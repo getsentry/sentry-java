@@ -23,6 +23,7 @@ import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryOptions;
+import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TracesSamplingDecision;
 import io.sentry.TransactionContext;
@@ -224,6 +225,7 @@ public final class ActivityLifecycleIntegration
         }
         transactionOptions.setStartTimestamp(ttidStartTime);
         transactionOptions.setAppStartTransaction(appStartSamplingDecision != null);
+        setSpanOrigin(transactionOptions);
 
         // we can only bind to the scope if there's no running transaction
         ITransaction transaction =
@@ -234,7 +236,9 @@ public final class ActivityLifecycleIntegration
                     UI_LOAD_OP,
                     appStartSamplingDecision),
                 transactionOptions);
-        setSpanOrigin(transaction);
+
+        final SpanOptions spanOptions = new SpanOptions();
+        setSpanOrigin(spanOptions);
 
         // in case appStartTime isn't available, we don't create a span for it.
         if (!(firstActivityCreated || appStartTime == null || coldStart == null)) {
@@ -244,8 +248,8 @@ public final class ActivityLifecycleIntegration
                   getAppStartOp(coldStart),
                   getAppStartDesc(coldStart),
                   appStartTime,
-                  Instrumenter.SENTRY);
-          setSpanOrigin(appStartSpan);
+                  Instrumenter.SENTRY,
+                  spanOptions);
 
           // in case there's already an end time (e.g. due to deferred SDK init)
           // we can finish the app-start span
@@ -253,15 +257,21 @@ public final class ActivityLifecycleIntegration
         }
         final @NotNull ISpan ttidSpan =
             transaction.startChild(
-                TTID_OP, getTtidDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
+                TTID_OP,
+                getTtidDesc(activityName),
+                ttidStartTime,
+                Instrumenter.SENTRY,
+                spanOptions);
         ttidSpanMap.put(activity, ttidSpan);
-        setSpanOrigin(ttidSpan);
 
         if (timeToFullDisplaySpanEnabled && fullyDisplayedReporter != null && options != null) {
           final @NotNull ISpan ttfdSpan =
               transaction.startChild(
-                  TTFD_OP, getTtfdDesc(activityName), ttidStartTime, Instrumenter.SENTRY);
-          setSpanOrigin(ttfdSpan);
+                  TTFD_OP,
+                  getTtfdDesc(activityName),
+                  ttidStartTime,
+                  Instrumenter.SENTRY,
+                  spanOptions);
           try {
             ttfdSpanMap.put(activity, ttfdSpan);
             ttfdAutoCloseFuture =
@@ -290,11 +300,8 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private void setSpanOrigin(ISpan span) {
-    if (span != null) {
-      // TODO [POTEL] replace with transactionOptions.setOrigin
-      span.getSpanContext().setOrigin(TRACE_ORIGIN);
-    }
+  private void setSpanOrigin(final @NotNull SpanOptions spanOptions) {
+    spanOptions.setOrigin(TRACE_ORIGIN);
   }
 
   @VisibleForTesting
