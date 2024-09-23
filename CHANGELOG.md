@@ -38,6 +38,7 @@
     - If you're using code obfuscation, adjust your proguard-rules accordingly, so your custom view class name is not minified
 - Set span origin in `ActivityLifecycleIntegration` on span options instead of after creating the span / transaction ([#3702](https://github.com/getsentry/sentry-java/pull/3702))
   - This allows spans to be filtered by span origin on creation
+- Honor ignored span origins in `SentryTracer.startChild` ([#3704](https://github.com/getsentry/sentry-java/pull/3704))
 
 ### Dependencies
 
