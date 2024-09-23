@@ -2259,6 +2259,19 @@ class ScopesTest {
         scopes.configureScope { assertSame(transaction, it.transaction) }
     }
 
+    @Test
+    fun `creating a transaction with origin sets the origin on the transaction context`() {
+        val scopes = generateScopes()
+
+        val transactionContext = TransactionContext("transaction-name", "transaction-op")
+        val transactionOptions = TransactionOptions().also {
+            it.origin = "other.span.origin"
+        }
+
+        val transaction = scopes.startTransaction(transactionContext, transactionOptions)
+        assertEquals("other.span.origin", transaction.spanContext.origin)
+    }
+
     private val dsnTest = "https://key@sentry.io/proj"
 
     private fun generateScopes(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): IScopes {
