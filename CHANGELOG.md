@@ -39,6 +39,7 @@
 - Set span origin in `ActivityLifecycleIntegration` on span options instead of after creating the span / transaction ([#3702](https://github.com/getsentry/sentry-java/pull/3702))
   - This allows spans to be filtered by span origin on creation
 - Honor ignored span origins in `SentryTracer.startChild` ([#3704](https://github.com/getsentry/sentry-java/pull/3704))
+- Add `enable-spotlight` and `spotlight-connection-url` to external options and check if spotlight is enabled when deciding whether to inspect an OpenTelemetry span for connecting to splotlight ([#3709](https://github.com/getsentry/sentry-java/pull/3709))
 
 ### Dependencies
 
