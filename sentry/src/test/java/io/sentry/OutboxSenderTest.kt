@@ -5,7 +5,7 @@ import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.util.HintUtils
-import io.sentry.util.thread.NoOpMainThreadChecker
+import io.sentry.util.thread.NoOpThreadChecker
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.check
@@ -38,7 +38,7 @@ class OutboxSenderTest {
         init {
             whenever(options.dsn).thenReturn("https://key@sentry.io/proj")
             whenever(options.dateProvider).thenReturn(SentryNanotimeDateProvider())
-            whenever(options.mainThreadChecker).thenReturn(NoOpMainThreadChecker.getInstance())
+            whenever(options.threadChecker).thenReturn(NoOpThreadChecker.getInstance())
             whenever(options.continuousProfiler).thenReturn(NoOpContinuousProfiler.getInstance())
             whenever(scopes.options).thenReturn(this.options)
         }

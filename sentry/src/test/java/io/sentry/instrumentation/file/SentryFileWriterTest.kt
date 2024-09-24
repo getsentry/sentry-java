@@ -6,7 +6,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus.OK
 import io.sentry.TransactionContext
-import io.sentry.util.thread.MainThreadChecker
+import io.sentry.util.thread.ThreadChecker
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
@@ -27,7 +27,7 @@ class SentryFileWriterTest {
         ): SentryFileWriter {
             whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
-                    mainThreadChecker = MainThreadChecker.getInstance()
+                    threadChecker = ThreadChecker.getInstance()
                 }
             )
             sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)

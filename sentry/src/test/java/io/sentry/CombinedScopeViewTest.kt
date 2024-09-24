@@ -1142,8 +1142,6 @@ class CombinedScopeViewTest {
         assertEquals(SentryId.EMPTY_ID, fixture.globalScope.replayId)
     }
 
-    // TODO [HSM] test clone
-
     private fun createTransaction(name: String, scopes: Scopes? = null): ITransaction {
         val scopesToUse = scopes ?: fixture.scopes
         return SentryTracer(TransactionContext(name, "op", TracesSamplingDecision(true)), scopesToUse).also {

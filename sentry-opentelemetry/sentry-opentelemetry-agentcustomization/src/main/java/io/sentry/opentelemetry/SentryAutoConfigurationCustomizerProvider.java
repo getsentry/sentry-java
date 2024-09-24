@@ -55,7 +55,6 @@ public final class SentryAutoConfigurationCustomizerProvider
             options.setIgnoredSpanOrigins(SpanUtils.ignoredSpanOriginsForOpenTelemetry());
             options.setSpanFactory(spanFactory);
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
-            // TODO [POTEL] is detecting a version mismatch between application and agent possible?
             if (sdkVersion != null) {
               options.setSdkVersion(sdkVersion);
             }

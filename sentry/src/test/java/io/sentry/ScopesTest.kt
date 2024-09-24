@@ -39,7 +39,6 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -1048,8 +1047,6 @@ class ScopesTest {
         assertEquals("test", scope?.transactionName)
     }
 
-    // TODO [POTEL] how do we handle instrumenter?
-    @Ignore
     @Test
     fun `when startTransaction is called with different instrumenter, no-op is returned`() {
         val scopes = generateScopes()
@@ -1061,8 +1058,6 @@ class ScopesTest {
         assertTrue(tx is NoOpTransaction)
     }
 
-    // TODO [POTEL] how do we handle instrumenter?
-    @Ignore
     @Test
     fun `when startTransaction is called with different instrumenter, no-op is returned 2`() {
         val scopes = generateScopes() {
@@ -2308,6 +2303,19 @@ class ScopesTest {
         val transaction = scopes.startTransaction(transactionContext, transactionOptions)
         assertFalse(transaction.isNoOp)
         scopes.configureScope { assertSame(transaction, it.transaction) }
+    }
+
+    @Test
+    fun `creating a transaction with origin sets the origin on the transaction context`() {
+        val scopes = generateScopes()
+
+        val transactionContext = TransactionContext("transaction-name", "transaction-op")
+        val transactionOptions = TransactionOptions().also {
+            it.origin = "other.span.origin"
+        }
+
+        val transaction = scopes.startTransaction(transactionContext, transactionOptions)
+        assertEquals("other.span.origin", transaction.spanContext.origin)
     }
 
     private val dsnTest = "https://key@sentry.io/proj"

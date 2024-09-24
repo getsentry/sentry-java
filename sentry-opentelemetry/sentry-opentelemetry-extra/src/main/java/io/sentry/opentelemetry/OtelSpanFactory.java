@@ -8,7 +8,6 @@ import io.opentelemetry.api.trace.TraceState;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.sentry.Baggage;
-import io.sentry.IScope;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ISpanFactory;
@@ -78,8 +77,6 @@ public final class OtelSpanFactory implements ISpanFactory {
       final @NotNull SpanContext spanContext) {
     final @NotNull String name = spanContext.getOperation();
     final @NotNull SpanBuilder spanBuilder = getTracer().spanBuilder(name);
-    // TODO [POTEL] If performance is disabled, can we use otel.SamplingDecision.RECORD_ONLY to
-    // still allow otel to be used for tracing
     if (parentSpan == null) {
       final @NotNull SentryId traceId = spanContext.getTraceId();
       final @Nullable SpanId parentSpanId = spanContext.getParentSpanId();
@@ -101,11 +98,6 @@ public final class OtelSpanFactory implements ISpanFactory {
                 TraceState.getDefault());
         final @NotNull Span wrappedSpan = Span.wrap(otelSpanContext);
         spanBuilder.setParent(Context.root().with(wrappedSpan));
-      }
-    } else {
-      if (parentSpan instanceof OtelSpanWrapper) {
-        // TODO [POTEL] retrieve context from span
-        //      spanBuilder.setParent()
       }
     }
 
@@ -150,18 +142,6 @@ public final class OtelSpanFactory implements ISpanFactory {
     }
 
     return sentrySpan;
-  }
-
-  // TODO [POTEL] consider removing this method
-  @Override
-  public @Nullable ISpan retrieveCurrentSpan(IScopes scopes) {
-    return scopes.getSpan();
-  }
-
-  // TODO [POTEL] consider removing this method
-  @Override
-  public @Nullable ISpan retrieveCurrentSpan(IScope scope) {
-    return scope.getSpan();
   }
 
   private @NotNull Tracer getTracer() {
