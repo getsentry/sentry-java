@@ -93,7 +93,7 @@ public class AndroidProfiler {
       new ArrayDeque<>();
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
   private final @NotNull BuildInfoProvider buildInfoProvider;
-  private final @NotNull ISentryExecutorService executorService;
+  private final @Nullable ISentryExecutorService timeoutExecutorService;
   private final @NotNull ILogger logger;
   private boolean isRunning = false;
 
@@ -101,14 +101,15 @@ public class AndroidProfiler {
       final @NotNull String tracesFilesDirPath,
       final int intervalUs,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
-      final @NotNull ISentryExecutorService executorService,
+      final @Nullable ISentryExecutorService timeoutExecutorService,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider) {
     this.traceFilesDir =
         new File(Objects.requireNonNull(tracesFilesDirPath, "TracesFilesDirPath is required"));
     this.intervalUs = intervalUs;
     this.logger = Objects.requireNonNull(logger, "Logger is required");
-    this.executorService = Objects.requireNonNull(executorService, "ExecutorService is required.");
+    // Timeout executor is nullable, as timeouts will not be there for continuous profiling
+    this.timeoutExecutorService = timeoutExecutorService;
     this.frameMetricsCollector =
         Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
     this.buildInfoProvider =
@@ -185,8 +186,11 @@ public class AndroidProfiler {
 
     // We stop profiling after a timeout to avoid huge profiles to be sent
     try {
-      scheduledFinish =
-          executorService.schedule(() -> endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
+      if (timeoutExecutorService != null) {
+        scheduledFinish =
+            timeoutExecutorService.schedule(
+                () -> endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
+      }
     } catch (RejectedExecutionException e) {
       logger.log(
           SentryLevel.ERROR,
