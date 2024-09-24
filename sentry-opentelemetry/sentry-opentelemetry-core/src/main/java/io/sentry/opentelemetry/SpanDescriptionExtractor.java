@@ -4,6 +4,7 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.SemanticAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
 import io.opentelemetry.semconv.incubating.DbIncubatingAttributes;
 import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes;
@@ -20,14 +21,11 @@ public final class SpanDescriptionExtractor {
       final @NotNull SpanData otelSpan, final @Nullable OtelSpanWrapper sentrySpan) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
 
-    final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
+    final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD) != null
+      ? attributes.get(HttpAttributes.HTTP_REQUEST_METHOD)
+      : attributes.get(SemanticAttributes.HTTP_METHOD);
     if (httpMethod != null) {
       return descriptionForHttpMethod(otelSpan, httpMethod);
-    }
-
-    final @Nullable String httpRequestMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
-    if (httpRequestMethod != null) {
-      return descriptionForHttpMethod(otelSpan, httpRequestMethod);
     }
 
     final @Nullable String dbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
@@ -63,6 +61,7 @@ public final class SpanDescriptionExtractor {
     }
     final @NotNull String op = opBuilder.toString();
     final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
+
     if (urlFull != null) {
       if (httpPath == null) {
         httpPath = urlFull;
