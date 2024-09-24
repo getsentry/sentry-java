@@ -14,7 +14,7 @@ import androidx.annotation.Nullable;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
-import io.sentry.util.thread.IMainThreadChecker;
+import io.sentry.util.thread.IThreadChecker;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -31,14 +31,13 @@ public class ScreenshotUtils {
       final @NotNull Activity activity,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    return takeScreenshot(
-        activity, AndroidMainThreadChecker.getInstance(), logger, buildInfoProvider);
+    return takeScreenshot(activity, AndroidThreadChecker.getInstance(), logger, buildInfoProvider);
   }
 
   @SuppressLint("NewApi")
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
-      final @NotNull IMainThreadChecker mainThreadChecker,
+      final @NotNull IThreadChecker threadChecker,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider) {
     // We are keeping BuildInfoProvider param for compatibility, as it's being used by
@@ -113,7 +112,7 @@ public class ScreenshotUtils {
         }
       } else {
         final Canvas canvas = new Canvas(bitmap);
-        if (mainThreadChecker.isMainThread()) {
+        if (threadChecker.isMainThread()) {
           view.draw(canvas);
           latch.countDown();
         } else {

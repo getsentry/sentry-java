@@ -26,6 +26,7 @@
 - Remove `PROCESS_COMMAND_ARGS` (`process.command_args`) OpenTelemetry span attribute as it can be very large ([#3664](https://github.com/getsentry/sentry-java/pull/3664))
 - Use RECORD_ONLY sampling decision if performance is disabled ([#3659](https://github.com/getsentry/sentry-java/pull/3659))
     - Also fix check whether Performance is enabled when making a sampling decision in the OpenTelemetry sampler
+- Sentry OpenTelemetry Java Agent now sets Instrumenter to SENTRY (used to be OTEL) ([#3697](https://github.com/getsentry/sentry-java/pull/3697))
 - Avoid stopping appStartProfiler after application creation ([#3630](https://github.com/getsentry/sentry-java/pull/3630))
 - Session Replay: Correctly detect dominant color for `TextView`s with Spans ([#3682](https://github.com/getsentry/sentry-java/pull/3682))
 - Session Replay: Add options to selectively redact/ignore views from being captured. The following options are available: ([#3689](https://github.com/getsentry/sentry-java/pull/3689))
@@ -35,6 +36,14 @@
   - redact/ignore `View`s of a certain type by adding fully-qualified classname to one of the lists `options.experimental.sessionReplay.addRedactViewClass()` or `options.experimental.sessionReplay.addIgnoreViewClass()`. Note, that all of the view subclasses/subtypes will be redacted/ignored as well
     - For example, (this is already a default behavior) to redact all `TextView`s and their subclasses (`RadioButton`, `EditText`, etc.): `options.experimental.sessionReplay.addRedactViewClass("android.widget.TextView")`
     - If you're using code obfuscation, adjust your proguard-rules accordingly, so your custom view class name is not minified
+- Set span origin in `ActivityLifecycleIntegration` on span options instead of after creating the span / transaction ([#3702](https://github.com/getsentry/sentry-java/pull/3702))
+  - This allows spans to be filtered by span origin on creation
+- Honor ignored span origins in `SentryTracer.startChild` ([#3704](https://github.com/getsentry/sentry-java/pull/3704))
+- Add `enable-spotlight` and `spotlight-connection-url` to external options and check if spotlight is enabled when deciding whether to inspect an OpenTelemetry span for connecting to splotlight ([#3709](https://github.com/getsentry/sentry-java/pull/3709))
+
+### Behavioural Changes
+
+- (Android) Replace thread id with kernel thread id in span data ([#3706](https://github.com/getsentry/sentry-java/pull/3706))
 
 ### Dependencies
 

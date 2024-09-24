@@ -300,6 +300,20 @@ class ExternalOptionsTest {
         }
     }
 
+    @Test
+    fun `creates options with enableSpotlight set to true`() {
+        withPropertiesFile("enable-spotlight=true") { options ->
+            assertTrue(options.isEnableSpotlight == true)
+        }
+    }
+
+    @Test
+    fun `creates options with spotlightConnectionUrl set`() {
+        withPropertiesFile("spotlight-connection-url=http://local.sentry.io:1234") { options ->
+            assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
+        }
+    }
+
     private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()
