@@ -56,6 +56,7 @@ class AndroidCpuCollectorTest {
         assertNotNull(cpuData)
         assertNotEquals(0.0, cpuData.cpuUsagePercentage)
         assertNotEquals(0, cpuData.timestampMillis)
+        assertNotEquals(0, cpuData.timestamp.nanoTimestamp())
     }
 
     @Test

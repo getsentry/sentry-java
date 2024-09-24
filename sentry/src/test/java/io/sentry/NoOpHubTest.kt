@@ -33,6 +33,10 @@ class NoOpHubTest {
         assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock<Hint>()))
 
     @Test
+    fun `captureProfileChunk returns empty SentryId`() =
+        assertEquals(SentryId.EMPTY_ID, sut.captureProfileChunk(mock()))
+
+    @Test
     fun `captureException returns empty SentryId`() =
         assertEquals(SentryId.EMPTY_ID, sut.captureException(RuntimeException()))
 

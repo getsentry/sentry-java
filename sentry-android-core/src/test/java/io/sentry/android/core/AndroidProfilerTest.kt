@@ -9,6 +9,7 @@ import io.sentry.ILogger
 import io.sentry.ISentryExecutorService
 import io.sentry.MemoryCollectionData
 import io.sentry.PerformanceCollectionData
+import io.sentry.SentryDate
 import io.sentry.SentryExecutorService
 import io.sentry.SentryLevel
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
@@ -278,12 +279,14 @@ class AndroidProfilerTest {
         val profiler = fixture.getSut()
         val performanceCollectionData = ArrayList<PerformanceCollectionData>()
         var singleData = PerformanceCollectionData()
-        singleData.addMemoryData(MemoryCollectionData(1, 2, 3))
-        singleData.addCpuData(CpuCollectionData(1, 1.4))
+        val t1 = mock<SentryDate>()
+        val t2 = mock<SentryDate>()
+        singleData.addMemoryData(MemoryCollectionData(1, 2, 3, t1))
+        singleData.addCpuData(CpuCollectionData(1, 1.4, t1))
         performanceCollectionData.add(singleData)
 
         singleData = PerformanceCollectionData()
-        singleData.addMemoryData(MemoryCollectionData(2, 3, 4))
+        singleData.addMemoryData(MemoryCollectionData(2, 3, 4, t2))
         performanceCollectionData.add(singleData)
 
         profiler.start()

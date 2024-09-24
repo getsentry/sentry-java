@@ -278,6 +278,12 @@ public final class HubAdapter implements IHub {
     return Sentry.startTransaction(transactionContext, transactionOptions);
   }
 
+  @Override
+  public @NotNull SentryId captureProfileChunk(
+      final @NotNull ProfileChunk profilingContinuousData) {
+    return Sentry.getCurrentScopes().captureProfileChunk(profilingContinuousData);
+  }
+
   @Deprecated
   @Override
   public @Nullable SentryTraceHeader traceHeaders() {

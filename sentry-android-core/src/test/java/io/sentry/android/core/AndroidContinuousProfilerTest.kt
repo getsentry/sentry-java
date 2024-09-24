@@ -4,8 +4,8 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.IHub
 import io.sentry.ILogger
+import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
@@ -45,7 +45,7 @@ class AndroidContinuousProfilerTest {
         }
         val mockLogger = mock<ILogger>()
 
-        val hub: IHub = mock()
+        val scopes: IScopes = mock()
         val frameMetricsCollector: SentryFrameMetricsCollector = mock()
 
         lateinit var transaction1: SentryTracer
@@ -61,10 +61,10 @@ class AndroidContinuousProfilerTest {
 
         fun getSut(buildInfoProvider: BuildInfoProvider = buildInfo, optionConfig: ((options: SentryAndroidOptions) -> Unit) = {}): AndroidContinuousProfiler {
             optionConfig(options)
-            whenever(hub.options).thenReturn(options)
-            transaction1 = SentryTracer(TransactionContext("", ""), hub)
-            transaction2 = SentryTracer(TransactionContext("", ""), hub)
-            transaction3 = SentryTracer(TransactionContext("", ""), hub)
+            whenever(scopes.options).thenReturn(options)
+            transaction1 = SentryTracer(TransactionContext("", ""), scopes)
+            transaction2 = SentryTracer(TransactionContext("", ""), scopes)
+            transaction3 = SentryTracer(TransactionContext("", ""), scopes)
             return AndroidContinuousProfiler(
                 buildInfoProvider,
                 frameMetricsCollector,
@@ -73,7 +73,7 @@ class AndroidContinuousProfilerTest {
                 options.isProfilingEnabled,
                 options.profilingTracesHz,
                 options.executorService
-            )
+            ).also { it.setScopes(scopes) }
         }
     }
 
@@ -315,5 +315,39 @@ class AndroidContinuousProfilerTest {
         executorService.runAll()
         verify(fixture.mockLogger, times(2)).log(eq(SentryLevel.DEBUG), eq("Profile chunk finished. Starting a new one."))
         assertTrue(profiler.isRunning)
+    }
+
+    @Test
+    fun `profiler sends chunk on each restart`() {
+        val executorService = DeferredExecutorService()
+        val profiler = fixture.getSut {
+            it.executorService = executorService
+        }
+        profiler.start()
+        assertTrue(profiler.isRunning)
+        // We run the executor service to trigger the profiler restart (chunk finish)
+        executorService.runAll()
+        verify(fixture.scopes, never()).captureProfileChunk(any())
+        // Now the executor is used to send the chunk
+        executorService.runAll()
+        verify(fixture.scopes).captureProfileChunk(any())
+    }
+
+    @Test
+    fun `profiler sends another chunk on stop`() {
+        val executorService = DeferredExecutorService()
+        val profiler = fixture.getSut {
+            it.executorService = executorService
+        }
+        profiler.start()
+        assertTrue(profiler.isRunning)
+        // We run the executor service to trigger the profiler restart (chunk finish)
+        executorService.runAll()
+        verify(fixture.scopes, never()).captureProfileChunk(any())
+        // We stop the profiler, which should send an additional chunk
+        profiler.stop()
+        // Now the executor is used to send the chunk
+        executorService.runAll()
+        verify(fixture.scopes, times(2)).captureProfileChunk(any())
     }
 }

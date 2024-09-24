@@ -270,6 +270,11 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
+  public @NotNull SentryId captureProfileChunk(@NotNull ProfileChunk profileChunk) {
+    return Sentry.getCurrentScopes().captureProfileChunk(profileChunk);
+  }
+
+  @Override
   public @NotNull ITransaction startTransaction(
       @NotNull TransactionContext transactionContext,
       @NotNull TransactionOptions transactionOptions) {
