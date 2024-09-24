@@ -45,6 +45,8 @@ public final class ExternalOptions {
   private @NotNull Set<String> bundleIds = new CopyOnWriteArraySet<>();
   private @Nullable Boolean enabled;
   private @Nullable Boolean enablePrettySerializationOutput;
+  private @Nullable Boolean enableSpotlight;
+  private @Nullable String spotlightConnectionUrl;
 
   private @Nullable List<String> ignoredCheckIns;
 
@@ -187,6 +189,9 @@ public final class ExternalOptions {
 
       options.setCron(cron);
     }
+
+    options.setEnableSpotlight(propertiesProvider.getBooleanProperty("enable-spotlight"));
+    options.setSpotlightConnectionUrl(propertiesProvider.getProperty("spotlight-connection-url"));
 
     return options;
   }
@@ -469,5 +474,25 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public void setCron(final @Nullable SentryOptions.Cron cron) {
     this.cron = cron;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableSpotlight(final @Nullable Boolean enableSpotlight) {
+    this.enableSpotlight = enableSpotlight;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Boolean isEnableSpotlight() {
+    return enableSpotlight;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable String getSpotlightConnectionUrl() {
+    return spotlightConnectionUrl;
+  }
+
+  @ApiStatus.Experimental
+  public void setSpotlightConnectionUrl(final @Nullable String spotlightConnectionUrl) {
+    this.spotlightConnectionUrl = spotlightConnectionUrl;
   }
 }

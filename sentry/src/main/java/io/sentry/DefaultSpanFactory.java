@@ -22,19 +22,8 @@ public final class DefaultSpanFactory implements ISpanFactory {
       final @NotNull SpanContext spanContext,
       @Nullable ISpan parentSpan) {
     if (parentSpan == null) {
-      // TODO [POTEL] We could create a transaction here
       return NoOpSpan.getInstance();
     }
     return parentSpan.startChild(spanContext, spanOptions);
-  }
-
-  @Override
-  public @Nullable ISpan retrieveCurrentSpan(final IScopes scopes) {
-    return scopes.getSpan();
-  }
-
-  @Override
-  public @Nullable ISpan retrieveCurrentSpan(final IScope scope) {
-    return scope.getSpan();
   }
 }

@@ -57,17 +57,13 @@ public final class OtelSpanWrapper implements ISpan {
    * OtelSpanWrapper} and indirectly back to {@link io.opentelemetry.sdk.trace.data.SpanData} via
    * {@link Span}. Also see {@link SentryWeakSpanStorage}.
    */
-  private final @NotNull WeakReference<ReadWriteSpan> span; // TODO [POTEL] bootstrap proxy
+  private final @NotNull WeakReference<ReadWriteSpan> span;
 
   private final @NotNull SpanContext context;
-  //  private final @NotNull SpanOptions options;
   private final @NotNull Contexts contexts = new Contexts();
   private @Nullable String transactionName;
   private @Nullable TransactionNameSource transactionNameSource;
   private final @Nullable Baggage baggage;
-
-  // TODO [POTEL]
-  //  private @Nullable SpanFinishedCallback spanFinishedCallback;
 
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
   private final @NotNull Map<String, MeasurementValue> measurements = new ConcurrentHashMap<>();
@@ -362,13 +358,6 @@ public final class OtelSpanWrapper implements ISpan {
       return;
     }
     this.measurements.put(name, new MeasurementValue(value, null));
-
-    // TODO [POTEL] can't set on transaction
-    // We set the measurement in the transaction, too, but we have to check if this is the root span
-    // of the transaction, to avoid an infinite recursion
-    //    if (transaction.getRoot() != this) {
-    //      transaction.setMeasurementFromChild(name, value);
-    //    }
   }
 
   @Override
@@ -385,13 +374,6 @@ public final class OtelSpanWrapper implements ISpan {
       return;
     }
     this.measurements.put(name, new MeasurementValue(value, unit.apiName()));
-
-    // TODO [POTEL] can't set on transaction
-    // We set the measurement in the transaction, too, but we have to check if this is the root span
-    // of the transaction, to avoid an infinite recursion
-    //    if (transaction.getRoot() != this) {
-    //      transaction.setMeasurementFromChild(name, value, unit);
-    //    }
   }
 
   @Override
@@ -430,7 +412,6 @@ public final class OtelSpanWrapper implements ISpan {
 
   @Override
   public @NotNull Contexts getContexts() {
-    // TODO [POTEL] only works for root span atm
     return contexts;
   }
 

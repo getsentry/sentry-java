@@ -215,6 +215,7 @@ class ActivityLifecycleIntegrationTest {
             check<TransactionOptions> { transactionOptions ->
                 assertEquals(fixture.options.idleTimeout, transactionOptions.idleTimeout)
                 assertEquals(TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION, transactionOptions.deadlineTimeout)
+                assertEquals("auto.ui.activity", transactionOptions.origin)
             }
         )
     }

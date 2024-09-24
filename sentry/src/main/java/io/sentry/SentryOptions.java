@@ -22,10 +22,9 @@ import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
-import io.sentry.util.thread.IMainThreadChecker;
-import io.sentry.util.thread.NoOpMainThreadChecker;
+import io.sentry.util.thread.IThreadChecker;
+import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
-import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -410,7 +409,7 @@ public class SentryOptions {
    */
   private final @NotNull List<ViewHierarchyExporter> viewHierarchyExporters = new ArrayList<>();
 
-  private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
+  private @NotNull IThreadChecker threadChecker = NoOpThreadChecker.getInstance();
 
   // TODO [MAJOR] this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
@@ -2070,12 +2069,12 @@ public class SentryOptions {
     viewHierarchyExporters.addAll(exporters);
   }
 
-  public @NotNull IMainThreadChecker getMainThreadChecker() {
-    return mainThreadChecker;
+  public @NotNull IThreadChecker getThreadChecker() {
+    return threadChecker;
   }
 
-  public void setMainThreadChecker(final @NotNull IMainThreadChecker mainThreadChecker) {
-    this.mainThreadChecker = mainThreadChecker;
+  public void setThreadChecker(final @NotNull IThreadChecker threadChecker) {
+    this.threadChecker = threadChecker;
   }
 
   /**
@@ -2763,6 +2762,14 @@ public class SentryOptions {
       setSendDefaultPii(options.isSendDefaultPii());
     }
 
+    if (options.isEnableSpotlight() != null) {
+      setEnableSpotlight(options.isEnableSpotlight());
+    }
+
+    if (options.getSpotlightConnectionUrl() != null) {
+      setSpotlightConnectionUrl(options.getSpotlightConnectionUrl());
+    }
+
     if (options.getCron() != null) {
       if (getCron() == null) {
         setCron(options.getCron());
@@ -2803,7 +2810,6 @@ public class SentryOptions {
 
   @ApiStatus.Internal
   public @NotNull ISpanFactory getSpanFactory() {
-    // TODO [POTEL] use a util for checking if OTel is active or similar
     return spanFactory;
   }
 
