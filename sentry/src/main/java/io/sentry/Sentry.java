@@ -1032,19 +1032,6 @@ public final class Sentry {
   }
 
   /**
-   * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
-   * &lt;meta&gt; HTML tags. Also see {@link Sentry#getBaggage()}.
-   *
-   * @deprecated please use {@link Sentry#getTraceparent()} instead.
-   * @return sentry trace header or null
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static @Nullable SentryTraceHeader traceHeaders() {
-    return getCurrentScopes().traceHeaders();
-  }
-
-  /**
    * Gets the current active transaction or span.
    *
    * @return the active span or null when no active transaction is running. In case of

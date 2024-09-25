@@ -276,13 +276,6 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.startTransaction(transactionContext, transactionOptions);
   }
 
-  @Deprecated
-  @Override
-  @SuppressWarnings("deprecation")
-  public @Nullable SentryTraceHeader traceHeaders() {
-    return Sentry.traceHeaders();
-  }
-
   @ApiStatus.Internal
   @Override
   public void setSpanContext(

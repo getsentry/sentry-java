@@ -243,13 +243,6 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public @NotNull SentryTraceHeader traceHeaders() {
-    return new SentryTraceHeader(SentryId.EMPTY_ID, SpanId.EMPTY_ID, true);
-  }
-
-  @Override
   public void setSpanContext(
       final @NotNull Throwable throwable,
       final @NotNull ISpan spanContext,

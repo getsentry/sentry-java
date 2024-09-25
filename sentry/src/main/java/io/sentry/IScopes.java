@@ -584,17 +584,6 @@ public interface IScopes {
       final @NotNull TransactionOptions transactionOptions);
 
   /**
-   * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
-   * &lt;meta&gt; HTML tags. Also see {@link IScopes#getBaggage()}.
-   *
-   * @deprecated please use {@link IScopes#getTraceparent()} instead.
-   * @return sentry trace header or null
-   */
-  @Deprecated
-  @Nullable
-  SentryTraceHeader traceHeaders();
-
-  /**
    * Associates {@link ISpan} and the transaction name with the {@link Throwable}. Used to determine
    * in which trace the exception has been thrown in framework integrations.
    *

@@ -900,13 +900,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return transaction;
   }
 
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @Override
-  public @Nullable SentryTraceHeader traceHeaders() {
-    return getTraceparent();
-  }
-
   @Override
   @ApiStatus.Internal
   public void setSpanContext(

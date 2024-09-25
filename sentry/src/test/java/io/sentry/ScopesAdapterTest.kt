@@ -228,11 +228,6 @@ class ScopesAdapterTest {
         verify(scopes).startTransaction(eq(transactionContext), eq(transactionOptions))
     }
 
-    @Test fun `traceHeaders calls Scopes`() {
-        ScopesAdapter.getInstance().traceHeaders()
-        verify(scopes).traceHeaders()
-    }
-
     @Test fun `setSpanContext calls Scopes`() {
         val throwable = mock<Throwable>()
         val span = mock<ISpan>()
