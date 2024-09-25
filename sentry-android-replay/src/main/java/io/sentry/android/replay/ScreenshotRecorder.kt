@@ -13,6 +13,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
+import android.util.Log
 import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
@@ -24,10 +25,10 @@ import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.util.MainLooperHandler
-import io.sentry.android.replay.util.dominantTextColor
 import io.sentry.android.replay.util.getVisibleRects
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
+import io.sentry.android.replay.viewhierarchy.ComposeViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
@@ -38,6 +39,7 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.roundToInt
+import kotlin.system.measureNanoTime
 
 @TargetApi(26)
 internal class ScreenshotRecorder(
@@ -115,6 +117,7 @@ internal class ScreenshotRecorder(
                             return@request
                         }
 
+                        // TODO: handle animations with heuristics (e.g. if we fall under this condition 2 times in a row, we should capture)
                         if (contentChanged.get()) {
                             options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
                             bitmap.recycle()
@@ -132,9 +135,9 @@ internal class ScreenshotRecorder(
                                     node.visibleRect ?: return@traverse false
 
                                     // TODO: investigate why it returns true on RN when it shouldn't
-//                                    if (viewHierarchy.isObscured(node)) {
-//                                        return@traverse true
-//                                    }
+                                    if (viewHierarchy.isObscured(node)) {
+                                        return@traverse true
+                                    }
 
                                     val (visibleRects, color) = when (node) {
                                         is ImageViewHierarchyNode -> {
@@ -143,7 +146,7 @@ internal class ScreenshotRecorder(
                                         }
 
                                         is TextViewHierarchyNode -> {
-                                            val textColor = node.layout.dominantTextColor
+                                            val textColor = node.layout?.dominantTextColor
                                                 ?: node.dominantColor
                                                 ?: Color.BLACK
                                             node.layout.getVisibleRects(
@@ -253,6 +256,17 @@ internal class ScreenshotRecorder(
 
     private fun View.traverse(parentNode: ViewHierarchyNode) {
         if (this !is ViewGroup) {
+            return
+        }
+
+        var isCompose: Boolean
+        val time = measureNanoTime {
+            isCompose = ComposeViewHierarchyNode.fromView(this, parentNode, options)
+        }
+        if (isCompose) {
+            Log.e("TIME", String.format("%.2f", time / 1_000_000.0) + "ms")
+            // if it's a compose view, we can skip the children as they are already traversed in
+            // the ComposeViewHierarchyNode.fromView method
             return
         }
 

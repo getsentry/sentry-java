@@ -17,7 +17,12 @@ import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.widget.TextView
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.TextLayoutResult
+import io.sentry.SentryOptions
+import io.sentry.android.replay.R
 import java.lang.NullPointerException
+import kotlin.math.roundToInt
 
 /**
  * Adapted copy of AccessibilityNodeInfo from https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/view/View.java;l=10718
@@ -65,7 +70,7 @@ internal fun Drawable?.isRedactable(): Boolean {
     }
 }
 
-internal fun Layout?.getVisibleRects(globalRect: Rect, paddingLeft: Int, paddingTop: Int): List<Rect> {
+internal fun TextLayout?.getVisibleRects(globalRect: Rect, paddingLeft: Int, paddingTop: Int): List<Rect> {
     if (this == null) {
         return listOf(globalRect)
     }
@@ -105,32 +110,66 @@ internal val TextView.totalPaddingTopSafe: Int
     }
 
 /**
- * Returns the dominant text color of the layout by looking at the [ForegroundColorSpan] spans if
- * this text is a [Spanned] text. If the text is not a [Spanned] text or there are no spans, it
- * returns null.
+ * Converts an [Int] ARGB color to an opaque color by setting the alpha channel to 255.
  */
-internal val Layout?.dominantTextColor: Int? get() {
-    this ?: return null
+internal fun Int.toOpaque() = this or 0xFF000000.toInt()
 
-    if (text !is Spanned) return null
+interface TextLayout {
+    val lineCount: Int
+    /**
+     * Returns the dominant text color of the layout by looking at the [ForegroundColorSpan] spans if
+     * this text is a [Spanned] text. If the text is not a [Spanned] text or there are no spans, it
+     * returns null.
+     */
+    val dominantTextColor: Int?
+    fun getPrimaryHorizontal(offset: Int): Float
+    fun getEllipsisCount(line: Int): Int
+    fun getLineVisibleEnd(line: Int): Int
+    fun getLineTop(line: Int): Int
+    fun getLineBottom(line: Int): Int
+    fun getLineStart(line: Int): Int
+}
 
-    val spans = (text as Spanned).getSpans(0, text.length, ForegroundColorSpan::class.java)
+class AndroidTextLayout(private val layout: Layout) : TextLayout {
+    override val lineCount: Int get() = layout.lineCount
+    override val dominantTextColor: Int? get() {
+        if (layout.text !is Spanned) return null
 
-    // determine the dominant color by the span with the longest range
-    var longestSpan = Int.MIN_VALUE
-    var dominantColor: Int? = null
-    for (span in spans) {
-        val spanStart = (text as Spanned).getSpanStart(span)
-        val spanEnd = (text as Spanned).getSpanEnd(span)
-        if (spanStart == -1 || spanEnd == -1) {
-            // the span is not attached
-            continue
+        val spans = (layout.text as Spanned).getSpans(0, layout.text.length, ForegroundColorSpan::class.java)
+
+        // determine the dominant color by the span with the longest range
+        var longestSpan = Int.MIN_VALUE
+        var dominantColor: Int? = null
+        for (span in spans) {
+            val spanStart = (layout.text as Spanned).getSpanStart(span)
+            val spanEnd = (layout.text as Spanned).getSpanEnd(span)
+            if (spanStart == -1 || spanEnd == -1) {
+                // the span is not attached
+                continue
+            }
+            val spanLength = spanEnd - spanStart
+            if (spanLength > longestSpan) {
+                longestSpan = spanLength
+                dominantColor = span.foregroundColor
+            }
         }
-        val spanLength = spanEnd - spanStart
-        if (spanLength > longestSpan) {
-            longestSpan = spanLength
-            dominantColor = span.foregroundColor
-        }
+        return dominantColor?.toOpaque()
     }
-    return dominantColor
+    override fun getPrimaryHorizontal(offset: Int): Float = layout.getPrimaryHorizontal(offset)
+    override fun getEllipsisCount(line: Int): Int = layout.getEllipsisCount(line)
+    override fun getLineVisibleEnd(line: Int): Int = layout.getLineVisibleEnd(line)
+    override fun getLineTop(line: Int): Int = layout.getLineTop(line)
+    override fun getLineBottom(line: Int): Int = layout.getLineBottom(line)
+    override fun getLineStart(line: Int): Int = layout.getLineStart(line)
+}
+
+class ComposeTextLayout(internal val layout: TextLayoutResult) : TextLayout {
+    override val lineCount: Int get() = layout.lineCount
+    override val dominantTextColor: Int get() = layout.layoutInput.style.color.toArgb().toOpaque()
+    override fun getPrimaryHorizontal(offset: Int): Float = layout.getHorizontalPosition(offset, usePrimaryDirection = true)
+    override fun getEllipsisCount(line: Int): Int = if (layout.isLineEllipsized(line)) 1 else 0
+    override fun getLineVisibleEnd(line: Int): Int = layout.getLineEnd(line, visibleEnd = true)
+    override fun getLineTop(line: Int): Int = layout.getLineTop(line).roundToInt()
+    override fun getLineBottom(line: Int): Int = layout.getLineBottom(line).roundToInt()
+    override fun getLineStart(line: Int): Int = layout.getLineStart(line)
 }

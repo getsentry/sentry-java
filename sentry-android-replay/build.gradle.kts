@@ -1,5 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
     id("com.android.library")
@@ -27,7 +28,9 @@ android {
 
     buildTypes {
         getByName("debug")
-        getByName("release")
+        getByName("release") {
+            consumerProguardFiles("proguard-rules.pro")
+        }
     }
 
     kotlinOptions {
@@ -65,6 +68,7 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
+    compileOnly("androidx.compose.ui:ui:1.4.0")
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     // tests
@@ -82,4 +86,8 @@ dependencies {
 tasks.withType<Detekt> {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
+}
+
+tasks.withType<KotlinCompilationTask<*>>().configureEach {
+    compilerOptions.freeCompilerArgs.add("-opt-in=androidx.compose.ui.ExperimentalComposeUiApi")
 }
