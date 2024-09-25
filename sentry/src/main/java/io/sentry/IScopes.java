@@ -658,14 +658,6 @@ public interface IScopes {
   void reportFullyDisplayed();
 
   /**
-   * @deprecated See {@link IScopes#reportFullyDisplayed()}.
-   */
-  @Deprecated
-  default void reportFullDisplayed() {
-    reportFullyDisplayed();
-  }
-
-  /**
    * Continue a trace based on HTTP header values. If no "sentry-trace" header is provided a random
    * trace ID and span ID is created.
    *

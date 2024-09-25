@@ -715,17 +715,6 @@ class SentryTest {
     }
 
     @Test
-    fun `reportFullDisplayed calls reportFullyDisplayed`() {
-        val scopes = mock<IScopes>()
-        Sentry.init {
-            it.dsn = dsn
-        }
-        Sentry.setCurrentScopes(scopes)
-        Sentry.reportFullDisplayed()
-        verify(scopes).reportFullyDisplayed()
-    }
-
-    @Test
     fun `ignores executorService if it is closed`() {
         var sentryOptions: SentryOptions? = null
         val executorService = mock<ISentryExecutorService>()
