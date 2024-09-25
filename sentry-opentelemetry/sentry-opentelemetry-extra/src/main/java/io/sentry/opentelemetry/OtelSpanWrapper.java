@@ -26,6 +26,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
@@ -64,6 +65,7 @@ public final class OtelSpanWrapper implements ISpan {
   private @Nullable String transactionName;
   private @Nullable TransactionNameSource transactionNameSource;
   private final @Nullable Baggage baggage;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
   private final @NotNull Map<String, MeasurementValue> measurements = new ConcurrentHashMap<>();
@@ -203,7 +205,7 @@ public final class OtelSpanWrapper implements ISpan {
   }
 
   private void updateBaggageValues() {
-    synchronized (this) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (baggage != null && baggage.isMutable()) {
         final AtomicReference<SentryId> replayIdAtomicReference = new AtomicReference<>();
         scopes.configureScope(

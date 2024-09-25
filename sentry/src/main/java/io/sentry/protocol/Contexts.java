@@ -2,11 +2,13 @@ package io.sentry.protocol;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SpanContext;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -29,7 +31,7 @@ public class Contexts implements JsonSerializable {
       new ConcurrentHashMap<>();
 
   /** Response lock, Ops should be atomic */
-  private final @NotNull Object responseLock = new Object();
+  protected final @NotNull AutoClosableReentrantLock responseLock = new AutoClosableReentrantLock();
 
   public Contexts() {}
 
@@ -128,7 +130,7 @@ public class Contexts implements JsonSerializable {
   }
 
   public void withResponse(HintUtils.SentryConsumer<Response> callback) {
-    synchronized (responseLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = responseLock.acquire()) {
       final @Nullable Response response = getResponse();
       if (response != null) {
         callback.accept(response);
@@ -141,7 +143,7 @@ public class Contexts implements JsonSerializable {
   }
 
   public void setResponse(final @NotNull Response response) {
-    synchronized (responseLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = responseLock.acquire()) {
       this.put(Response.TYPE, response);
     }
   }

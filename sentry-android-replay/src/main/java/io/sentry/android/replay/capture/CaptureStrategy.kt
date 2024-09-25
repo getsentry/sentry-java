@@ -17,6 +17,7 @@ import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
+import io.sentry.util.AutoClosableReentrantLock
 import java.io.File
 import java.util.Date
 import java.util.LinkedList
@@ -56,7 +57,7 @@ internal interface CaptureStrategy {
     fun close()
 
     companion object {
-        internal val currentEventsLock = Any()
+        internal val currentEventsLock = AutoClosableReentrantLock()
 
         fun createSegment(
             scopes: IScopes?,
@@ -207,7 +208,7 @@ internal interface CaptureStrategy {
             until: Long,
             callback: ((RRWebEvent) -> Unit)? = null
         ) {
-            synchronized(currentEventsLock) {
+            currentEventsLock.acquire().use {
                 var event = events.peek()
                 while (event != null && event.timestamp < until) {
                     callback?.invoke(event)

@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -16,10 +17,12 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SentrySpanStorage {
   private static volatile @Nullable SentrySpanStorage INSTANCE;
+  private static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
 
   public static @NotNull SentrySpanStorage getInstance() {
     if (INSTANCE == null) {
-      synchronized (SentrySpanStorage.class) {
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (INSTANCE == null) {
           INSTANCE = new SentrySpanStorage();
         }

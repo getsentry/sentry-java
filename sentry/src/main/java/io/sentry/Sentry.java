@@ -15,6 +15,7 @@ import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.DebugMetaPropertiesApplier;
 import io.sentry.util.FileUtils;
 import io.sentry.util.InitUtil;
@@ -75,6 +76,8 @@ public final class Sentry {
 
   /** Timestamp used to check old profiles to delete. */
   private static final long classCreationTimestamp = System.currentTimeMillis();
+
+  private static final AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   /**
    * Returns the current (threads) hub, if none, clones the rootScopes and returns it.
@@ -263,71 +266,75 @@ public final class Sentry {
    * @param globalHubMode the globalHubMode
    */
   @SuppressWarnings("deprecation")
-  private static synchronized void init(
-      final @NotNull SentryOptions options, final boolean globalHubMode) {
+  private static void init(final @NotNull SentryOptions options, final boolean globalHubMode) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
 
-    if (!options.getClass().getName().equals("io.sentry.android.core.SentryAndroidOptions")
-        && Platform.isAndroid()) {
-      throw new IllegalArgumentException(
-          "You are running Android. Please, use SentryAndroid.init. "
-              + options.getClass().getName());
-    }
+      if (!options.getClass().getName().equals("io.sentry.android.core.SentryAndroidOptions")
+          && Platform.isAndroid()) {
+        throw new IllegalArgumentException(
+            "You are running Android. Please, use SentryAndroid.init. "
+                + options.getClass().getName());
+      }
 
-    if (!preInitConfigurations(options)) {
-      return;
-    }
+      if (!preInitConfigurations(options)) {
+        return;
+      }
 
-    options.getLogger().log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
-    Sentry.globalHubMode = globalHubMode;
-    final boolean shouldInit = InitUtil.shouldInit(globalScope.getOptions(), options, isEnabled());
-    if (shouldInit) {
-      if (isEnabled()) {
+      options
+          .getLogger()
+          .log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
+      Sentry.globalHubMode = globalHubMode;
+      final boolean shouldInit =
+          InitUtil.shouldInit(globalScope.getOptions(), options, isEnabled());
+      if (shouldInit) {
+        if (isEnabled()) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Sentry has been already initialized. Previous configuration will be overwritten.");
+        }
+        globalScope.replaceOptions(options);
+
+        final IScopes scopes = getCurrentScopes();
+        final IScope rootScope = new Scope(options);
+        final IScope rootIsolationScope = new Scope(options);
+        rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
+
+        getScopesStorage().set(rootScopes);
+
+        scopes.close(true);
+
+        initConfigurations(options);
+
+        globalScope.bindClient(new SentryClient(options));
+
+        // If the executorService passed in the init is the same that was previously closed, we have
+        // to
+        // set a new one
+        if (options.getExecutorService().isClosed()) {
+          options.setExecutorService(new SentryExecutorService());
+        }
+        // when integrations are registered on Scopes ctor and async integrations are fired,
+        // it might and actually happened that integrations called captureSomething
+        // and Scopes was still NoOp.
+        // Registering integrations here make sure that Scopes is already created.
+        for (final Integration integration : options.getIntegrations()) {
+          integration.register(ScopesAdapter.getInstance(), options);
+        }
+
+        notifyOptionsObservers(options);
+
+        finalizePreviousSession(options, ScopesAdapter.getInstance());
+
+        handleAppStartProfilingConfig(options, options.getExecutorService());
+      } else {
         options
             .getLogger()
             .log(
                 SentryLevel.WARNING,
-                "Sentry has been already initialized. Previous configuration will be overwritten.");
+                "This init call has been ignored due to priority being too low.");
       }
-      globalScope.replaceOptions(options);
-
-      final IScopes scopes = getCurrentScopes();
-      final IScope rootScope = new Scope(options);
-      final IScope rootIsolationScope = new Scope(options);
-      rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
-
-      getScopesStorage().set(rootScopes);
-
-      scopes.close(true);
-
-      initConfigurations(options);
-
-      globalScope.bindClient(new SentryClient(options));
-
-      // If the executorService passed in the init is the same that was previously closed, we have
-      // to
-      // set a new one
-      if (options.getExecutorService().isClosed()) {
-        options.setExecutorService(new SentryExecutorService());
-      }
-      // when integrations are registered on Scopes ctor and async integrations are fired,
-      // it might and actually happened that integrations called captureSomething
-      // and Scopes was still NoOp.
-      // Registering integrations here make sure that Scopes is already created.
-      for (final Integration integration : options.getIntegrations()) {
-        integration.register(ScopesAdapter.getInstance(), options);
-      }
-
-      notifyOptionsObservers(options);
-
-      finalizePreviousSession(options, ScopesAdapter.getInstance());
-
-      handleAppStartProfilingConfig(options, options.getExecutorService());
-    } else {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "This init call has been ignored due to priority being too low.");
     }
   }
 
@@ -556,12 +563,14 @@ public final class Sentry {
   }
 
   /** Close the SDK */
-  public static synchronized void close() {
-    final IScopes scopes = getCurrentScopes();
-    rootScopes = NoOpScopes.getInstance();
-    // remove thread local to avoid memory leak
-    getScopesStorage().close();
-    scopes.close(false);
+  public static void close() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      final IScopes scopes = getCurrentScopes();
+      rootScopes = NoOpScopes.getInstance();
+      // remove thread local to avoid memory leak
+      getScopesStorage().close();
+      scopes.close(false);
+    }
   }
 
   /**

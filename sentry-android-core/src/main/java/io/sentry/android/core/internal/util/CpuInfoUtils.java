@@ -1,5 +1,7 @@
 package io.sentry.android.core.internal.util;
 
+import io.sentry.ISentryLifecycleToken;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.FileUtils;
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +16,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class CpuInfoUtils {
 
   private static final CpuInfoUtils instance = new CpuInfoUtils();
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   public static CpuInfoUtils getInstance() {
     return instance;
@@ -34,34 +37,36 @@ public final class CpuInfoUtils {
    *
    * @return A list with the frequency of each core of the cpu in Mhz
    */
-  public synchronized @NotNull List<Integer> readMaxFrequencies() {
-    if (!cpuMaxFrequenciesMhz.isEmpty()) {
+  public @NotNull List<Integer> readMaxFrequencies() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (!cpuMaxFrequenciesMhz.isEmpty()) {
+        return cpuMaxFrequenciesMhz;
+      }
+      File[] cpuDirs = new File(getSystemCpuPath()).listFiles();
+      if (cpuDirs == null) {
+        return new ArrayList<>();
+      }
+
+      for (File cpuDir : cpuDirs) {
+        if (!cpuDir.getName().matches("cpu[0-9]+")) continue;
+        File cpuMaxFreqFile = new File(cpuDir, CPUINFO_MAX_FREQ_PATH);
+
+        if (!cpuMaxFreqFile.exists() || !cpuMaxFreqFile.canRead()) continue;
+
+        long khz;
+        try {
+          String content = FileUtils.readText(cpuMaxFreqFile);
+          if (content == null) continue;
+          khz = Long.parseLong(content.trim());
+        } catch (NumberFormatException e) {
+          continue;
+        } catch (IOException e) {
+          continue;
+        }
+        cpuMaxFrequenciesMhz.add((int) (khz / 1000));
+      }
       return cpuMaxFrequenciesMhz;
     }
-    File[] cpuDirs = new File(getSystemCpuPath()).listFiles();
-    if (cpuDirs == null) {
-      return new ArrayList<>();
-    }
-
-    for (File cpuDir : cpuDirs) {
-      if (!cpuDir.getName().matches("cpu[0-9]+")) continue;
-      File cpuMaxFreqFile = new File(cpuDir, CPUINFO_MAX_FREQ_PATH);
-
-      if (!cpuMaxFreqFile.exists() || !cpuMaxFreqFile.canRead()) continue;
-
-      long khz;
-      try {
-        String content = FileUtils.readText(cpuMaxFreqFile);
-        if (content == null) continue;
-        khz = Long.parseLong(content.trim());
-      } catch (NumberFormatException e) {
-        continue;
-      } catch (IOException e) {
-        continue;
-      }
-      cpuMaxFrequenciesMhz.add((int) (khz / 1000));
-    }
-    return cpuMaxFrequenciesMhz;
   }
 
   @VisibleForTesting
