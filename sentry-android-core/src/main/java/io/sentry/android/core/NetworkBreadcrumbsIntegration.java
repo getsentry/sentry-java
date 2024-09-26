@@ -42,7 +42,8 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull ILogger logger) {
-    this.context = Objects.requireNonNull(context, "Context is required");
+    this.context =
+        Objects.requireNonNull(ContextUtils.getApplicationContext(context), "Context is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
     this.logger = Objects.requireNonNull(logger, "ILogger is required");

@@ -77,7 +77,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   public SystemEventsBreadcrumbsIntegration(
       final @NotNull Context context, final @NotNull List<String> actions) {
-    this.context = Objects.requireNonNull(context, "Context is required");
+    this.context =
+        Objects.requireNonNull(ContextUtils.getApplicationContext(context), "Context is required");
     this.actions = Objects.requireNonNull(actions, "Actions list is required");
   }
 
