@@ -128,8 +128,10 @@ public final class OtelSpanWrapper implements ISpan {
 
     final @NotNull ISpan childSpan =
         scopes.getOptions().getSpanFactory().createSpan(scopes, spanOptions, spanContext, this);
-    // TODO [POTEL] spanOptions.isBindToScope with default true?
-    childSpan.makeCurrent();
+
+    if (spanOptions.isBindToScope()) {
+      childSpan.makeCurrent();
+    }
     return childSpan;
   }
 

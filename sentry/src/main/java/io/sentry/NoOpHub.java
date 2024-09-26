@@ -243,6 +243,12 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public @NotNull ISpan startSpan(
+      @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
+    return NoOpSpan.getInstance();
+  }
+
+  @Override
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public @NotNull SentryTraceHeader traceHeaders() {

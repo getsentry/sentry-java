@@ -584,6 +584,16 @@ public interface IScopes {
       final @NotNull TransactionOptions transactionOptions);
 
   /**
+   * Creates a span and returns the instance.
+   *
+   * @param spanContext the span context
+   * @param spanOptions the span options
+   * @return created span
+   */
+  @NotNull
+  ISpan startSpan(final @NotNull SpanContext spanContext, final @NotNull SpanOptions spanOptions);
+
+  /**
    * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
    * &lt;meta&gt; HTML tags. Also see {@link IScopes#getBaggage()}.
    *

@@ -15,9 +15,6 @@ public final class TransactionOptions extends SpanOptions {
    */
   private @Nullable CustomSamplingContext customSamplingContext = null;
 
-  /** Defines if transaction should be bound to scope */
-  private boolean bindToScope = false;
-
   /** Defines if transaction refers to the app start process */
   private boolean isAppStartTransaction = false;
 
@@ -57,6 +54,12 @@ public final class TransactionOptions extends SpanOptions {
   /** Span factory to use. Uses factory configured in {@link SentryOptions} if `null`. */
   @ApiStatus.Internal private @Nullable ISpanFactory spanFactory = null;
 
+  public TransactionOptions() {}
+
+  TransactionOptions(SpanOptions spanOptions) {
+    super(spanOptions);
+  }
+
   /**
    * Gets the customSamplingContext
    *
@@ -73,24 +76,6 @@ public final class TransactionOptions extends SpanOptions {
    */
   public void setCustomSamplingContext(@Nullable CustomSamplingContext customSamplingContext) {
     this.customSamplingContext = customSamplingContext;
-  }
-
-  /**
-   * Checks if bindToScope is enabled
-   *
-   * @return true if enabled or false otherwise
-   */
-  public boolean isBindToScope() {
-    return bindToScope;
-  }
-
-  /**
-   * Sets bindToScope to enabled or disabled
-   *
-   * @param bindToScope true if enabled or false otherwise
-   */
-  public void setBindToScope(boolean bindToScope) {
-    this.bindToScope = bindToScope;
   }
 
   /**

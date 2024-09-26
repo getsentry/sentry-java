@@ -276,6 +276,12 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.startTransaction(transactionContext, transactionOptions);
   }
 
+  @Override
+  public @NotNull ISpan startSpan(
+      @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
+    return Sentry.startSpan(spanContext, spanOptions);
+  }
+
   @Deprecated
   @Override
   @SuppressWarnings("deprecation")

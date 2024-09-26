@@ -1023,6 +1023,18 @@ public final class Sentry {
   }
 
   /**
+   * Creates a Span and returns the instance.
+   *
+   * @param spanContext the span context
+   * @param spanOptions options for the span
+   * @return created span, may be a NoOp
+   */
+  public static @NotNull ISpan startSpan(
+      final @NotNull SpanContext spanContext, final @NotNull SpanOptions spanOptions) {
+    return getCurrentScopes().startSpan(spanContext, spanOptions);
+  }
+
+  /**
    * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
    * &lt;meta&gt; HTML tags. Also see {@link Sentry#getBaggage()}.
    *

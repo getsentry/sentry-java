@@ -274,6 +274,12 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
+  public @NotNull ISpan startSpan(
+      @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
+    return scopes.startSpan(spanContext, spanOptions);
+  }
+
+  @Override
   public @Nullable SentryTraceHeader traceHeaders() {
     return scopes.traceHeaders();
   }
