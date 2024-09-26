@@ -2,9 +2,21 @@
 
 ## Unreleased
 
+### Features
+
+- Add support for `feedback` envelope header item type ([#3687](https://github.com/getsentry/sentry-java/pull/3687))
+
 ### Fixes
 
 - Avoid stopping appStartProfiler after application creation ([#3630](https://github.com/getsentry/sentry-java/pull/3630))
+- Session Replay: Correctly detect dominant color for `TextView`s with Spans ([#3682](https://github.com/getsentry/sentry-java/pull/3682))
+- Session Replay: Add options to selectively redact/ignore views from being captured. The following options are available: ([#3689](https://github.com/getsentry/sentry-java/pull/3689))
+  - `android:tag="sentry-redact|sentry-ignore"` in XML or `view.setTag("sentry-redact|sentry-ignore")` in code tags
+    - if you already have a tag set for a view, you can set a tag by id: `<tag android:id="@id/sentry_privacy" android:value="redact|ignore"/>` in XML or `view.setTag(io.sentry.android.replay.R.id.sentry_privacy, "redact|ignore")` in code
+  - `view.sentryReplayRedact()` or `view.sentryReplayIgnore()` extension functions
+  - redact/ignore `View`s of a certain type by adding fully-qualified classname to one of the lists `options.experimental.sessionReplay.addRedactViewClass()` or `options.experimental.sessionReplay.addIgnoreViewClass()`. Note, that all of the view subclasses/subtypes will be redacted/ignored as well
+    - For example, (this is already a default behavior) to redact all `TextView`s and their subclasses (`RadioButton`, `EditText`, etc.): `options.experimental.sessionReplay.addRedactViewClass("android.widget.TextView")`
+    - If you're using code obfuscation, adjust your proguard-rules accordingly, so your custom view class name is not minified
 - Fix ensure Application Context is used even when SDK is initialized via Activity Context ([#3669](https://github.com/getsentry/sentry-java/pull/3669))
 
 *Breaking changes*:

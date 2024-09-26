@@ -24,6 +24,7 @@ import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.util.MainLooperHandler
+import io.sentry.android.replay.util.dominantTextColor
 import io.sentry.android.replay.util.getVisibleRects
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
@@ -142,13 +143,14 @@ internal class ScreenshotRecorder(
                                         }
 
                                         is TextViewHierarchyNode -> {
-                                            // TODO: find a way to get the correct text color for RN
-                                            // TODO: now it always returns black
+                                            val textColor = node.layout.dominantTextColor
+                                                ?: node.dominantColor
+                                                ?: Color.BLACK
                                             node.layout.getVisibleRects(
                                                 node.visibleRect,
                                                 node.paddingLeft,
                                                 node.paddingTop
-                                            ) to (node.dominantColor ?: Color.BLACK)
+                                            ) to textColor
                                         }
 
                                         else -> {

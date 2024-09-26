@@ -2247,6 +2247,7 @@ public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSeri
 	public static final field CheckIn Lio/sentry/SentryItemType;
 	public static final field ClientReport Lio/sentry/SentryItemType;
 	public static final field Event Lio/sentry/SentryItemType;
+	public static final field Feedback Lio/sentry/SentryItemType;
 	public static final field Profile Lio/sentry/SentryItemType;
 	public static final field ReplayEvent Lio/sentry/SentryItemType;
 	public static final field ReplayRecording Lio/sentry/SentryItemType;
@@ -2262,6 +2263,12 @@ public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSeri
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryItemType;
 	public static fun valueOfLabel (Ljava/lang/String;)Lio/sentry/SentryItemType;
 	public static fun values ()[Lio/sentry/SentryItemType;
+}
+
+public final class io/sentry/SentryItemType$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryItemType;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public final class io/sentry/SentryLevel : java/lang/Enum, io/sentry/JsonSerializable {
@@ -2699,16 +2706,18 @@ public final class io/sentry/SentryReplayEvent$ReplayType$Deserializer : io/sent
 }
 
 public final class io/sentry/SentryReplayOptions {
+	public static final field IMAGE_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
-	public fun addClassToRedact (Ljava/lang/String;)V
+	public fun addIgnoreViewClass (Ljava/lang/String;)V
+	public fun addRedactViewClass (Ljava/lang/String;)V
 	public fun getErrorReplayDuration ()J
 	public fun getFrameRate ()I
+	public fun getIgnoreViewClasses ()Ljava/util/Set;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
-	public fun getRedactAllImages ()Z
-	public fun getRedactAllText ()Z
-	public fun getRedactClasses ()Ljava/util/Set;
+	public fun getRedactViewClasses ()Ljava/util/Set;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
