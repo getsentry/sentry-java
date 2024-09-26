@@ -41,7 +41,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   /** Describes the status of the Transaction. */
   protected @Nullable SpanStatus status;
 
-  protected final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
+  protected final @NotNull Map<String, Object> data;
 
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
   protected @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
@@ -98,6 +98,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.origin = origin;
     final long threadId =
         ScopesAdapter.getInstance().getOptions().getThreadChecker().currentThreadSystemId();
+    this.data = new ConcurrentHashMap<>();
     this.data.put(SpanDataConvention.THREAD_ID, String.valueOf(threadId));
     this.data.put(SpanDataConvention.THREAD_NAME, Thread.currentThread().getName());
   }
@@ -124,6 +125,14 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
         CollectionUtils.newConcurrentHashMap(spanContext.unknown);
     if (copiedUnknown != null) {
       this.unknown = copiedUnknown;
+    }
+    this.instrumenter = spanContext.instrumenter;
+    this.baggage = spanContext.baggage;
+    final Map<String, Object> copiedData = CollectionUtils.newConcurrentHashMap(spanContext.data);
+    if (copiedData != null) {
+      this.data = copiedData;
+    } else {
+      this.data = new ConcurrentHashMap<>();
     }
   }
 

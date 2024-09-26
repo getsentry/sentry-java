@@ -247,6 +247,28 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when continuous profiler is running, profiler id is set in span data`() {
+        val profilerId = SentryId()
+        val profiler = mock<IContinuousProfiler>()
+        whenever(profiler.profilerId).thenReturn(profilerId)
+
+        val tracer = fixture.getSut(optionsConfiguration = { options ->
+            options.setContinuousProfiler(profiler)
+        })
+        val span = tracer.startChild("span.op")
+        assertEquals(profilerId.toString(), span.getData(SpanDataConvention.PROFILER_ID))
+    }
+
+    @Test
+    fun `when continuous profiler is not running, profiler id is not set in span data`() {
+        val tracer = fixture.getSut(optionsConfiguration = { options ->
+            options.setContinuousProfiler(NoOpContinuousProfiler.getInstance())
+        })
+        val span = tracer.startChild("span.op")
+        assertNull(span.getData(SpanDataConvention.PROFILER_ID))
+    }
+
+    @Test
     fun `when transaction is finished, transaction is cleared from the scope`() {
         val tracer = fixture.getSut()
         fixture.scopes.configureScope { it.transaction = tracer }
