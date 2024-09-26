@@ -858,7 +858,7 @@ class SentryClientTest {
             environment = "release"
             release = "io.sentry.samples@22.1.1"
             contexts[Contexts.REPLAY_ID] = "64cf554cc8d74c6eafa3e08b7c984f6d"
-            contexts.trace = SpanContext(traceId, SpanId(), "ui.load", null, null)
+            contexts.setTrace(SpanContext(traceId, SpanId(), "ui.load", null, null))
             transaction = "MainActivity"
         }
         val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
@@ -2496,7 +2496,7 @@ class SentryClientTest {
         val preExistingSpanContext = SpanContext("op.load")
 
         val sentryEvent = SentryEvent()
-        sentryEvent.contexts.trace = preExistingSpanContext
+        sentryEvent.contexts.setTrace(preExistingSpanContext)
         sut.captureEvent(sentryEvent, scope)
 
         verify(fixture.transport).send(
@@ -2568,7 +2568,7 @@ class SentryClientTest {
         val preExistingSpanContext = SpanContext("op.load")
 
         val sentryEvent = SentryEvent()
-        sentryEvent.contexts.trace = preExistingSpanContext
+        sentryEvent.contexts.setTrace(preExistingSpanContext)
         sut.captureEvent(sentryEvent, scope)
 
         verify(fixture.transport).send(
