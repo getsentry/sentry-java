@@ -1087,7 +1087,7 @@ class SentryTracerTest {
     @Test
     fun `when transaction is created, but not profiled, transactionPerformanceCollector is started anyway`() {
         val transaction = fixture.getSut()
-    verify(fixture.transactionPerformanceCollector).start(anyOrNull<ITransaction>())
+        verify(fixture.transactionPerformanceCollector).start(anyOrNull<ITransaction>())
     }
 
     @Test
