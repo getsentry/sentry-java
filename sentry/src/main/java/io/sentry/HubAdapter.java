@@ -278,6 +278,12 @@ public final class HubAdapter implements IHub {
     return Sentry.startTransaction(transactionContext, transactionOptions);
   }
 
+  @Override
+  public @NotNull ISpan startSpan(
+      @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
+    return Sentry.startSpan(spanContext, spanOptions);
+  }
+
   @Deprecated
   @Override
   public @Nullable SentryTraceHeader traceHeaders() {

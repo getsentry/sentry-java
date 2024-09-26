@@ -140,6 +140,15 @@ public final class TransactionContext extends SpanContext {
     this.baggage = baggage;
   }
 
+  @ApiStatus.Internal
+  TransactionContext(SpanContext spanContext) {
+    super(spanContext);
+    this.name = DEFAULT_TRANSACTION_NAME;
+    this.parentSamplingDecision = null;
+    this.transactionNameSource = DEFAULT_NAME_SOURCE;
+    this.baggage = null;
+  }
+
   public @NotNull String getName() {
     return name;
   }

@@ -10,6 +10,21 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class SpanOptions {
 
+  public SpanOptions() {}
+
+  /**
+   * copy constructor
+   *
+   * @param spanOptions options to copy
+   */
+  SpanOptions(SpanOptions spanOptions) {
+    startTimestamp = spanOptions.startTimestamp;
+    trimStart = spanOptions.trimStart;
+    trimEnd = spanOptions.trimEnd;
+    isIdle = spanOptions.isIdle;
+    origin = spanOptions.origin;
+  }
+
   /** The start timestamp of the transaction */
   private @Nullable SentryDate startTimestamp = null;
 
@@ -53,6 +68,9 @@ public class SpanOptions {
 
   protected @Nullable String origin = DEFAULT_ORIGIN;
 
+  /** Defines if transaction should be bound to scope */
+  private boolean bindToScope = false;
+
   public boolean isTrimStart() {
     return trimStart;
   }
@@ -83,5 +101,23 @@ public class SpanOptions {
 
   public void setOrigin(final @Nullable String origin) {
     this.origin = origin;
+  }
+
+  /**
+   * Checks if bindToScope is enabled
+   *
+   * @return true if enabled or false otherwise
+   */
+  public boolean isBindToScope() {
+    return bindToScope;
+  }
+
+  /**
+   * Sets bindToScope to enabled or disabled
+   *
+   * @param bindToScope true if enabled or false otherwise
+   */
+  public void setBindToScope(boolean bindToScope) {
+    this.bindToScope = bindToScope;
   }
 }

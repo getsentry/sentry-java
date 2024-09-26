@@ -823,6 +823,95 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return createTransaction(transactionContext, transactionOptions);
   }
 
+  @Override
+  public @NotNull ISpan startSpan(
+      @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
+    final @Nullable ISpan parentSpan = getSpan();
+    if (parentSpan == null) {
+      return startTransaction(
+          new TransactionContext(spanContext), new TransactionOptions(spanOptions));
+    } else {
+      return parentSpan.startChild(spanContext, spanOptions);
+    }
+  }
+
+  //  @Override
+  //  public @NotNull ISpan startSpan(@NotNull SpanContext spanContext, @NotNull SpanOptions
+  // spanOptions) {
+  //    Objects.requireNonNull(spanContext, "spanContext is required");
+  //
+  //    spanContext.setOrigin(spanOptions.getOrigin());
+  //
+  //    ISpan span;
+  //    if (!isEnabled()) {
+  //      getOptions()
+  //        .getLogger()
+  //        .log(
+  //          SentryLevel.WARNING,
+  //          "Instance is disabled and this 'startSpan' returns a no-op.");
+  //      span = NoOpSpan.getInstance();
+  //    } else if (SpanUtils.isIgnored(
+  //      getOptions().getIgnoredSpanOrigins(), spanContext.getOrigin())) {
+  //      getOptions()
+  //        .getLogger()
+  //        .log(
+  //          SentryLevel.DEBUG,
+  //          "Returning no-op for span origin %s as the SDK has been configured to ignore it",
+  //          transactionContext.getOrigin());
+  //      span = NoOpSpan.getInstance();
+  //
+  //    } else if (!getOptions().getInstrumenter().equals(spanContext.getInstrumenter())) {
+  //      getOptions()
+  //        .getLogger()
+  //        .log(
+  //          SentryLevel.DEBUG,
+  //          "Returning no-op for instrumenter %s as the SDK has been configured to use
+  // instrumenter %s",
+  //          spanContext.getInstrumenter(),
+  //          getOptions().getInstrumenter());
+  //      span = NoOpSpan.getInstance();
+  //    } else if (!getOptions().isTracingEnabled()) {
+  //      getOptions()
+  //        .getLogger()
+  //        .log(
+  //          SentryLevel.INFO, "Tracing is disabled and this 'startSpan' returns a no-op.");
+  //      span = NoOpSpan.getInstance();
+  //    } else {
+  //      final SamplingContext samplingContext =
+  //        new SamplingContext(spanContext, spanOptions.getCustomSamplingContext());
+  //      final @NotNull TracesSampler tracesSampler = getOptions().getInternalTracesSampler();
+  //      @NotNull TracesSamplingDecision samplingDecision = tracesSampler.sample(samplingContext);
+  //      spanContext.setSamplingDecision(samplingDecision);
+  //
+  //      final @Nullable ISpanFactory maybeSpanFactory = spanOptions.getSpanFactory();
+  //      final @NotNull ISpanFactory spanFactory =
+  //        maybeSpanFactory == null ? getOptions().getSpanFactory() : maybeSpanFactory;
+  //
+  //      // TODO [POTEL] parent span?
+  //      span =
+  //        spanFactory.createSpan(this, spanOptions, spanContext, null);
+  //
+  //      // The listener is called only if the transaction exists, as the transaction is needed to
+  //      // stop it
+  //      if (samplingDecision.getSampled() && samplingDecision.getProfileSampled()) {
+  //        final ITransactionProfiler transactionProfiler = getOptions().getTransactionProfiler();
+  //        // If the profiler is not running, we start and bind it here.
+  //        if (!transactionProfiler.isRunning()) {
+  //          transactionProfiler.start();
+  //          transactionProfiler.bindTransaction(transaction);
+  //        } else if (transactionOptions.isAppStartTransaction()) {
+  //          // If the profiler is running and the current transaction is the app start, we bind
+  // it.
+  //          transactionProfiler.bindTransaction(transaction);
+  //        }
+  //      }
+  //    }
+  //    if (spanOptions.isBindToScope()) {
+  //      span.makeCurrent();
+  //    }
+  //    return span;
+  //  }
+
   private @NotNull ITransaction createTransaction(
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
