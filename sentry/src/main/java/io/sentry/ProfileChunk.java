@@ -160,7 +160,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
         final @NotNull File traceFile) {
       this.profilerId = profilerId;
       this.chunkId = chunkId;
-      this.measurements = measurements;
+      this.measurements = new ConcurrentHashMap<>(measurements);
       this.traceFile = traceFile;
     }
 

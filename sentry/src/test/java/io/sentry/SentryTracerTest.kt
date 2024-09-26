@@ -1065,7 +1065,7 @@ class SentryTracerTest {
     @Test
     fun `when transaction is created, but not profiled, transactionPerformanceCollector is started anyway`() {
         val transaction = fixture.getSut()
-        verify(fixture.transactionPerformanceCollector).start(anyOrNull())
+    verify(fixture.transactionPerformanceCollector).start(anyOrNull<ITransaction>())
     }
 
     @Test
@@ -1073,14 +1073,14 @@ class SentryTracerTest {
         val transaction = fixture.getSut(optionsConfiguration = {
             it.profilesSampleRate = 1.0
         }, samplingDecision = TracesSamplingDecision(true, null, true, null))
-        verify(fixture.transactionPerformanceCollector).start(check { assertEquals(transaction, it) })
+        verify(fixture.transactionPerformanceCollector).start(check<ITransaction> { assertEquals(transaction, it) })
     }
 
     @Test
     fun `when transaction is finished, transactionPerformanceCollector is stopped`() {
         val transaction = fixture.getSut()
         transaction.finish()
-        verify(fixture.transactionPerformanceCollector).stop(check { assertEquals(transaction, it) })
+        verify(fixture.transactionPerformanceCollector).stop(check<ITransaction> { assertEquals(transaction, it) })
     }
 
     @Test
@@ -1247,9 +1247,11 @@ class SentryTracerTest {
         val data = mutableListOf<PerformanceCollectionData>(mock(), mock())
         val mockPerformanceCollector = object : TransactionPerformanceCollector {
             override fun start(transaction: ITransaction) {}
+            override fun start(id: String) {}
             override fun onSpanStarted(span: ISpan) {}
             override fun onSpanFinished(span: ISpan) {}
             override fun stop(transaction: ITransaction): MutableList<PerformanceCollectionData> = data
+            override fun stop(id: String): MutableList<PerformanceCollectionData> = data
             override fun close() {}
         }
         val transaction = fixture.getSut(optionsConfiguration = {
