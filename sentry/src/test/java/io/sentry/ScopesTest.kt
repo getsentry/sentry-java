@@ -1795,6 +1795,7 @@ class ScopesTest {
     fun `Scopes should close the sentry executor processor, profiler and performance collector on close call`() {
         val executor = mock<ISentryExecutorService>()
         val profiler = mock<ITransactionProfiler>()
+        val continuousProfiler = mock<IContinuousProfiler>()
         val performanceCollector = mock<TransactionPerformanceCollector>()
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
@@ -1802,11 +1803,13 @@ class ScopesTest {
             executorService = executor
             setTransactionProfiler(profiler)
             transactionPerformanceCollector = performanceCollector
+            setContinuousProfiler(continuousProfiler)
         }
         val sut = createScopes(options)
         sut.close()
         verify(executor).close(any())
         verify(profiler).close()
+        verify(continuousProfiler).close()
         verify(performanceCollector).close()
     }
 
