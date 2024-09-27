@@ -45,5 +45,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `### 🚨 Detected changes in high risk code 🚨 \n High-risk code can easily blow up and is hard to test. We had severe bugs in the past. Be extra careful when changing these files, and have an extra careful look at these:\n ${fileList}`
+              body: `### 🚨 Detected changes in high risk code 🚨 \n High-risk code has higher potential to break the SDK and may be hard to test. To prevent severe bugs, apply the rollout process for releasing such changes and be extra careful when changing and reviewing these files:\n ${fileList}`
             })
