@@ -68,7 +68,7 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
-    compileOnly("androidx.compose.ui:ui:1.4.0")
+    compileOnly("androidx.compose.ui:ui:1.5.0")
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     // tests

@@ -205,6 +205,8 @@ internal class ScreenshotRecorder(
         // next bind the new root
         rootView = WeakReference(root)
         root.viewTreeObserver?.addOnDrawListener(this)
+        // invalidate the flag to capture the first frame after new window is attached
+        contentChanged.set(true)
     }
 
     fun unbind(root: View?) {

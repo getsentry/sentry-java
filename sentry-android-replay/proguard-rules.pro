@@ -2,16 +2,19 @@
 # debugging stack traces.
 -keepattributes SourceFile,LineNumberTable
 
--dontwarn androidx.compose.ui.draw.PainterElement
--dontwarn androidx.compose.ui.draw.PainterModifierNodeElement
--dontwarn androidx.compose.ui.platform.AndroidComposeView
+# Rules to detect Images/Icons and redact them
 -dontwarn androidx.compose.ui.graphics.painter.Painter
-#-dontwarn coil.compose.ContentPainterModifier
-#-dontwarn coil3.compose.ContentPainterModifier
+-keepnames class * extends androidx.compose.ui.graphics.painter.Painter
 -keepclasseswithmembernames class * {
     androidx.compose.ui.graphics.painter.Painter painter;
 }
--keepnames class * extends androidx.compose.ui.graphics.painter.Painter
--keepnames class androidx.compose.ui.draw.PainterModifierNodeElement
--keepnames class androidx.compose.ui.draw.PainterElement
+# Rules to detect Text colors and if they have Modifier.fillMaxWidth to later redact them
+-dontwarn androidx.compose.ui.graphics.ColorProducer
+-dontwarn androidx.compose.foundation.layout.FillElement
+-keepnames class androidx.compose.foundation.layout.FillElement
+-keepclasseswithmembernames class * {
+    androidx.compose.ui.graphics.ColorProducer color;
+}
+# Rules to detect a compose view to parse its hierarchy
+-dontwarn androidx.compose.ui.platform.AndroidComposeView
 -keepnames class androidx.compose.ui.platform.AndroidComposeView
