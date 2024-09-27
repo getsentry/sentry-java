@@ -411,6 +411,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
         configureScope(scope -> scope.clear());
         configureScope(ScopeType.ISOLATION, scope -> scope.clear());
         getOptions().getTransactionProfiler().close();
+        getOptions().getContinuousProfiler().close();
         getOptions().getTransactionPerformanceCollector().close();
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
         if (isRestarting) {

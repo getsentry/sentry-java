@@ -9,6 +9,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.DefaultTransactionPerformanceCollector
 import io.sentry.ILogger
 import io.sentry.MainEventProcessor
+import io.sentry.NoOpContinuousProfiler
+import io.sentry.NoOpTransactionProfiler
 import io.sentry.SentryOptions
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
@@ -345,11 +347,34 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `init should set Android transaction profiler`() {
+    fun `init should set Android continuous profiler`() {
         fixture.initSut()
 
         assertNotNull(fixture.sentryOptions.transactionProfiler)
+        assertEquals(fixture.sentryOptions.transactionProfiler, NoOpTransactionProfiler.getInstance())
+        assertTrue(fixture.sentryOptions.continuousProfiler is AndroidContinuousProfiler)
+    }
+
+    @Test
+    fun `init with profilesSampleRate should set Android transaction profiler`() {
+        fixture.initSut(configureOptions = {
+            profilesSampleRate = 1.0
+        })
+
+        assertNotNull(fixture.sentryOptions.transactionProfiler)
         assertTrue(fixture.sentryOptions.transactionProfiler is AndroidTransactionProfiler)
+        assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+    }
+
+    @Test
+    fun `init with profilesSampler should set Android transaction profiler`() {
+        fixture.initSut(configureOptions = {
+            profilesSampler = mock()
+        })
+
+        assertNotNull(fixture.sentryOptions.transactionProfiler)
+        assertTrue(fixture.sentryOptions.transactionProfiler is AndroidTransactionProfiler)
+        assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
     }
 
     @Test

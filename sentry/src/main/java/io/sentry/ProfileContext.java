@@ -1,6 +1,5 @@
 package io.sentry;
 
-import com.jakewharton.nopen.annotation.Open;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -11,8 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@Open
-public class ProfileContext implements JsonUnknown, JsonSerializable {
+public final class ProfileContext implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "profile";
 
   /** Determines which trace the Span belongs to. */

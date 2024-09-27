@@ -210,6 +210,65 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `when continuous profiler is running, profile context is set`() {
+        val continuousProfiler = mock<IContinuousProfiler>()
+        val profilerId = SentryId()
+        whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.setContinuousProfiler(continuousProfiler)
+        })
+        tracer.finish()
+        verify(fixture.scopes).captureTransaction(
+            check {
+                assertNotNull(it.contexts.profile) {
+                    assertEquals(profilerId, it.profilerId)
+                }
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when continuous profiler is not running, profile context is not set`() {
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.setContinuousProfiler(NoOpContinuousProfiler.getInstance())
+        })
+        tracer.finish()
+        verify(fixture.scopes).captureTransaction(
+            check {
+                assertNull(it.contexts.profile)
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when continuous profiler is running, profiler id is set in span data`() {
+        val profilerId = SentryId()
+        val profiler = mock<IContinuousProfiler>()
+        whenever(profiler.profilerId).thenReturn(profilerId)
+
+        val tracer = fixture.getSut(optionsConfiguration = { options ->
+            options.setContinuousProfiler(profiler)
+        })
+        val span = tracer.startChild("span.op")
+        assertEquals(profilerId.toString(), span.getData(SpanDataConvention.PROFILER_ID))
+    }
+
+    @Test
+    fun `when continuous profiler is not running, profiler id is not set in span data`() {
+        val tracer = fixture.getSut(optionsConfiguration = { options ->
+            options.setContinuousProfiler(NoOpContinuousProfiler.getInstance())
+        })
+        val span = tracer.startChild("span.op")
+        assertNull(span.getData(SpanDataConvention.PROFILER_ID))
+    }
+
+    @Test
     fun `when transaction is finished, transaction is cleared from the scope`() {
         val tracer = fixture.getSut()
         fixture.scopes.configureScope { it.transaction = tracer }
@@ -1028,7 +1087,7 @@ class SentryTracerTest {
     @Test
     fun `when transaction is created, but not profiled, transactionPerformanceCollector is started anyway`() {
         val transaction = fixture.getSut()
-        verify(fixture.transactionPerformanceCollector).start(anyOrNull())
+        verify(fixture.transactionPerformanceCollector).start(anyOrNull<ITransaction>())
     }
 
     @Test
@@ -1036,14 +1095,14 @@ class SentryTracerTest {
         val transaction = fixture.getSut(optionsConfiguration = {
             it.profilesSampleRate = 1.0
         }, samplingDecision = TracesSamplingDecision(true, null, true, null))
-        verify(fixture.transactionPerformanceCollector).start(check { assertEquals(transaction, it) })
+        verify(fixture.transactionPerformanceCollector).start(check<ITransaction> { assertEquals(transaction, it) })
     }
 
     @Test
     fun `when transaction is finished, transactionPerformanceCollector is stopped`() {
         val transaction = fixture.getSut()
         transaction.finish()
-        verify(fixture.transactionPerformanceCollector).stop(check { assertEquals(transaction, it) })
+        verify(fixture.transactionPerformanceCollector).stop(check<ITransaction> { assertEquals(transaction, it) })
     }
 
     @Test
@@ -1210,9 +1269,11 @@ class SentryTracerTest {
         val data = mutableListOf<PerformanceCollectionData>(mock(), mock())
         val mockPerformanceCollector = object : TransactionPerformanceCollector {
             override fun start(transaction: ITransaction) {}
+            override fun start(id: String) {}
             override fun onSpanStarted(span: ISpan) {}
             override fun onSpanFinished(span: ISpan) {}
             override fun stop(transaction: ITransaction): MutableList<PerformanceCollectionData> = data
+            override fun stop(id: String): MutableList<PerformanceCollectionData> = data
             override fun close() {}
         }
         val transaction = fixture.getSut(optionsConfiguration = {

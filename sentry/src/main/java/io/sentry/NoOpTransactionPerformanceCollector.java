@@ -19,6 +19,9 @@ public final class NoOpTransactionPerformanceCollector implements TransactionPer
   public void start(@NotNull ITransaction transaction) {}
 
   @Override
+  public void start(@NotNull String id) {}
+
+  @Override
   public void onSpanStarted(@NotNull ISpan span) {}
 
   @Override
@@ -26,6 +29,11 @@ public final class NoOpTransactionPerformanceCollector implements TransactionPer
 
   @Override
   public @Nullable List<PerformanceCollectionData> stop(@NotNull ITransaction transaction) {
+    return null;
+  }
+
+  @Override
+  public @Nullable List<PerformanceCollectionData> stop(@NotNull String id) {
     return null;
   }
 

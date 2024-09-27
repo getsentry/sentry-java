@@ -81,6 +81,23 @@ public final class DefaultTransactionPerformanceCollector
                 e);
       }
     }
+    start(transaction.getEventId().toString());
+  }
+
+  @Override
+  public void start(final @NotNull String id) {
+    if (hasNoCollectors) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.INFO,
+              "No collector found. Performance stats will not be captured during transactions.");
+      return;
+    }
+
+    if (!performanceDataMap.containsKey(id)) {
+      performanceDataMap.put(id, new ArrayList<>());
+    }
     if (!isStarted.getAndSet(true)) {
       synchronized (timerLock) {
         if (timer == null) {
@@ -109,7 +126,7 @@ public final class DefaultTransactionPerformanceCollector
                 // The timer is scheduled to run every 100ms on average. In case it takes longer,
                 // subsequent tasks are executed more quickly. If two tasks are scheduled to run in
                 // less than 10ms, the measurement that we collect is not meaningful, so we skip it
-                if (now - lastCollectionTimestamp < 10) {
+                if (now - lastCollectionTimestamp <= 10) {
                   return;
                 }
                 lastCollectionTimestamp = now;
@@ -156,14 +173,18 @@ public final class DefaultTransactionPerformanceCollector
             transaction.getName(),
             transaction.getSpanContext().getTraceId().toString());
 
-    final @Nullable List<PerformanceCollectionData> data =
-        performanceDataMap.remove(transaction.getEventId().toString());
-
     for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {
       collector.onSpanFinished(transaction);
     }
 
-    // close if they are no more remaining transactions
+    return stop(transaction.getEventId().toString());
+  }
+
+  @Override
+  public @Nullable List<PerformanceCollectionData> stop(final @NotNull String id) {
+    final @Nullable List<PerformanceCollectionData> data = performanceDataMap.remove(id);
+
+    // close if they are no more running requests
     if (performanceDataMap.isEmpty()) {
       close();
     }

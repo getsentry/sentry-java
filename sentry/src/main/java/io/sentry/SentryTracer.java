@@ -86,6 +86,12 @@ public final class SentryTracer implements ITransaction {
       this.baggage = new Baggage(scopes.getOptions().getLogger());
     }
 
+    final @NotNull SentryId continuousProfilerId =
+        scopes.getOptions().getContinuousProfiler().getProfilerId();
+    if (!continuousProfilerId.equals(SentryId.EMPTY_ID)) {
+      this.contexts.setProfile(new ProfileContext(continuousProfilerId));
+    }
+
     // We are currently sending the performance data only in profiles, but we are always sending
     // performance measurements.
     if (transactionPerformanceCollector != null) {
@@ -513,6 +519,10 @@ public final class SentryTracer implements ITransaction {
       //              });
       //      span.setDescription(description);
       final long threadId = scopes.getOptions().getThreadChecker().currentThreadSystemId();
+      final SentryId profilerId = scopes.getOptions().getContinuousProfiler().getProfilerId();
+      if (!profilerId.equals(SentryId.EMPTY_ID)) {
+        span.setData(SpanDataConvention.PROFILER_ID, profilerId.toString());
+      }
       span.setData(SpanDataConvention.THREAD_ID, String.valueOf(threadId));
       span.setData(
           SpanDataConvention.THREAD_NAME,

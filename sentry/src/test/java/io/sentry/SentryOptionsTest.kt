@@ -305,6 +305,11 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when options is initialized, continuousProfiler is noop`() {
+        assert(SentryOptions().continuousProfiler == NoOpContinuousProfiler.getInstance())
+    }
+
+    @Test
     fun `when options is initialized, collector is empty list`() {
         assertTrue(SentryOptions().performanceCollectors.isEmpty())
     }
