@@ -13,7 +13,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
 import io.sentry.android.core.internal.modules.AssetsModulesLoader
-import io.sentry.android.core.internal.util.AndroidMainThreadChecker
+import io.sentry.android.core.internal.util.AndroidThreadChecker
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.replay.ReplayIntegration
 import io.sentry.android.timber.SentryTimberIntegration
@@ -582,10 +582,10 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `AndroidMainThreadChecker is set to options`() {
+    fun `AndroidThreadChecker is set to options`() {
         fixture.initSut()
 
-        assertTrue { fixture.sentryOptions.mainThreadChecker is AndroidMainThreadChecker }
+        assertTrue { fixture.sentryOptions.threadChecker is AndroidThreadChecker }
     }
 
     @Test

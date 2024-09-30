@@ -2867,7 +2867,6 @@ public class io/sentry/SentryOptions {
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getInternalTracesSampler ()Lio/sentry/TracesSampler;
 	public fun getLogger ()Lio/sentry/ILogger;
-	public fun getMainThreadChecker ()Lio/sentry/util/thread/IMainThreadChecker;
 	public fun getMaxAttachmentSize ()J
 	public fun getMaxBreadcrumbs ()I
 	public fun getMaxCacheItems ()I
@@ -2903,6 +2902,7 @@ public class io/sentry/SentryOptions {
 	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
 	public fun getSslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
 	public fun getTags ()Ljava/util/Map;
+	public fun getThreadChecker ()Lio/sentry/util/thread/IThreadChecker;
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
@@ -2997,7 +2997,6 @@ public class io/sentry/SentryOptions {
 	public fun setInitPriority (Lio/sentry/InitPriority;)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
-	public fun setMainThreadChecker (Lio/sentry/util/thread/IMainThreadChecker;)V
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
 	public fun setMaxCacheItems (I)V
@@ -3033,6 +3032,7 @@ public class io/sentry/SentryOptions {
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setThreadChecker (Lio/sentry/util/thread/IThreadChecker;)V
 	public fun setTraceOptionsRequests (Z)V
 	public fun setTracePropagationTargets (Ljava/util/List;)V
 	public fun setTraceSampling (Z)V
@@ -6419,24 +6419,27 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 	public fun getUrlOrFallback ()Ljava/lang/String;
 }
 
-public abstract interface class io/sentry/util/thread/IMainThreadChecker {
+public abstract interface class io/sentry/util/thread/IThreadChecker {
+	public abstract fun currentThreadSystemId ()J
 	public abstract fun isMainThread ()Z
 	public abstract fun isMainThread (J)Z
 	public abstract fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
 	public abstract fun isMainThread (Ljava/lang/Thread;)Z
 }
 
-public final class io/sentry/util/thread/MainThreadChecker : io/sentry/util/thread/IMainThreadChecker {
-	public static fun getInstance ()Lio/sentry/util/thread/MainThreadChecker;
+public final class io/sentry/util/thread/NoOpThreadChecker : io/sentry/util/thread/IThreadChecker {
+	public fun <init> ()V
+	public fun currentThreadSystemId ()J
+	public static fun getInstance ()Lio/sentry/util/thread/NoOpThreadChecker;
 	public fun isMainThread ()Z
 	public fun isMainThread (J)Z
 	public fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
 	public fun isMainThread (Ljava/lang/Thread;)Z
 }
 
-public final class io/sentry/util/thread/NoOpMainThreadChecker : io/sentry/util/thread/IMainThreadChecker {
-	public fun <init> ()V
-	public static fun getInstance ()Lio/sentry/util/thread/NoOpMainThreadChecker;
+public final class io/sentry/util/thread/ThreadChecker : io/sentry/util/thread/IThreadChecker {
+	public fun currentThreadSystemId ()J
+	public static fun getInstance ()Lio/sentry/util/thread/ThreadChecker;
 	public fun isMainThread ()Z
 	public fun isMainThread (J)Z
 	public fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
