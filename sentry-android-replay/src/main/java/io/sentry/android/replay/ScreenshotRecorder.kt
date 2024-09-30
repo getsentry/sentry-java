@@ -135,9 +135,9 @@ internal class ScreenshotRecorder(
                                     node.visibleRect ?: return@traverse false
 
                                     // TODO: investigate why it returns true on RN when it shouldn't
-                                    if (viewHierarchy.isObscured(node)) {
-                                        return@traverse true
-                                    }
+//                                    if (viewHierarchy.isObscured(node)) {
+//                                        return@traverse true
+//                                    }
 
                                     val (visibleRects, color) = when (node) {
                                         is ImageViewHierarchyNode -> {
@@ -261,12 +261,7 @@ internal class ScreenshotRecorder(
             return
         }
 
-        var isCompose: Boolean
-        val time = measureNanoTime {
-            isCompose = ComposeViewHierarchyNode.fromView(this, parentNode, options)
-        }
-        if (isCompose) {
-            Log.e("TIME", String.format("%.2f", time / 1_000_000.0) + "ms")
+        if (ComposeViewHierarchyNode.fromView(this, parentNode, options)) {
             // if it's a compose view, we can skip the children as they are already traversed in
             // the ComposeViewHierarchyNode.fromView method
             return

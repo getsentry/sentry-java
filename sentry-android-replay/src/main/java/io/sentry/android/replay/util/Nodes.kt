@@ -31,6 +31,8 @@ internal class ComposeTextLayout(internal val layout: TextLayoutResult, private 
     override fun getLineStart(line: Int): Int = layout.getLineStart(line)
 }
 
+// TODO: probably most of the below we can do via bytecode instrumentation and speed up at runtime
+
 /**
  * This method is necessary to redact images in Compose.
  *
@@ -84,6 +86,20 @@ internal fun androidx.compose.ui.geometry.Rect.toRect(): Rect {
 
 internal data class TextAttributes(val color: Color?, val hasFillModifier: Boolean)
 
+/**
+ * This method is necessary to redact text in Compose.
+ *
+ * We heuristically look up for classes that have a [Text] modifier, usually they all have a
+ * `Text` string in their name, e.g. TextStringSimpleElement or TextAnnotatedStringElement. We then
+ * get the color from the modifier, to be able to redact it with the correct color.
+ *
+ * We also look up for classes that have a [Fill] modifier, usually they all have a `Fill` string in
+ * their name, e.g. FillElement. This is necessary to workaround a Compose bug where single-line
+ * text composable without a `fill` modifier still thinks that there's one and wrongly calculates
+ * horizontal position.
+ *
+ * We also add special proguard rules to keep the `Text` class names and their `color` member.
+ */
 internal fun LayoutNode.findTextAttributes(): TextAttributes {
     val modifierInfos = getModifierInfo()
     var color: Color? = null

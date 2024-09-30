@@ -16,6 +16,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
+import io.sentry.android.replay.SentryReplayModifiers
 import io.sentry.android.replay.util.ComposeTextLayout
 import io.sentry.android.replay.util.findPainter
 import io.sentry.android.replay.util.findTextAttributes
@@ -43,6 +44,15 @@ internal object ComposeViewHierarchyNode {
     }
 
     private fun LayoutNode.shouldRedact(isImage: Boolean, options: SentryOptions): Boolean {
+        val sentryPrivacyModifier = collapsedSemantics?.getOrNull(SentryReplayModifiers.SentryPrivacy)
+        if (sentryPrivacyModifier == "ignore") {
+            return false
+        }
+
+        if (sentryPrivacyModifier == "redact") {
+            return true
+        }
+
         val className = getProxyClassName(isImage)
         if (options.experimental.sessionReplay.ignoreViewClasses.contains(className)) {
             return false
@@ -124,6 +134,9 @@ internal object ComposeViewHierarchyNode {
                 } else {
                     val shouldRedact = isVisible && node.shouldRedact(isImage = false, options)
 
+                    // TODO: this currently does not support embedded AndroidViews, we'd have to
+                    // TODO: traverse the ViewHierarchyNode here again. For now we can recommend
+                    // TODO: using custom modifiers to obscure the entire node if it's sensitive
                     GenericViewHierarchyNode(
                         x = positionInWindow.x,
                         y = positionInWindow.y,
@@ -132,7 +145,7 @@ internal object ComposeViewHierarchyNode {
                         elevation = (parent?.elevation ?: 0f),
                         distance = distance,
                         parent = parent,
-                        shouldRedact = shouldRedact, // TODO: use custom modifier to mark views that should be redacted/ignored
+                        shouldRedact = shouldRedact,
                         isImportantForContentCapture = false, /* will be set by children */
                         isVisible = isVisible,
                         visibleRect = visibleRect
@@ -156,7 +169,7 @@ internal object ComposeViewHierarchyNode {
             rootNode.traverse(parent, options)
         } catch (e: Throwable) {
             options.logger.log(SentryLevel.ERROR, e, """
-                Error traversing Compose view. Most likely you're using an unsupported version of
+                Error traversing Compose tree. Most likely you're using an unsupported version of
                 androidx.compose.ui:ui. The minimum supported version is 1.5.0. If it's a newer
                 version, please open a github issue with the version you're using, so we can add
                 support for it.
