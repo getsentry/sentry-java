@@ -20,10 +20,10 @@ import io.sentry.android.replay.sentryReplayIgnore
 import io.sentry.android.replay.sentryReplayRedact
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
-import org.junit.Before
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric.buildActivity
 import org.robolectric.annotation.Config
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -32,7 +32,7 @@ import kotlin.test.assertTrue
 @Config(sdk = [30])
 class RedactionOptionsTest {
 
-    @Before
+    @BeforeTest
     fun setup() {
         System.setProperty("robolectric.areWindowsMarkedVisible", "true")
     }

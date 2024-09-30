@@ -81,6 +81,13 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
+    testImplementation("androidx.compose.ui:ui-test-junit4:1.5.0")
+    testImplementation(Config.Libs.composeActivity)
+    testImplementation(Config.Libs.composeUi)
+    testImplementation(Config.Libs.composeCoil)
+    testImplementation(Config.Libs.composeFoundation)
+    testImplementation(Config.Libs.composeFoundationLayout)
+    testImplementation(Config.Libs.composeMaterial)
 }
 
 tasks.withType<Detekt> {
