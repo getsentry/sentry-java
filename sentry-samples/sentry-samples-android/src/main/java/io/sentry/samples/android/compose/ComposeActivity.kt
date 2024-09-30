@@ -124,7 +124,7 @@ fun Github(
             )
             AsyncImage(
                 model = "https://i.imgur.com/tie6A3J.jpeg",
-                contentDescription = "IMG",
+                contentDescription = null,
                 modifier = Modifier.padding(vertical = 16.dp)
             )
             TextField(

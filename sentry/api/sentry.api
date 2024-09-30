@@ -1671,14 +1671,6 @@ public final class io/sentry/PropagationContext {
 	public fun traceContext ()Lio/sentry/TraceContext;
 }
 
-public final class io/sentry/ReplayApi {
-	public fun <init> (Lio/sentry/ReplayController;)V
-	public fun getReplayId ()Lio/sentry/protocol/SentryId;
-	public fun isRecording ()Z
-	public fun pause ()V
-	public fun resume ()V
-}
-
 public abstract interface class io/sentry/ReplayBreadcrumbConverter {
 	public abstract fun convert (Lio/sentry/Breadcrumb;)Lio/sentry/rrweb/RRWebEvent;
 }
@@ -1901,7 +1893,6 @@ public final class io/sentry/Sentry {
 	public static fun pushScope ()V
 	public static fun removeExtra (Ljava/lang/String;)V
 	public static fun removeTag (Ljava/lang/String;)V
-	public static fun replay ()Lio/sentry/ReplayApi;
 	public static fun reportFullDisplayed ()V
 	public static fun reportFullyDisplayed ()V
 	public static fun setCurrentHub (Lio/sentry/IHub;)V

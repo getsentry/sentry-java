@@ -127,12 +127,12 @@ dependencies {
     implementation(Config.Libs.retrofit2)
     implementation(Config.Libs.retrofit2Gson)
 
-    implementation("io.coil-kt:coil-compose:2.6.0")
     implementation(Config.Libs.composeActivity)
     implementation(Config.Libs.composeFoundation)
     implementation(Config.Libs.composeFoundationLayout)
     implementation(Config.Libs.composeNavigation)
     implementation(Config.Libs.composeMaterial)
+    implementation(Config.Libs.composeCoil)
 
     debugImplementation(Config.Libs.leakCanary)
 }

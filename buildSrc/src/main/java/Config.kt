@@ -147,8 +147,12 @@ object Config {
         val composeActivity = "androidx.activity:activity-compose:1.4.0"
         val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
         val composeUi = "androidx.compose.ui:ui:$composeVersion"
+
+        // Note: don't change without testing forwards compatibility
+        val composeUiReplay = "androidx.compose.ui:ui:1.5.0"
         val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
         val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
+        val composeCoil = "io.coil-kt:coil-compose:2.6.0"
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
 
