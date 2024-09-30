@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 public final class Breadcrumb implements JsonUnknown, JsonSerializable {
 
   /** A timestamp representing when the breadcrumb occurred. */
-  private final @NotNull Date timestamp;
+  private final long timestamp;
 
   /** If a message is provided, its rendered as text and the whitespace is preserved. */
   private @Nullable String message;
@@ -45,7 +45,12 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    *
    * @param timestamp the timestamp
    */
+  @SuppressWarnings("JavaUtilDate")
   public Breadcrumb(final @NotNull Date timestamp) {
+    this.timestamp = timestamp.getTime();
+  }
+
+  public Breadcrumb(final long timestamp) {
     this.timestamp = timestamp;
   }
 
@@ -492,7 +497,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
 
   /** Breadcrumb ctor */
   public Breadcrumb() {
-    this(DateUtils.getCurrentDateTime());
+    this(System.currentTimeMillis());
   }
 
   /**
@@ -510,9 +515,8 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    *
    * @return the timestamp
    */
-  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
-  public @NotNull Date getTimestamp() {
-    return (Date) timestamp.clone();
+  public long getTimestamp() {
+    return timestamp;
   }
 
   /**
@@ -634,7 +638,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Breadcrumb that = (Breadcrumb) o;
-    return timestamp.getTime() == that.timestamp.getTime()
+    return timestamp == that.timestamp
         && Objects.equals(message, that.message)
         && Objects.equals(type, that.type)
         && Objects.equals(category, that.category)
@@ -672,7 +676,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
-    writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
+    writer.name(JsonKeys.TIMESTAMP).value(logger, DateUtils.getDateTime(timestamp));
     if (message != null) {
       writer.name(JsonKeys.MESSAGE).value(message);
     }

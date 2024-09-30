@@ -49,7 +49,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
       if (crumb.getLevel() != null) {
         level = crumb.getLevel().name().toLowerCase(Locale.ROOT);
       }
-      final String timestamp = DateUtils.getTimestamp(crumb.getTimestamp());
+      final String timestamp = DateUtils.getTimestamp(DateUtils.getDateTime(crumb.getTimestamp()));
 
       String data = null;
       try {

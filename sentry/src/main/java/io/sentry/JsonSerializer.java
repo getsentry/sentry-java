@@ -258,7 +258,7 @@ public final class JsonSerializer implements ISerializer {
   }
 
   @Override
-  public @NotNull String serialize(@NotNull Map<String, Object> data) throws Exception {
+  public @NotNull String aaaserialize(@NotNull Map<String, Object> data) throws Exception {
     return serializeToString(data, false);
   }
 

@@ -133,5 +133,5 @@ dependencies {
     implementation(Config.Libs.composeNavigation)
     implementation(Config.Libs.composeMaterial)
 
-    debugImplementation(Config.Libs.leakCanary)
+//    debugImplementation(Config.Libs.leakCanary)
 }

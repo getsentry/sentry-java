@@ -161,8 +161,8 @@ internal interface CaptureStrategy {
 
             val urls = LinkedList<String>()
             breadcrumbs.forEach { breadcrumb ->
-                if (breadcrumb.timestamp.time >= segmentTimestamp.time &&
-                    breadcrumb.timestamp.time < endTimestamp.time
+                if (breadcrumb.timestamp >= segmentTimestamp.time &&
+                    breadcrumb.timestamp < endTimestamp.time
                 ) {
                     val rrwebEvent = options
                         .replayController

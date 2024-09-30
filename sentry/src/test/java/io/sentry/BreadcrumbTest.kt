@@ -6,6 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class BreadcrumbTest {
 
@@ -91,7 +92,7 @@ class BreadcrumbTest {
     @Test
     fun `breadcrumb has timestamp when created`() {
         val breadcrumb = Breadcrumb()
-        assertNotNull(breadcrumb.timestamp)
+        assertTrue(breadcrumb.timestamp > 0)
     }
 
     @Test

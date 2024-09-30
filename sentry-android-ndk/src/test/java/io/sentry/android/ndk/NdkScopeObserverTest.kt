@@ -97,7 +97,7 @@ class NdkScopeObserverTest {
             setData("a", "b")
             type = "type"
         }
-        val timestamp = DateUtils.getTimestamp(breadcrumb.timestamp)
+        val timestamp = DateUtils.getTimestamp(DateUtils.getDateTime(breadcrumb.timestamp))
         val data = "{\"a\":\"b\"}"
 
         sut.addBreadcrumb(breadcrumb)
