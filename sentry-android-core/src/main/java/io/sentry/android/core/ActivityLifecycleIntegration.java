@@ -478,17 +478,13 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public void onActivityStopped(final @NotNull Activity activity) {
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      // no-op
-    }
+    // no-op (acquire lock if this no longer is no-op)
   }
 
   @Override
   public void onActivitySaveInstanceState(
       final @NotNull Activity activity, final @NotNull Bundle outState) {
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      // no-op
-    }
+    // no-op (acquire lock if this no longer is no-op)
   }
 
   @Override
