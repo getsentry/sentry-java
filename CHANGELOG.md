@@ -48,6 +48,7 @@
 - Trace context on `Contexts.setTrace` has been marked `@NotNull` ([#3721](https://github.com/getsentry/sentry-java/pull/3721))
   - Setting it to `null` would cause an exception.
   - Transactions are dropped if trace context is missing
+- Remove internal annotation on `SpanOptions` ([#3722](https://github.com/getsentry/sentry-java/pull/3722))
 
 ### Behavioural Changes
 
