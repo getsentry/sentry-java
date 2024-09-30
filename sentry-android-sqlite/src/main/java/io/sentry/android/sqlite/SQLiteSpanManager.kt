@@ -57,7 +57,7 @@ internal class SQLiteSpanManager(
             throw e
         } finally {
             span?.apply {
-                val isMainThread: Boolean = scopes.options.mainThreadChecker.isMainThread
+                val isMainThread: Boolean = scopes.options.threadChecker.isMainThread
                 setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread)
                 if (isMainThread) {
                     setData(SpanDataConvention.CALL_STACK_KEY, stackTraceFactory.inAppCallStack)

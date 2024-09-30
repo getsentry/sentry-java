@@ -4,7 +4,7 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
 import io.sentry.test.createTestScopes
-import io.sentry.util.thread.IMainThreadChecker
+import io.sentry.util.thread.IThreadChecker
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -1361,11 +1361,11 @@ class SentryTracerTest {
 
     @Test
     fun `when a span is launched on the main thread, the thread info should be set correctly`() {
-        val mainThreadChecker = mock<IMainThreadChecker>()
-        whenever(mainThreadChecker.isMainThread).thenReturn(true)
+        val threadChecker = mock<IThreadChecker>()
+        whenever(threadChecker.isMainThread).thenReturn(true)
 
         val tracer = fixture.getSut(optionsConfiguration = { options ->
-            options.mainThreadChecker = mainThreadChecker
+            options.threadChecker = threadChecker
         })
         val span = tracer.startChild("span.op")
         assertNotNull(span.getData(SpanDataConvention.THREAD_ID))
@@ -1374,11 +1374,11 @@ class SentryTracerTest {
 
     @Test
     fun `when a span is launched on the background thread, the thread info should be set correctly`() {
-        val mainThreadChecker = mock<IMainThreadChecker>()
-        whenever(mainThreadChecker.isMainThread).thenReturn(false)
+        val threadChecker = mock<IThreadChecker>()
+        whenever(threadChecker.isMainThread).thenReturn(false)
 
         val tracer = fixture.getSut(optionsConfiguration = { options ->
-            options.mainThreadChecker = mainThreadChecker
+            options.threadChecker = threadChecker
         })
         val span = tracer.startChild("span.op")
         assertNotNull(span.getData(SpanDataConvention.THREAD_ID))

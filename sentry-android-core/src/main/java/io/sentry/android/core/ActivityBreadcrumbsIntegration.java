@@ -29,6 +29,7 @@ public final class ActivityBreadcrumbsIntegration
   private boolean enabled;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
+  // TODO check if locking is even required at all for lifecycle methods
   public ActivityBreadcrumbsIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
   }

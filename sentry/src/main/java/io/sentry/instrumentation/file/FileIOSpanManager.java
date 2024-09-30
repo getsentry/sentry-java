@@ -102,7 +102,7 @@ final class FileIOSpanManager {
         currentSpan.setDescription(byteCountToString);
       }
       currentSpan.setData("file.size", byteCount);
-      final boolean isMainThread = options.getMainThreadChecker().isMainThread();
+      final boolean isMainThread = options.getThreadChecker().isMainThread();
       currentSpan.setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread);
       if (isMainThread) {
         currentSpan.setData(
