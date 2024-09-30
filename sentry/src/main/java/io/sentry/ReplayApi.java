@@ -10,30 +10,22 @@ public final class ReplayApi {
     this.replayController = replayController;
   }
 
-  /**
-   * Resumes screen recording if it was paused.
-   */
+  /** Resumes screen recording if it was paused. */
   public void resume() {
     replayController.resume();
   }
 
-  /**
-   * Pauses screen recording entirely, but does not stop the current replay.
-   */
+  /** Pauses screen recording entirely, but does not stop the current replay. */
   public void pause() {
     replayController.pause();
   }
 
-  /**
-   * Returns whether the replay is currently running
-   */
+  /** Returns whether the replay is currently running */
   public boolean isRecording() {
     return replayController.isRecording();
   }
 
-  /**
-   * The id of the currently running replay or {@link SentryId#EMPTY_ID} if no replay is running
-   */
+  /** The id of the currently running replay or {@link SentryId#EMPTY_ID} if no replay is running */
   @NotNull
   public SentryId getReplayId() {
     return replayController.getReplayId();

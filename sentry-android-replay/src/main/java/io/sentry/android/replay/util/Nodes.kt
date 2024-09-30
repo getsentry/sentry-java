@@ -1,4 +1,5 @@
 @file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // to access internal vals and classes
+
 package io.sentry.android.replay.util
 
 import android.graphics.Rect
@@ -109,9 +110,11 @@ internal fun LayoutNode.findTextAttributes(): TextAttributes {
         val modifierClassName = modifier::class.java.name
         if (modifierClassName.contains("Text")) {
             color = try {
-                (modifier::class.java.getDeclaredField("color")
-                    .apply { isAccessible = true }
-                    .get(modifier) as? ColorProducer)
+                (
+                    modifier::class.java.getDeclaredField("color")
+                        .apply { isAccessible = true }
+                        .get(modifier) as? ColorProducer
+                    )
                     ?.invoke()
             } catch (e: Throwable) {
                 null

@@ -5,6 +5,7 @@ package io.sentry.android.replay.util
  */
 interface TextLayout {
     val lineCount: Int
+
     /**
      * Returns the dominant text color of the layout by looking at the [ForegroundColorSpan] spans if
      * this text is a [Spanned] text. If the text is not a [Spanned] text or there are no spans, it

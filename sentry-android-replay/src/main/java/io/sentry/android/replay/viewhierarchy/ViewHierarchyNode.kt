@@ -2,7 +2,6 @@ package io.sentry.android.replay.viewhierarchy
 
 import android.annotation.TargetApi
 import android.graphics.Rect
-import android.text.Layout
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -273,26 +272,26 @@ sealed class ViewHierarchyNode(
             val (isVisible, visibleRect) = view.isVisibleToUser()
             val shouldRedact = isVisible && view.shouldRedact(options)
             when (view) {
-              is TextView -> {
-                  parent?.setImportantForCaptureToAncestors(true)
-                  return TextViewHierarchyNode(
-                      layout = view.layout?.let { AndroidTextLayout(it) },
-                      dominantColor = view.currentTextColor.toOpaque(),
-                      paddingLeft = view.totalPaddingLeft,
-                      paddingTop = view.totalPaddingTopSafe,
-                      x = view.x,
-                      y = view.y,
-                      width = view.width,
-                      height = view.height,
-                      elevation = (parent?.elevation ?: 0f) + view.elevation,
-                      shouldRedact = shouldRedact,
-                      distance = distance,
-                      parent = parent,
-                      isImportantForContentCapture = true,
-                      isVisible = isVisible,
-                      visibleRect = visibleRect
-                  )
-              }
+                is TextView -> {
+                    parent?.setImportantForCaptureToAncestors(true)
+                    return TextViewHierarchyNode(
+                        layout = view.layout?.let { AndroidTextLayout(it) },
+                        dominantColor = view.currentTextColor.toOpaque(),
+                        paddingLeft = view.totalPaddingLeft,
+                        paddingTop = view.totalPaddingTopSafe,
+                        x = view.x,
+                        y = view.y,
+                        width = view.width,
+                        height = view.height,
+                        elevation = (parent?.elevation ?: 0f) + view.elevation,
+                        shouldRedact = shouldRedact,
+                        distance = distance,
+                        parent = parent,
+                        isImportantForContentCapture = true,
+                        isVisible = isVisible,
+                        visibleRect = visibleRect
+                    )
+                }
 
                 is ImageView -> {
                     parent?.setImportantForCaptureToAncestors(true)
