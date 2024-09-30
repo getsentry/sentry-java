@@ -9,7 +9,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
-import io.sentry.util.thread.IMainThreadChecker
+import io.sentry.util.thread.IThreadChecker
 import org.junit.Before
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -98,8 +98,8 @@ class SQLiteSpanManagerTest {
     fun `when performSql runs in background blocked_main_thread is false and no stack trace is attached`() {
         val sut = fixture.getSut()
 
-        fixture.options.mainThreadChecker = mock<IMainThreadChecker>()
-        whenever(fixture.options.mainThreadChecker.isMainThread).thenReturn(false)
+        fixture.options.threadChecker = mock<IThreadChecker>()
+        whenever(fixture.options.threadChecker.isMainThread).thenReturn(false)
 
         sut.performSql("sql") {}
         val span = fixture.sentryTracer.children.first()
@@ -112,8 +112,8 @@ class SQLiteSpanManagerTest {
     fun `when performSql runs in foreground blocked_main_thread is true and a stack trace is attached`() {
         val sut = fixture.getSut()
 
-        fixture.options.mainThreadChecker = mock<IMainThreadChecker>()
-        whenever(fixture.options.mainThreadChecker.isMainThread).thenReturn(true)
+        fixture.options.threadChecker = mock<IThreadChecker>()
+        whenever(fixture.options.threadChecker.isMainThread).thenReturn(true)
 
         sut.performSql("sql") {}
         val span = fixture.sentryTracer.children.first()

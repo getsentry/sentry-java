@@ -200,7 +200,7 @@ internal abstract class BaseCaptureStrategy(
             private val value = AtomicReference(initialValue)
 
             private fun runInBackground(task: () -> Unit) {
-                if (options.mainThreadChecker.isMainThread) {
+                if (options.threadChecker.isMainThread) {
                     persistingExecutor.submitSafely(options, "$TAG.runInBackground") {
                         task()
                     }
