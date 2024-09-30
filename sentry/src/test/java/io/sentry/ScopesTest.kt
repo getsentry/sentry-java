@@ -1976,13 +1976,6 @@ class ScopesTest {
     }
 
     @Test
-    fun `reportFullDisplayed calls reportFullyDisplayed`() {
-        val scopes = spy(generateScopes())
-        scopes.reportFullDisplayed()
-        verify(scopes).reportFullyDisplayed()
-    }
-
-    @Test
     fun `continueTrace creates propagation context from headers and returns transaction context if performance enabled`() {
         val scopes = generateScopes()
         val traceId = SentryId()

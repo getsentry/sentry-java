@@ -1085,15 +1085,6 @@ public final class Sentry {
     getCurrentScopes().reportFullyDisplayed();
   }
 
-  /**
-   * @deprecated See {@link Sentry#reportFullyDisplayed()}.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static void reportFullDisplayed() {
-    reportFullyDisplayed();
-  }
-
   /** the metrics API for the current Scopes */
   @NotNull
   @ApiStatus.Experimental

@@ -901,7 +901,6 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun pushScope ()Lio/sentry/ISentryLifecycleToken;
 	public abstract fun removeExtra (Ljava/lang/String;)V
 	public abstract fun removeTag (Ljava/lang/String;)V
-	public fun reportFullDisplayed ()V
 	public abstract fun reportFullyDisplayed ()V
 	public abstract fun setActiveSpan (Lio/sentry/ISpan;)V
 	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
@@ -2370,7 +2369,6 @@ public final class io/sentry/Sentry {
 	public static fun pushScope ()Lio/sentry/ISentryLifecycleToken;
 	public static fun removeExtra (Ljava/lang/String;)V
 	public static fun removeTag (Ljava/lang/String;)V
-	public static fun reportFullDisplayed ()V
 	public static fun reportFullyDisplayed ()V
 	public static fun setCurrentHub (Lio/sentry/IHub;)Lio/sentry/ISentryLifecycleToken;
 	public static fun setCurrentScopes (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
