@@ -608,7 +608,6 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
-	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -674,7 +673,6 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
-	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -901,7 +899,6 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun pushScope ()Lio/sentry/ISentryLifecycleToken;
 	public abstract fun removeExtra (Ljava/lang/String;)V
 	public abstract fun removeTag (Ljava/lang/String;)V
-	public fun reportFullDisplayed ()V
 	public abstract fun reportFullyDisplayed ()V
 	public abstract fun setActiveSpan (Lio/sentry/ISpan;)V
 	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
@@ -916,7 +913,6 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
-	public abstract fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public abstract fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public abstract fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -1451,7 +1447,6 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
-	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -1612,7 +1607,6 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
-	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -2209,7 +2203,6 @@ public final class io/sentry/Scopes : io/sentry/IScopes, io/sentry/metrics/Metri
 	public fun startSession ()V
 	public fun startSpanForMetric (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
-	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -2275,7 +2268,6 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
-	public fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -2370,7 +2362,6 @@ public final class io/sentry/Sentry {
 	public static fun pushScope ()Lio/sentry/ISentryLifecycleToken;
 	public static fun removeExtra (Ljava/lang/String;)V
 	public static fun removeTag (Ljava/lang/String;)V
-	public static fun reportFullDisplayed ()V
 	public static fun reportFullyDisplayed ()V
 	public static fun setCurrentHub (Lio/sentry/IHub;)Lio/sentry/ISentryLifecycleToken;
 	public static fun setCurrentScopes (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
@@ -2386,7 +2377,6 @@ public final class io/sentry/Sentry {
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
-	public static fun traceHeaders ()Lio/sentry/SentryTraceHeader;
 	public static fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public static fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -2822,6 +2812,7 @@ public final class io/sentry/SentryNanotimeDateProvider : io/sentry/SentryDatePr
 
 public class io/sentry/SentryOptions {
 	public static final field DEFAULT_PROPAGATION_TARGETS Ljava/lang/String;
+	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> ()V
 	public fun addBundleId (Ljava/lang/String;)V
 	public fun addContextTag (Ljava/lang/String;)V
@@ -2876,7 +2867,6 @@ public class io/sentry/SentryOptions {
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getInternalTracesSampler ()Lio/sentry/TracesSampler;
 	public fun getLogger ()Lio/sentry/ILogger;
-	public fun getMainThreadChecker ()Lio/sentry/util/thread/IMainThreadChecker;
 	public fun getMaxAttachmentSize ()J
 	public fun getMaxBreadcrumbs ()I
 	public fun getMaxCacheItems ()I
@@ -2912,6 +2902,7 @@ public class io/sentry/SentryOptions {
 	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
 	public fun getSslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
 	public fun getTags ()Ljava/util/Map;
+	public fun getThreadChecker ()Lio/sentry/util/thread/IThreadChecker;
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
@@ -3006,7 +2997,6 @@ public class io/sentry/SentryOptions {
 	public fun setInitPriority (Lio/sentry/InitPriority;)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
-	public fun setMainThreadChecker (Lio/sentry/util/thread/IMainThreadChecker;)V
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
 	public fun setMaxCacheItems (I)V
@@ -3042,6 +3032,7 @@ public class io/sentry/SentryOptions {
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setThreadChecker (Lio/sentry/util/thread/IThreadChecker;)V
 	public fun setTraceOptionsRequests (Z)V
 	public fun setTracePropagationTargets (Ljava/util/List;)V
 	public fun setTraceSampling (Z)V
@@ -3831,6 +3822,7 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static final field STARTUP_CRASH_MARKER_FILE Ljava/lang/String;
 	public static final field SUFFIX_ENVELOPE_FILE Ljava/lang/String;
 	protected static final field UTF_8 Ljava/nio/charset/Charset;
+	protected final field cacheLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> (Lio/sentry/SentryOptions;Ljava/lang/String;I)V
 	public static fun create (Lio/sentry/SentryOptions;)Lio/sentry/cache/IEnvelopeCache;
 	public fun discard (Lio/sentry/SentryEnvelope;)V
@@ -4513,6 +4505,7 @@ public final class io/sentry/protocol/Browser$JsonKeys {
 
 public class io/sentry/protocol/Contexts : io/sentry/JsonSerializable {
 	public static final field REPLAY_ID Ljava/lang/String;
+	protected final field responseLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/Contexts;)V
 	public fun containsKey (Ljava/lang/Object;)Z
@@ -6132,6 +6125,11 @@ public abstract class io/sentry/transport/TransportResult {
 	public static fun success ()Lio/sentry/transport/TransportResult;
 }
 
+public final class io/sentry/util/AutoClosableReentrantLock : java/util/concurrent/locks/ReentrantLock {
+	public fun <init> ()V
+	public fun acquire ()Lio/sentry/ISentryLifecycleToken;
+}
+
 public final class io/sentry/util/CheckInUtils {
 	public fun <init> ()V
 	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
@@ -6421,24 +6419,27 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 	public fun getUrlOrFallback ()Ljava/lang/String;
 }
 
-public abstract interface class io/sentry/util/thread/IMainThreadChecker {
+public abstract interface class io/sentry/util/thread/IThreadChecker {
+	public abstract fun currentThreadSystemId ()J
 	public abstract fun isMainThread ()Z
 	public abstract fun isMainThread (J)Z
 	public abstract fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
 	public abstract fun isMainThread (Ljava/lang/Thread;)Z
 }
 
-public final class io/sentry/util/thread/MainThreadChecker : io/sentry/util/thread/IMainThreadChecker {
-	public static fun getInstance ()Lio/sentry/util/thread/MainThreadChecker;
+public final class io/sentry/util/thread/NoOpThreadChecker : io/sentry/util/thread/IThreadChecker {
+	public fun <init> ()V
+	public fun currentThreadSystemId ()J
+	public static fun getInstance ()Lio/sentry/util/thread/NoOpThreadChecker;
 	public fun isMainThread ()Z
 	public fun isMainThread (J)Z
 	public fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
 	public fun isMainThread (Ljava/lang/Thread;)Z
 }
 
-public final class io/sentry/util/thread/NoOpMainThreadChecker : io/sentry/util/thread/IMainThreadChecker {
-	public fun <init> ()V
-	public static fun getInstance ()Lio/sentry/util/thread/NoOpMainThreadChecker;
+public final class io/sentry/util/thread/ThreadChecker : io/sentry/util/thread/IThreadChecker {
+	public fun currentThreadSystemId ()J
+	public static fun getInstance ()Lio/sentry/util/thread/ThreadChecker;
 	public fun isMainThread ()Z
 	public fun isMainThread (J)Z
 	public fun isMainThread (Lio/sentry/protocol/SentryThread;)Z

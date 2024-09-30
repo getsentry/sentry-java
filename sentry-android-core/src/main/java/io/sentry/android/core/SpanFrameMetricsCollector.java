@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import io.sentry.DateUtils;
 import io.sentry.IPerformanceContinuousCollector;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.NoOpSpan;
@@ -11,6 +12,7 @@ import io.sentry.SentryNanotimeDate;
 import io.sentry.SpanDataConvention;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.MeasurementValue;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.SortedSet;
@@ -34,7 +36,7 @@ public class SpanFrameMetricsCollector
   private static final SentryNanotimeDate EMPTY_NANO_TIME = new SentryNanotimeDate(new Date(0), 0);
 
   private final boolean enabled;
-  private final @NotNull Object lock = new Object();
+  protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
 
   private volatile @Nullable String listenerId;
@@ -85,7 +87,7 @@ public class SpanFrameMetricsCollector
       return;
     }
 
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       runningSpans.add(span);
 
       if (listenerId == null) {
@@ -109,7 +111,7 @@ public class SpanFrameMetricsCollector
     }
 
     // ignore span if onSpanStarted was never called for it
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (!runningSpans.contains(span)) {
         return;
       }
@@ -117,7 +119,7 @@ public class SpanFrameMetricsCollector
 
     captureFrameMetrics(span);
 
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (runningSpans.isEmpty()) {
         clear();
       } else {
@@ -130,7 +132,7 @@ public class SpanFrameMetricsCollector
 
   private void captureFrameMetrics(@NotNull final ISpan span) {
     // TODO lock still required?
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       boolean removed = runningSpans.remove(span);
       if (!removed) {
         return;
@@ -224,7 +226,7 @@ public class SpanFrameMetricsCollector
 
   @Override
   public void clear() {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (listenerId != null) {
         frameMetricsCollector.stopCollection(listenerId);
         listenerId = null;

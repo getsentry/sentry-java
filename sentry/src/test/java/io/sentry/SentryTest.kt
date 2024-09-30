@@ -18,8 +18,8 @@ import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.injectForField
 import io.sentry.util.PlatformTestManipulator
-import io.sentry.util.thread.IMainThreadChecker
-import io.sentry.util.thread.MainThreadChecker
+import io.sentry.util.thread.IThreadChecker
+import io.sentry.util.thread.ThreadChecker
 import org.awaitility.kotlin.await
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -647,7 +647,7 @@ class SentryTest {
             sentryOptions = it
         }
 
-        assertTrue { sentryOptions!!.mainThreadChecker is MainThreadChecker }
+        assertTrue { sentryOptions!!.threadChecker is ThreadChecker }
     }
 
     @Test
@@ -656,11 +656,11 @@ class SentryTest {
 
         Sentry.init {
             it.dsn = dsn
-            it.mainThreadChecker = CustomMainThreadChecker()
+            it.threadChecker = CustomThreadChecker()
             sentryOptions = it
         }
 
-        assertTrue { sentryOptions!!.mainThreadChecker is CustomMainThreadChecker }
+        assertTrue { sentryOptions!!.threadChecker is CustomThreadChecker }
     }
 
     @Test
@@ -711,17 +711,6 @@ class SentryTest {
         }
         Sentry.setCurrentScopes(scopes)
         Sentry.reportFullyDisplayed()
-        verify(scopes).reportFullyDisplayed()
-    }
-
-    @Test
-    fun `reportFullDisplayed calls reportFullyDisplayed`() {
-        val scopes = mock<IScopes>()
-        Sentry.init {
-            it.dsn = dsn
-        }
-        Sentry.setCurrentScopes(scopes)
-        Sentry.reportFullDisplayed()
         verify(scopes).reportFullyDisplayed()
     }
 
@@ -1269,11 +1258,12 @@ class SentryTest {
         }
     }
 
-    private class CustomMainThreadChecker : IMainThreadChecker {
+    private class CustomThreadChecker : IThreadChecker {
         override fun isMainThread(threadId: Long): Boolean = false
         override fun isMainThread(thread: Thread): Boolean = false
         override fun isMainThread(): Boolean = false
         override fun isMainThread(sentryThread: SentryThread): Boolean = false
+        override fun currentThreadSystemId(): Long = 0
     }
 
     private class CustomMemoryCollector :

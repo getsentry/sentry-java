@@ -10,6 +10,7 @@ import io.sentry.metrics.Metric;
 import io.sentry.metrics.MetricType;
 import io.sentry.metrics.MetricsHelper;
 import io.sentry.metrics.SetMetric;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -36,6 +37,8 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   private final @NotNull IMetricsClient client;
   private final @NotNull SentryDateProvider dateProvider;
   private final @Nullable SentryOptions.BeforeEmitMetricCallback beforeEmitCallback;
+  private final @NotNull AutoClosableReentrantLock aggregatorLock = new AutoClosableReentrantLock();
+  private final @NotNull AutoClosableReentrantLock bucketsLock = new AutoClosableReentrantLock();
 
   private volatile @NotNull ISentryExecutorService executorService;
   private volatile boolean isClosed = false;
@@ -215,7 +218,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
     final boolean isOverWeight = isOverWeight();
     if (!isClosed && (isOverWeight || !flushScheduled)) {
-      synchronized (this) {
+      try (final @NotNull ISentryLifecycleToken ignored = aggregatorLock.acquire()) {
         if (!isClosed) {
           // TODO this is probably not a good idea after all
           // as it will slow down the first metric emission
@@ -304,7 +307,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
     if (bucket == null) {
       // although buckets is thread safe, we still need to synchronize here to avoid creating
       // the same bucket at the same time, overwriting each other
-      synchronized (buckets) {
+      try (final @NotNull ISentryLifecycleToken ignored = bucketsLock.acquire()) {
         bucket = buckets.get(bucketKey);
         if (bucket == null) {
           bucket = new HashMap<>();
@@ -317,7 +320,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
 
   @Override
   public void close() throws IOException {
-    synchronized (this) {
+    try (final @NotNull ISentryLifecycleToken ignored = aggregatorLock.acquire()) {
       isClosed = true;
       executorService.close(0);
     }
@@ -329,7 +332,7 @@ public final class MetricsAggregator implements IMetricsAggregator, Runnable, Cl
   public void run() {
     flush(false);
 
-    synchronized (this) {
+    try (final @NotNull ISentryLifecycleToken ignored = aggregatorLock.acquire()) {
       if (!isClosed && !buckets.isEmpty()) {
         executorService.schedule(this, MetricsHelper.FLUSHER_SLEEP_TIME_MS);
       }

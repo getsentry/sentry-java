@@ -5,6 +5,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import java.util.ArrayList;
@@ -40,7 +41,8 @@ public final class SentryTracer implements ITransaction {
   private volatile @Nullable TimerTask deadlineTimeoutTask;
 
   private volatile @Nullable Timer timer = null;
-  private final @NotNull Object timerLock = new Object();
+  private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
+  private final @NotNull AutoClosableReentrantLock tracerLock = new AutoClosableReentrantLock();
 
   private final @NotNull AtomicBoolean isIdleFinishTimerRunning = new AtomicBoolean(false);
   private final @NotNull AtomicBoolean isDeadlineTimerRunning = new AtomicBoolean(false);
@@ -103,7 +105,7 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void scheduleFinish() {
-    synchronized (timerLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       if (timer != null) {
         final @Nullable Long idleTimeout = transactionOptions.getIdleTimeout();
 
@@ -254,7 +256,7 @@ public final class SentryTracer implements ITransaction {
       final SentryTransaction transaction = new SentryTransaction(this);
 
       if (timer != null) {
-        synchronized (timerLock) {
+        try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
           if (timer != null) {
             cancelIdleTimer();
             cancelDeadlineTimer();
@@ -282,7 +284,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   private void cancelIdleTimer() {
-    synchronized (timerLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       if (idleTimeoutTask != null) {
         idleTimeoutTask.cancel();
         isIdleFinishTimerRunning.set(false);
@@ -294,7 +296,7 @@ public final class SentryTracer implements ITransaction {
   private void scheduleDeadlineTimeout() {
     final @Nullable Long deadlineTimeOut = transactionOptions.getDeadlineTimeout();
     if (deadlineTimeOut != null) {
-      synchronized (timerLock) {
+      try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
         if (timer != null) {
           cancelDeadlineTimer();
           isDeadlineTimerRunning.set(true);
@@ -322,7 +324,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   private void cancelDeadlineTimer() {
-    synchronized (timerLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       if (deadlineTimeoutTask != null) {
         deadlineTimeoutTask.cancel();
         isDeadlineTimerRunning.set(false);
@@ -449,13 +451,13 @@ public final class SentryTracer implements ITransaction {
       return NoOpSpan.getInstance();
     }
 
-    final @Nullable SpanId parentSpanId = spanContext.getParentSpanId();
-    final @NotNull String operation = spanContext.getOperation();
-    final @Nullable String description = spanContext.getDescription();
-
     if (SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), spanOptions.getOrigin())) {
       return NoOpSpan.getInstance();
     }
+
+    final @Nullable SpanId parentSpanId = spanContext.getParentSpanId();
+    final @NotNull String operation = spanContext.getOperation();
+    final @Nullable String description = spanContext.getDescription();
 
     if (children.size() < scopes.getOptions().getMaxSpans()) {
       Objects.requireNonNull(parentSpanId, "parentSpanId is required");
@@ -512,10 +514,11 @@ public final class SentryTracer implements ITransaction {
       //                }
       //              });
       //      span.setDescription(description);
-      span.setData(SpanDataConvention.THREAD_ID, String.valueOf(Thread.currentThread().getId()));
+      final long threadId = scopes.getOptions().getThreadChecker().currentThreadSystemId();
+      span.setData(SpanDataConvention.THREAD_ID, String.valueOf(threadId));
       span.setData(
           SpanDataConvention.THREAD_NAME,
-          scopes.getOptions().getMainThreadChecker().isMainThread()
+          scopes.getOptions().getThreadChecker().isMainThread()
               ? "main"
               : Thread.currentThread().getName());
       this.children.add(span);
@@ -648,7 +651,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   private void updateBaggageValues() {
-    synchronized (this) {
+    try (final @NotNull ISentryLifecycleToken ignored = tracerLock.acquire()) {
       if (baggage.isMutable()) {
         final AtomicReference<SentryId> replayId = new AtomicReference<>();
         scopes.configureScope(

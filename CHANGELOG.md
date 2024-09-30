@@ -9,6 +9,11 @@
   - This will reduce the number of spans created by the SDK
 - `options.experimental.sessionReplay.errorSampleRate` was renamed to `options.experimental.sessionReplay.onErrorSampleRate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
 - Manifest option `io.sentry.session-replay.error-sample-rate` was renamed to `io.sentry.session-replay.on-error-sample-rate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
+- Replace `synchronized` methods and blocks with `ReentrantLock` (`AutoClosableReentrantLock`) ([#3715](https://github.com/getsentry/sentry-java/pull/3715))
+  - If you are subclassing any Sentry classes, please check if the parent class used `synchronized` before. Please make sure to use the same lock object as the parent class in that case.
+- `traceHeaders` method has been removed ([#3718](https://github.com/getsentry/sentry-java/pull/3718))
+- `reportFullDisplayed` method has been removed ([#3717](https://github.com/getsentry/sentry-java/pull/3717))
+  - This was a typo, `reportFullyDisplayed` still remains.
 
 ### Features
 
@@ -36,6 +41,19 @@
   - redact/ignore `View`s of a certain type by adding fully-qualified classname to one of the lists `options.experimental.sessionReplay.addRedactViewClass()` or `options.experimental.sessionReplay.addIgnoreViewClass()`. Note, that all of the view subclasses/subtypes will be redacted/ignored as well
     - For example, (this is already a default behavior) to redact all `TextView`s and their subclasses (`RadioButton`, `EditText`, etc.): `options.experimental.sessionReplay.addRedactViewClass("android.widget.TextView")`
     - If you're using code obfuscation, adjust your proguard-rules accordingly, so your custom view class name is not minified
+- Set span origin in `ActivityLifecycleIntegration` on span options instead of after creating the span / transaction ([#3702](https://github.com/getsentry/sentry-java/pull/3702))
+  - This allows spans to be filtered by span origin on creation
+- Honor ignored span origins in `SentryTracer.startChild` ([#3704](https://github.com/getsentry/sentry-java/pull/3704))
+- Add `enable-spotlight` and `spotlight-connection-url` to external options and check if spotlight is enabled when deciding whether to inspect an OpenTelemetry span for connecting to splotlight ([#3709](https://github.com/getsentry/sentry-java/pull/3709))
+- Trace context on `Contexts.setTrace` has been marked `@NotNull` ([#3721](https://github.com/getsentry/sentry-java/pull/3721))
+  - Setting it to `null` would cause an exception.
+  - Transactions are dropped if trace context is missing
+- Remove internal annotation on `SpanOptions` ([#3722](https://github.com/getsentry/sentry-java/pull/3722))
+- `SentryLogbackInitializer` is now public ([#3723](https://github.com/getsentry/sentry-java/pull/3723))
+
+### Behavioural Changes
+
+- (Android) Replace thread id with kernel thread id in span data ([#3706](https://github.com/getsentry/sentry-java/pull/3706))
 
 ### Dependencies
 

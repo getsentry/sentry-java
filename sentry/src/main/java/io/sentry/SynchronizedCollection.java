@@ -19,9 +19,11 @@
 package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Decorates another {@link Collection} to synchronize its behaviour for a multi-threaded
@@ -50,7 +52,7 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
   /** The collection to decorate */
   private final Collection<E> collection;
   /** The object to lock on, needed for List/SortedSet views */
-  final Object lock;
+  final AutoClosableReentrantLock lock;
 
   /**
    * Factory method to create a synchronized collection.
@@ -77,7 +79,7 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
       throw new NullPointerException("Collection must not be null.");
     }
     this.collection = collection;
-    this.lock = this;
+    this.lock = new AutoClosableReentrantLock();
   }
 
   /**
@@ -87,7 +89,7 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
    * @param lock the lock object to use, must not be null
    * @throws NullPointerException if the collection or lock is null
    */
-  SynchronizedCollection(final Collection<E> collection, final Object lock) {
+  SynchronizedCollection(final Collection<E> collection, final AutoClosableReentrantLock lock) {
     if (collection == null) {
       throw new NullPointerException("Collection must not be null.");
     }
@@ -111,42 +113,42 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
 
   @Override
   public boolean add(final E object) {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().add(object);
     }
   }
 
   @Override
   public boolean addAll(final Collection<? extends E> coll) {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().addAll(coll);
     }
   }
 
   @Override
   public void clear() {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       decorated().clear();
     }
   }
 
   @Override
   public boolean contains(final Object object) {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().contains(object);
     }
   }
 
   @Override
   public boolean containsAll(final Collection<?> coll) {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().containsAll(coll);
     }
   }
 
   @Override
   public boolean isEmpty() {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().isEmpty();
     }
   }
@@ -170,42 +172,42 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
 
   @Override
   public Object[] toArray() {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().toArray();
     }
   }
 
   @Override
   public <T> T[] toArray(final T[] object) {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().toArray(object);
     }
   }
 
   @Override
   public boolean remove(final Object object) {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().remove(object);
     }
   }
 
   @Override
   public boolean removeAll(final Collection<?> coll) {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().removeAll(coll);
     }
   }
 
   @Override
   public boolean retainAll(final Collection<?> coll) {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().retainAll(coll);
     }
   }
 
   @Override
   public int size() {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().size();
     }
   }
@@ -213,7 +215,7 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
   @SuppressWarnings("UndefinedEquals")
   @Override
   public boolean equals(final Object object) {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (object == this) {
         return true;
       }
@@ -223,14 +225,14 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
 
   @Override
   public int hashCode() {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().hashCode();
     }
   }
 
   @Override
   public String toString() {
-    synchronized (lock) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return decorated().toString();
     }
   }

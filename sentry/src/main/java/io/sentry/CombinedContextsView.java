@@ -50,7 +50,7 @@ public final class CombinedContextsView extends Contexts {
   }
 
   @Override
-  public void setTrace(@Nullable SpanContext traceContext) {
+  public void setTrace(@NotNull SpanContext traceContext) {
     getDefaultContexts().setTrace(traceContext);
   }
 

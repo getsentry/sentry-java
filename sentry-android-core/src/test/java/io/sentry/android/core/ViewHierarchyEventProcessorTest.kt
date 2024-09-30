@@ -12,7 +12,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.TypeCheckHint
 import io.sentry.protocol.SentryException
-import io.sentry.util.thread.IMainThreadChecker
+import io.sentry.util.thread.IThreadChecker
 import org.junit.runner.RunWith
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.kotlin.any
@@ -46,7 +46,7 @@ class ViewHierarchyEventProcessorTest {
             }
         }
         val activity = mock<Activity>()
-        val mainThreadChecker = mock<IMainThreadChecker>()
+        val threadChecker = mock<IThreadChecker>()
         val window = mock<Window>()
         val view = mock<View>()
         val options = SentryAndroidOptions().apply {
@@ -62,14 +62,14 @@ class ViewHierarchyEventProcessorTest {
             whenever(activity.runOnUiThread(any())).then {
                 it.getArgument<Runnable>(0).run()
             }
-            whenever(mainThreadChecker.isMainThread).thenReturn(true)
+            whenever(threadChecker.isMainThread).thenReturn(true)
 
             CurrentActivityHolder.getInstance().setActivity(activity)
         }
 
         fun getSut(attachViewHierarchy: Boolean = false): ViewHierarchyEventProcessor {
             options.isAttachViewHierarchy = attachViewHierarchy
-            options.mainThreadChecker = mainThreadChecker
+            options.threadChecker = threadChecker
             return ViewHierarchyEventProcessor(options)
         }
 
@@ -96,7 +96,7 @@ class ViewHierarchyEventProcessorTest {
     fun `should return a view hierarchy as byte array`() {
         val viewHierarchy = ViewHierarchyEventProcessor.snapshotViewHierarchyAsData(
             fixture.activity,
-            fixture.mainThreadChecker,
+            fixture.threadChecker,
             fixture.serializer,
             fixture.logger
         )
@@ -109,7 +109,7 @@ class ViewHierarchyEventProcessorTest {
     fun `should return null as bytes are empty array`() {
         val viewHierarchy = ViewHierarchyEventProcessor.snapshotViewHierarchyAsData(
             fixture.activity,
-            fixture.mainThreadChecker,
+            fixture.threadChecker,
             fixture.emptySerializer,
             fixture.logger
         )
@@ -161,7 +161,7 @@ class ViewHierarchyEventProcessorTest {
 
     @Test
     fun `when an event errored in the background, the view hierarchy should captured on the main thread`() {
-        whenever(fixture.mainThreadChecker.isMainThread).thenReturn(false)
+        whenever(fixture.threadChecker.isMainThread).thenReturn(false)
 
         val (event, hint) = fixture.process(
             true,

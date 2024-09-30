@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import io.sentry.ISentryLifecycleToken;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 public final class LazyEvaluator<T> {
   private @Nullable T value = null;
   private final @NotNull Evaluator<T> evaluator;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   /**
    * Class that evaluates a function lazily. It means the evaluator function is called only when
@@ -28,11 +30,13 @@ public final class LazyEvaluator<T> {
    *
    * @return The result of the evaluator function.
    */
-  public synchronized @NotNull T getValue() {
-    if (value == null) {
-      value = evaluator.evaluate();
+  public @NotNull T getValue() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (value == null) {
+        value = evaluator.evaluate();
+      }
+      return value;
     }
-    return value;
   }
 
   public interface Evaluator<T> {

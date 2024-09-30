@@ -8,6 +8,7 @@ import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.ScopeType;
@@ -19,7 +20,7 @@ import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
-import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
+import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
@@ -161,7 +162,7 @@ final class AndroidOptionsInitializer {
     // Check if the profiler was already instantiated in the app start.
     // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
     // state of the profiler, and it's only possible retaining the instance.
-    synchronized (AppStartMetrics.getInstance()) {
+    try (final @NotNull ISentryLifecycleToken ignored = AppStartMetrics.staticLock.acquire()) {
       final @Nullable ITransactionProfiler appStartProfiler =
           AppStartMetrics.getInstance().getAppStartProfiler();
       if (appStartProfiler != null) {
@@ -211,7 +212,7 @@ final class AndroidOptionsInitializer {
       options.setViewHierarchyExporters(viewHierarchyExporters);
     }
 
-    options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
+    options.setThreadChecker(AndroidThreadChecker.getInstance());
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
       options.addPerformanceCollector(

@@ -425,7 +425,7 @@ class ScopesTest {
 
         val event = SentryEvent(exception)
         val originalSpanContext = SpanContext("op")
-        event.contexts.trace = originalSpanContext
+        event.contexts.setTrace(originalSpanContext)
 
         val hints = HintUtils.createWithTypeCheckHint({})
         sut.captureEvent(event, hints)
@@ -1822,29 +1822,6 @@ class ScopesTest {
     }
     //endregion
 
-    //region startTransaction tests
-    @Test
-    fun `when traceHeaders and no transaction is active, traceHeaders are generated from scope`() {
-        val scopes = generateScopes()
-
-        var spanId: SpanId? = null
-        scopes.configureScope { spanId = it.propagationContext.spanId }
-
-        val traceHeader = scopes.traceHeaders()
-        assertNotNull(traceHeader)
-        assertEquals(spanId, traceHeader.spanId)
-    }
-
-    @Test
-    fun `when traceHeaders and there is an active transaction, traceHeaders are not null`() {
-        val scopes = generateScopes()
-        val tx = scopes.startTransaction("aTransaction", "op")
-        scopes.configureScope { it.setTransaction(tx) }
-
-        assertNotNull(scopes.traceHeaders())
-    }
-    //endregion
-
     //region getSpan tests
     @Test
     fun `when there is no active transaction, getSpan returns null`() {
@@ -1973,13 +1950,6 @@ class ScopesTest {
         assertTrue(called)
         scopes.reportFullyDisplayed()
         assertTrue(called)
-    }
-
-    @Test
-    fun `reportFullDisplayed calls reportFullyDisplayed`() {
-        val scopes = spy(generateScopes())
-        scopes.reportFullDisplayed()
-        verify(scopes).reportFullyDisplayed()
     }
 
     @Test
@@ -2257,6 +2227,19 @@ class ScopesTest {
         val transaction = scopes.startTransaction(transactionContext, transactionOptions)
         assertFalse(transaction.isNoOp)
         scopes.configureScope { assertSame(transaction, it.transaction) }
+    }
+
+    @Test
+    fun `creating a transaction with origin sets the origin on the transaction context`() {
+        val scopes = generateScopes()
+
+        val transactionContext = TransactionContext("transaction-name", "transaction-op")
+        val transactionOptions = TransactionOptions().also {
+            it.origin = "other.span.origin"
+        }
+
+        val transaction = scopes.startTransaction(transactionContext, transactionOptions)
+        assertEquals("other.span.origin", transaction.spanContext.origin)
     }
 
     private val dsnTest = "https://key@sentry.io/proj"

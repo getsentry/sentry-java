@@ -42,11 +42,13 @@ import android.os.Bundle;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import io.sentry.util.StringUtils;
 import java.io.Closeable;
@@ -69,7 +71,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   private final @NotNull List<String> actions;
   private boolean isClosed = false;
-  private final @NotNull Object startLock = new Object();
+  private final @NotNull AutoClosableReentrantLock startLock = new AutoClosableReentrantLock();
 
   public SystemEventsBreadcrumbsIntegration(final @NotNull Context context) {
     this(context, getDefaultActions());
@@ -103,7 +105,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
             .getExecutorService()
             .submit(
                 () -> {
-                  synchronized (startLock) {
+                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
                     if (!isClosed) {
                       startSystemEventsReceiver(scopes, (SentryAndroidOptions) options);
                     }
@@ -192,7 +194,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   @Override
   public void close() throws IOException {
-    synchronized (startLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
       isClosed = true;
     }
     if (receiver != null) {

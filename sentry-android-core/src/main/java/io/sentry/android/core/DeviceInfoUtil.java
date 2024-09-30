@@ -15,6 +15,7 @@ import android.os.StatFs;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
@@ -22,6 +23,7 @@ import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.OperatingSystem;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.io.File;
 import java.util.Calendar;
 import java.util.Collections;
@@ -39,6 +41,9 @@ public final class DeviceInfoUtil {
 
   @SuppressLint("StaticFieldLeak")
   private static volatile DeviceInfoUtil instance;
+
+  private static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
 
   private final @NotNull Context context;
   private final @NotNull SentryAndroidOptions options;
@@ -74,7 +79,7 @@ public final class DeviceInfoUtil {
   public static DeviceInfoUtil getInstance(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     if (instance == null) {
-      synchronized (DeviceInfoUtil.class) {
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (instance == null) {
           instance = new DeviceInfoUtil(context.getApplicationContext(), options);
         }

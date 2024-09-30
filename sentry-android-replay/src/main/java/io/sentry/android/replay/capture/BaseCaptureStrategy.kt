@@ -161,7 +161,7 @@ internal abstract class BaseCaptureStrategy(
     override fun onTouchEvent(event: MotionEvent) {
         val rrwebEvents = gestureConverter.convert(event, recorderConfig)
         if (rrwebEvents != null) {
-            synchronized(currentEventsLock) {
+            currentEventsLock.acquire().use {
                 currentEvents += rrwebEvents
             }
         }
@@ -200,7 +200,7 @@ internal abstract class BaseCaptureStrategy(
             private val value = AtomicReference(initialValue)
 
             private fun runInBackground(task: () -> Unit) {
-                if (options.mainThreadChecker.isMainThread) {
+                if (options.threadChecker.isMainThread) {
                     persistingExecutor.submitSafely(options, "$TAG.runInBackground") {
                         task()
                     }
