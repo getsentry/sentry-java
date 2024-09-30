@@ -56,7 +56,7 @@ class SentryBaseEventSerializationTest {
                     setOperatingSystem(OperatingSystemSerializationTest.Fixture().getSut())
                     setRuntime(SentryRuntimeSerializationTest.Fixture().getSut())
                     setResponse(ResponseSerializationTest.Fixture().getSut())
-                    trace = SpanContextSerializationTest.Fixture().getSut()
+                    setTrace(SpanContextSerializationTest.Fixture().getSut())
                 }
                 sdk = SdkVersionSerializationTest.Fixture().getSut()
                 request = RequestSerializationTest.Fixture().getSut()

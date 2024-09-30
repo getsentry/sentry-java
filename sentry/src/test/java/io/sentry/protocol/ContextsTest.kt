@@ -18,7 +18,7 @@ class ContextsTest {
         contexts.setRuntime(SentryRuntime())
         contexts.setGpu(Gpu())
         contexts.setResponse(Response())
-        contexts.trace = SpanContext("op")
+        contexts.setTrace(SpanContext("op"))
 
         val clone = Contexts(contexts)
 
@@ -38,7 +38,7 @@ class ContextsTest {
     fun `copying contexts will have the same values`() {
         val contexts = Contexts()
         contexts["some-property"] = "some-value"
-        contexts.trace = SpanContext("op")
+        contexts.setTrace(SpanContext("op"))
         contexts.trace!!.description = "desc"
 
         val clone = Contexts(contexts)

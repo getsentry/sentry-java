@@ -425,7 +425,7 @@ class ScopesTest {
 
         val event = SentryEvent(exception)
         val originalSpanContext = SpanContext("op")
-        event.contexts.trace = originalSpanContext
+        event.contexts.setTrace(originalSpanContext)
 
         val hints = HintUtils.createWithTypeCheckHint({})
         sut.captureEvent(event, hints)

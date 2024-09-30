@@ -45,6 +45,9 @@
   - This allows spans to be filtered by span origin on creation
 - Honor ignored span origins in `SentryTracer.startChild` ([#3704](https://github.com/getsentry/sentry-java/pull/3704))
 - Add `enable-spotlight` and `spotlight-connection-url` to external options and check if spotlight is enabled when deciding whether to inspect an OpenTelemetry span for connecting to splotlight ([#3709](https://github.com/getsentry/sentry-java/pull/3709))
+- Trace context on `Contexts.setTrace` has been marked `@NotNull` ([#3721](https://github.com/getsentry/sentry-java/pull/3721))
+  - Setting it to `null` would cause an exception.
+  - Transactions are dropped if trace context is missing
 
 ### Behavioural Changes
 

@@ -873,7 +873,7 @@ class PerformanceAndroidEventProcessorTest {
             AppStartType.UNKNOWN -> "ui.load"
         }
         val txn = SentryTransaction(fixture.tracer)
-        txn.contexts.trace = SpanContext(op, TracesSamplingDecision(false))
+        txn.contexts.setTrace(SpanContext(op, TracesSamplingDecision(false)))
         return txn
     }
 }
