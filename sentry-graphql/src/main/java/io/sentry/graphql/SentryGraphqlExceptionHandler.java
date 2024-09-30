@@ -7,6 +7,8 @@ import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
 import graphql.schema.DataFetchingEnvironment;
+import io.sentry.ISentryLifecycleToken;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -17,7 +19,8 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SentryGraphqlExceptionHandler {
   private final @Nullable DataFetcherExceptionHandler delegate;
-  private final @NotNull Object exceptionContextLock = new Object();
+  private final @NotNull AutoClosableReentrantLock exceptionContextLock =
+      new AutoClosableReentrantLock();
 
   public SentryGraphqlExceptionHandler(final @Nullable DataFetcherExceptionHandler delegate) {
     this.delegate = delegate;
@@ -30,7 +33,7 @@ public final class SentryGraphqlExceptionHandler {
     if (environment != null) {
       final @Nullable GraphQLContext graphQlContext = environment.getGraphQlContext();
       if (graphQlContext != null) {
-        synchronized (exceptionContextLock) {
+        try (final @NotNull ISentryLifecycleToken ignored = exceptionContextLock.acquire()) {
           final @NotNull List<Throwable> exceptions =
               graphQlContext.getOrDefault(
                   SENTRY_EXCEPTIONS_CONTEXT_KEY, new CopyOnWriteArrayList<Throwable>());

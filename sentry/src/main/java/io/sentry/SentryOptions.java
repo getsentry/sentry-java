@@ -19,6 +19,7 @@ import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
@@ -502,6 +503,8 @@ public class SentryOptions {
 
   private boolean forceInit = false;
 
+  protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+
   /**
    * Adds an event processor
    *
@@ -980,7 +983,7 @@ public class SentryOptions {
   @ApiStatus.Internal
   public @NotNull TracesSampler getInternalTracesSampler() {
     if (internalTracesSampler == null) {
-      synchronized (this) {
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
         if (internalTracesSampler == null) {
           internalTracesSampler = new TracesSampler(this);
         }

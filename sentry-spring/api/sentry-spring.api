@@ -49,6 +49,7 @@ public class io/sentry/spring/SentryRequestHttpServletRequestProcessor : io/sent
 }
 
 public class io/sentry/spring/SentryRequestResolver {
+	protected static final field staticLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun resolveSentryRequest (Ljavax/servlet/http/HttpServletRequest;)Lio/sentry/protocol/Request;
 }

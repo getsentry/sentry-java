@@ -7,10 +7,12 @@ import android.content.Context;
 import android.telephony.TelephonyManager;
 import io.sentry.Breadcrumb;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.Permissions;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -25,7 +27,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   @TestOnly @Nullable PhoneStateChangeListener listener;
   private @Nullable TelephonyManager telephonyManager;
   private boolean isClosed = false;
-  private final @NotNull Object startLock = new Object();
+  private final @NotNull AutoClosableReentrantLock startLock = new AutoClosableReentrantLock();
 
   public PhoneStateBreadcrumbsIntegration(final @NotNull Context context) {
     this.context = Objects.requireNonNull(context, "Context is required");
@@ -53,7 +55,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
             .getExecutorService()
             .submit(
                 () -> {
-                  synchronized (startLock) {
+                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
                     if (!isClosed) {
                       startTelephonyListener(scopes, options);
                     }
@@ -94,7 +96,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   @SuppressWarnings("deprecation")
   @Override
   public void close() throws IOException {
-    synchronized (startLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
       isClosed = true;
     }
     if (telephonyManager != null && listener != null) {

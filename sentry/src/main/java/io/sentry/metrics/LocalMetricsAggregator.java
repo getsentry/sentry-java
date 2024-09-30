@@ -1,7 +1,9 @@
 package io.sentry.metrics;
 
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.MeasurementUnit;
 import io.sentry.protocol.MetricSummary;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +23,7 @@ public final class LocalMetricsAggregator {
 
   // format: <export key, <metric key, gauge>>
   private final @NotNull Map<String, Map<String, GaugeMetric>> buckets = new HashMap<>();
+  private final @NotNull AutoClosableReentrantLock bucketsLock = new AutoClosableReentrantLock();
 
   public void add(
       final @NotNull String bucketKey,
@@ -32,7 +35,7 @@ public final class LocalMetricsAggregator {
 
     final @NotNull String exportKey = MetricsHelper.getExportKey(type, key, unit);
 
-    synchronized (buckets) {
+    try (final @NotNull ISentryLifecycleToken ignored = bucketsLock.acquire()) {
       @Nullable Map<String, GaugeMetric> bucket = buckets.get(exportKey);
       //noinspection Java8MapApi
       if (bucket == null) {
@@ -53,7 +56,7 @@ public final class LocalMetricsAggregator {
   @NotNull
   public Map<String, List<MetricSummary>> getSummaries() {
     final @NotNull Map<String, List<MetricSummary>> summaries = new HashMap<>();
-    synchronized (buckets) {
+    try (final @NotNull ISentryLifecycleToken ignored = bucketsLock.acquire()) {
       for (final @NotNull Map.Entry<String, Map<String, GaugeMetric>> entry : buckets.entrySet()) {
         final @NotNull String exportKey = Objects.requireNonNull(entry.getKey());
         final @NotNull List<MetricSummary> metricSummaries = new ArrayList<>();
