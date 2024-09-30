@@ -20,7 +20,7 @@ import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
-import io.sentry.util.thread.NoOpMainThreadChecker
+import io.sentry.util.thread.NoOpThreadChecker
 import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.Test
@@ -50,7 +50,7 @@ class ReplayIntegrationWithRecorderTest {
 
     internal class Fixture {
         val options = SentryOptions().apply {
-            mainThreadChecker = NoOpMainThreadChecker.getInstance()
+            threadChecker = NoOpThreadChecker.getInstance()
         }
         val scopes = mock<IScopes>()
 

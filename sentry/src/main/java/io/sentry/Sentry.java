@@ -21,9 +21,9 @@ import io.sentry.util.FileUtils;
 import io.sentry.util.InitUtil;
 import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
-import io.sentry.util.thread.IMainThreadChecker;
-import io.sentry.util.thread.MainThreadChecker;
-import io.sentry.util.thread.NoOpMainThreadChecker;
+import io.sentry.util.thread.IThreadChecker;
+import io.sentry.util.thread.NoOpThreadChecker;
+import io.sentry.util.thread.ThreadChecker;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -546,10 +546,10 @@ public final class Sentry {
     final @Nullable List<Properties> propertiesList = options.getDebugMetaLoader().loadDebugMeta();
     DebugMetaPropertiesApplier.applyToOptions(options, propertiesList);
 
-    final IMainThreadChecker mainThreadChecker = options.getMainThreadChecker();
-    // only override the MainThreadChecker if it's not already set by Android
-    if (mainThreadChecker instanceof NoOpMainThreadChecker) {
-      options.setMainThreadChecker(MainThreadChecker.getInstance());
+    final IThreadChecker threadChecker = options.getThreadChecker();
+    // only override the ThreadChecker if it's not already set by Android
+    if (threadChecker instanceof NoOpThreadChecker) {
+      options.setThreadChecker(ThreadChecker.getInstance());
     }
 
     if (options.getPerformanceCollectors().isEmpty()) {

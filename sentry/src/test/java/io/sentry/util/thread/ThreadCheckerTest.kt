@@ -5,25 +5,25 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class MainThreadCheckerTest {
+class ThreadCheckerTest {
 
-    private val mainThreadChecker = MainThreadChecker.getInstance()
+    private val threadChecker = ThreadChecker.getInstance()
 
     @Test
     fun `When calling isMainThread from the same thread, it should return true`() {
-        assertTrue(mainThreadChecker.isMainThread)
+        assertTrue(threadChecker.isMainThread)
     }
 
     @Test
     fun `When calling isMainThread with the current thread, it should return true`() {
         val thread = Thread.currentThread()
-        assertTrue(mainThreadChecker.isMainThread(thread))
+        assertTrue(threadChecker.isMainThread(thread))
     }
 
     @Test
     fun `When calling isMainThread from a different thread, it should return false`() {
         val thread = Thread()
-        assertFalse(mainThreadChecker.isMainThread(thread))
+        assertFalse(threadChecker.isMainThread(thread))
     }
 
     @Test
@@ -32,7 +32,7 @@ class MainThreadCheckerTest {
         val sentryThread = SentryThread().apply {
             id = thread.id
         }
-        assertTrue(mainThreadChecker.isMainThread(sentryThread))
+        assertTrue(threadChecker.isMainThread(sentryThread))
     }
 
     @Test
@@ -41,6 +41,6 @@ class MainThreadCheckerTest {
         val sentryThread = SentryThread().apply {
             id = thread.id
         }
-        assertFalse(mainThreadChecker.isMainThread(sentryThread))
+        assertFalse(threadChecker.isMainThread(sentryThread))
     }
 }
