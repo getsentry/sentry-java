@@ -5,6 +5,7 @@ import android.content.ContentProvider
 import android.os.Build
 import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.IContinuousProfiler
 import io.sentry.ITransactionProfiler
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
@@ -56,7 +57,8 @@ class AppStartMetricsTest {
         metrics.addActivityLifecycleTimeSpans(ActivityLifecycleTimeSpan())
         AppStartMetrics.onApplicationCreate(mock<Application>())
         AppStartMetrics.onContentProviderCreate(mock<ContentProvider>())
-        metrics.setAppStartProfiler(mock())
+        metrics.appStartProfiler = mock()
+        metrics.appStartContinuousProfiler = mock()
         metrics.appStartSamplingDecision = mock()
 
         metrics.clear()
@@ -69,6 +71,7 @@ class AppStartMetricsTest {
         assertTrue(metrics.activityLifecycleTimeSpans.isEmpty())
         assertTrue(metrics.contentProviderOnCreateTimeSpans.isEmpty())
         assertNull(metrics.appStartProfiler)
+        assertNull(metrics.appStartContinuousProfiler)
         assertNull(metrics.appStartSamplingDecision)
     }
 
@@ -197,10 +200,37 @@ class AppStartMetricsTest {
     }
 
     @Test
+    fun `if activity is never started, stops app start continuous profiler if running`() {
+        val profiler = mock<IContinuousProfiler>()
+        whenever(profiler.isRunning).thenReturn(true)
+        AppStartMetrics.getInstance().appStartContinuousProfiler = profiler
+
+        AppStartMetrics.getInstance().registerApplicationForegroundCheck(mock())
+        // Job on main thread checks if activity was launched
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        verify(profiler).close()
+    }
+
+    @Test
     fun `if activity is started, does not stop app start profiler if running`() {
         val profiler = mock<ITransactionProfiler>()
         whenever(profiler.isRunning).thenReturn(true)
         AppStartMetrics.getInstance().appStartProfiler = profiler
+        AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
+
+        AppStartMetrics.getInstance().registerApplicationForegroundCheck(mock())
+        // Job on main thread checks if activity was launched
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        verify(profiler, never()).close()
+    }
+
+    @Test
+    fun `if activity is started, does not stop app start continuous profiler if running`() {
+        val profiler = mock<IContinuousProfiler>()
+        whenever(profiler.isRunning).thenReturn(true)
+        AppStartMetrics.getInstance().appStartContinuousProfiler = profiler
         AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
 
         AppStartMetrics.getInstance().registerApplicationForegroundCheck(mock())
