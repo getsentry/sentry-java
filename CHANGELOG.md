@@ -49,6 +49,7 @@
   - Setting it to `null` would cause an exception.
   - Transactions are dropped if trace context is missing
 - Remove internal annotation on `SpanOptions` ([#3722](https://github.com/getsentry/sentry-java/pull/3722))
+- `SentryLogbackInitializer` is now public ([#3723](https://github.com/getsentry/sentry-java/pull/3723))
 
 ### Behavioural Changes
 
