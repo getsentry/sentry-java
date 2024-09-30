@@ -1732,6 +1732,17 @@ public class SentryOptions {
   }
 
   /**
+   * Returns if continuous profiling is enabled. This means that no profile sample rate has been
+   * set.
+   *
+   * @return if continuous profiling is enabled.
+   */
+  @ApiStatus.Internal
+  public boolean isContinuousProfilingEnabled() {
+    return getProfilesSampleRate() == null && getProfilesSampler() == null;
+  }
+
+  /**
    * Sets whether profiling is enabled for transactions.
    *
    * @deprecated use {{@link SentryOptions#setProfilesSampleRate(Double)} }
