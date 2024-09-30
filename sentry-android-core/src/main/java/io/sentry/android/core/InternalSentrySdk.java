@@ -196,7 +196,7 @@ public final class InternalSentrySdk {
         deleteCurrentSessionFile(
             options,
             // should be sync if going to crash or already not a main thread
-            !maybeStartNewSession || !scopes.getOptions().getMainThreadChecker().isMainThread());
+            !maybeStartNewSession || !scopes.getOptions().getThreadChecker().isMainThread());
         if (maybeStartNewSession) {
           scopes.startSession();
         }

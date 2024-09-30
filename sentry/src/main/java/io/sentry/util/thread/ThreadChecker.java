@@ -12,16 +12,16 @@ import org.jetbrains.annotations.NotNull;
  * <p>We're gonna educate people through the docs.
  */
 @ApiStatus.Internal
-public final class MainThreadChecker implements IMainThreadChecker {
+public final class ThreadChecker implements IThreadChecker {
 
   private static final long mainThreadId = Thread.currentThread().getId();
-  private static final MainThreadChecker instance = new MainThreadChecker();
+  private static final ThreadChecker instance = new ThreadChecker();
 
-  public static MainThreadChecker getInstance() {
+  public static ThreadChecker getInstance() {
     return instance;
   }
 
-  private MainThreadChecker() {}
+  private ThreadChecker() {}
 
   @Override
   public boolean isMainThread(long threadId) {
@@ -42,5 +42,10 @@ public final class MainThreadChecker implements IMainThreadChecker {
   public boolean isMainThread(final @NotNull SentryThread sentryThread) {
     final Long threadId = sentryThread.getId();
     return threadId != null && isMainThread(threadId);
+  }
+
+  @Override
+  public long currentThreadSystemId() {
+    return Thread.currentThread().getId();
   }
 }

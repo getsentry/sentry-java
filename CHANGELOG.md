@@ -43,6 +43,10 @@
 - Honor ignored span origins in `SentryTracer.startChild` ([#3704](https://github.com/getsentry/sentry-java/pull/3704))
 - Add `enable-spotlight` and `spotlight-connection-url` to external options and check if spotlight is enabled when deciding whether to inspect an OpenTelemetry span for connecting to splotlight ([#3709](https://github.com/getsentry/sentry-java/pull/3709))
 
+### Behavioural Changes
+
+- (Android) Replace thread id with kernel thread id in span data ([#3706](https://github.com/getsentry/sentry-java/pull/3706))
+
 ### Dependencies
 
 - Bump OpenTelemetry to 1.41.0, OpenTelemetry Java Agent to 2.7.0 and Semantic Conventions to 1.25.0 ([#3668](https://github.com/getsentry/sentry-java/pull/3668))

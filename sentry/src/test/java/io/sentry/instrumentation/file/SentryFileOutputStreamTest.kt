@@ -7,7 +7,7 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryStackFrame
-import io.sentry.util.thread.MainThreadChecker
+import io.sentry.util.thread.ThreadChecker
 import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -34,7 +34,7 @@ class SentryFileOutputStreamTest {
         ): SentryFileOutputStream {
             whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
-                    mainThreadChecker = MainThreadChecker.getInstance()
+                    threadChecker = ThreadChecker.getInstance()
                     addInAppInclude("org.junit")
                 }
             )
