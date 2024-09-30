@@ -273,11 +273,6 @@ public final class HubScopesWrapper implements IHub {
     return scopes.startTransaction(transactionContext, transactionOptions);
   }
 
-  @Override
-  public @Nullable SentryTraceHeader traceHeaders() {
-    return scopes.traceHeaders();
-  }
-
   @ApiStatus.Internal
   @Override
   public void setSpanContext(
