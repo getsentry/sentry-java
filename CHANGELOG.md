@@ -21,6 +21,7 @@
   - You may now set `forceInit=true` (`force-init` for `.properties` files) to ensure a call to Sentry.init / SentryAndroid.init takes effect
 - Add force init option to Android Manifest ([#3675](https://github.com/getsentry/sentry-java/pull/3675))
   - Use `<meta-data android:name="io.sentry.force-init" android:value="true" />` to ensure Sentry Android auto init is not easily overwritten
+- Emit transaction.data inside contexts.trace.data ([#3642](https://github.com/getsentry/sentry-java/pull/3642))
 
 ### Fixes
 
