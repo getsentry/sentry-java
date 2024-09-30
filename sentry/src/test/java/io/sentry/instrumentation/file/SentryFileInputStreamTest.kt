@@ -8,7 +8,7 @@ import io.sentry.SpanStatus
 import io.sentry.SpanStatus.INTERNAL_ERROR
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryStackFrame
-import io.sentry.util.thread.MainThreadChecker
+import io.sentry.util.thread.ThreadChecker
 import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -43,7 +43,7 @@ class SentryFileInputStreamTest {
             whenever(scopes.options).thenReturn(
                 options.apply {
                     isSendDefaultPii = sendDefaultPii
-                    mainThreadChecker = MainThreadChecker.getInstance()
+                    threadChecker = ThreadChecker.getInstance()
                     addInAppInclude("org.junit")
                 }
             )
