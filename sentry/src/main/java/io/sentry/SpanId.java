@@ -12,6 +12,7 @@ public final class SpanId implements JsonSerializable {
   private final @NotNull LazyEvaluator<String> lazyValue;
 
   public SpanId(final @NotNull String value) {
+		Objects.requireNonNull(value, "value is required")
     this.lazyValue = new LazyEvaluator<>(() -> value);
   }
 
