@@ -33,9 +33,9 @@ public final class SentryId implements JsonSerializable {
   public SentryId(final @NotNull String sentryIdString) {
     if (sentryIdString.length() != 32 && sentryIdString.length() != 36) {
       throw new IllegalArgumentException(
-        "String representation of SentryId has either 32 (UUID no dashes) "
-          + "or 36 characters long (completed UUID). Received: "
-          + sentryIdString);
+          "String representation of SentryId has either 32 (UUID no dashes) "
+              + "or 36 characters long (completed UUID). Received: "
+              + sentryIdString);
     }
     this.lazyValue =
         new LazyEvaluator<>(() -> fromStringSentryId(StringUtils.normalizeUUID(sentryIdString)));
