@@ -855,8 +855,6 @@ class JsonSerializerTest {
         assertNotNull(element["spans"] as List<*>)
         assertEquals("myValue", (element["tags"] as Map<*, *>)["myTag"] as String)
 
-        assertEquals("dataValue", (element["extra"] as Map<*, *>)["dataKey"] as String)
-
         val jsonSpan = (element["spans"] as List<*>)[0] as Map<*, *>
         assertNotNull(jsonSpan["trace_id"])
         assertNotNull(jsonSpan["span_id"])
@@ -867,6 +865,7 @@ class JsonSerializerTest {
         assertNotNull(jsonSpan["start_timestamp"])
 
         val jsonTrace = (element["contexts"] as Map<*, *>)["trace"] as Map<*, *>
+        assertEquals("dataValue", (jsonTrace["data"] as Map<*, *>)["dataKey"] as String)
         assertNotNull(jsonTrace["trace_id"] as String)
         assertNotNull(jsonTrace["span_id"] as String)
         assertEquals("http", jsonTrace["op"] as String)
