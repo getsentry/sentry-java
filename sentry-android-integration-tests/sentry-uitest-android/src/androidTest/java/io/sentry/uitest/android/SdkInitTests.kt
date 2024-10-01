@@ -179,14 +179,15 @@ class SdkInitTests : BaseUiTest() {
                             "com.saucelabs.rdcinjector.testfairy.TestFairyEventQueue",
                             "context"
                         )
-                    ),
-                    IgnoredReferenceMatcher(
-                        ReferencePattern.StaticFieldPattern(
-                            "com.testfairy.modules.capture.TouchListener",
-                            "k"
-                        )
+                    )
+                ) + ('a'..'z').map { char ->
+                IgnoredReferenceMatcher(
+                    ReferencePattern.StaticFieldPattern(
+                        "com.testfairy.modules.capture.TouchListener",
+                        "$char"
                     )
                 )
+            }
         )
 
         val activityScenario = launchActivity<ComposeActivity>()
