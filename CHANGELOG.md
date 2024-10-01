@@ -22,6 +22,7 @@
 - Add force init option to Android Manifest ([#3675](https://github.com/getsentry/sentry-java/pull/3675))
   - Use `<meta-data android:name="io.sentry.force-init" android:value="true" />` to ensure Sentry Android auto init is not easily overwritten
 - Emit transaction.data inside contexts.trace.data ([#3735](https://github.com/getsentry/sentry-java/pull/3735))
+  - Also does not emit `transaction.data` in `exras` anymore
 
 ### Fixes
 
