@@ -12,6 +12,7 @@ import io.sentry.IConnectionStatusProvider;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
+import io.sentry.android.core.ContextUtils;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -37,7 +38,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
       @NotNull Context context,
       @NotNull ILogger logger,
       @NotNull BuildInfoProvider buildInfoProvider) {
-    this.context = context;
+    this.context = ContextUtils.getApplicationContext(context);
     this.logger = logger;
     this.buildInfoProvider = buildInfoProvider;
     this.registeredCallbacks = new HashMap<>();

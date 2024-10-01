@@ -29,7 +29,8 @@ public final class AppComponentsBreadcrumbsIntegration
   private @Nullable SentryAndroidOptions options;
 
   public AppComponentsBreadcrumbsIntegration(final @NotNull Context context) {
-    this.context = Objects.requireNonNull(context, "Context is required");
+    this.context =
+        Objects.requireNonNull(ContextUtils.getApplicationContext(context), "Context is required");
   }
 
   @Override

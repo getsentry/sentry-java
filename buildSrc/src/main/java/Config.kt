@@ -53,7 +53,7 @@ object Config {
         val appCompat = "androidx.appcompat:appcompat:1.3.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
         val okhttp = "com.squareup.okhttp3:okhttp:$okHttpVersion"
-        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.8.1"
+        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.14"
         val constraintLayout = "androidx.constraintlayout:constraintlayout:2.1.3"
 
         private val lifecycleVersion = "2.2.0"
@@ -200,6 +200,7 @@ object Config {
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
         val javaFaker = "com.github.javafaker:javafaker:1.0.2"
         val msgpack = "org.msgpack:msgpack-core:0.9.8"
+        val leakCanaryInstrumentation = "com.squareup.leakcanary:leakcanary-android-instrumentation:2.14"
     }
 
     object QualityPlugins {

@@ -76,7 +76,7 @@ public final class DeviceInfoUtil {
     if (instance == null) {
       synchronized (DeviceInfoUtil.class) {
         if (instance == null) {
-          instance = new DeviceInfoUtil(context.getApplicationContext(), options);
+          instance = new DeviceInfoUtil(ContextUtils.getApplicationContext(context), options);
         }
       }
     }

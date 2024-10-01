@@ -34,7 +34,8 @@ public final class TempSensorBreadcrumbsIntegration
   private final @NotNull Object startLock = new Object();
 
   public TempSensorBreadcrumbsIntegration(final @NotNull Context context) {
-    this.context = Objects.requireNonNull(context, "Context is required");
+    this.context =
+        Objects.requireNonNull(ContextUtils.getApplicationContext(context), "Context is required");
   }
 
   @Override

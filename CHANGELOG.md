@@ -5,6 +5,7 @@
 ### Features
 
 - Add support for `feedback` envelope header item type ([#3687](https://github.com/getsentry/sentry-java/pull/3687))
+- Add breadcrumb.origin field ([#3727](https://github.com/getsentry/sentry-java/pull/3727))
 
 ### Fixes
 
@@ -17,6 +18,7 @@
   - redact/ignore `View`s of a certain type by adding fully-qualified classname to one of the lists `options.experimental.sessionReplay.addRedactViewClass()` or `options.experimental.sessionReplay.addIgnoreViewClass()`. Note, that all of the view subclasses/subtypes will be redacted/ignored as well
     - For example, (this is already a default behavior) to redact all `TextView`s and their subclasses (`RadioButton`, `EditText`, etc.): `options.experimental.sessionReplay.addRedactViewClass("android.widget.TextView")`
     - If you're using code obfuscation, adjust your proguard-rules accordingly, so your custom view class name is not minified
+- Fix ensure Application Context is used even when SDK is initialized via Activity Context ([#3669](https://github.com/getsentry/sentry-java/pull/3669))
 
 *Breaking changes*:
 

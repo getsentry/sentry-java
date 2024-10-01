@@ -90,10 +90,7 @@ final class AndroidOptionsInitializer {
       final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The context is required.");
 
-    // it returns null if ContextImpl, so let's check for nullability
-    if (context.getApplicationContext() != null) {
-      context = context.getApplicationContext();
-    }
+    context = ContextUtils.getApplicationContext(context);
 
     Objects.requireNonNull(options, "The options object is required.");
     Objects.requireNonNull(logger, "The ILogger object is required.");
