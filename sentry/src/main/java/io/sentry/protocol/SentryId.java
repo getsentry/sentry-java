@@ -5,6 +5,7 @@ import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.StringUtils;
 import java.io.IOException;
 import java.util.UUID;
@@ -12,28 +13,37 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryId implements JsonSerializable {
-  private final @NotNull UUID uuid;
 
   public static final SentryId EMPTY_ID = new SentryId(new UUID(0, 0));
+
+  private final @NotNull LazyEvaluator<UUID> lazyValue;
 
   public SentryId() {
     this((UUID) null);
   }
 
   public SentryId(@Nullable UUID uuid) {
-    if (uuid == null) {
-      uuid = UUID.randomUUID();
+    if (uuid != null) {
+      this.lazyValue = new LazyEvaluator<>(() -> uuid);
+    } else {
+      this.lazyValue = new LazyEvaluator<>(UUID::randomUUID);
     }
-    this.uuid = uuid;
   }
 
   public SentryId(final @NotNull String sentryIdString) {
-    this.uuid = fromStringSentryId(StringUtils.normalizeUUID(sentryIdString));
+    if (sentryIdString.length() != 32 && sentryIdString.length() != 36) {
+      throw new IllegalArgumentException(
+        "String representation of SentryId has either 32 (UUID no dashes) "
+          + "or 36 characters long (completed UUID). Received: "
+          + sentryIdString);
+    }
+    this.lazyValue =
+        new LazyEvaluator<>(() -> fromStringSentryId(StringUtils.normalizeUUID(sentryIdString)));
   }
 
   @Override
   public String toString() {
-    return StringUtils.normalizeUUID(uuid.toString()).replace("-", "");
+    return StringUtils.normalizeUUID(lazyValue.getValue().toString()).replace("-", "");
   }
 
   @Override
@@ -41,12 +51,12 @@ public final class SentryId implements JsonSerializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SentryId sentryId = (SentryId) o;
-    return uuid.compareTo(sentryId.uuid) == 0;
+    return lazyValue.getValue().compareTo(sentryId.lazyValue.getValue()) == 0;
   }
 
   @Override
   public int hashCode() {
-    return uuid.hashCode();
+    return lazyValue.getValue().hashCode();
   }
 
   private @NotNull UUID fromStringSentryId(@NotNull String sentryIdString) {
@@ -59,12 +69,6 @@ public final class SentryId implements JsonSerializable {
               .insert(18, "-")
               .insert(23, "-")
               .toString();
-    }
-    if (sentryIdString.length() != 36) {
-      throw new IllegalArgumentException(
-          "String representation of SentryId has either 32 (UUID no dashes) "
-              + "or 36 characters long (completed UUID). Received: "
-              + sentryIdString);
     }
 
     return UUID.fromString(sentryIdString);
