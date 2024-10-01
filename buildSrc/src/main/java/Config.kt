@@ -148,8 +148,7 @@ object Config {
         val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
         val composeUi = "androidx.compose.ui:ui:$composeVersion"
 
-        // Note: don't change without testing forwards compatibility
-        val composeUiReplay = "androidx.compose.ui:ui:1.5.0"
+        val composeUiReplay = "androidx.compose.ui:ui:1.5.0" // Note: don't change without testing forwards compatibility
         val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
         val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
         val composeCoil = "io.coil-kt:coil-compose:2.6.0"

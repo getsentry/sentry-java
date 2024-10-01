@@ -39,14 +39,14 @@ class RedactionOptionsTest {
 
     @Test
     fun `when redactAllText is set all TextView nodes are redacted`() {
-        buildActivity(ExampleActivity::class.java).setup()
+        buildActivity(RedactionOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.redactAllText = true
         }
 
-        val textNode = ViewHierarchyNode.fromView(ExampleActivity.textView!!, null, 0, options)
-        val radioButtonNode = ViewHierarchyNode.fromView(ExampleActivity.radioButton!!, null, 0, options)
+        val textNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.textView!!, null, 0, options)
+        val radioButtonNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.radioButton!!, null, 0, options)
 
         assertTrue(textNode is TextViewHierarchyNode)
         assertTrue(textNode.shouldRedact)
@@ -57,14 +57,14 @@ class RedactionOptionsTest {
 
     @Test
     fun `when redactAllText is set to false all TextView nodes are ignored`() {
-        buildActivity(ExampleActivity::class.java).setup()
+        buildActivity(RedactionOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.redactAllText = false
         }
 
-        val textNode = ViewHierarchyNode.fromView(ExampleActivity.textView!!, null, 0, options)
-        val radioButtonNode = ViewHierarchyNode.fromView(ExampleActivity.radioButton!!, null, 0, options)
+        val textNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.textView!!, null, 0, options)
+        val radioButtonNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.radioButton!!, null, 0, options)
 
         assertTrue(textNode is TextViewHierarchyNode)
         assertFalse(textNode.shouldRedact)
@@ -75,13 +75,13 @@ class RedactionOptionsTest {
 
     @Test
     fun `when redactAllImages is set all ImageView nodes are redacted`() {
-        buildActivity(ExampleActivity::class.java).setup()
+        buildActivity(RedactionOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.redactAllImages = true
         }
 
-        val imageNode = ViewHierarchyNode.fromView(ExampleActivity.imageView!!, null, 0, options)
+        val imageNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.imageView!!, null, 0, options)
 
         assertTrue(imageNode is ImageViewHierarchyNode)
         assertTrue(imageNode.shouldRedact)
@@ -89,13 +89,13 @@ class RedactionOptionsTest {
 
     @Test
     fun `when redactAllImages is set to false all ImageView nodes are ignored`() {
-        buildActivity(ExampleActivity::class.java).setup()
+        buildActivity(RedactionOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.redactAllImages = false
         }
 
-        val imageNode = ViewHierarchyNode.fromView(ExampleActivity.imageView!!, null, 0, options)
+        val imageNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.imageView!!, null, 0, options)
 
         assertTrue(imageNode is ImageViewHierarchyNode)
         assertFalse(imageNode.shouldRedact)
@@ -103,98 +103,98 @@ class RedactionOptionsTest {
 
     @Test
     fun `when sentry-redact tag is set redacts the view`() {
-        buildActivity(ExampleActivity::class.java).setup()
+        buildActivity(RedactionOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.redactAllText = false
         }
 
-        ExampleActivity.textView!!.tag = "sentry-redact"
-        val textNode = ViewHierarchyNode.fromView(ExampleActivity.textView!!, null, 0, options)
+        RedactionOptionsActivity.textView!!.tag = "sentry-redact"
+        val textNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.textView!!, null, 0, options)
 
         assertTrue(textNode.shouldRedact)
     }
 
     @Test
     fun `when sentry-ignore tag is set ignores the view`() {
-        buildActivity(ExampleActivity::class.java).setup()
+        buildActivity(RedactionOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.redactAllText = true
         }
 
-        ExampleActivity.textView!!.tag = "sentry-ignore"
-        val textNode = ViewHierarchyNode.fromView(ExampleActivity.textView!!, null, 0, options)
+        RedactionOptionsActivity.textView!!.tag = "sentry-ignore"
+        val textNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.textView!!, null, 0, options)
 
         assertFalse(textNode.shouldRedact)
     }
 
     @Test
     fun `when sentry-privacy tag is set to redact redacts the view`() {
-        buildActivity(ExampleActivity::class.java).setup()
+        buildActivity(RedactionOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.redactAllText = false
         }
 
-        ExampleActivity.textView!!.sentryReplayRedact()
-        val textNode = ViewHierarchyNode.fromView(ExampleActivity.textView!!, null, 0, options)
+        RedactionOptionsActivity.textView!!.sentryReplayRedact()
+        val textNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.textView!!, null, 0, options)
 
         assertTrue(textNode.shouldRedact)
     }
 
     @Test
     fun `when sentry-privacy tag is set to ignore ignores the view`() {
-        buildActivity(ExampleActivity::class.java).setup()
+        buildActivity(RedactionOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.redactAllText = true
         }
 
-        ExampleActivity.textView!!.sentryReplayIgnore()
-        val textNode = ViewHierarchyNode.fromView(ExampleActivity.textView!!, null, 0, options)
+        RedactionOptionsActivity.textView!!.sentryReplayIgnore()
+        val textNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.textView!!, null, 0, options)
 
         assertFalse(textNode.shouldRedact)
     }
 
     @Test
     fun `when view is not visible, does not redact the view`() {
-        buildActivity(ExampleActivity::class.java).setup()
+        buildActivity(RedactionOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.redactAllText = true
         }
 
-        ExampleActivity.textView!!.visibility = View.GONE
-        val textNode = ViewHierarchyNode.fromView(ExampleActivity.textView!!, null, 0, options)
+        RedactionOptionsActivity.textView!!.visibility = View.GONE
+        val textNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.textView!!, null, 0, options)
 
         assertFalse(textNode.shouldRedact)
     }
 
     @Test
     fun `when added to redact list redacts custom view`() {
-        buildActivity(ExampleActivity::class.java).setup()
+        buildActivity(RedactionOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.redactViewClasses.add(CustomView::class.java.canonicalName)
         }
 
-        val customViewNode = ViewHierarchyNode.fromView(ExampleActivity.customView!!, null, 0, options)
+        val customViewNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.customView!!, null, 0, options)
 
         assertTrue(customViewNode.shouldRedact)
     }
 
     @Test
     fun `when subclass is added to ignored classes ignores all instances of that class`() {
-        buildActivity(ExampleActivity::class.java).setup()
+        buildActivity(RedactionOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.redactAllText = true // all TextView subclasses
             experimental.sessionReplay.ignoreViewClasses.add(RadioButton::class.java.canonicalName)
         }
 
-        val textNode = ViewHierarchyNode.fromView(ExampleActivity.textView!!, null, 0, options)
-        val radioButtonNode = ViewHierarchyNode.fromView(ExampleActivity.radioButton!!, null, 0, options)
+        val textNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.textView!!, null, 0, options)
+        val radioButtonNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.radioButton!!, null, 0, options)
 
         assertTrue(textNode.shouldRedact)
         assertFalse(radioButtonNode.shouldRedact)
@@ -202,15 +202,15 @@ class RedactionOptionsTest {
 
     @Test
     fun `when a container view is ignored its children are not ignored`() {
-        buildActivity(ExampleActivity::class.java).setup()
+        buildActivity(RedactionOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.ignoreViewClasses.add(LinearLayout::class.java.canonicalName)
         }
 
-        val linearLayoutNode = ViewHierarchyNode.fromView(ExampleActivity.textView!!.parent as LinearLayout, null, 0, options)
-        val textNode = ViewHierarchyNode.fromView(ExampleActivity.textView!!, null, 0, options)
-        val imageNode = ViewHierarchyNode.fromView(ExampleActivity.imageView!!, null, 0, options)
+        val linearLayoutNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.textView!!.parent as LinearLayout, null, 0, options)
+        val textNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.textView!!, null, 0, options)
+        val imageNode = ViewHierarchyNode.fromView(RedactionOptionsActivity.imageView!!, null, 0, options)
 
         assertFalse(linearLayoutNode.shouldRedact)
         assertTrue(textNode.shouldRedact)
@@ -226,7 +226,7 @@ private class CustomView(context: Context) : View(context) {
     }
 }
 
-private class ExampleActivity : Activity() {
+private class RedactionOptionsActivity : Activity() {
 
     companion object {
         var textView: TextView? = null

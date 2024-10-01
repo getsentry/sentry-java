@@ -15,7 +15,6 @@ import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.view.PixelCopy
 import android.view.View
-import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.WindowManager
 import io.sentry.SentryLevel.DEBUG
@@ -27,7 +26,7 @@ import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.getVisibleRects
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
-import io.sentry.android.replay.viewhierarchy.ComposeViewHierarchyNode
+import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
@@ -123,7 +122,7 @@ internal class ScreenshotRecorder(
                         }
 
                         val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
-                        root.traverse(viewHierarchy)
+                        root.traverse(viewHierarchy, options)
 
                         recorder.submitSafely(options, "screenshot_recorder.redact") {
                             val canvas = Canvas(bitmap)
@@ -252,34 +251,6 @@ internal class ScreenshotRecorder(
         )
         // get the pixel color (= dominant color)
         return singlePixelBitmap.getPixel(0, 0)
-    }
-
-    private fun View.traverse(parentNode: ViewHierarchyNode) {
-        if (this !is ViewGroup) {
-            return
-        }
-
-        if (ComposeViewHierarchyNode.fromView(this, parentNode, options)) {
-            // if it's a compose view, we can skip the children as they are already traversed in
-            // the ComposeViewHierarchyNode.fromView method
-            return
-        }
-
-        if (this.childCount == 0) {
-            return
-        }
-
-        val childNodes = ArrayList<ViewHierarchyNode>(this.childCount)
-        for (i in 0 until childCount) {
-            val child = getChildAt(i)
-            if (child != null) {
-                val childNode =
-                    ViewHierarchyNode.fromView(child, parentNode, indexOfChild(child), options)
-                childNodes.add(childNode)
-                child.traverse(childNode)
-            }
-        }
-        parentNode.children = childNodes
     }
 
     private class RecorderExecutorServiceThreadFactory : ThreadFactory {

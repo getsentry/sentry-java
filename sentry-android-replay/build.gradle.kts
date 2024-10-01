@@ -26,6 +26,14 @@ android {
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
     }
 
+    buildFeatures {
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
+    }
+
     buildTypes {
         getByName("debug")
         getByName("release") {
@@ -81,7 +89,6 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
-    testImplementation("androidx.compose.ui:ui-test-junit4:1.5.0")
     testImplementation(Config.Libs.composeActivity)
     testImplementation(Config.Libs.composeUi)
     testImplementation(Config.Libs.composeCoil)

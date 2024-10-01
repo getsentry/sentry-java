@@ -7,11 +7,13 @@ public final class io/sentry/android/replay/BuildConfig {
 }
 
 public class io/sentry/android/replay/DefaultReplayBreadcrumbConverter : io/sentry/ReplayBreadcrumbConverter {
+	public static final field $stable I
 	public fun <init> ()V
 	public fun convert (Lio/sentry/Breadcrumb;)Lio/sentry/rrweb/RRWebEvent;
 }
 
 public final class io/sentry/android/replay/GeneratedVideo {
+	public static final field $stable I
 	public fun <init> (Ljava/io/File;IJ)V
 	public final fun component1 ()Ljava/io/File;
 	public final fun component2 ()I
@@ -39,6 +41,7 @@ public abstract interface class io/sentry/android/replay/Recorder : java/io/Clos
 }
 
 public final class io/sentry/android/replay/ReplayCache : java/io/Closeable {
+	public static final field $stable I
 	public static final field Companion Lio/sentry/android/replay/ReplayCache$Companion;
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/protocol/SentryId;Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
 	public final fun addFrame (Ljava/io/File;JLjava/lang/String;)V
@@ -55,6 +58,7 @@ public final class io/sentry/android/replay/ReplayCache$Companion {
 }
 
 public final class io/sentry/android/replay/ReplayIntegration : android/content/ComponentCallbacks, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, io/sentry/android/replay/gestures/TouchRecorderCallback, java/io/Closeable {
+	public static final field $stable I
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	public synthetic fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -83,6 +87,7 @@ public abstract interface class io/sentry/android/replay/ScreenshotRecorderCallb
 }
 
 public final class io/sentry/android/replay/ScreenshotRecorderConfig {
+	public static final field $stable I
 	public static final field Companion Lio/sentry/android/replay/ScreenshotRecorderConfig$Companion;
 	public fun <init> (IIFFII)V
 	public final fun component1 ()I
@@ -109,6 +114,7 @@ public final class io/sentry/android/replay/ScreenshotRecorderConfig$Companion {
 }
 
 public final class io/sentry/android/replay/SentryReplayModifiers {
+	public static final field $stable I
 	public static final field INSTANCE Lio/sentry/android/replay/SentryReplayModifiers;
 	public final fun getSentryPrivacy ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
 }
@@ -126,12 +132,14 @@ public final class io/sentry/android/replay/ViewExtensionsKt {
 }
 
 public final class io/sentry/android/replay/gestures/GestureRecorder : io/sentry/android/replay/OnRootViewsChangedListener {
+	public static final field $stable I
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/android/replay/gestures/TouchRecorderCallback;)V
 	public fun onRootViewsChanged (Landroid/view/View;Z)V
 	public final fun stop ()V
 }
 
 public final class io/sentry/android/replay/gestures/ReplayGestureConverter {
+	public static final field $stable I
 	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;)V
 	public final fun convert (Landroid/view/MotionEvent;Lio/sentry/android/replay/ScreenshotRecorderConfig;)Ljava/util/List;
 }
@@ -141,6 +149,7 @@ public abstract interface class io/sentry/android/replay/gestures/TouchRecorderC
 }
 
 public final class io/sentry/android/replay/util/AndroidTextLayout : io/sentry/android/replay/util/TextLayout {
+	public static final field $stable I
 	public fun <init> (Landroid/text/Layout;)V
 	public fun getDominantTextColor ()Ljava/lang/Integer;
 	public fun getEllipsisCount (I)I
@@ -202,6 +211,7 @@ public abstract interface class io/sentry/android/replay/video/SimpleFrameMuxer 
 }
 
 public final class io/sentry/android/replay/video/SimpleMp4FrameMuxer : io/sentry/android/replay/video/SimpleFrameMuxer {
+	public static final field $stable I
 	public fun <init> (Ljava/lang/String;F)V
 	public fun getVideoTime ()J
 	public fun isStarted ()Z
@@ -211,6 +221,7 @@ public final class io/sentry/android/replay/video/SimpleMp4FrameMuxer : io/sentr
 }
 
 public abstract class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode {
+	public static final field $stable I
 	public static final field Companion Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode$Companion;
 	public synthetic fun <init> (FFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (FFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -238,16 +249,19 @@ public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode$Comp
 }
 
 public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode$GenericViewHierarchyNode : io/sentry/android/replay/viewhierarchy/ViewHierarchyNode {
+	public static final field $stable I
 	public fun <init> (FFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;)V
 	public synthetic fun <init> (FFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode$ImageViewHierarchyNode : io/sentry/android/replay/viewhierarchy/ViewHierarchyNode {
+	public static final field $stable I
 	public fun <init> (FFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;)V
 	public synthetic fun <init> (FFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
 public final class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode$TextViewHierarchyNode : io/sentry/android/replay/viewhierarchy/ViewHierarchyNode {
+	public static final field $stable I
 	public fun <init> (Lio/sentry/android/replay/util/TextLayout;Ljava/lang/Integer;IIFFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;)V
 	public synthetic fun <init> (Lio/sentry/android/replay/util/TextLayout;Ljava/lang/Integer;IIFFIIFILio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;ZZZLandroid/graphics/Rect;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getDominantColor ()Ljava/lang/Integer;

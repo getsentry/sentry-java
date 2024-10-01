@@ -16,8 +16,44 @@ import android.text.Layout
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.view.View
+import android.view.ViewGroup
 import android.widget.TextView
+import io.sentry.SentryOptions
+import io.sentry.android.replay.viewhierarchy.ComposeViewHierarchyNode
+import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import java.lang.NullPointerException
+
+/**
+ * Recursively traverses the view hierarchy and creates a [ViewHierarchyNode] for each view.
+ * Supports Compose view hierarchy as well.
+ */
+internal fun View.traverse(parentNode: ViewHierarchyNode, options: SentryOptions) {
+    if (this !is ViewGroup) {
+        return
+    }
+
+    if (ComposeViewHierarchyNode.fromView(this, parentNode, options)) {
+        // if it's a compose view, we can skip the children as they are already traversed in
+        // the ComposeViewHierarchyNode.fromView method
+        return
+    }
+
+    if (this.childCount == 0) {
+        return
+    }
+
+    val childNodes = ArrayList<ViewHierarchyNode>(this.childCount)
+    for (i in 0 until childCount) {
+        val child = getChildAt(i)
+        if (child != null) {
+            val childNode =
+                ViewHierarchyNode.fromView(child, parentNode, indexOfChild(child), options)
+            childNodes.add(childNode)
+            child.traverse(childNode, options)
+        }
+    }
+    parentNode.children = childNodes
+}
 
 /**
  * Adapted copy of AccessibilityNodeInfo from https://cs.android.com/android/platform/superproject/+/master:frameworks/base/core/java/android/view/View.java;l=10718
