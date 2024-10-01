@@ -40,3 +40,10 @@
 -dontwarn org.mockito.internal.**
 -dontwarn org.jetbrains.annotations.**
 -dontwarn io.sentry.android.replay.ReplayIntegration
+
+# As described here
+# https://docs.saucelabs.com/testfairy/sdk/android/integrating-android/#proguard-optional
+-keep class com.testfairy.** { *; }
+-dontwarn com.testfairy.**
+-keepattributes Exceptions, Signature, LineNumberTable
+-dontusemixedcaseclassnames
