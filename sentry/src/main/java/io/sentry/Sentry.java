@@ -235,7 +235,7 @@ public final class Sentry {
     Sentry.globalHubMode = globalHubMode;
 
     final IHub hub = getCurrentHub();
-    mainHub = new Hub(options);
+    mainHub = new TracingHub(new Hub(options));
 
     currentHub.set(mainHub);
 
