@@ -19,6 +19,20 @@ import org.jetbrains.annotations.TestOnly;
 public final class SentryInstrumentation
     extends graphql.execution.instrumentation.SimpleInstrumentation {
 
+  /**
+   * @deprecated please use {@link SentryGraphqlInstrumentation#SENTRY_SCOPES_CONTEXT_KEY}
+   */
+  @Deprecated
+  public static final @NotNull String SENTRY_SCOPES_CONTEXT_KEY =
+      SentryGraphqlInstrumentation.SENTRY_SCOPES_CONTEXT_KEY;
+
+  /**
+   * @deprecated please use {@link SentryGraphqlInstrumentation#SENTRY_EXCEPTIONS_CONTEXT_KEY}
+   */
+  @Deprecated
+  public static final @NotNull String SENTRY_EXCEPTIONS_CONTEXT_KEY =
+      SentryGraphqlInstrumentation.SENTRY_EXCEPTIONS_CONTEXT_KEY;
+
   private static final String TRACE_ORIGIN = "auto.graphql.graphql";
   private final @NotNull SentryGraphqlInstrumentation instrumentation;
 
@@ -129,4 +143,11 @@ public final class SentryInstrumentation
         parameters.getInstrumentationState();
     return instrumentation.instrumentDataFetcher(dataFetcher, parameters, tracingState);
   }
+
+  /**
+   * @deprecated please use {@link SentryGraphqlInstrumentation.BeforeSpanCallback}
+   */
+  @Deprecated
+  @FunctionalInterface
+  public interface BeforeSpanCallback extends SentryGraphqlInstrumentation.BeforeSpanCallback {}
 }
