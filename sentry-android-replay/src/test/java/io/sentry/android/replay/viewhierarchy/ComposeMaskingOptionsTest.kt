@@ -22,10 +22,10 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil.compose.AsyncImage
 import io.sentry.SentryOptions
-import io.sentry.android.replay.redactAllImages
-import io.sentry.android.replay.redactAllText
-import io.sentry.android.replay.sentryReplayIgnore
-import io.sentry.android.replay.sentryReplayRedact
+import io.sentry.android.replay.maskAllImages
+import io.sentry.android.replay.maskAllText
+import io.sentry.android.replay.sentryReplayMask
+import io.sentry.android.replay.sentryReplayUnmask
 import io.sentry.android.replay.util.ComposeTextLayout
 import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
@@ -43,132 +43,132 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
-class ComposeRedactionOptionsTest {
+class ComposeMaskingOptionsTest {
 
     @Before
     fun setup() {
         System.setProperty("robolectric.areWindowsMarkedVisible", "true")
-        ComposeRedactionOptionsActivity.textModifierApplier = null
-        ComposeRedactionOptionsActivity.containerModifierApplier = null
+        ComposeMaskingOptionsActivity.textModifierApplier = null
+        ComposeMaskingOptionsActivity.containerModifierApplier = null
     }
 
     @Test
-    fun `when redactAllText is set all Text nodes are redacted`() {
-        val activity = buildActivity(ComposeRedactionOptionsActivity::class.java).setup()
+    fun `when maskAllText is set all Text nodes are masked`() {
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.redactAllText = true
+            experimental.sessionReplay.maskAllText = true
         }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
-        assertTrue(textNodes.all { it.shouldRedact })
+        assertTrue(textNodes.all { it.shouldMask })
         // just a sanity check for parsing the tree
         assertEquals("Random repo", (textNodes[1].layout as ComposeTextLayout).layout.layoutInput.text.text)
     }
 
     @Test
-    fun `when redactAllText is set to false all Text nodes are ignored`() {
-        val activity = buildActivity(ComposeRedactionOptionsActivity::class.java).setup()
+    fun `when maskAllText is set to false all Text nodes are unmasked`() {
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.redactAllText = false
+            experimental.sessionReplay.maskAllText = false
         }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
-        assertTrue(textNodes.none { it.shouldRedact })
+        assertTrue(textNodes.none { it.shouldMask })
     }
 
     @Test
-    fun `when redactAllImages is set all Image nodes are redacted`() {
-        val activity = buildActivity(ComposeRedactionOptionsActivity::class.java).setup()
+    fun `when maskAllImages is set all Image nodes are masked`() {
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.redactAllImages = true
+            experimental.sessionReplay.maskAllImages = true
         }
 
         val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
         assertEquals(1, imageNodes.size) // [AsyncImage]
-        assertTrue(imageNodes.all { it.shouldRedact })
+        assertTrue(imageNodes.all { it.shouldMask })
     }
 
     @Test
-    fun `when redactAllImages is set to false all Image nodes are ignored`() {
-        val activity = buildActivity(ComposeRedactionOptionsActivity::class.java).setup()
+    fun `when maskAllImages is set to false all Image nodes are unmasked`() {
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.redactAllImages = false
+            experimental.sessionReplay.maskAllImages = false
         }
 
         val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
         assertEquals(1, imageNodes.size) // [AsyncImage]
-        assertTrue(imageNodes.none { it.shouldRedact })
+        assertTrue(imageNodes.none { it.shouldMask })
     }
 
     @Test
-    fun `when sentry-redact modifier is set redacts the node`() {
-        ComposeRedactionOptionsActivity.textModifierApplier = { Modifier.sentryReplayRedact() }
-        val activity = buildActivity(ComposeRedactionOptionsActivity::class.java).setup()
+    fun `when sentry-mask modifier is set masks the node`() {
+        ComposeMaskingOptionsActivity.textModifierApplier = { Modifier.sentryReplayMask() }
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.redactAllText = false
+            experimental.sessionReplay.maskAllText = false
         }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
         textNodes.forEach {
             if ((it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text == "Make Request") {
-                assertTrue(it.shouldRedact)
+                assertTrue(it.shouldMask)
             } else {
-                assertFalse(it.shouldRedact)
+                assertFalse(it.shouldMask)
             }
         }
     }
 
     @Test
-    fun `when sentry-ignore modifier is set ignores the node`() {
-        ComposeRedactionOptionsActivity.textModifierApplier = { Modifier.sentryReplayIgnore() }
-        val activity = buildActivity(ComposeRedactionOptionsActivity::class.java).setup()
+    fun `when sentry-unmask modifier is set unmasks the node`() {
+        ComposeMaskingOptionsActivity.textModifierApplier = { Modifier.sentryReplayUnmask() }
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.redactAllText = true
+            experimental.sessionReplay.maskAllText = true
         }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
         textNodes.forEach {
             if ((it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text == "Make Request") {
-                assertFalse(it.shouldRedact)
+                assertFalse(it.shouldMask)
             } else {
-                assertTrue(it.shouldRedact)
+                assertTrue(it.shouldMask)
             }
         }
     }
 
     @Test
-    fun `when view is not visible, does not redact the view`() {
-        ComposeRedactionOptionsActivity.textModifierApplier = { Modifier.semantics { invisibleToUser() } }
-        val activity = buildActivity(ComposeRedactionOptionsActivity::class.java).setup()
+    fun `when view is not visible, does not mask the view`() {
+        ComposeMaskingOptionsActivity.textModifierApplier = { Modifier.semantics { invisibleToUser() } }
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.redactAllText = true
+            experimental.sessionReplay.maskAllText = true
         }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         textNodes.forEach {
             if ((it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text == "Make Request") {
-                assertFalse(it.shouldRedact)
+                assertFalse(it.shouldMask)
             } else {
-                assertTrue(it.shouldRedact)
+                assertTrue(it.shouldMask)
             }
         }
     }
 
     @Test
-    fun `when a container view is ignored its children are not ignored`() {
-        ComposeRedactionOptionsActivity.containerModifierApplier = { Modifier.sentryReplayIgnore() }
-        val activity = buildActivity(ComposeRedactionOptionsActivity::class.java).setup()
+    fun `when a container view is unmasked its children are not unmasked`() {
+        ComposeMaskingOptionsActivity.containerModifierApplier = { Modifier.sentryReplayUnmask() }
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions()
 
@@ -176,9 +176,9 @@ class ComposeRedactionOptionsTest {
         val imageNodes = allNodes.filterIsInstance<ImageViewHierarchyNode>()
         val textNodes = allNodes.filterIsInstance<TextViewHierarchyNode>()
         val genericNodes = allNodes.filterIsInstance<GenericViewHierarchyNode>()
-        assertTrue(imageNodes.all { it.shouldRedact })
-        assertTrue(textNodes.all { it.shouldRedact })
-        assertTrue(genericNodes.none { it.shouldRedact })
+        assertTrue(imageNodes.all { it.shouldMask })
+        assertTrue(textNodes.all { it.shouldMask })
+        assertTrue(genericNodes.none { it.shouldMask })
     }
 
     private inline fun <reified T> Activity.collectNodesOfType(options: SentryOptions): List<T> {
@@ -197,7 +197,7 @@ class ComposeRedactionOptionsTest {
     }
 }
 
-private class ComposeRedactionOptionsActivity : ComponentActivity() {
+private class ComposeMaskingOptionsActivity : ComponentActivity() {
 
     companion object {
         var textModifierApplier: (() -> Modifier)? = null

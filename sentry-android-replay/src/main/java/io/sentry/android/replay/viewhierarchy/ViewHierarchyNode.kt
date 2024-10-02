@@ -9,7 +9,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.replay.R
 import io.sentry.android.replay.util.AndroidTextLayout
 import io.sentry.android.replay.util.TextLayout
-import io.sentry.android.replay.util.isRedactable
+import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.isVisibleToUser
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.totalPaddingTopSafe
@@ -25,7 +25,7 @@ sealed class ViewHierarchyNode(
     /* Distance to the parent (index) */
     val distance: Int,
     val parent: ViewHierarchyNode? = null,
-    val shouldRedact: Boolean = false,
+    val shouldMask: Boolean = false,
     /* Whether the node is important for content capture (=non-empty container) */
     var isImportantForContentCapture: Boolean = false,
     val isVisible: Boolean = false,
@@ -41,11 +41,11 @@ sealed class ViewHierarchyNode(
         elevation: Float,
         distance: Int,
         parent: ViewHierarchyNode? = null,
-        shouldRedact: Boolean = false,
+        shouldMask: Boolean = false,
         isImportantForContentCapture: Boolean = false,
         isVisible: Boolean = false,
         visibleRect: Rect? = null
-    ) : ViewHierarchyNode(x, y, width, height, elevation, distance, parent, shouldRedact, isImportantForContentCapture, isVisible, visibleRect)
+    ) : ViewHierarchyNode(x, y, width, height, elevation, distance, parent, shouldMask, isImportantForContentCapture, isVisible, visibleRect)
 
     class TextViewHierarchyNode(
         val layout: TextLayout? = null,
@@ -59,11 +59,11 @@ sealed class ViewHierarchyNode(
         elevation: Float,
         distance: Int,
         parent: ViewHierarchyNode? = null,
-        shouldRedact: Boolean = false,
+        shouldMask: Boolean = false,
         isImportantForContentCapture: Boolean = false,
         isVisible: Boolean = false,
         visibleRect: Rect? = null
-    ) : ViewHierarchyNode(x, y, width, height, elevation, distance, parent, shouldRedact, isImportantForContentCapture, isVisible, visibleRect)
+    ) : ViewHierarchyNode(x, y, width, height, elevation, distance, parent, shouldMask, isImportantForContentCapture, isVisible, visibleRect)
 
     class ImageViewHierarchyNode(
         x: Float,
@@ -73,11 +73,11 @@ sealed class ViewHierarchyNode(
         elevation: Float,
         distance: Int,
         parent: ViewHierarchyNode? = null,
-        shouldRedact: Boolean = false,
+        shouldMask: Boolean = false,
         isImportantForContentCapture: Boolean = false,
         isVisible: Boolean = false,
         visibleRect: Rect? = null
-    ) : ViewHierarchyNode(x, y, width, height, elevation, distance, parent, shouldRedact, isImportantForContentCapture, isVisible, visibleRect)
+    ) : ViewHierarchyNode(x, y, width, height, elevation, distance, parent, shouldMask, isImportantForContentCapture, isVisible, visibleRect)
 
     /**
      * Basically replicating this: https://developer.android.com/reference/android/view/View#isImportantForContentCapture()
@@ -233,8 +233,8 @@ sealed class ViewHierarchyNode(
     )
 
     companion object {
-        private const val SENTRY_IGNORE_TAG = "sentry-ignore"
-        private const val SENTRY_REDACT_TAG = "sentry-redact"
+        private const val SENTRY_UNMASK_TAG = "sentry-unmask"
+        private const val SENTRY_MASK_TAG = "sentry-mask"
 
         private fun Class<*>.isAssignableFrom(set: Set<String>): Boolean {
             var cls: Class<*>? = this
@@ -248,29 +248,29 @@ sealed class ViewHierarchyNode(
             return false
         }
 
-        private fun View.shouldRedact(options: SentryOptions): Boolean {
-            if ((tag as? String)?.lowercase()?.contains(SENTRY_IGNORE_TAG) == true ||
-                getTag(R.id.sentry_privacy) == "ignore"
+        private fun View.shouldMask(options: SentryOptions): Boolean {
+            if ((tag as? String)?.lowercase()?.contains(SENTRY_UNMASK_TAG) == true ||
+                getTag(R.id.sentry_privacy) == "unmask"
             ) {
                 return false
             }
 
-            if ((tag as? String)?.lowercase()?.contains(SENTRY_REDACT_TAG) == true ||
-                getTag(R.id.sentry_privacy) == "redact"
+            if ((tag as? String)?.lowercase()?.contains(SENTRY_MASK_TAG) == true ||
+                getTag(R.id.sentry_privacy) == "mask"
             ) {
                 return true
             }
 
-            if (this.javaClass.isAssignableFrom(options.experimental.sessionReplay.ignoreViewClasses)) {
+            if (this.javaClass.isAssignableFrom(options.experimental.sessionReplay.unmaskViewClasses)) {
                 return false
             }
 
-            return this.javaClass.isAssignableFrom(options.experimental.sessionReplay.redactViewClasses)
+            return this.javaClass.isAssignableFrom(options.experimental.sessionReplay.maskViewClasses)
         }
 
         fun fromView(view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryOptions): ViewHierarchyNode {
             val (isVisible, visibleRect) = view.isVisibleToUser()
-            val shouldRedact = isVisible && view.shouldRedact(options)
+            val shouldMask = isVisible && view.shouldMask(options)
             when (view) {
                 is TextView -> {
                     parent?.setImportantForCaptureToAncestors(true)
@@ -284,7 +284,7 @@ sealed class ViewHierarchyNode(
                         width = view.width,
                         height = view.height,
                         elevation = (parent?.elevation ?: 0f) + view.elevation,
-                        shouldRedact = shouldRedact,
+                        shouldMask = shouldMask,
                         distance = distance,
                         parent = parent,
                         isImportantForContentCapture = true,
@@ -305,7 +305,7 @@ sealed class ViewHierarchyNode(
                         parent = parent,
                         isVisible = isVisible,
                         isImportantForContentCapture = true,
-                        shouldRedact = shouldRedact && view.drawable?.isRedactable() == true,
+                        shouldMask = shouldMask && view.drawable?.isMaskable() == true,
                         visibleRect = visibleRect
                     )
                 }
@@ -319,7 +319,7 @@ sealed class ViewHierarchyNode(
                 (parent?.elevation ?: 0f) + view.elevation,
                 distance = distance,
                 parent = parent,
-                shouldRedact = shouldRedact,
+                shouldMask = shouldMask,
                 isImportantForContentCapture = false, /* will be set by children */
                 isVisible = isVisible,
                 visibleRect = visibleRect

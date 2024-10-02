@@ -36,7 +36,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import coil.compose.AsyncImage
-import io.sentry.android.replay.sentryReplayIgnore
+import io.sentry.android.replay.sentryReplayUnmask
 import io.sentry.compose.SentryTraced
 import io.sentry.compose.withSentryObservableEffect
 import io.sentry.samples.android.GithubAPI
@@ -145,7 +145,7 @@ fun Github(
                     .testTag("button_list_repos_async")
                     .padding(top = 32.dp)
             ) {
-                Text("Make Request", modifier = Modifier.sentryReplayIgnore())
+                Text("Make Request", modifier = Modifier.sentryReplayUnmask())
             }
         }
     }

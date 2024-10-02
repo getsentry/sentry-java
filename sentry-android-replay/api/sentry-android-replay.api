@@ -29,8 +29,8 @@ public final class io/sentry/android/replay/GeneratedVideo {
 }
 
 public final class io/sentry/android/replay/ModifierExtensionsKt {
-	public static final fun sentryReplayIgnore (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
-	public static final fun sentryReplayRedact (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
+	public static final fun sentryReplayMask (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
+	public static final fun sentryReplayUnmask (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
 }
 
 public abstract interface class io/sentry/android/replay/Recorder : java/io/Closeable {
@@ -120,15 +120,15 @@ public final class io/sentry/android/replay/SentryReplayModifiers {
 }
 
 public final class io/sentry/android/replay/SessionReplayOptionsKt {
-	public static final fun getRedactAllImages (Lio/sentry/SentryReplayOptions;)Z
-	public static final fun getRedactAllText (Lio/sentry/SentryReplayOptions;)Z
-	public static final fun setRedactAllImages (Lio/sentry/SentryReplayOptions;Z)V
-	public static final fun setRedactAllText (Lio/sentry/SentryReplayOptions;Z)V
+	public static final fun getMaskAllImages (Lio/sentry/SentryReplayOptions;)Z
+	public static final fun getMaskAllText (Lio/sentry/SentryReplayOptions;)Z
+	public static final fun setMaskAllImages (Lio/sentry/SentryReplayOptions;Z)V
+	public static final fun setMaskAllText (Lio/sentry/SentryReplayOptions;Z)V
 }
 
 public final class io/sentry/android/replay/ViewExtensionsKt {
-	public static final fun sentryReplayIgnore (Landroid/view/View;)V
-	public static final fun sentryReplayRedact (Landroid/view/View;)V
+	public static final fun sentryReplayMask (Landroid/view/View;)V
+	public static final fun sentryReplayUnmask (Landroid/view/View;)V
 }
 
 public final class io/sentry/android/replay/gestures/GestureRecorder : io/sentry/android/replay/OnRootViewsChangedListener {
@@ -230,7 +230,7 @@ public abstract class io/sentry/android/replay/viewhierarchy/ViewHierarchyNode {
 	public final fun getElevation ()F
 	public final fun getHeight ()I
 	public final fun getParent ()Lio/sentry/android/replay/viewhierarchy/ViewHierarchyNode;
-	public final fun getShouldRedact ()Z
+	public final fun getShouldMask ()Z
 	public final fun getVisibleRect ()Landroid/graphics/Rect;
 	public final fun getWidth ()I
 	public final fun getX ()F

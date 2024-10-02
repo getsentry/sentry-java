@@ -12,18 +12,18 @@ public object SentryReplayModifiers {
     )
 }
 
-public fun Modifier.sentryReplayRedact(): Modifier {
+public fun Modifier.sentryReplayMask(): Modifier {
     return semantics(
         properties = {
-            this[SentryPrivacy] = "redact"
+            this[SentryPrivacy] = "mask"
         }
     )
 }
 
-public fun Modifier.sentryReplayIgnore(): Modifier {
+public fun Modifier.sentryReplayUnmask(): Modifier {
     return semantics(
         properties = {
-            this[SentryPrivacy] = "ignore"
+            this[SentryPrivacy] = "unmask"
         }
     )
 }

@@ -6,15 +6,15 @@
 
 - Add support for `feedback` envelope header item type ([#3687](https://github.com/getsentry/sentry-java/pull/3687))
 - Add breadcrumb.origin field ([#3727](https://github.com/getsentry/sentry-java/pull/3727))
-- Session Replay: Add options to selectively redact/ignore views from being captured. The following options are available: ([#3689](https://github.com/getsentry/sentry-java/pull/3689))
-    - `android:tag="sentry-redact|sentry-ignore"` in XML or `view.setTag("sentry-redact|sentry-ignore")` in code tags
-        - if you already have a tag set for a view, you can set a tag by id: `<tag android:id="@id/sentry_privacy" android:value="redact|ignore"/>` in XML or `view.setTag(io.sentry.android.replay.R.id.sentry_privacy, "redact|ignore")` in code
-    - `view.sentryReplayRedact()` or `view.sentryReplayIgnore()` extension functions
-    - redact/ignore `View`s of a certain type by adding fully-qualified classname to one of the lists `options.experimental.sessionReplay.addRedactViewClass()` or `options.experimental.sessionReplay.addIgnoreViewClass()`. Note, that all of the view subclasses/subtypes will be redacted/ignored as well
-        - For example, (this is already a default behavior) to redact all `TextView`s and their subclasses (`RadioButton`, `EditText`, etc.): `options.experimental.sessionReplay.addRedactViewClass("android.widget.TextView")`
+- Session Replay: Add options to selectively mask/unmask views captured in replay. The following options are available: ([#3689](https://github.com/getsentry/sentry-java/pull/3689))
+    - `android:tag="sentry-mask|sentry-unmask"` in XML or `view.setTag("sentry-mask|sentry-unmask")` in code tags
+        - if you already have a tag set for a view, you can set a tag by id: `<tag android:id="@id/sentry_privacy" android:value="mask|unmask"/>` in XML or `view.setTag(io.sentry.android.replay.R.id.sentry_privacy, "mask|unmask")` in code
+    - `view.sentryReplayMask()` or `view.sentryReplayUnmask()` extension functions
+    - mask/unmask `View`s of a certain type by adding fully-qualified classname to one of the lists `options.experimental.sessionReplay.addMaskViewClass()` or `options.experimental.sessionReplay.addUnmaskViewClass()`. Note, that all of the view subclasses/subtypes will be masked/unmasked as well
+        - For example, (this is already a default behavior) to mask all `TextView`s and their subclasses (`RadioButton`, `EditText`, etc.): `options.experimental.sessionReplay.addMaskViewClass("android.widget.TextView")`
         - If you're using code obfuscation, adjust your proguard-rules accordingly, so your custom view class name is not minified
 - Session Replay: Support Jetpack Compose masking ([#3739](https://github.com/getsentry/sentry-java/pull/3739))
-  - To selectively mask/unmask @Composables, use `Modifier.sentryReplayRedact()` and `Modifier.sentryReplayIgnore()` modifiers
+  - To selectively mask/unmask @Composables, use `Modifier.sentryReplayMask()` and `Modifier.sentryReplayUnmask()` modifiers
 
 ### Fixes
 

@@ -21,7 +21,7 @@ import io.sentry.android.replay.SentryReplayModifiers
 import io.sentry.android.replay.util.ComposeTextLayout
 import io.sentry.android.replay.util.findPainter
 import io.sentry.android.replay.util.findTextAttributes
-import io.sentry.android.replay.util.isRedactable
+import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.toRect
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
@@ -44,22 +44,22 @@ internal object ComposeViewHierarchyNode {
         }
     }
 
-    private fun LayoutNode.shouldRedact(isImage: Boolean, options: SentryOptions): Boolean {
+    private fun LayoutNode.shouldMask(isImage: Boolean, options: SentryOptions): Boolean {
         val sentryPrivacyModifier = collapsedSemantics?.getOrNull(SentryReplayModifiers.SentryPrivacy)
-        if (sentryPrivacyModifier == "ignore") {
+        if (sentryPrivacyModifier == "unmask") {
             return false
         }
 
-        if (sentryPrivacyModifier == "redact") {
+        if (sentryPrivacyModifier == "mask") {
             return true
         }
 
         val className = getProxyClassName(isImage)
-        if (options.experimental.sessionReplay.ignoreViewClasses.contains(className)) {
+        if (options.experimental.sessionReplay.unmaskViewClasses.contains(className)) {
             return false
         }
 
-        return options.experimental.sessionReplay.redactViewClasses.contains(className)
+        return options.experimental.sessionReplay.maskViewClasses.contains(className)
     }
 
     private fun fromComposeNode(
@@ -82,7 +82,7 @@ internal object ComposeViewHierarchyNode {
         val positionInWindow = node.coordinates.positionInWindow()
         return when {
             semantics?.contains(SemanticsProperties.Text) == true || isEditable -> {
-                val shouldRedact = isVisible && node.shouldRedact(isImage = false, options)
+                val shouldMask = isVisible && node.shouldMask(isImage = false, options)
 
                 parent?.setImportantForCaptureToAncestors(true)
                 val textLayoutResults = mutableListOf<TextLayoutResult>()
@@ -107,7 +107,7 @@ internal object ComposeViewHierarchyNode {
                     elevation = (parent?.elevation ?: 0f),
                     distance = distance,
                     parent = parent,
-                    shouldRedact = shouldRedact,
+                    shouldMask = shouldMask,
                     isImportantForContentCapture = true,
                     isVisible = isVisible,
                     visibleRect = visibleRect
@@ -116,7 +116,7 @@ internal object ComposeViewHierarchyNode {
             else -> {
                 val painter = node.findPainter()
                 if (painter != null) {
-                    val shouldRedact = isVisible && node.shouldRedact(isImage = true, options)
+                    val shouldMask = isVisible && node.shouldMask(isImage = true, options)
 
                     parent?.setImportantForCaptureToAncestors(true)
                     ImageViewHierarchyNode(
@@ -129,11 +129,11 @@ internal object ComposeViewHierarchyNode {
                         parent = parent,
                         isVisible = isVisible,
                         isImportantForContentCapture = true,
-                        shouldRedact = shouldRedact && painter.isRedactable(),
+                        shouldMask = shouldMask && painter.isMaskable(),
                         visibleRect = visibleRect
                     )
                 } else {
-                    val shouldRedact = isVisible && node.shouldRedact(isImage = false, options)
+                    val shouldMask = isVisible && node.shouldMask(isImage = false, options)
 
                     // TODO: this currently does not support embedded AndroidViews, we'd have to
                     // TODO: traverse the ViewHierarchyNode here again. For now we can recommend
@@ -146,7 +146,7 @@ internal object ComposeViewHierarchyNode {
                         elevation = (parent?.elevation ?: 0f),
                         distance = distance,
                         parent = parent,
-                        shouldRedact = shouldRedact,
+                        shouldMask = shouldMask,
                         isImportantForContentCapture = false, /* will be set by children */
                         isVisible = isVisible,
                         visibleRect = visibleRect

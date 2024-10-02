@@ -2,13 +2,13 @@
 # debugging stack traces.
 -keepattributes SourceFile,LineNumberTable
 
-# Rules to detect Images/Icons and redact them
+# Rules to detect Images/Icons and mask them
 -dontwarn androidx.compose.ui.graphics.painter.Painter
 -keepnames class * extends androidx.compose.ui.graphics.painter.Painter
 -keepclasseswithmembernames class * {
     androidx.compose.ui.graphics.painter.Painter painter;
 }
-# Rules to detect Text colors and if they have Modifier.fillMaxWidth to later redact them
+# Rules to detect Text colors and if they have Modifier.fillMaxWidth to later mask them
 -dontwarn androidx.compose.ui.graphics.ColorProducer
 -dontwarn androidx.compose.foundation.layout.FillElement
 -keepnames class androidx.compose.foundation.layout.FillElement
