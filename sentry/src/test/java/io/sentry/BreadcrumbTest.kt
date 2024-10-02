@@ -22,6 +22,7 @@ class BreadcrumbTest {
         val level = SentryLevel.DEBUG
         breadcrumb.level = level
         breadcrumb.category = "category"
+        breadcrumb.origin = "origin"
 
         val clone = Breadcrumb(breadcrumb)
 
@@ -45,6 +46,7 @@ class BreadcrumbTest {
         val level = SentryLevel.DEBUG
         breadcrumb.level = level
         breadcrumb.category = "category"
+        breadcrumb.origin = "origin"
 
         val clone = Breadcrumb(breadcrumb)
 
@@ -54,6 +56,7 @@ class BreadcrumbTest {
         assertEquals("type", clone.type)
         assertEquals(SentryLevel.DEBUG, clone.level)
         assertEquals("category", clone.category)
+        assertEquals("origin", clone.origin)
     }
 
     @Test
@@ -68,6 +71,7 @@ class BreadcrumbTest {
         val level = SentryLevel.DEBUG
         breadcrumb.level = level
         breadcrumb.category = "category"
+        breadcrumb.origin = "origin"
 
         val clone = Breadcrumb(breadcrumb)
 
@@ -78,6 +82,7 @@ class BreadcrumbTest {
         breadcrumb.type = "newType"
         breadcrumb.level = SentryLevel.FATAL
         breadcrumb.category = "newCategory"
+        breadcrumb.origin = "newOrigin"
 
         assertEquals("message", clone.message)
         assertEquals("data", clone.data["data"])
@@ -87,6 +92,7 @@ class BreadcrumbTest {
         assertEquals("type", clone.type)
         assertEquals(SentryLevel.DEBUG, clone.level)
         assertEquals("category", clone.category)
+        assertEquals("origin", clone.origin)
     }
 
     @Test

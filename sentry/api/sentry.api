@@ -109,6 +109,7 @@ public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getMessage ()Ljava/lang/String;
+	public fun getOrigin ()Ljava/lang/String;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
@@ -127,6 +128,7 @@ public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setMessage (Ljava/lang/String;)V
+	public fun setOrigin (Ljava/lang/String;)V
 	public fun setType (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public static fun transaction (Ljava/lang/String;)Lio/sentry/Breadcrumb;
@@ -148,6 +150,7 @@ public final class io/sentry/Breadcrumb$JsonKeys {
 	public static final field DATA Ljava/lang/String;
 	public static final field LEVEL Ljava/lang/String;
 	public static final field MESSAGE Ljava/lang/String;
+	public static final field ORIGIN Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
