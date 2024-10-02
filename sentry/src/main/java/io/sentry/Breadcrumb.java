@@ -717,7 +717,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
-    writer.name(JsonKeys.TIMESTAMP).value(logger, DateUtils.getDateTime(timestamp));
+    writer.name(JsonKeys.TIMESTAMP).value(logger, getTimestamp());
     if (message != null) {
       writer.name(JsonKeys.MESSAGE).value(message);
     }
