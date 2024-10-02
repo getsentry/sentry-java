@@ -527,8 +527,17 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    *
    * @return the timestamp
    */
-  public long getTimestamp() {
+  public long getTimestampMs() {
     return timestamp;
+  }
+
+  /**
+   * Returns the Breadcrumb's timestamp as java.util.Date
+   *
+   * @return the timestamp
+   */
+  public @NotNull Date getTimestamp() {
+    return DateUtils.getDateTime(timestamp);
   }
 
   /**

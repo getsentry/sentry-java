@@ -98,6 +98,7 @@ public final class io/sentry/BaggageHeader {
 
 public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
+	public fun <init> (J)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/util/Date;)V
 	public static fun debug (Ljava/lang/String;)Lio/sentry/Breadcrumb;
@@ -111,6 +112,7 @@ public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/
 	public fun getMessage ()Ljava/lang/String;
 	public fun getOrigin ()Ljava/lang/String;
 	public fun getTimestamp ()Ljava/util/Date;
+	public fun getTimestampMs ()J
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public static fun graphqlDataFetcher (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;

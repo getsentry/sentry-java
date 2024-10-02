@@ -66,7 +66,7 @@ class BreadcrumbSerializationTest {
         val actual = Breadcrumb.fromMap(map, SentryOptions())
         val expected = fixture.getSut()
 
-        assertEquals(expected.timestamp, actual?.timestamp)
+        assertEquals(expected.timestampMs, actual?.timestampMs)
         assertEquals(expected.message, actual?.message)
         assertEquals(expected.type, actual?.type)
         assertEquals(expected.data, actual?.data)

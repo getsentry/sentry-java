@@ -98,7 +98,7 @@ class BreadcrumbTest {
     @Test
     fun `breadcrumb has timestamp when created`() {
         val breadcrumb = Breadcrumb()
-        assertTrue(breadcrumb.timestamp > 0)
+        assertTrue(breadcrumb.timestampMs > 0)
     }
 
     @Test
