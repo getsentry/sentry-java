@@ -61,7 +61,7 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterGraphql)
     testImplementation(Config.Libs.contextPropagation)
     testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.Libs.graphQlJava)
+    testImplementation(Config.Libs.graphQlJava22)
 }
 
 tasks.withType<KotlinCompile> {

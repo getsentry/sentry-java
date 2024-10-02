@@ -75,7 +75,7 @@ class ExceptionReporterTest {
                     field
                 ).build()
             ).build()
-            val instrumentationState = SentryInstrumentation.TracingState()
+            val instrumentationState = SentryGraphqlInstrumentation.TracingState()
             instrumentationExecutionParameters = InstrumentationExecutionParameters(executionInput, schema, instrumentationState)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
 

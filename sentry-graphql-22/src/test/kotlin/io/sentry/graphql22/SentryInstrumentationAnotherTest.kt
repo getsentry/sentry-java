@@ -1,9 +1,9 @@
-package io.sentry.graphql
+package io.sentry.graphql22
 
 import graphql.ErrorClassification
 import graphql.ErrorType
 import graphql.ExecutionInput
-import graphql.ExecutionResultImpl
+import graphql.ExecutionResult
 import graphql.GraphQLContext
 import graphql.GraphqlErrorException
 import graphql.execution.ExecutionContext
@@ -35,7 +35,10 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint
+import io.sentry.graphql.ExceptionReporter
 import io.sentry.graphql.ExceptionReporter.ExceptionDetails
+import io.sentry.graphql.SentryGraphqlInstrumentation
+import io.sentry.graphql.SentrySubscriptionHandler
 import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -87,7 +90,12 @@ class SentryInstrumentationAnotherTest {
             exceptionReporter = mock<ExceptionReporter>()
             subscriptionHandler = mock<SentrySubscriptionHandler>()
             whenever(subscriptionHandler.onSubscriptionResult(any(), any(), any(), any())).thenReturn("result modified by subscription handler")
-            val instrumentation = SentryInstrumentation(null, subscriptionHandler, exceptionReporter, ignoredErrors)
+            val instrumentation = SentryInstrumentation(
+                null,
+                subscriptionHandler,
+                exceptionReporter,
+                ignoredErrors
+            )
             dataFetcher = mock<DataFetcher<Any?>>()
             whenever(dataFetcher.get(any())).thenReturn("raw result")
             graphQLContext = GraphQLContext.newContext()
@@ -133,11 +141,9 @@ class SentryInstrumentationAnotherTest {
             }
             fieldFetchParameters = InstrumentationFieldFetchParameters(
                 executionContext,
-                environment,
+                { environment },
                 executionStrategyParameters,
                 false
-            ).withNewState(
-                instrumentationState
             )
             val executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
@@ -149,7 +155,7 @@ class SentryInstrumentationAnotherTest {
                     field
                 ).build()
             ).build()
-            instrumentationExecutionParameters = InstrumentationExecutionParameters(executionInput, schema, instrumentationState)
+            instrumentationExecutionParameters = InstrumentationExecutionParameters(executionInput, schema)
             instrumentationExecuteOperationParameters = InstrumentationExecuteOperationParameters(executionContext)
 
             return instrumentation
@@ -161,7 +167,7 @@ class SentryInstrumentationAnotherTest {
     @Test
     fun `invokes subscription handler for subscription`() {
         val instrumentation = fixture.getSut(isTransactionActive = false, operation = OperationDefinition.Operation.SUBSCRIPTION)
-        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters)
+        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters, fixture.instrumentationState)
         val result = instrumentedDataFetcher.get(fixture.environment)
 
         assertEquals("result modified by subscription handler", result)
@@ -171,7 +177,7 @@ class SentryInstrumentationAnotherTest {
     @Test
     fun `invokes subscription handler for subscription if transaction is active`() {
         val instrumentation = fixture.getSut(isTransactionActive = true, operation = OperationDefinition.Operation.SUBSCRIPTION)
-        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters)
+        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters, fixture.instrumentationState)
         val result = instrumentedDataFetcher.get(fixture.environment)
 
         assertEquals("result modified by subscription handler", result)
@@ -181,7 +187,7 @@ class SentryInstrumentationAnotherTest {
     @Test
     fun `does not invoke subscription handler for query`() {
         val instrumentation = fixture.getSut(isTransactionActive = false, operation = OperationDefinition.Operation.QUERY)
-        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters)
+        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters, fixture.instrumentationState)
         val result = instrumentedDataFetcher.get(fixture.environment)
 
         assertEquals("raw result", result)
@@ -191,7 +197,7 @@ class SentryInstrumentationAnotherTest {
     @Test
     fun `does not invoke subscription handler for query if transaction is active`() {
         val instrumentation = fixture.getSut(isTransactionActive = false, operation = OperationDefinition.Operation.QUERY)
-        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters)
+        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters, fixture.instrumentationState)
         val result = instrumentedDataFetcher.get(fixture.environment)
 
         assertEquals("raw result", result)
@@ -201,7 +207,7 @@ class SentryInstrumentationAnotherTest {
     @Test
     fun `does not invoke subscription handler for mutation`() {
         val instrumentation = fixture.getSut(isTransactionActive = false, operation = OperationDefinition.Operation.MUTATION)
-        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters)
+        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters, fixture.instrumentationState)
         val result = instrumentedDataFetcher.get(fixture.environment)
 
         assertEquals("raw result", result)
@@ -211,7 +217,7 @@ class SentryInstrumentationAnotherTest {
     @Test
     fun `does not invoke subscription handler for mutation if transaction is active`() {
         val instrumentation = fixture.getSut(isTransactionActive = false, operation = OperationDefinition.Operation.MUTATION)
-        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters)
+        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters, fixture.instrumentationState)
         val result = instrumentedDataFetcher.get(fixture.environment)
 
         assertEquals("raw result", result)
@@ -221,7 +227,7 @@ class SentryInstrumentationAnotherTest {
     @Test
     fun `adds a breadcrumb for operation`() {
         val instrumentation = fixture.getSut()
-        instrumentation.beginExecuteOperation(fixture.instrumentationExecuteOperationParameters)
+        instrumentation.beginExecuteOperation(fixture.instrumentationExecuteOperationParameters, fixture.instrumentationState)
         verify(fixture.scopes).addBreadcrumb(
             org.mockito.kotlin.check<Breadcrumb> { breadcrumb ->
                 assertEquals("graphql", breadcrumb.type)
@@ -236,7 +242,7 @@ class SentryInstrumentationAnotherTest {
     @Test
     fun `adds a breadcrumb for data fetcher`() {
         val instrumentation = fixture.getSut()
-        instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters).get(fixture.environment)
+        instrumentation.instrumentDataFetcher(fixture.dataFetcher, fixture.fieldFetchParameters, fixture.instrumentationState).get(fixture.environment)
         verify(fixture.scopes).addBreadcrumb(
             org.mockito.kotlin.check<Breadcrumb> { breadcrumb ->
                 assertEquals("graphql", breadcrumb.type)
@@ -257,7 +263,7 @@ class SentryInstrumentationAnotherTest {
     fun `stores scopes in context and adds transaction to state`() {
         val instrumentation = fixture.getSut(isTransactionActive = true, operation = OperationDefinition.Operation.MUTATION, graphQLContextParam = emptyMap(), addTransactionToTracingState = false)
         withMockScopes {
-            instrumentation.beginExecution(fixture.instrumentationExecutionParameters)
+            instrumentation.beginExecution(fixture.instrumentationExecutionParameters, fixture.instrumentationState)
             assertSame(fixture.scopes, fixture.instrumentationExecutionParameters.graphQLContext.get<IScopes>(SentryGraphqlInstrumentation.SENTRY_SCOPES_CONTEXT_KEY))
             assertNotNull(fixture.instrumentationState.transaction)
         }
@@ -266,7 +272,7 @@ class SentryInstrumentationAnotherTest {
     @Test
     fun `invokes exceptionReporter for error`() {
         val instrumentation = fixture.getSut()
-        val executionResult = ExecutionResultImpl.newExecutionResult()
+        val executionResult = ExecutionResult.newExecutionResult()
             .data("raw result")
             .addError(
                 GraphqlErrorException.newErrorException().message("exception message").errorClassification(
@@ -274,7 +280,7 @@ class SentryInstrumentationAnotherTest {
                 ).build()
             )
             .build()
-        val resultFuture = instrumentation.instrumentExecutionResult(executionResult, fixture.instrumentationExecutionParameters)
+        val resultFuture = instrumentation.instrumentExecutionResult(executionResult, fixture.instrumentationExecutionParameters, fixture.instrumentationState)
         verify(fixture.exceptionReporter).captureThrowable(
             org.mockito.kotlin.check<Throwable> {
                 assertEquals("exception message", it.message)
@@ -300,10 +306,10 @@ class SentryInstrumentationAnotherTest {
                 SentryGraphqlInstrumentation.SENTRY_SCOPES_CONTEXT_KEY to fixture.scopes
             )
         )
-        val executionResult = ExecutionResultImpl.newExecutionResult()
+        val executionResult = ExecutionResult.newExecutionResult()
             .data("raw result")
             .build()
-        val resultFuture = instrumentation.instrumentExecutionResult(executionResult, fixture.instrumentationExecutionParameters)
+        val resultFuture = instrumentation.instrumentExecutionResult(executionResult, fixture.instrumentationExecutionParameters, fixture.instrumentationState)
         verify(fixture.exceptionReporter).captureThrowable(
             org.mockito.kotlin.check<Throwable> {
                 assertSame(exception, it)
@@ -323,13 +329,13 @@ class SentryInstrumentationAnotherTest {
     @Test
     fun `does not invoke exceptionReporter for certain errors that should be handled by SentryDataFetcherExceptionHandler`() {
         val instrumentation = fixture.getSut()
-        val executionResult = ExecutionResultImpl.newExecutionResult()
+        val executionResult = ExecutionResult.newExecutionResult()
             .data("raw result")
             .addError(GraphqlErrorException.newErrorException().message("exception message").errorClassification(ErrorType.DataFetchingException).build())
             .addError(GraphqlErrorException.newErrorException().message("exception message").errorClassification(org.springframework.graphql.execution.ErrorType.INTERNAL_ERROR).build())
             .addError(GraphqlErrorException.newErrorException().message("exception message").errorClassification(com.netflix.graphql.types.errors.ErrorType.INTERNAL).build())
             .build()
-        val resultFuture = instrumentation.instrumentExecutionResult(executionResult, fixture.instrumentationExecutionParameters)
+        val resultFuture = instrumentation.instrumentExecutionResult(executionResult, fixture.instrumentationExecutionParameters, fixture.instrumentationState)
         verify(fixture.exceptionReporter, never()).captureThrowable(any(), any(), any())
         val result = resultFuture.get()
         assertSame(executionResult, result)
@@ -338,11 +344,11 @@ class SentryInstrumentationAnotherTest {
     @Test
     fun `does not invoke exceptionReporter for ignored errors`() {
         val instrumentation = fixture.getSut(ignoredErrors = listOf("SOME_ERROR"))
-        val executionResult = ExecutionResultImpl.newExecutionResult()
+        val executionResult = ExecutionResult.newExecutionResult()
             .data("raw result")
             .addError(GraphqlErrorException.newErrorException().message("exception message").errorClassification(SomeErrorClassification.SOME_ERROR).build())
             .build()
-        val resultFuture = instrumentation.instrumentExecutionResult(executionResult, fixture.instrumentationExecutionParameters)
+        val resultFuture = instrumentation.instrumentExecutionResult(executionResult, fixture.instrumentationExecutionParameters, fixture.instrumentationState)
         verify(fixture.exceptionReporter, never()).captureThrowable(any(), any(), any())
         val result = resultFuture.get()
         assertSame(executionResult, result)
@@ -351,10 +357,10 @@ class SentryInstrumentationAnotherTest {
     @Test
     fun `never invokes exceptionReporter if no errors`() {
         val instrumentation = fixture.getSut()
-        val executionResult = ExecutionResultImpl.newExecutionResult()
+        val executionResult = ExecutionResult.newExecutionResult()
             .data("raw result")
             .build()
-        val resultFuture = instrumentation.instrumentExecutionResult(executionResult, fixture.instrumentationExecutionParameters)
+        val resultFuture = instrumentation.instrumentExecutionResult(executionResult, fixture.instrumentationExecutionParameters, fixture.instrumentationState)
         verify(fixture.exceptionReporter, never()).captureThrowable(any(), any(), any())
         val result = resultFuture.get()
         assertSame(executionResult, result)

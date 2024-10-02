@@ -133,6 +133,7 @@ object Config {
         val p6spy = "p6spy:p6spy:3.9.1"
 
         val graphQlJava = "com.graphql-java:graphql-java:17.3"
+        val graphQlJava22 = "com.graphql-java:graphql-java:22.1"
 
         val quartz = "org.quartz-scheduler:quartz:2.3.0"
 
