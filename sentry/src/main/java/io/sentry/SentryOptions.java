@@ -419,8 +419,7 @@ public class SentryOptions {
   private boolean traceOptionsRequests = true;
 
   /** Date provider to retrieve the current date from. */
-  @ApiStatus.Internal
-  private volatile @Nullable SentryDateProvider dateProvider;
+  @ApiStatus.Internal private volatile @Nullable SentryDateProvider dateProvider;
 
   private final @NotNull Object dateProviderLock = new Object();
 

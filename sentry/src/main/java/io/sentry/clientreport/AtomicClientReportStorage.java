@@ -16,19 +16,22 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 final class AtomicClientReportStorage implements IClientReportStorage {
 
-  private final @NotNull LazyEvaluator<Map<ClientReportKey, AtomicLong>> lostEventCounts = new LazyEvaluator<>(() -> {
-    final Map<ClientReportKey, AtomicLong> modifyableEventCountsForInit = new ConcurrentHashMap<>();
+  private final @NotNull LazyEvaluator<Map<ClientReportKey, AtomicLong>> lostEventCounts =
+      new LazyEvaluator<>(
+          () -> {
+            final Map<ClientReportKey, AtomicLong> modifyableEventCountsForInit =
+                new ConcurrentHashMap<>();
 
-    for (final DiscardReason discardReason : DiscardReason.values()) {
-      for (final DataCategory category : DataCategory.values()) {
-        modifyableEventCountsForInit.put(
-          new ClientReportKey(discardReason.getReason(), category.getCategory()),
-          new AtomicLong(0));
-      }
-    }
+            for (final DiscardReason discardReason : DiscardReason.values()) {
+              for (final DataCategory category : DataCategory.values()) {
+                modifyableEventCountsForInit.put(
+                    new ClientReportKey(discardReason.getReason(), category.getCategory()),
+                    new AtomicLong(0));
+              }
+            }
 
-    return Collections.unmodifiableMap(modifyableEventCountsForInit);
-  });
+            return Collections.unmodifiableMap(modifyableEventCountsForInit);
+          });
 
   public AtomicClientReportStorage() {}
 
