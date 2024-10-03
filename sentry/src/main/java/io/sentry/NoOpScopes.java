@@ -243,6 +243,9 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
+  public void startProfile() {}
+
+  @Override
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public @NotNull SentryTraceHeader traceHeaders() {

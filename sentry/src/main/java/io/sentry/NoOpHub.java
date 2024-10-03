@@ -248,6 +248,9 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public void startProfile() {}
+
+  @Override
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   public @NotNull SentryTraceHeader traceHeaders() {

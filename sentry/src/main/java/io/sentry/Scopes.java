@@ -930,6 +930,16 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return transaction;
   }
 
+  @Override
+  public void startProfile() {
+    if (getOptions().isContinuousProfilingEnabled()) {
+      getOptions().getLogger().log(SentryLevel.DEBUG, "Started continuous Profiling.");
+      getOptions().getContinuousProfiler().start();
+    } else {
+      getOptions().getLogger().log(SentryLevel.WARNING, "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
+    }
+  }
+
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
   @Override

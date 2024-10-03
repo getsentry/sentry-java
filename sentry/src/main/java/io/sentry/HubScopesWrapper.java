@@ -279,6 +279,11 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
+  public void startProfile() {
+    scopes.startProfile();
+  }
+
+  @Override
   public @Nullable SentryTraceHeader traceHeaders() {
     return scopes.traceHeaders();
   }

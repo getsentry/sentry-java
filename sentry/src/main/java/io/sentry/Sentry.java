@@ -1022,6 +1022,11 @@ public final class Sentry {
     return getCurrentScopes().startTransaction(transactionContext, transactionOptions);
   }
 
+  /** Starts the continuous profiler, if enabled. */
+  public static void startProfile() {
+    getCurrentScopes().startProfile();
+  }
+
   /**
    * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
    * &lt;meta&gt; HTML tags. Also see {@link Sentry#getBaggage()}.

@@ -279,6 +279,11 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  public void startProfile() {
+    Sentry.startProfile();
+  }
+
+  @Override
   public @NotNull SentryId captureProfileChunk(
       final @NotNull ProfileChunk profilingContinuousData) {
     return Sentry.getCurrentScopes().captureProfileChunk(profilingContinuousData);

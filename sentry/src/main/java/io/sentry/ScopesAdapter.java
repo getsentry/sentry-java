@@ -281,6 +281,11 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.startTransaction(transactionContext, transactionOptions);
   }
 
+  @Override
+  public void startProfile() {
+    Sentry.startProfile();
+  }
+
   @Deprecated
   @Override
   @SuppressWarnings("deprecation")
