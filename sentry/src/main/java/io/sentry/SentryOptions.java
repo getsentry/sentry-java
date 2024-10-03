@@ -485,7 +485,7 @@ public class SentryOptions {
 
   @ApiStatus.Experimental private @Nullable Cron cron = null;
 
-  private final @NotNull ExperimentalOptions experimental = new ExperimentalOptions();
+  private final @NotNull ExperimentalOptions experimental;
 
   private @NotNull ReplayController replayController = NoOpReplayController.getInstance();
 
@@ -2567,6 +2567,7 @@ public class SentryOptions {
    * @param empty if options should be empty.
    */
   private SentryOptions(final boolean empty) {
+    experimental = new ExperimentalOptions(empty);
     if (!empty) {
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
