@@ -19,6 +19,7 @@
     - For example, (this is already a default behavior) to redact all `TextView`s and their subclasses (`RadioButton`, `EditText`, etc.): `options.experimental.sessionReplay.addRedactViewClass("android.widget.TextView")`
     - If you're using code obfuscation, adjust your proguard-rules accordingly, so your custom view class name is not minified
 - Fix ensure Application Context is used even when SDK is initialized via Activity Context ([#3669](https://github.com/getsentry/sentry-java/pull/3669))
+- Fix potential ANRs due to `Calendar.getInstance` usage in Breadcrumbs constructor ([#3736](https://github.com/getsentry/sentry-java/pull/3736))
 
 *Breaking changes*:
 
