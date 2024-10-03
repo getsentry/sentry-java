@@ -9,6 +9,7 @@
 
 ### Fixes
 
+- fix invalid profiles when the transaction name is empty ([#3747](https://github.com/getsentry/sentry-java/pull/3747))
 - Avoid stopping appStartProfiler after application creation ([#3630](https://github.com/getsentry/sentry-java/pull/3630))
 - Session Replay: Correctly detect dominant color for `TextView`s with Spans ([#3682](https://github.com/getsentry/sentry-java/pull/3682))
 - Session Replay: Add options to selectively redact/ignore views from being captured. The following options are available: ([#3689](https://github.com/getsentry/sentry-java/pull/3689))
