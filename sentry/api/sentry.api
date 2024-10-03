@@ -112,7 +112,6 @@ public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/
 	public fun getMessage ()Ljava/lang/String;
 	public fun getOrigin ()Ljava/lang/String;
 	public fun getTimestamp ()Ljava/util/Date;
-	public fun getTimestampMs ()J
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public static fun graphqlDataFetcher (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;

@@ -19,8 +19,11 @@ import org.jetbrains.annotations.Nullable;
 /** Series of application events */
 public final class Breadcrumb implements JsonUnknown, JsonSerializable {
 
-  /** A timestamp representing when the breadcrumb occurred. */
-  private final long timestamp;
+  /** A timestamp representing when the breadcrumb occurred in milliseconds. */
+  private @Nullable final Long timestampMs;
+
+  /** A timestamp representing when the breadcrumb occurred as java.util.Date. */
+  private @Nullable Date timestamp;
 
   /** If a message is provided, its rendered as text and the whitespace is preserved. */
   private @Nullable String message;
@@ -53,15 +56,18 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    */
   @SuppressWarnings("JavaUtilDate")
   public Breadcrumb(final @NotNull Date timestamp) {
-    this.timestamp = timestamp.getTime();
+    this.timestamp = timestamp;
+    this.timestampMs = null;
   }
 
   public Breadcrumb(final long timestamp) {
-    this.timestamp = timestamp;
+    this.timestampMs = timestamp;
+    this.timestamp = null;
   }
 
   Breadcrumb(final @NotNull Breadcrumb breadcrumb) {
     this.timestamp = breadcrumb.timestamp;
+    this.timestampMs = breadcrumb.timestampMs;
     this.message = breadcrumb.message;
     this.type = breadcrumb.type;
     this.category = breadcrumb.category;
@@ -523,21 +529,20 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
   }
 
   /**
-   * Returns the Breadcrumb's timestamp
-   *
-   * @return the timestamp
-   */
-  public long getTimestampMs() {
-    return timestamp;
-  }
-
-  /**
    * Returns the Breadcrumb's timestamp as java.util.Date
    *
    * @return the timestamp
    */
+  @SuppressWarnings("JavaUtilDate")
   public @NotNull Date getTimestamp() {
-    return DateUtils.getDateTime(timestamp);
+    if (timestamp != null) {
+      return (Date) timestamp.clone();
+    } else if (timestampMs != null) {
+      // we memoize it here into timestamp to avoid instantiating Calendar again and again
+      timestamp = DateUtils.getDateTime(timestampMs);
+      return timestamp;
+    }
+    throw new IllegalStateException("No timestamp set for breadcrumb");
   }
 
   /**
@@ -677,7 +682,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Breadcrumb that = (Breadcrumb) o;
-    return timestamp == that.timestamp
+    return getTimestamp().getTime() == that.getTimestamp().getTime()
         && Objects.equals(message, that.message)
         && Objects.equals(type, that.type)
         && Objects.equals(category, that.category)

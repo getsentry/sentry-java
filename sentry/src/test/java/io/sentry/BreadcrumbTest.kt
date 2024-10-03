@@ -1,12 +1,12 @@
 package io.sentry
 
+import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class BreadcrumbTest {
 
@@ -98,7 +98,13 @@ class BreadcrumbTest {
     @Test
     fun `breadcrumb has timestamp when created`() {
         val breadcrumb = Breadcrumb()
-        assertTrue(breadcrumb.timestampMs > 0)
+        assertNotNull(breadcrumb.timestamp)
+    }
+
+    @Test
+    fun `breadcrumb can be created with Date timestamp`() {
+        val breadcrumb = Breadcrumb(Date(123L))
+        assertEquals(123L, breadcrumb.timestamp.time)
     }
 
     @Test

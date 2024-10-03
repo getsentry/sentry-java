@@ -106,8 +106,8 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
         }
         return if (!breadcrumbCategory.isNullOrEmpty()) {
             RRWebBreadcrumbEvent().apply {
-                timestamp = breadcrumb.timestampMs
-                breadcrumbTimestamp = breadcrumb.timestampMs / 1000.0
+                timestamp = breadcrumb.timestamp.time
+                breadcrumbTimestamp = breadcrumb.timestamp.time / 1000.0
                 breadcrumbType = "default"
                 category = breadcrumbCategory
                 message = breadcrumbMessage
@@ -134,7 +134,7 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
         val httpStartTimestamp = breadcrumb.data[SpanDataConvention.HTTP_START_TIMESTAMP]
         val httpEndTimestamp = breadcrumb.data[SpanDataConvention.HTTP_END_TIMESTAMP]
         return RRWebSpanEvent().apply {
-            timestamp = breadcrumb.timestampMs
+            timestamp = breadcrumb.timestamp.time
             op = "resource.http"
             description = breadcrumb.data["url"] as String
             // can be double if it was serialized to disk

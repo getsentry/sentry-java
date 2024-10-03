@@ -1214,7 +1214,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
     @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
     @Override
     public int compare(final @NotNull Breadcrumb b1, final @NotNull Breadcrumb b2) {
-      return Long.compare(b1.getTimestampMs(), b2.getTimestampMs());
+      return b1.getTimestamp().compareTo(b2.getTimestamp());
     }
   }
 }
