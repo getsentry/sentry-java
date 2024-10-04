@@ -89,12 +89,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   @Override
   public void setTag(final @NotNull String key, final @NotNull String value) {
     try {
-      options
-          .getExecutorService()
-          .submit(
-              () -> {
-                nativeScope.setTag(key, value);
-              });
+      options.getExecutorService().submit(() -> nativeScope.setTag(key, value));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTag(%s) has an error.", key);
     }
@@ -103,12 +98,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   @Override
   public void removeTag(final @NotNull String key) {
     try {
-      options
-          .getExecutorService()
-          .submit(
-              () -> {
-                nativeScope.removeTag(key);
-              });
+      options.getExecutorService().submit(() -> nativeScope.removeTag(key));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync removeTag(%s) has an error.", key);
     }
@@ -117,12 +107,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   @Override
   public void setExtra(final @NotNull String key, final @NotNull String value) {
     try {
-      options
-          .getExecutorService()
-          .submit(
-              () -> {
-                nativeScope.setExtra(key, value);
-              });
+      options.getExecutorService().submit(() -> nativeScope.setExtra(key, value));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setExtra(%s) has an error.", key);
     }
@@ -131,12 +116,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   @Override
   public void removeExtra(final @NotNull String key) {
     try {
-      options
-          .getExecutorService()
-          .submit(
-              () -> {
-                nativeScope.removeExtra(key);
-              });
+      options.getExecutorService().submit(() -> nativeScope.removeExtra(key));
     } catch (Throwable e) {
       options
           .getLogger()
