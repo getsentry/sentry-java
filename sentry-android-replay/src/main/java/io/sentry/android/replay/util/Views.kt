@@ -13,6 +13,8 @@ import android.graphics.drawable.VectorDrawable
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.text.Layout
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.widget.TextView
 import java.lang.NullPointerException
@@ -101,3 +103,34 @@ internal val TextView.totalPaddingTopSafe: Int
     } catch (e: NullPointerException) {
         extendedPaddingTop
     }
+
+/**
+ * Returns the dominant text color of the layout by looking at the [ForegroundColorSpan] spans if
+ * this text is a [Spanned] text. If the text is not a [Spanned] text or there are no spans, it
+ * returns null.
+ */
+internal val Layout?.dominantTextColor: Int? get() {
+    this ?: return null
+
+    if (text !is Spanned) return null
+
+    val spans = (text as Spanned).getSpans(0, text.length, ForegroundColorSpan::class.java)
+
+    // determine the dominant color by the span with the longest range
+    var longestSpan = Int.MIN_VALUE
+    var dominantColor: Int? = null
+    for (span in spans) {
+        val spanStart = (text as Spanned).getSpanStart(span)
+        val spanEnd = (text as Spanned).getSpanEnd(span)
+        if (spanStart == -1 || spanEnd == -1) {
+            // the span is not attached
+            continue
+        }
+        val spanLength = spanEnd - spanStart
+        if (spanLength > longestSpan) {
+            longestSpan = spanLength
+            dominantColor = span.foregroundColor
+        }
+    }
+    return dominantColor
+}

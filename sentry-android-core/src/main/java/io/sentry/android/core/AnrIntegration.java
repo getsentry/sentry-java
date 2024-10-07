@@ -33,7 +33,7 @@ public final class AnrIntegration implements Integration, Closeable {
   private final @NotNull Object startLock = new Object();
 
   public AnrIntegration(final @NotNull Context context) {
-    this.context = context;
+    this.context = ContextUtils.getApplicationContext(context);
   }
 
   /**

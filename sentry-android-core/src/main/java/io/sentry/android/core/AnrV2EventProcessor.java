@@ -97,7 +97,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @Nullable SecureRandom random) {
-    this.context = context;
+    this.context = ContextUtils.getApplicationContext(context);
     this.options = options;
     this.buildInfoProvider = buildInfoProvider;
     this.random = random;
