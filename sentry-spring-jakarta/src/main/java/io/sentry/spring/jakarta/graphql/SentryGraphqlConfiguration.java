@@ -18,7 +18,7 @@ import org.springframework.core.annotation.Order;
 public class SentryGraphqlConfiguration {
 
   @Bean(name = "sentryInstrumentation")
-  @ConditionalOnMissingBean(name = "sentryInstrumentation")
+  @ConditionalOnMissingBean
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
   public SentryInstrumentation sentryInstrumentationWebMvc(
       final @NotNull ObjectProvider<SentryGraphqlInstrumentation.BeforeSpanCallback>
@@ -28,7 +28,7 @@ public class SentryGraphqlConfiguration {
   }
 
   @Bean(name = "sentryInstrumentation")
-  @ConditionalOnMissingBean(name = "sentryInstrumentation")
+  @ConditionalOnMissingBean
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   public SentryInstrumentation sentryInstrumentationWebflux(
       final @NotNull ObjectProvider<SentryGraphqlInstrumentation.BeforeSpanCallback>

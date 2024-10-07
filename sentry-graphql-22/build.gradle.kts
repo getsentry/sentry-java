@@ -84,6 +84,6 @@ tasks.withType<JavaCompile>().configureEach {
 buildConfig {
     useJavaOutput()
     packageName("io.sentry.graphql22")
-    buildConfigField("String", "SENTRY_GRAPHQL_SDK_NAME", "\"${Config.Sentry.SENTRY_GRAPHQL_SDK_NAME}\"")
+    buildConfigField("String", "SENTRY_GRAPHQL22_SDK_NAME", "\"${Config.Sentry.SENTRY_GRAPHQL22_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
