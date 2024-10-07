@@ -838,10 +838,12 @@ class SentryAutoConfigurationTest {
     @Test
     fun `does not create any graphql config if no sentry-graphql lib on classpath`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
-            .withClassLoader(FilteredClassLoader(
-                io.sentry.graphql.SentryInstrumentation::class.java,
-                io.sentry.graphql22.SentryInstrumentation::class.java
-            ))
+            .withClassLoader(
+                FilteredClassLoader(
+                    io.sentry.graphql.SentryInstrumentation::class.java,
+                    io.sentry.graphql22.SentryInstrumentation::class.java
+                )
+            )
             .run {
                 assertThat(it).doesNotHaveBean(io.sentry.graphql.SentryInstrumentation::class.java)
                 assertThat(it).doesNotHaveBean(io.sentry.graphql22.SentryInstrumentation::class.java)
