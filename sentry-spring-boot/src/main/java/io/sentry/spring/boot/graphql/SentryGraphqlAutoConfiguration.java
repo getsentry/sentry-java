@@ -22,7 +22,7 @@ import org.springframework.core.annotation.Order;
 public class SentryGraphqlAutoConfiguration {
 
   @Bean(name = "sentryInstrumentation")
-  @ConditionalOnMissingBean(name = "sentryInstrumentation")
+  @ConditionalOnMissingBean
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
   public SentryInstrumentation sentryInstrumentationWebMvc(
       final @NotNull SentryProperties sentryProperties,
@@ -33,7 +33,7 @@ public class SentryGraphqlAutoConfiguration {
   }
 
   @Bean(name = "sentryInstrumentation")
-  @ConditionalOnMissingBean(name = "sentryInstrumentation")
+  @ConditionalOnMissingBean
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   public SentryInstrumentation sentryInstrumentationWebflux(
       final @NotNull SentryProperties sentryProperties,
