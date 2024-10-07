@@ -23,6 +23,7 @@
   - Use `<meta-data android:name="io.sentry.force-init" android:value="true" />` to ensure Sentry Android auto init is not easily overwritten
 - Attach request body for `application/x-www-form-urlencoded` requests in Spring ([#3731](https://github.com/getsentry/sentry-java/pull/3731))
   - Previously request body was only attached for `application/json` requests
+- Set breadcrumb level based on http status ([#3771](https://github.com/getsentry/sentry-java/pull/3771))
 
 ### Fixes
 
