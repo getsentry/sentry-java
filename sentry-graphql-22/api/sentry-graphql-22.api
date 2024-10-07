@@ -1,5 +1,6 @@
 public final class io/sentry/graphql22/BuildConfig {
 	public static final field SENTRY_GRAPHQL_SDK_NAME Ljava/lang/String;
+	public static final field SENTRY_GRAPHQL22_SDK_NAME Ljava/lang/String;
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 
