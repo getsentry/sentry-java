@@ -870,6 +870,16 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
+    fun `sentry graphql22 configuration is created if graphql not on classpath`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(io.sentry.graphql.SentryInstrumentation::class.java))
+            .run {
+                assertThat(it).doesNotHaveBean(io.sentry.graphql.SentryInstrumentation::class.java)
+                assertThat(it).hasSingleBean(io.sentry.graphql22.SentryInstrumentation::class.java)
+            }
+    }
+
+    @Test
     fun `Sentry quartz job listener is added`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
             .withUserConfiguration(QuartzAutoConfiguration::class.java)
