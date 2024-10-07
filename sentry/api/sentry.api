@@ -6220,6 +6220,8 @@ public final class io/sentry/util/HttpUtils {
 	public static fun filterOutSecurityCookies (Ljava/lang/String;Ljava/util/List;)Ljava/lang/String;
 	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/Enumeration;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
 	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/List;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
+	public static fun isHttpClientError (I)Z
+	public static fun isHttpServerError (I)Z
 	public static fun isSecurityCookie (Ljava/lang/String;Ljava/util/List;)Z
 }
 
