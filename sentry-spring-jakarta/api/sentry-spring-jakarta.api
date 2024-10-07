@@ -175,6 +175,14 @@ public final class io/sentry/spring/jakarta/graphql/SentryDgsSubscriptionHandler
 	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IScopes;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
 }
 
+public class io/sentry/spring/jakarta/graphql/SentryGraphql22Configuration {
+	public fun <init> ()V
+	public fun exceptionResolverAdapter ()Lio/sentry/spring/jakarta/graphql/SentryDataFetcherExceptionResolverAdapter;
+	public fun graphqlBeanPostProcessor ()Lio/sentry/spring/jakarta/graphql/SentryGraphqlBeanPostProcessor;
+	public fun sentryInstrumentationWebMvc (Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql22/SentryInstrumentation;
+	public fun sentryInstrumentationWebflux (Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql22/SentryInstrumentation;
+}
+
 public final class io/sentry/spring/jakarta/graphql/SentryGraphqlBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor, org/springframework/core/PriorityOrdered {
 	public fun <init> ()V
 	public fun getOrder ()I
