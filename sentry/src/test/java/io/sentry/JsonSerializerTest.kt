@@ -855,8 +855,6 @@ class JsonSerializerTest {
         assertNotNull(element["spans"] as List<*>)
         assertEquals("myValue", (element["tags"] as Map<*, *>)["myTag"] as String)
 
-        assertEquals("dataValue", (element["extra"] as Map<*, *>)["dataKey"] as String)
-
         val jsonSpan = (element["spans"] as List<*>)[0] as Map<*, *>
         assertNotNull(jsonSpan["trace_id"])
         assertNotNull(jsonSpan["span_id"])
@@ -867,6 +865,7 @@ class JsonSerializerTest {
         assertNotNull(jsonSpan["start_timestamp"])
 
         val jsonTrace = (element["contexts"] as Map<*, *>)["trace"] as Map<*, *>
+        assertEquals("dataValue", (jsonTrace["data"] as Map<*, *>)["dataKey"] as String)
         assertNotNull(jsonTrace["trace_id"] as String)
         assertNotNull(jsonTrace["span_id"] as String)
         assertEquals("http", jsonTrace["op"] as String)
@@ -887,7 +886,10 @@ class JsonSerializerTest {
                               "trace_id": "b156a475de54423d9c1571df97ec7eb6",
                               "span_id": "0a53026963414893",
                               "op": "http",
-                              "status": "ok"
+                              "status": "ok",
+                              "data": {
+                                "transactionDataKey": "transactionDataValue"
+                              }
                             },
                             "custom": {
                               "some-key": "some-value"
@@ -928,6 +930,7 @@ class JsonSerializerTest {
         assertEquals("0a53026963414893", transaction.contexts.trace!!.spanId.toString())
         assertEquals("http", transaction.contexts.trace!!.operation)
         assertNotNull(transaction.contexts["custom"])
+        assertEquals("transactionDataValue", transaction.contexts.trace!!.data!!["transactionDataKey"])
         assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
 
         assertEquals("extraValue", transaction.getExtra("extraKey"))
