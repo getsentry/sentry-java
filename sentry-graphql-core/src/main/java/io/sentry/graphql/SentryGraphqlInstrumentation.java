@@ -94,7 +94,7 @@ public final class SentryGraphqlInstrumentation {
     return new TracingState();
   }
 
-  public @NotNull void beginExecution(
+  public void beginExecution(
       final @NotNull InstrumentationExecutionParameters parameters,
       final @NotNull TracingState tracingState) {
     final @NotNull IScopes currentScopes = Sentry.getCurrentScopes();
@@ -169,7 +169,7 @@ public final class SentryGraphqlInstrumentation {
     return null;
   }
 
-  public @NotNull void beginExecuteOperation(
+  public void beginExecuteOperation(
       final @NotNull InstrumentationExecuteOperationParameters parameters) {
     final @Nullable ExecutionContext executionContext = parameters.getExecutionContext();
     if (executionContext != null) {

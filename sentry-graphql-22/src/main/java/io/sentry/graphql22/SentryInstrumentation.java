@@ -124,9 +124,9 @@ public final class SentryInstrumentation
   }
 
   @Override
-  public CompletableFuture<ExecutionResult> instrumentExecutionResult(
-      ExecutionResult executionResult,
-      InstrumentationExecutionParameters parameters,
+  public @NotNull CompletableFuture<ExecutionResult> instrumentExecutionResult(
+      final @NotNull ExecutionResult executionResult,
+      final @NotNull InstrumentationExecutionParameters parameters,
       final @NotNull InstrumentationState state) {
     return super.instrumentExecutionResult(executionResult, parameters, state)
         .whenComplete(
@@ -136,7 +136,7 @@ public final class SentryInstrumentation
   }
 
   @Override
-  public @NotNull InstrumentationContext<ExecutionResult> beginExecuteOperation(
+  public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(
       final @NotNull InstrumentationExecuteOperationParameters parameters,
       final @NotNull InstrumentationState state) {
     instrumentation.beginExecuteOperation(parameters);
