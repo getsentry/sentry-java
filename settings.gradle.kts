@@ -41,6 +41,8 @@ include(
     "sentry-bom",
     "sentry-openfeign",
     "sentry-graphql",
+    "sentry-graphql-22",
+    "sentry-graphql-core",
     "sentry-jdbc",
     "sentry-opentelemetry:sentry-opentelemetry-bootstrap",
     "sentry-opentelemetry:sentry-opentelemetry-core",

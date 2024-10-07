@@ -32,7 +32,7 @@ class SentryGenericDataFetcherExceptionHandlerTest {
         ).build()
         handler.onException(parameters)
 
-        val exceptions: List<Throwable> = parameters.dataFetchingEnvironment.graphQlContext[SentryInstrumentation.SENTRY_EXCEPTIONS_CONTEXT_KEY]
+        val exceptions: List<Throwable> = parameters.dataFetchingEnvironment.graphQlContext[SentryGraphqlInstrumentation.SENTRY_EXCEPTIONS_CONTEXT_KEY]
         assertNotNull(exceptions)
         assertEquals(1, exceptions.size)
         assertEquals(exception, exceptions.first())

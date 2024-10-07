@@ -1,13 +1,17 @@
-package io.sentry.graphql;
+package io.sentry.graphql22;
 
 import graphql.ExecutionResult;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.schema.DataFetcher;
 import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.graphql.ExceptionReporter;
+import io.sentry.graphql.SentryGraphqlInstrumentation;
+import io.sentry.graphql.SentrySubscriptionHandler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -33,7 +37,7 @@ public final class SentryInstrumentation
   public static final @NotNull String SENTRY_EXCEPTIONS_CONTEXT_KEY =
       SentryGraphqlInstrumentation.SENTRY_EXCEPTIONS_CONTEXT_KEY;
 
-  private static final String TRACE_ORIGIN = "auto.graphql.graphql";
+  private static final String TRACE_ORIGIN = "auto.graphql.graphql22";
   private final @NotNull SentryGraphqlInstrumentation instrumentation;
 
   /**
@@ -85,9 +89,9 @@ public final class SentryInstrumentation
     this.instrumentation =
         new SentryGraphqlInstrumentation(
             beforeSpan, subscriptionHandler, exceptionReporter, ignoredErrorTypes, TRACE_ORIGIN);
-    SentryIntegrationPackageStorage.getInstance().addIntegration("GraphQL");
+    SentryIntegrationPackageStorage.getInstance().addIntegration("GraphQL-v22");
     SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-graphql", BuildConfig.VERSION_NAME);
+        .addPackage("maven:io.sentry:sentry-graphql-22", BuildConfig.VERSION_NAME);
   }
 
   /**
@@ -104,23 +108,27 @@ public final class SentryInstrumentation
   }
 
   @Override
-  public @NotNull InstrumentationState createState() {
+  public @NotNull InstrumentationState createState(
+      final @NotNull InstrumentationCreateStateParameters parameters) {
     return instrumentation.createState();
   }
 
   @Override
-  public @NotNull InstrumentationContext<ExecutionResult> beginExecution(
-      final @NotNull InstrumentationExecutionParameters parameters) {
+  public @Nullable InstrumentationContext<ExecutionResult> beginExecution(
+      final @NotNull InstrumentationExecutionParameters parameters,
+      final @NotNull InstrumentationState state) {
     final SentryGraphqlInstrumentation.TracingState tracingState =
-        parameters.getInstrumentationState();
+        InstrumentationState.ofState(state);
     instrumentation.beginExecution(parameters, tracingState);
-    return super.beginExecution(parameters);
+    return super.beginExecution(parameters, state);
   }
 
   @Override
-  public CompletableFuture<ExecutionResult> instrumentExecutionResult(
-      ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
-    return super.instrumentExecutionResult(executionResult, parameters)
+  public @NotNull CompletableFuture<ExecutionResult> instrumentExecutionResult(
+      final @NotNull ExecutionResult executionResult,
+      final @NotNull InstrumentationExecutionParameters parameters,
+      final @NotNull InstrumentationState state) {
+    return super.instrumentExecutionResult(executionResult, parameters, state)
         .whenComplete(
             (result, exception) -> {
               instrumentation.instrumentExecutionResultComplete(parameters, result, exception);
@@ -128,19 +136,21 @@ public final class SentryInstrumentation
   }
 
   @Override
-  public @NotNull InstrumentationContext<ExecutionResult> beginExecuteOperation(
-      final @NotNull InstrumentationExecuteOperationParameters parameters) {
+  public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(
+      final @NotNull InstrumentationExecuteOperationParameters parameters,
+      final @NotNull InstrumentationState state) {
     instrumentation.beginExecuteOperation(parameters);
-    return super.beginExecuteOperation(parameters);
+    return super.beginExecuteOperation(parameters, state);
   }
 
   @Override
   @SuppressWarnings({"FutureReturnValueIgnored", "deprecation"})
   public @NotNull DataFetcher<?> instrumentDataFetcher(
       final @NotNull DataFetcher<?> dataFetcher,
-      final @NotNull InstrumentationFieldFetchParameters parameters) {
+      final @NotNull InstrumentationFieldFetchParameters parameters,
+      final @NotNull InstrumentationState state) {
     final SentryGraphqlInstrumentation.TracingState tracingState =
-        parameters.getInstrumentationState();
+        InstrumentationState.ofState(state);
     return instrumentation.instrumentDataFetcher(dataFetcher, parameters, tracingState);
   }
 

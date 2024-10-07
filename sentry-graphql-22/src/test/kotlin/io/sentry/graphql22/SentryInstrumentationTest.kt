@@ -1,4 +1,4 @@
-package io.sentry.graphql
+package io.sentry.graphql22
 
 import graphql.GraphQL
 import graphql.GraphQLContext
@@ -24,6 +24,10 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.graphql.ExceptionReporter
+import io.sentry.graphql.NoOpSubscriptionHandler
+import io.sentry.graphql.SentryGraphqlInstrumentation
+import io.sentry.graphql.SentrySubscriptionHandler
 import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -57,7 +61,13 @@ class SentryInstrumentationTest {
 
             val graphQLSchema = SchemaGenerator().makeExecutableSchema(SchemaParser().parse(schema), buildRuntimeWiring(dataFetcherThrows))
             val graphQL = GraphQL.newGraphQL(graphQLSchema)
-                .instrumentation(SentryInstrumentation(beforeSpan, NoOpSubscriptionHandler.getInstance(), true))
+                .instrumentation(
+                    SentryInstrumentation(
+                        beforeSpan,
+                        NoOpSubscriptionHandler.getInstance(),
+                        true
+                    )
+                )
                 .build()
 
             if (isTransactionActive) {
@@ -95,7 +105,7 @@ class SentryInstrumentationTest {
             val span = fixture.activeSpan.children.first()
             assertEquals("graphql", span.operation)
             assertEquals("Query.shows", span.description)
-            assertEquals("auto.graphql.graphql", span.spanContext.origin)
+            assertEquals("auto.graphql.graphql22", span.spanContext.origin)
             assertTrue(span.isFinished)
             assertEquals(SpanStatus.OK, span.status)
         }
@@ -170,7 +180,12 @@ class SentryInstrumentationTest {
         val subscriptionHandler = mock<SentrySubscriptionHandler>()
         whenever(subscriptionHandler.onSubscriptionResult(any(), any(), any(), any())).thenReturn("result modified by subscription handler")
         val operation = OperationDefinition.Operation.SUBSCRIPTION
-        val instrumentation = SentryInstrumentation(null, subscriptionHandler, exceptionReporter, emptyList())
+        val instrumentation = SentryInstrumentation(
+            null,
+            subscriptionHandler,
+            exceptionReporter,
+            emptyList()
+        )
         val dataFetcher = mock<DataFetcher<Any?>>()
         whenever(dataFetcher.get(any())).thenReturn("raw result")
         val graphQLContext = GraphQLContext.newContext().build()
@@ -195,11 +210,11 @@ class SentryInstrumentationTest {
             .build()
         val parameters = InstrumentationFieldFetchParameters(
             executionContext,
-            environment,
+            { environment },
             executionStrategyParameters,
             false
-        ).withNewState(SentryGraphqlInstrumentation.TracingState())
-        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, parameters)
+        )
+        val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, parameters, SentryGraphqlInstrumentation.TracingState())
         val result = instrumentedDataFetcher.get(environment)
 
         assertNotNull(result)
@@ -211,9 +226,9 @@ class SentryInstrumentationTest {
         withMockScopes {
             val sut = fixture.getSut()
             assertNotNull(fixture.scopes.options.sdkVersion)
-            assert(fixture.scopes.options.sdkVersion!!.integrationSet.contains("GraphQL"))
+            assert(fixture.scopes.options.sdkVersion!!.integrationSet.contains("GraphQL-v22"))
             val packageInfo =
-                fixture.scopes.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-graphql" }
+                fixture.scopes.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-graphql-22" }
             assertNotNull(packageInfo)
             assert(packageInfo.version == BuildConfig.VERSION_NAME)
         }

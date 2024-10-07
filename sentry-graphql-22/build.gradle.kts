@@ -23,7 +23,7 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
     api(projects.sentry)
     api(projects.sentryGraphqlCore)
-    compileOnly(Config.Libs.graphQlJava)
+    compileOnly(Config.Libs.graphQlJava22)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -42,7 +42,7 @@ dependencies {
     testImplementation(Config.Libs.okhttp)
     testImplementation(Config.Libs.springBootStarterGraphql)
     testImplementation("com.netflix.graphql.dgs:graphql-error-types:4.9.2")
-    testImplementation(Config.Libs.graphQlJava)
+    testImplementation(Config.Libs.graphQlJava22)
 }
 
 configure<SourceSetContainer> {
@@ -83,7 +83,7 @@ tasks.withType<JavaCompile>().configureEach {
 
 buildConfig {
     useJavaOutput()
-    packageName("io.sentry.graphql")
-    buildConfigField("String", "SENTRY_GRAPHQL_SDK_NAME", "\"${Config.Sentry.SENTRY_GRAPHQL_SDK_NAME}\"")
+    packageName("io.sentry.graphql22")
+    buildConfigField("String", "SENTRY_GRAPHQL22_SDK_NAME", "\"${Config.Sentry.SENTRY_GRAPHQL22_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
