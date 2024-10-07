@@ -57,6 +57,8 @@
   - Transactions are dropped if trace context is missing
 - Remove internal annotation on `SpanOptions` ([#3722](https://github.com/getsentry/sentry-java/pull/3722))
 - `SentryLogbackInitializer` is now public ([#3723](https://github.com/getsentry/sentry-java/pull/3723))
+- Fix order of calling `close` on previous Sentry instance when re-initializing ([#3750](https://github.com/getsentry/sentry-java/pull/3750))
+  - Previously some parts of Sentry were immediately closed after re-init that should have stayed open and some parts of the previous init were never closed
 
 ### Behavioural Changes
 
