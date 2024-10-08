@@ -21,3 +21,8 @@
 # Rules to detect a media player view to later mask it
 -dontwarn androidx.media3.ui.PlayerView
 -keepnames class androidx.media3.ui.PlayerView
+# Rules to detect a ExoPlayer view to later mask it
+-dontwarn com.google.android.exoplayer2.ui.PlayerView
+-keepnames class com.google.android.exoplayer2.ui.PlayerView
+-dontwarn com.google.android.exoplayer2.ui.StyledPlayerView
+-keepnames class com.google.android.exoplayer2.ui.StyledPlayerView
