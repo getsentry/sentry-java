@@ -11,6 +11,9 @@ public final class SentryReplayOptions {
 
   public static final String TEXT_VIEW_CLASS_NAME = "android.widget.TextView";
   public static final String IMAGE_VIEW_CLASS_NAME = "android.widget.ImageView";
+  public static final String WEB_VIEW_CLASS_NAME = "android.webkit.WebView";
+  public static final String VIDEO_VIEW_CLASS_NAME = "android.widget.VideoView";
+  public static final String EXOPLAYER_VIEW_CLASS_NAME = "androidx.media3.ui.PlayerView";
 
   public enum SentryReplayQuality {
     /** Video Scale: 80% Bit Rate: 50.000 */
@@ -99,6 +102,9 @@ public final class SentryReplayOptions {
   public SentryReplayOptions() {
     setMaskAllText(true);
     setMaskAllImages(true);
+    maskViewClasses.add(WEB_VIEW_CLASS_NAME);
+    maskViewClasses.add(VIDEO_VIEW_CLASS_NAME);
+    maskViewClasses.add(EXOPLAYER_VIEW_CLASS_NAME);
   }
 
   public SentryReplayOptions(
