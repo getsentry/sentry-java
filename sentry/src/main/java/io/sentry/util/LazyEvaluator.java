@@ -10,7 +10,8 @@ import org.jetbrains.annotations.Nullable;
  */
 @ApiStatus.Internal
 public final class LazyEvaluator<T> {
-  private @Nullable T value = null;
+
+  private volatile @Nullable T value = null;
   private final @NotNull Evaluator<T> evaluator;
 
   /**
@@ -28,10 +29,16 @@ public final class LazyEvaluator<T> {
    *
    * @return The result of the evaluator function.
    */
-  public synchronized @NotNull T getValue() {
+  public @NotNull T getValue() {
     if (value == null) {
-      value = evaluator.evaluate();
+      synchronized (this) {
+        if (value == null) {
+          value = evaluator.evaluate();
+        }
+      }
     }
+
+    //noinspection DataFlowIssue
     return value;
   }
 
