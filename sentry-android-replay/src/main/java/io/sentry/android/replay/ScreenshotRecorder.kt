@@ -13,6 +13,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
+import android.util.Log
 import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
@@ -101,6 +102,7 @@ internal class ScreenshotRecorder(
             Bitmap.Config.ARGB_8888
         )
 
+        val timeStart = System.nanoTime()
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
         mainLooperHandler.post {
             try {
@@ -123,6 +125,8 @@ internal class ScreenshotRecorder(
 
                         val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
                         root.traverse(viewHierarchy)
+                        val timeEnd = System.nanoTime()
+                        Log.e("TIME", String.format("%.2f", ((timeEnd - timeStart) / 1_000_000.0)))
 
                         recorder.submitSafely(options, "screenshot_recorder.redact") {
                             val canvas = Canvas(bitmap)
