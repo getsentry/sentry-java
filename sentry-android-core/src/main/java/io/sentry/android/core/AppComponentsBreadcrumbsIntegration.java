@@ -85,41 +85,20 @@ public final class AppComponentsBreadcrumbsIntegration
   @SuppressWarnings("deprecation")
   @Override
   public void onConfigurationChanged(@NotNull Configuration newConfig) {
-    if (hub != null) {
-      final Device.DeviceOrientation deviceOrientation =
-          DeviceOrientations.getOrientation(context.getResources().getConfiguration().orientation);
-
-      String orientation;
-      if (deviceOrientation != null) {
-        orientation = deviceOrientation.name().toLowerCase(Locale.ROOT);
-      } else {
-        orientation = "undefined";
-      }
-
-      final Breadcrumb breadcrumb = new Breadcrumb();
-      breadcrumb.setType("navigation");
-      breadcrumb.setCategory("device.orientation");
-      breadcrumb.setData("position", orientation);
-      breadcrumb.setLevel(SentryLevel.INFO);
-
-      final Hint hint = new Hint();
-      hint.set(ANDROID_CONFIGURATION, newConfig);
-
-      hub.addBreadcrumb(breadcrumb, hint);
-    }
+    executeInBackground(() -> captureConfigurationChangedBreadcrumb(newConfig));
   }
 
   @Override
   public void onLowMemory() {
-    createLowMemoryBreadcrumb(null);
+    executeInBackground(() -> captureLowMemoryBreadcrumb(null));
   }
 
   @Override
   public void onTrimMemory(final int level) {
-    createLowMemoryBreadcrumb(level);
+    executeInBackground(() -> captureLowMemoryBreadcrumb(level));
   }
 
-  private void createLowMemoryBreadcrumb(final @Nullable Integer level) {
+  private void captureLowMemoryBreadcrumb(final @Nullable Integer level) {
     if (hub != null) {
       final Breadcrumb breadcrumb = new Breadcrumb();
       if (level != null) {
@@ -145,6 +124,43 @@ public final class AppComponentsBreadcrumbsIntegration
       breadcrumb.setData("action", "LOW_MEMORY");
       breadcrumb.setLevel(SentryLevel.WARNING);
       hub.addBreadcrumb(breadcrumb);
+    }
+  }
+
+  private void captureConfigurationChangedBreadcrumb(final @NotNull Configuration newConfig) {
+    if (hub != null) {
+      final Device.DeviceOrientation deviceOrientation =
+          DeviceOrientations.getOrientation(context.getResources().getConfiguration().orientation);
+
+      String orientation;
+      if (deviceOrientation != null) {
+        orientation = deviceOrientation.name().toLowerCase(Locale.ROOT);
+      } else {
+        orientation = "undefined";
+      }
+
+      final Breadcrumb breadcrumb = new Breadcrumb();
+      breadcrumb.setType("navigation");
+      breadcrumb.setCategory("device.orientation");
+      breadcrumb.setData("position", orientation);
+      breadcrumb.setLevel(SentryLevel.INFO);
+
+      final Hint hint = new Hint();
+      hint.set(ANDROID_CONFIGURATION, newConfig);
+
+      hub.addBreadcrumb(breadcrumb, hint);
+    }
+  }
+
+  private void executeInBackground(final @NotNull Runnable runnable) {
+    if (options != null) {
+      try {
+        options.getExecutorService().submit(runnable);
+      } catch (Throwable t) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, t, "Failed to submit app components breadcrumb task");
+      }
     }
   }
 }

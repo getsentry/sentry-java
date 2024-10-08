@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.IHub
 import io.sentry.SentryLevel
+import io.sentry.test.ImmediateExecutorService
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -88,7 +89,9 @@ class AppComponentsBreadcrumbsIntegrationTest {
     @Test
     fun `When low memory event, a breadcrumb with type, category and level should be set`() {
         val sut = fixture.getSut()
-        val options = SentryAndroidOptions()
+        val options = SentryAndroidOptions().apply {
+            executorService = ImmediateExecutorService()
+        }
         val hub = mock<IHub>()
         sut.register(hub, options)
         sut.onLowMemory()
@@ -104,7 +107,9 @@ class AppComponentsBreadcrumbsIntegrationTest {
     @Test
     fun `When trim memory event with level, a breadcrumb with type, category and level should be set`() {
         val sut = fixture.getSut()
-        val options = SentryAndroidOptions()
+        val options = SentryAndroidOptions().apply {
+            executorService = ImmediateExecutorService()
+        }
         val hub = mock<IHub>()
         sut.register(hub, options)
         sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_BACKGROUND)
