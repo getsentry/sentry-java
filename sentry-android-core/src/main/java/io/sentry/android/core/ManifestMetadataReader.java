@@ -56,7 +56,7 @@ final class ManifestMetadataReader {
   static final String UNCAUGHT_EXCEPTION_HANDLER_ENABLE =
       "io.sentry.uncaught-exception-handler.enable";
 
-  static final String TRACING_ENABLE = "io.sentry.traces.enable";
+  @Deprecated static final String TRACING_ENABLE = "io.sentry.traces.enable";
   static final String TRACES_SAMPLE_RATE = "io.sentry.traces.sample-rate";
   static final String TRACES_ACTIVITY_ENABLE = "io.sentry.traces.activity.enable";
   static final String TRACES_ACTIVITY_AUTO_FINISH_ENABLE =

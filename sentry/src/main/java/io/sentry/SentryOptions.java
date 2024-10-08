@@ -910,14 +910,21 @@ public class SentryOptions {
    * <p>NOTE: There is also {@link SentryOptions#isTracingEnabled()} which checks other options as
    * well.
    *
+   * @deprecated We're removing enableTracing in 8.0
    * @return true if enabled, false if disabled, null can mean enabled if {@link
    *     SentryOptions#getTracesSampleRate()} or {@link SentryOptions#getTracesSampler()} are set.
    */
+  @Deprecated
   public @Nullable Boolean getEnableTracing() {
     return enableTracing;
   }
 
-  /** Enables generation of transactions and propagation of trace data. */
+  /**
+   * Enables generation of transactions and propagation of trace data.
+   *
+   * @deprecated We're removing enableTracing in 8.0
+   */
+  @Deprecated
   public void setEnableTracing(@Nullable Boolean enableTracing) {
     this.enableTracing = enableTracing;
   }
