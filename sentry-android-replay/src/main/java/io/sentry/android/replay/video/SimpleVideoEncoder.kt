@@ -136,7 +136,7 @@ internal class SimpleVideoEncoder(
         )
         format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
         format.setFloat(MediaFormat.KEY_FRAME_RATE, muxerConfig.frameRate.toFloat())
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, -1) // use -1 to force always non-key frames, meaning only partial updates to save the video size
+        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 10) // use 10 to force non-key frames, meaning only partial updates to save the video size. Every 10th second is a key frame, which is useful for buffer mode
 
         format
     }
