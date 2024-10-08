@@ -315,7 +315,7 @@ public abstract interface class io/sentry/EventProcessor {
 }
 
 public final class io/sentry/ExperimentalOptions {
-	public fun <init> ()V
+	public fun <init> (Z)V
 	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
 	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 }
@@ -2712,8 +2712,8 @@ public final class io/sentry/SentryReplayEvent$ReplayType$Deserializer : io/sent
 public final class io/sentry/SentryReplayOptions {
 	public static final field IMAGE_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
-	public fun <init> ()V
 	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
+	public fun <init> (Z)V
 	public fun addIgnoreViewClass (Ljava/lang/String;)V
 	public fun addRedactViewClass (Ljava/lang/String;)V
 	public fun getErrorReplayDuration ()J
