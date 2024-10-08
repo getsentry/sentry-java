@@ -96,14 +96,16 @@ public final class SentryReplayOptions {
   /** The maximum duration of a full session replay, defaults to 1h. */
   private long sessionDuration = 60 * 60 * 1000L;
 
-  public SentryReplayOptions() {
-    setRedactAllText(true);
-    setRedactAllImages(true);
+  public SentryReplayOptions(final boolean empty) {
+    if (!empty) {
+      setRedactAllText(true);
+      setRedactAllImages(true);
+    }
   }
 
   public SentryReplayOptions(
       final @Nullable Double sessionSampleRate, final @Nullable Double onErrorSampleRate) {
-    this();
+    this(false);
     this.sessionSampleRate = sessionSampleRate;
     this.onErrorSampleRate = onErrorSampleRate;
   }
