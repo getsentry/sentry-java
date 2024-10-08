@@ -428,7 +428,7 @@ public class SentryOptions {
   private boolean enableTimeToFullDisplayTracing = false;
 
   /** Screen fully displayed reporter, used for time-to-full-display spans. */
-  private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
+  private @NotNull FullyDisplayedReporter fullyDisplayedReporter =
       FullyDisplayedReporter.getInstance();
 
   private @NotNull IConnectionStatusProvider connectionStatusProvider =
@@ -2095,6 +2095,13 @@ public class SentryOptions {
   @ApiStatus.Internal
   public @NotNull FullyDisplayedReporter getFullyDisplayedReporter() {
     return fullyDisplayedReporter;
+  }
+
+  @ApiStatus.Internal
+  @TestOnly
+  public void setFullyDisplayedReporter(
+      final @NotNull FullyDisplayedReporter fullyDisplayedReporter) {
+    this.fullyDisplayedReporter = fullyDisplayedReporter;
   }
 
   /**
