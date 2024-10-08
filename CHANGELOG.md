@@ -15,6 +15,7 @@
         - If you're using code obfuscation, adjust your proguard-rules accordingly, so your custom view class name is not minified
 - Session Replay: Support Jetpack Compose masking ([#3739](https://github.com/getsentry/sentry-java/pull/3739))
   - To selectively mask/unmask @Composables, use `Modifier.sentryReplayMask()` and `Modifier.sentryReplayUnmask()` modifiers
+- Session Replay: Mask `WebView`, `VideoView` and `androidx.media3.ui.PlayerView` by default ([#3775](https://github.com/getsentry/sentry-java/pull/3775))
 
 ### Fixes
 

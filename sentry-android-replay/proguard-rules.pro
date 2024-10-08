@@ -18,3 +18,6 @@
 # Rules to detect a compose view to parse its hierarchy
 -dontwarn androidx.compose.ui.platform.AndroidComposeView
 -keepnames class androidx.compose.ui.platform.AndroidComposeView
+# Rules to detect a media player view to later mask it
+-dontwarn androidx.media3.ui.PlayerView
+-keepnames class androidx.media3.ui.PlayerView
