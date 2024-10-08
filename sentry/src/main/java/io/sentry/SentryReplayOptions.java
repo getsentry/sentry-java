@@ -15,7 +15,8 @@ public final class SentryReplayOptions {
   public static final String VIDEO_VIEW_CLASS_NAME = "android.widget.VideoView";
   public static final String ANDROIDX_MEDIA_VIEW_CLASS_NAME = "androidx.media3.ui.PlayerView";
   public static final String EXOPLAYER_CLASS_NAME = "com.google.android.exoplayer2.ui.PlayerView";
-  public static final String EXOPLAYER_STYLED_CLASS_NAME = "com.google.android.exoplayer2.ui.StyledPlayerView";
+  public static final String EXOPLAYER_STYLED_CLASS_NAME =
+      "com.google.android.exoplayer2.ui.StyledPlayerView";
 
   public enum SentryReplayQuality {
     /** Video Scale: 80% Bit Rate: 50.000 */
