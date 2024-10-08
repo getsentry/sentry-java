@@ -13,7 +13,6 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
-import android.util.Log
 import android.view.PixelCopy
 import android.view.View
 import android.view.ViewTreeObserver
