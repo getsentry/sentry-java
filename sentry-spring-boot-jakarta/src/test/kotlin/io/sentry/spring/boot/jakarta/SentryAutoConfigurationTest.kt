@@ -162,7 +162,6 @@ class SentryAutoConfigurationTest {
             "sentry.proxy.port=8090",
             "sentry.proxy.user=proxy-user",
             "sentry.proxy.pass=proxy-pass",
-            "sentry.enable-tracing=true",
             "sentry.traces-sample-rate=0.3",
             "sentry.tags.tag1=tag1-value",
             "sentry.tags.tag2=tag2-value",
@@ -203,7 +202,6 @@ class SentryAutoConfigurationTest {
             assertThat(options.proxy!!.port).isEqualTo("8090")
             assertThat(options.proxy!!.user).isEqualTo("proxy-user")
             assertThat(options.proxy!!.pass).isEqualTo("proxy-pass")
-            assertThat(options.enableTracing).isEqualTo(true)
             assertThat(options.tracesSampleRate).isEqualTo(0.3)
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
             assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
@@ -472,14 +470,6 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when traces sample rate is set, creates tracing filter`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=0.2")
-            .run {
-                assertThat(it).hasBean("sentryTracingFilter")
-            }
-    }
-
-    @Test
-    fun `when enable tracing is set to false and traces sample rate is set, creates tracing filter`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=0.2")
             .run {
                 assertThat(it).hasBean("sentryTracingFilter")

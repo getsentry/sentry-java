@@ -1992,7 +1992,7 @@ class ScopesTest {
 
     @Test
     fun `continueTrace creates propagation context from headers and returns null if performance disabled`() {
-        val scopes = generateScopes { it.enableTracing = false }
+        val scopes = generateScopes { it.tracesSampleRate = null }
         val traceId = SentryId()
         val parentSpanId = SpanId()
         val transactionContext = scopes.continueTrace("$traceId-$parentSpanId-1", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
@@ -2007,7 +2007,7 @@ class ScopesTest {
 
     @Test
     fun `continueTrace creates new propagation context if header invalid and returns null if performance disabled`() {
-        val scopes = generateScopes { it.enableTracing = false }
+        val scopes = generateScopes { it.tracesSampleRate = null }
         val traceId = SentryId()
         var propagationContextHolder = AtomicReference<PropagationContext>()
 

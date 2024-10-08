@@ -1360,7 +1360,7 @@ class ActivityLifecycleIntegrationTest {
     fun `starts new trace if performance is disabled`() {
         val sut = fixture.getSut()
         val activity = mock<Activity>()
-        fixture.options.enableTracing = false
+        fixture.options.tracesSampleRate = null
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = Scope(fixture.options)
@@ -1381,7 +1381,7 @@ class ActivityLifecycleIntegrationTest {
     fun `sets the activity as the current screen`() {
         val sut = fixture.getSut()
         val activity = mock<Activity>()
-        fixture.options.enableTracing = false
+        fixture.options.tracesSampleRate = null
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = mock<IScope>()
@@ -1401,7 +1401,7 @@ class ActivityLifecycleIntegrationTest {
     fun `does not start another new trace if one has already been started but does after activity was destroyed`() {
         val sut = fixture.getSut()
         val activity = mock<Activity>()
-        fixture.options.enableTracing = false
+        fixture.options.tracesSampleRate = null
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = Scope(fixture.options)
