@@ -534,15 +534,6 @@ class SpanTest {
         assertEquals(1, transaction.root.measurements["test"]!!.value)
     }
 
-    @Test
-    fun `span provides local metrics aggregator instance`() {
-        val span = fixture.getSut()
-        assertNotNull(span.localMetricsAggregator)
-
-        // ensure the getter returns the same instance
-        assertSame(span.localMetricsAggregator, span.localMetricsAggregator)
-    }
-
     // test to ensure that the span is not finished when the finishCallback is called
     @Test
     fun `span is not finished when finishCallback is called`() {

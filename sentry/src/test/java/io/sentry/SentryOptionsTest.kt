@@ -13,7 +13,6 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryOptionsTest {
@@ -642,49 +641,6 @@ class SentryOptionsTest {
     @Test
     fun `when options are initialized, enableScopePersistence is set to true by default`() {
         assertEquals(true, SentryOptions().isEnableScopePersistence)
-    }
-
-    @Test
-    fun `when options are initialized, metrics is disabled by default`() {
-        assertFalse(SentryOptions().isEnableMetrics)
-        assertFalse(SentryOptions().isEnableDefaultTagsForMetrics)
-        assertFalse(SentryOptions().isEnableSpanLocalMetricAggregation)
-    }
-
-    @Test
-    fun `when metrics is enabled, getters reflect that`() {
-        val options = SentryOptions().apply {
-            isEnableMetrics = true
-        }
-        assertTrue(options.isEnableMetrics)
-        assertTrue(options.isEnableDefaultTagsForMetrics)
-        assertTrue(options.isEnableSpanLocalMetricAggregation)
-    }
-
-    @Test
-    fun `when metric settings are flipped, getters reflect that`() {
-        val options = SentryOptions().apply {
-            isEnableMetrics = true
-            isEnableDefaultTagsForMetrics = false
-            isEnableSpanLocalMetricAggregation = false
-        }
-        assertTrue(options.isEnableMetrics)
-        assertFalse(options.isEnableDefaultTagsForMetrics)
-        assertFalse(options.isEnableSpanLocalMetricAggregation)
-    }
-
-    @Test
-    fun `metric callback is null by default`() {
-        assertNull(SentryOptions().beforeEmitMetricCallback)
-    }
-
-    @Test
-    fun `when metric callback is set, getter returns it`() {
-        val callback = SentryOptions.BeforeEmitMetricCallback { _, _ -> false }
-        val options = SentryOptions().apply {
-            beforeEmitMetricCallback = callback
-        }
-        assertSame(callback, options.beforeEmitMetricCallback)
     }
 
     @Test

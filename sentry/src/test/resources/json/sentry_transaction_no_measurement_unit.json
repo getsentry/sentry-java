@@ -28,20 +28,7 @@
                 "value": 1,
                 "unit": "test"
               }
-            },
-          "_metrics_summary": {
-            "d:custom/background_operation@second": [
-              {
-                "min": 1.0,
-                "max": 2.0,
-                "sum": 3.0,
-                "count": 2,
-                "tags": {
-                  "environment": "production"
-                }
-              }
-            ]
-          }
+            }
         }
     ],
     "type": "transaction",
@@ -57,19 +44,6 @@
           "unit": "test"
         }
     },
-  "_metrics_summary": {
-    "d:custom/background_operation@second": [
-      {
-        "min": 5.0,
-        "max": 6.0,
-        "sum": 11.0,
-        "count": 3,
-        "tags": {
-          "environment": "production"
-        }
-      }
-    ]
-  },
     "transaction_info": {
       "source": "custom"
     },

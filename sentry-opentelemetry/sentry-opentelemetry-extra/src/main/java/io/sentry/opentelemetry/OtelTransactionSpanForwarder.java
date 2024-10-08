@@ -16,7 +16,6 @@ import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TraceContext;
 import io.sentry.TracesSamplingDecision;
-import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
@@ -206,11 +205,6 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
   @Override
   public boolean isNoOp() {
     return rootSpan.isNoOp();
-  }
-
-  @Override
-  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
-    return rootSpan.getLocalMetricsAggregator();
   }
 
   @Override
