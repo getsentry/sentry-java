@@ -42,6 +42,12 @@ public final class LazyEvaluator<T> {
     return value;
   }
 
+  public void setValue(final @Nullable T value) {
+    synchronized (this) {
+      this.value = value;
+    }
+  }
+
   public interface Evaluator<T> {
     @NotNull
     T evaluate();

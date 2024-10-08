@@ -19,7 +19,7 @@ import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
-import io.sentry.util.Objects;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
@@ -118,15 +118,13 @@ public class SentryOptions {
   /** minimum LogLevel to be used if debug is enabled */
   private @NotNull SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
 
-  /** Envelope reader interface */
-  private volatile @Nullable IEnvelopeReader envelopeReader;
-
-  private final @NotNull Object envelopeReaderLock = new Object();
-
   /** Serializer interface to serialize/deserialize json events */
-  private volatile @Nullable ISerializer serializer;
+  private final @NotNull LazyEvaluator<ISerializer> serializer =
+      new LazyEvaluator<>(() -> new JsonSerializer(this));
 
-  private final @NotNull Object serializerLock = new Object();
+  /** Envelope reader interface */
+  private final @NotNull LazyEvaluator<IEnvelopeReader> envelopeReader =
+      new LazyEvaluator<>(() -> new EnvelopeReader(serializer.getValue()));
 
   /** Max depth when serializing object graphs with reflection. * */
   private int maxDepth = 100;
@@ -419,9 +417,9 @@ public class SentryOptions {
   private boolean traceOptionsRequests = true;
 
   /** Date provider to retrieve the current date from. */
-  @ApiStatus.Internal private volatile @Nullable SentryDateProvider dateProvider;
-
-  private final @NotNull Object dateProviderLock = new Object();
+  @ApiStatus.Internal
+  private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
+      new LazyEvaluator<>(() -> new SentryAutoDateProvider());
 
   private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 
@@ -610,14 +608,7 @@ public class SentryOptions {
    * @return the serializer
    */
   public @NotNull ISerializer getSerializer() {
-    if (serializer == null) {
-      synchronized (serializerLock) {
-        if (serializer == null) {
-          serializer = new JsonSerializer(this);
-        }
-      }
-    }
-    return Objects.requireNonNull(serializer, "Serializer was null");
+    return serializer.getValue();
   }
 
   /**
@@ -626,7 +617,7 @@ public class SentryOptions {
    * @param serializer the serializer
    */
   public void setSerializer(@Nullable ISerializer serializer) {
-    this.serializer = serializer != null ? serializer : NoOpSerializer.getInstance();
+    this.serializer.setValue(serializer != null ? serializer : NoOpSerializer.getInstance());
   }
 
   /**
@@ -648,19 +639,12 @@ public class SentryOptions {
   }
 
   public @NotNull IEnvelopeReader getEnvelopeReader() {
-    if (envelopeReader == null) {
-      synchronized (envelopeReaderLock) {
-        if (envelopeReader == null) {
-          envelopeReader = new EnvelopeReader(getSerializer());
-        }
-      }
-    }
-    return Objects.requireNonNull(envelopeReader, "EnvelopeReader was null");
+    return envelopeReader.getValue();
   }
 
   public void setEnvelopeReader(final @Nullable IEnvelopeReader envelopeReader) {
-    this.envelopeReader =
-        envelopeReader != null ? envelopeReader : NoOpEnvelopeReader.getInstance();
+    this.envelopeReader.setValue(
+        envelopeReader != null ? envelopeReader : NoOpEnvelopeReader.getInstance());
   }
 
   /**
@@ -2231,14 +2215,7 @@ public class SentryOptions {
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
   @ApiStatus.Internal
   public @NotNull SentryDateProvider getDateProvider() {
-    if (dateProvider == null) {
-      synchronized (dateProviderLock) {
-        if (dateProvider == null) {
-          dateProvider = new SentryAutoDateProvider();
-        }
-      }
-    }
-    return Objects.requireNonNull(dateProvider, "DateProvider is not set");
+    return dateProvider.getValue();
   }
 
   /**
@@ -2249,7 +2226,7 @@ public class SentryOptions {
    */
   @ApiStatus.Internal
   public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
-    this.dateProvider = dateProvider;
+    this.dateProvider.setValue(dateProvider);
   }
 
   /**
