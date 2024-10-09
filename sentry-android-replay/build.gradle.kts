@@ -32,6 +32,7 @@ android {
 
     composeOptions {
         kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
+        useLiveLiterals = false
     }
 
     buildTypes {
