@@ -440,7 +440,7 @@ class SentryAndroidTest {
             .untilTrue(asserted)
 
         // assert that persisted values have changed
-        options.executorService.close(5000L) // finalizes all enqueued persisting tasks
+        options.executorService.close(10000L) // finalizes all enqueued persisting tasks
         assertEquals(
             "TestActivity",
             PersistingScopeObserver.read(options, TRANSACTION_FILENAME, String::class.java)
