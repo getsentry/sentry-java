@@ -13,10 +13,8 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
-import android.util.Log
 import android.view.PixelCopy
 import android.view.View
-import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.WindowManager
 import io.sentry.SentryLevel.DEBUG
@@ -25,10 +23,10 @@ import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.util.MainLooperHandler
-import io.sentry.android.replay.util.dominantTextColor
 import io.sentry.android.replay.util.getVisibleRects
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
+import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
@@ -102,7 +100,6 @@ internal class ScreenshotRecorder(
             Bitmap.Config.ARGB_8888
         )
 
-        val timeStart = System.nanoTime()
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
         mainLooperHandler.post {
             try {
@@ -117,6 +114,7 @@ internal class ScreenshotRecorder(
                             return@request
                         }
 
+                        // TODO: handle animations with heuristics (e.g. if we fall under this condition 2 times in a row, we should capture)
                         if (contentChanged.get()) {
                             options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
                             bitmap.recycle()
@@ -124,9 +122,7 @@ internal class ScreenshotRecorder(
                         }
 
                         val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
-                        root.traverse(viewHierarchy)
-                        val timeEnd = System.nanoTime()
-                        Log.e("TIME", String.format("%.2f", ((timeEnd - timeStart) / 1_000_000.0)))
+                        root.traverse(viewHierarchy, options)
 
                         recorder.submitSafely(options, "screenshot_recorder.redact") {
                             val canvas = Canvas(bitmap)
@@ -147,7 +143,7 @@ internal class ScreenshotRecorder(
                                         }
 
                                         is TextViewHierarchyNode -> {
-                                            val textColor = node.layout.dominantTextColor
+                                            val textColor = node.layout?.dominantTextColor
                                                 ?: node.dominantColor
                                                 ?: Color.BLACK
                                             node.layout.getVisibleRects(
@@ -206,6 +202,8 @@ internal class ScreenshotRecorder(
         // next bind the new root
         rootView = WeakReference(root)
         root.viewTreeObserver?.addOnDrawListener(this)
+        // invalidate the flag to capture the first frame after new window is attached
+        contentChanged.set(true)
     }
 
     fun unbind(root: View?) {
@@ -253,28 +251,6 @@ internal class ScreenshotRecorder(
         )
         // get the pixel color (= dominant color)
         return singlePixelBitmap.getPixel(0, 0)
-    }
-
-    private fun View.traverse(parentNode: ViewHierarchyNode) {
-        if (this !is ViewGroup) {
-            return
-        }
-
-        if (this.childCount == 0) {
-            return
-        }
-
-        val childNodes = ArrayList<ViewHierarchyNode>(this.childCount)
-        for (i in 0 until childCount) {
-            val child = getChildAt(i)
-            if (child != null) {
-                val childNode =
-                    ViewHierarchyNode.fromView(child, parentNode, indexOfChild(child), options)
-                childNodes.add(childNode)
-                child.traverse(childNode)
-            }
-        }
-        parentNode.children = childNodes
     }
 
     private class RecorderExecutorServiceThreadFactory : ThreadFactory {
