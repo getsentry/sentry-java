@@ -33,6 +33,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.io.Closeable
 import java.io.File
 import java.io.FileReader
 import java.nio.file.Files
@@ -77,6 +78,50 @@ class SentryTest {
         }
         verify(scopes).close(eq(true))
     }
+
+    @Test
+    fun `init multiple times calls close on previous options not new`() {
+        val profiler1 = mock<ITransactionProfiler>()
+        val profiler2 = mock<ITransactionProfiler>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setTransactionProfiler(profiler1)
+        }
+        verify(profiler1, never()).close()
+
+        Sentry.init {
+            it.dsn = dsn
+            it.setTransactionProfiler(profiler2)
+        }
+        verify(profiler2, never()).close()
+        verify(profiler1).close()
+
+        Sentry.close()
+        verify(profiler2).close()
+    }
+
+    @Test
+    fun `init multiple times calls close on previous integrations not new`() {
+        val integration1 = mock<CloseableIntegration>()
+        val integration2 = mock<CloseableIntegration>()
+        Sentry.init {
+            it.dsn = dsn
+            it.addIntegration(integration1)
+        }
+        verify(integration1, never()).close()
+
+        Sentry.init {
+            it.dsn = dsn
+            it.addIntegration(integration2)
+        }
+        verify(integration2, never()).close()
+        verify(integration1).close()
+
+        Sentry.close()
+        verify(integration2).close()
+    }
+
+    interface CloseableIntegration : Integration, Closeable
 
     @Test
     fun `global client is enabled after restart`() {

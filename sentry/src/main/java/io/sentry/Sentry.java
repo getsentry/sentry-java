@@ -294,16 +294,17 @@ public final class Sentry {
                   SentryLevel.WARNING,
                   "Sentry has been already initialized. Previous configuration will be overwritten.");
         }
-        globalScope.replaceOptions(options);
 
         final IScopes scopes = getCurrentScopes();
+        scopes.close(true);
+
+        globalScope.replaceOptions(options);
+
         final IScope rootScope = new Scope(options);
         final IScope rootIsolationScope = new Scope(options);
         rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
         getScopesStorage().set(rootScopes);
-
-        scopes.close(true);
 
         initConfigurations(options);
 

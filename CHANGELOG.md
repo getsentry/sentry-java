@@ -24,6 +24,11 @@
 - Attach request body for `application/x-www-form-urlencoded` requests in Spring ([#3731](https://github.com/getsentry/sentry-java/pull/3731))
   - Previously request body was only attached for `application/json` requests
 - Set breadcrumb level based on http status ([#3771](https://github.com/getsentry/sentry-java/pull/3771))
+- Support `graphql-java` v22 via a new module `sentry-graphql-22` ([#3740](https://github.com/getsentry/sentry-java/pull/3740))
+  - If you are using `graphql-java` v21 or earlier, you can use the `sentry-graphql` module
+  - For `graphql-java` v22 and newer please use the `sentry-graphql-22` module
+- We now provide a `SentryInstrumenter` bean directly for Spring (Boot) if there is none yet instead of using `GraphQlSourceBuilderCustomizer` to add the instrumentation ([#3744](https://github.com/getsentry/sentry-java/pull/3744))
+  - It is now also possible to provide a bean of type `SentryGraphqlInstrumentation.BeforeSpanCallback` which is then used by `SentryInstrumenter`
 
 ### Fixes
 
@@ -53,6 +58,8 @@
   - Transactions are dropped if trace context is missing
 - Remove internal annotation on `SpanOptions` ([#3722](https://github.com/getsentry/sentry-java/pull/3722))
 - `SentryLogbackInitializer` is now public ([#3723](https://github.com/getsentry/sentry-java/pull/3723))
+- Fix order of calling `close` on previous Sentry instance when re-initializing ([#3750](https://github.com/getsentry/sentry-java/pull/3750))
+  - Previously some parts of Sentry were immediately closed after re-init that should have stayed open and some parts of the previous init were never closed
 
 ### Behavioural Changes
 
