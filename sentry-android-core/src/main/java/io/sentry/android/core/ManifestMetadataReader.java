@@ -38,9 +38,6 @@ final class ManifestMetadataReader {
   static final String SDK_NAME = "io.sentry.sdk.name";
   static final String SDK_VERSION = "io.sentry.sdk.version";
 
-  // TODO [MAJOR]: remove on 6.x in favor of SESSION_AUTO_TRACKING_ENABLE
-  static final String SESSION_TRACKING_ENABLE = "io.sentry.session-tracking.enable";
-
   static final String AUTO_SESSION_TRACKING_ENABLE = "io.sentry.auto-session-tracking.enable";
   static final String SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS =
       "io.sentry.session-tracking.timeout-interval-millis";
@@ -65,14 +62,9 @@ final class ManifestMetadataReader {
 
   static final String TTFD_ENABLE = "io.sentry.traces.time-to-full-display.enable";
 
-  static final String TRACES_PROFILING_ENABLE = "io.sentry.traces.profiling.enable";
   static final String PROFILES_SAMPLE_RATE = "io.sentry.traces.profiling.sample-rate";
 
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
-
-  // TODO [MAJOR]: remove in favor of TRACE_PROPAGATION_TARGETS
-  @Deprecated static final String TRACING_ORIGINS = "io.sentry.traces.tracing-origins";
-
   static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
@@ -150,14 +142,13 @@ final class ManifestMetadataReader {
 
         options.setAnrEnabled(readBool(metadata, logger, ANR_ENABLE, options.isAnrEnabled()));
 
-        // deprecated
-        final boolean enableSessionTracking =
-            readBool(
-                metadata, logger, SESSION_TRACKING_ENABLE, options.isEnableAutoSessionTracking());
-
         // use enableAutoSessionTracking as fallback
         options.setEnableAutoSessionTracking(
-            readBool(metadata, logger, AUTO_SESSION_TRACKING_ENABLE, enableSessionTracking));
+            readBool(
+                metadata,
+                logger,
+                AUTO_SESSION_TRACKING_ENABLE,
+                options.isEnableAutoSessionTracking()));
 
         if (options.getSampleRate() == null) {
           final Double sampleRate = readDouble(metadata, logger, SAMPLE_RATE);
@@ -309,9 +300,6 @@ final class ManifestMetadataReader {
                 TRACES_ACTIVITY_AUTO_FINISH_ENABLE,
                 options.isEnableActivityLifecycleTracingAutoFinish()));
 
-        options.setProfilingEnabled(
-            readBool(metadata, logger, TRACES_PROFILING_ENABLE, options.isProfilingEnabled()));
-
         if (options.getProfilesSampleRate() == null) {
           final Double profilesSampleRate = readDouble(metadata, logger, PROFILES_SAMPLE_RATE);
           if (profilesSampleRate != -1) {
@@ -334,15 +322,7 @@ final class ManifestMetadataReader {
         List<String> tracePropagationTargets =
             readList(metadata, logger, TRACE_PROPAGATION_TARGETS);
 
-        // TODO [MAJOR] remove once TRACING_ORIGINS have been removed
-        if (!metadata.containsKey(TRACE_PROPAGATION_TARGETS)
-            && (tracePropagationTargets == null || tracePropagationTargets.isEmpty())) {
-          tracePropagationTargets = readList(metadata, logger, TRACING_ORIGINS);
-        }
-
-        if ((metadata.containsKey(TRACE_PROPAGATION_TARGETS)
-                || metadata.containsKey(TRACING_ORIGINS))
-            && tracePropagationTargets == null) {
+        if (metadata.containsKey(TRACE_PROPAGATION_TARGETS) && tracePropagationTargets == null) {
           options.setTracePropagationTargets(Collections.emptyList());
         } else if (tracePropagationTargets != null) {
           options.setTracePropagationTargets(tracePropagationTargets);

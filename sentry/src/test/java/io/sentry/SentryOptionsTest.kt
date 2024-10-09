@@ -250,30 +250,6 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when profilingEnabled is set to true, profilesSampleRate is set to 1`() {
-        val options = SentryOptions()
-        options.isProfilingEnabled = true
-        assertEquals(1.0, options.profilesSampleRate)
-    }
-
-    @Test
-    fun `when profilingEnabled is set to false, profilesSampleRate is set to null`() {
-        val options = SentryOptions()
-        options.isProfilingEnabled = false
-        assertNull(options.profilesSampleRate)
-    }
-
-    @Test
-    fun `when profilesSampleRate is set, setting profilingEnabled is ignored`() {
-        val options = SentryOptions()
-        options.profilesSampleRate = 0.2
-        options.isProfilingEnabled = true
-        assertEquals(0.2, options.profilesSampleRate)
-        options.isProfilingEnabled = false
-        assertEquals(0.2, options.profilesSampleRate)
-    }
-
-    @Test
     fun `when options is initialized, transactionPerformanceCollector is set`() {
         assertIs<TransactionPerformanceCollector>(SentryOptions().transactionPerformanceCollector)
     }

@@ -11,7 +11,6 @@ import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
-import io.sentry.IScopes;
 import io.sentry.ISentryExecutorService;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
@@ -50,20 +49,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
   private long profileStartCpuMillis;
   private @NotNull Date profileStartTimestamp;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
-
-  /**
-   * @deprecated please use a constructor that doesn't takes a {@link IScopes} instead, as it would
-   *     be ignored anyway.
-   */
-  @Deprecated
-  public AndroidTransactionProfiler(
-      final @NotNull Context context,
-      final @NotNull SentryAndroidOptions sentryAndroidOptions,
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
-      final @NotNull IScopes scopes) {
-    this(context, sentryAndroidOptions, buildInfoProvider, frameMetricsCollector);
-  }
 
   public AndroidTransactionProfiler(
       final @NotNull Context context,

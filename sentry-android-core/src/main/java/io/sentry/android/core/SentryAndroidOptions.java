@@ -338,27 +338,6 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * Returns the interval for profiling traces in milliseconds.
-   *
-   * @return the interval for profiling traces in milliseconds.
-   * @deprecated has no effect and will be removed in future versions. It now just returns 0.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public int getProfilingTracesIntervalMillis() {
-    return 0;
-  }
-
-  /**
-   * Sets the interval for profiling traces in milliseconds.
-   *
-   * @param profilingTracesIntervalMillis - the interval for profiling traces in milliseconds.
-   * @deprecated has no effect and will be removed in future versions.
-   */
-  @Deprecated
-  public void setProfilingTracesIntervalMillis(final int profilingTracesIntervalMillis) {}
-
-  /**
    * Returns the Debug image loader
    *
    * @return the image loader

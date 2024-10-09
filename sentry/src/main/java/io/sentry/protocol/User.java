@@ -233,30 +233,6 @@ public final class User implements JsonUnknown, JsonSerializable {
   }
 
   /**
-   * Gets other user related data.
-   *
-   * @deprecated use {{@link User#getData()}} instead
-   * @return the other user data.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public @Nullable Map<String, @NotNull String> getOthers() {
-    return getData();
-  }
-
-  /**
-   * Sets other user related data.
-   *
-   * @deprecated use {{@link User#setData(Map)}} instead
-   * @param other the other user related data.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public void setOthers(final @Nullable Map<String, @NotNull String> other) {
-    this.setData(other);
-  }
-
-  /**
    * Get human readable name.
    *
    * @return Human readable name
