@@ -1,6 +1,6 @@
 package io.sentry.graphql;
 
-import static io.sentry.graphql.SentryInstrumentation.SENTRY_EXCEPTIONS_CONTEXT_KEY;
+import static io.sentry.graphql.SentryGraphqlInstrumentation.SENTRY_EXCEPTIONS_CONTEXT_KEY;
 
 import graphql.GraphQLContext;
 import graphql.execution.DataFetcherExceptionHandler;

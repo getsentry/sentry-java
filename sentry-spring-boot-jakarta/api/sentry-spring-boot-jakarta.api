@@ -71,11 +71,19 @@ public class io/sentry/spring/boot/jakarta/SentryWebfluxAutoConfiguration {
 	public fun sentryWebExceptionHandler (Lio/sentry/IScopes;)Lio/sentry/spring/jakarta/webflux/SentryWebExceptionHandler;
 }
 
+public class io/sentry/spring/boot/jakarta/graphql/SentryGraphql22AutoConfiguration {
+	public fun <init> ()V
+	public fun exceptionResolverAdapter ()Lio/sentry/spring/jakarta/graphql/SentryDataFetcherExceptionResolverAdapter;
+	public static fun graphqlBeanPostProcessor ()Lio/sentry/spring/jakarta/graphql/SentryGraphqlBeanPostProcessor;
+	public fun sentryInstrumentationWebMvc (Lio/sentry/spring/boot/jakarta/SentryProperties;Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql22/SentryInstrumentation;
+	public fun sentryInstrumentationWebflux (Lio/sentry/spring/boot/jakarta/SentryProperties;Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql22/SentryInstrumentation;
+}
+
 public class io/sentry/spring/boot/jakarta/graphql/SentryGraphqlAutoConfiguration {
 	public fun <init> ()V
 	public fun exceptionResolverAdapter ()Lio/sentry/spring/jakarta/graphql/SentryDataFetcherExceptionResolverAdapter;
 	public static fun graphqlBeanPostProcessor ()Lio/sentry/spring/jakarta/graphql/SentryGraphqlBeanPostProcessor;
-	public fun sourceBuilderCustomizerWebflux (Lio/sentry/spring/boot/jakarta/SentryProperties;)Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
-	public fun sourceBuilderCustomizerWebmvc (Lio/sentry/spring/boot/jakarta/SentryProperties;)Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
+	public fun sentryInstrumentationWebMvc (Lio/sentry/spring/boot/jakarta/SentryProperties;Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql/SentryInstrumentation;
+	public fun sentryInstrumentationWebflux (Lio/sentry/spring/boot/jakarta/SentryProperties;Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql/SentryInstrumentation;
 }
 

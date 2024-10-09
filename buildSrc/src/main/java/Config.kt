@@ -133,6 +133,7 @@ object Config {
         val p6spy = "p6spy:p6spy:3.9.1"
 
         val graphQlJava = "com.graphql-java:graphql-java:17.3"
+        val graphQlJava22 = "com.graphql-java:graphql-java:22.1"
 
         val quartz = "org.quartz-scheduler:quartz:2.3.0"
 
@@ -240,6 +241,7 @@ object Config {
         val SENTRY_APOLLO3_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo3"
         val SENTRY_APOLLO_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo"
         val SENTRY_GRAPHQL_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql"
+        val SENTRY_GRAPHQL22_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql22"
         val SENTRY_QUARTZ_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.quartz"
         val SENTRY_JDBC_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.jdbc"
         val SENTRY_SERVLET_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.servlet"
