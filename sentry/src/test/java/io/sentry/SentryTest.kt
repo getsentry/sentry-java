@@ -1246,18 +1246,6 @@ class SentryTest {
         }
     }
 
-    @Test
-    fun `metrics calls scopes getMetrics`() {
-        val scopes = mock<IScopes>()
-        Sentry.init({
-            it.dsn = dsn
-        }, false)
-        Sentry.setCurrentScopes(scopes)
-
-        Sentry.metrics()
-        verify(scopes).metrics()
-    }
-
     private class InMemoryOptionsObserver : IOptionsObserver {
         var release: String? = null
             private set

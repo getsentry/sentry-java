@@ -468,14 +468,6 @@ public class SentryOptions {
   /** Whether to profile app launches, depending on profilesSampler or profilesSampleRate. */
   private boolean enableAppStartProfiling = false;
 
-  private boolean enableMetrics = false;
-
-  private boolean enableDefaultTagsForMetrics = true;
-
-  private boolean enableSpanLocalMetricAggregation = true;
-
-  private @Nullable BeforeEmitMetricCallback beforeEmitMetricCallback = null;
-
   private @NotNull ISpanFactory spanFactory = NoOpSpanFactory.getInstance();
 
   /**
@@ -2395,48 +2387,6 @@ public class SentryOptions {
 
   public void setEnableScopePersistence(final boolean enableScopePersistence) {
     this.enableScopePersistence = enableScopePersistence;
-  }
-
-  @ApiStatus.Experimental
-  public boolean isEnableMetrics() {
-    return enableMetrics;
-  }
-
-  @ApiStatus.Experimental
-  public void setEnableMetrics(boolean enableMetrics) {
-    this.enableMetrics = enableMetrics;
-  }
-
-  @ApiStatus.Experimental
-  public boolean isEnableSpanLocalMetricAggregation() {
-    return isEnableMetrics() && enableSpanLocalMetricAggregation;
-  }
-
-  @ApiStatus.Experimental
-  public void setEnableSpanLocalMetricAggregation(final boolean enableSpanLocalMetricAggregation) {
-    this.enableSpanLocalMetricAggregation = enableSpanLocalMetricAggregation;
-  }
-
-  @ApiStatus.Experimental
-  public boolean isEnableDefaultTagsForMetrics() {
-    return isEnableMetrics() && enableDefaultTagsForMetrics;
-  }
-
-  @ApiStatus.Experimental
-  public void setEnableDefaultTagsForMetrics(final boolean enableDefaultTagsForMetrics) {
-    this.enableDefaultTagsForMetrics = enableDefaultTagsForMetrics;
-  }
-
-  @ApiStatus.Experimental
-  @Nullable
-  public BeforeEmitMetricCallback getBeforeEmitMetricCallback() {
-    return beforeEmitMetricCallback;
-  }
-
-  @ApiStatus.Experimental
-  public void setBeforeEmitMetricCallback(
-      final @Nullable BeforeEmitMetricCallback beforeEmitMetricCallback) {
-    this.beforeEmitMetricCallback = beforeEmitMetricCallback;
   }
 
   public @Nullable Cron getCron() {

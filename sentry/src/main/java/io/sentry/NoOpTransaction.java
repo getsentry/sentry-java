@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
@@ -251,10 +250,5 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public boolean isNoOp() {
     return true;
-  }
-
-  @Override
-  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
-    return null;
   }
 }

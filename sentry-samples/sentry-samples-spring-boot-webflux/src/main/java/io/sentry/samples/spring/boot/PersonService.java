@@ -12,14 +12,7 @@ public class PersonService {
   Mono<Person> create(Person person) {
     return Mono.delay(Duration.ofMillis(100))
         .publishOn(Schedulers.boundedElastic())
-        .doOnNext(
-            __ ->
-                Sentry.metrics()
-                    .timing(
-                        "person.insert",
-                        () -> {
-                          Sentry.captureMessage("Creating person");
-                        }))
+        .doOnNext(__ -> Sentry.captureMessage("Creating person"))
         .map(__ -> person);
   }
 }
