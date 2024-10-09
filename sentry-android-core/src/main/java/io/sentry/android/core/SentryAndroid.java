@@ -173,7 +173,6 @@ public final class SentryAndroid {
                 }
               });
           if (!sessionStarted.get()) {
-            hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
             hub.startSession();
           }
         }
