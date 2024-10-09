@@ -191,14 +191,6 @@ public class io/sentry/android/replay/util/FixedWindowCallback : android/view/Wi
 	public fun onWindowStartingActionMode (Landroid/view/ActionMode$Callback;I)Landroid/view/ActionMode;
 }
 
-public final class io/sentry/android/replay/util/NodesKt {
-	public static final fun fastCoerceAtLeast (FF)F
-	public static final fun fastCoerceAtMost (FF)F
-	public static final fun fastCoerceIn (FFF)F
-	public static final fun fastMaxOf (FFFF)F
-	public static final fun fastMinOf (FFFF)F
-}
-
 public abstract interface class io/sentry/android/replay/util/TextLayout {
 	public abstract fun getDominantTextColor ()Ljava/lang/Integer;
 	public abstract fun getEllipsisCount (I)I
