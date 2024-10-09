@@ -6,6 +6,7 @@
 
 - Add support for `feedback` envelope header item type ([#3687](https://github.com/getsentry/sentry-java/pull/3687))
 - Add breadcrumb.origin field ([#3727](https://github.com/getsentry/sentry-java/pull/3727))
+- Offload System.loadLibrary calls to background thread ([#3670](https://github.com/getsentry/sentry-java/pull/3670))
 
 ### Fixes
 
