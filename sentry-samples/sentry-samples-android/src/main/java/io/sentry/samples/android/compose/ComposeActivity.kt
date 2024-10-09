@@ -117,7 +117,7 @@ fun Github(
                 .fillMaxSize()
         ) {
             Image(
-                painter = painterResource(IR.drawable.logo_pocket_casts),
+                painter = painterResource(IR.drawable.sentry_glyph),
                 contentDescription = "LOGO",
                 colorFilter = ColorFilter.tint(Color.Black),
                 modifier = Modifier.padding(vertical = 16.dp)

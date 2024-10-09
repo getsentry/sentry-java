@@ -6,7 +6,8 @@ import android.annotation.TargetApi
 import android.view.View
 import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.Owner
@@ -19,11 +20,11 @@ import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.SentryReplayModifiers
 import io.sentry.android.replay.util.ComposeTextLayout
+import io.sentry.android.replay.util.boundsInWindow
 import io.sentry.android.replay.util.findPainter
 import io.sentry.android.replay.util.findTextAttributes
 import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.toOpaque
-import io.sentry.android.replay.util.toRect
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
@@ -62,10 +63,13 @@ internal object ComposeViewHierarchyNode {
         return options.experimental.sessionReplay.maskViewClasses.contains(className)
     }
 
+    private var _rootCoordinates: LayoutCoordinates? = null
+
     private fun fromComposeNode(
         node: LayoutNode,
         parent: ViewHierarchyNode?,
         distance: Int,
+        isComposeRoot: Boolean,
         options: SentryOptions
     ): ViewHierarchyNode? {
         val isInTree = node.isPlaced && node.isAttached
@@ -73,8 +77,12 @@ internal object ComposeViewHierarchyNode {
             return null
         }
 
+        if (isComposeRoot) {
+            _rootCoordinates = node.coordinates.findRootCoordinates()
+        }
+
         val semantics = node.collapsedSemantics
-        val visibleRect = node.coordinates.boundsInWindow().toRect()
+        val visibleRect = node.coordinates.boundsInWindow(_rootCoordinates)
         val isVisible = !node.outerCoordinator.isTransparent() &&
             (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
             visibleRect.height() > 0 && visibleRect.width() > 0
@@ -167,7 +175,7 @@ internal object ComposeViewHierarchyNode {
 
         try {
             val rootNode = (view as? Owner)?.root ?: return false
-            rootNode.traverse(parent, options)
+            rootNode.traverse(parent, isComposeRoot = true, options)
         } catch (e: Throwable) {
             options.logger.log(
                 SentryLevel.ERROR,
@@ -185,7 +193,7 @@ internal object ComposeViewHierarchyNode {
         return true
     }
 
-    private fun LayoutNode.traverse(parentNode: ViewHierarchyNode, options: SentryOptions) {
+    private fun LayoutNode.traverse(parentNode: ViewHierarchyNode, isComposeRoot: Boolean, options: SentryOptions) {
         val children = this.children
         if (children.isEmpty()) {
             return
@@ -194,10 +202,10 @@ internal object ComposeViewHierarchyNode {
         val childNodes = ArrayList<ViewHierarchyNode>(children.size)
         for (index in children.indices) {
             val child = children[index]
-            val childNode = fromComposeNode(child, parentNode, index, options)
+            val childNode = fromComposeNode(child, parentNode, index, isComposeRoot, options)
             if (childNode != null) {
                 childNodes.add(childNode)
-                child.traverse(childNode, options)
+                child.traverse(childNode, isComposeRoot = false, options)
             }
         }
         parentNode.children = childNodes

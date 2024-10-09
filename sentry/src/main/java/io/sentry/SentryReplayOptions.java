@@ -102,19 +102,21 @@ public final class SentryReplayOptions {
   /** The maximum duration of a full session replay, defaults to 1h. */
   private long sessionDuration = 60 * 60 * 1000L;
 
-  public SentryReplayOptions() {
-    setMaskAllText(true);
-    setMaskAllImages(true);
-    maskViewClasses.add(WEB_VIEW_CLASS_NAME);
-    maskViewClasses.add(VIDEO_VIEW_CLASS_NAME);
-    maskViewClasses.add(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
-    maskViewClasses.add(EXOPLAYER_CLASS_NAME);
-    maskViewClasses.add(EXOPLAYER_STYLED_CLASS_NAME);
+  public SentryReplayOptions(final boolean empty) {
+    if (!empty) {
+      setMaskAllText(true);
+      setMaskAllImages(true);
+      maskViewClasses.add(WEB_VIEW_CLASS_NAME);
+      maskViewClasses.add(VIDEO_VIEW_CLASS_NAME);
+      maskViewClasses.add(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
+      maskViewClasses.add(EXOPLAYER_CLASS_NAME);
+      maskViewClasses.add(EXOPLAYER_STYLED_CLASS_NAME);
+    }
   }
 
   public SentryReplayOptions(
       final @Nullable Double sessionSampleRate, final @Nullable Double onErrorSampleRate) {
-    this();
+    this(false);
     this.sessionSampleRate = sessionSampleRate;
     this.onErrorSampleRate = onErrorSampleRate;
   }

@@ -19,13 +19,13 @@ import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
 import io.sentry.util.thread.IMainThreadChecker;
 import io.sentry.util.thread.NoOpMainThreadChecker;
 import java.io.File;
-import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -118,11 +118,13 @@ public class SentryOptions {
   /** minimum LogLevel to be used if debug is enabled */
   private @NotNull SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
 
-  /** Envelope reader interface */
-  private @NotNull IEnvelopeReader envelopeReader = new EnvelopeReader(new JsonSerializer(this));
-
   /** Serializer interface to serialize/deserialize json events */
-  private @NotNull ISerializer serializer = new JsonSerializer(this);
+  private final @NotNull LazyEvaluator<ISerializer> serializer =
+      new LazyEvaluator<>(() -> new JsonSerializer(this));
+
+  /** Envelope reader interface */
+  private final @NotNull LazyEvaluator<IEnvelopeReader> envelopeReader =
+      new LazyEvaluator<>(() -> new EnvelopeReader(serializer.getValue()));
 
   /** Max depth when serializing object graphs with reflection. * */
   private int maxDepth = 100;
@@ -416,7 +418,8 @@ public class SentryOptions {
 
   /** Date provider to retrieve the current date from. */
   @ApiStatus.Internal
-  private @NotNull SentryDateProvider dateProvider = new SentryAutoDateProvider();
+  private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
+      new LazyEvaluator<>(() -> new SentryAutoDateProvider());
 
   private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 
@@ -428,7 +431,7 @@ public class SentryOptions {
   private boolean enableTimeToFullDisplayTracing = false;
 
   /** Screen fully displayed reporter, used for time-to-full-display spans. */
-  private final @NotNull FullyDisplayedReporter fullyDisplayedReporter =
+  private @NotNull FullyDisplayedReporter fullyDisplayedReporter =
       FullyDisplayedReporter.getInstance();
 
   private @NotNull IConnectionStatusProvider connectionStatusProvider =
@@ -479,7 +482,7 @@ public class SentryOptions {
 
   @ApiStatus.Experimental private @Nullable Cron cron = null;
 
-  private final @NotNull ExperimentalOptions experimental = new ExperimentalOptions();
+  private final @NotNull ExperimentalOptions experimental;
 
   private @NotNull ReplayController replayController = NoOpReplayController.getInstance();
 
@@ -605,7 +608,7 @@ public class SentryOptions {
    * @return the serializer
    */
   public @NotNull ISerializer getSerializer() {
-    return serializer;
+    return serializer.getValue();
   }
 
   /**
@@ -614,7 +617,7 @@ public class SentryOptions {
    * @param serializer the serializer
    */
   public void setSerializer(@Nullable ISerializer serializer) {
-    this.serializer = serializer != null ? serializer : NoOpSerializer.getInstance();
+    this.serializer.setValue(serializer != null ? serializer : NoOpSerializer.getInstance());
   }
 
   /**
@@ -636,12 +639,12 @@ public class SentryOptions {
   }
 
   public @NotNull IEnvelopeReader getEnvelopeReader() {
-    return envelopeReader;
+    return envelopeReader.getValue();
   }
 
   public void setEnvelopeReader(final @Nullable IEnvelopeReader envelopeReader) {
-    this.envelopeReader =
-        envelopeReader != null ? envelopeReader : NoOpEnvelopeReader.getInstance();
+    this.envelopeReader.setValue(
+        envelopeReader != null ? envelopeReader : NoOpEnvelopeReader.getInstance());
   }
 
   /**
@@ -2097,6 +2100,13 @@ public class SentryOptions {
     return fullyDisplayedReporter;
   }
 
+  @ApiStatus.Internal
+  @TestOnly
+  public void setFullyDisplayedReporter(
+      final @NotNull FullyDisplayedReporter fullyDisplayedReporter) {
+    this.fullyDisplayedReporter = fullyDisplayedReporter;
+  }
+
   /**
    * Whether OPTIONS requests should be traced.
    *
@@ -2212,7 +2222,7 @@ public class SentryOptions {
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
   @ApiStatus.Internal
   public @NotNull SentryDateProvider getDateProvider() {
-    return dateProvider;
+    return dateProvider.getValue();
   }
 
   /**
@@ -2223,7 +2233,7 @@ public class SentryOptions {
    */
   @ApiStatus.Internal
   public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
-    this.dateProvider = dateProvider;
+    this.dateProvider.setValue(dateProvider);
   }
 
   /**
@@ -2540,6 +2550,7 @@ public class SentryOptions {
    * @param empty if options should be empty.
    */
   private SentryOptions(final boolean empty) {
+    experimental = new ExperimentalOptions(empty);
     if (!empty) {
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
