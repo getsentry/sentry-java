@@ -37,7 +37,7 @@ internal class ComposeTextLayout(internal val layout: TextLayoutResult, private 
 // TODO: probably most of the below we can do via bytecode instrumentation and speed up at runtime
 
 /**
- * This method is necessary to redact images in Compose.
+ * This method is necessary to mask images in Compose.
  *
  * We heuristically look up for classes that have a [Painter] modifier, usually they all have a
  * `Painter` string in their name, e.g. PainterElement, PainterModifierNodeElement or
@@ -71,9 +71,9 @@ internal fun LayoutNode.findPainter(): Painter? {
  * [androidx.compose.ui.graphics.painter.BrushPainter]
  *
  * In theory, [androidx.compose.ui.graphics.painter.BitmapPainter] can also come from local assets,
- * but it can as well come from a network resource, so we preemptively redact it.
+ * but it can as well come from a network resource, so we preemptively mask it.
  */
-internal fun Painter.isRedactable(): Boolean {
+internal fun Painter.isMaskable(): Boolean {
     val className = this::class.java.name
     return !className.contains("Vector") &&
         !className.contains("Color") &&
@@ -83,11 +83,11 @@ internal fun Painter.isRedactable(): Boolean {
 internal data class TextAttributes(val color: Color?, val hasFillModifier: Boolean)
 
 /**
- * This method is necessary to redact text in Compose.
+ * This method is necessary to mask text in Compose.
  *
  * We heuristically look up for classes that have a [Text] modifier, usually they all have a
  * `Text` string in their name, e.g. TextStringSimpleElement or TextAnnotatedStringElement. We then
- * get the color from the modifier, to be able to redact it with the correct color.
+ * get the color from the modifier, to be able to mask it with the correct color.
  *
  * We also look up for classes that have a [Fill] modifier, usually they all have a `Fill` string in
  * their name, e.g. FillElement. This is necessary to workaround a Compose bug where single-line

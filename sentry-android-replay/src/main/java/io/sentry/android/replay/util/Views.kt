@@ -88,9 +88,9 @@ internal fun View.isVisibleToUser(): Pair<Boolean, Rect?> {
 
 @SuppressLint("ObsoleteSdkInt")
 @TargetApi(21)
-internal fun Drawable?.isRedactable(): Boolean {
+internal fun Drawable?.isMaskable(): Boolean {
     // TODO: maybe find a way how to check if the drawable is coming from the apk or loaded from network
-    // TODO: otherwise maybe check for the bitmap size and don't redact those that take a lot of height (e.g. a background of a whatsapp chat)
+    // TODO: otherwise maybe check for the bitmap size and don't mask those that take a lot of height (e.g. a background of a whatsapp chat)
     return when (this) {
         is InsetDrawable, is ColorDrawable, is VectorDrawable, is GradientDrawable -> false
         is BitmapDrawable -> {

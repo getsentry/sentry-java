@@ -124,11 +124,11 @@ internal class ScreenshotRecorder(
                         val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
                         root.traverse(viewHierarchy, options)
 
-                        recorder.submitSafely(options, "screenshot_recorder.redact") {
+                        recorder.submitSafely(options, "screenshot_recorder.mask") {
                             val canvas = Canvas(bitmap)
                             canvas.setMatrix(prescaledMatrix)
                             viewHierarchy.traverse { node ->
-                                if (node.shouldRedact && (node.width > 0 && node.height > 0)) {
+                                if (node.shouldMask && (node.width > 0 && node.height > 0)) {
                                     node.visibleRect ?: return@traverse false
 
                                     // TODO: investigate why it returns true on RN when it shouldn't
