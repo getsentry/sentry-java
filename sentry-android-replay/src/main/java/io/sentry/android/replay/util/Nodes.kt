@@ -3,9 +3,11 @@
 package io.sentry.android.replay.util
 
 import android.graphics.Rect
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.text.TextLayoutResult
 import kotlin.math.roundToInt
@@ -78,13 +80,6 @@ internal fun Painter.isRedactable(): Boolean {
         !className.contains("Brush")
 }
 
-/**
- * Converts from [androidx.compose.ui.geometry.Rect] to [android.graphics.Rect].
- */
-internal fun androidx.compose.ui.geometry.Rect.toRect(): Rect {
-    return Rect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
-}
-
 internal data class TextAttributes(val color: Color?, val hasFillModifier: Boolean)
 
 /**
@@ -124,4 +119,88 @@ internal fun LayoutNode.findTextAttributes(): TextAttributes {
         }
     }
     return TextAttributes(color, hasFillModifier)
+}
+
+/**
+ * Returns the smaller of the given values. If any value is NaN, returns NaN. Preferred over
+ * `kotlin.comparisons.minOf()` for 4 arguments as it avoids allocating an array because of the
+ * varargs.
+ */
+private inline fun fastMinOf(a: Float, b: Float, c: Float, d: Float): Float {
+    return minOf(a, minOf(b, minOf(c, d)))
+}
+
+/**
+ * Returns the largest of the given values. If any value is NaN, returns NaN. Preferred over
+ * `kotlin.comparisons.maxOf()` for 4 arguments as it avoids allocating an array because of the
+ * varargs.
+ */
+private inline fun fastMaxOf(a: Float, b: Float, c: Float, d: Float): Float {
+    return maxOf(a, maxOf(b, maxOf(c, d)))
+}
+
+/**
+ * Returns this float value clamped in the inclusive range defined by [minimumValue] and
+ * [maximumValue]. Unlike [Float.coerceIn], the range is not validated: the caller must ensure that
+ * [minimumValue] is less than [maximumValue].
+ */
+private inline fun Float.fastCoerceIn(minimumValue: Float, maximumValue: Float) =
+    this.fastCoerceAtLeast(minimumValue).fastCoerceAtMost(maximumValue)
+
+/** Ensures that this value is not less than the specified [minimumValue]. */
+private inline fun Float.fastCoerceAtLeast(minimumValue: Float): Float {
+    return if (this < minimumValue) minimumValue else this
+}
+
+/** Ensures that this value is not greater than the specified [maximumValue]. */
+private inline fun Float.fastCoerceAtMost(maximumValue: Float): Float {
+    return if (this > maximumValue) maximumValue else this
+}
+
+/**
+ * A faster copy of https://github.com/androidx/androidx/blob/fc7df0dd68466ac3bb16b1c79b7a73dd0bfdd4c1/compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/layout/LayoutCoordinates.kt#L187
+ *
+ * Since we traverse the tree from the root, we don't need to find it again from the leaf node and
+ * just pass it as an argument.
+ *
+ * @return boundaries of this layout relative to the window's origin.
+ */
+internal fun LayoutCoordinates.boundsInWindow(root: LayoutCoordinates?): Rect {
+    root ?: return Rect()
+
+    val rootWidth = root.size.width.toFloat()
+    val rootHeight = root.size.height.toFloat()
+
+    val bounds = root.localBoundingBoxOf(this)
+    val boundsLeft = bounds.left.fastCoerceIn(0f, rootWidth)
+    val boundsTop = bounds.top.fastCoerceIn(0f, rootHeight)
+    val boundsRight = bounds.right.fastCoerceIn(0f, rootWidth)
+    val boundsBottom = bounds.bottom.fastCoerceIn(0f, rootHeight)
+
+    if (boundsLeft == boundsRight || boundsTop == boundsBottom) {
+        return Rect()
+    }
+
+    val topLeft = root.localToWindow(Offset(boundsLeft, boundsTop))
+    val topRight = root.localToWindow(Offset(boundsRight, boundsTop))
+    val bottomRight = root.localToWindow(Offset(boundsRight, boundsBottom))
+    val bottomLeft = root.localToWindow(Offset(boundsLeft, boundsBottom))
+
+    val topLeftX = topLeft.x
+    val topRightX = topRight.x
+    val bottomLeftX = bottomLeft.x
+    val bottomRightX = bottomRight.x
+
+    val left = fastMinOf(topLeftX, topRightX, bottomLeftX, bottomRightX)
+    val right = fastMaxOf(topLeftX, topRightX, bottomLeftX, bottomRightX)
+
+    val topLeftY = topLeft.y
+    val topRightY = topRight.y
+    val bottomLeftY = bottomLeft.y
+    val bottomRightY = bottomRight.y
+
+    val top = fastMinOf(topLeftY, topRightY, bottomLeftY, bottomRightY)
+    val bottom = fastMaxOf(topLeftY, topRightY, bottomLeftY, bottomRightY)
+
+    return Rect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
 }
