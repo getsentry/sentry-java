@@ -85,22 +85,25 @@ public final class AppComponentsBreadcrumbsIntegration
   @SuppressWarnings("deprecation")
   @Override
   public void onConfigurationChanged(@NotNull Configuration newConfig) {
-    executeInBackground(() -> captureConfigurationChangedBreadcrumb(newConfig));
+    final long now = System.currentTimeMillis();
+    executeInBackground(() -> captureConfigurationChangedBreadcrumb(now, newConfig));
   }
 
   @Override
   public void onLowMemory() {
-    executeInBackground(() -> captureLowMemoryBreadcrumb(null));
+    final long now = System.currentTimeMillis();
+    executeInBackground(() -> captureLowMemoryBreadcrumb(now, null));
   }
 
   @Override
   public void onTrimMemory(final int level) {
-    executeInBackground(() -> captureLowMemoryBreadcrumb(level));
+    final long now = System.currentTimeMillis();
+    executeInBackground(() -> captureLowMemoryBreadcrumb(now, level));
   }
 
-  private void captureLowMemoryBreadcrumb(final @Nullable Integer level) {
+  private void captureLowMemoryBreadcrumb(final long timeMs, final @Nullable Integer level) {
     if (hub != null) {
-      final Breadcrumb breadcrumb = new Breadcrumb();
+      final Breadcrumb breadcrumb = new Breadcrumb(timeMs);
       if (level != null) {
         // only add breadcrumb if TRIM_MEMORY_BACKGROUND, TRIM_MEMORY_MODERATE or
         // TRIM_MEMORY_COMPLETE.
@@ -127,7 +130,8 @@ public final class AppComponentsBreadcrumbsIntegration
     }
   }
 
-  private void captureConfigurationChangedBreadcrumb(final @NotNull Configuration newConfig) {
+  private void captureConfigurationChangedBreadcrumb(
+      final long timeMs, final @NotNull Configuration newConfig) {
     if (hub != null) {
       final Device.DeviceOrientation deviceOrientation =
           DeviceOrientations.getOrientation(context.getResources().getConfiguration().orientation);
@@ -139,7 +143,7 @@ public final class AppComponentsBreadcrumbsIntegration
         orientation = "undefined";
       }
 
-      final Breadcrumb breadcrumb = new Breadcrumb();
+      final Breadcrumb breadcrumb = new Breadcrumb(timeMs);
       breadcrumb.setType("navigation");
       breadcrumb.setCategory("device.orientation");
       breadcrumb.setData("position", orientation);

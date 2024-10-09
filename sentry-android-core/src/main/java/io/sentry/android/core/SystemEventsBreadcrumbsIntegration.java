@@ -230,12 +230,14 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         return;
       }
 
+      final long now = System.currentTimeMillis();
       try {
         options
             .getExecutorService()
             .submit(
                 () -> {
-                  final Breadcrumb breadcrumb = createBreadcrumb(intent, action, isBatteryChanged);
+                  final Breadcrumb breadcrumb =
+                      createBreadcrumb(now, intent, action, isBatteryChanged);
                   final Hint hint = new Hint();
                   hint.set(ANDROID_INTENT, intent);
                   hub.addBreadcrumb(breadcrumb, hint);
@@ -248,8 +250,11 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     }
 
     private @NotNull Breadcrumb createBreadcrumb(
-        final @NotNull Intent intent, final @Nullable String action, boolean isBatteryChanged) {
-      final Breadcrumb breadcrumb = new Breadcrumb();
+        final long timeMs,
+        final @NotNull Intent intent,
+        final @Nullable String action,
+        boolean isBatteryChanged) {
+      final Breadcrumb breadcrumb = new Breadcrumb(timeMs);
       breadcrumb.setType("system");
       breadcrumb.setCategory("device.event");
       final String shortAction = StringUtils.getStringAfterDot(action);
