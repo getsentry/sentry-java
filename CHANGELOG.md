@@ -5,6 +5,8 @@
 ### Breaking Changes
 
 - Throw IllegalArgumentException when calling Sentry.init on Android ([#3596](https://github.com/getsentry/sentry-java/pull/3596))
+- Metrics has been removed from the SDK ([#3774](https://github.com/getsentry/sentry-java/pull/3774))
+  - Metrics will return but we don't know in what exact form yet
 - Change OkHttp sub-spans to span attributes ([#3556](https://github.com/getsentry/sentry-java/pull/3556))
   - This will reduce the number of spans created by the SDK
 - `options.experimental.sessionReplay.errorSampleRate` was renamed to `options.experimental.sessionReplay.onErrorSampleRate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
