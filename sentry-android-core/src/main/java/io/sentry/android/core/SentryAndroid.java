@@ -13,7 +13,6 @@ import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
-import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;

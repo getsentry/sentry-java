@@ -6,7 +6,6 @@ import io.sentry.Breadcrumb;
 import io.sentry.IHub;
 import io.sentry.SentryLevel;
 import io.sentry.Session;
-import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import java.util.Timer;
