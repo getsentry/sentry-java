@@ -1465,21 +1465,21 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads session replay redact flags to options`() {
+    fun `applyMetadata reads session replay mask flags to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_REDACT_ALL_TEXT to false, ManifestMetadataReader.REPLAYS_REDACT_ALL_IMAGES to false)
+        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_MASK_ALL_TEXT to false, ManifestMetadataReader.REPLAYS_MASK_ALL_IMAGES to false)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.experimental.sessionReplay.ignoreViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
-        assertTrue(fixture.options.experimental.sessionReplay.ignoreViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
     }
 
     @Test
-    fun `applyMetadata reads session replay redact flags to options and keeps default if not found`() {
+    fun `applyMetadata reads session replay mask flags to options and keeps default if not found`() {
         // Arrange
         val context = fixture.getContext()
 
@@ -1487,7 +1487,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.experimental.sessionReplay.redactViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
-        assertTrue(fixture.options.experimental.sessionReplay.redactViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.maskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.maskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
     }
 }
