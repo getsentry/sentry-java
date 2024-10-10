@@ -39,6 +39,7 @@
   - Use `<meta-data android:name="io.sentry.force-init" android:value="true" />` to ensure Sentry Android auto init is not easily overwritten
 - Attach request body for `application/x-www-form-urlencoded` requests in Spring ([#3731](https://github.com/getsentry/sentry-java/pull/3731))
   - Previously request body was only attached for `application/json` requests
+- Set breadcrumb level based on http status ([#3771](https://github.com/getsentry/sentry-java/pull/3771))
 - Support `graphql-java` v22 via a new module `sentry-graphql-22` ([#3740](https://github.com/getsentry/sentry-java/pull/3740))
   - If you are using `graphql-java` v21 or earlier, you can use the `sentry-graphql` module
   - For `graphql-java` v22 and newer please use the `sentry-graphql-22` module
