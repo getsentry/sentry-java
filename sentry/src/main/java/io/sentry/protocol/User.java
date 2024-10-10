@@ -43,10 +43,7 @@ public final class User implements JsonUnknown, JsonSerializable {
   /** User geo location. */
   private @Nullable Geo geo;
 
-  /**
-   * Additional arbitrary fields, as stored in the database (and sometimes as sent by clients). All
-   * data from `self.other` should end up here after store normalization.
-   */
+  /** Additional arbitrary fields, as stored in the database (and sometimes as sent by clients). */
   private @Nullable Map<String, @NotNull String> data;
 
   /** unknown fields, only internal usage. */
@@ -125,24 +122,6 @@ public final class User implements JsonUnknown, JsonSerializable {
                 options
                     .getLogger()
                     .log(SentryLevel.WARNING, "Invalid key or null value in data map.");
-              }
-            }
-            user.data = userData;
-          }
-          break;
-        case JsonKeys.OTHER:
-          final Map<Object, Object> other =
-              (value instanceof Map) ? (Map<Object, Object>) value : null;
-          // restore `other` from legacy JSON
-          if (other != null && (user.data == null || user.data.isEmpty())) {
-            final ConcurrentHashMap<String, String> userData = new ConcurrentHashMap<>();
-            for (Map.Entry<Object, Object> otherEntry : other.entrySet()) {
-              if (otherEntry.getKey() instanceof String && otherEntry.getValue() != null) {
-                userData.put((String) otherEntry.getKey(), otherEntry.getValue().toString());
-              } else {
-                options
-                    .getLogger()
-                    .log(SentryLevel.WARNING, "Invalid key or null value in other map.");
               }
             }
             user.data = userData;
@@ -322,7 +301,6 @@ public final class User implements JsonUnknown, JsonSerializable {
     public static final String IP_ADDRESS = "ip_address";
     public static final String NAME = "name";
     public static final String GEO = "geo";
-    public static final String OTHER = "other";
     public static final String DATA = "data";
   }
 
@@ -395,14 +373,6 @@ public final class User implements JsonUnknown, JsonSerializable {
             user.data =
                 CollectionUtils.newConcurrentHashMap(
                     (Map<String, String>) reader.nextObjectOrNull());
-            break;
-          case JsonKeys.OTHER:
-            // restore `other` from legacy JSON
-            if (user.data == null || user.data.isEmpty()) {
-              user.data =
-                  CollectionUtils.newConcurrentHashMap(
-                      (Map<String, String>) reader.nextObjectOrNull());
-            }
             break;
           default:
             if (unknown == null) {

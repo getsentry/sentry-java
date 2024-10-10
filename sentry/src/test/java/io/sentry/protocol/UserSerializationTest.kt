@@ -52,23 +52,6 @@ class UserSerializationTest {
     }
 
     @Test
-    fun `deserialize legacy`() {
-        var expectedJson = sanitizedFile("json/user.json")
-        val expected = deserialize(expectedJson)
-
-        // Not part of this test
-        expected.name = null
-        expected.geo = null
-
-        expectedJson = serialize(expected)
-
-        val inputJson = sanitizedFile("json/user_legacy.json")
-        val actual = deserialize(inputJson)
-        val actualJson = serialize(actual)
-        assertEquals(expectedJson, actualJson)
-    }
-
-    @Test
     fun deserializeFromMap() {
         val map: Map<String, Any?> = mapOf(
             "email" to "c4d61c1b-c144-431e-868f-37a46be5e5f2",
