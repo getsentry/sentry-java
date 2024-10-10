@@ -29,7 +29,7 @@ public final class ProfilingTransactionData implements JsonUnknown, JsonSerializ
       @NotNull ITransaction transaction, @NotNull Long startNs, @NotNull Long startCpuMs) {
     this.id = transaction.getEventId().toString();
     this.traceId = transaction.getSpanContext().getTraceId().toString();
-    this.name = transaction.getName();
+    this.name = transaction.getName().isEmpty() ? "unknown" : transaction.getName();
     this.relativeStartNs = startNs;
     this.relativeStartCpuMs = startCpuMs;
   }
