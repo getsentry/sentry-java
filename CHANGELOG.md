@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
+
 ## 7.15.0
 
 ### Features
