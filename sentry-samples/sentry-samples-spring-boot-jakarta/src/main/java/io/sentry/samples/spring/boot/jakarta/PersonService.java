@@ -5,6 +5,8 @@ import io.sentry.Sentry;
 import io.sentry.spring.jakarta.tracing.SentrySpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -18,12 +20,15 @@ public class PersonService {
   private static final Logger LOGGER = LoggerFactory.getLogger(PersonService.class);
 
   private final JdbcTemplate jdbcTemplate;
+  private final CacheManager cacheManager;
   private int createCount = 0;
 
-  public PersonService(JdbcTemplate jdbcTemplate) {
+  public PersonService(JdbcTemplate jdbcTemplate, CacheManager cacheManager) {
     this.jdbcTemplate = jdbcTemplate;
+    this.cacheManager = cacheManager;
   }
 
+  @Cacheable(value = "people", key = "{ #root.methodName, #person.firstName, #person.lastName }")
   Person create(Person person) {
     createCount++;
     final ISpan span = Sentry.getSpan();
