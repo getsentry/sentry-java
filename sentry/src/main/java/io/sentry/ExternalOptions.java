@@ -243,11 +243,6 @@ public final class ExternalOptions {
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
-  @Deprecated
-  public @Nullable List<String> getTracingOrigins() {
-    return tracePropagationTargets;
-  }
-
   public @Nullable List<String> getTracePropagationTargets() {
     return tracePropagationTargets;
   }
@@ -334,12 +329,6 @@ public final class ExternalOptions {
 
   public void addInAppExclude(final @NotNull String exclude) {
     inAppExcludes.add(exclude);
-  }
-
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    this.addTracePropagationTarget(tracingOrigin);
   }
 
   public void addTracePropagationTarget(final @NotNull String tracePropagationTarget) {

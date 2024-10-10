@@ -141,7 +141,7 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues(
             "sentry.dsn=http://key@localhost/proj",
             "sentry.read-timeout-millis=10",
-            "sentry.shutdown-timeout=20",
+            "sentry.shutdown-timeout-millis=20",
             "sentry.flush-timeout-millis=30",
             "sentry.debug=true",
             "sentry.diagnostic-level=INFO",
@@ -239,17 +239,6 @@ class SentryAutoConfigurationTest {
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.tracePropagationTargets).isNotNull().isEmpty()
-        }
-    }
-
-    @Test
-    fun `when setting tracingOrigins it still works`() {
-        contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
-            "sentry.tracing-origins=somehost,otherhost"
-        ).run {
-            val options = it.getBean(SentryProperties::class.java)
-            assertThat(options.tracePropagationTargets).isNotNull().isEqualTo(listOf("somehost", "otherhost"))
         }
     }
 

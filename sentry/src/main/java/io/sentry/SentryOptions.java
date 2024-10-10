@@ -652,34 +652,10 @@ public class SentryOptions {
   /**
    * Returns the shutdown timeout in Millis
    *
-   * @deprecated use {{@link SentryOptions#getShutdownTimeoutMillis()} }
-   * @return the timeout in Millis
-   */
-  @ApiStatus.ScheduledForRemoval
-  @Deprecated
-  public long getShutdownTimeout() {
-    return shutdownTimeoutMillis;
-  }
-
-  /**
-   * Returns the shutdown timeout in Millis
-   *
    * @return the timeout in Millis
    */
   public long getShutdownTimeoutMillis() {
     return shutdownTimeoutMillis;
-  }
-
-  /**
-   * Sets the shutdown timeout in Millis Default is 2000 = 2s
-   *
-   * @deprecated use {{@link SentryOptions#setShutdownTimeoutMillis(long)} }
-   * @param shutdownTimeoutMillis the shutdown timeout in millis
-   */
-  @ApiStatus.ScheduledForRemoval
-  @Deprecated
-  public void setShutdownTimeout(long shutdownTimeoutMillis) {
-    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
   }
 
   /**
@@ -1677,19 +1653,6 @@ public class SentryOptions {
   }
 
   /**
-   * Sets whether profiling is enabled for transactions.
-   *
-   * @deprecated use {{@link SentryOptions#setProfilesSampleRate(Double)} }
-   * @param profilingEnabled - whether profiling is enabled for transactions
-   */
-  @Deprecated
-  public void setProfilingEnabled(boolean profilingEnabled) {
-    if (getProfilesSampleRate() == null) {
-      setProfilesSampleRate(profilingEnabled ? 1.0 : null);
-    }
-  }
-
-  /**
    * Returns the callback used to determine if a profile is sampled.
    *
    * @return the callback
@@ -1744,42 +1707,6 @@ public class SentryOptions {
       return null;
     }
     return new File(cacheDirPath, "profiling_traces").getAbsolutePath();
-  }
-
-  /**
-   * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
-   *
-   * @deprecated use {{@link SentryOptions#getTracePropagationTargets()} }
-   * @return the list of origins
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public @NotNull List<String> getTracingOrigins() {
-    return getTracePropagationTargets();
-  }
-
-  /**
-   * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
-   *
-   * @deprecated use {{@link SentryOptions#setTracePropagationTargets(List)}}
-   * @param tracingOrigin - the tracing origin
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    if (tracePropagationTargets == null) {
-      tracePropagationTargets = new CopyOnWriteArrayList<>();
-    }
-    if (!tracingOrigin.isEmpty()) {
-      tracePropagationTargets.add(tracingOrigin);
-    }
-  }
-
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @ApiStatus.Internal
-  public void setTracingOrigins(final @Nullable List<String> tracingOrigins) {
-    setTracePropagationTargets(tracingOrigins);
   }
 
   /**

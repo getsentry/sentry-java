@@ -30,13 +30,6 @@ public final class io/sentry/graphql/NoOpSubscriptionHandler : io/sentry/graphql
 	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IScopes;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
 }
 
-public final class io/sentry/graphql/SentryDataFetcherExceptionHandler : graphql/execution/DataFetcherExceptionHandler {
-	public fun <init> (Lgraphql/execution/DataFetcherExceptionHandler;)V
-	public fun <init> (Lio/sentry/IScopes;Lgraphql/execution/DataFetcherExceptionHandler;)V
-	public fun handleException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Ljava/util/concurrent/CompletableFuture;
-	public fun onException (Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Lgraphql/execution/DataFetcherExceptionHandlerResult;
-}
-
 public final class io/sentry/graphql/SentryGenericDataFetcherExceptionHandler : graphql/execution/DataFetcherExceptionHandler {
 	public fun <init> (Lgraphql/execution/DataFetcherExceptionHandler;)V
 	public fun <init> (Lio/sentry/IScopes;Lgraphql/execution/DataFetcherExceptionHandler;)V
