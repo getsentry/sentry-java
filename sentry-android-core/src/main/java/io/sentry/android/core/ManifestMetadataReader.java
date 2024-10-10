@@ -57,7 +57,6 @@ final class ManifestMetadataReader {
   static final String UNCAUGHT_EXCEPTION_HANDLER_ENABLE =
       "io.sentry.uncaught-exception-handler.enable";
 
-  static final String TRACING_ENABLE = "io.sentry.traces.enable";
   static final String TRACES_SAMPLE_RATE = "io.sentry.traces.sample-rate";
   static final String TRACES_ACTIVITY_ENABLE = "io.sentry.traces.activity.enable";
   static final String TRACES_ACTIVITY_AUTO_FINISH_ENABLE =
@@ -285,10 +284,6 @@ final class ManifestMetadataReader {
                 logger,
                 COLLECT_ADDITIONAL_CONTEXT,
                 options.isCollectAdditionalContext()));
-
-        if (options.getEnableTracing() == null) {
-          options.setEnableTracing(readBoolNullable(metadata, logger, TRACING_ENABLE, null));
-        }
 
         if (options.getTracesSampleRate() == null) {
           final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
