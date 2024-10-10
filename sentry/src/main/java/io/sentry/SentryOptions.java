@@ -187,9 +187,6 @@ public class SentryOptions {
    */
   private @Nullable Double sampleRate;
 
-  /** Enables generation of transactions and propagation of trace data. */
-  private @Nullable Boolean enableTracing;
-
   /**
    * Configures the sample rate as a percentage of transactions to be sent in the range of 0.0 to
    * 1.0. if 1.0 is set it means that 100% of transactions are sent. If set to 0.1 only 10% of
@@ -468,14 +465,6 @@ public class SentryOptions {
   /** Whether to profile app launches, depending on profilesSampler or profilesSampleRate. */
   private boolean enableAppStartProfiling = false;
 
-  private boolean enableMetrics = false;
-
-  private boolean enableDefaultTagsForMetrics = true;
-
-  private boolean enableSpanLocalMetricAggregation = true;
-
-  private @Nullable BeforeEmitMetricCallback beforeEmitMetricCallback = null;
-
   private @NotNull ISpanFactory spanFactory = NoOpSpanFactory.getInstance();
 
   /**
@@ -663,34 +652,10 @@ public class SentryOptions {
   /**
    * Returns the shutdown timeout in Millis
    *
-   * @deprecated use {{@link SentryOptions#getShutdownTimeoutMillis()} }
-   * @return the timeout in Millis
-   */
-  @ApiStatus.ScheduledForRemoval
-  @Deprecated
-  public long getShutdownTimeout() {
-    return shutdownTimeoutMillis;
-  }
-
-  /**
-   * Returns the shutdown timeout in Millis
-   *
    * @return the timeout in Millis
    */
   public long getShutdownTimeoutMillis() {
     return shutdownTimeoutMillis;
-  }
-
-  /**
-   * Sets the shutdown timeout in Millis Default is 2000 = 2s
-   *
-   * @deprecated use {{@link SentryOptions#setShutdownTimeoutMillis(long)} }
-   * @param shutdownTimeoutMillis the shutdown timeout in millis
-   */
-  @ApiStatus.ScheduledForRemoval
-  @Deprecated
-  public void setShutdownTimeout(long shutdownTimeoutMillis) {
-    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
   }
 
   /**
@@ -918,24 +883,6 @@ public class SentryOptions {
               + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
     }
     this.sampleRate = sampleRate;
-  }
-
-  /**
-   * Whether generation of transactions and propagation of trace data is enabled.
-   *
-   * <p>NOTE: There is also {@link SentryOptions#isTracingEnabled()} which checks other options as
-   * well.
-   *
-   * @return true if enabled, false if disabled, null can mean enabled if {@link
-   *     SentryOptions#getTracesSampleRate()} or {@link SentryOptions#getTracesSampler()} are set.
-   */
-  public @Nullable Boolean getEnableTracing() {
-    return enableTracing;
-  }
-
-  /** Enables generation of transactions and propagation of trace data. */
-  public void setEnableTracing(@Nullable Boolean enableTracing) {
-    this.enableTracing = enableTracing;
   }
 
   /**
@@ -1530,10 +1477,6 @@ public class SentryOptions {
    * @return if tracing is enabled.
    */
   public boolean isTracingEnabled() {
-    if (enableTracing != null) {
-      return enableTracing;
-    }
-
     return getTracesSampleRate() != null || getTracesSampler() != null;
   }
 
@@ -1710,19 +1653,6 @@ public class SentryOptions {
   }
 
   /**
-   * Sets whether profiling is enabled for transactions.
-   *
-   * @deprecated use {{@link SentryOptions#setProfilesSampleRate(Double)} }
-   * @param profilingEnabled - whether profiling is enabled for transactions
-   */
-  @Deprecated
-  public void setProfilingEnabled(boolean profilingEnabled) {
-    if (getProfilesSampleRate() == null) {
-      setProfilesSampleRate(profilingEnabled ? 1.0 : null);
-    }
-  }
-
-  /**
    * Returns the callback used to determine if a profile is sampled.
    *
    * @return the callback
@@ -1777,42 +1707,6 @@ public class SentryOptions {
       return null;
     }
     return new File(cacheDirPath, "profiling_traces").getAbsolutePath();
-  }
-
-  /**
-   * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
-   *
-   * @deprecated use {{@link SentryOptions#getTracePropagationTargets()} }
-   * @return the list of origins
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public @NotNull List<String> getTracingOrigins() {
-    return getTracePropagationTargets();
-  }
-
-  /**
-   * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
-   *
-   * @deprecated use {{@link SentryOptions#setTracePropagationTargets(List)}}
-   * @param tracingOrigin - the tracing origin
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    if (tracePropagationTargets == null) {
-      tracePropagationTargets = new CopyOnWriteArrayList<>();
-    }
-    if (!tracingOrigin.isEmpty()) {
-      tracePropagationTargets.add(tracingOrigin);
-    }
-  }
-
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @ApiStatus.Internal
-  public void setTracingOrigins(final @Nullable List<String> tracingOrigins) {
-    setTracePropagationTargets(tracingOrigins);
   }
 
   /**
@@ -2397,48 +2291,6 @@ public class SentryOptions {
     this.enableScopePersistence = enableScopePersistence;
   }
 
-  @ApiStatus.Experimental
-  public boolean isEnableMetrics() {
-    return enableMetrics;
-  }
-
-  @ApiStatus.Experimental
-  public void setEnableMetrics(boolean enableMetrics) {
-    this.enableMetrics = enableMetrics;
-  }
-
-  @ApiStatus.Experimental
-  public boolean isEnableSpanLocalMetricAggregation() {
-    return isEnableMetrics() && enableSpanLocalMetricAggregation;
-  }
-
-  @ApiStatus.Experimental
-  public void setEnableSpanLocalMetricAggregation(final boolean enableSpanLocalMetricAggregation) {
-    this.enableSpanLocalMetricAggregation = enableSpanLocalMetricAggregation;
-  }
-
-  @ApiStatus.Experimental
-  public boolean isEnableDefaultTagsForMetrics() {
-    return isEnableMetrics() && enableDefaultTagsForMetrics;
-  }
-
-  @ApiStatus.Experimental
-  public void setEnableDefaultTagsForMetrics(final boolean enableDefaultTagsForMetrics) {
-    this.enableDefaultTagsForMetrics = enableDefaultTagsForMetrics;
-  }
-
-  @ApiStatus.Experimental
-  @Nullable
-  public BeforeEmitMetricCallback getBeforeEmitMetricCallback() {
-    return beforeEmitMetricCallback;
-  }
-
-  @ApiStatus.Experimental
-  public void setBeforeEmitMetricCallback(
-      final @Nullable BeforeEmitMetricCallback beforeEmitMetricCallback) {
-    this.beforeEmitMetricCallback = beforeEmitMetricCallback;
-  }
-
   public @Nullable Cron getCron() {
     return cron;
   }
@@ -2684,9 +2536,6 @@ public class SentryOptions {
     }
     if (options.getPrintUncaughtStackTrace() != null) {
       setPrintUncaughtStackTrace(options.getPrintUncaughtStackTrace());
-    }
-    if (options.getEnableTracing() != null) {
-      setEnableTracing(options.getEnableTracing());
     }
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());

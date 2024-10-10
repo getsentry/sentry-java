@@ -11,7 +11,6 @@ import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.ManifestModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
-import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -1071,13 +1070,6 @@ public final class Sentry {
    */
   public static void reportFullyDisplayed() {
     getCurrentScopes().reportFullyDisplayed();
-  }
-
-  /** the metrics API for the current Scopes */
-  @NotNull
-  @ApiStatus.Experimental
-  public static MetricsApi metrics() {
-    return getCurrentScopes().metrics();
   }
 
   /**

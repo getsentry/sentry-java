@@ -13,7 +13,6 @@ import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
-import io.sentry.metrics.NoopMetricsAggregator
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
@@ -62,7 +61,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -2604,22 +2602,6 @@ class SentryClientTest {
 
         sut.captureEvent(SentryEvent(), Hint())
         verify(fixture.transport).send(anyOrNull(), anyOrNull())
-    }
-
-    @Test
-    fun `no-op metrics aggregator is returned when metrics is disabled`() {
-        val sut = fixture.getSut { options ->
-            options.isEnableMetrics = false
-        }
-        assertSame(NoopMetricsAggregator.getInstance(), sut.metricsAggregator)
-    }
-
-    @Test
-    fun `metrics aggregator is returned when metrics is disabled`() {
-        val sut = fixture.getSut { options ->
-            options.isEnableMetrics = true
-        }
-        assertNotSame(NoopMetricsAggregator.getInstance(), sut.metricsAggregator)
     }
 
     @Test

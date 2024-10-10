@@ -107,19 +107,6 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads session tracking to options`() {
-        // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.SESSION_TRACKING_ENABLE to false)
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertFalse(fixture.options.isEnableAutoSessionTracking)
-    }
-
-    @Test
     fun `applyMetadata reads session tracking and keep default value if not found`() {
         // Arrange
         val context = fixture.getContext()
@@ -673,45 +660,6 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads enableTracing from metadata`() {
-        // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.TRACING_ENABLE to true)
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertEquals(true, fixture.options.enableTracing)
-    }
-
-    @Test
-    fun `applyMetadata does not override enableTracing from options`() {
-        // Arrange
-        fixture.options.enableTracing = true
-        val bundle = bundleOf(ManifestMetadataReader.TRACING_ENABLE to false)
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertEquals(true, fixture.options.enableTracing)
-    }
-
-    @Test
-    fun `applyMetadata without specifying enableTracing, stays null`() {
-        // Arrange
-        val context = fixture.getContext()
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertNull(fixture.options.enableTracing)
-    }
-
-    @Test
     fun `applyMetadata reads enableAutoActivityLifecycleTracing to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.TRACES_ACTIVITY_ENABLE to false)
@@ -787,31 +735,6 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads enableTracesProfiling to options`() {
-        // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.TRACES_PROFILING_ENABLE to true)
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertTrue(fixture.options.isProfilingEnabled)
-    }
-
-    @Test
-    fun `applyMetadata reads enableTracesProfiling to options and keeps default`() {
-        // Arrange
-        val context = fixture.getContext()
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertFalse(fixture.options.isProfilingEnabled)
-    }
-
-    @Test
     fun `applyMetadata reads profilesSampleRate from metadata`() {
         // Arrange
         val expectedSampleRate = 0.99f
@@ -863,67 +786,6 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracePropagationTargets)
-    }
-
-    @Test
-    fun `applyMetadata ignores tracingOrigins if tracePropagationTargets is present`() {
-        // Arrange
-        val bundle = bundleOf(
-            ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to """localhost,^(http|https)://api\..*$""",
-            ManifestMetadataReader.TRACING_ORIGINS to """otherhost"""
-        )
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracePropagationTargets)
-    }
-
-    @Test
-    fun `applyMetadata ignores tracingOrigins if tracePropagationTargets is present even if null`() {
-        // Arrange
-        val bundle = bundleOf(
-            ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to null,
-            ManifestMetadataReader.TRACING_ORIGINS to """otherhost"""
-        )
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertTrue(fixture.options.tracePropagationTargets.isEmpty())
-    }
-
-    @Test
-    fun `applyMetadata ignores tracingOrigins if tracePropagationTargets is present even if empty string`() {
-        // Arrange
-        val bundle = bundleOf(
-            ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to "",
-            ManifestMetadataReader.TRACING_ORIGINS to """otherhost"""
-        )
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertTrue(fixture.options.tracePropagationTargets.isEmpty())
-    }
-
-    @Test
-    fun `applyMetadata uses tracingOrigins if tracePropagationTargets is not present`() {
-        // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.TRACING_ORIGINS to """otherhost""")
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertEquals(listOf("otherhost"), fixture.options.tracePropagationTargets)
     }
 
     @Test
@@ -1395,31 +1257,6 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertTrue(fixture.options.isEnableScopePersistence)
-    }
-
-    @Test
-    fun `applyMetadata reads enableMetrics flag to options`() {
-        // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to true)
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertTrue(fixture.options.isEnableMetrics)
-    }
-
-    @Test
-    fun `applyMetadata reads enableMetrics flag to options and keeps default if not found`() {
-        // Arrange
-        val context = fixture.getContext()
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertFalse(fixture.options.isEnableMetrics)
     }
 
     @Test

@@ -26,7 +26,6 @@ public final class ExternalOptions {
   private @Nullable Boolean enableUncaughtExceptionHandler;
   private @Nullable Boolean debug;
   private @Nullable Boolean enableDeduplication;
-  private @Nullable Boolean enableTracing;
   private @Nullable Double tracesSampleRate;
   private @Nullable Double profilesSampleRate;
   private @Nullable SentryOptions.RequestSize maxRequestBodySize;
@@ -70,7 +69,6 @@ public final class ExternalOptions {
         propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
     options.setPrintUncaughtStackTrace(
         propertiesProvider.getBooleanProperty("uncaught.handler.print-stacktrace"));
-    options.setEnableTracing(propertiesProvider.getBooleanProperty("enable-tracing"));
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setProfilesSampleRate(propertiesProvider.getDoubleProperty("profiles-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
@@ -245,11 +243,6 @@ public final class ExternalOptions {
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
-  @Deprecated
-  public @Nullable List<String> getTracingOrigins() {
-    return tracePropagationTargets;
-  }
-
   public @Nullable List<String> getTracePropagationTargets() {
     return tracePropagationTargets;
   }
@@ -268,14 +261,6 @@ public final class ExternalOptions {
 
   public void setEnableDeduplication(final @Nullable Boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
-  }
-
-  public @Nullable Boolean getEnableTracing() {
-    return enableTracing;
-  }
-
-  public void setEnableTracing(final @Nullable Boolean enableTracing) {
-    this.enableTracing = enableTracing;
   }
 
   public @Nullable Double getTracesSampleRate() {
@@ -344,12 +329,6 @@ public final class ExternalOptions {
 
   public void addInAppExclude(final @NotNull String exclude) {
     inAppExcludes.add(exclude);
-  }
-
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    this.addTracePropagationTarget(tracingOrigin);
   }
 
   public void addTracePropagationTarget(final @NotNull String tracePropagationTarget) {

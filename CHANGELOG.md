@@ -5,15 +5,31 @@
 ### Breaking Changes
 
 - Throw IllegalArgumentException when calling Sentry.init on Android ([#3596](https://github.com/getsentry/sentry-java/pull/3596))
+- Metrics have been removed from the SDK ([#3774](https://github.com/getsentry/sentry-java/pull/3774))
+  - Metrics will return but we don't know in what exact form yet
+- `enableTracing` option (a.k.a `enable-tracing`) has been removed from the SDK ([#3776](https://github.com/getsentry/sentry-java/pull/3776))
+  - Please set `tracesSampleRate` to a value >= 0.0 for enabling performance instead. The default value is `null` which means performance is disabled.
 - Change OkHttp sub-spans to span attributes ([#3556](https://github.com/getsentry/sentry-java/pull/3556))
   - This will reduce the number of spans created by the SDK
 - `options.experimental.sessionReplay.errorSampleRate` was renamed to `options.experimental.sessionReplay.onErrorSampleRate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
 - Manifest option `io.sentry.session-replay.error-sample-rate` was renamed to `io.sentry.session-replay.on-error-sample-rate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
 - Replace `synchronized` methods and blocks with `ReentrantLock` (`AutoClosableReentrantLock`) ([#3715](https://github.com/getsentry/sentry-java/pull/3715))
   - If you are subclassing any Sentry classes, please check if the parent class used `synchronized` before. Please make sure to use the same lock object as the parent class in that case.
-- `traceHeaders` method has been removed ([#3718](https://github.com/getsentry/sentry-java/pull/3718))
-- `reportFullDisplayed` method has been removed ([#3717](https://github.com/getsentry/sentry-java/pull/3717))
-  - This was a typo, `reportFullyDisplayed` still remains.
+- `traceOrigins` option (`io.sentry.traces.tracing-origins` in manifest) has been removed, please use `tracePropagationTargets` (`io.sentry.traces.trace-propagation-targets` in manifest`) instead ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
+- `profilingEnabled` option (`io.sentry.traces.profiling.enable` in manifest) has been removed, please use `profilesSampleRate` (`io.sentry.traces.profiling.sample-rate` instead) instead ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
+- `shutdownTimeout` option has been removed, please use `shutdownTimeoutMillis` instead ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
+- `profilingTracesIntervalMillis` option for Android has been removed ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
+- `io.sentry.session-tracking.enable` manifest option has been removed ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
+- `Sentry.traceHeaders()` method has been removed, please use `Sentry.getTraceparent()` instead ([#3718](https://github.com/getsentry/sentry-java/pull/3718))
+- `Sentry.reportFullDisplayed()` method has been removed, please use `Sentry.reportFullyDisplayed()` instead ([#3717](https://github.com/getsentry/sentry-java/pull/3717))
+- `User.other` has been removed, please use `data` instead ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
+- `SdkVersion.getIntegrations()` has been removed, please use `getIntegrationSet` instead ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
+- `SdkVersion.getPackages()` has been removed, please use `getPackageSet()` instead ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
+- `Device.language` has been removed, please use `locale` instead ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
+- `TraceContext.user` and `TraceContextUser` class have been removed, please use `userId` on `TraceContext` instead ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
+- `TransactionContext.fromSentryTrace()` has been removed, please use `Sentry.continueTrace()` instead ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
+- `SentryDataFetcherExceptionHandler` has been removed, please use `SentryGenericDataFetcherExceptionHandler` in combination with `SentryInstrumentation` instead ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
+- One of the `AndroidTransactionProfiler` constructors has been removed, please use a different one ([#3780](https://github.com/getsentry/sentry-java/pull/3780))
 
 ### Features
 
