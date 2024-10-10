@@ -254,15 +254,17 @@ public class SpanFrameMetricsCollector
         (long) ((double) ONE_SECOND_NANOS / (double) refreshRate);
     lastKnownFrameDurationNanos = expectedFrameDurationNanos;
 
-    frames.add(
-        new Frame(
-            frameStartNanos,
-            frameEndNanos,
-            durationNanos,
-            delayNanos,
-            isSlow,
-            isFrozen,
-            expectedFrameDurationNanos));
+    if (isSlow || isFrozen) {
+      frames.add(
+          new Frame(
+              frameStartNanos,
+              frameEndNanos,
+              durationNanos,
+              delayNanos,
+              isSlow,
+              isFrozen,
+              expectedFrameDurationNanos));
+    }
   }
 
   private static int interpolateFrameCount(
@@ -277,7 +279,7 @@ public class SpanFrameMetricsCollector
     final long frameMetricsDurationNanos = frameMetrics.getTotalDurationNanos();
     final long nonRenderedDuration = spanDurationNanos - frameMetricsDurationNanos;
     if (nonRenderedDuration > 0) {
-      return (int) (nonRenderedDuration / frameDurationNanos);
+      return (int) Math.ceil((double) nonRenderedDuration / frameDurationNanos);
     }
     return 0;
   }
