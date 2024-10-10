@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Avoid collecting normal frames ([#3782](https://github.com/getsentry/sentry-java/pull/3782))
 - Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
 
 ## 7.15.0
