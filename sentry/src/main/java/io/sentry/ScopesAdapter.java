@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -342,12 +341,6 @@ public final class ScopesAdapter implements IScopes {
   @Override
   public @Nullable RateLimiter getRateLimiter() {
     return Sentry.getCurrentScopes().getRateLimiter();
-  }
-
-  @ApiStatus.Experimental
-  @Override
-  public @NotNull MetricsApi metrics() {
-    return Sentry.getCurrentScopes().metrics();
   }
 
   @Override

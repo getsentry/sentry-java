@@ -34,7 +34,6 @@ public final class io/sentry/opentelemetry/OtelSpanWrapper : io/sentry/ISpan {
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
-	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public fun getMeasurements ()Ljava/util/Map;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
@@ -89,7 +88,6 @@ public final class io/sentry/opentelemetry/OtelTransactionSpanForwarder : io/sen
 	public fun getEventId ()Lio/sentry/protocol/SentryId;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public fun getLatestActiveSpan ()Lio/sentry/ISpan;
-	public fun getLocalMetricsAggregator ()Lio/sentry/metrics/LocalMetricsAggregator;
 	public fun getName ()Ljava/lang/String;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;

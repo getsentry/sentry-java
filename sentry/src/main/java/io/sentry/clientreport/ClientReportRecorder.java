@@ -165,9 +165,6 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     if (SentryItemType.Profile.equals(itemType)) {
       return DataCategory.Profile;
     }
-    if (SentryItemType.Statsd.equals(itemType)) {
-      return DataCategory.MetricBucket;
-    }
     if (SentryItemType.Attachment.equals(itemType)) {
       return DataCategory.Attachment;
     }

@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -996,11 +995,6 @@ public final class SentryTracer implements ITransaction {
   @Override
   public boolean isNoOp() {
     return false;
-  }
-
-  @Override
-  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
-    return root.getLocalMetricsAggregator();
   }
 
   private static final class FinishStatus {

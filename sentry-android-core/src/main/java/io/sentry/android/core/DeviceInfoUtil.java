@@ -133,9 +133,6 @@ public final class DeviceInfoUtil {
     }
 
     final @NotNull Locale locale = Locale.getDefault();
-    if (device.getLanguage() == null) {
-      device.setLanguage(locale.getLanguage());
-    }
     if (device.getLocale() == null) {
       device.setLocale(locale.toString()); // eg en_US
     }

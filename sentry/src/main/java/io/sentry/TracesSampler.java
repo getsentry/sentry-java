@@ -9,8 +9,6 @@ import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class TracesSampler {
-  private static final @NotNull Double DEFAULT_TRACES_SAMPLE_RATE = 1.0;
-
   private final @NotNull SentryOptions options;
   private final @NotNull SecureRandom random;
 
@@ -69,15 +67,10 @@ public final class TracesSampler {
     }
 
     final @Nullable Double tracesSampleRateFromOptions = options.getTracesSampleRate();
-    final @Nullable Boolean isEnableTracing = options.getEnableTracing();
-    final @Nullable Double defaultSampleRate =
-        Boolean.TRUE.equals(isEnableTracing) ? DEFAULT_TRACES_SAMPLE_RATE : null;
-    final @Nullable Double tracesSampleRateOrDefault =
-        tracesSampleRateFromOptions == null ? defaultSampleRate : tracesSampleRateFromOptions;
     final @NotNull Double downsampleFactor =
         Math.pow(2, options.getBackpressureMonitor().getDownsampleFactor());
     final @Nullable Double downsampledTracesSampleRate =
-        tracesSampleRateOrDefault == null ? null : tracesSampleRateOrDefault / downsampleFactor;
+        tracesSampleRateFromOptions == null ? null : tracesSampleRateFromOptions / downsampleFactor;
 
     if (downsampledTracesSampleRate != null) {
       return new TracesSamplingDecision(

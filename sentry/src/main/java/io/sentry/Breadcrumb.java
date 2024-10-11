@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -189,6 +190,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
     final Breadcrumb breadcrumb = http(url, method);
     if (code != null) {
       breadcrumb.setData("status_code", code);
+      breadcrumb.setLevel(levelFromHttpStatusCode(code));
     }
     return breadcrumb;
   }
@@ -492,6 +494,16 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
       final @NotNull Map<String, Object> additionalData) {
 
     return userInteraction(subCategory, viewId, viewClass, null, additionalData);
+  }
+
+  private static @Nullable SentryLevel levelFromHttpStatusCode(final @NotNull Integer code) {
+    if (HttpUtils.isHttpClientError(code)) {
+      return SentryLevel.WARNING;
+    } else if (HttpUtils.isHttpServerError(code)) {
+      return SentryLevel.ERROR;
+    } else {
+      return null;
+    }
   }
 
   /** Breadcrumb ctor */
