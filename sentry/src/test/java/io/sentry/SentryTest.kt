@@ -33,6 +33,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.io.Closeable
 import java.io.File
 import java.io.FileReader
 import java.nio.file.Files
@@ -77,6 +78,50 @@ class SentryTest {
         }
         verify(scopes).close(eq(true))
     }
+
+    @Test
+    fun `init multiple times calls close on previous options not new`() {
+        val profiler1 = mock<ITransactionProfiler>()
+        val profiler2 = mock<ITransactionProfiler>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setTransactionProfiler(profiler1)
+        }
+        verify(profiler1, never()).close()
+
+        Sentry.init {
+            it.dsn = dsn
+            it.setTransactionProfiler(profiler2)
+        }
+        verify(profiler2, never()).close()
+        verify(profiler1).close()
+
+        Sentry.close()
+        verify(profiler2).close()
+    }
+
+    @Test
+    fun `init multiple times calls close on previous integrations not new`() {
+        val integration1 = mock<CloseableIntegration>()
+        val integration2 = mock<CloseableIntegration>()
+        Sentry.init {
+            it.dsn = dsn
+            it.addIntegration(integration1)
+        }
+        verify(integration1, never()).close()
+
+        Sentry.init {
+            it.dsn = dsn
+            it.addIntegration(integration2)
+        }
+        verify(integration2, never()).close()
+        verify(integration1).close()
+
+        Sentry.close()
+        verify(integration2).close()
+    }
+
+    interface CloseableIntegration : Integration, Closeable
 
     @Test
     fun `global client is enabled after restart`() {
@@ -954,7 +999,7 @@ class SentryTest {
         PlatformTestManipulator.pretendIsAndroid(true)
         Sentry.init(OptionsContainer.create(CustomAndroidOptions::class.java), {
             it.dsn = dsn
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.sampleRate = 1.0
             it.mockName()
             sentryOptions = it
@@ -974,7 +1019,7 @@ class SentryTest {
         PlatformTestManipulator.pretendIsAndroid(false)
         Sentry.init({
             it.dsn = dsn
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.sampleRate = 1.0
         }, false)
 
@@ -989,7 +1034,7 @@ class SentryTest {
     fun `getSpan calls returns child span if globalHubMode is disabled`() {
         Sentry.init({
             it.dsn = dsn
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.sampleRate = 1.0
         }, false)
 
@@ -1029,7 +1074,7 @@ class SentryTest {
         val mockProfilesSampler = mock<ProfilesSamplerCallback>()
         Sentry.init {
             it.dsn = dsn
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.isEnableAppStartProfiling = true
             it.profilesSampleRate = 1.0
             it.tracesSampler = mockSampleTracer
@@ -1060,7 +1105,7 @@ class SentryTest {
         val mockProfilesSampler = mock<ProfilesSamplerCallback>()
         Sentry.init {
             it.dsn = dsn
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.isEnableAppStartProfiling = true
             it.profilesSampleRate = 1.0
             it.tracesSampler = mockSampleTracer
@@ -1079,7 +1124,7 @@ class SentryTest {
         val mockProfilesSampler = mock<ProfilesSamplerCallback>()
         Sentry.init {
             it.dsn = dsn
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.isEnableAppStartProfiling = true
             it.profilesSampleRate = 1.0
             it.tracesSampler = mockSampleTracer
@@ -1093,16 +1138,14 @@ class SentryTest {
     }
 
     @Test
-    fun `init does not call app start profiling samplers if enableTracing is false`() {
+    fun `init does not call app start profiling samplers if performance is disabled`() {
         val logger = mock<ILogger>()
-        val mockTraceSampler = mock<TracesSamplerCallback>()
         val mockProfilesSampler = mock<ProfilesSamplerCallback>()
         Sentry.init {
             it.dsn = dsn
-            it.enableTracing = false
+            it.tracesSampleRate = null
             it.isEnableAppStartProfiling = true
             it.profilesSampleRate = 1.0
-            it.tracesSampler = mockTraceSampler
             it.profilesSampler = mockProfilesSampler
             it.executorService = ImmediateExecutorService()
             it.cacheDirPath = getTempPath()
@@ -1110,7 +1153,6 @@ class SentryTest {
             it.setLogger(logger)
         }
         verify(logger).log(eq(SentryLevel.INFO), eq("Tracing is disabled and app start profiling will not start."))
-        verify(mockTraceSampler, never()).sample(any())
         verify(mockProfilesSampler, never()).sample(any())
     }
 
@@ -1130,7 +1172,7 @@ class SentryTest {
     }
 
     @Test
-    fun `init creates app start profiling config if isEnableAppStartProfiling and enableTracing is true`() {
+    fun `init creates app start profiling config if isEnableAppStartProfiling and performance is enabled`() {
         val path = getTempPath()
         File(path).mkdirs()
         val appStartProfilingConfigFile = File(path, "app_start_profiling_config")
@@ -1141,7 +1183,7 @@ class SentryTest {
             it.cacheDirPath = path
             it.isEnableAppStartProfiling = true
             it.profilesSampleRate = 1.0
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.executorService = ImmediateExecutorService()
         }
         assertTrue(appStartProfilingConfigFile.exists())
@@ -1154,7 +1196,7 @@ class SentryTest {
         Sentry.init {
             it.dsn = dsn
             it.cacheDirPath = path
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.tracesSampleRate = 0.5
             it.isEnableAppStartProfiling = true
             it.profilesSampleRate = 0.2
@@ -1199,18 +1241,6 @@ class SentryTest {
         Sentry.init {
             it.dsn = dsn
         }
-    }
-
-    @Test
-    fun `metrics calls scopes getMetrics`() {
-        val scopes = mock<IScopes>()
-        Sentry.init({
-            it.dsn = dsn
-        }, false)
-        Sentry.setCurrentScopes(scopes)
-
-        Sentry.metrics()
-        verify(scopes).metrics()
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {

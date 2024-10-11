@@ -1,7 +1,5 @@
 package io.sentry;
 
-import io.sentry.metrics.MetricsApi;
-import io.sentry.metrics.NoopMetricsAggregator;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -20,8 +18,6 @@ public final class NoOpHub implements IHub {
   private static final NoOpHub instance = new NoOpHub();
 
   private final @NotNull SentryOptions emptyOptions = SentryOptions.empty();
-  private final @NotNull MetricsApi metricsApi =
-      new MetricsApi(NoopMetricsAggregator.getInstance());
 
   private NoOpHub() {}
 
@@ -304,11 +300,6 @@ public final class NoOpHub implements IHub {
   @Override
   public @Nullable RateLimiter getRateLimiter() {
     return null;
-  }
-
-  @Override
-  public @NotNull MetricsApi metrics() {
-    return metricsApi;
   }
 
   @Override

@@ -12,7 +12,6 @@ import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
-import io.sentry.util.CollectionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.StringUtils;
 import java.util.ArrayList;
@@ -169,10 +168,6 @@ public final class RateLimiter {
         return DataCategory.Attachment;
       case "profile":
         return DataCategory.Profile;
-        // The envelope item type used for metrics is statsd, whereas the client report category is
-        // metric_bucket
-      case "statsd":
-        return DataCategory.MetricBucket;
       case "transaction":
         return DataCategory.Transaction;
       case "check_in":
@@ -205,7 +200,7 @@ public final class RateLimiter {
         // These can be ignored by the SDK.
         // final String scope = rateLimit.length > 2 ? rateLimit[2] : null;
         // final String reasonCode = rateLimit.length > 3 ? rateLimit[3] : null;
-        final @Nullable String limitNamespaces = rateLimit.length > 4 ? rateLimit[4] : null;
+        // final @Nullable String limitNamespaces = rateLimit.length > 4 ? rateLimit[4] : null;
 
         if (rateLimit.length > 0) {
           final String retryAfter = rateLimit[0];
@@ -236,17 +231,6 @@ public final class RateLimiter {
                 // we dont apply rate limiting for unknown categories
                 if (DataCategory.Unknown.equals(dataCategory)) {
                   continue;
-                }
-                // SDK doesn't support namespaces, yet. Namespaces can be returned by relay in case
-                // of metric_bucket items. If the namespaces are empty or contain "custom" we apply
-                // the rate limit to all metrics, otherwise to none.
-                if (DataCategory.MetricBucket.equals(dataCategory)
-                    && limitNamespaces != null
-                    && !limitNamespaces.equals("")) {
-                  final String[] namespaces = limitNamespaces.split(";", -1);
-                  if (namespaces.length > 0 && !CollectionUtils.contains(namespaces, "custom")) {
-                    continue;
-                  }
                 }
 
                 applyRetryAfterOnlyIfLonger(dataCategory, date);

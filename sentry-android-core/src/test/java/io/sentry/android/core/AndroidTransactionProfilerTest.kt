@@ -337,16 +337,6 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `profiler ignores profilingTracesIntervalMillis`() {
-        fixture.options.apply {
-            profilingTracesIntervalMillis = 0
-        }
-        val profiler = fixture.getSut(context)
-        profiler.start()
-        assertEquals(1, profiler.transactionsCounter)
-    }
-
-    @Test
     fun `profiler never use background threads`() {
         val profiler = fixture.getSut(context)
         val mockExecutorService: ISentryExecutorService = mock()

@@ -50,7 +50,7 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
-    implementation(projects.sentryGraphql)
+    implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
 
     // database query tracing
