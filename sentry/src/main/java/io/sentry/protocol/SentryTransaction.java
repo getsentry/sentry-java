@@ -93,7 +93,6 @@ public final class SentryTransaction extends SentryBaseEvent
             tracerContext.getStatus(),
             tracerContext.getOrigin());
 
-    contexts.setTrace(tracerContextToSend);
     for (final Map.Entry<String, String> tag : tracerContext.getTags().entrySet()) {
       this.setTag(tag.getKey(), tag.getValue());
     }
@@ -103,6 +102,8 @@ public final class SentryTransaction extends SentryBaseEvent
         tracerContextToSend.setData(tag.getKey(), tag.getValue());
       }
     }
+
+    contexts.setTrace(tracerContextToSend);
 
     this.transactionInfo = new TransactionInfo(sentryTracer.getTransactionNameSource().apiName());
 

@@ -74,7 +74,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       final @NotNull String operation,
       final @Nullable SpanId parentSpanId,
       final @Nullable TracesSamplingDecision samplingDecision) {
-    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null, "manual");
+    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null, DEFAULT_ORIGIN);
   }
 
   @ApiStatus.Internal
