@@ -19,8 +19,11 @@ import org.jetbrains.annotations.Nullable;
 /** Series of application events */
 public final class Breadcrumb implements JsonUnknown, JsonSerializable {
 
-  /** A timestamp representing when the breadcrumb occurred. */
-  private final @NotNull Date timestamp;
+  /** A timestamp representing when the breadcrumb occurred in milliseconds. */
+  private @Nullable final Long timestampMs;
+
+  /** A timestamp representing when the breadcrumb occurred as java.util.Date. */
+  private @Nullable Date timestamp;
 
   /** If a message is provided, its rendered as text and the whitespace is preserved. */
   private @Nullable String message;
@@ -51,12 +54,20 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    *
    * @param timestamp the timestamp
    */
+  @SuppressWarnings("JavaUtilDate")
   public Breadcrumb(final @NotNull Date timestamp) {
     this.timestamp = timestamp;
+    this.timestampMs = null;
+  }
+
+  public Breadcrumb(final long timestamp) {
+    this.timestampMs = timestamp;
+    this.timestamp = null;
   }
 
   Breadcrumb(final @NotNull Breadcrumb breadcrumb) {
     this.timestamp = breadcrumb.timestamp;
+    this.timestampMs = breadcrumb.timestampMs;
     this.message = breadcrumb.message;
     this.type = breadcrumb.type;
     this.category = breadcrumb.category;
@@ -504,7 +515,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
 
   /** Breadcrumb ctor */
   public Breadcrumb() {
-    this(DateUtils.getCurrentDateTime());
+    this(System.currentTimeMillis());
   }
 
   /**
@@ -518,13 +529,20 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
   }
 
   /**
-   * Returns the Breadcrumb's timestamp
+   * Returns the Breadcrumb's timestamp as java.util.Date
    *
    * @return the timestamp
    */
-  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
+  @SuppressWarnings("JavaUtilDate")
   public @NotNull Date getTimestamp() {
-    return (Date) timestamp.clone();
+    if (timestamp != null) {
+      return (Date) timestamp.clone();
+    } else if (timestampMs != null) {
+      // we memoize it here into timestamp to avoid instantiating Calendar again and again
+      timestamp = DateUtils.getDateTime(timestampMs);
+      return timestamp;
+    }
+    throw new IllegalStateException("No timestamp set for breadcrumb");
   }
 
   /**
@@ -664,7 +682,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Breadcrumb that = (Breadcrumb) o;
-    return timestamp.getTime() == that.timestamp.getTime()
+    return getTimestamp().getTime() == that.getTimestamp().getTime()
         && Objects.equals(message, that.message)
         && Objects.equals(type, that.type)
         && Objects.equals(category, that.category)
@@ -704,7 +722,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
-    writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
+    writer.name(JsonKeys.TIMESTAMP).value(logger, getTimestamp());
     if (message != null) {
       writer.name(JsonKeys.MESSAGE).value(message);
     }
