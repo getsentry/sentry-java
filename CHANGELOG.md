@@ -5,6 +5,7 @@
 ### Fixes
 
 - Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
+- Vendor `java.util.Random` and replace `java.security.SecureRandom` usages ([#3783](https://github.com/getsentry/sentry-java/pull/3783))
 
 ## 7.15.0
 
