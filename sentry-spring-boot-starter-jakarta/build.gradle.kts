@@ -12,6 +12,10 @@ plugins {
 }
 
 configure<JavaPluginExtension> {
+    // https://docs.gradle.org/current/userguide/java_plugin.html#packaging
+    withJavadocJar()
+    withSourcesJar()
+
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
 }
