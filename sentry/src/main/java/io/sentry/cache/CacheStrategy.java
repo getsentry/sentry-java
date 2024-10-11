@@ -10,6 +10,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -36,8 +37,9 @@ abstract class CacheStrategy {
   @SuppressWarnings("CharsetObjectCanBeUsed")
   protected static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  protected final @NotNull SentryOptions options;
-  protected final @NotNull ISerializer serializer;
+  protected @NotNull SentryOptions options;
+  protected final @NotNull LazyEvaluator<ISerializer> serializer =
+      new LazyEvaluator<>(() -> options.getSerializer());
   protected final @NotNull File directory;
   private final int maxSize;
 
@@ -48,7 +50,6 @@ abstract class CacheStrategy {
     Objects.requireNonNull(directoryPath, "Directory is required.");
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
 
-    this.serializer = options.getSerializer();
     this.directory = new File(directoryPath);
 
     this.maxSize = maxSize;
@@ -177,7 +178,7 @@ abstract class CacheStrategy {
             && currentSession.getSessionId().equals(session.getSessionId())) {
           session.setInitAsTrue();
           try {
-            newSessionItem = SentryEnvelopeItem.fromSession(serializer, session);
+            newSessionItem = SentryEnvelopeItem.fromSession(serializer.getValue(), session);
             // remove item from envelope items so we can replace with the new one that has the
             // init flag true
             itemsIterator.remove();
@@ -216,7 +217,7 @@ abstract class CacheStrategy {
 
   private @Nullable SentryEnvelope readEnvelope(final @NotNull File file) {
     try (final InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
-      return serializer.deserializeEnvelope(inputStream);
+      return serializer.getValue().deserializeEnvelope(inputStream);
     } catch (IOException e) {
       options.getLogger().log(ERROR, "Failed to deserialize the envelope.", e);
     }
@@ -258,7 +259,7 @@ abstract class CacheStrategy {
     try (final Reader reader =
         new BufferedReader(
             new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-      return serializer.deserialize(reader, Session.class);
+      return serializer.getValue().deserialize(reader, Session.class);
     } catch (Throwable e) {
       options.getLogger().log(ERROR, "Failed to deserialize the session.", e);
     }
@@ -268,7 +269,7 @@ abstract class CacheStrategy {
   private void saveNewEnvelope(
       final @NotNull SentryEnvelope envelope, final @NotNull File file, final long timestamp) {
     try (final OutputStream outputStream = new FileOutputStream(file)) {
-      serializer.serialize(envelope, outputStream);
+      serializer.getValue().serialize(envelope, outputStream);
       // we need to set the same timestamp so the sorting from oldest to newest wont break.
       file.setLastModified(timestamp);
     } catch (Throwable e) {

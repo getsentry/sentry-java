@@ -315,7 +315,7 @@ public abstract interface class io/sentry/EventProcessor {
 }
 
 public final class io/sentry/ExperimentalOptions {
-	public fun <init> ()V
+	public fun <init> (Z)V
 	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
 	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 }
@@ -2523,6 +2523,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExecutorService (Lio/sentry/ISentryExecutorService;)V
 	public fun setFlushTimeoutMillis (J)V
+	public fun setFullyDisplayedReporter (Lio/sentry/FullyDisplayedReporter;)V
 	public fun setGestureTargetLocators (Ljava/util/List;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
@@ -2710,27 +2711,32 @@ public final class io/sentry/SentryReplayEvent$ReplayType$Deserializer : io/sent
 }
 
 public final class io/sentry/SentryReplayOptions {
+	public static final field ANDROIDX_MEDIA_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field EXOPLAYER_CLASS_NAME Ljava/lang/String;
+	public static final field EXOPLAYER_STYLED_CLASS_NAME Ljava/lang/String;
 	public static final field IMAGE_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
-	public fun <init> ()V
+	public static final field VIDEO_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field WEB_VIEW_CLASS_NAME Ljava/lang/String;
 	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
-	public fun addIgnoreViewClass (Ljava/lang/String;)V
-	public fun addRedactViewClass (Ljava/lang/String;)V
+	public fun <init> (Z)V
+	public fun addMaskViewClass (Ljava/lang/String;)V
+	public fun addUnmaskViewClass (Ljava/lang/String;)V
 	public fun getErrorReplayDuration ()J
 	public fun getFrameRate ()I
-	public fun getIgnoreViewClasses ()Ljava/util/Set;
+	public fun getMaskViewClasses ()Ljava/util/Set;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
-	public fun getRedactViewClasses ()Ljava/util/Set;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
+	public fun getUnmaskViewClasses ()Ljava/util/Set;
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
+	public fun setMaskAllImages (Z)V
+	public fun setMaskAllText (Z)V
 	public fun setOnErrorSampleRate (Ljava/lang/Double;)V
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
-	public fun setRedactAllImages (Z)V
-	public fun setRedactAllText (Z)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
 }
 
@@ -5698,6 +5704,7 @@ public final class io/sentry/util/JsonSerializationUtils {
 public final class io/sentry/util/LazyEvaluator {
 	public fun <init> (Lio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun getValue ()Ljava/lang/Object;
+	public fun setValue (Ljava/lang/Object;)V
 }
 
 public abstract interface class io/sentry/util/LazyEvaluator$Evaluator {
