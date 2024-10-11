@@ -2,13 +2,10 @@
 
 ## Unreleased
 
-### Features
-
-- NDK support: Offload System.loadLibrary calls to background thread ([#3670](https://github.com/getsentry/sentry-java/pull/3670))
-
 ### Fixes
 
 - Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
+- Fix potential ANRs due to NDK System.loadLibrary calls ([#3670](https://github.com/getsentry/sentry-java/pull/3670))
 
 ## 7.15.0
 
