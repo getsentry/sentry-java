@@ -113,4 +113,17 @@ public final class OtelSpanContext extends SpanContext {
       return StatusCode.ERROR;
     }
   }
+
+  @Override
+  public @Nullable Boolean getSampled() {
+    Boolean superSampled = super.getSampled();
+    if (superSampled != null) {
+      return superSampled;
+    }
+    final @Nullable ReadWriteSpan otelSpan = span.get();
+    if (otelSpan != null) {
+      return otelSpan.getSpanContext().isSampled();
+    }
+    return null;
+  }
 }
