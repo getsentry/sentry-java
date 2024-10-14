@@ -1,8 +1,8 @@
 package io.sentry.android.replay.util
 
-import java.security.SecureRandom
+import io.sentry.util.Random
 
-internal fun SecureRandom.sample(rate: Double?): Boolean {
+internal fun Random.sample(rate: Double?): Boolean {
     if (rate != null) {
         return !(rate < this.nextDouble()) // bad luck
     }
