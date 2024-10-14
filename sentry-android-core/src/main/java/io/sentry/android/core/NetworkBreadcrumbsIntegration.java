@@ -15,12 +15,14 @@ import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryDateProvider;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.TypeCheckHint;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -33,7 +35,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
   private final @NotNull Context context;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull ILogger logger;
-  private final @NotNull Object lock = new Object();
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private volatile boolean isClosed;
   private @Nullable SentryOptions options;
 
@@ -86,7 +88,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
                       return;
                     }
 
-                    synchronized (lock) {
+                    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
                       networkCallback =
                           new NetworkBreadcrumbsNetworkCallback(
                               scopes, buildInfoProvider, options.getDateProvider());
@@ -120,7 +122,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
           .getExecutorService()
           .submit(
               () -> {
-                synchronized (lock) {
+                try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
                   if (networkCallback != null) {
                     AndroidConnectionStatusProvider.unregisterNetworkCallback(
                         context, logger, buildInfoProvider, networkCallback);
