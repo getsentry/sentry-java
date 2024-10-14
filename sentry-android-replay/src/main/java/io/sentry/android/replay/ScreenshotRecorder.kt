@@ -24,10 +24,10 @@ import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.util.MainLooperHandler
-import io.sentry.android.replay.util.dominantTextColor
 import io.sentry.android.replay.util.getVisibleRects
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
+import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
@@ -115,6 +115,7 @@ internal class ScreenshotRecorder(
                             return@request
                         }
 
+                        // TODO: handle animations with heuristics (e.g. if we fall under this condition 2 times in a row, we should capture)
                         if (contentChanged.get()) {
                             options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
                             bitmap.recycle()
@@ -122,13 +123,13 @@ internal class ScreenshotRecorder(
                         }
 
                         val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
-                        root.traverse(viewHierarchy)
+                        root.traverse(viewHierarchy, options)
 
-                        recorder.submitSafely(options, "screenshot_recorder.redact") {
+                        recorder.submitSafely(options, "screenshot_recorder.mask") {
                             val canvas = Canvas(bitmap)
                             canvas.setMatrix(prescaledMatrix)
                             viewHierarchy.traverse { node ->
-                                if (node.shouldRedact && (node.width > 0 && node.height > 0)) {
+                                if (node.shouldMask && (node.width > 0 && node.height > 0)) {
                                     node.visibleRect ?: return@traverse false
 
                                     // TODO: investigate why it returns true on RN when it shouldn't
@@ -143,7 +144,7 @@ internal class ScreenshotRecorder(
                                         }
 
                                         is TextViewHierarchyNode -> {
-                                            val textColor = node.layout.dominantTextColor
+                                            val textColor = node.layout?.dominantTextColor
                                                 ?: node.dominantColor
                                                 ?: Color.BLACK
                                             node.layout.getVisibleRects(
@@ -202,6 +203,8 @@ internal class ScreenshotRecorder(
         // next bind the new root
         rootView = WeakReference(root)
         root.viewTreeObserver?.addOnDrawListener(this)
+        // invalidate the flag to capture the first frame after new window is attached
+        contentChanged.set(true)
     }
 
     fun unbind(root: View?) {

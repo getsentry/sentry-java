@@ -47,7 +47,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull SentryAndroidOptions options) {
-    this.context = Objects.requireNonNull(context, "The application context is required.");
+    this.context =
+        Objects.requireNonNull(
+            ContextUtils.getApplicationContext(context), "The application context is required.");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
     this.options = Objects.requireNonNull(options, "The options object is required.");
@@ -57,7 +59,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // some device info performs disk I/O, but it's result is cached, let's pre-cache it
     final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
     this.deviceInfoUtil =
-        executorService.submit(() -> DeviceInfoUtil.getInstance(context, options));
+        executorService.submit(() -> DeviceInfoUtil.getInstance(this.context, options));
     executorService.shutdown();
   }
 
