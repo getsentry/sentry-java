@@ -17,12 +17,13 @@ public final class SpanDescriptionExtractor {
 
   @SuppressWarnings("deprecation")
   public @NotNull OtelSpanInfo extractSpanInfo(
-    final @NotNull SpanData otelSpan, final @Nullable OtelSpanWrapper sentrySpan) {
+      final @NotNull SpanData otelSpan, final @Nullable OtelSpanWrapper sentrySpan) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
 
-    final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD) != null
-      ? attributes.get(HttpAttributes.HTTP_REQUEST_METHOD)
-      : attributes.get(io.opentelemetry.semconv.SemanticAttributes.HTTP_METHOD);
+    final @Nullable String httpMethod =
+        attributes.get(HttpAttributes.HTTP_REQUEST_METHOD) != null
+            ? attributes.get(HttpAttributes.HTTP_REQUEST_METHOD)
+            : attributes.get(io.opentelemetry.semconv.SemanticAttributes.HTTP_METHOD);
     if (httpMethod != null) {
       return descriptionForHttpMethod(otelSpan, httpMethod);
     }
@@ -34,14 +35,14 @@ public final class SpanDescriptionExtractor {
 
     final @NotNull String name = otelSpan.getName();
     final @Nullable String maybeDescription =
-      sentrySpan != null ? sentrySpan.getDescription() : name;
+        sentrySpan != null ? sentrySpan.getDescription() : name;
     final @NotNull String description = maybeDescription != null ? maybeDescription : name;
     return new OtelSpanInfo(name, description, TransactionNameSource.CUSTOM);
   }
 
   @SuppressWarnings("deprecation")
   private OtelSpanInfo descriptionForHttpMethod(
-    final @NotNull SpanData otelSpan, final @NotNull String httpMethod) {
+      final @NotNull SpanData otelSpan, final @NotNull String httpMethod) {
     final @NotNull String name = otelSpan.getName();
     final @NotNull SpanKind kind = otelSpan.getKind();
     final @NotNull StringBuilder opBuilder = new StringBuilder("http");
@@ -72,7 +73,7 @@ public final class SpanDescriptionExtractor {
 
     final @NotNull String description = httpMethod + " " + httpPath;
     final @NotNull TransactionNameSource transactionNameSource =
-      httpRoute != null ? TransactionNameSource.ROUTE : TransactionNameSource.URL;
+        httpRoute != null ? TransactionNameSource.ROUTE : TransactionNameSource.URL;
 
     return new OtelSpanInfo(op, description, transactionNameSource);
   }

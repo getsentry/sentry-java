@@ -1,10 +1,14 @@
 package io.sentry.opentelemetry
 
 import io.opentelemetry.api.OpenTelemetry
-import io.opentelemetry.api.trace.*
 import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanBuilder
 import io.opentelemetry.api.trace.SpanContext
 import io.opentelemetry.api.trace.SpanId
+import io.opentelemetry.api.trace.SpanKind
+import io.opentelemetry.api.trace.StatusCode
+import io.opentelemetry.api.trace.TraceId
+import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.context.propagation.TextMapGetter
@@ -15,17 +19,32 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor
 import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.UrlAttributes
-import io.sentry.*
+import io.sentry.Hint
+import io.sentry.IScopes
+import io.sentry.SentryEvent
+import io.sentry.SentryOptions
+import io.sentry.SpanStatus
 import io.sentry.util.SpanUtils
-import org.mockito.kotlin.*
+import org.junit.Assert.assertTrue
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import java.net.http.HttpHeaders
-import kotlin.test.*
+import kotlin.test.Ignore
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class OtelSentrySpanProcessorTest {
 
     companion object {
         val SENTRY_TRACE_ID = "2722d9f6ec019ade60c776169d9a8904"
-        val SENTRY_TRACE_HEADER_STRING = "${SENTRY_TRACE_ID}-cedf5b7571cb4972-1"
+        val SENTRY_TRACE_HEADER_STRING = "$SENTRY_TRACE_ID-cedf5b7571cb4972-1"
         val BAGGAGE_HEADER_STRING = "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET"
     }
 
@@ -35,8 +54,8 @@ class OtelSentrySpanProcessorTest {
             it.dsn = "https://key@sentry.io/proj"
             it.ignoredSpanOrigins = SpanUtils.ignoredSpanOriginsForOpenTelemetry()
             it.spanFactory = OtelSpanFactory()
-            it.enableTracing = true
             it.sampleRate = 1.0
+            it.tracesSampleRate = 1.0
         }
         val scopes = mock<IScopes>()
         lateinit var openTelemetry: OpenTelemetry
@@ -56,7 +75,6 @@ class OtelSentrySpanProcessorTest {
                 .setTracerProvider(sdkTracerProvider)
                 .setPropagators(ContextPropagators.create(OtelSentryPropagator()))
                 .build()
-
 
             tracer = openTelemetry.getTracer("sentry-test")
         }
@@ -176,7 +194,7 @@ class OtelSentrySpanProcessorTest {
 
             assertTrue(map.isNotEmpty())
 
-            assertEquals("${SENTRY_TRACE_ID}-${otelSpan.spanContext.spanId}-1", map["sentry-trace"])
+            assertEquals("$SENTRY_TRACE_ID-${otelSpan.spanContext.spanId}-1", map["sentry-trace"])
             assertEquals(BAGGAGE_HEADER_STRING, map["baggage"])
 
             endSpanWithStatus(otelChildSpan)
@@ -274,9 +292,9 @@ class OtelSentrySpanProcessorTest {
         thenSpanIsFinished(otelSpan)
     }
 
+    // TODO [POTEL]
     @Test
     @Ignore
-    //TODO [POTEL]
     fun `links error to OTEL transaction`() {
         fixture.setup()
         val extractedContext = whenExtractingHeaders()
@@ -286,7 +304,10 @@ class OtelSentrySpanProcessorTest {
             thenSentrySpanIsCreated(otelSpan, isContinued = true)
 
             otelSpan.makeCurrent().use { _ ->
-                val processedEvent = OpenTelemetryLinkErrorEventProcessor(fixture.scopes).process(SentryEvent(), Hint())
+                val processedEvent = OpenTelemetryLinkErrorEventProcessor(fixture.scopes).process(
+                    SentryEvent(),
+                    Hint()
+                )
                 val traceContext = processedEvent!!.contexts.trace!!
 
                 assertEquals(SENTRY_TRACE_ID, traceContext.traceId.toString())
