@@ -71,7 +71,7 @@ dependencies {
     api(projects.sentry)
     api(projects.sentryAndroidCore)
 
-    implementation("io.sentry:sentry-native-ndk:0.7.5")
+    implementation("io.sentry:sentry-native-ndk:0.7.10")
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
