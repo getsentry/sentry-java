@@ -26,8 +26,8 @@ final class ManifestMetadataReader {
   static final String SAMPLE_RATE = "io.sentry.sample-rate";
   static final String ANR_ENABLE = "io.sentry.anr.enable";
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
-
   static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";
+  static final String ANR_ATTACH_THREAD_DUMPS = "io.sentry.anr.attach-thread-dumps";
 
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
@@ -56,7 +56,7 @@ final class ManifestMetadataReader {
   static final String UNCAUGHT_EXCEPTION_HANDLER_ENABLE =
       "io.sentry.uncaught-exception-handler.enable";
 
-  static final String TRACING_ENABLE = "io.sentry.traces.enable";
+  @Deprecated static final String TRACING_ENABLE = "io.sentry.traces.enable";
   static final String TRACES_SAMPLE_RATE = "io.sentry.traces.sample-rate";
   static final String TRACES_ACTIVITY_ENABLE = "io.sentry.traces.activity.enable";
   static final String TRACES_ACTIVITY_AUTO_FINISH_ENABLE =
@@ -108,9 +108,9 @@ final class ManifestMetadataReader {
 
   static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.session-replay.on-error-sample-rate";
 
-  static final String REPLAYS_REDACT_ALL_TEXT = "io.sentry.session-replay.redact-all-text";
+  static final String REPLAYS_MASK_ALL_TEXT = "io.sentry.session-replay.mask-all-text";
 
-  static final String REPLAYS_REDACT_ALL_IMAGES = "io.sentry.session-replay.redact-all-images";
+  static final String REPLAYS_MASK_ALL_IMAGES = "io.sentry.session-replay.mask-all-images";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -175,6 +175,9 @@ final class ManifestMetadataReader {
                 logger,
                 ANR_TIMEOUT_INTERVAL_MILLIS,
                 options.getAnrTimeoutIntervalMillis()));
+
+        options.setAttachAnrThreadDump(
+            readBool(metadata, logger, ANR_ATTACH_THREAD_DUMPS, options.isAttachAnrThreadDump()));
 
         final String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
@@ -409,12 +412,12 @@ final class ManifestMetadataReader {
         options
             .getExperimental()
             .getSessionReplay()
-            .setRedactAllText(readBool(metadata, logger, REPLAYS_REDACT_ALL_TEXT, true));
+            .setMaskAllText(readBool(metadata, logger, REPLAYS_MASK_ALL_TEXT, true));
 
         options
             .getExperimental()
             .getSessionReplay()
-            .setRedactAllImages(readBool(metadata, logger, REPLAYS_REDACT_ALL_IMAGES, true));
+            .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
       }
 
       options
