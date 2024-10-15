@@ -81,7 +81,7 @@ public final class DeviceInfoUtil {
     if (instance == null) {
       try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (instance == null) {
-          instance = new DeviceInfoUtil(context.getApplicationContext(), options);
+          instance = new DeviceInfoUtil(ContextUtils.getApplicationContext(context), options);
         }
       }
     }

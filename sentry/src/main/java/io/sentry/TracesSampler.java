@@ -22,6 +22,7 @@ public final class TracesSampler {
     this.random = random;
   }
 
+  @SuppressWarnings("deprecation")
   @NotNull
   public TracesSamplingDecision sample(final @NotNull SamplingContext samplingContext) {
     final TracesSamplingDecision samplingContextSamplingDecision =
