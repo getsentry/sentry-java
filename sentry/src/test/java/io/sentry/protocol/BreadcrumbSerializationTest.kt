@@ -28,6 +28,7 @@ class BreadcrumbSerializationTest {
             type = "ace57e2e-305e-4048-abf0-6c8538ea7bf4"
             setData("6607d106-d426-462b-af74-f29fce978e48", "149bb94a-1387-4484-90be-2df15d1322ab")
             category = "b6eea851-5ae5-40ed-8fdd-5e1a655a879c"
+            origin = "4d8085ef-22fc-49d5-801e-55d509fd1a1c"
             level = SentryLevel.DEBUG
         }
     }
@@ -59,6 +60,7 @@ class BreadcrumbSerializationTest {
                 "6607d106-d426-462b-af74-f29fce978e48" to "149bb94a-1387-4484-90be-2df15d1322ab"
             ),
             "category" to "b6eea851-5ae5-40ed-8fdd-5e1a655a879c",
+            "origin" to "4d8085ef-22fc-49d5-801e-55d509fd1a1c",
             "level" to "debug"
         )
         val actual = Breadcrumb.fromMap(map, SentryOptions())
@@ -69,6 +71,7 @@ class BreadcrumbSerializationTest {
         assertEquals(expected.type, actual?.type)
         assertEquals(expected.data, actual?.data)
         assertEquals(expected.category, actual?.category)
+        assertEquals(expected.origin, actual?.origin)
         assertEquals(expected.level, actual?.level)
     }
 

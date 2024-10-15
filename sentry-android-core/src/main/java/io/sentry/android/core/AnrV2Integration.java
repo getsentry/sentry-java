@@ -63,7 +63,7 @@ public class AnrV2Integration implements Integration, Closeable {
 
   AnrV2Integration(
       final @NotNull Context context, final @NotNull ICurrentDateProvider dateProvider) {
-    this.context = context;
+    this.context = ContextUtils.getApplicationContext(context);
     this.dateProvider = dateProvider;
   }
 

@@ -36,7 +36,7 @@ class TextViewDominantColorTest {
 
         val node = ViewHierarchyNode.fromView(TextViewActivity.textView!!, null, 0, SentryOptions())
         assertTrue(node is TextViewHierarchyNode)
-        assertNull(node.layout.dominantTextColor)
+        assertNull(node.layout?.dominantTextColor)
     }
 
     @Test
@@ -55,7 +55,7 @@ class TextViewDominantColorTest {
 
         val node = ViewHierarchyNode.fromView(TextViewActivity.textView!!, null, 0, SentryOptions())
         assertTrue(node is TextViewHierarchyNode)
-        assertEquals(Color.RED, node.layout.dominantTextColor)
+        assertEquals(Color.RED, node.layout?.dominantTextColor)
     }
 
     @Test
@@ -75,7 +75,7 @@ class TextViewDominantColorTest {
 
         val node = ViewHierarchyNode.fromView(TextViewActivity.textView!!, null, 0, SentryOptions())
         assertTrue(node is TextViewHierarchyNode)
-        assertEquals(Color.BLACK, node.layout.dominantTextColor)
+        assertEquals(Color.BLACK, node.layout?.dominantTextColor)
     }
 }
 
