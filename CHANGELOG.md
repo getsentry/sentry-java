@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- fix invalid profiles when the transaction name is empty ([#3747](https://github.com/getsentry/sentry-java/pull/3747))
 - Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
 - Vendor `java.util.Random` and replace `java.security.SecureRandom` usages ([#3783](https://github.com/getsentry/sentry-java/pull/3783))
 - Fix potential ANRs due to NDK scope sync ([#3754](https://github.com/getsentry/sentry-java/pull/3754))
@@ -32,7 +33,6 @@
 
 ### Fixes
 
-- fix invalid profiles when the transaction name is empty ([#3747](https://github.com/getsentry/sentry-java/pull/3747))
 - Avoid stopping appStartProfiler after application creation ([#3630](https://github.com/getsentry/sentry-java/pull/3630))
 - Session Replay: Correctly detect dominant color for `TextView`s with Spans ([#3682](https://github.com/getsentry/sentry-java/pull/3682))
 - Fix ensure Application Context is used even when SDK is initialized via Activity Context ([#3669](https://github.com/getsentry/sentry-java/pull/3669))
