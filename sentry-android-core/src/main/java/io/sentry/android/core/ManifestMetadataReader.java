@@ -26,8 +26,8 @@ final class ManifestMetadataReader {
   static final String SAMPLE_RATE = "io.sentry.sample-rate";
   static final String ANR_ENABLE = "io.sentry.anr.enable";
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
-
   static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";
+  static final String ANR_ATTACH_THREAD_DUMPS = "io.sentry.anr.attach-thread-dumps";
 
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
@@ -175,6 +175,9 @@ final class ManifestMetadataReader {
                 logger,
                 ANR_TIMEOUT_INTERVAL_MILLIS,
                 options.getAnrTimeoutIntervalMillis()));
+
+        options.setAttachAnrThreadDump(
+            readBool(metadata, logger, ANR_ATTACH_THREAD_DUMPS, options.isAttachAnrThreadDump()));
 
         final String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
