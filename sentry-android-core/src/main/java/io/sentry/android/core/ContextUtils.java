@@ -383,4 +383,19 @@ public final class ContextUtils {
     }
     app.setPermissions(permissions);
   }
+
+  /**
+   * Get the app context
+   *
+   * @return the app context, or if not available, the provided context
+   */
+  @NotNull
+  public static Context getApplicationContext(final @NotNull Context context) {
+    // it returns null if ContextImpl, so let's check for nullability
+    final @Nullable Context appContext = context.getApplicationContext();
+    if (appContext != null) {
+      return appContext;
+    }
+    return context;
+  }
 }

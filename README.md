@@ -57,7 +57,13 @@ Sentry SDK for Java and Android
 | sentry-opentelemetry-core               | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-core)                             |
 | sentry-okhttp                           | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-okhttp/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-okhttp)                                                     |
 
+# Releases
 
+This repo uses the following ways to release SDK updates:
+
+- `Pre-release`: We create pre-releases (alpha, beta, RC,…) for larger and potentially more impactful changes, such as new features or major versions.
+- `Latest`: We continuously release major/minor/hotfix versions from the `main` branch. These releases go through all our internal quality gates and are very safe to use and intended to be the default for most teams.
+- `Stable`: We promote releases from `Latest` when they have been used in the field for some time and in scale, considering time since release, adoption, and other quality and stability metrics. These releases will be indicated on the releases page (https://github.com/getsentry/sentry-java/releases/) with the `Stable` suffix.
 
 # Useful links and docs
 

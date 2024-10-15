@@ -98,9 +98,9 @@ final class ManifestMetadataReader {
 
   static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.session-replay.on-error-sample-rate";
 
-  static final String REPLAYS_REDACT_ALL_TEXT = "io.sentry.session-replay.redact-all-text";
+  static final String REPLAYS_MASK_ALL_TEXT = "io.sentry.session-replay.mask-all-text";
 
-  static final String REPLAYS_REDACT_ALL_IMAGES = "io.sentry.session-replay.redact-all-images";
+  static final String REPLAYS_MASK_ALL_IMAGES = "io.sentry.session-replay.mask-all-images";
 
   static final String FORCE_INIT = "io.sentry.force-init";
 
@@ -389,12 +389,12 @@ final class ManifestMetadataReader {
         options
             .getExperimental()
             .getSessionReplay()
-            .setRedactAllText(readBool(metadata, logger, REPLAYS_REDACT_ALL_TEXT, true));
+            .setMaskAllText(readBool(metadata, logger, REPLAYS_MASK_ALL_TEXT, true));
 
         options
             .getExperimental()
             .getSessionReplay()
-            .setRedactAllImages(readBool(metadata, logger, REPLAYS_REDACT_ALL_IMAGES, true));
+            .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
       }
 
       options

@@ -11,7 +11,8 @@ import org.jetbrains.annotations.Nullable;
  */
 @ApiStatus.Internal
 public final class LazyEvaluator<T> {
-  private @Nullable T value = null;
+
+  private volatile @Nullable T value = null;
   private final @NotNull Evaluator<T> evaluator;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
@@ -31,11 +32,21 @@ public final class LazyEvaluator<T> {
    * @return The result of the evaluator function.
    */
   public @NotNull T getValue() {
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      if (value == null) {
-        value = evaluator.evaluate();
+    if (value == null) {
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        if (value == null) {
+          value = evaluator.evaluate();
+        }
       }
-      return value;
+    }
+
+    //noinspection DataFlowIssue
+    return value;
+  }
+
+  public void setValue(final @Nullable T value) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      this.value = value;
     }
   }
 

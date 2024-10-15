@@ -5,6 +5,7 @@ package io.sentry.samples.android.compose
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,7 +23,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -31,10 +35,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import coil.compose.AsyncImage
+import io.sentry.android.replay.sentryReplayUnmask
 import io.sentry.compose.SentryTraced
 import io.sentry.compose.withSentryObservableEffect
 import io.sentry.samples.android.GithubAPI
 import kotlinx.coroutines.launch
+import io.sentry.samples.android.R as IR
 
 class ComposeActivity : ComponentActivity() {
 
@@ -109,6 +116,17 @@ fun Github(
             modifier = Modifier
                 .fillMaxSize()
         ) {
+            Image(
+                painter = painterResource(IR.drawable.sentry_glyph),
+                contentDescription = "LOGO",
+                colorFilter = ColorFilter.tint(Color.Black),
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
+            AsyncImage(
+                model = "https://i.imgur.com/tie6A3J.jpeg",
+                contentDescription = null,
+                modifier = Modifier.padding(vertical = 16.dp)
+            )
             TextField(
                 value = user,
                 onValueChange = { newText ->
@@ -127,7 +145,7 @@ fun Github(
                     .testTag("button_list_repos_async")
                     .padding(top = 32.dp)
             ) {
-                Text("Make Request")
+                Text("Make Request", modifier = Modifier.sentryReplayUnmask())
             }
         }
     }
