@@ -119,7 +119,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         try (final Reader reader =
             new BufferedReader(
                 new InputStreamReader(new FileInputStream(currentSessionFile), UTF_8))) {
-          final Session session = serializer.deserialize(reader, Session.class);
+          final Session session = serializer.getValue().deserialize(reader, Session.class);
           if (session != null) {
             writeSessionToDisk(previousSessionFile, session);
           }
@@ -207,7 +207,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         try (final Reader reader =
             new BufferedReader(
                 new InputStreamReader(new FileInputStream(previousSessionFile), UTF_8))) {
-          final Session session = serializer.deserialize(reader, Session.class);
+          final Session session = serializer.getValue().deserialize(reader, Session.class);
           if (session != null) {
             final AbnormalExit abnormalHint = (AbnormalExit) sdkHint;
             final @Nullable Long abnormalExitTimestamp = abnormalHint.timestamp();
@@ -266,7 +266,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         try (final Reader reader =
             new BufferedReader(
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-          final Session session = serializer.deserialize(reader, Session.class);
+          final Session session = serializer.getValue().deserialize(reader, Session.class);
           if (session == null) {
             options
                 .getLogger()
@@ -307,7 +307,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
 
     try (final OutputStream outputStream = new FileOutputStream(file)) {
-      serializer.serialize(envelope, outputStream);
+      serializer.getValue().serialize(envelope, outputStream);
     } catch (Throwable e) {
       options
           .getLogger()
@@ -327,7 +327,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
     try (final OutputStream outputStream = new FileOutputStream(file);
         final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
-      serializer.serialize(session, writer);
+      serializer.getValue().serialize(session, writer);
     } catch (Throwable e) {
       options
           .getLogger()
@@ -393,7 +393,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     for (final File file : allCachedEnvelopes) {
       try (final InputStream is = new BufferedInputStream(new FileInputStream(file))) {
 
-        ret.add(serializer.deserializeEnvelope(is));
+        ret.add(serializer.getValue().deserializeEnvelope(is));
       } catch (FileNotFoundException e) {
         options
             .getLogger()

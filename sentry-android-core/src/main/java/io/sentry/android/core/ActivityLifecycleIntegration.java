@@ -394,7 +394,7 @@ public final class ActivityLifecycleIntegration
 
       firstActivityCreated = true;
 
-      if (fullyDisplayedReporter != null) {
+      if (performanceEnabled && ttfdSpan != null && fullyDisplayedReporter != null) {
         fullyDisplayedReporter.registerFullyDrawnListener(() -> onFullFrameDrawn(ttfdSpan));
       }
     }

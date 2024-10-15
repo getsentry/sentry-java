@@ -9,12 +9,15 @@ import android.os.Build
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.IScopes
+import io.sentry.ISentryExecutorService
 import io.sentry.SentryDateProvider
 import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
 import io.sentry.TypeCheckHint
 import io.sentry.android.core.NetworkBreadcrumbsIntegration.NetworkBreadcrumbConnectionDetail
 import io.sentry.android.core.NetworkBreadcrumbsIntegration.NetworkBreadcrumbsNetworkCallback
+import io.sentry.test.DeferredExecutorService
+import io.sentry.test.ImmediateExecutorService
 import org.mockito.kotlin.KInOrder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -47,14 +50,22 @@ class NetworkBreadcrumbsIntegrationTest {
 
         init {
             whenever(mockBuildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
-            whenever(context.getSystemService(eq(Context.CONNECTIVITY_SERVICE))).thenReturn(connectivityManager)
+            whenever(context.getSystemService(eq(Context.CONNECTIVITY_SERVICE))).thenReturn(
+                connectivityManager
+            )
         }
 
-        fun getSut(enableNetworkEventBreadcrumbs: Boolean = true, buildInfo: BuildInfoProvider = mockBuildInfoProvider): NetworkBreadcrumbsIntegration {
+        fun getSut(
+            enableNetworkEventBreadcrumbs: Boolean = true,
+            buildInfo: BuildInfoProvider = mockBuildInfoProvider,
+            executor: ISentryExecutorService = ImmediateExecutorService()
+        ): NetworkBreadcrumbsIntegration {
             options = SentryAndroidOptions().apply {
+                executorService = executor
                 isEnableNetworkEventBreadcrumbs = enableNetworkEventBreadcrumbs
                 dateProvider = SentryDateProvider {
-                    val nowNanos = TimeUnit.MILLISECONDS.toNanos(nowMs ?: System.currentTimeMillis())
+                    val nowNanos =
+                        TimeUnit.MILLISECONDS.toNanos(nowMs ?: System.currentTimeMillis())
                     SentryNanotimeDate(DateUtils.nanosToDate(nowNanos), nowNanos)
                 }
             }
@@ -117,7 +128,10 @@ class NetworkBreadcrumbsIntegrationTest {
         sut.register(fixture.scopes, fixture.options)
         sut.close()
 
-        verify(fixture.connectivityManager, never()).unregisterNetworkCallback(any<NetworkCallback>())
+        verify(
+            fixture.connectivityManager,
+            never()
+        ).unregisterNetworkCallback(any<NetworkCallback>())
         assertNull(sut.networkCallback)
     }
 
@@ -482,11 +496,27 @@ class NetworkBreadcrumbsIntegrationTest {
         }
     }
 
+    @Test
+    fun `If integration is opened and closed immediately it still properly unregisters`() {
+        val executor = DeferredExecutorService()
+        val sut = fixture.getSut(executor = executor)
+
+        sut.register(fixture.scopes, fixture.options)
+        sut.close()
+
+        executor.runAll()
+
+        assertNull(sut.networkCallback)
+        verify(fixture.connectivityManager, never()).registerDefaultNetworkCallback(any<NetworkCallback>())
+        verify(fixture.connectivityManager, never()).unregisterNetworkCallback(any<NetworkCallback>())
+    }
+
     private fun KInOrder.verifyBreadcrumbInOrder(check: (detail: NetworkBreadcrumbConnectionDetail) -> Unit) {
         verify(fixture.scopes, times(1)).addBreadcrumb(
             any<Breadcrumb>(),
             check {
-                val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
+                val connectionDetail =
+                    it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                 check(connectionDetail)
             }
         )
@@ -496,7 +526,8 @@ class NetworkBreadcrumbsIntegrationTest {
         verify(fixture.scopes).addBreadcrumb(
             any<Breadcrumb>(),
             check {
-                val connectionDetail = it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
+                val connectionDetail =
+                    it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                 check(connectionDetail)
             }
         )
@@ -516,9 +547,13 @@ class NetworkBreadcrumbsIntegrationTest {
         whenever(capabilities.linkUpstreamBandwidthKbps).thenReturn(upstreamBandwidthKbps)
         whenever(capabilities.signalStrength).thenReturn(signalStrength)
         whenever(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)).thenReturn(isVpn)
-        whenever(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)).thenReturn(isEthernet)
+        whenever(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)).thenReturn(
+            isEthernet
+        )
         whenever(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)).thenReturn(isWifi)
-        whenever(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)).thenReturn(isCellular)
+        whenever(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)).thenReturn(
+            isCellular
+        )
         return capabilities
     }
 

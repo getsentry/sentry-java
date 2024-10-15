@@ -23,6 +23,7 @@ import io.sentry.android.replay.capture.SessionCaptureStrategy
 import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.android.replay.gestures.TouchRecorderCallback
 import io.sentry.android.replay.util.MainLooperHandler
+import io.sentry.android.replay.util.appContext
 import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.cache.PersistingScopeObserver
@@ -51,7 +52,7 @@ public class ReplayIntegration(
 
     // needed for the Java's call site
     constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
-        context,
+        context.appContext(),
         dateProvider,
         null,
         null,
@@ -67,7 +68,7 @@ public class ReplayIntegration(
         replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
         mainLooperHandler: MainLooperHandler? = null,
         gestureRecorderProvider: (() -> GestureRecorder)? = null
-    ) : this(context, dateProvider, recorderProvider, recorderConfigProvider, replayCacheProvider) {
+    ) : this(context.appContext(), dateProvider, recorderProvider, recorderConfigProvider, replayCacheProvider) {
         this.replayCaptureStrategyProvider = replayCaptureStrategyProvider
         this.mainLooperHandler = mainLooperHandler ?: MainLooperHandler()
         this.gestureRecorderProvider = gestureRecorderProvider
