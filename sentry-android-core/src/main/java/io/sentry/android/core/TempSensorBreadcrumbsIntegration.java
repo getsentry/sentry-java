@@ -87,7 +87,7 @@ public final class TempSensorBreadcrumbsIntegration
           sensorManager.registerListener(this, defaultSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
           options.getLogger().log(SentryLevel.DEBUG, "TempSensorBreadcrumbsIntegration installed.");
-          addIntegrationToSdkVersion(getClass());
+          addIntegrationToSdkVersion("TempSensor");
         } else {
           options.getLogger().log(SentryLevel.INFO, "TYPE_AMBIENT_TEMPERATURE is not available.");
         }
