@@ -5704,6 +5704,7 @@ public final class io/sentry/util/JsonSerializationUtils {
 public final class io/sentry/util/LazyEvaluator {
 	public fun <init> (Lio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun getValue ()Ljava/lang/Object;
+	public fun resetValue ()V
 	public fun setValue (Ljava/lang/Object;)V
 }
 

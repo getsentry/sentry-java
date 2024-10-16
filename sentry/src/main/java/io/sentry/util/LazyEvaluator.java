@@ -48,6 +48,12 @@ public final class LazyEvaluator<T> {
     }
   }
 
+  public void resetValue() {
+    synchronized (this) {
+      this.value = null;
+    }
+  }
+
   public interface Evaluator<T> {
     @NotNull
     T evaluate();

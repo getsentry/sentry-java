@@ -82,6 +82,9 @@ public class SentryOptions {
    */
   private @Nullable String dsn;
 
+  /** Parsed DSN to avoid parsing it every time. */
+  private final @NotNull LazyEvaluator<Dsn> parsedDsn = new LazyEvaluator<>(() -> new Dsn(dsn));
+
   /** dsnHash is used as a subfolder of cacheDirPath to isolate events when rotating DSNs */
   private @Nullable String dsnHash;
 
@@ -538,12 +541,26 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the DSN
+   *
+   * @return the DSN or null if not set
+   */
+  @ApiStatus.Internal
+  @NotNull
+  Dsn getParsedDsn() {
+    return parsedDsn.getValue();
+  }
+
+  /**
    * Sets the DSN
    *
    * @param dsn the DSN
    */
   public void setDsn(final @Nullable String dsn) {
     this.dsn = dsn;
+    if (!isEnabled() || (dsn != null && dsn.isEmpty())) {
+      this.parsedDsn.resetValue();
+    }
 
     dsnHash = StringUtils.calculateStringHash(this.dsn, logger);
   }

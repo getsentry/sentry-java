@@ -381,8 +381,8 @@ public final class Sentry {
           "DSN is required. Use empty string or set enabled to false in SentryOptions to disable SDK.");
     }
 
-    @SuppressWarnings("unused")
-    final Dsn parsedDsn = new Dsn(dsn);
+    // This creates the DSN object and performs some checks
+    options.getParsedDsn();
 
     ILogger logger = options.getLogger();
 
