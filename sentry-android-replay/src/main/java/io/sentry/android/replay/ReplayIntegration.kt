@@ -35,9 +35,9 @@ import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
 import io.sentry.util.HintUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
+import io.sentry.util.Random
 import java.io.Closeable
 import java.io.File
-import java.security.SecureRandom
 import java.util.LinkedList
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
@@ -78,7 +78,7 @@ public class ReplayIntegration(
     private var hub: IHub? = null
     private var recorder: Recorder? = null
     private var gestureRecorder: GestureRecorder? = null
-    private val random by lazy { SecureRandom() }
+    private val random by lazy { Random() }
     private val rootViewsSpy by lazy(NONE) { RootViewsSpy.install() }
 
     // TODO: probably not everything has to be thread-safe here
@@ -119,7 +119,7 @@ public class ReplayIntegration(
             options.logger.log(INFO, "ComponentCallbacks is not available, orientation changes won't be handled by Session replay", e)
         }
 
-        addIntegrationToSdkVersion(javaClass)
+        addIntegrationToSdkVersion("Replay")
         SentryIntegrationPackageStorage.getInstance()
             .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
 

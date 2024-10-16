@@ -361,6 +361,17 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
+    fun `profiling transaction with empty name fallbacks to unknown`() {
+        val profiler = fixture.getSut(context)
+        profiler.start()
+        profiler.bindTransaction(fixture.transaction1)
+        val profilingTraceData = profiler.onTransactionFinish(fixture.transaction1, null, fixture.options)
+        assertNotNull(profilingTraceData)
+        assertEquals("unknown", profilingTraceData.transactionName)
+        assertEquals("unknown", profilingTraceData.transactions.first().name)
+    }
+
+    @Test
     fun `profiler does not throw if traces cannot be written to disk`() {
         File(fixture.options.profilingTracesDirPath!!).setWritable(false)
         val profiler = fixture.getSut(context)

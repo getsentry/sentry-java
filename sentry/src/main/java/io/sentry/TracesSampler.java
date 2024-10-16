@@ -1,7 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
-import java.security.SecureRandom;
+import io.sentry.util.Random;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -10,14 +10,14 @@ final class TracesSampler {
   private static final @NotNull Double DEFAULT_TRACES_SAMPLE_RATE = 1.0;
 
   private final @NotNull SentryOptions options;
-  private final @NotNull SecureRandom random;
+  private final @NotNull Random random;
 
   public TracesSampler(final @NotNull SentryOptions options) {
-    this(Objects.requireNonNull(options, "options are required"), new SecureRandom());
+    this(Objects.requireNonNull(options, "options are required"), new Random());
   }
 
   @TestOnly
-  TracesSampler(final @NotNull SentryOptions options, final @NotNull SecureRandom random) {
+  TracesSampler(final @NotNull SentryOptions options, final @NotNull Random random) {
     this.options = options;
     this.random = random;
   }
