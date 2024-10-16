@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- Cache parsed Dsn ([#3796](https://github.com/getsentry/sentry-java/pull/3796))
 - fix invalid profiles when the transaction name is empty ([#3747](https://github.com/getsentry/sentry-java/pull/3747))
 - Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
 - Vendor `java.util.Random` and replace `java.security.SecureRandom` usages ([#3783](https://github.com/getsentry/sentry-java/pull/3783))
