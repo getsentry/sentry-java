@@ -247,6 +247,31 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads anr attach thread dump to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ANR_ATTACH_THREAD_DUMPS to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(true, fixture.options.isAttachAnrThreadDump)
+    }
+
+    @Test
+    fun `applyMetadata reads anr attach thread dump to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(false, fixture.options.isAttachAnrThreadDump)
+    }
+
+    @Test
     fun `applyMetadata reads activity breadcrumbs to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE to false)
@@ -1465,21 +1490,21 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads session replay redact flags to options`() {
+    fun `applyMetadata reads session replay mask flags to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_REDACT_ALL_TEXT to false, ManifestMetadataReader.REPLAYS_REDACT_ALL_IMAGES to false)
+        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_MASK_ALL_TEXT to false, ManifestMetadataReader.REPLAYS_MASK_ALL_IMAGES to false)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.experimental.sessionReplay.ignoreViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
-        assertTrue(fixture.options.experimental.sessionReplay.ignoreViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
     }
 
     @Test
-    fun `applyMetadata reads session replay redact flags to options and keeps default if not found`() {
+    fun `applyMetadata reads session replay mask flags to options and keeps default if not found`() {
         // Arrange
         val context = fixture.getContext()
 
@@ -1487,7 +1512,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.experimental.sessionReplay.redactViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
-        assertTrue(fixture.options.experimental.sessionReplay.redactViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.maskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.maskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
     }
 }
