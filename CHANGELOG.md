@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Include javadoc & sources in Gradle .module metadata file
+
 ### Fixes
 
 - Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
