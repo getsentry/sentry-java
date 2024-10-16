@@ -17,10 +17,10 @@ import io.sentry.transport.RateLimiter;
 import io.sentry.util.CheckInUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import io.sentry.util.Random;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,7 +40,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
 
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
-  private final @Nullable SecureRandom random;
+  private final @Nullable Random random;
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
   private final @NotNull IMetricsAggregator metricsAggregator;
 
@@ -67,7 +67,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
             ? new MetricsAggregator(options, this)
             : NoopMetricsAggregator.getInstance();
 
-    this.random = options.getSampleRate() == null ? null : new SecureRandom();
+    this.random = options.getSampleRate() == null ? null : new Random();
   }
 
   private boolean shouldApplyScopeData(
