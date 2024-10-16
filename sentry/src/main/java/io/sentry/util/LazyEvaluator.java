@@ -25,7 +25,8 @@ public final class LazyEvaluator<T> {
   }
 
   /**
-   * Executes the evaluator function and caches its result, so that it's called only once.
+   * Executes the evaluator function and caches its result, so that it's called only once, unless
+   * resetValue is called.
    *
    * @return The result of the evaluator function.
    */
@@ -48,6 +49,10 @@ public final class LazyEvaluator<T> {
     }
   }
 
+  /**
+   * Resets the internal value and forces the evaluator function to be called the next time
+   * getValue() is called.
+   */
   public void resetValue() {
     synchronized (this) {
       this.value = null;

@@ -532,7 +532,7 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the DSN
+   * Returns the DSN.
    *
    * @return the DSN or null if not set
    */
@@ -541,13 +541,13 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the DSN
+   * Evaluates and parses the DSN. May throw an exception if the DSN is invalid.
    *
-   * @return the DSN or null if not set
+   * @return the parsed DSN or throws if dsn is invalid
    */
   @ApiStatus.Internal
   @NotNull
-  Dsn getParsedDsn() {
+  Dsn getParsedDsn() throws IllegalArgumentException {
     return parsedDsn.getValue();
   }
 
@@ -558,9 +558,7 @@ public class SentryOptions {
    */
   public void setDsn(final @Nullable String dsn) {
     this.dsn = dsn;
-    if (!isEnabled() || (dsn != null && dsn.isEmpty())) {
-      this.parsedDsn.resetValue();
-    }
+    this.parsedDsn.resetValue();
 
     dsnHash = StringUtils.calculateStringHash(this.dsn, logger);
   }
