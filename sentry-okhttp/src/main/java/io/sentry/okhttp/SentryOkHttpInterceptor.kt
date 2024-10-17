@@ -33,7 +33,7 @@ import java.io.IOException
  * @param hub The [IHub], internal and only used for testing.
  * @param beforeSpan The [ISpan] can be customized or dropped with the [BeforeSpanCallback].
  * @param captureFailedRequests The SDK will only capture HTTP Client errors if it is enabled,
- * Defaults to false.
+ * Defaults to true.
  * @param failedRequestStatusCodes The SDK will only capture HTTP Client errors if the HTTP Response
  * status code is within the defined ranges.
  * @param failedRequestTargets The SDK will only capture HTTP Client errors if the HTTP Request URL
