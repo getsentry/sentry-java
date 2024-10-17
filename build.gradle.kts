@@ -70,7 +70,8 @@ apiValidation {
             "sentry-uitest-android-benchmark",
             "test-app-plain",
             "test-app-sentry",
-            "sentry-samples-netflix-dgs"
+            "sentry-samples-netflix-dgs",
+            "sentry-uitest-android-critical"
         )
     )
 }
