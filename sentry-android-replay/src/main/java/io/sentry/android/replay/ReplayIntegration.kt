@@ -119,7 +119,7 @@ public class ReplayIntegration(
             options.logger.log(INFO, "ComponentCallbacks is not available, orientation changes won't be handled by Session replay", e)
         }
 
-        addIntegrationToSdkVersion(javaClass)
+        addIntegrationToSdkVersion("Replay")
         SentryIntegrationPackageStorage.getInstance()
             .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
 
