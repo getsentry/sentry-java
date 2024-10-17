@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Load lazy fields on init in the background ([#3803](https://github.com/getsentry/sentry-java/pull/3803))
+- Replace setOf with HashSet.add ([#3801](https://github.com/getsentry/sentry-java/pull/3801))
+
 ## 7.16.0-alpha.1
 
 ### Features
@@ -8,7 +15,6 @@
 
 ### Fixes
 
-- Replace setOf with HashSet.add ([#3801](https://github.com/getsentry/sentry-java/pull/3801))
 - Cache parsed Dsn ([#3796](https://github.com/getsentry/sentry-java/pull/3796))
 - fix invalid profiles when the transaction name is empty ([#3747](https://github.com/getsentry/sentry-java/pull/3747))
 - Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
