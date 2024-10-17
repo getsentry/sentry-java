@@ -69,6 +69,15 @@ public final class SentryNdk {
 
   /** Closes the NDK integration */
   public static void close() {
-    shutdown();
+    try {
+      if (loadLibraryLatch.await(2000, TimeUnit.MILLISECONDS)) {
+        shutdown();
+      } else {
+        throw new IllegalStateException("Timeout waiting for Sentry NDK library to load");
+      }
+    } catch (InterruptedException e) {
+      throw new IllegalStateException(
+          "Thread interrupted while waiting for NDK libs to be loaded", e);
+    }
   }
 }
