@@ -54,7 +54,7 @@ public open class SentryOkHttpInterceptor(
     public constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
     init {
-        addIntegrationToSdkVersion(javaClass)
+        addIntegrationToSdkVersion("OkHttp")
         SentryIntegrationPackageStorage.getInstance()
             .addPackage("maven:io.sentry:sentry-okhttp", BuildConfig.VERSION_NAME)
     }
