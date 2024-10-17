@@ -5,6 +5,7 @@
 ### Features
 
 - Add meta option to attach ANR thread dumps ([#3791](https://github.com/getsentry/sentry-java/pull/3791))
+- Include javadoc & sources in Gradle .module metadata file
 
 ### Fixes
 
