@@ -2451,6 +2451,17 @@ public class SentryOptions {
     this.enableScreenTracking = enableScreenTracking;
   }
 
+  /**
+   * Load the lazy fields. Useful to load in the background, so that results are already cached.
+   * DO NOT CALL THIS METHOD ON THE MAIN THREAD.
+   */
+  void loadLazyFields() {
+    getSerializer();
+    getParsedDsn();
+    getEnvelopeReader();
+    getDateProvider();
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 

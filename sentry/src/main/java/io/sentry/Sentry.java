@@ -217,6 +217,7 @@ public final class Sentry {
    * @param options options the SentryOptions
    * @param globalHubMode the globalHubMode
    */
+  @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
   private static synchronized void init(
       final @NotNull SentryOptions options, final boolean globalHubMode) {
     if (isEnabled()) {
@@ -230,6 +231,9 @@ public final class Sentry {
     if (!initConfigurations(options)) {
       return;
     }
+
+    // load lazy fields of the options in a separate thread
+    new Thread(() -> options.loadLazyFields()).start();
 
     options.getLogger().log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
     Sentry.globalHubMode = globalHubMode;
