@@ -118,7 +118,7 @@ public final class ActivityLifecycleIntegration
 
     application.registerActivityLifecycleCallbacks(this);
     this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
-    addIntegrationToSdkVersion(getClass());
+    addIntegrationToSdkVersion("ActivityLifecycle");
   }
 
   private boolean isPerformanceEnabled(final @NotNull SentryAndroidOptions options) {

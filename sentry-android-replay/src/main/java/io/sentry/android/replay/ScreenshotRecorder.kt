@@ -36,6 +36,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.LazyThreadSafetyMode.NONE
 import kotlin.math.roundToInt
 
 @TargetApi(26)
@@ -51,15 +52,19 @@ internal class ScreenshotRecorder(
     }
     private var rootView: WeakReference<View>? = null
     private val pendingViewHierarchy = AtomicReference<ViewHierarchyNode>()
-    private val maskingPaint = Paint()
-    private val singlePixelBitmap: Bitmap = Bitmap.createBitmap(
-        1,
-        1,
-        Bitmap.Config.ARGB_8888
-    )
-    private val singlePixelBitmapCanvas: Canvas = Canvas(singlePixelBitmap)
-    private val prescaledMatrix = Matrix().apply {
-        preScale(config.scaleFactorX, config.scaleFactorY)
+    private val maskingPaint by lazy(NONE) { Paint() }
+    private val singlePixelBitmap: Bitmap by lazy(NONE) {
+        Bitmap.createBitmap(
+            1,
+            1,
+            Bitmap.Config.ARGB_8888
+        )
+    }
+    private val singlePixelBitmapCanvas: Canvas by lazy(NONE) { Canvas(singlePixelBitmap) }
+    private val prescaledMatrix by lazy(NONE) {
+        Matrix().apply {
+            preScale(config.scaleFactorX, config.scaleFactorY)
+        }
     }
     private val contentChanged = AtomicBoolean(false)
     private val isCapturing = AtomicBoolean(true)

@@ -239,8 +239,8 @@ sealed class ViewHierarchyNode(
         private fun Class<*>.isAssignableFrom(set: Set<String>): Boolean {
             var cls: Class<*>? = this
             while (cls != null) {
-                val canonicalName = cls.canonicalName
-                if (canonicalName != null && set.contains(canonicalName)) {
+                val canonicalName = cls.name
+                if (set.contains(canonicalName)) {
                     return true
                 }
                 cls = cls.superclass
