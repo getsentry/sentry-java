@@ -8,7 +8,6 @@ import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.findRootCoordinates
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.semantics.SemanticsActions
@@ -87,12 +86,13 @@ internal object ComposeViewHierarchyNode {
             (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
             visibleRect.height() > 0 && visibleRect.width() > 0
         val isEditable = semantics?.contains(SemanticsActions.SetText) == true
-        val positionInWindow = node.coordinates.positionInWindow()
         return when {
             semantics?.contains(SemanticsProperties.Text) == true || isEditable -> {
                 val shouldMask = isVisible && node.shouldMask(isImage = false, options)
 
                 parent?.setImportantForCaptureToAncestors(true)
+                // TODO: if we get reports that it's slow, we can drop this, and just mask
+                // TODO: the whole view instead of per-line
                 val textLayoutResults = mutableListOf<TextLayoutResult>()
                 semantics?.getOrNull(SemanticsActions.GetTextLayoutResult)
                     ?.action
@@ -108,8 +108,8 @@ internal object ComposeViewHierarchyNode {
                 TextViewHierarchyNode(
                     layout = if (textLayoutResults.isNotEmpty() && !isEditable) ComposeTextLayout(textLayoutResults.first(), hasFillModifier) else null,
                     dominantColor = textColor?.toArgb()?.toOpaque(),
-                    x = positionInWindow.x,
-                    y = positionInWindow.y,
+                    x = visibleRect.left.toFloat(),
+                    y = visibleRect.top.toFloat(),
                     width = node.width,
                     height = node.height,
                     elevation = (parent?.elevation ?: 0f),
@@ -128,8 +128,8 @@ internal object ComposeViewHierarchyNode {
 
                     parent?.setImportantForCaptureToAncestors(true)
                     ImageViewHierarchyNode(
-                        x = positionInWindow.x,
-                        y = positionInWindow.y,
+                        x = visibleRect.left.toFloat(),
+                        y = visibleRect.top.toFloat(),
                         width = node.width,
                         height = node.height,
                         elevation = (parent?.elevation ?: 0f),
@@ -147,8 +147,8 @@ internal object ComposeViewHierarchyNode {
                     // TODO: traverse the ViewHierarchyNode here again. For now we can recommend
                     // TODO: using custom modifiers to obscure the entire node if it's sensitive
                     GenericViewHierarchyNode(
-                        x = positionInWindow.x,
-                        y = positionInWindow.y,
+                        x = visibleRect.left.toFloat(),
+                        y = visibleRect.top.toFloat(),
                         width = node.width,
                         height = node.height,
                         elevation = (parent?.elevation ?: 0f),
