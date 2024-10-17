@@ -14,6 +14,8 @@
 - Fix potential ANRs due to NDK scope sync ([#3754](https://github.com/getsentry/sentry-java/pull/3754))
 - Fix potential ANRs due to NDK System.loadLibrary calls ([#3670](https://github.com/getsentry/sentry-java/pull/3670))
 - Fix slow `Log` calls on app startup ([#3793](https://github.com/getsentry/sentry-java/pull/3793))
+- Fix slow Integration name parsing ([#3794](https://github.com/getsentry/sentry-java/pull/3794))
+- Session Replay: Reduce startup and capture overhead ([#3799](https://github.com/getsentry/sentry-java/pull/3799))
 
 ## 7.15.0
 

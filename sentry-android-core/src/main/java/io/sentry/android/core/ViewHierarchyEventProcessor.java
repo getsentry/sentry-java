@@ -55,7 +55,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
             DEBOUNCE_MAX_EXECUTIONS);
 
     if (options.isAttachViewHierarchy()) {
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("ViewHierarchy");
     }
   }
 
