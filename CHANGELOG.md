@@ -7,6 +7,12 @@
 - Load lazy fields on init in the background ([#3803](https://github.com/getsentry/sentry-java/pull/3803))
 - Replace setOf with HashSet.add ([#3801](https://github.com/getsentry/sentry-java/pull/3801))
 
+### Dependencies
+
+- Bump Native SDK from v0.7.2 to v0.7.10 ([#3713](https://github.com/getsentry/sentry-java/pull/3713))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0710)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.10)
+
 ## 7.16.0-alpha.1
 
 ### Features
