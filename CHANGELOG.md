@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+## Features
+
+- Lazy uuid generation for SentryId and SpanId ([#3770](https://github.com/getsentry/sentry-java/pull/3770))
+
 ## 8.0.0-beta.1
 
 ### Breaking Changes
@@ -42,9 +48,9 @@
     - If you are using `graphql-java` v21 or earlier, you can use the `sentry-graphql` module
     - For `graphql-java` v22 and newer please use the `sentry-graphql-22` module
 - We now provide a `SentryInstrumenter` bean directly for Spring (Boot) if there is none yet instead of using `GraphQlSourceBuilderCustomizer` to add the instrumentation ([#3744](https://github.com/getsentry/sentry-java/pull/3744))
-    - It is now also possible to provide a bean of type `SentryGraphqlInstrumentation.BeforeSpanCallback` which is then used by `SentryInstrumenter`
+  - It is now also possible to provide a bean of type `SentryGraphqlInstrumentation.BeforeSpanCallback` which is then used by `SentryInstrumenter`
 - Emit transaction.data inside contexts.trace.data ([#3735](https://github.com/getsentry/sentry-java/pull/3735))
-  - Also does not emit `transaction.data` in `exras` anymore
+    - Also does not emit `transaction.data` in `exras` anymore
 
 ### Fixes
 

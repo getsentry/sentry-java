@@ -1,5 +1,6 @@
 package io.sentry.protocol
 
+import io.sentry.SpanId
 import io.sentry.util.StringUtils
 import org.mockito.Mockito
 import org.mockito.kotlin.any
@@ -9,20 +10,14 @@ import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class SentryIdTest {
-
-    @Test
-    fun `does not throw when instantiated with corrupted UUID`() {
-        val id = SentryId("0000-0000")
-        assertEquals("00000000000000000000000000000000", id.toString())
-    }
+class SpanIdTest {
 
     @Test
     fun `UUID is not generated on initialization`() {
         val uuid = UUID.randomUUID()
         Mockito.mockStatic(UUID::class.java).use { utils ->
             utils.`when`<UUID> { UUID.randomUUID() }.thenReturn(uuid)
-            val ignored = SentryId()
+            val ignored = SpanId()
             utils.verify({ UUID.randomUUID() }, never())
         }
     }
@@ -30,11 +25,11 @@ class SentryIdTest {
     @Test
     fun `UUID is generated only once`() {
         val uuid = UUID.randomUUID()
-        Mockito.mockStatic(UUID::class.java).use { utils ->
+        Mockito.mockStatic(java.util.UUID::class.java).use { utils ->
             utils.`when`<UUID> { UUID.randomUUID() }.thenReturn(uuid)
-            val sentryId = SentryId()
-            val uuid1 = sentryId.toString()
-            val uuid2 = sentryId.toString()
+            val spanId = SpanId()
+            val uuid1 = spanId.toString()
+            val uuid2 = spanId.toString()
 
             assertEquals(uuid1, uuid2)
             utils.verify({ UUID.randomUUID() }, times(1))
@@ -45,9 +40,9 @@ class SentryIdTest {
     fun `normalizeUUID is only called once`() {
         Mockito.mockStatic(StringUtils::class.java).use { utils ->
             utils.`when`<Any> { StringUtils.normalizeUUID(any()) }.thenReturn("00000000000000000000000000000000")
-            val sentryId = SentryId()
-            val uuid1 = sentryId.toString()
-            val uuid2 = sentryId.toString()
+            val spanId = SpanId()
+            val uuid1 = spanId.toString()
+            val uuid2 = spanId.toString()
 
             assertEquals(uuid1, uuid2)
             utils.verify({ StringUtils.normalizeUUID(any()) }, times(1))
