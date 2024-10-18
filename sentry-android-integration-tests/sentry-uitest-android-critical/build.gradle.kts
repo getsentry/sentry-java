@@ -62,4 +62,3 @@ tasks.withType<Detekt> {
 kotlin {
     explicitApi()
 }
-
