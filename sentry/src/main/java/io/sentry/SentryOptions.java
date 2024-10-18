@@ -496,6 +496,9 @@ public class SentryOptions {
 
   private boolean forceInit = false;
 
+  // TODO replace hub in name
+  private @Nullable Boolean globalHubMode = null;
+
   protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   /**
@@ -2370,6 +2373,26 @@ public class SentryOptions {
     return forceInit;
   }
 
+  /**
+   * If set to true, automatic scope forking will be disabled. If set to false, scopes will be
+   * forked automatically, e.g. when scopes are accessed on a thread for the first time, pushScope
+   * is invoked, in some cases when we explicitly want to fork the root scopes, etc.
+   *
+   * <p>If this is set to something other than `null`, it will take precedence over what is passed
+   * to Sentry.init.
+   *
+   * <p>Enabling this is intended for mobile and desktop apps, not backends.
+   *
+   * @param globalHubMode true = automatic scope forking is disabled
+   */
+  public void setGlobalHubMode(final @Nullable Boolean globalHubMode) {
+    this.globalHubMode = globalHubMode;
+  }
+
+  public @Nullable Boolean isGlobalHubMode() {
+    return globalHubMode;
+  }
+
   /** The BeforeSend callback */
   public interface BeforeSendCallback {
 
@@ -2632,6 +2655,10 @@ public class SentryOptions {
 
     if (options.getSpotlightConnectionUrl() != null) {
       setSpotlightConnectionUrl(options.getSpotlightConnectionUrl());
+    }
+
+    if (options.isGlobalHubMode() != null) {
+      setGlobalHubMode(options.isGlobalHubMode());
     }
 
     if (options.getCron() != null) {
