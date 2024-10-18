@@ -473,6 +473,7 @@ public final class io/sentry/ExternalOptions {
 	public fun isEnableSpotlight ()Ljava/lang/Boolean;
 	public fun isEnabled ()Ljava/lang/Boolean;
 	public fun isForceInit ()Ljava/lang/Boolean;
+	public fun isGlobalHubMode ()Ljava/lang/Boolean;
 	public fun isSendDefaultPii ()Ljava/lang/Boolean;
 	public fun isSendModules ()Ljava/lang/Boolean;
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
@@ -487,6 +488,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnabled (Ljava/lang/Boolean;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setForceInit (Ljava/lang/Boolean;)V
+	public fun setGlobalHubMode (Ljava/lang/Boolean;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
@@ -2891,6 +2893,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnableUserInteractionTracing ()Z
 	public fun isEnabled ()Z
 	public fun isForceInit ()Z
+	public fun isGlobalHubMode ()Ljava/lang/Boolean;
 	public fun isPrintUncaughtStackTrace ()Z
 	public fun isProfilingEnabled ()Z
 	public fun isSendClientReports ()Z
@@ -2943,6 +2946,7 @@ public class io/sentry/SentryOptions {
 	public fun setForceInit (Z)V
 	public fun setFullyDisplayedReporter (Lio/sentry/FullyDisplayedReporter;)V
 	public fun setGestureTargetLocators (Ljava/util/List;)V
+	public fun setGlobalHubMode (Ljava/lang/Boolean;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredSpanOrigins (Ljava/util/List;)V

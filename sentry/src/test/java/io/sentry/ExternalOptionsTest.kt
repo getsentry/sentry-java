@@ -307,6 +307,20 @@ class ExternalOptionsTest {
         }
     }
 
+    @Test
+    fun `creates options with globalHubMode set to true`() {
+        withPropertiesFile("global-hub-mode=true") { options ->
+            assertTrue(options.isGlobalHubMode == true)
+        }
+    }
+
+    @Test
+    fun `creates options with globalHubMode set to false`() {
+        withPropertiesFile("global-hub-mode=false") { options ->
+            assertTrue(options.isGlobalHubMode == false)
+        }
+    }
+
     private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()

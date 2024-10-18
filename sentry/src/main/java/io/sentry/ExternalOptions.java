@@ -52,6 +52,7 @@ public final class ExternalOptions {
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
   private @Nullable Boolean enableBackpressureHandling;
+  private @Nullable Boolean globalHubMode;
   private @Nullable Boolean forceInit;
 
   private @Nullable SentryOptions.Cron cron;
@@ -140,6 +141,8 @@ public final class ExternalOptions {
 
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
+
+    options.setGlobalHubMode(propertiesProvider.getBooleanProperty("global-hub-mode"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -435,6 +438,15 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable Boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
+  }
+
+  public void setGlobalHubMode(final @Nullable Boolean globalHubMode) {
+    this.globalHubMode = globalHubMode;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Boolean isGlobalHubMode() {
+    return globalHubMode;
   }
 
   public void setForceInit(final @Nullable Boolean forceInit) {

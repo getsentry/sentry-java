@@ -338,6 +338,7 @@ class SentryOptionsTest {
         }
         externalOptions.isEnableSpotlight = true
         externalOptions.spotlightConnectionUrl = "http://local.sentry.io:1234"
+        externalOptions.isGlobalHubMode = true
 
         val options = SentryOptions()
 
@@ -379,6 +380,7 @@ class SentryOptionsTest {
         assertEquals(RequestSize.MEDIUM, options.maxRequestBodySize)
         assertTrue(options.isEnableSpotlight)
         assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
+        assertTrue(options.isGlobalHubMode!!)
     }
 
     @Test
@@ -545,6 +547,11 @@ class SentryOptionsTest {
     @Test
     fun `when options are initialized, enableAppStartProfiling is set to false by default`() {
         assertFalse(SentryOptions().isEnableAppStartProfiling)
+    }
+
+    @Test
+    fun `when options are initialized, isGlobalHubMode is set to null by default`() {
+        assertNull(SentryOptions().isGlobalHubMode)
     }
 
     @Test
