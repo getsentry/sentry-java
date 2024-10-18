@@ -7,6 +7,12 @@
 - Load lazy fields on init in the background ([#3803](https://github.com/getsentry/sentry-java/pull/3803))
 - Replace setOf with HashSet.add ([#3801](https://github.com/getsentry/sentry-java/pull/3801))
 
+### Dependencies
+
+- Bump Gradle from v8.5.0 to v8.10.2 ([#3714](https://github.com/getsentry/sentry-java/pull/3714))
+  - [changelog](https://github.com/gradle/gradle/blob/master release-test/CHANGELOG.md#v8102)
+  - [diff](https://github.com/gradle/gradle/compare/v8.5.0...v8.10.2)
+
 ## 7.16.0-alpha.1
 
 ### Features
