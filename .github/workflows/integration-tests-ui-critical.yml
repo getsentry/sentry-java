@@ -15,6 +15,7 @@ env:
   BUILD_PATH: "build/outputs/apk/release"
   APK_NAME: "sentry-uitest-android-critical-release.apk"
   APK_ARTIFACT_NAME: "sentry-uitest-android-critical-release"
+  MAESTRO_VERSION: "1.39.0"
 
 jobs:
   build:
@@ -70,15 +71,30 @@ jobs:
           name: ${{env.APK_ARTIFACT_NAME}}
 
       - name: Install Maestro
-        run: |
-          brew tap mobile-dev-inc/tap
-          brew install maestro
+        run: curl -Ls "https://get.maestro.mobile.dev" | bash
 
-      - name: Run Maestro tests
-        run: |
-          maestro test \
-            "${{env.BASE_PATH}}/maestro" \
-            --debug-output "${{env.BASE_PATH}}/maestro-logs"
+      - name: Run tests
+        uses: reactivecircus/android-emulator-runner@f0d1ed2dcad93c7479e8b2f2226c83af54494915 # pin@v2.32.0
+        with:
+          api-level: 30
+          force-avd-creation: false
+          disable-animations: true
+          disable-spellchecker: true
+          target: 'aosp_atd'
+          channel: canary # Necessary for ATDs
+          emulator-options: >
+            -no-window
+            -no-snapshot-save
+            -gpu swiftshader_indirect
+            -noaudio
+            -no-boot-anim
+            -camera-back none
+            -camera-front none
+            -timezone US/Pacific
+          script: |
+            maestro test \
+              "${{env.BASE_PATH}}/maestro" \
+              --debug-output "${{env.BASE_PATH}}/maestro-logs"
 
       - name: Upload Maestro test results
         if: failure()
