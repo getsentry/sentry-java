@@ -278,8 +278,9 @@ public final class Sentry {
         return;
       }
 
+      final @Nullable Boolean globalHubModeFromOptions = options.isGlobalHubMode();
       final boolean globalHubModeToUse =
-          options.isGlobalHubMode() != null ? options.isGlobalHubMode() : globalHubMode;
+          globalHubModeFromOptions != null ? globalHubModeFromOptions : globalHubMode;
       options
           .getLogger()
           .log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubModeToUse));

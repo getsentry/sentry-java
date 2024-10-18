@@ -2381,7 +2381,8 @@ public class SentryOptions {
    * <p>If this is set to something other than `null`, it will take precedence over what is passed
    * to Sentry.init.
    *
-   * <p>Enabling this is intended for mobile and desktop apps, not backends.
+   * <p>Enabling this is intended for mobile and desktop apps, not backends. For Android the default
+   * value passed to Sentry.init is true (globalHubMode enabled), for backends it defaults to false.
    *
    * @param globalHubMode true = automatic scope forking is disabled
    */
