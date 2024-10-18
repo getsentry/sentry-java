@@ -53,6 +53,14 @@ assembleUiTestRelease:
 	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease
 	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest -DtestBuildType=release
 
+# Assemble release of the uitest-android-critical module
+assembleUiTestCriticalRelease:
+	./gradlew :sentry-android-integration-tests:sentry-uitest-android-critical:assembleRelease
+
+# Run Maestro tests for the uitest-android-critical module
+runUiTestCritical:
+	./scripts/test-ui-critical.sh
+
 # Create coverage reports
 #  - Jacoco for Java & Android modules
 #  - Kover for KMP modules e.g sentry-compose
