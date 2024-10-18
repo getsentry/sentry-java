@@ -95,9 +95,7 @@ jobs:
             -timezone US/Pacific
           script: |
             adb install -r -d "${{env.APK_NAME}}"
-            maestro test \
-              "${{env.BASE_PATH}}/maestro" \
-              --debug-output "${{env.BASE_PATH}}/maestro-logs"
+            maestro test "${{env.BASE_PATH}}/maestro" --debug-output "${{env.BASE_PATH}}/maestro-logs"
 
       - name: Upload Maestro test results
         if: failure()
