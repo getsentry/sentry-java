@@ -69,6 +69,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{env.APK_ARTIFACT_NAME}}
+          path: ${{env.APK_NAME}}
 
       - name: Install Maestro
         run: curl -Ls "https://get.maestro.mobile.dev" | bash
@@ -92,6 +93,7 @@ jobs:
             -camera-front none
             -timezone US/Pacific
           script: |
+            adb install -r -d "${{env.APK_NAME}}"
             maestro test \
               "${{env.BASE_PATH}}/maestro" \
               --debug-output "${{env.BASE_PATH}}/maestro-logs"
