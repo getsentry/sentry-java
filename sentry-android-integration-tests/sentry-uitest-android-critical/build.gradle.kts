@@ -9,6 +9,12 @@ android {
     compileSdk = Config.Android.compileSdkVersion
     namespace = "io.sentry.uitest.android.critical"
 
+    signingConfigs {
+        getByName("debug") {
+            // Debug config remains unchanged
+        }
+    }
+
     defaultConfig {
         applicationId = "io.sentry.uitest.android.critical"
         minSdk = 21
@@ -20,6 +26,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
