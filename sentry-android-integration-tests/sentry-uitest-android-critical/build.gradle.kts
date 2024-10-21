@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.uitest.android.critical"
-        minSdk = 21
+        minSdk = Config.Android.minSdkVersionCompose
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 1
         versionName = "1.0"
