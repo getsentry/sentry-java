@@ -73,7 +73,7 @@ jobs:
       - name: Install Maestro
         uses: dniHze/maestro-test-action@bda8a93211c86d0a05b7a4597c5ad134566fbde4 # pin@v1.0.0
         with:
-          maestro-version: ${{env.MAESTRO_VERSION}}
+          version: ${{env.MAESTRO_VERSION}}
 
       - name: Run tests
         uses: reactivecircus/android-emulator-runner@f0d1ed2dcad93c7479e8b2f2226c83af54494915 # pin@v2.32.0
