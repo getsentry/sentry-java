@@ -19,7 +19,7 @@ env:
 
 jobs:
   build:
-    name: Build sentry-uitest-android-critical
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -47,9 +47,20 @@ jobs:
           retention-days: 1
 
   run-maestro-tests:
-    name: Run Maestro Tests
+    name: Run Tests for API Level ${{ matrix.api-level }}
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      # we want that the matrix keeps running, default is to cancel them if it fails.
+      fail-fast: false
+      matrix:
+        api-level: [
+          29, # Android 10
+          30, # Android 11
+          31, # Android 12
+          33, # Android 13
+          34, # Android 14
+        ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -78,7 +89,7 @@ jobs:
       - name: Run tests
         uses: reactivecircus/android-emulator-runner@f0d1ed2dcad93c7479e8b2f2226c83af54494915 # pin@v2.32.0
         with:
-          api-level: 30
+          api-level: ${{ matrix.api-level }}
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
