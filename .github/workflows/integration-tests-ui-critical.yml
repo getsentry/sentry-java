@@ -62,13 +62,13 @@ jobs:
             target: aosp_atd
             channel: canary # Necessary for ATDs
           - api-level: 31 # Android 12
-            target: default
+            target: google_apis
             channel: stable
           - api-level: 33 # Android 13
-            target: default
+            target: google_apis
             channel: stable
           - api-level: 34 # Android 14
-            target: default
+            target: google_apis
             channel: stable
     steps:
       - name: Checkout code
