@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: List available system images
-        run: sdkmanager --list
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list
 
       - name: Checkout code
         uses: actions/checkout@v4
