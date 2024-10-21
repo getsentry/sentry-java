@@ -49,7 +49,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryTest {
@@ -1241,6 +1243,38 @@ class SentryTest {
         Sentry.init {
             it.dsn = dsn
         }
+    }
+
+    @Test
+    fun `if globalHubMode on options is not set, uses false from init param`() {
+        Sentry.init({ o -> o.dsn = dsn }, false)
+        val s1 = Sentry.forkedRootScopes("s1")
+        val s2 = Sentry.forkedRootScopes("s2")
+        assertNotSame(s1, s2)
+    }
+
+    @Test
+    fun `if globalHubMode on options is not set, uses true from init param`() {
+        Sentry.init({ o -> o.dsn = dsn }, true)
+        val s1 = Sentry.forkedRootScopes("s1")
+        val s2 = Sentry.forkedRootScopes("s2")
+        assertSame(s1, s2)
+    }
+
+    @Test
+    fun `if globalHubMode on options is set, ignores false from init param`() {
+        Sentry.init({ o -> o.dsn = dsn; o.isGlobalHubMode = true }, false)
+        val s1 = Sentry.forkedRootScopes("s1")
+        val s2 = Sentry.forkedRootScopes("s2")
+        assertSame(s1, s2)
+    }
+
+    @Test
+    fun `if globalHubMode on options is set, ignores true from init param`() {
+        Sentry.init({ o -> o.dsn = dsn; o.isGlobalHubMode = false }, true)
+        val s1 = Sentry.forkedRootScopes("s1")
+        val s2 = Sentry.forkedRootScopes("s2")
+        assertNotSame(s1, s2)
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {
