@@ -61,18 +61,23 @@ jobs:
           - api-level: 29 # Android 10
             target: default
             channel: stable
+            arch: x86
           - api-level: 30 # Android 11
             target: aosp_atd
             channel: canary # Necessary for ATDs
+            arch: x86
           - api-level: 31 # Android 12
-            target: google_apis
-            channel: stable
+            target: aosp_atd
+            channel: canary # Necessary for ATDs
+            arch: x86_64
           - api-level: 33 # Android 13
-            target: google_apis
-            channel: stable
+            target: aosp_atd
+            channel: canary # Necessary for ATDs
+            arch: x86_64
           - api-level: 34 # Android 14
-            target: google_apis
-            channel: stable
+            target: aosp_atd
+            channel: canary # Necessary for ATDs
+            arch: x86_64
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -107,6 +112,7 @@ jobs:
           disable-spellchecker: true
           target: ${{ matrix.target }}
           channel: ${{ matrix.channel }}
+          arch: ${{ matrix.arch }}
           emulator-options: >
             -no-window
             -no-snapshot-save
