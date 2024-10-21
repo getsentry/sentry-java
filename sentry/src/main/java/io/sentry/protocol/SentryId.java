@@ -5,6 +5,7 @@ import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.SentryUUID;
 import io.sentry.util.StringUtils;
 import java.io.IOException;
 import java.util.UUID;
@@ -12,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryId implements JsonSerializable {
-  private final @NotNull UUID uuid;
+  private final @NotNull String uuid;
 
   public static final SentryId EMPTY_ID = new SentryId(new UUID(0, 0));
 
@@ -22,9 +23,10 @@ public final class SentryId implements JsonSerializable {
 
   public SentryId(@Nullable UUID uuid) {
     if (uuid == null) {
-      uuid = UUID.randomUUID();
+      this.uuid = SentryUUID.generateSentryId();
+    } else {
+      this.uuid = SentryUUID.toSentryIdString(uuid);
     }
-    this.uuid = uuid;
   }
 
   public SentryId(final @NotNull String sentryIdString) {
@@ -33,7 +35,7 @@ public final class SentryId implements JsonSerializable {
 
   @Override
   public String toString() {
-    return StringUtils.normalizeUUID(uuid.toString()).replace("-", "");
+    return uuid;
   }
 
   @Override
@@ -49,16 +51,10 @@ public final class SentryId implements JsonSerializable {
     return uuid.hashCode();
   }
 
-  private @NotNull UUID fromStringSentryId(@NotNull String sentryIdString) {
+  private @NotNull String fromStringSentryId(@NotNull String sentryIdString) {
     if (sentryIdString.length() == 32) {
       // expected format, SentryId is a UUID without dashes
-      sentryIdString =
-          new StringBuilder(sentryIdString)
-              .insert(8, "-")
-              .insert(13, "-")
-              .insert(18, "-")
-              .insert(23, "-")
-              .toString();
+      return sentryIdString;
     }
     if (sentryIdString.length() != 36) {
       throw new IllegalArgumentException(
@@ -67,7 +63,7 @@ public final class SentryId implements JsonSerializable {
               + sentryIdString);
     }
 
-    return UUID.fromString(sentryIdString);
+    return StringUtils.normalizeUUID(sentryIdString);
   }
 
   // JsonSerializable

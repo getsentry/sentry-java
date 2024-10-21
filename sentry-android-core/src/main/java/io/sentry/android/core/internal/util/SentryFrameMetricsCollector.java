@@ -16,6 +16,7 @@ import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.SentryUUID;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.util.Objects;
@@ -262,7 +263,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     if (!isAvailable) {
       return null;
     }
-    final String uid = UUID.randomUUID().toString();
+    final String uid = SentryUUID.generateSentryId();
     listenerMap.put(uid, listener);
     trackCurrentWindow();
     return uid;
