@@ -2,8 +2,11 @@
 
 ## Unreleased
 
-## Features
+### Features
 
+- Add `globalHubMode` to options ([#3805](https://github.com/getsentry/sentry-java/pull/3805))
+  - `globalHubMode` used to only be a param on `Sentry.init`. To make it easier to be used in e.g. Desktop environments, we now additionally added it as an option on SentryOptions that can also be set via `sentry.properties`.
+  - If both the param on `Sentry.init` and the option are set, the option will win. By default the option is set to `null` meaning whatever is passed to `Sentry.init` takes effect.
 - Lazy uuid generation for SentryId and SpanId ([#3770](https://github.com/getsentry/sentry-java/pull/3770))
 
 ## 8.0.0-beta.1
@@ -48,9 +51,9 @@
     - If you are using `graphql-java` v21 or earlier, you can use the `sentry-graphql` module
     - For `graphql-java` v22 and newer please use the `sentry-graphql-22` module
 - We now provide a `SentryInstrumenter` bean directly for Spring (Boot) if there is none yet instead of using `GraphQlSourceBuilderCustomizer` to add the instrumentation ([#3744](https://github.com/getsentry/sentry-java/pull/3744))
-  - It is now also possible to provide a bean of type `SentryGraphqlInstrumentation.BeforeSpanCallback` which is then used by `SentryInstrumenter`
+    - It is now also possible to provide a bean of type `SentryGraphqlInstrumentation.BeforeSpanCallback` which is then used by `SentryInstrumenter`
 - Emit transaction.data inside contexts.trace.data ([#3735](https://github.com/getsentry/sentry-java/pull/3735))
-    - Also does not emit `transaction.data` in `exras` anymore
+  - Also does not emit `transaction.data` in `exras` anymore
 
 ### Fixes
 
