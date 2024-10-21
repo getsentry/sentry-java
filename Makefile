@@ -1,4 +1,4 @@
-.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease createCoverageReports check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical check preMerge publish
 
 all: stop clean javadocs compile createCoverageReports
 assembleBenchmarks: assembleBenchmarkTestRelease
