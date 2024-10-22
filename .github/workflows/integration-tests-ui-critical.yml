@@ -144,17 +144,13 @@ jobs:
             -timezone US/Pacific
           script: |
             adb install -r -d "${{env.APK_NAME}}"
-            ./sentry-mock-relay-0.0.1/bin/sentry-mock-relay > /dev/null & MOCK_RELAY_PID=$!
+            ./sentry-mock-relay-0.0.1/bin/sentry-mock-relay > /dev/null &
 
-            set +e
             maestro test "${{env.BASE_PATH}}/maestro" --debug-output "${{env.BASE_PATH}}/maestro-logs"
-            MAESTRO_EXIT_CODE=$?
 
             curl --fail http://localhost:8961/assertReceivedAtLeastOneCrashReport
-            MOCK_RELAY_EXIT_CODE=$?
 
-            kill $MOCK_RELAY_PID
-            exit $(($MAESTRO_EXIT_CODE || $MOCK_RELAY_EXIT_CODE))
+            pkill -f 'sentry-mock-relay' || true
 
       - name: Upload Maestro test results
         if: failure()
