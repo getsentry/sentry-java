@@ -1,4 +1,4 @@
-.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical buildMockRelay check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical check preMerge publish
 
 all: stop clean javadocs compile createCoverageReports
 assembleBenchmarks: assembleBenchmarkTestRelease
@@ -60,10 +60,6 @@ assembleUiTestCriticalRelease:
 # Run Maestro tests for the uitest-android-critical module
 runUiTestCritical:
 	./scripts/test-ui-critical.sh
-
-# Build the mock relay for critical tests
-buildMockRelay:
-	./gradlew :sentry-android-integration-tests:sentry-mock-relay:build
 
 # Create coverage reports
 #  - Jacoco for Java & Android modules
