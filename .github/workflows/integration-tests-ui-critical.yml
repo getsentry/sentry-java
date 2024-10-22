@@ -150,7 +150,7 @@ jobs:
 
             curl --fail http://localhost:8961/assertReceivedAtLeastOneCrashReport
 
-            pkill -f 'sentry-mock-relay' || true
+            "pkill -f 'sentry-mock-relay' || true"
 
       - name: Upload Maestro test results
         if: failure()
