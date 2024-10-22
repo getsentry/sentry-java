@@ -51,8 +51,6 @@ android {
 
 dependencies {
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
-    implementation(Config.Libs.okhttp)
-    implementation(Config.TestLibs.mockWebserver)
     implementation(Config.Libs.androidxCore)
     implementation(Config.Libs.composeActivity)
     implementation(Config.Libs.composeFoundation)

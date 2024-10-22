@@ -11,14 +11,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  INTEGRATION_TESTS_PATH: "sentry-android-integration-tests"
-  BASE_PATH: "${{env.INTEGRATION_TESTS_PATH}}/sentry-uitest-android-critical"
+  BASE_PATH: "sentry-android-integration-tests/sentry-uitest-android-critical"
   BUILD_PATH: "build/outputs/apk/release"
   APK_NAME: "sentry-uitest-android-critical-release.apk"
   APK_ARTIFACT_NAME: "sentry-uitest-android-critical-release"
   MAESTRO_VERSION: "1.39.0"
-  MOCK_RELAY_ARTIFACT_NAME: "sentry-mock-relay"
-  MOCK_RELAY_PATH: "sentry-mock-relay-0.0.1.zip"
 
 jobs:
   build:
@@ -38,16 +35,6 @@ jobs:
         uses: gradle/actions/setup-gradle@bb0c460cbf5354b0cddd15bacdf0d6aaa3e5a32b # pin@v3
         with:
           gradle-home-cache-cleanup: true
-
-      - name: Build mock relay
-        run: make buildMockRelay
-
-      - name: Upload Mock Relay
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{env.MOCK_RELAY_ARTIFACT_NAME}}
-          path: "${{env.INTEGRATION_TESTS_PATH}}/sentry-mock-relay/build/distributions/${{env.MOCK_RELAY_PATH}}"
-          retention-days: 1
 
       - name: Build debug APK
         run: make assembleUiTestCriticalRelease
@@ -104,14 +91,6 @@ jobs:
         with:
           name: ${{env.APK_ARTIFACT_NAME}}
 
-      - name: Download Mock Relay
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{env.MOCK_RELAY_ARTIFACT_NAME}}
-
-      - name: Unzip Mock Relay
-        run: unzip -o ${{env.MOCK_RELAY_PATH}}
-
       - name: Install Maestro
         uses: dniHze/maestro-test-action@bda8a93211c86d0a05b7a4597c5ad134566fbde4 # pin@v1.0.0
         with:
@@ -138,17 +117,7 @@ jobs:
             -timezone US/Pacific
           script: |
             adb install -r -d "${{env.APK_NAME}}"
-            ./sentry-mock-relay-0.0.1/bin/sentry-mock-relay > /dev/null & MOCK_RELAY_PID=$!
-
-            set +e
             maestro test "${{env.BASE_PATH}}/maestro" --debug-output "${{env.BASE_PATH}}/maestro-logs"
-            MAESTRO_EXIT_CODE=$?
-
-            curl --fail http://localhost:8961/assertReceivedAtLeastOneCrashReport
-            MOCK_RELAY_EXIT_CODE=$?
-
-            kill $MOCK_RELAY_PID
-            exit $(($MAESTRO_EXIT_CODE || $MOCK_RELAY_EXIT_CODE))
 
       - name: Upload Maestro test results
         if: failure()

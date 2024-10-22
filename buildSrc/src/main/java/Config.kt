@@ -201,10 +201,6 @@ object Config {
         val javaFaker = "com.github.javafaker:javafaker:1.0.2"
         val msgpack = "org.msgpack:msgpack-core:0.9.8"
         val leakCanaryInstrumentation = "com.squareup.leakcanary:leakcanary-android-instrumentation:2.14"
-        val kotlinxSerializationJson = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1"
-        val pluginSerializationVersion = "1.5.0"
-        val logbackClassic = "ch.qos.logback:logback-classic:1.4.14"
-        val ktorVersion = "2.3.12"
     }
 
     object QualityPlugins {

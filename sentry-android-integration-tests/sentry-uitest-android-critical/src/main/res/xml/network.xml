@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<network-security-config>
-  <domain-config cleartextTrafficPermitted="true">
-    <!-- Allow cleartext traffic from the emulator to the host machine -->
-    <!-- See https://developer.android.com/studio/run/emulator-networking for more details -->
-    <domain includeSubdomains="true">10.0.2.2</domain>
-  </domain-config>
-</network-security-config>
