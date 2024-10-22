@@ -59,7 +59,6 @@ public final class SentryId implements JsonSerializable {
     return lazyStringValue.getValue().hashCode();
   }
 
-
   private @NotNull String normalize(@NotNull String uuidString) {
     return StringUtils.normalizeUUID(uuidString).replace("-", "");
   }
