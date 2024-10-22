@@ -24,9 +24,9 @@ public final class SentryId implements JsonSerializable {
 
   public SentryId(@Nullable UUID uuid) {
     if (uuid != null) {
-      this.lazyStringValue = new LazyEvaluator<>(() -> uuidToSentryIdString(uuid));
+      this.lazyStringValue = new LazyEvaluator<>(() -> normalize(uuid.toString()));
     } else {
-      this.lazyStringValue = new LazyEvaluator<>(() -> uuidToSentryIdString(UUID.randomUUID()));
+      this.lazyStringValue = new LazyEvaluator<>(() -> normalize(UUID.randomUUID().toString()));
     }
   }
 
