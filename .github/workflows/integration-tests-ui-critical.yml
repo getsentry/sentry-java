@@ -12,7 +12,7 @@ concurrency:
 
 env:
   INTEGRATION_TESTS_PATH: "sentry-android-integration-tests"
-  BASE_PATH: "${{env.INTEGRATION_TESTS_PATH}}/sentry-uitest-android-critical"
+  BASE_PATH: "sentry-android-integration-tests/sentry-uitest-android-critical"
   BUILD_PATH: "build/outputs/apk/release"
   APK_NAME: "sentry-uitest-android-critical-release.apk"
   APK_ARTIFACT_NAME: "sentry-uitest-android-critical-release"
