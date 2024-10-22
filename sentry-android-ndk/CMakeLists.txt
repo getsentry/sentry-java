@@ -18,4 +18,5 @@ target_link_libraries(sentry-android PRIVATE
 
 # Android 15: Support 16KB page sizes
 # see https://developer.android.com/guide/practices/page-sizes
+target_link_options(sentry PRIVATE "-Wl,-z,max-page-size=16384")
 target_link_options(sentry-android PRIVATE "-Wl,-z,max-page-size=16384")
