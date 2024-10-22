@@ -51,7 +51,7 @@ public final class SentryId implements JsonSerializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SentryId sentryId = (SentryId) o;
-    return lazyStringValue.getValue().compareTo(sentryId.lazyStringValue.getValue()) == 0;
+    return lazyStringValue.getValue().equals(sentryId.lazyStringValue.getValue());
   }
 
   @Override
