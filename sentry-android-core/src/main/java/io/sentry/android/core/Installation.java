@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import android.content.Context;
 import io.sentry.ISentryLifecycleToken;
+import io.sentry.SentryUUID;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -65,7 +66,7 @@ final class Installation {
   static @NotNull String writeInstallationFile(final @NotNull File installation)
       throws IOException {
     try (final OutputStream out = new FileOutputStream(installation)) {
-      final String id = UUID.randomUUID().toString();
+      final String id = SentryUUID.generateSentryId();
       out.write(id.getBytes(UTF_8));
       out.flush();
       return id;

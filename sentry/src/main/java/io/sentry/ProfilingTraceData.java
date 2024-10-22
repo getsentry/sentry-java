@@ -154,7 +154,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     // Stacktrace context
     this.transactionId = transactionId;
     this.traceId = traceId;
-    this.profileId = UUID.randomUUID().toString();
+    this.profileId = SentryUUID.generateSentryId();
     this.environment = environment != null ? environment : DEFAULT_ENVIRONMENT;
     this.truncationReason = truncationReason;
     if (!isTruncationReasonValid()) {

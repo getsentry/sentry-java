@@ -16,6 +16,7 @@ import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryItemType;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.SentryUUID;
 import io.sentry.Session;
 import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.hints.AbnormalExit;
@@ -368,7 +369,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       if (fileNameMap.containsKey(envelope)) {
         fileName = fileNameMap.get(envelope);
       } else {
-        fileName = UUID.randomUUID() + SUFFIX_ENVELOPE_FILE;
+        fileName = SentryUUID.generateSentryId() + SUFFIX_ENVELOPE_FILE;
         fileNameMap.put(envelope, fileName);
       }
 

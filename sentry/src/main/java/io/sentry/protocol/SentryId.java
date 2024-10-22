@@ -5,6 +5,7 @@ import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.SentryUUID;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.StringUtils;
 import java.io.IOException;
@@ -14,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentryId implements JsonSerializable {
 
-  public static final SentryId EMPTY_ID = new SentryId(new UUID(0, 0));
+  public static final SentryId EMPTY_ID = new SentryId(StringUtils.PROPER_NIL_UUID);
 
   private final @NotNull LazyEvaluator<String> lazyStringValue;
 
@@ -26,7 +27,7 @@ public final class SentryId implements JsonSerializable {
     if (uuid != null) {
       this.lazyStringValue = new LazyEvaluator<>(() -> normalize(uuid.toString()));
     } else {
-      this.lazyStringValue = new LazyEvaluator<>(() -> normalize(UUID.randomUUID().toString()));
+      this.lazyStringValue = new LazyEvaluator<>(SentryUUID::generateSentryId);
     }
   }
 
