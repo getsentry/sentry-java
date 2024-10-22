@@ -150,7 +150,7 @@ jobs:
 
             curl --fail http://localhost:8961/assertReceivedAtLeastOneCrashReport
 
-            "lsof -ti:8961 | xargs kill -9 || true"
+            kill $(pgrep -fi sentry-mock-relay)
 
       - name: Upload Maestro test results
         if: failure()
