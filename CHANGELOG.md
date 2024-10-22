@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add support for 16KB page sizes (Android 15) ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
+
 ### Fixes
 
 - Load lazy fields on init in the background ([#3803](https://github.com/getsentry/sentry-java/pull/3803))
@@ -77,10 +81,6 @@
   - Fix SIGABRT native crashes on Xiaomi devices when encoding a video
   - Fix `RejectedExecutionException` when redacting a screenshot
   - Fix `FileNotFoundException` when persisting segment values
-
-### Features
-
-- Add support for 16KB page sizes (Android 15) ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
 
 ### Chores
 
