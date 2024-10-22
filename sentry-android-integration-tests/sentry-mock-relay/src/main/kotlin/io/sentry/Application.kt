@@ -1,7 +1,5 @@
 package io.sentry
 
-import io.ktor.server.application.Application
-import io.ktor.server.application.call
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveText
 import io.ktor.server.request.uri
@@ -15,6 +13,8 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.zip.GZIPInputStream
+import io.ktor.server.application.Application
+import io.ktor.server.application.call
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
