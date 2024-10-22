@@ -63,7 +63,7 @@ public final class SentryId implements JsonSerializable {
     return uuidStringToSentryIdString(uuid.toString());
   }
 
-  private @NotNull String uuidStringToSentryIdString(@NotNull String uuidString) {
+  private @NotNull String normalize(@NotNull String uuidString) {
     return StringUtils.normalizeUUID(uuidString).replace("-", "");
   }
 
