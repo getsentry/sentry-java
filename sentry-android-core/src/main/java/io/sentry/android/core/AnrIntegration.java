@@ -33,7 +33,7 @@ public final class AnrIntegration implements Integration, Closeable {
   private final @NotNull Object startLock = new Object();
 
   public AnrIntegration(final @NotNull Context context) {
-    this.context = context;
+    this.context = ContextUtils.getApplicationContext(context);
   }
 
   /**
@@ -59,7 +59,7 @@ public final class AnrIntegration implements Integration, Closeable {
         .log(SentryLevel.DEBUG, "AnrIntegration enabled: %s", options.isAnrEnabled());
 
     if (options.isAnrEnabled()) {
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("Anr");
       try {
         options
             .getExecutorService()

@@ -34,7 +34,8 @@ public final class TempSensorBreadcrumbsIntegration
   private final @NotNull Object startLock = new Object();
 
   public TempSensorBreadcrumbsIntegration(final @NotNull Context context) {
-    this.context = Objects.requireNonNull(context, "Context is required");
+    this.context =
+        Objects.requireNonNull(ContextUtils.getApplicationContext(context), "Context is required");
   }
 
   @Override
@@ -86,7 +87,7 @@ public final class TempSensorBreadcrumbsIntegration
           sensorManager.registerListener(this, defaultSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
           options.getLogger().log(SentryLevel.DEBUG, "TempSensorBreadcrumbsIntegration installed.");
-          addIntegrationToSdkVersion(getClass());
+          addIntegrationToSdkVersion("TempSensorBreadcrumbs");
         } else {
           options.getLogger().log(SentryLevel.INFO, "TYPE_AMBIENT_TEMPERATURE is not available.");
         }

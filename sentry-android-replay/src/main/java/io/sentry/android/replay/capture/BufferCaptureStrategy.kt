@@ -18,8 +18,8 @@ import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
+import io.sentry.util.Random
 import java.io.File
-import java.security.SecureRandom
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
 
@@ -27,7 +27,7 @@ internal class BufferCaptureStrategy(
     private val options: SentryOptions,
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
-    private val random: SecureRandom,
+    private val random: Random,
     executor: ScheduledExecutorService? = null,
     replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
 ) : BaseCaptureStrategy(options, hub, dateProvider, executor = executor, replayCacheProvider = replayCacheProvider) {
@@ -63,10 +63,10 @@ internal class BufferCaptureStrategy(
         isTerminating: Boolean,
         onSegmentSent: (Date) -> Unit
     ) {
-        val sampled = random.sample(options.experimental.sessionReplay.errorSampleRate)
+        val sampled = random.sample(options.experimental.sessionReplay.onErrorSampleRate)
 
         if (!sampled) {
-            options.logger.log(INFO, "Replay wasn't sampled by errorSampleRate, not capturing for event")
+            options.logger.log(INFO, "Replay wasn't sampled by onErrorSampleRate, not capturing for event")
             return
         }
 

@@ -29,6 +29,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 @Config(sdk = [33])
@@ -212,5 +213,22 @@ class ContextUtilsTest {
             )
         )
         assertFalse(ContextUtils.isForegroundImportance())
+    }
+
+    @Test
+    fun `getApplicationContext returns context if app context is null`() {
+        val contextMock = mock<Context>()
+        val appContext = ContextUtils.getApplicationContext(contextMock)
+        assertSame(contextMock, appContext)
+    }
+
+    @Test
+    fun `getApplicationContext returns app context`() {
+        val contextMock = mock<Context>()
+        val appContextMock = mock<Context>()
+        whenever(contextMock.applicationContext).thenReturn(appContextMock)
+
+        val appContext = ContextUtils.getApplicationContext(contextMock)
+        assertSame(appContextMock, appContext)
     }
 }

@@ -138,49 +138,6 @@ class LifecycleWatcherTest {
     }
 
     @Test
-    fun `When session tracking is enabled, add breadcrumb on start`() {
-        val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
-        watcher.onStart(fixture.ownerMock)
-        verify(fixture.hub).addBreadcrumb(
-            check<Breadcrumb> {
-                assertEquals("app.lifecycle", it.category)
-                assertEquals("session", it.type)
-                assertEquals(SentryLevel.INFO, it.level)
-                // cant assert data, its not a public API
-            }
-        )
-    }
-
-    @Test
-    fun `When session tracking is enabled, add breadcrumb on stop`() {
-        val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
-        watcher.onStop(fixture.ownerMock)
-        verify(fixture.hub, timeout(10000)).endSession()
-        verify(fixture.hub).addBreadcrumb(
-            check<Breadcrumb> {
-                assertEquals("app.lifecycle", it.category)
-                assertEquals("session", it.type)
-                assertEquals(SentryLevel.INFO, it.level)
-                // cant assert data, its not a public API
-            }
-        )
-    }
-
-    @Test
-    fun `When session tracking is disabled, do not add breadcrumb on start`() {
-        val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
-        watcher.onStart(fixture.ownerMock)
-        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
-    }
-
-    @Test
-    fun `When session tracking is disabled, do not add breadcrumb on stop`() {
-        val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
-        watcher.onStop(fixture.ownerMock)
-        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
-    }
-
-    @Test
     fun `When app lifecycle breadcrumbs is enabled, add breadcrumb on start`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false)
         watcher.onStart(fixture.ownerMock)

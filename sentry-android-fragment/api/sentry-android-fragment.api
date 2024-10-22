@@ -24,6 +24,7 @@ public final class io/sentry/android/fragment/FragmentLifecycleIntegration : and
 public final class io/sentry/android/fragment/FragmentLifecycleState : java/lang/Enum {
 	public static final field ATTACHED Lio/sentry/android/fragment/FragmentLifecycleState;
 	public static final field CREATED Lio/sentry/android/fragment/FragmentLifecycleState;
+	public static final field Companion Lio/sentry/android/fragment/FragmentLifecycleState$Companion;
 	public static final field DESTROYED Lio/sentry/android/fragment/FragmentLifecycleState;
 	public static final field DETACHED Lio/sentry/android/fragment/FragmentLifecycleState;
 	public static final field PAUSED Lio/sentry/android/fragment/FragmentLifecycleState;
@@ -35,6 +36,10 @@ public final class io/sentry/android/fragment/FragmentLifecycleState : java/lang
 	public static final field VIEW_DESTROYED Lio/sentry/android/fragment/FragmentLifecycleState;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/fragment/FragmentLifecycleState;
 	public static fun values ()[Lio/sentry/android/fragment/FragmentLifecycleState;
+}
+
+public final class io/sentry/android/fragment/FragmentLifecycleState$Companion {
+	public final fun getStates ()Ljava/util/HashSet;
 }
 
 public final class io/sentry/android/fragment/SentryFragmentLifecycleCallbacks : androidx/fragment/app/FragmentManager$FragmentLifecycleCallbacks {

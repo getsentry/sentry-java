@@ -6,6 +6,7 @@ import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.SentryLevel
+import io.sentry.SentryReplayOptions
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -243,6 +244,31 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertEquals(5000.toLong(), fixture.options.anrTimeoutIntervalMillis)
+    }
+
+    @Test
+    fun `applyMetadata reads anr attach thread dump to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ANR_ATTACH_THREAD_DUMPS to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(true, fixture.options.isAttachAnrThreadDump)
+    }
+
+    @Test
+    fun `applyMetadata reads anr attach thread dump to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(false, fixture.options.isAttachAnrThreadDump)
     }
 
     @Test
@@ -1422,7 +1448,7 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads replays errorSampleRate from metadata`() {
+    fun `applyMetadata reads replays onErrorSampleRate from metadata`() {
         // Arrange
         val expectedSampleRate = 0.99f
 
@@ -1433,14 +1459,14 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.errorSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
     }
 
     @Test
-    fun `applyMetadata does not override replays errorSampleRate from options`() {
+    fun `applyMetadata does not override replays onErrorSampleRate from options`() {
         // Arrange
         val expectedSampleRate = 0.99f
-        fixture.options.experimental.sessionReplay.errorSampleRate = expectedSampleRate.toDouble()
+        fixture.options.experimental.sessionReplay.onErrorSampleRate = expectedSampleRate.toDouble()
         val bundle = bundleOf(ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to 0.1f)
         val context = fixture.getContext(metaData = bundle)
 
@@ -1448,11 +1474,11 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.errorSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
     }
 
     @Test
-    fun `applyMetadata without specifying replays errorSampleRate, stays null`() {
+    fun `applyMetadata without specifying replays onErrorSampleRate, stays null`() {
         // Arrange
         val context = fixture.getContext()
 
@@ -1460,25 +1486,25 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertNull(fixture.options.experimental.sessionReplay.errorSampleRate)
+        assertNull(fixture.options.experimental.sessionReplay.onErrorSampleRate)
     }
 
     @Test
-    fun `applyMetadata reads session replay redact flags to options`() {
+    fun `applyMetadata reads session replay mask flags to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_REDACT_ALL_TEXT to false, ManifestMetadataReader.REPLAYS_REDACT_ALL_IMAGES to false)
+        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_MASK_ALL_TEXT to false, ManifestMetadataReader.REPLAYS_MASK_ALL_IMAGES to false)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertFalse(fixture.options.experimental.sessionReplay.redactAllImages)
-        assertFalse(fixture.options.experimental.sessionReplay.redactAllText)
+        assertTrue(fixture.options.experimental.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
     }
 
     @Test
-    fun `applyMetadata reads session replay redact flags to options and keeps default if not found`() {
+    fun `applyMetadata reads session replay mask flags to options and keeps default if not found`() {
         // Arrange
         val context = fixture.getContext()
 
@@ -1486,7 +1512,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.experimental.sessionReplay.redactAllImages)
-        assertTrue(fixture.options.experimental.sessionReplay.redactAllText)
+        assertTrue(fixture.options.experimental.sessionReplay.maskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.experimental.sessionReplay.maskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
     }
 }

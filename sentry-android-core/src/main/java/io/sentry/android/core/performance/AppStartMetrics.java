@@ -255,13 +255,14 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
               // if no activity has ever been created, app was launched in background
               if (onCreateTime == null) {
                 appLaunchedInForeground = false;
+
+                // we stop the app start profiler, as it's useless and likely to timeout
+                if (appStartProfiler != null && appStartProfiler.isRunning()) {
+                  appStartProfiler.close();
+                  appStartProfiler = null;
+                }
               }
               application.unregisterActivityLifecycleCallbacks(instance);
-              // we stop the app start profiler, as it's useless and likely to timeout
-              if (appStartProfiler != null && appStartProfiler.isRunning()) {
-                appStartProfiler.close();
-                appStartProfiler = null;
-              }
             });
   }
 
