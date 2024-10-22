@@ -57,7 +57,7 @@ fun Application.configureRouting() {
         }
         get("/assertReceivedAtLeastOneCrashReport") {
             if (receivedEnvelopes.isEmpty()) {
-                call.respondText("Mocked Replay have not received any envelopes", status = io.ktor.http.HttpStatusCode.BadRequest)
+                call.respondText("Mocked Replay have not received any envelopes\n", status = io.ktor.http.HttpStatusCode.BadRequest)
             }
 
             val hasCrashReport = receivedEnvelopes.any { envelope ->
@@ -80,9 +80,9 @@ fun Application.configureRouting() {
             }
 
             if (hasCrashReport) {
-                call.respondText("Received at least one crash report")
+                call.respondText("Received at least one crash report\n")
             } else {
-                call.respondText("No crash report received", status = io.ktor.http.HttpStatusCode.BadRequest)
+                call.respondText("No crash report received\n", status = io.ktor.http.HttpStatusCode.BadRequest)
             }
         }
     }
