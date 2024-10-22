@@ -1,0 +1,6 @@
+ktor:
+    application:
+        modules:
+            - io.sentry.ApplicationKt.module
+    deployment:
+        port: 8961
