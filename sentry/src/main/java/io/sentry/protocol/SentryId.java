@@ -31,14 +31,14 @@ public final class SentryId implements JsonSerializable {
   }
 
   public SentryId(final @NotNull String sentryIdString) {
-    String normalized = StringUtils.normalizeUUID(sentryIdString);
+    final @NotNull String normalized = StringUtils.normalizeUUID(sentryIdString);
     if (normalized.length() != 32 && normalized.length() != 36) {
       throw new IllegalArgumentException(
           "String representation of SentryId has either 32 (UUID no dashes) "
               + "or 36 characters long (completed UUID). Received: "
               + sentryIdString);
     }
-    this.lazyStringValue = new LazyEvaluator<>(() -> uuidStringToSentryIdString(normalized));
+    this.lazyStringValue = new LazyEvaluator<>(() -> normalize(normalized));
   }
 
   @Override
