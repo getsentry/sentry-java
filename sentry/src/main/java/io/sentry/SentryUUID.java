@@ -5,14 +5,14 @@ import java.util.Random;
 import java.util.UUID;
 
 /**
- * Utility class for faster id generation for SentryId, SpanId, and unique filenames uses throughout the SDK
- * It uses our vendored Random class instead of SecureRandom for improved performance
- * It directly creates a correctly formatted String to be used as IDs in the Sentry context.
+ * Utility class for faster id generation for SentryId, SpanId, and unique filenames uses throughout
+ * the SDK It uses our vendored Random class instead of SecureRandom for improved performance It
+ * directly creates a correctly formatted String to be used as IDs in the Sentry context.
  *
- * Id generation is sped up by 4 to 10 times based on the underlying java version.
+ * <p>Id generation is sped up by 4 to 10 times based on the underlying java version.
  *
- * Based on the work of <a href="https://github.com/jchambers/">Jon Chambers</a>
- * Here: https://github.com/jchambers/fast-uuid
+ * <p>Based on the work of <a href="https://github.com/jchambers/">Jon Chambers</a> Here:
+ * https://github.com/jchambers/fast-uuid
  */
 public class SentryUUID {
 
@@ -21,7 +21,7 @@ public class SentryUUID {
   private static final int SENTRY_SPAN_UUID_STRING_LENGTH = 16;
 
   private static final char[] HEX_DIGITS =
-    new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+      new char[] {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
   private static final long[] HEX_VALUES = new long[128];
 
@@ -59,22 +59,20 @@ public class SentryUUID {
   }
 
   /**
-   * Parses a UUID from the given character sequence. The character sequence must represent a UUID as described in
-   * {@link UUID#toString()}.
+   * Parses a UUID from the given character sequence. The character sequence must represent a UUID
+   * as described in {@link UUID#toString()}.
    *
    * @param uuidSequence the character sequence from which to parse a UUID
-   *
    * @return the UUID represented by the given character sequence
-   *
-   * @throws IllegalArgumentException if the given character sequence does not conform to the string representation as
-   * described in {@link UUID#toString()}
+   * @throws IllegalArgumentException if the given character sequence does not conform to the string
+   *     representation as described in {@link UUID#toString()}
    */
   public static UUID parseUUID(final CharSequence uuidSequence) {
-    if (uuidSequence.length() != UUID_STRING_LENGTH ||
-      uuidSequence.charAt(8) != '-' ||
-      uuidSequence.charAt(13) != '-' ||
-      uuidSequence.charAt(18) != '-' ||
-      uuidSequence.charAt(23) != '-') {
+    if (uuidSequence.length() != UUID_STRING_LENGTH
+        || uuidSequence.charAt(8) != '-'
+        || uuidSequence.charAt(13) != '-'
+        || uuidSequence.charAt(18) != '-'
+        || uuidSequence.charAt(23) != '-') {
 
       throw new IllegalArgumentException("Illegal UUID string: " + uuidSequence);
     }
@@ -128,11 +126,10 @@ public class SentryUUID {
   }
 
   /**
-   * Returns a string representation of the given UUID. The returned string is formatted as described in
-   * {@link UUID#toString()}.
+   * Returns a string representation of the given UUID. The returned string is formatted as
+   * described in {@link UUID#toString()}.
    *
    * @param uuid the UUID to represent as a string
-   *
    * @return a string representation of the given UUID
    */
   public static String toString(final UUID uuid) {
@@ -142,16 +139,16 @@ public class SentryUUID {
 
     final char[] uuidChars = new char[UUID_STRING_LENGTH];
 
-    uuidChars[0]  = HEX_DIGITS[(int) ((mostSignificantBits & 0xf000000000000000L) >>> 60)];
-    uuidChars[1]  = HEX_DIGITS[(int) ((mostSignificantBits & 0x0f00000000000000L) >>> 56)];
-    uuidChars[2]  = HEX_DIGITS[(int) ((mostSignificantBits & 0x00f0000000000000L) >>> 52)];
-    uuidChars[3]  = HEX_DIGITS[(int) ((mostSignificantBits & 0x000f000000000000L) >>> 48)];
-    uuidChars[4]  = HEX_DIGITS[(int) ((mostSignificantBits & 0x0000f00000000000L) >>> 44)];
-    uuidChars[5]  = HEX_DIGITS[(int) ((mostSignificantBits & 0x00000f0000000000L) >>> 40)];
-    uuidChars[6]  = HEX_DIGITS[(int) ((mostSignificantBits & 0x000000f000000000L) >>> 36)];
-    uuidChars[7]  = HEX_DIGITS[(int) ((mostSignificantBits & 0x0000000f00000000L) >>> 32)];
-    uuidChars[8]  = '-';
-    uuidChars[9]  = HEX_DIGITS[(int) ((mostSignificantBits & 0x00000000f0000000L) >>> 28)];
+    uuidChars[0] = HEX_DIGITS[(int) ((mostSignificantBits & 0xf000000000000000L) >>> 60)];
+    uuidChars[1] = HEX_DIGITS[(int) ((mostSignificantBits & 0x0f00000000000000L) >>> 56)];
+    uuidChars[2] = HEX_DIGITS[(int) ((mostSignificantBits & 0x00f0000000000000L) >>> 52)];
+    uuidChars[3] = HEX_DIGITS[(int) ((mostSignificantBits & 0x000f000000000000L) >>> 48)];
+    uuidChars[4] = HEX_DIGITS[(int) ((mostSignificantBits & 0x0000f00000000000L) >>> 44)];
+    uuidChars[5] = HEX_DIGITS[(int) ((mostSignificantBits & 0x00000f0000000000L) >>> 40)];
+    uuidChars[6] = HEX_DIGITS[(int) ((mostSignificantBits & 0x000000f000000000L) >>> 36)];
+    uuidChars[7] = HEX_DIGITS[(int) ((mostSignificantBits & 0x0000000f00000000L) >>> 32)];
+    uuidChars[8] = '-';
+    uuidChars[9] = HEX_DIGITS[(int) ((mostSignificantBits & 0x00000000f0000000L) >>> 28)];
     uuidChars[10] = HEX_DIGITS[(int) ((mostSignificantBits & 0x000000000f000000L) >>> 24)];
     uuidChars[11] = HEX_DIGITS[(int) ((mostSignificantBits & 0x0000000000f00000L) >>> 20)];
     uuidChars[12] = HEX_DIGITS[(int) ((mostSignificantBits & 0x00000000000f0000L) >>> 16)];
@@ -159,7 +156,7 @@ public class SentryUUID {
     uuidChars[14] = HEX_DIGITS[(int) ((mostSignificantBits & 0x000000000000f000L) >>> 12)];
     uuidChars[15] = HEX_DIGITS[(int) ((mostSignificantBits & 0x0000000000000f00L) >>> 8)];
     uuidChars[16] = HEX_DIGITS[(int) ((mostSignificantBits & 0x00000000000000f0L) >>> 4)];
-    uuidChars[17] = HEX_DIGITS[(int)  (mostSignificantBits & 0x000000000000000fL)];
+    uuidChars[17] = HEX_DIGITS[(int) (mostSignificantBits & 0x000000000000000fL)];
     uuidChars[18] = '-';
     uuidChars[19] = HEX_DIGITS[(int) ((leastSignificantBits & 0xf000000000000000L) >>> 60)];
     uuidChars[20] = HEX_DIGITS[(int) ((leastSignificantBits & 0x0f00000000000000L) >>> 56)];
@@ -177,7 +174,7 @@ public class SentryUUID {
     uuidChars[32] = HEX_DIGITS[(int) ((leastSignificantBits & 0x000000000000f000L) >>> 12)];
     uuidChars[33] = HEX_DIGITS[(int) ((leastSignificantBits & 0x0000000000000f00L) >>> 8)];
     uuidChars[34] = HEX_DIGITS[(int) ((leastSignificantBits & 0x00000000000000f0L) >>> 4)];
-    uuidChars[35] = HEX_DIGITS[(int)  (leastSignificantBits & 0x000000000000000fL)];
+    uuidChars[35] = HEX_DIGITS[(int) (leastSignificantBits & 0x000000000000000fL)];
 
     return new String(uuidChars);
   }
@@ -210,7 +207,7 @@ public class SentryUUID {
     uuidChars[28] = HEX_DIGITS[(int) ((leastSignificantBits & 0x000000000000f000L) >>> 12)];
     uuidChars[29] = HEX_DIGITS[(int) ((leastSignificantBits & 0x0000000000000f00L) >>> 8)];
     uuidChars[30] = HEX_DIGITS[(int) ((leastSignificantBits & 0x00000000000000f0L) >>> 4)];
-    uuidChars[31] = HEX_DIGITS[(int)  (leastSignificantBits & 0x000000000000000fL)];
+    uuidChars[31] = HEX_DIGITS[(int) (leastSignificantBits & 0x000000000000000fL)];
 
     return new String(uuidChars);
   }
@@ -219,7 +216,6 @@ public class SentryUUID {
 
     final long mostSignificantBits = uuid.getMostSignificantBits();
     return toSentrySpanIdString(mostSignificantBits);
-
   }
 
   public static String toSentrySpanIdString(long mostSignificantBits) {
@@ -230,7 +226,8 @@ public class SentryUUID {
     return new String(uuidChars);
   }
 
-  private static void fillMostSignificantBits(final char[] uuidChars, final long mostSignificantBits) {
+  private static void fillMostSignificantBits(
+      final char[] uuidChars, final long mostSignificantBits) {
     uuidChars[0] = HEX_DIGITS[(int) ((mostSignificantBits & 0xf000000000000000L) >>> 60)];
     uuidChars[1] = HEX_DIGITS[(int) ((mostSignificantBits & 0x0f00000000000000L) >>> 56)];
     uuidChars[2] = HEX_DIGITS[(int) ((mostSignificantBits & 0x00f0000000000000L) >>> 52)];
@@ -265,13 +262,12 @@ public class SentryUUID {
     Random random = SentryUUID.Holder.numberGenerator;
     byte[] randomBytes = new byte[8];
     random.nextBytes(randomBytes);
-    randomBytes[6]  &= 0x0f;  /* clear version        */
-    randomBytes[6]  |= 0x40;  /* set to version 4     */
+    randomBytes[6] &= 0x0f; /* clear version        */
+    randomBytes[6] |= 0x40; /* set to version 4     */
 
     long msb = 0;
 
-    for (int i=0; i<8; i++)
-      msb = (msb << 8) | (randomBytes[i] & 0xff);
+    for (int i = 0; i < 8; i++) msb = (msb << 8) | (randomBytes[i] & 0xff);
 
     return msb;
   }
@@ -280,19 +276,17 @@ public class SentryUUID {
     Random random = SentryUUID.Holder.numberGenerator;
     byte[] randomBytes = new byte[16];
     random.nextBytes(randomBytes);
-    randomBytes[6]  &= 0x0f;  /* clear version        */
-    randomBytes[6]  |= 0x40;  /* set to version 4     */
-    randomBytes[8]  &= 0x3f;  /* clear variant        */
-    randomBytes[8]  |= (byte) 0x80;  /* set to IETF variant  */
+    randomBytes[6] &= 0x0f; /* clear version        */
+    randomBytes[6] |= 0x40; /* set to version 4     */
+    randomBytes[8] &= 0x3f; /* clear variant        */
+    randomBytes[8] |= (byte) 0x80; /* set to IETF variant  */
 
     long msb = 0;
     long lsb = 0;
 
-    for (int i=0; i<8; i++)
-      msb = (msb << 8) | (randomBytes[i] & 0xff);
+    for (int i = 0; i < 8; i++) msb = (msb << 8) | (randomBytes[i] & 0xff);
 
-    for (int i=8; i<16; i++)
-      lsb = (lsb << 8) | (randomBytes[i] & 0xff);
+    for (int i = 8; i < 16; i++) lsb = (lsb << 8) | (randomBytes[i] & 0xff);
 
     return new UUID(msb, lsb);
   }
@@ -300,7 +294,6 @@ public class SentryUUID {
   private static class Holder {
     static final Random numberGenerator = new Random();
 
-    private Holder() {
-    }
+    private Holder() {}
   }
 }

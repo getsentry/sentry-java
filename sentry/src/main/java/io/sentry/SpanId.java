@@ -18,8 +18,7 @@ public final class SpanId implements JsonSerializable {
   }
 
   public SpanId() {
-    this.lazyValue =
-        new LazyEvaluator<>(SentryUUID::generateSpanId);
+    this.lazyValue = new LazyEvaluator<>(SentryUUID::generateSpanId);
   }
 
   @Override
