@@ -20,6 +20,11 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Set Swap Space
+        uses: pierotofy/set-swap-space@49819abfb41bd9b44fb781159c033dba90353a7c # pin@v1
+        with:
+          swap-size-gb: 10
+
       - name: Setup Java Version
         uses: actions/setup-java@v4
         with:
