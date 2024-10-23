@@ -13,6 +13,7 @@ import io.sentry.ISentryLifecycleToken;
 import io.sentry.MemoryCollectionData;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.SentryLevel;
+import io.sentry.SentryUUID;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
@@ -24,7 +25,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -137,7 +137,7 @@ public class AndroidProfiler {
       if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return null;
 
       // We create a file with a uuid name, so no need to check if it already exists
-      traceFile = new File(traceFilesDir, UUID.randomUUID() + ".trace");
+      traceFile = new File(traceFilesDir, SentryUUID.generateSentryId() + ".trace");
 
       measurementsMap.clear();
       screenFrameRateMeasurements.clear();
