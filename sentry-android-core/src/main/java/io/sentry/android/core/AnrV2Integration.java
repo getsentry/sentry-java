@@ -95,7 +95,7 @@ public class AnrV2Integration implements Integration, Closeable {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start AnrProcessor.", e);
       }
       options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration installed.");
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("AnrV2");
     }
   }
 

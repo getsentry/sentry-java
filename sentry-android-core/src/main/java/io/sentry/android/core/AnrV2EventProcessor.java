@@ -54,8 +54,8 @@ import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
+import io.sentry.util.Random;
 import java.io.File;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,7 +83,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
 
-  private final @Nullable SecureRandom random;
+  private final @Nullable Random random;
 
   public AnrV2EventProcessor(
       final @NotNull Context context,
@@ -96,7 +96,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @Nullable SecureRandom random) {
+      final @Nullable Random random) {
     this.context = ContextUtils.getApplicationContext(context);
     this.options = options;
     this.buildInfoProvider = buildInfoProvider;
@@ -180,7 +180,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
     try {
       // we have to sample here with the old sample rate, because it may change between app launches
-      final @NotNull SecureRandom random = this.random != null ? this.random : new SecureRandom();
+      final @NotNull Random random = this.random != null ? this.random : new Random();
       final double replayErrorSampleRateDouble = Double.parseDouble(replayErrorSampleRate);
       if (replayErrorSampleRateDouble < random.nextDouble()) {
         options

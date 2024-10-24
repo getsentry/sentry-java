@@ -26,8 +26,8 @@ final class ManifestMetadataReader {
   static final String SAMPLE_RATE = "io.sentry.sample-rate";
   static final String ANR_ENABLE = "io.sentry.anr.enable";
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
-
   static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";
+  static final String ANR_ATTACH_THREAD_DUMPS = "io.sentry.anr.attach-thread-dumps";
 
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
@@ -175,6 +175,9 @@ final class ManifestMetadataReader {
                 logger,
                 ANR_TIMEOUT_INTERVAL_MILLIS,
                 options.getAnrTimeoutIntervalMillis()));
+
+        options.setAttachAnrThreadDump(
+            readBool(metadata, logger, ANR_ATTACH_THREAD_DUMPS, options.isAttachAnrThreadDump()));
 
         final String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
@@ -434,7 +437,7 @@ final class ManifestMetadataReader {
       final @NotNull String key,
       final boolean defaultValue) {
     final boolean value = metadata.getBoolean(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
 
@@ -447,10 +450,10 @@ final class ManifestMetadataReader {
     if (metadata.getSerializable(key) != null) {
       final boolean nonNullDefault = defaultValue == null ? false : true;
       final boolean bool = metadata.getBoolean(key, nonNullDefault);
-      logger.log(SentryLevel.DEBUG, "%s read: %s", key, bool);
+      logger.log(SentryLevel.DEBUG, key + " read: " + bool);
       return bool;
     } else {
-      logger.log(SentryLevel.DEBUG, "%s used default %s", key, defaultValue);
+      logger.log(SentryLevel.DEBUG, key + " used default " + defaultValue);
       return defaultValue;
     }
   }
@@ -461,7 +464,7 @@ final class ManifestMetadataReader {
       final @NotNull String key,
       final @Nullable String defaultValue) {
     final String value = metadata.getString(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
 
@@ -471,14 +474,14 @@ final class ManifestMetadataReader {
       final @NotNull String key,
       final @NotNull String defaultValue) {
     final String value = metadata.getString(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
 
   private static @Nullable List<String> readList(
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     final String value = metadata.getString(key);
-    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    logger.log(SentryLevel.DEBUG, key + " read: " + value);
     if (value != null) {
       return Arrays.asList(value.split(",", -1));
     } else {
@@ -490,7 +493,7 @@ final class ManifestMetadataReader {
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     // manifest meta-data only reads float
     final Double value = ((Float) metadata.getFloat(key, -1)).doubleValue();
-    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
 
@@ -501,7 +504,7 @@ final class ManifestMetadataReader {
       final long defaultValue) {
     // manifest meta-data only reads int if the value is not big enough
     final long value = metadata.getInt(key, (int) defaultValue);
-    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
 
@@ -521,7 +524,6 @@ final class ManifestMetadataReader {
       if (metadata != null) {
         autoInit = readBool(metadata, logger, AUTO_INIT, true);
       }
-      logger.log(SentryLevel.INFO, "Retrieving auto-init from AndroidManifest.xml");
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Failed to read auto-init from android manifest metadata.", e);
     }
