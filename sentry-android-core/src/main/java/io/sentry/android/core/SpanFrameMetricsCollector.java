@@ -45,17 +45,19 @@ public class SpanFrameMetricsCollector
   private final @NotNull SortedSet<ISpan> runningSpans =
       new TreeSet<>(
           (o1, o2) -> {
+            if (o1 == o2) {
+              return 0;
+            }
             int timeDiff = o1.getStartDate().compareTo(o2.getStartDate());
             if (timeDiff != 0) {
               return timeDiff;
-            } else {
-              // TreeSet uses compareTo to check for duplicates, so ensure that
-              // two non-equal spans with the same start date are not considered equal
-              return o1.getSpanContext()
-                  .getSpanId()
-                  .toString()
-                  .compareTo(o2.getSpanContext().getSpanId().toString());
             }
+            // TreeSet uses compareTo to check for duplicates, so ensure that
+            // two non-equal spans with the same start date are not considered equal
+            return o1.getSpanContext()
+                .getSpanId()
+                .toString()
+                .compareTo(o2.getSpanContext().getSpanId().toString());
           });
 
   // all collected frames, sorted by frame end time
