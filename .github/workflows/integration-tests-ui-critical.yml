@@ -149,8 +149,7 @@ jobs:
             maestro test "${{env.BASE_PATH}}/maestro" --debug-output "${{env.BASE_PATH}}/maestro-logs"
 
             curl --fail http://localhost:8961/assertReceivedAtLeastOneCrashReport
-
-            kill $(pgrep -fi sentry-mock-relay)
+            curl --fail http://localhost:8961/stop
 
       - name: Upload Maestro test results
         if: failure()

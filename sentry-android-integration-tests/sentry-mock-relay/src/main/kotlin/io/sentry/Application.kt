@@ -1,5 +1,3 @@
-@file:Suppress("UnusedReceiverParameter")
-
 package io.sentry
 
 import io.ktor.server.application.Application
@@ -17,18 +15,9 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.zip.GZIPInputStream
-import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)
-}
-
-@Suppress("unused")
-fun Application.setupShutdownHook() {
-    Runtime.getRuntime().addShutdownHook(Thread {
-        // Ensure when the server is killed it won't fail a job in CI
-        exitProcess(0)
-    })
 }
 
 fun Application.module() {
@@ -95,6 +84,9 @@ fun Application.configureRouting() {
             } else {
                 call.respondText("No crash report received\n", status = io.ktor.http.HttpStatusCode.BadRequest)
             }
+        }
+        get("/stop") {
+            Runtime.getRuntime().halt(0)
         }
     }
 }
