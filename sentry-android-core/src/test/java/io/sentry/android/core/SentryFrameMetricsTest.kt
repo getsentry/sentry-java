@@ -39,7 +39,7 @@ class SentryFrameMetricsTest {
         // Slow and frozen frames are considered
         frameMetrics.addFrame(116, 100, true, false)
         frameMetrics.addFrame(1016, 1000, true, true)
-        assertEquals(2, frameMetrics.totalFrameCount)
+        assertEquals(2, frameMetrics.slowFrozenFrameCount)
     }
 
     @Test
@@ -54,7 +54,7 @@ class SentryFrameMetricsTest {
         assertEquals(100, dup.slowFrameDelayNanos)
         assertEquals(1, dup.frozenFrameCount)
         assertEquals(1000, dup.frozenFrameDelayNanos)
-        assertEquals(2, dup.totalFrameCount)
+        assertEquals(2, dup.slowFrozenFrameCount)
     }
 
     @Test
@@ -81,7 +81,7 @@ class SentryFrameMetricsTest {
         assertEquals(1, diff.frozenFrameCount)
         assertEquals(1000, diff.frozenFrameDelayNanos)
 
-        assertEquals(2, diff.totalFrameCount)
+        assertEquals(2, diff.slowFrozenFrameCount)
     }
 
     @Test
@@ -98,7 +98,7 @@ class SentryFrameMetricsTest {
         assertEquals(0, frameMetrics.slowFrameDelayNanos)
         assertEquals(0, frameMetrics.frozenFrameCount)
         assertEquals(0, frameMetrics.frozenFrameDelayNanos)
-        assertEquals(0, frameMetrics.totalFrameCount)
+        assertEquals(0, frameMetrics.slowFrozenFrameCount)
     }
 
     @Test

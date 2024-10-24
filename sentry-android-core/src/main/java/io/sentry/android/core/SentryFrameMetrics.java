@@ -61,7 +61,8 @@ final class SentryFrameMetrics {
     return frozenFrameDelayNanos;
   }
 
-  public int getTotalFrameCount() {
+  /** Returns the sum of the slow and frozen frames. */
+  public int getSlowFrozenFrameCount() {
     return slowFrameCount + frozenFrameCount;
   }
 

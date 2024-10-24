@@ -341,6 +341,7 @@ class SpanFrameMetricsCollectorTest {
         verify(span).setData("frames.total", 61)
         verify(span).setData("frames.slow", 0)
         verify(span).setData("frames.frozen", 0)
+        verify(span).setData("frames.delay", 0.0)
     }
 
     @Test

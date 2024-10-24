@@ -192,7 +192,7 @@ public class SpanFrameMetricsCollector
         }
       }
 
-      int totalFrameCount = frameMetrics.getTotalFrameCount();
+      int totalFrameCount = frameMetrics.getSlowFrozenFrameCount();
 
       final long nextScheduledFrameNanos = frameMetricsCollector.getLastKnownFrameStartTimeNanos();
       // nextScheduledFrameNanos might be -1 if no frames have been scheduled for drawing yet
