@@ -1,14 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Android 15: Add support for 16KB page sizes ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
+  - See https://developer.android.com/guide/practices/page-sizes for more details
+
 ## 7.16.0
 
 ### Features
 
 - Add meta option to attach ANR thread dumps ([#3791](https://github.com/getsentry/sentry-java/pull/3791))
-
-### Features
-
-- Add support for 16KB page sizes (Android 15) ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
 
 ### Fixes
 
