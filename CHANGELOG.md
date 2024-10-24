@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Avoid collecting normal frames ([#3782](https://github.com/getsentry/sentry-java/pull/3782))
+
 ## 7.16.0
 
 ### Features
