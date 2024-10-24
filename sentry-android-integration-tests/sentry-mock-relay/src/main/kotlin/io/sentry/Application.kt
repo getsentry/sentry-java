@@ -9,6 +9,8 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonArray
@@ -86,7 +88,12 @@ fun Application.configureRouting() {
             }
         }
         get("/stop") {
-            Runtime.getRuntime().halt(0)
+            call.respondText("OK")
+
+            launch {
+                delay(1000)
+                Runtime.getRuntime().halt(0)
+            }
         }
     }
 }
