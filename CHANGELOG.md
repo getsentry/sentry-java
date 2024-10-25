@@ -10,7 +10,7 @@
 
 ### Behavioural Changes
 
-- (Android) Performance V2 is enabled by default ([#](https://github.com/getsentry/sentry-java/pull/))
+- (Android) Enable Performance V2 by default ([#3824](https://github.com/getsentry/sentry-java/pull/3824))
   - With this change cold app start spans will include spans for ContentProviders, Application and Activity load.
 
 ## 8.0.0-beta.1
