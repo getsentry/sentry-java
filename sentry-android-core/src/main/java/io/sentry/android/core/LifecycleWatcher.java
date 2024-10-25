@@ -7,7 +7,6 @@ import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.Session;
-import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.AutoClosableReentrantLock;
@@ -92,7 +91,6 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     if (lastUpdatedSession == 0L
         || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
       if (enableSessionTracking) {
-        addSessionBreadcrumb("start");
         scopes.startSession();
       }
       scopes.getOptions().getReplayController().start();
@@ -127,7 +125,6 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
               @Override
               public void run() {
                 if (enableSessionTracking) {
-                  addSessionBreadcrumb("end");
                   scopes.endSession();
                 }
                 scopes.getOptions().getReplayController().stop();
@@ -157,11 +154,6 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
       breadcrumb.setLevel(SentryLevel.INFO);
       scopes.addBreadcrumb(breadcrumb);
     }
-  }
-
-  private void addSessionBreadcrumb(final @NotNull String state) {
-    final Breadcrumb breadcrumb = BreadcrumbFactory.forSession(state);
-    scopes.addBreadcrumb(breadcrumb);
   }
 
   @TestOnly

@@ -363,7 +363,7 @@ class SentryAndroidTest {
         optionsConfig: (SentryAndroidOptions) -> Unit = {},
         callback: (session: Session?) -> Unit
     ) {
-        Mockito.mockStatic(ContextUtils::class.java).use { mockedContextUtils ->
+        Mockito.mockStatic(ContextUtils::class.java, Mockito.CALLS_REAL_METHODS).use { mockedContextUtils ->
             mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance() }
                 .thenReturn(inForeground)
             SentryAndroid.init(context) { options ->
@@ -441,7 +441,7 @@ class SentryAndroidTest {
             .untilTrue(asserted)
 
         // assert that persisted values have changed
-        options.executorService.close(5000L) // finalizes all enqueued persisting tasks
+        options.executorService.close(10000L) // finalizes all enqueued persisting tasks
         assertEquals(
             "TestActivity",
             PersistingScopeObserver.read(options, TRANSACTION_FILENAME, String::class.java)

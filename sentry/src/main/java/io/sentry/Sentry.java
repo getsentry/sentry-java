@@ -267,7 +267,6 @@ public final class Sentry {
   @SuppressWarnings("deprecation")
   private static void init(final @NotNull SentryOptions options, final boolean globalHubMode) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-
       if (!options.getClass().getName().equals("io.sentry.android.core.SentryAndroidOptions")
           && Platform.isAndroid()) {
         throw new IllegalArgumentException(
@@ -279,10 +278,13 @@ public final class Sentry {
         return;
       }
 
+      final @Nullable Boolean globalHubModeFromOptions = options.isGlobalHubMode();
+      final boolean globalHubModeToUse =
+          globalHubModeFromOptions != null ? globalHubModeFromOptions : globalHubMode;
       options
           .getLogger()
-          .log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
-      Sentry.globalHubMode = globalHubMode;
+          .log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubModeToUse));
+      Sentry.globalHubMode = globalHubModeToUse;
       final boolean shouldInit =
           InitUtil.shouldInit(globalScope.getOptions(), options, isEnabled());
       if (shouldInit) {

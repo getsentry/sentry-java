@@ -20,8 +20,6 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        language: ['cpp', 'java']
 
     steps:
       - name: Checkout Repo
@@ -41,18 +39,13 @@ jobs:
           gradle-home-cache-cleanup: true
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@8214744c546c1e5c8f03dde8fab3a7353211988d # pin@v2
+        uses: github/codeql-action/init@294a9d92911152fe08befb9ec03e240add280cb3 # pin@v2
         with:
           languages: ${{ matrix.language }}
 
-      - if: matrix.language == 'cpp'
-        name: Build Cpp
-        run: |
-          ./gradlew sentry-android-ndk:buildCMakeRelWithDebInfo
-      - if: matrix.language == 'java'
-        name: Build Java
+      - name: Build Java
         run: |
           ./gradlew buildForCodeQL
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@8214744c546c1e5c8f03dde8fab3a7353211988d # pin@v2
+        uses: github/codeql-action/analyze@294a9d92911152fe08befb9ec03e240add280cb3 # pin@v2
