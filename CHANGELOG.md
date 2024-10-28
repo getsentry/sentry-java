@@ -10,8 +10,8 @@
 
 ### Fixes
 
-- Add `auto.graphql.graphql22` to ignored span origins when using OpenTelemetry
-- The Spring Boot 3 WebFlux sample now uses our GraphQL v22 integration
+- Add `auto.graphql.graphql22` to ignored span origins when using OpenTelemetry ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
+- The Spring Boot 3 WebFlux sample now uses our GraphQL v22 integration ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
 
 ### Behavioural Changes
 

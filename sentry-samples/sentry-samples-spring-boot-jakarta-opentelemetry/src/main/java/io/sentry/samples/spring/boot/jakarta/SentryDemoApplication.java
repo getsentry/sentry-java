@@ -33,34 +33,34 @@ public class SentryDemoApplication {
     return builder.build();
   }
 
-  //  @Bean
-  //  public JobDetailFactoryBean jobDetail() {
-  //    JobDetailFactoryBean jobDetailFactory = new JobDetailFactoryBean();
-  //    jobDetailFactory.setJobClass(SampleJob.class);
-  //    jobDetailFactory.setDurability(true);
-  //    jobDetailFactory.setJobDataAsMap(
-  //        Collections.singletonMap(SENTRY_SLUG_KEY, "monitor_slug_job_detail"));
-  //    return jobDetailFactory;
-  //  }
-  //
-  //  @Bean
-  //  public SimpleTriggerFactoryBean trigger(JobDetail job) {
-  //    SimpleTriggerFactoryBean trigger = new SimpleTriggerFactoryBean();
-  //    trigger.setJobDetail(job);
-  //    trigger.setRepeatInterval(2 * 60 * 1000); // every two minutes
-  //    trigger.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY);
-  //    trigger.setJobDataAsMap(
-  //        Collections.singletonMap(SENTRY_SLUG_KEY, "monitor_slug_simple_trigger"));
-  //    return trigger;
-  //  }
-  //
-  //  @Bean
-  //  public CronTriggerFactoryBean cronTrigger(JobDetail job) {
-  //    CronTriggerFactoryBean trigger = new CronTriggerFactoryBean();
-  //    trigger.setJobDetail(job);
-  //    trigger.setCronExpression("0 0/5 * ? * *"); // every five minutes
-  //    return trigger;
-  //  }
+  @Bean
+  public JobDetailFactoryBean jobDetail() {
+    JobDetailFactoryBean jobDetailFactory = new JobDetailFactoryBean();
+    jobDetailFactory.setJobClass(SampleJob.class);
+    jobDetailFactory.setDurability(true);
+    jobDetailFactory.setJobDataAsMap(
+        Collections.singletonMap(SENTRY_SLUG_KEY, "monitor_slug_job_detail"));
+    return jobDetailFactory;
+  }
+
+  @Bean
+  public SimpleTriggerFactoryBean trigger(JobDetail job) {
+    SimpleTriggerFactoryBean trigger = new SimpleTriggerFactoryBean();
+    trigger.setJobDetail(job);
+    trigger.setRepeatInterval(2 * 60 * 1000); // every two minutes
+    trigger.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY);
+    trigger.setJobDataAsMap(
+        Collections.singletonMap(SENTRY_SLUG_KEY, "monitor_slug_simple_trigger"));
+    return trigger;
+  }
+
+  @Bean
+  public CronTriggerFactoryBean cronTrigger(JobDetail job) {
+    CronTriggerFactoryBean trigger = new CronTriggerFactoryBean();
+    trigger.setJobDetail(job);
+    trigger.setCronExpression("0 0/5 * ? * *"); // every five minutes
+    return trigger;
+  }
 
   @Bean
   public Tracer getTracer() {
