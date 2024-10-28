@@ -26,6 +26,10 @@
 - Load lazy fields on init in the background ([#3803](https://github.com/getsentry/sentry-java/pull/3803))
 - Replace setOf with HashSet.add ([#3801](https://github.com/getsentry/sentry-java/pull/3801))
 
+### Breaking changes
+
+- The method `addIntegrationToSdkVersion(Ljava/lang/Class;)V` has been removed from the core (`io.sentry:sentry`) package. Please make sure all of the packages (e.g. `io.sentry:sentry-android-core`, `io.sentry:sentry-android-fragment`, `io.sentry:sentry-okhttp`  and others) are all aligned and using the same version to prevent the `NoSuchMethodError` exception.
+
 ## 7.16.0-alpha.1
 
 ### Features
