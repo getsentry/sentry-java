@@ -20,13 +20,13 @@ jobs:
       fail-fast: false
       matrix:
         sample: [ "sentry-samples-spring-boot-jakarta" ]
-        agent: 0
+        agent: [ "0" ]
         include:
           - sample: "sentry-samples-spring-boot"
           - sample: "sentry-samples-spring-boot-webflux-jakarta"
           - sample: "sentry-samples-spring-boot-webflux"
           - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
-            agent: 1
+            agent: "1"
     steps:
       - uses: actions/checkout@v4
         with:
