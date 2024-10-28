@@ -13,6 +13,11 @@
 - Add `auto.graphql.graphql22` to ignored span origins when using OpenTelemetry
 - The Spring Boot 3 WebFlux sample now uses our GraphQL v22 integration
 
+### Behavioural Changes
+
+- (Android) Enable Performance V2 by default ([#3824](https://github.com/getsentry/sentry-java/pull/3824))
+  - With this change cold app start spans will include spans for ContentProviders, Application and Activity load.
+
 ## 8.0.0-beta.1
 
 ### Breaking Changes
