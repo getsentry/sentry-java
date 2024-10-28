@@ -20,13 +20,13 @@ jobs:
       fail-fast: false
       matrix:
         sample: [ "sentry-samples-spring-boot-jakarta" ]
-        agent: ""
+        agent: 0
         include:
           - sample: "sentry-samples-spring-boot"
           - sample: "sentry-samples-spring-boot-webflux-jakarta"
           - sample: "sentry-samples-spring-boot-webflux"
           - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
-            agent: "-javaagent:./sentry-opentelemetry/sentry-opentelemetry-agent/build/libs/sentry-opentelemetry-agent-8.0.0-beta.1.jar"
+            agent: 1
     steps:
       - uses: actions/checkout@v4
         with:
