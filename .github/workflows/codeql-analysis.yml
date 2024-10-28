@@ -41,7 +41,7 @@ jobs:
           gradle-home-cache-cleanup: true
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@f779452ac5af1c261dce0346a8f964149f49322b # pin@v2
+        uses: github/codeql-action/init@662472033e021d55d94146f66f6058822b0b39fd # pin@v2
         with:
           languages: ${{ matrix.language }}
 
@@ -55,4 +55,4 @@ jobs:
           ./gradlew buildForCodeQL
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@f779452ac5af1c261dce0346a8f964149f49322b # pin@v2
+        uses: github/codeql-action/analyze@662472033e021d55d94146f66f6058822b0b39fd # pin@v2
