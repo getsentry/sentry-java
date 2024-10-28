@@ -61,6 +61,7 @@ include(
     "sentry-samples:sentry-samples-spring-jakarta",
     "sentry-samples:sentry-samples-spring-boot",
     "sentry-samples:sentry-samples-spring-boot-jakarta",
+    "sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry",
     "sentry-samples:sentry-samples-spring-boot-webflux",
     "sentry-samples:sentry-samples-spring-boot-webflux-jakarta",
     "sentry-samples:sentry-samples-netflix-dgs",
