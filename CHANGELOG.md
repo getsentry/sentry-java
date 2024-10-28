@@ -6,6 +6,12 @@
 
 - Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
 
+### Dependencies
+
+- Bump Native SDK from v0.7.2 to v0.7.10 ([#3713](https://github.com/getsentry/sentry-java/pull/3713))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0710)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.10)
+
 ## 7.16.0
 
 ### Features
