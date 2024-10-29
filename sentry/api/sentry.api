@@ -3277,7 +3277,7 @@ public final class io/sentry/SentryWrapper {
 }
 
 public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> (Lio/sentry/Session$State;Ljava/util/Date;Ljava/util/Date;ILjava/lang/String;Ljava/util/UUID;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Lio/sentry/Session$State;Ljava/util/Date;Ljava/util/Date;ILjava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/Long;Ljava/lang/Double;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/User;Ljava/lang/String;Ljava/lang/String;)V
 	public fun clone ()Lio/sentry/Session;
 	public synthetic fun clone ()Ljava/lang/Object;
@@ -3292,7 +3292,7 @@ public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun getIpAddress ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getSequence ()Ljava/lang/Long;
-	public fun getSessionId ()Ljava/util/UUID;
+	public fun getSessionId ()Ljava/lang/String;
 	public fun getStarted ()Ljava/util/Date;
 	public fun getStatus ()Lio/sentry/Session$State;
 	public fun getTimestamp ()Ljava/util/Date;

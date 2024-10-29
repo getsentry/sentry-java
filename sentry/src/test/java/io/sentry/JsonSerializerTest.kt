@@ -1250,7 +1250,7 @@ class JsonSerializerTest {
 
     private fun assertSessionData(expectedSession: Session?) {
         assertNotNull(expectedSession)
-        assertEquals(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"), expectedSession.sessionId)
+        assertEquals("c81d4e2e-bcf2-11e6-869b-7df92533d2db", expectedSession.sessionId)
         assertEquals("123", expectedSession.distinctId)
         assertTrue(expectedSession.init!!)
         assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.started!!))
@@ -1287,7 +1287,7 @@ class JsonSerializerTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),

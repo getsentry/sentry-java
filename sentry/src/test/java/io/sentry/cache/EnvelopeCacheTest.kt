@@ -8,6 +8,7 @@ import io.sentry.SentryCrashLastRunState
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.SentryUUID
 import io.sentry.Session
 import io.sentry.Session.State
 import io.sentry.Session.State.Ok
@@ -308,7 +309,7 @@ class EnvelopeCacheTest {
             DateUtils.getCurrentDateTime(),
             0,
             "dis",
-            UUID.randomUUID(),
+            SentryUUID.generateSentryId(),
             true,
             null,
             null,
