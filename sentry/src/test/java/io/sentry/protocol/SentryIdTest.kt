@@ -1,11 +1,11 @@
 package io.sentry.protocol
 
+import io.sentry.SentryUUID
 import io.sentry.util.StringUtils
 import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
-import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -19,25 +19,25 @@ class SentryIdTest {
 
     @Test
     fun `UUID is not generated on initialization`() {
-        val uuid = UUID.randomUUID()
-        Mockito.mockStatic(UUID::class.java).use { utils ->
-            utils.`when`<UUID> { UUID.randomUUID() }.thenReturn(uuid)
+        val uuid = SentryUUID.generateSentryId()
+        Mockito.mockStatic(SentryUUID::class.java).use { utils ->
+            utils.`when`<String> { SentryUUID.generateSentryId() }.thenReturn(uuid)
             val ignored = SentryId()
-            utils.verify({ UUID.randomUUID() }, never())
+            utils.verify({ SentryUUID.generateSentryId() }, never())
         }
     }
 
     @Test
     fun `UUID is generated only once`() {
-        val uuid = UUID.randomUUID()
-        Mockito.mockStatic(UUID::class.java).use { utils ->
-            utils.`when`<UUID> { UUID.randomUUID() }.thenReturn(uuid)
+        val uuid = SentryUUID.generateSentryId()
+        Mockito.mockStatic(SentryUUID::class.java).use { utils ->
+            utils.`when`<String> { SentryUUID.generateSentryId() }.thenReturn(uuid)
             val sentryId = SentryId()
             val uuid1 = sentryId.toString()
             val uuid2 = sentryId.toString()
 
             assertEquals(uuid1, uuid2)
-            utils.verify({ UUID.randomUUID() }, times(1))
+            utils.verify({ SentryUUID.generateSentryId() }, times(1))
         }
     }
 
