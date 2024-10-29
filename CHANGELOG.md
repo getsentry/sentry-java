@@ -9,6 +9,11 @@
   - If both the param on `Sentry.init` and the option are set, the option will win. By default the option is set to `null` meaning whatever is passed to `Sentry.init` takes effect.
 - Lazy uuid generation for SentryId and SpanId ([#3770](https://github.com/getsentry/sentry-java/pull/3770))
 
+### Behavioural Changes
+
+- (Android) Enable Performance V2 by default ([#3824](https://github.com/getsentry/sentry-java/pull/3824))
+  - With this change cold app start spans will include spans for ContentProviders, Application and Activity load.
+
 ## 8.0.0-beta.1
 
 ### Breaking Changes

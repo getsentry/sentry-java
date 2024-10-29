@@ -151,16 +151,16 @@ class SentryAndroidOptionsTest {
     }
 
     @Test
-    fun `performance v2 is disabled by default`() {
+    fun `performance v2 is enabled by default`() {
         val sentryOptions = SentryAndroidOptions()
-        assertFalse(sentryOptions.isEnablePerformanceV2)
+        assertTrue(sentryOptions.isEnablePerformanceV2)
     }
 
     @Test
-    fun `performance v2 can be enabled`() {
+    fun `performance v2 can be disabled`() {
         val sentryOptions = SentryAndroidOptions()
-        sentryOptions.isEnablePerformanceV2 = true
-        assertTrue(sentryOptions.isEnablePerformanceV2)
+        sentryOptions.isEnablePerformanceV2 = false
+        assertFalse(sentryOptions.isEnablePerformanceV2)
     }
 
     fun `when options is initialized, enableScopeSync is enabled by default`() {
