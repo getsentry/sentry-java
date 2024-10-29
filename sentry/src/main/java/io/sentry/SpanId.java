@@ -8,7 +8,8 @@ import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 public final class SpanId implements JsonSerializable {
-  public static final SpanId EMPTY_ID = new SpanId(PROPER_NIL_UUID.replace("-", ""));
+  public static final SpanId EMPTY_ID =
+      new SpanId(PROPER_NIL_UUID.replace("-", "").substring(0, 16));
 
   private final @NotNull LazyEvaluator<String> lazyValue;
 
