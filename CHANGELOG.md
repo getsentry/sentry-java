@@ -11,6 +11,7 @@
 - Faster generation of Sentry and Span IDs ([#3818](https://github.com/getsentry/sentry-java/pull/3818))
   - Uses faster implementation to convert UUID to SentryID String
   - Uses faster Random implementation to generate UUIDs
+- Use String instead of UUID for SessionId ([#3834](https://github.com/getsentry/sentry-java/pull/3834))
 
 ## 8.0.0-beta.1
 
