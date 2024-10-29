@@ -6151,6 +6151,7 @@ public final class io/sentry/util/SpanUtils {
 }
 
 public final class io/sentry/util/StringUtils {
+	public static final field PROPER_NIL_UUID Ljava/lang/String;
 	public static fun byteCountToString (J)Ljava/lang/String;
 	public static fun calculateStringHash (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/String;
 	public static fun camelCase (Ljava/lang/String;)Ljava/lang/String;
