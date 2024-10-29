@@ -817,6 +817,7 @@ class ActivityLifecycleIntegrationTest {
         val appStartMetrics = AppStartMetrics.getInstance()
         appStartMetrics.appStartType = AppStartType.WARM
         appStartMetrics.sdkInitTimeSpan.setStoppedAt(2)
+        appStartMetrics.appStartTimeSpan.setStoppedAt(2)
 
         val endDate = appStartMetrics.sdkInitTimeSpan.projectedStopTimestamp
 
