@@ -13,6 +13,11 @@
   - Uses faster Random implementation to generate UUIDs
 - Use String instead of UUID for SessionId ([#3834](https://github.com/getsentry/sentry-java/pull/3834))
 
+### Behavioural Changes
+
+- (Android) Enable Performance V2 by default ([#3824](https://github.com/getsentry/sentry-java/pull/3824))
+  - With this change cold app start spans will include spans for ContentProviders, Application and Activity load.
+
 ## 8.0.0-beta.1
 
 ### Breaking Changes
