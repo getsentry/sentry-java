@@ -55,6 +55,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Random;
+import io.sentry.util.SentryRandom;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -180,7 +181,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
     try {
       // we have to sample here with the old sample rate, because it may change between app launches
-      final @NotNull Random random = this.random != null ? this.random : new Random();
+      final @NotNull Random random = this.random != null ? this.random : SentryRandom.current();
       final double replayErrorSampleRateDouble = Double.parseDouble(replayErrorSampleRate);
       if (replayErrorSampleRateDouble < random.nextDouble()) {
         options
