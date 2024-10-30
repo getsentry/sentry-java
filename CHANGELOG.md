@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add meta option to set the maximum amount of breadcrumbs to be logged. ([#?](https://github.com/getsentry/sentry-java/pull/?))
+
+
+### Fixes
+
+- using MaxBreadcrumb with value 0 no longer crashes. ([#?](https://github.com/getsentry/sentry-java/pull/?))
+
 ## 7.16.0
 
 ### Features
