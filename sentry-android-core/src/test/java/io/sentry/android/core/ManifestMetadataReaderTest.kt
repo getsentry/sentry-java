@@ -1541,4 +1541,28 @@ class ManifestMetadataReaderTest {
         assertEquals(100, fixture.options.maxBreadcrumbs)
     }
 
+    @Test
+    fun `applyMetadata reads integers even when expecting floats`() {
+        // Arrange
+        val expectedSampleRate: Int = 1
+
+        val bundle = bundleOf(
+            ManifestMetadataReader.SAMPLE_RATE to expectedSampleRate,
+            ManifestMetadataReader.TRACES_SAMPLE_RATE to expectedSampleRate,
+            ManifestMetadataReader.PROFILES_SAMPLE_RATE to expectedSampleRate,
+            ManifestMetadataReader.REPLAYS_SESSION_SAMPLE_RATE to expectedSampleRate,
+            ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to expectedSampleRate
+        )
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.tracesSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.profilesSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.sessionSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
+    }
 }

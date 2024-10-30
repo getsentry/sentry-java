@@ -501,7 +501,7 @@ final class ManifestMetadataReader {
   private static @NotNull Double readDouble(
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     // manifest meta-data only reads float
-    final Double value = ((Float) metadata.getFloat(key, -1)).doubleValue();
+    final Double value = ((Number) metadata.getFloat(key, metadata.getInt(key, -1))).doubleValue();
     logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
