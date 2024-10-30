@@ -4,11 +4,11 @@
 
 ### Features
 
-- Add meta option to set the maximum amount of breadcrumbs to be logged. ([#?](https://github.com/getsentry/sentry-java/pull/?))
+- Add meta option to set the maximum amount of breadcrumbs to be logged. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
 
 ### Fixes
 
-- using MaxBreadcrumb with value 0 no longer crashes. ([#?](https://github.com/getsentry/sentry-java/pull/?))
+- Using MaxBreadcrumb with value 0 no longer crashes. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
 - Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
 
 ## 7.16.0
