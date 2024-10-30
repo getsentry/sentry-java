@@ -9,6 +9,11 @@
   - If both the param on `Sentry.init` and the option are set, the option will win. By default the option is set to `null` meaning whatever is passed to `Sentry.init` takes effect.
 - Lazy uuid generation for SentryId and SpanId ([#3770](https://github.com/getsentry/sentry-java/pull/3770))
 
+### Fixes
+
+- Add `auto.graphql.graphql22` to ignored span origins when using OpenTelemetry ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
+- The Spring Boot 3 WebFlux sample now uses our GraphQL v22 integration ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
+
 ### Behavioural Changes
 
 - (Android) Enable Performance V2 by default ([#3824](https://github.com/getsentry/sentry-java/pull/3824))

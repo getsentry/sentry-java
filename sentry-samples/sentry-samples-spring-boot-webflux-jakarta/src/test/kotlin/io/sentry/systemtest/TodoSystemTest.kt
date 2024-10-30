@@ -13,16 +13,17 @@ class TodoSystemTest {
     @Before
     fun setup() {
         testHelper = TestHelper("http://localhost:8080")
+        testHelper.reset()
     }
 
     @Test
     fun `get todo webclient works`() {
-        testHelper.snapshotEnvelopeCount()
-
         val restClient = testHelper.restClient
         restClient.getTodoWebclient(1L)
         assertEquals(HttpStatus.OK, restClient.lastKnownStatusCode)
 
-        testHelper.ensureEnvelopeCountIncreased()
+        testHelper.ensureTransactionReceived { transaction ->
+            testHelper.doesTransactionContainSpanWithOp(transaction, "http.client")
+        }
     }
 }
