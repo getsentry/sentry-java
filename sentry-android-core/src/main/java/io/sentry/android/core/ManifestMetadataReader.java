@@ -216,11 +216,7 @@ final class ManifestMetadataReader {
                 options.getSessionTrackingIntervalMillis()));
 
         options.setMaxBreadcrumbs(
-          (int)readLong(
-            metadata,
-            logger,
-            MAX_BREADCRUMBS,
-            options.getMaxBreadcrumbs()));
+            (int) readLong(metadata, logger, MAX_BREADCRUMBS, options.getMaxBreadcrumbs()));
 
         options.setEnableActivityLifecycleBreadcrumbs(
             readBool(

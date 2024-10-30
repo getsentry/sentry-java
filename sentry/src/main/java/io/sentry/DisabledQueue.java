@@ -1,19 +1,20 @@
 package io.sentry;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
 import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-final class DisabledQueue <E> extends AbstractCollection<E> implements Queue<E>, Serializable {
+final class DisabledQueue<E> extends AbstractCollection<E> implements Queue<E>, Serializable {
 
   /** Serialization version. */
   private static final long serialVersionUID = -8423413834657610417L;
 
   /** Constructor that creates a queue that does not accept any element. */
-  public DisabledQueue() { }
+  public DisabledQueue() {}
 
   // -----------------------------------------------------------------------
   /**
@@ -22,7 +23,9 @@ final class DisabledQueue <E> extends AbstractCollection<E> implements Queue<E>,
    * @return this queue's size
    */
   @Override
-  public int size() { return 0; }
+  public int size() {
+    return 0;
+  }
 
   /**
    * Returns true if this queue is empty; false otherwise.
@@ -30,11 +33,13 @@ final class DisabledQueue <E> extends AbstractCollection<E> implements Queue<E>,
    * @return false
    */
   @Override
-  public boolean isEmpty() { return false; }
+  public boolean isEmpty() {
+    return false;
+  }
 
   /** Does nothing. */
   @Override
-  public void clear() { }
+  public void clear() {}
 
   /**
    * Since the queue is disabled, the element will not be added.
@@ -43,7 +48,9 @@ final class DisabledQueue <E> extends AbstractCollection<E> implements Queue<E>,
    * @return false, always
    */
   @Override
-  public boolean add(final @NotNull E element) { return false; }
+  public boolean add(final @NotNull E element) {
+    return false;
+  }
 
   // -----------------------------------------------------------------------
 
@@ -59,16 +66,24 @@ final class DisabledQueue <E> extends AbstractCollection<E> implements Queue<E>,
   }
 
   @Override
-  public @Nullable E poll() { return null; }
+  public @Nullable E poll() {
+    return null;
+  }
 
   @Override
-  public @Nullable E element() { return null; }
+  public @Nullable E element() {
+    return null;
+  }
 
   @Override
-  public @Nullable E peek() { return null; }
+  public @Nullable E peek() {
+    return null;
+  }
 
   @Override
-  public @NotNull E remove() { throw new NoSuchElementException("queue is disabled"); }
+  public @NotNull E remove() {
+    throw new NoSuchElementException("queue is disabled");
+  }
 
   // -----------------------------------------------------------------------
 
@@ -93,8 +108,8 @@ final class DisabledQueue <E> extends AbstractCollection<E> implements Queue<E>,
 
       @Override
       public void remove() {
-          throw new IllegalStateException();
-        }
+        throw new IllegalStateException();
+      }
     };
   }
 }

@@ -30,7 +30,7 @@ class DisabledQueueTest {
     @Test
     fun `isEmpty always returns false if add function was called`() {
         val queue = DisabledQueue<Int>()
-        queue.add(1);
+        queue.add(1)
 
         assertFalse(queue.isEmpty(), "isEmpty should always return false.")
     }
@@ -45,14 +45,14 @@ class DisabledQueueTest {
     @Test
     fun `poll returns null`() {
         val queue = DisabledQueue<Int>()
-        queue.add(1);
+        queue.add(1)
         assertNull(queue.poll(), "poll should always return null.")
     }
 
     @Test
     fun `peek returns null`() {
         val queue = DisabledQueue<Int>()
-        queue.add(1);
+        queue.add(1)
 
         assertNull(queue.peek(), "peek should always return null.")
     }
