@@ -1,8 +1,8 @@
 package io.sentry.util
 
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
+import kotlin.test.assertNotSame
+import kotlin.test.assertSame
 
 class SentryRandomTest {
 
@@ -10,7 +10,7 @@ class SentryRandomTest {
     fun `thread local creates a new instance per thread but keeps re-using it for the same thread`() {
         val mainThreadRandom1 = SentryRandom.current()
         val mainThreadRandom2 = SentryRandom.current()
-        assertEquals(mainThreadRandom1.toString(), mainThreadRandom2.toString())
+        assertSame(mainThreadRandom1, mainThreadRandom2)
 
         var thread1Random1: Random? = null
         var thread1Random2: Random? = null
@@ -33,13 +33,13 @@ class SentryRandomTest {
         thread1.join()
         thread2.join()
 
-        assertEquals(thread1Random1.toString(), thread1Random2.toString())
-        assertNotEquals(mainThreadRandom1.toString(), thread1Random1.toString())
+        assertSame(thread1Random1, thread1Random2)
+        assertNotSame(mainThreadRandom1, thread1Random1)
 
-        assertEquals(thread2Random1.toString(), thread2Random2.toString())
-        assertNotEquals(mainThreadRandom1.toString(), thread2Random1.toString())
+        assertSame(thread2Random1, thread2Random2)
+        assertNotSame(mainThreadRandom1, thread2Random1)
 
         val mainThreadRandom3 = SentryRandom.current()
-        assertEquals(mainThreadRandom1.toString(), mainThreadRandom3.toString())
+        assertSame(mainThreadRandom1, mainThreadRandom3)
     }
 }
