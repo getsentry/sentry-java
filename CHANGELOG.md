@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
+
 ### Fixes
 
 - Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
