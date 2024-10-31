@@ -134,7 +134,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       // registerReceiver can throw SecurityException but it's not documented in the official docs
       ContextUtils.registerReceiver(context, options, receiver, filter);
       options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("SystemEventsBreadcrumbs");
     } catch (Throwable e) {
       options.setEnableSystemEventBreadcrumbs(false);
       options
