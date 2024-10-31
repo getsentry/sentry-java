@@ -5,6 +5,7 @@
 ### Features
 
 - Add meta option to set the maximum amount of breadcrumbs to be logged. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
+- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
 
 ### Fixes
 

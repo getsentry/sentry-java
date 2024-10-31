@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.util.Objects;
 import io.sentry.util.Random;
+import io.sentry.util.SentryRandom;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -10,14 +11,14 @@ final class TracesSampler {
   private static final @NotNull Double DEFAULT_TRACES_SAMPLE_RATE = 1.0;
 
   private final @NotNull SentryOptions options;
-  private final @NotNull Random random;
+  private final @Nullable Random random;
 
   public TracesSampler(final @NotNull SentryOptions options) {
-    this(Objects.requireNonNull(options, "options are required"), new Random());
+    this(Objects.requireNonNull(options, "options are required"), null);
   }
 
   @TestOnly
-  TracesSampler(final @NotNull SentryOptions options, final @NotNull Random random) {
+  TracesSampler(final @NotNull SentryOptions options, final @Nullable Random random) {
     this.options = options;
     this.random = random;
   }
@@ -90,6 +91,13 @@ final class TracesSampler {
   }
 
   private boolean sample(final @NotNull Double aDouble) {
-    return !(aDouble < random.nextDouble());
+    return !(aDouble < getRandom().nextDouble());
+  }
+
+  private Random getRandom() {
+    if (random == null) {
+      return SentryRandom.current();
+    }
+    return random;
   }
 }
