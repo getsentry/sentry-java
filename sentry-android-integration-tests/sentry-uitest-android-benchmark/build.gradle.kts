@@ -119,6 +119,3 @@ tasks.withType<Detekt> {
     jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
 
-kotlin {
-    explicitApi()
-}
