@@ -1530,7 +1530,7 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads max breadcrumb mask flags to options and keeps default if not found`() {
+    fun `applyMetadata reads maxBreadcrumbs to options and keeps default if not found`() {
         // Arrange
         val context = fixture.getContext()
 
