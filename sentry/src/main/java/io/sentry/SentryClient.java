@@ -18,6 +18,7 @@ import io.sentry.util.CheckInUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Random;
+import io.sentry.util.SentryRandom;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
@@ -40,7 +41,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
 
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
-  private final @Nullable Random random;
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
   private final @NotNull IMetricsAggregator metricsAggregator;
 
@@ -66,8 +66,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
         options.isEnableMetrics()
             ? new MetricsAggregator(options, this)
             : NoopMetricsAggregator.getInstance();
-
-    this.random = options.getSampleRate() == null ? null : new Random();
   }
 
   private boolean shouldApplyScopeData(
@@ -1183,6 +1181,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
   }
 
   private boolean sample() {
+    final @Nullable Random random = options.getSampleRate() == null ? null : SentryRandom.current();
     // https://docs.sentry.io/development/sdk-dev/features/#event-sampling
     if (options.getSampleRate() != null && random != null) {
       final double sampling = options.getSampleRate();

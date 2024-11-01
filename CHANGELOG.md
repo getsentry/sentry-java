@@ -1,11 +1,22 @@
 # Changelog
 
-## 7.17.0-alpha.1
+## Unreleased
 
 ### Features
 
+- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
 - Android 15: Add support for 16KB page sizes ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
   - See https://developer.android.com/guide/practices/page-sizes for more details
+
+### Fixes
+
+- Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.2 to v0.7.8 ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#078)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.8)
 
 ## 7.16.0
 
@@ -27,12 +38,9 @@
 - Load lazy fields on init in the background ([#3803](https://github.com/getsentry/sentry-java/pull/3803))
 - Replace setOf with HashSet.add ([#3801](https://github.com/getsentry/sentry-java/pull/3801))
 
-### Dependencies
+### Breaking changes
 
-- Bump Native SDK from v0.7.2 to v0.7.8 ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
-  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#078)
-  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.8)
-
+- The method `addIntegrationToSdkVersion(Ljava/lang/Class;)V` has been removed from the core (`io.sentry:sentry`) package. Please make sure all of the packages (e.g. `io.sentry:sentry-android-core`, `io.sentry:sentry-android-fragment`, `io.sentry:sentry-okhttp`  and others) are all aligned and using the same version to prevent the `NoSuchMethodError` exception.
 
 ## 7.16.0-alpha.1
 
