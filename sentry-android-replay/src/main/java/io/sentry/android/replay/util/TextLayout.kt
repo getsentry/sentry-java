@@ -3,7 +3,7 @@ package io.sentry.android.replay.util
 /**
  * An abstraction over [android.text.Layout] with different implementations for Views and Compose.
  */
-interface TextLayout {
+internal interface TextLayout {
     val lineCount: Int
 
     /**

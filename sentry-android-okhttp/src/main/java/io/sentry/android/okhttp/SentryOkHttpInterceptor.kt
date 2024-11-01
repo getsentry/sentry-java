@@ -30,7 +30,7 @@ import okhttp3.Response
     "Use SentryOkHttpInterceptor from sentry-okhttp instead",
     ReplaceWith("SentryOkHttpInterceptor", "io.sentry.okhttp.SentryOkHttpInterceptor")
 )
-class SentryOkHttpInterceptor(
+public class SentryOkHttpInterceptor(
     private val hub: IHub = HubAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
     private val captureFailedRequests: Boolean = true,
@@ -49,9 +49,9 @@ class SentryOkHttpInterceptor(
     failedRequestTargets
 ) {
 
-    constructor() : this(HubAdapter.getInstance())
-    constructor(hub: IHub) : this(hub, null)
-    constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
+    public constructor() : this(HubAdapter.getInstance())
+    public constructor(hub: IHub) : this(hub, null)
+    public constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
     init {
         addIntegrationToSdkVersion("OkHttp")
@@ -66,7 +66,7 @@ class SentryOkHttpInterceptor(
         "Use BeforeSpanCallback from sentry-okhttp instead",
         ReplaceWith("BeforeSpanCallback", "io.sentry.okhttp.SentryOkHttpInterceptor.BeforeSpanCallback")
     )
-    fun interface BeforeSpanCallback {
+    public fun interface BeforeSpanCallback {
         /**
          * Mutates or drops span before being added
          *
@@ -74,6 +74,6 @@ class SentryOkHttpInterceptor(
          * @param request the HTTP request executed by okHttp
          * @param response the HTTP response received by okHttp
          */
-        fun execute(span: ISpan, request: Request, response: Response?): ISpan?
+        public fun execute(span: ISpan, request: Request, response: Response?): ISpan?
     }
 }

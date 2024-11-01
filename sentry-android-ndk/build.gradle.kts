@@ -24,8 +24,7 @@ android {
     println("sentry-android-ndk: $sentryNativeSrc")
 
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
-        minSdk = Config.Android.minSdkVersionNdk // NDK requires a higher API level than core.
+        minSdk = Config.Android.minSdkVersionNdk
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 
@@ -90,11 +89,15 @@ android {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    buildFeatures {
+        buildConfig = true
     }
+
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    }
+
+    ndkVersion = "23.1.7779620"
 }
 
 dependencies {

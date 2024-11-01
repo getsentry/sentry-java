@@ -42,10 +42,8 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
     }
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 

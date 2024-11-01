@@ -12,8 +12,6 @@ public final class io/sentry/android/timber/SentryTimberIntegration : io/sentry/
 	public fun <init> (Lio/sentry/SentryLevel;Lio/sentry/SentryLevel;)V
 	public synthetic fun <init> (Lio/sentry/SentryLevel;Lio/sentry/SentryLevel;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun close ()V
-	public final fun getMinBreadcrumbLevel ()Lio/sentry/SentryLevel;
-	public final fun getMinEventLevel ()Lio/sentry/SentryLevel;
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
