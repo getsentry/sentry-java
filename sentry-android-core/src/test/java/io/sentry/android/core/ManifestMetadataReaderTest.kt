@@ -1517,7 +1517,7 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads maxbreadcrumb mask flags to options and sets the value if found`() {
+    fun `applyMetadata reads maxBreadcrumbs to options and sets the value if found`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.MAX_BREADCRUMBS to 1)
         val context = fixture.getContext(metaData = bundle)
