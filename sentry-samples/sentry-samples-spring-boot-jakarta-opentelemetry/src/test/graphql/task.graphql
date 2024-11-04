@@ -1,0 +1,16 @@
+query TasksAndAssigneesQuery($slug: ID!) {
+    tasks(projectSlug: $slug) {
+        id
+        name
+        assigneeId
+        assignee {
+            id
+            name
+        }
+        creatorId
+        creator {
+            id
+            name
+        }
+    }
+}

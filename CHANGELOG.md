@@ -13,6 +13,11 @@
   - Uses faster Random implementation to generate UUIDs
 - Use String instead of UUID for SessionId ([#3834](https://github.com/getsentry/sentry-java/pull/3834))
 
+### Fixes
+
+- Add `auto.graphql.graphql22` to ignored span origins when using OpenTelemetry ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
+- The Spring Boot 3 WebFlux sample now uses our GraphQL v22 integration ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
+
 ### Behavioural Changes
 
 - (Android) Enable Performance V2 by default ([#3824](https://github.com/getsentry/sentry-java/pull/3824))
