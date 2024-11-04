@@ -243,7 +243,10 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
-  public void startProfile() {}
+  public void startProfiler() {}
+
+  @Override
+  public void stopProfiler() {}
 
   @Override
   @Deprecated

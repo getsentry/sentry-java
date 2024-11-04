@@ -1023,8 +1023,13 @@ public final class Sentry {
   }
 
   /** Starts the continuous profiler, if enabled. */
-  public static void startProfile() {
-    getCurrentScopes().startProfile();
+  public static void startProfiler() {
+    getCurrentScopes().startProfiler();
+  }
+
+  /** Starts the continuous profiler, if enabled. */
+  public static void stopProfiler() {
+    getCurrentScopes().stopProfiler();
   }
 
   /**

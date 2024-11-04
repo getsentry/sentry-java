@@ -282,8 +282,13 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
-  public void startProfile() {
-    Sentry.startProfile();
+  public void startProfiler() {
+    Sentry.startProfiler();
+  }
+
+  @Override
+  public void stopProfiler() {
+    Sentry.stopProfiler();
   }
 
   @Deprecated

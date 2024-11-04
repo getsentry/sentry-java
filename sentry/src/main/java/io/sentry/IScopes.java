@@ -593,7 +593,9 @@ public interface IScopes {
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions);
 
-  void startProfile();
+  void startProfiler();
+
+  void stopProfiler();
 
   /**
    * Returns the "sentry-trace" header that allows tracing across services. Can also be used in

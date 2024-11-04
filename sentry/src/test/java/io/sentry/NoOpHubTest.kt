@@ -121,4 +121,10 @@ class NoOpHubTest {
         sut.withScope(scopeCallback)
         verify(scopeCallback).run(NoOpScope.getInstance())
     }
+
+    @Test
+    fun `startProfiler doesnt throw`() = sut.startProfiler()
+
+    @Test
+    fun `stopProfiler doesnt throw`() = sut.stopProfiler()
 }

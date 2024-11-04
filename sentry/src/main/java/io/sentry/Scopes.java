@@ -931,12 +931,30 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   }
 
   @Override
-  public void startProfile() {
+  public void startProfiler() {
     if (getOptions().isContinuousProfilingEnabled()) {
       getOptions().getLogger().log(SentryLevel.DEBUG, "Started continuous Profiling.");
       getOptions().getContinuousProfiler().start();
     } else {
-      getOptions().getLogger().log(SentryLevel.WARNING, "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
+    }
+  }
+
+  @Override
+  public void stopProfiler() {
+    if (getOptions().isContinuousProfilingEnabled()) {
+      getOptions().getLogger().log(SentryLevel.DEBUG, "Stopped continuous Profiling.");
+      getOptions().getContinuousProfiler().stop();
+    } else {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
     }
   }
 

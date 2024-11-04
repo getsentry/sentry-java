@@ -279,8 +279,13 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
-  public void startProfile() {
-    scopes.startProfile();
+  public void startProfiler() {
+    scopes.startProfiler();
+  }
+
+  @Override
+  public void stopProfiler() {
+    scopes.stopProfiler();
   }
 
   @Override

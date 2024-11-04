@@ -96,10 +96,11 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
   }
 
   public synchronized void start() {
-    if ((scopes == null || scopes  != NoOpScopes.getInstance()) &&
-        Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
+    if ((scopes == null || scopes != NoOpScopes.getInstance())
+        && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
       this.scopes = Sentry.getCurrentScopes();
-      this.performanceCollector = Sentry.getCurrentScopes().getOptions().getTransactionPerformanceCollector();
+      this.performanceCollector =
+          Sentry.getCurrentScopes().getOptions().getTransactionPerformanceCollector();
     }
 
     // Debug.startMethodTracingSampling() is only available since Lollipop, but Android Profiler
