@@ -570,7 +570,7 @@ class SessionAdapterTest {
     @Test
     fun `missing abnormal_mechanism does not serialize `() {
         val json = "{\n" +
-            "  \"sid\": \"not a uuid\",\n" +
+            "  \"sid\": \"c81d4e2e-bcf2-11e6-869b-7df92533d2db\",\n" +
             "  \"did\": \"123\",\n" +
             "  \"init\": true,\n" +
             "  \"status\": \"ok\",\n" +
@@ -594,7 +594,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            null,
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
