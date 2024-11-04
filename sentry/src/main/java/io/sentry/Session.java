@@ -451,7 +451,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
         switch (nextName) {
           case JsonKeys.SID:
             String sid = reader.nextStringOrNull();
-            if(sid != null && sid.length() == 32) {
+            if (sid != null && sid.length() == 32) {
               sessionId = sid;
             }
             break;
