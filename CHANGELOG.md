@@ -12,6 +12,12 @@
 - Using MaxBreadcrumb with value 0 no longer crashes. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
 - Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
 
+### Dependencies
+
+- Bump Native SDK from v0.7.2 to v0.7.11 ([#3833](https://github.com/getsentry/sentry-java/pull/3833))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0711)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.11)
+
 ## 7.16.0
 
 ### Features
