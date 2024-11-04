@@ -28,6 +28,7 @@ public final class SpanUtils {
     origins.add("auto.http.spring.resttemplate");
     origins.add("auto.http.openfeign");
     origins.add("auto.graphql.graphql");
+    origins.add("auto.graphql.graphql22");
     origins.add("auto.db.jdbc");
 
     return origins;
