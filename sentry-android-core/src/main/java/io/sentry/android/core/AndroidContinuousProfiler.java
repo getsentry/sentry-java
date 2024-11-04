@@ -90,11 +90,6 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
             buildInfoProvider);
   }
 
-  public synchronized void setScopes(final @NotNull IScopes scopes) {
-    this.scopes = scopes;
-    this.performanceCollector = scopes.getOptions().getTransactionPerformanceCollector();
-  }
-
   public synchronized void start() {
     if ((scopes == null || scopes != NoOpScopes.getInstance())
         && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {

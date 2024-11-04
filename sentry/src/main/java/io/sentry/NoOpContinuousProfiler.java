@@ -20,9 +20,6 @@ public final class NoOpContinuousProfiler implements IContinuousProfiler {
   public void stop() {}
 
   @Override
-  public void setScopes(@NotNull IScopes scopes) {}
-
-  @Override
   public boolean isRunning() {
     return false;
   }

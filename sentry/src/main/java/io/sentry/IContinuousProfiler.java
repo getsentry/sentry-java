@@ -13,8 +13,6 @@ public interface IContinuousProfiler {
 
   void stop();
 
-  void setScopes(final @NotNull IScopes scopes);
-
   /** Cancel the profiler and stops it. Used on SDK close. */
   void close();
 
