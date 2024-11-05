@@ -12,6 +12,12 @@
 - Using MaxBreadcrumb with value 0 no longer crashes. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
 - Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
 
+### Dependencies
+
+- Bump Gradle from v8.5.0 to v8.10.2 ([#3714](https://github.com/getsentry/sentry-java/pull/3714))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8102)
+  - [diff](https://github.com/gradle/gradle/compare/v8.5.0...v8.10.2)
+
 ## 7.16.0
 
 ### Features
