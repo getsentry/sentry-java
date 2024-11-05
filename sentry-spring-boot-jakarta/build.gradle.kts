@@ -41,7 +41,9 @@ dependencies {
     compileOnly(Config.Libs.springBoot3StarterQuartz)
     compileOnly(Config.Libs.reactorCore)
     compileOnly(Config.Libs.contextPropagation)
+    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
 
     annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)

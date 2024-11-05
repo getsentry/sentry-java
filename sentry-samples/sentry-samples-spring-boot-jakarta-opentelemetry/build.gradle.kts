@@ -52,7 +52,11 @@ dependencies {
     implementation(projects.sentryLogback)
     implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
-    implementation(Config.Libs.OpenTelemetry.otelSdk)
+//    implementation(Config.Libs.OpenTelemetry.otelSdk)
+    implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
+    implementation(Config.Libs.springBoot3StarterOpenTelemetry)
+    implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
+    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
 
     // database query tracing
     implementation(projects.sentryJdbc)
@@ -65,6 +69,12 @@ dependencies {
     testImplementation("ch.qos.logback:logback-classic:1.3.5")
     testImplementation(Config.Libs.slf4jApi2)
     testImplementation(Config.Libs.apolloKotlin)
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.7.0")
+    }
 }
 
 configure<SourceSetContainer> {

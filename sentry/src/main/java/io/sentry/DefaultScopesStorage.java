@@ -10,6 +10,9 @@ public final class DefaultScopesStorage implements IScopesStorage {
   private static final @NotNull ThreadLocal<IScopes> currentScopes = new ThreadLocal<>();
 
   @Override
+  public void init() {}
+
+  @Override
   public ISentryLifecycleToken set(@Nullable IScopes scopes) {
     final @Nullable IScopes oldScopes = get();
     currentScopes.set(scopes);

@@ -3,20 +3,15 @@ package io.sentry.opentelemetry;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.ContextStorage;
 import io.opentelemetry.context.Scope;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class SentryContextStorage implements ContextStorage {
-  private final @NotNull Logger logger = Logger.getLogger(SentryContextStorage.class.getName());
-
   private final @NotNull ContextStorage contextStorage;
 
   public SentryContextStorage(final @NotNull ContextStorage contextStorage) {
     this.contextStorage = contextStorage;
-    logger.log(Level.SEVERE, "SentryContextStorage ctor called");
   }
 
   @Override

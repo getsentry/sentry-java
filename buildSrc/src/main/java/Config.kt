@@ -98,6 +98,7 @@ object Config {
         val springBoot3StarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBoot3Version"
         val springBoot3StarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBoot3Version"
         val springBoot3StarterActuator = "org.springframework.boot:spring-boot-starter-actuator:$springBoot3Version"
+        val springBoot3StarterOpenTelemetry = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter:${OpenTelemetry.otelJavaagentVersion}"
 
         val springWeb = "org.springframework:spring-webmvc"
         val springWebflux = "org.springframework:spring-webflux"
