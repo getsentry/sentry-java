@@ -41,7 +41,7 @@ public final class SentryContextWrapper implements Context {
   }
 
   private static @NotNull Context forkCurrentScope(final @NotNull Context context) {
-    final @Nullable OtelSpanWrapper sentrySpan = getCurrentSpanFromGlobalStorage(context);
+    final @Nullable IOtelSpanWrapper sentrySpan = getCurrentSpanFromGlobalStorage(context);
     final @Nullable IScopes spanScopes = sentrySpan == null ? null : sentrySpan.getScopes();
     final @NotNull IScopes forkedScopes = forkCurrentScopeInternal(context, spanScopes);
     if (sentrySpan != null) {
@@ -71,12 +71,12 @@ public final class SentryContextWrapper implements Context {
     return Sentry.forkedRootScopes("contextwrapper.fallback");
   }
 
-  private static @Nullable OtelSpanWrapper getCurrentSpanFromGlobalStorage(
+  private static @Nullable IOtelSpanWrapper getCurrentSpanFromGlobalStorage(
       final @NotNull Context context) {
     @Nullable final Span span = Span.fromContextOrNull(context);
 
     if (span != null) {
-      final @Nullable OtelSpanWrapper sentrySpan =
+      final @Nullable IOtelSpanWrapper sentrySpan =
           SentryWeakSpanStorage.getInstance().getSentrySpan(span.getSpanContext());
       return sentrySpan;
     }

@@ -48,7 +48,7 @@ dependencies {
     compileOnly(projects.sentryGraphql22)
     compileOnly(projects.sentryQuartz)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
-    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryExtra)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
     // tests
     testImplementation(projects.sentryTestSupport)

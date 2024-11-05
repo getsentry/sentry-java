@@ -46,7 +46,6 @@ include(
     "sentry-jdbc",
     "sentry-opentelemetry:sentry-opentelemetry-bootstrap",
     "sentry-opentelemetry:sentry-opentelemetry-core",
-    "sentry-opentelemetry:sentry-opentelemetry-extra",
     "sentry-opentelemetry:sentry-opentelemetry-agentcustomization",
     "sentry-opentelemetry:sentry-opentelemetry-agent",
     "sentry-quartz",

@@ -41,7 +41,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** NOTE: This wrapper is not used when using OpenTelemetry API, only when using Sentry API. */
 @ApiStatus.Internal
-public final class OtelSpanWrapper implements ISpan {
+public final class OtelSpanWrapper implements IOtelSpanWrapper {
 
   private final @NotNull IScopes scopes;
 
@@ -78,7 +78,7 @@ public final class OtelSpanWrapper implements ISpan {
       final @NotNull IScopes scopes,
       final @NotNull SentryDate startTimestamp,
       final @Nullable TracesSamplingDecision samplingDecision,
-      final @Nullable OtelSpanWrapper parentSpan,
+      final @Nullable IOtelSpanWrapper parentSpan,
       final @Nullable SpanId parentSpanId,
       final @Nullable Baggage baggage) {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
@@ -315,6 +315,7 @@ public final class OtelSpanWrapper implements ISpan {
     return context.getTags().get(key);
   }
 
+  @Override
   @ApiStatus.Internal
   public @NotNull Map<String, String> getTags() {
     return context.getTags();
@@ -406,34 +407,41 @@ public final class OtelSpanWrapper implements ISpan {
     return contexts;
   }
 
+  @Override
   public void setTransactionName(@NotNull String name) {
     setTransactionName(name, TransactionNameSource.CUSTOM);
   }
 
+  @Override
   public void setTransactionName(@NotNull String name, @NotNull TransactionNameSource nameSource) {
     this.transactionName = name;
     this.transactionNameSource = nameSource;
   }
 
+  @Override
   @ApiStatus.Internal
   public @Nullable TransactionNameSource getTransactionNameSource() {
     return transactionNameSource;
   }
 
+  @Override
   @ApiStatus.Internal
   public @Nullable String getTransactionName() {
     return this.transactionName;
   }
 
+  @Override
   @NotNull
   public SentryId getTraceId() {
     return context.getTraceId();
   }
 
+  @Override
   public @NotNull Map<String, Object> getData() {
     return data;
   }
 
+  @Override
   @NotNull
   public Map<String, MeasurementValue> getMeasurements() {
     return measurements;
@@ -444,6 +452,7 @@ public final class OtelSpanWrapper implements ISpan {
     return context.getSampled();
   }
 
+  @Override
   public @Nullable Boolean isProfileSampled() {
     return context.getProfileSampled();
   }
@@ -453,6 +462,7 @@ public final class OtelSpanWrapper implements ISpan {
     return context.getSamplingDecision();
   }
 
+  @Override
   @ApiStatus.Internal
   public @NotNull IScopes getScopes() {
     return scopes;

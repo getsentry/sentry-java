@@ -52,7 +52,7 @@ public final class OtelSpanFactory implements ISpanFactory {
       @NotNull IScopes scopes,
       @NotNull TransactionOptions transactionOptions,
       @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
-    final @Nullable OtelSpanWrapper span =
+    final @Nullable IOtelSpanWrapper span =
         createSpanInternal(
             scopes, transactionOptions, null, context.getSamplingDecision(), context);
     if (span == null) {
@@ -73,7 +73,7 @@ public final class OtelSpanFactory implements ISpanFactory {
 
     final @Nullable TracesSamplingDecision samplingDecision =
         parentSpan == null ? null : parentSpan.getSamplingDecision();
-    final @Nullable OtelSpanWrapper span =
+    final @Nullable IOtelSpanWrapper span =
         createSpanInternal(scopes, spanOptions, parentSpan, samplingDecision, spanContext);
     if (span == null) {
       return NoOpSpan.getInstance();
@@ -81,7 +81,7 @@ public final class OtelSpanFactory implements ISpanFactory {
     return span;
   }
 
-  private @Nullable OtelSpanWrapper createSpanInternal(
+  private @Nullable IOtelSpanWrapper createSpanInternal(
       final @NotNull IScopes scopes,
       final @NotNull SpanOptions spanOptions,
       final @Nullable ISpan parentSpan,
@@ -139,7 +139,7 @@ public final class OtelSpanFactory implements ISpanFactory {
 
     final @NotNull Span otelSpan = spanBuilder.startSpan();
 
-    final @Nullable OtelSpanWrapper sentrySpan = storage.getSentrySpan(otelSpan.getSpanContext());
+    final @Nullable IOtelSpanWrapper sentrySpan = storage.getSentrySpan(otelSpan.getSpanContext());
     if (sentrySpan != null) {
       final @Nullable String description = spanContext.getDescription();
       if (description != null) {

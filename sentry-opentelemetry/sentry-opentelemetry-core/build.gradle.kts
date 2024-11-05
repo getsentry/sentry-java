@@ -20,9 +20,12 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     compileOnly(projects.sentry)
-    // TODO implementation?
+    /**
+     * sentryOpentelemetryBootstrap cannot be an implementation dependency
+     * because getSentryOpentelemetryCore is loaded into the agent classloader
+     * and sentryOpentelemetryBootstrap should be in the bootstrap classloader.
+     */
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
-    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryExtra)
 
     implementation(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(Config.Libs.OpenTelemetry.otelSemconv)
@@ -36,7 +39,6 @@ dependencies {
 
     // tests
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
-    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryExtra)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
