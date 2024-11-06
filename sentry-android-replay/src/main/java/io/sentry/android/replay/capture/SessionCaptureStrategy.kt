@@ -1,6 +1,8 @@
 package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
+import io.sentry.DataCategory.All
+import io.sentry.DataCategory.Replay
 import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.IHub
 import io.sentry.SentryLevel.DEBUG
@@ -75,6 +77,12 @@ internal class SessionCaptureStrategy(
     override fun onScreenshotRecorded(bitmap: Bitmap?, store: ReplayCache.(frameTimestamp: Long) -> Unit) {
         if (options.connectionStatusProvider.connectionStatus == DISCONNECTED) {
             options.logger.log(DEBUG, "Skipping screenshot recording, no internet connection")
+            bitmap?.recycle()
+            return
+        }
+        val rateLimiter = hub?.rateLimiter
+        if (rateLimiter?.isActiveForCategory(All) == true || rateLimiter?.isActiveForCategory(Replay) == true) {
+            options.logger.log(DEBUG, "Skipping screenshot recording, rate limit is active")
             bitmap?.recycle()
             return
         }

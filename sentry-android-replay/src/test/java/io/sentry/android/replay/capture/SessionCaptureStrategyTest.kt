@@ -2,6 +2,7 @@ package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.DateUtils
 import io.sentry.IHub
 import io.sentry.Scope
@@ -27,6 +28,7 @@ import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.transport.RateLimiter
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.ArgumentMatchers.anyInt
@@ -36,6 +38,8 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -69,6 +73,7 @@ class SessionCaptureStrategyTest {
             doAnswer {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }.whenever(it).configureScope(any())
+            doReturn(mock<RateLimiter>()).whenever(it).rateLimiter
         }
         var persistedSegment = LinkedHashMap<String, String?>()
         val replayCache = mock<ReplayCache> {
@@ -366,5 +371,19 @@ class SessionCaptureStrategyTest {
             "The replayId must be set first, so when we clean up stale replays" +
                 "the current replay cache folder is not being deleted."
         )
+    }
+
+    @Test
+    fun `when rate limited does not capture screenshots`() {
+        val strategy = fixture.getSut()
+
+        whenever(fixture.hub.rateLimiter?.isActiveForCategory(eq(DataCategory.Replay))).thenReturn(true)
+
+        strategy.start(fixture.recorderConfig)
+        var called = false
+        strategy.onScreenshotRecorded(mock<Bitmap>()) {
+            called = true
+        }
+        assertFalse(called)
     }
 }

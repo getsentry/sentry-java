@@ -177,6 +177,8 @@ public final class RateLimiter {
         return DataCategory.Transaction;
       case "check_in":
         return DataCategory.Monitor;
+      case "replay_video":
+        return DataCategory.Replay;
       default:
         return DataCategory.Unknown;
     }
