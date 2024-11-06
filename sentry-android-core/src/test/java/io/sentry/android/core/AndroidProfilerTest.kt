@@ -161,18 +161,6 @@ class AndroidProfilerTest {
     }
 
     @Test
-    fun `profiler works only on api 21+`() {
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
-        }
-        val profiler = fixture.getSut(1, buildInfo)
-        val startData = profiler.start()
-        val endData = profiler.endAndCollect(false, null)
-        assertNull(startData)
-        assertNull(endData)
-    }
-
-    @Test
     fun `profiler returns start and end timestamps`() {
         val profiler = fixture.getSut()
         val startData = profiler.start()

@@ -125,7 +125,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
                 try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
                   if (networkCallback != null) {
                     AndroidConnectionStatusProvider.unregisterNetworkCallback(
-                        context, logger, buildInfoProvider, networkCallback);
+                        context, logger, networkCallback);
                     logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration removed.");
                   }
                   networkCallback = null;
@@ -266,7 +266,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
       this.signalStrength = strength > -100 ? strength : 0;
       this.isVpn = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN);
       String connectionType =
-          AndroidConnectionStatusProvider.getConnectionType(networkCapabilities, buildInfoProvider);
+          AndroidConnectionStatusProvider.getConnectionType(networkCapabilities);
       this.type = connectionType != null ? connectionType : "";
       this.timestampNanos = capabilityNanos;
     }

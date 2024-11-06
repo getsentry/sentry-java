@@ -66,10 +66,6 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   @SuppressLint("NewApi") // we have an if-check for that down below
   @Override
   public boolean addConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
-      logger.log(SentryLevel.DEBUG, "addConnectionStatusObserver requires Android 5+.");
-      return false;
-    }
 
     final ConnectivityManager.NetworkCallback callback =
         new ConnectivityManager.NetworkCallback() {
@@ -103,7 +99,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
     final @Nullable ConnectivityManager.NetworkCallback callback =
         registeredCallbacks.remove(observer);
     if (callback != null) {
-      unregisterNetworkCallback(context, logger, buildInfoProvider, callback);
+      unregisterNetworkCallback(context, logger, callback);
     }
   }
 
@@ -255,11 +251,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
    */
   @SuppressLint("NewApi")
   public static @Nullable String getConnectionType(
-      final @NotNull NetworkCapabilities networkCapabilities,
-      final @NotNull BuildInfoProvider buildInfoProvider) {
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
-      return null;
-    }
+      final @NotNull NetworkCapabilities networkCapabilities) {
     // TODO: change the protocol to be a list of transports as a device may have the capability of
     // multiple
 
@@ -317,11 +309,8 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   public static void unregisterNetworkCallback(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull ConnectivityManager.NetworkCallback networkCallback) {
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
-      return;
-    }
+
     final ConnectivityManager connectivityManager = getConnectivityManager(context, logger);
     if (connectivityManager == null) {
       return;

@@ -1,7 +1,6 @@
 package io.sentry.android.core;
 
 import android.annotation.SuppressLint;
-import android.os.Build;
 import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
@@ -133,9 +132,6 @@ public class AndroidProfiler {
         return null;
       }
 
-      // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-      if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return null;
-
       // We create a file with a uuid name, so no need to check if it already exists
       traceFile = new File(traceFilesDir, UUID.randomUUID() + ".trace");
 
@@ -232,9 +228,6 @@ public class AndroidProfiler {
         return null;
       }
 
-      // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-      if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return null;
-
       try {
         // If there is any problem with the file this method could throw, but the start is also
         // wrapped, so this should never happen (except for tests, where this is the only method
@@ -303,12 +296,6 @@ public class AndroidProfiler {
   @SuppressLint("NewApi")
   private void putPerformanceCollectionDataInMeasurements(
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
-
-    // onTransactionStart() is only available since Lollipop
-    // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
-      return;
-    }
 
     // This difference is required, since the PerformanceCollectionData timestamps are expressed in
     // terms of System.currentTimeMillis() and measurements timestamps require the nanoseconds since

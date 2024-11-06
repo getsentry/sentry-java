@@ -33,11 +33,7 @@ object Config {
     object Android {
         private val sdkVersion = 34
 
-        val minSdkVersion = 19
-        val minSdkVersionOkHttp = 21
-        val minSdkVersionReplay = 19
-        val minSdkVersionNdk = 19
-        val minSdkVersionCompose = 21
+        val minSdkVersion = 21
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
 

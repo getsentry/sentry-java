@@ -24,7 +24,7 @@ class AndroidCpuCollectorTest {
             whenever(mockBuildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
         }
         fun getSut(buildInfoProvider: BuildInfoProvider = mockBuildInfoProvider) =
-            AndroidCpuCollector(mock(), buildInfoProvider)
+            AndroidCpuCollector(mock())
     }
 
     @Test
@@ -56,16 +56,5 @@ class AndroidCpuCollectorTest {
         assertNotNull(cpuData)
         assertNotEquals(0.0, cpuData.cpuUsagePercentage)
         assertNotEquals(0, cpuData.timestampMillis)
-    }
-
-    @Test
-    fun `collector works only on api 21+`() {
-        val data = PerformanceCollectionData()
-        val mockBuildInfoProvider = mock<BuildInfoProvider>()
-        whenever(mockBuildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
-        val collector = fixture.getSut(mockBuildInfoProvider)
-        collector.setup()
-        collector.collect(data)
-        assertNull(data.cpuData)
     }
 }
