@@ -1,6 +1,5 @@
 package io.sentry.android.core;
 
-import android.annotation.SuppressLint;
 import android.os.SystemClock;
 import android.system.Os;
 import android.system.OsConstants;
@@ -47,7 +46,6 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
     this.logger = Objects.requireNonNull(logger, "Logger is required.");
   }
 
-  @SuppressLint("NewApi")
   @Override
   public void setup() {
     isEnabled = true;
@@ -57,7 +55,6 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
     lastCpuNanos = readTotalCpuNanos();
   }
 
-  @SuppressLint("NewApi")
   @Override
   public void collect(final @NotNull PerformanceCollectionData performanceCollectionData) {
     if (!isEnabled) {

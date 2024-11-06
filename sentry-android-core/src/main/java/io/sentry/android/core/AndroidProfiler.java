@@ -93,7 +93,6 @@ public class AndroidProfiler {
   private final @NotNull ArrayDeque<ProfileMeasurementValue> frozenFrameRenderMeasurements =
       new ArrayDeque<>();
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
-  private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull ISentryExecutorService executorService;
   private final @NotNull ILogger logger;
   private boolean isRunning = false;
@@ -104,8 +103,7 @@ public class AndroidProfiler {
       final int intervalUs,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
       final @NotNull ISentryExecutorService executorService,
-      final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider) {
+      final @NotNull ILogger logger) {
     this.traceFilesDir =
         new File(Objects.requireNonNull(tracesFilesDirPath, "TracesFilesDirPath is required"));
     this.intervalUs = intervalUs;
@@ -113,8 +111,6 @@ public class AndroidProfiler {
     this.executorService = Objects.requireNonNull(executorService, "ExecutorService is required.");
     this.frameMetricsCollector =
         Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
-    this.buildInfoProvider =
-        Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
   }
 
   @SuppressLint("NewApi")

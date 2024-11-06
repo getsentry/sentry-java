@@ -63,7 +63,6 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
     return getConnectionType(context, logger, buildInfoProvider);
   }
 
-  @SuppressLint("NewApi") // we have an if-check for that down below
   @Override
   public boolean addConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
 
@@ -249,7 +248,6 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
    * @param networkCapabilities the NetworkCapabilities to check the transport type
    * @return the connection type wifi, ethernet, cellular or null
    */
-  @SuppressLint("NewApi")
   public static @Nullable String getConnectionType(
       final @NotNull NetworkCapabilities networkCapabilities) {
     // TODO: change the protocol to be a list of transports as a device may have the capability of
