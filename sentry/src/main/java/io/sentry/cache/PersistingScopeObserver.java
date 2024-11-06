@@ -1,6 +1,9 @@
 package io.sentry.cache;
 
+import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.INFO;
+import static io.sentry.cache.CacheUtils.ensureCacheDir;
 
 import io.sentry.Breadcrumb;
 import io.sentry.IScope;
@@ -9,16 +12,34 @@ import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanContext;
+import io.sentry.cache.tape.ObjectQueue;
+import io.sentry.cache.tape.QueueFile;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class PersistingScopeObserver extends ScopeObserverAdapter {
+
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   public static final String SCOPE_CACHE = ".scope-cache";
   public static final String USER_FILENAME = "user.json";
@@ -33,10 +54,51 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   public static final String TRACE_FILENAME = "trace.json";
   public static final String REPLAY_FILENAME = "replay.json";
 
+  private final @Nullable ObjectQueue<Breadcrumb> breadcrumbsQueue;
   private final @NotNull SentryOptions options;
 
   public PersistingScopeObserver(final @NotNull SentryOptions options) {
     this.options = options;
+
+    final File cacheDir = ensureCacheDir(options, SCOPE_CACHE);
+    if (cacheDir == null) {
+      options.getLogger().log(INFO, "Cache dir is not set, cannot store in scope cache");
+      breadcrumbsQueue = null;
+      return;
+    }
+
+    QueueFile queueFile = null;
+    try {
+      final File file = new File(cacheDir, BREADCRUMBS_FILENAME);
+      if (file.exists()) {
+        file.delete();
+      }
+      queueFile = new QueueFile.Builder(file).build();
+    } catch (IOException e) {
+      options.getLogger().log(ERROR, "Failed to create breadcrumbs queue", e);
+      breadcrumbsQueue = null;
+      return;
+    }
+    breadcrumbsQueue = ObjectQueue.create(queueFile,
+      new ObjectQueue.Converter<Breadcrumb>() {
+        @Override
+        @Nullable
+        public Breadcrumb from(byte[] source) {
+          try (final Reader reader =
+                 new BufferedReader(new InputStreamReader(new ByteArrayInputStream(source), UTF_8))) {
+              return options.getSerializer().deserialize(reader, Breadcrumb.class);
+          } catch (Throwable e) {
+            options.getLogger().log(ERROR, e, "Error reading entity from scope cache");
+          }
+          return null; // we don't read
+        }
+
+        @Override public void toStream(Breadcrumb value, OutputStream sink) throws IOException {
+          try (final Writer writer = new BufferedWriter(new OutputStreamWriter(sink, UTF_8))) {
+            options.getSerializer().serialize(value, writer);
+          }
+        }
+      });
   }
 
   @Override
@@ -51,9 +113,33 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
         });
   }
 
+  @Override public void addBreadcrumb(@NotNull Breadcrumb crumb) {
+    serializeToDisk(() -> {
+      try {
+        if (breadcrumbsQueue != null) {
+          breadcrumbsQueue.add(crumb);
+        }
+      } catch (IOException e) {
+        options.getLogger().log(ERROR, "Failed to add breadcrumb to file queue", e);
+      }
+    });
+  }
+
   @Override
   public void setBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs) {
-    serializeToDisk(() -> store(breadcrumbs, BREADCRUMBS_FILENAME));
+    if (breadcrumbs.isEmpty()) {
+      serializeToDisk(() -> {
+        if (breadcrumbsQueue != null) {
+          Iterator<Breadcrumb> iterator = breadcrumbsQueue.iterator();
+          while(iterator.hasNext()) {
+            Breadcrumb breadcrumb = iterator.next();
+            options.getLogger().log(DEBUG, "Removing breadcrumb from file queue: %s", breadcrumb);
+            iterator.remove();
+          }
+        }
+      });
+    }
+    //serializeToDisk(() -> store(breadcrumbs, BREADCRUMBS_FILENAME));
   }
 
   @Override

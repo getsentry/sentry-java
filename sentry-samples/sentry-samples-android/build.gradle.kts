@@ -134,5 +134,5 @@ dependencies {
     implementation(Config.Libs.composeMaterial)
     implementation(Config.Libs.composeCoil)
 
-    debugImplementation(Config.Libs.leakCanary)
+//    debugImplementation(Config.Libs.leakCanary)
 }

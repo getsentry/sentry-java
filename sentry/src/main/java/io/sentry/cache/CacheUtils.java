@@ -102,7 +102,7 @@ final class CacheUtils {
     return null;
   }
 
-  private static @Nullable File ensureCacheDir(
+  static @Nullable File ensureCacheDir(
       final @NotNull SentryOptions options, final @NotNull String cacheDirName) {
     final String cacheDir = options.getCacheDirPath();
     if (cacheDir == null) {
