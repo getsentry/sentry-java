@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- The Android minSdkVersion is now 21 ([#3852](https://github.com/getsentry/sentry-java/pull/3852))
+
 ### Features
 
 - Add `globalHubMode` to options ([#3805](https://github.com/getsentry/sentry-java/pull/3805))
