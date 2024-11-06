@@ -52,8 +52,6 @@ dependencies {
     implementation(projects.sentryLogback)
     implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
-//    implementation(Config.Libs.OpenTelemetry.otelSdk)
-    implementation("io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter")
     implementation(Config.Libs.springBoot3StarterOpenTelemetry)
     implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
     implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)

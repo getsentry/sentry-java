@@ -161,7 +161,6 @@ public final class OtelSpanFactory implements ISpanFactory {
   }
 
   private @NotNull TracerProvider getTracerProvider() {
-    System.out.println("hello from " + toString());
     if (openTelemetry != null) {
       return openTelemetry.getTracerProvider();
     }

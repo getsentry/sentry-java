@@ -10,9 +10,6 @@ import org.jetbrains.annotations.Nullable;
 public final class OpenTelemetryUtil {
 
   public static void applyOpenTelemetryOptions(final @Nullable SentryOptions options) {
-    System.out.println(
-        "hello from OpenTelemetryUtil with span factory "
-            + SentrySpanFactoryHolder.getSpanFactory());
     if (options != null) {
       options.setSpanFactory(SentrySpanFactoryHolder.getSpanFactory());
       options.setIgnoredSpanOrigins(SpanUtils.ignoredSpanOriginsForOpenTelemetry());

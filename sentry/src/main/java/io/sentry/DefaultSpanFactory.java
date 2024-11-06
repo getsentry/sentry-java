@@ -21,9 +21,12 @@ public final class DefaultSpanFactory implements ISpanFactory {
       final @NotNull SpanOptions spanOptions,
       final @NotNull SpanContext spanContext,
       @Nullable ISpan parentSpan) {
-    if (parentSpan == null) {
-      return NoOpSpan.getInstance();
-    }
-    return parentSpan.startChild(spanContext, spanOptions);
+    /**
+     * Be careful here when executing something like parentSpan.startChild() as that might cause a
+     * loop and a stack overflow. This can happen, e.g. when OpenTelemetry is creating spans that
+     * use OtelSpanWrapper which calls this createSpan method that then in turn calls startChild
+     * again causing the loop.
+     */
+    return NoOpSpan.getInstance();
   }
 }

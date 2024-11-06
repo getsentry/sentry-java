@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.opentelemetry.api.OpenTelemetry;
 import io.sentry.ISpanFactory;
 import io.sentry.Sentry;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
 import io.sentry.opentelemetry.OtelSpanFactory;
@@ -15,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration(proxyBeanMethods = false)
 @Open
-public class SentryOpenTelemetryConfiguration {
+public class SentryOpenTelemetryNoAgentConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
@@ -28,8 +29,9 @@ public class SentryOpenTelemetryConfiguration {
   public @NotNull Sentry.OptionsConfiguration<SentryOptions>
       sentryOpenTelemetryOptionsConfiguration() {
     return options -> {
+      SentryIntegrationPackageStorage.getInstance()
+          .addIntegration("SpringBoot3OpenTelemetryNoAgent");
       SentryAutoConfigurationCustomizerProvider.skipInit = true;
-      // TODO set integration
       OpenTelemetryUtil.applyOpenTelemetryOptions(options);
     };
   }

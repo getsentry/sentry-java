@@ -29,7 +29,8 @@ import io.sentry.spring.jakarta.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameterPointcutConfiguration;
 import io.sentry.spring.jakarta.exception.SentryExceptionParameterAdviceConfiguration;
-import io.sentry.spring.jakarta.opentelemetry.SentryOpenTelemetryConfiguration;
+import io.sentry.spring.jakarta.opentelemetry.SentryOpenTelemetryAgentWithoutAutoInitConfiguration;
+import io.sentry.spring.jakarta.opentelemetry.SentryOpenTelemetryNoAgentConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.jakarta.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter;
@@ -119,15 +120,23 @@ public class SentryAutoConfiguration {
       return new InAppIncludesResolver();
     }
 
-    // TODO ensure agent (auto-init) is not active
     @Configuration(proxyBeanMethods = false)
-    @Import(SentryOpenTelemetryConfiguration.class)
+    @Import(SentryOpenTelemetryAgentWithoutAutoInitConfiguration.class)
     @Open
-    @ConditionalOnClass({
-      io.opentelemetry.api.OpenTelemetry.class,
-      io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider.class
-    })
-    static class OpenTelemetryConfiguration {}
+    @ConditionalOnProperty(name = "sentry.auto-init", havingValue = "false")
+    @ConditionalOnClass(name = {"io.sentry.opentelemetry.agent.AgentMarker"})
+    static class OpenTelemetryAgentWithoutAutoInitConfiguration {}
+
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryOpenTelemetryNoAgentConfiguration.class)
+    @Open
+    @ConditionalOnClass(
+        name = {
+          "io.opentelemetry.api.OpenTelemetry",
+          "io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider"
+        })
+    @ConditionalOnMissingClass("io.sentry.opentelemetry.agent.AgentMarker")
+    static class OpenTelemetryNoAgentConfiguration {}
 
     @Bean
     public @NotNull IScopes sentryHub(
@@ -168,21 +177,6 @@ public class SentryAutoConfiguration {
       public @NotNull ContextTagsEventProcessor contextTagsEventProcessor(
           final @NotNull SentryOptions sentryOptions) {
         return new ContextTagsEventProcessor(sentryOptions);
-      }
-    }
-
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnProperty(name = "sentry.auto-init", havingValue = "false")
-    @ConditionalOnClass(io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor.class)
-    @SuppressWarnings("deprecation")
-    @Open
-    static class OpenTelemetryLinkErrorEventProcessorConfiguration {
-
-      @Bean
-      @ConditionalOnMissingBean
-      public @NotNull io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor
-          openTelemetryLinkErrorEventProcessor() {
-        return new io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor();
       }
     }
 

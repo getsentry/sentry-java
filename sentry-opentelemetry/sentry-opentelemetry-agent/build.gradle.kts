@@ -163,3 +163,7 @@ tasks {
         dependsOn(shadowJar)
     }
 }
+
+tasks.named("distZip").configure {
+    this.dependsOn("jar")
+}
