@@ -92,6 +92,13 @@ android {
             ignore = true
         }
     }
+
+    @Suppress("UnstableApiUsage")
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {
@@ -126,8 +133,7 @@ dependencies {
     implementation(Config.Libs.composeNavigation)
     implementation(Config.Libs.composeMaterial)
     implementation(Config.Libs.composeCoil)
+    implementation(Config.Libs.sentryNativeNdk)
 
     debugImplementation(Config.Libs.leakCanary)
-
-    implementation("io.sentry:sentry-native-ndk:0.7.5")
 }

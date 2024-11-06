@@ -2,17 +2,29 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- The minSdk level for sentry-android-ndk changed from 19 to 21 ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
+
 ### Features
 
 - Add `globalHubMode` to options ([#3805](https://github.com/getsentry/sentry-java/pull/3805))
   - `globalHubMode` used to only be a param on `Sentry.init`. To make it easier to be used in e.g. Desktop environments, we now additionally added it as an option on SentryOptions that can also be set via `sentry.properties`.
   - If both the param on `Sentry.init` and the option are set, the option will win. By default the option is set to `null` meaning whatever is passed to `Sentry.init` takes effect.
 - Lazy uuid generation for SentryId and SpanId ([#3770](https://github.com/getsentry/sentry-java/pull/3770))
+- Android 15: Add support for 16KB page sizes ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
+  - See https://developer.android.com/guide/practices/page-sizes for more details
 
 ### Fixes
 
 - Add `auto.graphql.graphql22` to ignored span origins when using OpenTelemetry ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
 - The Spring Boot 3 WebFlux sample now uses our GraphQL v22 integration ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.5 to v0.7.8 ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
+    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#078)
+    - [diff](https://github.com/getsentry/sentry-native/compare/0.7.5...0.7.8)
 
 ### Behavioural Changes
 
