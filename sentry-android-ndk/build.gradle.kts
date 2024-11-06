@@ -8,8 +8,6 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
-val sentryAndroidSdkName: String by project
-
 android {
     compileSdk = Config.Android.compileSdkVersion
     namespace = "io.sentry.android.ndk"
@@ -71,7 +69,7 @@ dependencies {
     api(projects.sentry)
     api(projects.sentryAndroidCore)
 
-    implementation("io.sentry:sentry-native-ndk:0.7.5")
+    implementation(Config.Libs.sentryNativeNdk)
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
