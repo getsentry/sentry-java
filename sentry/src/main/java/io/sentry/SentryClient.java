@@ -297,7 +297,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
     }
 
     if (event == null) {
-      options.getLogger().log(SentryLevel.DEBUG, "Replay was dropped by Event processors.");
       return SentryId.EMPTY_ID;
     }
 
