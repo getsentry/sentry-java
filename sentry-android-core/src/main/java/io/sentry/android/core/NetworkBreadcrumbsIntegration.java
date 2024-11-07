@@ -9,7 +9,6 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
@@ -52,7 +51,6 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
     this.logger = Objects.requireNonNull(logger, "ILogger is required");
   }
 
-  @SuppressLint("NewApi")
   @Override
   public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     Objects.requireNonNull(scopes, "Scopes are required");
@@ -125,7 +123,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
                 try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
                   if (networkCallback != null) {
                     AndroidConnectionStatusProvider.unregisterNetworkCallback(
-                        context, logger, buildInfoProvider, networkCallback);
+                        context, logger, networkCallback);
                     logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration removed.");
                   }
                   networkCallback = null;
@@ -136,8 +134,6 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
     }
   }
 
-  @SuppressLint("ObsoleteSdkInt")
-  @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
   static final class NetworkBreadcrumbsNetworkCallback extends ConnectivityManager.NetworkCallback {
     final @NotNull IScopes scopes;
     final @NotNull BuildInfoProvider buildInfoProvider;
@@ -248,8 +244,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
     final boolean isVpn;
     final @NotNull String type;
 
-    @SuppressLint({"NewApi", "ObsoleteSdkInt"})
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @SuppressLint({"NewApi"})
     NetworkBreadcrumbConnectionDetail(
         final @NotNull NetworkCapabilities networkCapabilities,
         final @NotNull BuildInfoProvider buildInfoProvider,
@@ -266,7 +261,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
       this.signalStrength = strength > -100 ? strength : 0;
       this.isVpn = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN);
       String connectionType =
-          AndroidConnectionStatusProvider.getConnectionType(networkCapabilities, buildInfoProvider);
+          AndroidConnectionStatusProvider.getConnectionType(networkCapabilities);
       this.type = connectionType != null ? connectionType : "";
       this.timestampNanos = capabilityNanos;
     }

@@ -1,7 +1,6 @@
 package io.sentry.android.core;
 
 import android.annotation.SuppressLint;
-import android.os.Build;
 import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
@@ -94,7 +93,6 @@ public class AndroidProfiler {
   private final @NotNull ArrayDeque<ProfileMeasurementValue> frozenFrameRenderMeasurements =
       new ArrayDeque<>();
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
-  private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull ISentryExecutorService executorService;
   private final @NotNull ILogger logger;
   private boolean isRunning = false;
@@ -105,8 +103,7 @@ public class AndroidProfiler {
       final int intervalUs,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
       final @NotNull ISentryExecutorService executorService,
-      final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider) {
+      final @NotNull ILogger logger) {
     this.traceFilesDir =
         new File(Objects.requireNonNull(tracesFilesDirPath, "TracesFilesDirPath is required"));
     this.intervalUs = intervalUs;
@@ -114,8 +111,6 @@ public class AndroidProfiler {
     this.executorService = Objects.requireNonNull(executorService, "ExecutorService is required.");
     this.frameMetricsCollector =
         Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
-    this.buildInfoProvider =
-        Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
   }
 
   @SuppressLint("NewApi")
@@ -132,9 +127,6 @@ public class AndroidProfiler {
         logger.log(SentryLevel.WARNING, "Profiling has already started...");
         return null;
       }
-
-      // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-      if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return null;
 
       // We create a file with a uuid name, so no need to check if it already exists
       traceFile = new File(traceFilesDir, UUID.randomUUID() + ".trace");
@@ -232,9 +224,6 @@ public class AndroidProfiler {
         return null;
       }
 
-      // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-      if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) return null;
-
       try {
         // If there is any problem with the file this method could throw, but the start is also
         // wrapped, so this should never happen (except for tests, where this is the only method
@@ -303,12 +292,6 @@ public class AndroidProfiler {
   @SuppressLint("NewApi")
   private void putPerformanceCollectionDataInMeasurements(
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
-
-    // onTransactionStart() is only available since Lollipop
-    // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
-      return;
-    }
 
     // This difference is required, since the PerformanceCollectionData timestamps are expressed in
     // terms of System.currentTimeMillis() and measurements timestamps require the nanoseconds since
