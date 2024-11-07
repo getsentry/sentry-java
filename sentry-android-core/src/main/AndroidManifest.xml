@@ -3,9 +3,6 @@
   xmlns:tools="http://schemas.android.com/tools">
   <uses-permission android:name="android.permission.INTERNET"/>
 
-  <!-- Compose requires min SDK 21, but Sentry requires min SDK 19 -->
-  <uses-sdk tools:overrideLibrary="androidx.compose.runtime" />
-
   <application>
     <!-- 'android:authorities' must be unique in the device, across all apps -->
     <provider

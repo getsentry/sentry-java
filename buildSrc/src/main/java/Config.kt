@@ -8,7 +8,7 @@ object Config {
 
     val springBootVersion = "2.7.5"
     val springBoot3Version = "3.3.2"
-    val kotlinCompatibleLanguageVersion = "1.5"
+    val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.5.12"
     val androidComposeCompilerVersion = "1.5.10"
