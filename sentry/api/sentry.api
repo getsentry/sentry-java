@@ -3175,12 +3175,6 @@ public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang
 	public static fun values ()[Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 }
 
-public final class io/sentry/SentrySpanFactoryHolder {
-	public fun <init> ()V
-	public static fun getSpanFactory ()Lio/sentry/ISpanFactory;
-	public static fun setSpanFactory (Lio/sentry/ISpanFactory;)V
-}
-
 public final class io/sentry/SentrySpanStorage {
 	public fun get (Ljava/lang/String;)Lio/sentry/ISpan;
 	public static fun getInstance ()Lio/sentry/SentrySpanStorage;
@@ -3479,6 +3473,11 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field HTTP_STATUS_CODE_KEY Ljava/lang/String;
 	public static final field THREAD_ID Ljava/lang/String;
 	public static final field THREAD_NAME Ljava/lang/String;
+}
+
+public final class io/sentry/SpanFactoryFactory {
+	public fun <init> ()V
+	public static fun create (Lio/sentry/util/LoadClass;Lio/sentry/ILogger;)Lio/sentry/ISpanFactory;
 }
 
 public abstract interface class io/sentry/SpanFinishedCallback {
