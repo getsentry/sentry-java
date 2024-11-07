@@ -77,7 +77,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.sample }}-system-test
+          name: test-results-${{ matrix.sample }}-${{ matrix.agent }}-${{ matrix.agent-auto-init }}-system-test
           path: |
             **/build/reports/*
             sentry-mock-server.txt
