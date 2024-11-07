@@ -137,7 +137,7 @@ subprojects {
                 androidReports("release") {
                     xml {
                         // Change the report file name so the Codecov Github action can find it
-                        setReportFile(file("${project.layout.buildDirectory}/reports/kover/report.xml"))
+                        setReportFile(project.layout.buildDirectory.file("reports/kover/report.xml").get().asFile)
                     }
                 }
             }
@@ -152,7 +152,7 @@ subprojects {
         }
     }
 
-    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support" && this.name != "sentry-compose-helper" && this.name != "sentry-bom") {
+    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support" && this.name != "sentry-compose-helper") {
         apply<DistributionPlugin>()
         apply<com.vanniktech.maven.publish.MavenPublishPlugin>()
 
@@ -177,11 +177,9 @@ subprojects {
         tasks.named("distZip").configure {
             this.dependsOn("publishToMavenLocal")
             this.doLast {
-                val distributionFilePath =
-                    "${this.project.layout.buildDirectory}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
-                val file = File(distributionFilePath)
-                if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
-                if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
+                val file = this.project.layout.buildDirectory.file("distributions${sep}${this.project.name}-${this.project.version}.zip").get().asFile
+                if (!file.exists()) throw IllegalStateException("Distribution file: ${file.absolutePath} does not exist")
+                if (file.length() == 0L) throw IllegalStateException("Distribution file: ${file.absolutePath} is empty")
             }
         }
 
@@ -198,7 +196,7 @@ subprojects {
                 repositories {
                     maven {
                         name = "unityMaven"
-                        url = file("${rootProject.layout.buildDirectory}/unityMaven").toURI()
+                        url = rootProject.layout.buildDirectory.file("unityMaven").get().asFile.toURI()
                     }
                 }
             }
@@ -235,7 +233,7 @@ spotless {
 
 gradle.projectsEvaluated {
     tasks.create("aggregateJavadocs", Javadoc::class.java) {
-        setDestinationDir(file("${project.layout.buildDirectory}/docs/javadoc"))
+        setDestinationDir(project.layout.buildDirectory.file("docs/javadoc").get().asFile)
         title = "${project.name} $version API"
         val opts = options as StandardJavadocDocletOptions
         opts.quiet()

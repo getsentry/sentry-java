@@ -50,7 +50,7 @@ val embeddedJar by configurations.creating {
 }
 
 artifacts {
-    add("embeddedJar", File("${project.layout.buildDirectory}/libs/sentry-compose-helper-jvm-$version.jar"))
+    add("embeddedJar", project.layout.buildDirectory.file("libs/sentry-compose-helper-jvm-$version.jar").get().asFile)
 }
 
 buildConfig {
