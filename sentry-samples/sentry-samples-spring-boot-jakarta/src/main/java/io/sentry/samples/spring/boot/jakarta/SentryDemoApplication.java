@@ -1,7 +1,5 @@
 package io.sentry.samples.spring.boot.jakarta;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.trace.Tracer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -61,9 +59,4 @@ public class SentryDemoApplication {
   //    trigger.setCronExpression("0 0/5 * ? * *"); // every five minutes
   //    return trigger;
   //  }
-
-  @Bean
-  public Tracer otelTracer() {
-    return GlobalOpenTelemetry.getTracer("demoTracer");
-  }
 }

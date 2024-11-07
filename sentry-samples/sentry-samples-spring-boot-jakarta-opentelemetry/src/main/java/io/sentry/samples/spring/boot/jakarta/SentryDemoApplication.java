@@ -1,5 +1,7 @@
 package io.sentry.samples.spring.boot.jakarta;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Tracer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -66,4 +68,9 @@ public class SentryDemoApplication {
   //    return openTelemetry.getTracer("tracerForSpringBootDemo");
   ////    return GlobalOpenTelemetry.getTracer("tracerForSpringBootDemo");
   //  }
+
+  @Bean
+  public Tracer tracer() {
+    return GlobalOpenTelemetry.get().getTracer("tracerForSpringBootDemo");
+  }
 }

@@ -61,6 +61,7 @@ apiValidation {
             "sentry-samples-spring-boot",
             "sentry-samples-spring-boot-jakarta",
             "sentry-samples-spring-boot-jakarta-opentelemetry",
+            "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-spring-boot-webflux-jakarta",
             "sentry-uitest-android",
