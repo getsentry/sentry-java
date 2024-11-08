@@ -16,7 +16,8 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentryId implements JsonSerializable {
 
-  public static final SentryId EMPTY_ID = new SentryId(StringUtils.PROPER_NIL_UUID);
+  public static final SentryId EMPTY_ID =
+      new SentryId(StringUtils.PROPER_NIL_UUID.replace("-", ""));
 
   private final @NotNull LazyEvaluator<String> lazyStringValue;
 
@@ -41,7 +42,11 @@ public final class SentryId implements JsonSerializable {
               + "or 36 characters long (completed UUID). Received: "
               + sentryIdString);
     }
-    this.lazyStringValue = new LazyEvaluator<>(() -> normalized);
+    if (normalized.length() == 36) {
+      this.lazyStringValue = new LazyEvaluator<>(() -> normalize(normalized));
+    } else {
+      this.lazyStringValue = new LazyEvaluator<>(() -> normalized);
+    }
   }
 
   @Override
