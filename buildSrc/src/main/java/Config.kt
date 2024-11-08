@@ -33,11 +33,7 @@ object Config {
     object Android {
         private val sdkVersion = 34
 
-        val minSdkVersion = 19
-        val minSdkVersionOkHttp = 21
-        val minSdkVersionReplay = 19
-        val minSdkVersionNdk = 19
-        val minSdkVersionCompose = 21
+        val minSdkVersion = 21
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
 
@@ -155,6 +151,8 @@ object Config {
         val composeCoil = "io.coil-kt:coil-compose:2.0.0"
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
+
+        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.8"
 
         object OpenTelemetry {
             val otelVersion = "1.41.0"

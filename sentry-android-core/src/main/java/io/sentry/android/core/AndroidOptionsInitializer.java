@@ -212,8 +212,7 @@ final class AndroidOptionsInitializer {
     options.setThreadChecker(AndroidThreadChecker.getInstance());
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
-      options.addPerformanceCollector(
-          new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
+      options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
 
       if (options.isEnablePerformanceV2()) {
         options.addPerformanceCollector(
