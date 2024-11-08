@@ -8,10 +8,9 @@ import io.sentry.ObjectWriter;
 import io.sentry.SentryUUID;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.StringUtils;
+import io.sentry.util.UUIDStringUtils;
 import java.io.IOException;
 import java.util.UUID;
-
-import io.sentry.util.UUIDStringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +26,8 @@ public final class SentryId implements JsonSerializable {
 
   public SentryId(@Nullable UUID uuid) {
     if (uuid != null) {
-      this.lazyStringValue = new LazyEvaluator<>(() -> normalize(UUIDStringUtils.toSentryIdString(uuid)));
+      this.lazyStringValue =
+          new LazyEvaluator<>(() -> normalize(UUIDStringUtils.toSentryIdString(uuid)));
     } else {
       this.lazyStringValue = new LazyEvaluator<>(SentryUUID::generateSentryId);
     }
