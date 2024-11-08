@@ -43,7 +43,7 @@ public final class SentryId implements JsonSerializable {
               + sentryIdString);
     }
     if (normalized.length() == 36) {
-      this.lazyStringValue = new LazyEvaluator<>(() -> normalized.replace("-", ""));
+      this.lazyStringValue = new LazyEvaluator<>(() -> normalize(normalized));
     } else {
       this.lazyStringValue = new LazyEvaluator<>(() -> normalized);
     }
