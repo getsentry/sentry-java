@@ -453,6 +453,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
             String sid = reader.nextStringOrNull();
             if (sid != null && sid.length() == 32) {
               sessionId = sid;
+            } else {
+              logger.log(SentryLevel.ERROR, "%s sid is not valid.", sid);
             }
             break;
           case JsonKeys.DID:
