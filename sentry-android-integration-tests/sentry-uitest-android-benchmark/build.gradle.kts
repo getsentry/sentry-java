@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.uitest.android.benchmark"
-        minSdk = Config.Android.minSdkVersionNdk
+        minSdk = Config.Android.minSdkVersion
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 1
         versionName = "1.0.0"

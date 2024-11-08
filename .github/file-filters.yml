@@ -1,0 +1,12 @@
+# This is used by the action https://github.com/dorny/paths-filter
+
+high_risk_code: &high_risk_code
+  # Transport classes
+  - "sentry/src/main/java/io/sentry/transport/AsyncHttpTransport.java"
+  - "sentry/src/main/java/io/sentry/transport/HttpConnection.java"
+  - "sentry/src/main/java/io/sentry/transport/QueuedThreadPoolExecutor.java"
+  - "sentry/src/main/java/io/sentry/transport/RateLimiter.java"
+  - "sentry-apache-http-client-5/src/main/java/io/sentry/transport/apache/ApacheHttpClientTransport.java"
+
+  # Class used by hybrid SDKs
+  - "sentry-android-core/src/main/java/io/sentry/android/core/InternalSentrySdk.java"

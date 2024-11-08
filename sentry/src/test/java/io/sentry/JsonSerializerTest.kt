@@ -567,7 +567,7 @@ class JsonSerializerTest {
                 mapOf(
                     "trace_id" to "00000000000000000000000000000000",
                     "relative_cpu_end_ms" to null,
-                    "name" to "",
+                    "name" to "unknown",
                     "relative_start_ns" to 1,
                     "relative_end_ns" to null,
                     "id" to "00000000000000000000000000000000",
@@ -576,7 +576,7 @@ class JsonSerializerTest {
                 mapOf(
                     "trace_id" to "00000000000000000000000000000000",
                     "relative_cpu_end_ms" to null,
-                    "name" to "",
+                    "name" to "unknown",
                     "relative_start_ns" to 2,
                     "relative_end_ns" to null,
                     "id" to "00000000000000000000000000000000",

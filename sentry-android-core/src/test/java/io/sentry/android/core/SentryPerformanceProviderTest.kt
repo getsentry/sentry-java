@@ -190,15 +190,6 @@ class SentryPerformanceProviderTest {
     }
 
     @Test
-    fun `when SDK is lower than 21, nothing happens`() {
-        fixture.getSut(sdkVersion = Build.VERSION_CODES.KITKAT) { config ->
-            writeConfig(config)
-        }
-        assertNull(AppStartMetrics.getInstance().appStartProfiler)
-        verify(fixture.logger, never()).log(any(), any())
-    }
-
-    @Test
     fun `when config file is empty, profiler is not started`() {
         fixture.getSut { config ->
             config.createNewFile()

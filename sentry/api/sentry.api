@@ -6011,7 +6011,6 @@ public final class io/sentry/util/InitUtil {
 
 public final class io/sentry/util/IntegrationUtils {
 	public fun <init> ()V
-	public static fun addIntegrationToSdkVersion (Ljava/lang/Class;)V
 	public static fun addIntegrationToSdkVersion (Ljava/lang/String;)V
 }
 
@@ -6025,6 +6024,7 @@ public final class io/sentry/util/JsonSerializationUtils {
 public final class io/sentry/util/LazyEvaluator {
 	public fun <init> (Lio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun getValue ()Ljava/lang/Object;
+	public fun resetValue ()V
 	public fun setValue (Ljava/lang/Object;)V
 }
 
@@ -6141,12 +6141,30 @@ public final class io/sentry/util/PropagationTargetsUtils {
 	public static fun contain (Ljava/util/List;Ljava/net/URI;)Z
 }
 
+public final class io/sentry/util/Random : java/io/Serializable {
+	public fun <init> ()V
+	public fun <init> (J)V
+	public fun nextBoolean ()Z
+	public fun nextBytes ([B)V
+	public fun nextDouble ()D
+	public fun nextFloat ()F
+	public fun nextInt ()I
+	public fun nextInt (I)I
+	public fun nextLong ()J
+	public fun setSeed (J)V
+}
+
 public final class io/sentry/util/SampleRateUtils {
 	public fun <init> ()V
 	public static fun isValidProfilesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;Z)Z
+}
+
+public final class io/sentry/util/SentryRandom {
+	public fun <init> ()V
+	public static fun current ()Lio/sentry/util/Random;
 }
 
 public final class io/sentry/util/SpanUtils {
