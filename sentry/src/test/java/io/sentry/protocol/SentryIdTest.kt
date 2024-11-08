@@ -6,6 +6,7 @@ import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
+import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -42,10 +43,36 @@ class SentryIdTest {
     }
 
     @Test
-    fun `normalizeUUID is only called once`() {
+    fun `normalizeUUID is never called when using empty constructor`() {
         Mockito.mockStatic(StringUtils::class.java).use { utils ->
             utils.`when`<Any> { StringUtils.normalizeUUID(any()) }.thenReturn("00000000000000000000000000000000")
             val sentryId = SentryId()
+            val uuid1 = sentryId.toString()
+            val uuid2 = sentryId.toString()
+
+            assertEquals(uuid1, uuid2)
+            utils.verify({ StringUtils.normalizeUUID(any()) }, times(0))
+        }
+    }
+
+    @Test
+    fun `normalizeUUID is only called once when String is passed to constructor`() {
+        Mockito.mockStatic(StringUtils::class.java).use { utils ->
+            utils.`when`<Any> { StringUtils.normalizeUUID(any()) }.thenReturn("00000000000000000000000000000000")
+            val sentryId = SentryId("00000000000000000000000000000000")
+            val uuid1 = sentryId.toString()
+            val uuid2 = sentryId.toString()
+
+            assertEquals(uuid1, uuid2)
+            utils.verify({ StringUtils.normalizeUUID(any()) }, times(1))
+        }
+    }
+
+    @Test
+    fun `normalizeUUID is only called once when UUID is passed to constructor`() {
+        Mockito.mockStatic(StringUtils::class.java).use { utils ->
+            utils.`when`<Any> { StringUtils.normalizeUUID(any()) }.thenReturn("00000000000000000000000000000000")
+            val sentryId = SentryId(UUID.randomUUID())
             val uuid1 = sentryId.toString()
             val uuid2 = sentryId.toString()
 

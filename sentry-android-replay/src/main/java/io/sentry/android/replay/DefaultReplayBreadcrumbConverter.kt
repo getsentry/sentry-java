@@ -12,14 +12,14 @@ import kotlin.LazyThreadSafetyMode.NONE
 public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
     internal companion object {
         private val snakecasePattern by lazy(NONE) { "_[a-z]".toRegex() }
-        private val supportedNetworkData = setOf(
-            "status_code",
-            "method",
-            "response_content_length",
-            "request_content_length",
-            "http.response_content_length",
-            "http.request_content_length"
-        )
+        private val supportedNetworkData = HashSet<String>().apply {
+            add("status_code")
+            add("method")
+            add("response_content_length")
+            add("request_content_length")
+            add("http.response_content_length")
+            add("http.request_content_length")
+        }
     }
 
     private var lastConnectivityState: String? = null

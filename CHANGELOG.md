@@ -7,6 +7,8 @@
 - Use String instead of UUID for SessionId ([#3834](https://github.com/getsentry/sentry-java/pull/3834))
   - The `Session` constructor now takes a `String` instead of a `UUID` for the `sessionId` parameter.
   - `Session.getSessionId()` now returns a `String` instead of a `UUID`.
+- The Android minSdk level for all Android modules is now 21 ([#3852](https://github.com/getsentry/sentry-java/pull/3852))
+- The minSdk level for sentry-android-ndk changed from 19 to 21 ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
 
 ### Features
 
@@ -17,11 +19,22 @@
 - Faster generation of Sentry and Span IDs ([#3818](https://github.com/getsentry/sentry-java/pull/3818))
   - Uses faster implementation to convert UUID to SentryID String
   - Uses faster Random implementation to generate UUIDs
+- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
+- Android 15: Add support for 16KB page sizes ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
+  - See https://developer.android.com/guide/practices/page-sizes for more details
 
 ### Fixes
 
 - Add `auto.graphql.graphql22` to ignored span origins when using OpenTelemetry ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
 - The Spring Boot 3 WebFlux sample now uses our GraphQL v22 integration ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
+- Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
+
+
+### Dependencies
+
+- Bump Native SDK from v0.7.5 to v0.7.8 ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
+    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#078)
+    - [diff](https://github.com/getsentry/sentry-native/compare/0.7.5...0.7.8)
 
 ### Behavioural Changes
 
@@ -271,6 +284,48 @@ You may also use `LifecycleHelper.close(token)`, e.g. in case you need to pass t
 
 - Report exceptions returned by Throwable.getSuppressed() to Sentry as exception groups ([#3396] https://github.com/getsentry/sentry-java/pull/3396)
 
+
+## 7.16.0
+
+### Features
+
+- Add meta option to attach ANR thread dumps ([#3791](https://github.com/getsentry/sentry-java/pull/3791))
+
+### Fixes
+
+- Cache parsed Dsn ([#3796](https://github.com/getsentry/sentry-java/pull/3796))
+- fix invalid profiles when the transaction name is empty ([#3747](https://github.com/getsentry/sentry-java/pull/3747))
+- Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
+- Vendor `java.util.Random` and replace `java.security.SecureRandom` usages ([#3783](https://github.com/getsentry/sentry-java/pull/3783))
+- Fix potential ANRs due to NDK scope sync ([#3754](https://github.com/getsentry/sentry-java/pull/3754))
+- Fix potential ANRs due to NDK System.loadLibrary calls ([#3670](https://github.com/getsentry/sentry-java/pull/3670))
+- Fix slow `Log` calls on app startup ([#3793](https://github.com/getsentry/sentry-java/pull/3793))
+- Fix slow Integration name parsing ([#3794](https://github.com/getsentry/sentry-java/pull/3794))
+- Session Replay: Reduce startup and capture overhead ([#3799](https://github.com/getsentry/sentry-java/pull/3799))
+- Load lazy fields on init in the background ([#3803](https://github.com/getsentry/sentry-java/pull/3803))
+- Replace setOf with HashSet.add ([#3801](https://github.com/getsentry/sentry-java/pull/3801))
+
+### Breaking changes
+
+- The method `addIntegrationToSdkVersion(Ljava/lang/Class;)V` has been removed from the core (`io.sentry:sentry`) package. Please make sure all of the packages (e.g. `io.sentry:sentry-android-core`, `io.sentry:sentry-android-fragment`, `io.sentry:sentry-okhttp`  and others) are all aligned and using the same version to prevent the `NoSuchMethodError` exception.
+
+## 7.16.0-alpha.1
+
+### Features
+
+- Add meta option to attach ANR thread dumps ([#3791](https://github.com/getsentry/sentry-java/pull/3791))
+
+### Fixes
+
+- Cache parsed Dsn ([#3796](https://github.com/getsentry/sentry-java/pull/3796))
+- fix invalid profiles when the transaction name is empty ([#3747](https://github.com/getsentry/sentry-java/pull/3747))
+- Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
+- Vendor `java.util.Random` and replace `java.security.SecureRandom` usages ([#3783](https://github.com/getsentry/sentry-java/pull/3783))
+- Fix potential ANRs due to NDK scope sync ([#3754](https://github.com/getsentry/sentry-java/pull/3754))
+- Fix potential ANRs due to NDK System.loadLibrary calls ([#3670](https://github.com/getsentry/sentry-java/pull/3670))
+- Fix slow `Log` calls on app startup ([#3793](https://github.com/getsentry/sentry-java/pull/3793))
+- Fix slow Integration name parsing ([#3794](https://github.com/getsentry/sentry-java/pull/3794))
+- Session Replay: Reduce startup and capture overhead ([#3799](https://github.com/getsentry/sentry-java/pull/3799))
 
 ## 7.15.0
 
