@@ -21,8 +21,8 @@ private const val TRACE_ORIGIN = "auto.ui.fragment"
 @Suppress("TooManyFunctions")
 public class SentryFragmentLifecycleCallbacks(
     private val hub: IHub = HubAdapter.getInstance(),
-    private val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
-    private val enableAutoFragmentLifecycleTracing: Boolean
+    internal val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
+    internal val enableAutoFragmentLifecycleTracing: Boolean
 ) : FragmentLifecycleCallbacks() {
 
     public constructor(

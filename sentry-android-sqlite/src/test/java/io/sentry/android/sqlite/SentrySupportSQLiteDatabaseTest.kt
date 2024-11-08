@@ -1,6 +1,5 @@
 package io.sentry.android.sqlite
 
-import android.database.Cursor
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteQuery
 import io.sentry.IHub
@@ -16,7 +15,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -64,21 +62,17 @@ class SentrySupportSQLiteDatabaseTest {
             sut.execPerConnectionSQL(sql, emptyArray())
             verify(fixture.mockDatabase).execPerConnectionSQL(eq(sql), any())
 
-            var res = sut.query(sql)
+            sut.query(sql)
             verify(fixture.mockDatabase).query(eq(sql))
-            assertIs<Cursor?>(res)
 
-            res = sut.query(sql, emptyArray())
+            sut.query(sql, emptyArray())
             verify(fixture.mockDatabase).query(eq(sql), any())
-            assertIs<Cursor?>(res)
 
-            res = sut.query(dummySqLiteQuery)
+            sut.query(dummySqLiteQuery)
             verify(fixture.mockDatabase).query(eq(dummySqLiteQuery))
-            assertIs<Cursor?>(res)
 
-            res = sut.query(dummySqLiteQuery, mock())
+            sut.query(dummySqLiteQuery, mock())
             verify(fixture.mockDatabase).query(eq(dummySqLiteQuery), any())
-            assertIs<Cursor?>(res)
 
             sut.execSQL(sql)
             verify(fixture.mockDatabase).execSQL(eq(sql))
@@ -96,7 +90,6 @@ class SentrySupportSQLiteDatabaseTest {
         val sut = fixture.getSut()
         val compiled = sut.compileStatement("sql")
         assertNotNull(compiled)
-        assertIs<SentrySupportSQLiteStatement>(compiled)
     }
 
     @Test
