@@ -165,7 +165,7 @@ class CacheStrategyTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
             2,
             "123",
-            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
+            "c81d4e2ebcf211e6869b7df92533d2db",
             init,
             123456.toLong(),
             6000.toDouble(),
