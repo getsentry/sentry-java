@@ -234,6 +234,31 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads anr attach thread dump to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ANR_ATTACH_THREAD_DUMPS to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(true, fixture.options.isAttachAnrThreadDump)
+    }
+
+    @Test
+    fun `applyMetadata reads anr attach thread dump to options and keeps default`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(false, fixture.options.isAttachAnrThreadDump)
+    }
+
+    @Test
     fun `applyMetadata reads activity breadcrumbs to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE to false)
@@ -1185,14 +1210,14 @@ class ManifestMetadataReaderTest {
     @Test
     fun `applyMetadata reads performance-v2 flag to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.ENABLE_PERFORMANCE_V2 to true)
+        val bundle = bundleOf(ManifestMetadataReader.ENABLE_PERFORMANCE_V2 to false)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.isEnablePerformanceV2)
+        assertFalse(fixture.options.isEnablePerformanceV2)
     }
 
     @Test
@@ -1204,7 +1229,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertFalse(fixture.options.isEnablePerformanceV2)
+        assertTrue(fixture.options.isEnablePerformanceV2)
     }
 
     @Test
@@ -1351,5 +1376,30 @@ class ManifestMetadataReaderTest {
         // Assert
         assertTrue(fixture.options.experimental.sessionReplay.maskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
         assertTrue(fixture.options.experimental.sessionReplay.maskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+    }
+
+    @Test
+    fun `applyMetadata reads integers even when expecting floats`() {
+        // Arrange
+        val expectedSampleRate: Int = 1
+
+        val bundle = bundleOf(
+            ManifestMetadataReader.SAMPLE_RATE to expectedSampleRate,
+            ManifestMetadataReader.TRACES_SAMPLE_RATE to expectedSampleRate,
+            ManifestMetadataReader.PROFILES_SAMPLE_RATE to expectedSampleRate,
+            ManifestMetadataReader.REPLAYS_SESSION_SAMPLE_RATE to expectedSampleRate,
+            ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to expectedSampleRate
+        )
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.tracesSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.profilesSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.sessionSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
     }
 }

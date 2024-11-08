@@ -122,7 +122,7 @@ public final class ActivityLifecycleIntegration
 
     application.registerActivityLifecycleCallbacks(this);
     this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
-    addIntegrationToSdkVersion(getClass());
+    addIntegrationToSdkVersion("ActivityLifecycle");
   }
 
   private boolean isPerformanceEnabled(final @NotNull SentryAndroidOptions options) {
@@ -661,16 +661,17 @@ public final class ActivityLifecycleIntegration
       lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
     }
     if (!firstActivityCreated) {
+      final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
       // if Activity has savedInstanceState then its a warm start
       // https://developer.android.com/topic/performance/vitals/launch-time#warm
       // SentryPerformanceProvider sets this already
       // pre-performance-v2: back-fill with best guess
-      if (options != null && !options.isEnablePerformanceV2()) {
-        AppStartMetrics.getInstance()
-            .setAppStartType(
-                savedInstanceState == null
-                    ? AppStartMetrics.AppStartType.COLD
-                    : AppStartMetrics.AppStartType.WARM);
+      if ((options != null && !options.isEnablePerformanceV2())
+          || appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.UNKNOWN) {
+        appStartMetrics.setAppStartType(
+            savedInstanceState == null
+                ? AppStartMetrics.AppStartType.COLD
+                : AppStartMetrics.AppStartType.WARM);
       }
     }
   }

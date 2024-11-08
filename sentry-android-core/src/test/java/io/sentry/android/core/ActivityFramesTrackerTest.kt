@@ -30,6 +30,11 @@ class ActivityFramesTrackerTest {
         val handler = mock<MainLooperHandler>()
         val options = SentryAndroidOptions()
 
+        init {
+            // ActivityFramesTracker is used only if performanceV2 is disabled
+            options.isEnablePerformanceV2 = false
+        }
+
         fun getSut(mockAggregator: Boolean = true): ActivityFramesTracker {
             return if (mockAggregator) {
                 ActivityFramesTracker(loadClass, options, handler, aggregator)
