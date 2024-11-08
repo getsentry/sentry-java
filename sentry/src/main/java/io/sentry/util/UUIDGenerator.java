@@ -25,7 +25,6 @@
 
 package io.sentry.util;
 
-import java.util.Random;
 import java.util.UUID;
 
 /**
@@ -36,7 +35,7 @@ public final class UUIDGenerator {
 
   @SuppressWarnings("NarrowingCompoundAssignment")
   public static long randomHalfLengthUUID() {
-    Random random = Holder.numberGenerator;
+    Random random = SentryRandom.current();
     byte[] randomBytes = new byte[8];
     random.nextBytes(randomBytes);
     randomBytes[6] &= 0x0f; /* clear version        */
@@ -51,7 +50,7 @@ public final class UUIDGenerator {
 
   @SuppressWarnings("NarrowingCompoundAssignment")
   public static UUID randomUUID() {
-    Random random = Holder.numberGenerator;
+    Random random = SentryRandom.current();
     byte[] randomBytes = new byte[16];
     random.nextBytes(randomBytes);
     randomBytes[6] &= 0x0f; /* clear version        */
@@ -67,11 +66,5 @@ public final class UUIDGenerator {
     for (int i = 8; i < 16; i++) lsb = (lsb << 8) | (randomBytes[i] & 0xff);
 
     return new UUID(msb, lsb);
-  }
-
-  private static class Holder {
-    static final Random numberGenerator = new Random();
-
-    private Holder() {}
   }
 }
