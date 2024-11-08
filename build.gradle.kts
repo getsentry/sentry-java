@@ -51,6 +51,7 @@ apiValidation {
         listOf(
             "sentry-samples-android",
             "sentry-samples-console",
+            "sentry-samples-console-opentelemetry-noagent",
             "sentry-samples-jul",
             "sentry-samples-log4j2",
             "sentry-samples-logback",

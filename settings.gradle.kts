@@ -52,6 +52,7 @@ include(
     "sentry-okhttp",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
+    "sentry-samples:sentry-samples-console-opentelemetry-noagent",
     "sentry-samples:sentry-samples-jul",
     "sentry-samples:sentry-samples-log4j2",
     "sentry-samples:sentry-samples-logback",

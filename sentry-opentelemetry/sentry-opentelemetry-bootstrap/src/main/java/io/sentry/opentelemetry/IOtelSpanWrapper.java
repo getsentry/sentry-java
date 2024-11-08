@@ -1,5 +1,6 @@
 package io.sentry.opentelemetry;
 
+import io.opentelemetry.context.Context;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.protocol.MeasurementValue;
@@ -43,4 +44,7 @@ public interface IOtelSpanWrapper extends ISpan {
   @ApiStatus.Internal
   @NotNull
   Map<String, String> getTags();
+
+  @NotNull
+  Context storeInContext(Context context);
 }

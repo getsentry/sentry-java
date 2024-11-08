@@ -100,7 +100,7 @@ public final class OtelSpanFactory implements ISpanFactory {
                 TraceFlags.getSampled(),
                 TraceState.getDefault());
         final @NotNull Span wrappedSpan = Span.wrap(otelSpanContext);
-        spanBuilder.setParent(Context.root().with(wrappedSpan));
+        spanBuilder.setParent(wrappedSpan.storeInContext(Context.current()));
       } else {
         final @NotNull io.opentelemetry.api.trace.SpanContext otelSpanContext =
             io.opentelemetry.api.trace.SpanContext.createFromRemoteParent(
@@ -109,7 +109,12 @@ public final class OtelSpanFactory implements ISpanFactory {
                 TraceFlags.getSampled(),
                 TraceState.getDefault());
         final @NotNull Span wrappedSpan = Span.wrap(otelSpanContext);
-        spanBuilder.setParent(Context.root().with(wrappedSpan));
+        spanBuilder.setParent(wrappedSpan.storeInContext(Context.current()));
+      }
+    } else {
+      if (parentSpan instanceof IOtelSpanWrapper) {
+        IOtelSpanWrapper parentSpanWrapper = (IOtelSpanWrapper) parentSpan;
+        spanBuilder.setParent(parentSpanWrapper.storeInContext(Context.current()));
       }
     }
 

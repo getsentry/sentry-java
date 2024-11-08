@@ -1,6 +1,7 @@
 package io.sentry.opentelemetry;
 
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.sentry.Baggage;
@@ -466,6 +467,16 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   @ApiStatus.Internal
   public @NotNull IScopes getScopes() {
     return scopes;
+  }
+
+  @Override
+  public @NotNull Context storeInContext(Context context) {
+    final @Nullable ReadWriteSpan otelSpan = getSpan();
+    if (otelSpan != null) {
+      return otelSpan.storeInContext(context);
+    } else {
+      return context;
+    }
   }
 
   @SuppressWarnings("MustBeClosedChecker")
