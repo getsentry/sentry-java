@@ -264,7 +264,11 @@ public final class Sentry {
    * @param options options the SentryOptions
    * @param globalHubMode the globalHubMode
    */
-  @SuppressWarnings("deprecation")
+  @SuppressWarnings({
+    "deprecation",
+    "Convert2MethodRef",
+    "FutureReturnValueIgnored"
+  }) // older AGP versions do not support method references
   private static void init(final @NotNull SentryOptions options, final boolean globalHubMode) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (!options.getClass().getName().equals("io.sentry.android.core.SentryAndroidOptions")
@@ -294,6 +298,18 @@ public final class Sentry {
               .log(
                   SentryLevel.WARNING,
                   "Sentry has been already initialized. Previous configuration will be overwritten.");
+        }
+
+        // load lazy fields of the options in a separate thread
+        try {
+          options.getExecutorService().submit(() -> options.loadLazyFields());
+        } catch (RejectedExecutionException e) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Failed to call the executor. Lazy fields will not be loaded. Did you call Sentry.close()?",
+                  e);
         }
 
         final IScopes scopes = getCurrentScopes();
@@ -458,8 +474,8 @@ public final class Sentry {
           "DSN is required. Use empty string or set enabled to false in SentryOptions to disable SDK.");
     }
 
-    @SuppressWarnings("unused")
-    final Dsn parsedDsn = new Dsn(dsn);
+    // This creates the DSN object and performs some checks
+    options.getParsedDsn();
 
     return true;
   }

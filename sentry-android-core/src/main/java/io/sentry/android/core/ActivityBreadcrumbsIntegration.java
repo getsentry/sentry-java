@@ -50,7 +50,7 @@ public final class ActivityBreadcrumbsIntegration
     if (enabled) {
       application.registerActivityLifecycleCallbacks(this);
       options.getLogger().log(SentryLevel.DEBUG, "ActivityBreadcrumbIntegration installed.");
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("ActivityBreadcrumbs");
     }
   }
 

@@ -27,7 +27,8 @@ public final class LazyEvaluator<T> {
   }
 
   /**
-   * Executes the evaluator function and caches its result, so that it's called only once.
+   * Executes the evaluator function and caches its result, so that it's called only once, unless
+   * resetValue is called.
    *
    * @return The result of the evaluator function.
    */
@@ -47,6 +48,16 @@ public final class LazyEvaluator<T> {
   public void setValue(final @Nullable T value) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       this.value = value;
+    }
+  }
+
+  /**
+   * Resets the internal value and forces the evaluator function to be called the next time
+   * getValue() is called.
+   */
+  public void resetValue() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      this.value = null;
     }
   }
 

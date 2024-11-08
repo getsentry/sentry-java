@@ -96,7 +96,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
                               context, logger, buildInfoProvider, networkCallback);
                       if (registered) {
                         logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration installed.");
-                        addIntegrationToSdkVersion(getClass());
+                        addIntegrationToSdkVersion("NetworkBreadcrumbs");
                       } else {
                         logger.log(
                             SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration not installed.");
