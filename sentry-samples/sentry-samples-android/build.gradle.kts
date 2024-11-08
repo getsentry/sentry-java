@@ -33,6 +33,20 @@ android {
         }
     }
 
+    lint {
+        disable.addAll(
+            listOf(
+                "Typos",
+                "PluralsCandidate",
+                "MonochromeLauncherIcon",
+                "TextFields",
+                "ContentDescription",
+                "LabelFor",
+                "HardcodedText"
+            )
+        )
+    }
+
     buildFeatures {
         // Determines whether to support View Binding.
         // Note that the viewBinding.enabled property is now deprecated.
