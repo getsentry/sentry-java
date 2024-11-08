@@ -19,6 +19,13 @@ class SentryIdTest {
     }
 
     @Test
+    fun `dashes are stripped if initialized with 36char uuid string`() {
+        val uuidString = UUID.randomUUID().toString()
+        val id = SentryId(uuidString)
+        assertEquals(uuidString.replace("-", ""), id.toString())
+    }
+
+    @Test
     fun `UUID is not generated on initialization`() {
         val uuid = SentryUUID.generateSentryId()
         Mockito.mockStatic(SentryUUID::class.java).use { utils ->
