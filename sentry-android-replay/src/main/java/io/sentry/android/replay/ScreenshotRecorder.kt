@@ -17,6 +17,9 @@ import android.view.PixelCopy
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.WindowManager
+import io.sentry.DataCategory.All
+import io.sentry.DataCategory.Replay
+import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryLevel.WARNING
@@ -30,12 +33,12 @@ import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
+import io.sentry.transport.RateLimiter
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.LazyThreadSafetyMode.NONE
 import kotlin.math.roundToInt
 
@@ -44,14 +47,14 @@ internal class ScreenshotRecorder(
     val config: ScreenshotRecorderConfig,
     val options: SentryOptions,
     val mainLooperHandler: MainLooperHandler,
-    private val screenshotRecorderCallback: ScreenshotRecorderCallback?
+    private val screenshotRecorderCallback: ScreenshotRecorderCallback?,
+    private val rateLimiter: RateLimiter?
 ) : ViewTreeObserver.OnDrawListener {
 
     private val recorder by lazy {
         Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
     }
     private var rootView: WeakReference<View>? = null
-    private val pendingViewHierarchy = AtomicReference<ViewHierarchyNode>()
     private val maskingPaint by lazy(NONE) { Paint() }
     private val singlePixelBitmap: Bitmap by lazy(NONE) {
         Bitmap.createBitmap(
@@ -69,10 +72,21 @@ internal class ScreenshotRecorder(
     private val contentChanged = AtomicBoolean(false)
     private val isCapturing = AtomicBoolean(true)
     private var lastScreenshot: Bitmap? = null
+    internal val isSession = AtomicBoolean(false)
 
     fun capture() {
         if (!isCapturing.get()) {
             options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
+            return
+        }
+
+        if (isSession.get() && options.connectionStatusProvider.connectionStatus == DISCONNECTED) {
+            options.logger.log(DEBUG, "Skipping screenshot recording, no internet connection")
+            return
+        }
+
+        if (isSession.get() && (rateLimiter?.isActiveForCategory(All) == true || rateLimiter?.isActiveForCategory(Replay) == true)) {
+            options.logger.log(DEBUG, "Skipping screenshot recording, rate limit is active")
             return
         }
 
@@ -230,7 +244,6 @@ internal class ScreenshotRecorder(
         unbind(rootView?.get())
         rootView?.clear()
         lastScreenshot?.recycle()
-        pendingViewHierarchy.set(null)
         isCapturing.set(false)
         recorder.gracefullyShutdown(options)
     }

@@ -75,17 +75,6 @@ internal class SessionCaptureStrategy(
     }
 
     override fun onScreenshotRecorded(bitmap: Bitmap?, store: ReplayCache.(frameTimestamp: Long) -> Unit) {
-        if (options.connectionStatusProvider.connectionStatus == DISCONNECTED) {
-            options.logger.log(DEBUG, "Skipping screenshot recording, no internet connection")
-            bitmap?.recycle()
-            return
-        }
-        val rateLimiter = hub?.rateLimiter
-        if (rateLimiter?.isActiveForCategory(All) == true || rateLimiter?.isActiveForCategory(Replay) == true) {
-            options.logger.log(DEBUG, "Skipping screenshot recording, rate limit is active")
-            bitmap?.recycle()
-            return
-        }
         // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
         // reflecting the exact time of when it was captured
         val frameTimestamp = dateProvider.currentTimeMillis

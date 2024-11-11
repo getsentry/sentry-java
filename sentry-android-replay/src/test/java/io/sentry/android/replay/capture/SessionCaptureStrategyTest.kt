@@ -372,18 +372,4 @@ class SessionCaptureStrategyTest {
                 "the current replay cache folder is not being deleted."
         )
     }
-
-    @Test
-    fun `when rate limited does not capture screenshots`() {
-        val strategy = fixture.getSut()
-
-        whenever(fixture.hub.rateLimiter?.isActiveForCategory(eq(DataCategory.Replay))).thenReturn(true)
-
-        strategy.start(fixture.recorderConfig)
-        var called = false
-        strategy.onScreenshotRecorded(mock<Bitmap>()) {
-            called = true
-        }
-        assertFalse(called)
-    }
 }

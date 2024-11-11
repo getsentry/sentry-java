@@ -15,4 +15,6 @@ interface Recorder : Closeable {
     fun pause()
 
     fun stop()
+
+    fun setReplayStrategy(isSession: Boolean) = Unit
 }

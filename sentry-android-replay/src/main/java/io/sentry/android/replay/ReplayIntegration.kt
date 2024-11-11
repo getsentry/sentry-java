@@ -109,7 +109,7 @@ public class ReplayIntegration(
         }
 
         this.hub = hub
-        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, mainLooperHandler)
+        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, mainLooperHandler, hub.rateLimiter)
         gestureRecorder = gestureRecorderProvider?.invoke() ?: GestureRecorder(options, this)
         isEnabled.set(true)
 
@@ -157,6 +157,10 @@ public class ReplayIntegration(
 
         captureStrategy?.start(recorderConfig)
         recorder?.start(recorderConfig)
+        // TODO: move this here
+        // TODO: add 2 listeners here: OnRateLimit(category, applied) and OnConnectionChanged(connected)
+        // TODO: when they are fired, call either recorder?.resume() + strategy.resume() or recorder?.pause() + strategy.pause()
+        recorder?.setReplayStrategy(captureStrategy is SessionCaptureStrategy)
         registerRootViewListeners()
     }
 
@@ -184,6 +188,7 @@ public class ReplayIntegration(
             captureStrategy?.segmentTimestamp = newTimestamp
         })
         captureStrategy = captureStrategy?.convert()
+        recorder?.setReplayStrategy(captureStrategy is SessionCaptureStrategy)
     }
 
     override fun getReplayId(): SentryId = captureStrategy?.currentReplayId ?: SentryId.EMPTY_ID
