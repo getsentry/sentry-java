@@ -12,3 +12,7 @@ target_link_libraries(native-sample PRIVATE
     sentry-native-ndk::sentry-android
     sentry-native-ndk::sentry
 )
+
+# Android 15: Support 16KB page sizes
+# see https://developer.android.com/guide/practices/page-sizes
+target_link_options(native-sample PRIVATE "-Wl,-z,max-page-size=16384")

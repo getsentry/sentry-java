@@ -38,4 +38,18 @@ class LazyEvaluatorTest {
         assertEquals(1, evaluator.value)
         assertEquals(1, fixture.count)
     }
+
+    @Test
+    fun `evaluates again after resetValue`() {
+        val evaluator = fixture.getSut()
+        assertEquals(0, fixture.count)
+        assertEquals(1, evaluator.value)
+        assertEquals(1, evaluator.value)
+        assertEquals(1, fixture.count)
+        // Evaluate again, only once
+        evaluator.resetValue()
+        assertEquals(2, evaluator.value)
+        assertEquals(2, evaluator.value)
+        assertEquals(2, fixture.count)
+    }
 }
