@@ -9,6 +9,7 @@
   - `Session.getSessionId()` now returns a `String` instead of a `UUID`.
 - The Android minSdk level for all Android modules is now 21 ([#3852](https://github.com/getsentry/sentry-java/pull/3852))
 - The minSdk level for sentry-android-ndk changed from 19 to 21 ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
+- All status codes below 400 are now mapped to `SpanStatus.OK` ([#3869](https://github.com/getsentry/sentry-java/pull/3869))
 
 ### Features
 
@@ -48,6 +49,7 @@
 - Add `auto.graphql.graphql22` to ignored span origins when using OpenTelemetry ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
 - The Spring Boot 3 WebFlux sample now uses our GraphQL v22 integration ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
 - Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
+- All status codes below 400 are now mapped to `SpanStatus.OK` ([#3869](https://github.com/getsentry/sentry-java/pull/3869))
 
 
 ### Dependencies

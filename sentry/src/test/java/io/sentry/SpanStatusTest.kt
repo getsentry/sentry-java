@@ -22,13 +22,18 @@ class SpanStatusTest {
     }
 
     @Test
+    fun `code 3xx is now also considered OK`() {
+        assertEquals(SpanStatus.OK, SpanStatus.fromHttpStatusCode(304))
+    }
+
+    @Test
     fun `returns null when no SpanStatus matches specific code`() {
-        assertNull(SpanStatus.fromHttpStatusCode(302))
+        assertNull(SpanStatus.fromHttpStatusCode(599))
     }
 
     @Test
     fun `returns default value when no SpanStatus matches specific code`() {
-        assertEquals(SpanStatus.UNKNOWN_ERROR, SpanStatus.fromHttpStatusCode(302, SpanStatus.UNKNOWN_ERROR))
+        assertEquals(SpanStatus.UNKNOWN_ERROR, SpanStatus.fromHttpStatusCode(599, SpanStatus.UNKNOWN_ERROR))
     }
 
     @Test
