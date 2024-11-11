@@ -18,8 +18,8 @@ import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
+import io.sentry.util.Random
 import java.io.File
-import java.security.SecureRandom
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
 
@@ -27,7 +27,7 @@ internal class BufferCaptureStrategy(
     private val options: SentryOptions,
     private val scopes: IScopes?,
     private val dateProvider: ICurrentDateProvider,
-    private val random: SecureRandom,
+    private val random: Random,
     executor: ScheduledExecutorService? = null,
     replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
 ) : BaseCaptureStrategy(options, scopes, dateProvider, executor = executor, replayCacheProvider = replayCacheProvider) {

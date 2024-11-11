@@ -127,8 +127,10 @@ class SdkInitTests : BaseUiTest() {
 
         Sentry.startTransaction("afterRestart", "emptyTransaction").finish()
         // We assert for less than 1 second just to account for slow devices in saucelabs or headless emulator
-        // TODO: Revert back to 1000ms after making scope.close() faster again
-        assertTrue(restartMs < 2500, "Expected less than 2500 ms for SDK restart. Got $restartMs ms")
+        assertTrue(
+            restartMs < 1000,
+            "Expected less than 1000 ms for SDK restart. Got $restartMs ms"
+        )
 
         relay.assert {
             findEnvelope {

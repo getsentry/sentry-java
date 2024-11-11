@@ -98,7 +98,6 @@ class AndroidOptionsInitializerTest {
         }
 
         fun initSutWithClassLoader(
-            minApi: Int = Build.VERSION_CODES.KITKAT,
             classesToLoad: List<String> = emptyList(),
             isFragmentAvailable: Boolean = false,
             isTimberAvailable: Boolean = false,
@@ -111,7 +110,7 @@ class AndroidOptionsInitializerTest {
                 }
             )
             sentryOptions.isDebug = true
-            val buildInfo = createBuildInfo(minApi)
+            val buildInfo = createBuildInfo()
             val loadClass = createClassMock(classesToLoad)
             val activityFramesTracker = ActivityFramesTracker(loadClass, sentryOptions)
 
@@ -142,9 +141,9 @@ class AndroidOptionsInitializerTest {
             )
         }
 
-        private fun createBuildInfo(minApi: Int): BuildInfoProvider {
+        private fun createBuildInfo(): BuildInfoProvider {
             val buildInfo = mock<BuildInfoProvider>()
-            whenever(buildInfo.sdkInfoVersion).thenReturn(minApi)
+            whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
             return buildInfo
         }
 
