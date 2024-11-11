@@ -40,7 +40,7 @@ class SentryFragmentLifecycleCallbacksTest {
         val span = mock<ISpan>()
 
         fun getSut(
-            loggedFragmentLifecycleStates: Set<FragmentLifecycleState> = FragmentLifecycleState.values().toSet(),
+            loggedFragmentLifecycleStates: Set<FragmentLifecycleState> = FragmentLifecycleState.states,
             enableAutoFragmentLifecycleTracing: Boolean = false,
             tracesSampleRate: Double? = 1.0,
             isAdded: Boolean = true
