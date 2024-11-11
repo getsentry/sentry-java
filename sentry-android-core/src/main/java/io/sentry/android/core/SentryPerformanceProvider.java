@@ -8,7 +8,6 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.os.SystemClock;
@@ -109,11 +108,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
     if (context == null) {
       logger.log(SentryLevel.FATAL, "App. Context from ContentProvider is null");
-      return;
-    }
-
-    // Debug.startMethodTracingSampling() is only available since Lollipop
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
       return;
     }
 
