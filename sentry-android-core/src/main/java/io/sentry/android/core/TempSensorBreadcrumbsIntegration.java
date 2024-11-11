@@ -12,9 +12,11 @@ import android.hardware.SensorManager;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -31,10 +33,11 @@ public final class TempSensorBreadcrumbsIntegration
 
   @TestOnly @Nullable SensorManager sensorManager;
   private boolean isClosed = false;
-  private final @NotNull Object startLock = new Object();
+  private final @NotNull AutoClosableReentrantLock startLock = new AutoClosableReentrantLock();
 
   public TempSensorBreadcrumbsIntegration(final @NotNull Context context) {
-    this.context = Objects.requireNonNull(context, "Context is required");
+    this.context =
+        Objects.requireNonNull(ContextUtils.getApplicationContext(context), "Context is required");
   }
 
   @Override
@@ -59,7 +62,7 @@ public final class TempSensorBreadcrumbsIntegration
             .getExecutorService()
             .submit(
                 () -> {
-                  synchronized (startLock) {
+                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
                     if (!isClosed) {
                       startSensorListener(options);
                     }
@@ -86,7 +89,7 @@ public final class TempSensorBreadcrumbsIntegration
           sensorManager.registerListener(this, defaultSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
           options.getLogger().log(SentryLevel.DEBUG, "TempSensorBreadcrumbsIntegration installed.");
-          addIntegrationToSdkVersion(getClass());
+          addIntegrationToSdkVersion("TempSensorBreadcrumbs");
         } else {
           options.getLogger().log(SentryLevel.INFO, "TYPE_AMBIENT_TEMPERATURE is not available.");
         }
@@ -100,7 +103,7 @@ public final class TempSensorBreadcrumbsIntegration
 
   @Override
   public void close() throws IOException {
-    synchronized (startLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
       isClosed = true;
     }
     if (sensorManager != null) {

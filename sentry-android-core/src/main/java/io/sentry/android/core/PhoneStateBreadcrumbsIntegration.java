@@ -7,10 +7,12 @@ import android.content.Context;
 import android.telephony.TelephonyManager;
 import io.sentry.Breadcrumb;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.Permissions;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -25,10 +27,11 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   @TestOnly @Nullable PhoneStateChangeListener listener;
   private @Nullable TelephonyManager telephonyManager;
   private boolean isClosed = false;
-  private final @NotNull Object startLock = new Object();
+  private final @NotNull AutoClosableReentrantLock startLock = new AutoClosableReentrantLock();
 
   public PhoneStateBreadcrumbsIntegration(final @NotNull Context context) {
-    this.context = Objects.requireNonNull(context, "Context is required");
+    this.context =
+        Objects.requireNonNull(ContextUtils.getApplicationContext(context), "Context is required");
   }
 
   @Override
@@ -53,7 +56,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
             .getExecutorService()
             .submit(
                 () -> {
-                  synchronized (startLock) {
+                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
                     if (!isClosed) {
                       startTelephonyListener(scopes, options);
                     }
@@ -80,7 +83,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
         telephonyManager.listen(listener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
 
         options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
-        addIntegrationToSdkVersion(getClass());
+        addIntegrationToSdkVersion("PhoneStateBreadcrumbs");
       } catch (Throwable e) {
         options
             .getLogger()
@@ -94,7 +97,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   @SuppressWarnings("deprecation")
   @Override
   public void close() throws IOException {
-    synchronized (startLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
       isClosed = true;
     }
     if (telephonyManager != null && listener != null) {

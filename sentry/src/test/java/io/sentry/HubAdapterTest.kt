@@ -234,11 +234,6 @@ class HubAdapterTest {
         verify(scopes).startTransaction(eq(transactionContext), eq(transactionOptions))
     }
 
-    @Test fun `traceHeaders calls Hub`() {
-        HubAdapter.getInstance().traceHeaders()
-        verify(scopes).traceHeaders()
-    }
-
     @Test fun `setSpanContext calls Hub`() {
         val throwable = mock<Throwable>()
         val span = mock<ISpan>()

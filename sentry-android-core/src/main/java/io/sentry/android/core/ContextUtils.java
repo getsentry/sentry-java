@@ -293,16 +293,8 @@ public final class ContextUtils {
     return Settings.Global.getString(context.getContentResolver(), "device_name");
   }
 
-  @SuppressWarnings("deprecation")
-  @SuppressLint("NewApi") // we're wrapping into if-check with sdk version
-  static @NotNull String[] getArchitectures(final @NotNull BuildInfoProvider buildInfoProvider) {
-    final String[] supportedAbis;
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.LOLLIPOP) {
-      supportedAbis = Build.SUPPORTED_ABIS;
-    } else {
-      supportedAbis = new String[] {Build.CPU_ABI, Build.CPU_ABI2};
-    }
-    return supportedAbis;
+  static @NotNull String[] getArchitectures() {
+    return Build.SUPPORTED_ABIS;
   }
 
   /**
@@ -382,5 +374,20 @@ public final class ContextUtils {
       }
     }
     app.setPermissions(permissions);
+  }
+
+  /**
+   * Get the app context
+   *
+   * @return the app context, or if not available, the provided context
+   */
+  @NotNull
+  public static Context getApplicationContext(final @NotNull Context context) {
+    // it returns null if ContextImpl, so let's check for nullability
+    final @Nullable Context appContext = context.getApplicationContext();
+    if (appContext != null) {
+      return appContext;
+    }
+    return context;
   }
 }

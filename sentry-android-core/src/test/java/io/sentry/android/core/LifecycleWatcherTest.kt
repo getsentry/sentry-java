@@ -138,49 +138,6 @@ class LifecycleWatcherTest {
     }
 
     @Test
-    fun `When session tracking is enabled, add breadcrumb on start`() {
-        val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
-        watcher.onStart(fixture.ownerMock)
-        verify(fixture.scopes).addBreadcrumb(
-            check<Breadcrumb> {
-                assertEquals("app.lifecycle", it.category)
-                assertEquals("session", it.type)
-                assertEquals(SentryLevel.INFO, it.level)
-                // cant assert data, its not a public API
-            }
-        )
-    }
-
-    @Test
-    fun `When session tracking is enabled, add breadcrumb on stop`() {
-        val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
-        watcher.onStop(fixture.ownerMock)
-        verify(fixture.scopes, timeout(10000)).endSession()
-        verify(fixture.scopes).addBreadcrumb(
-            check<Breadcrumb> {
-                assertEquals("app.lifecycle", it.category)
-                assertEquals("session", it.type)
-                assertEquals(SentryLevel.INFO, it.level)
-                // cant assert data, its not a public API
-            }
-        )
-    }
-
-    @Test
-    fun `When session tracking is disabled, do not add breadcrumb on start`() {
-        val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
-        watcher.onStart(fixture.ownerMock)
-        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
-    }
-
-    @Test
-    fun `When session tracking is disabled, do not add breadcrumb on stop`() {
-        val watcher = fixture.getSUT(enableAutoSessionTracking = false, enableAppLifecycleBreadcrumbs = false)
-        watcher.onStop(fixture.ownerMock)
-        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
-    }
-
-    @Test
     fun `When app lifecycle breadcrumbs is enabled, add breadcrumb on start`() {
         val watcher = fixture.getSUT(enableAutoSessionTracking = false)
         watcher.onStart(fixture.ownerMock)
@@ -238,7 +195,7 @@ class LifecycleWatcherTest {
                 DateUtils.getCurrentDateTime(),
                 0,
                 "abc",
-                UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
+                "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
                 true,
                 0,
                 10.0,
@@ -265,7 +222,7 @@ class LifecycleWatcherTest {
                 DateUtils.getDateTime(-1),
                 0,
                 "abc",
-                UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
+                "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
                 true,
                 0,
                 10.0,
@@ -306,7 +263,7 @@ class LifecycleWatcherTest {
                 DateUtils.getCurrentDateTime(),
                 0,
                 "abc",
-                UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
+                "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
                 true,
                 0,
                 10.0,

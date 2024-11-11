@@ -6,6 +6,7 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.MeasurementUnit;
 import io.sentry.SentryEvent;
 import io.sentry.SpanContext;
@@ -21,6 +22,7 @@ import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +46,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
 
   private final @NotNull ActivityFramesTracker activityFramesTracker;
   private final @NotNull SentryAndroidOptions options;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   PerformanceAndroidEventProcessor(
       final @NotNull SentryAndroidOptions options,
@@ -71,70 +74,71 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
 
   @SuppressWarnings("NullAway")
   @Override
-  public synchronized @NotNull SentryTransaction process(
+  public @NotNull SentryTransaction process(
       @NotNull SentryTransaction transaction, @NotNull Hint hint) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (!options.isTracingEnabled()) {
+        return transaction;
+      }
 
-    if (!options.isTracingEnabled()) {
-      return transaction;
-    }
+      // the app start measurement is only sent once and only if the transaction has
+      // the app.start span, which is automatically created by the SDK.
+      if (hasAppStartSpan(transaction)) {
+        if (!sentStartMeasurement) {
+          final @NotNull TimeSpan appStartTimeSpan =
+              AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
+          final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
 
-    // the app start measurement is only sent once and only if the transaction has
-    // the app.start span, which is automatically created by the SDK.
-    if (hasAppStartSpan(transaction)) {
-      if (!sentStartMeasurement) {
-        final @NotNull TimeSpan appStartTimeSpan =
-            AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
-        final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
+          // if appStartUpDurationMs is 0, metrics are not ready to be sent
+          if (appStartUpDurationMs != 0) {
+            final MeasurementValue value =
+                new MeasurementValue(
+                    (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
 
-        // if appStartUpDurationMs is 0, metrics are not ready to be sent
-        if (appStartUpDurationMs != 0) {
-          final MeasurementValue value =
-              new MeasurementValue(
-                  (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
+            final String appStartKey =
+                AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
+                    ? MeasurementValue.KEY_APP_START_COLD
+                    : MeasurementValue.KEY_APP_START_WARM;
 
-          final String appStartKey =
-              AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
-                  ? MeasurementValue.KEY_APP_START_COLD
-                  : MeasurementValue.KEY_APP_START_WARM;
+            transaction.getMeasurements().put(appStartKey, value);
 
-          transaction.getMeasurements().put(appStartKey, value);
+            attachColdAppStartSpans(AppStartMetrics.getInstance(), transaction);
+            sentStartMeasurement = true;
+          }
+        }
 
-          attachColdAppStartSpans(AppStartMetrics.getInstance(), transaction);
-          sentStartMeasurement = true;
+        @Nullable App appContext = transaction.getContexts().getApp();
+        if (appContext == null) {
+          appContext = new App();
+          transaction.getContexts().setApp(appContext);
+        }
+        final String appStartType =
+            AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
+                ? "cold"
+                : "warm";
+        appContext.setStartType(appStartType);
+      }
+
+      setContributingFlags(transaction);
+
+      final SentryId eventId = transaction.getEventId();
+      final SpanContext spanContext = transaction.getContexts().getTrace();
+
+      // only add slow/frozen frames to transactions created by ActivityLifecycleIntegration
+      // which have the operation UI_LOAD_OP. If a user-defined (or hybrid SDK) transaction
+      // users it, we'll also add the metrics if available
+      if (eventId != null
+          && spanContext != null
+          && spanContext.getOperation().contentEquals(UI_LOAD_OP)) {
+        final Map<String, @NotNull MeasurementValue> framesMetrics =
+            activityFramesTracker.takeMetrics(eventId);
+        if (framesMetrics != null) {
+          transaction.getMeasurements().putAll(framesMetrics);
         }
       }
 
-      @Nullable App appContext = transaction.getContexts().getApp();
-      if (appContext == null) {
-        appContext = new App();
-        transaction.getContexts().setApp(appContext);
-      }
-      final String appStartType =
-          AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
-              ? "cold"
-              : "warm";
-      appContext.setStartType(appStartType);
+      return transaction;
     }
-
-    setContributingFlags(transaction);
-
-    final SentryId eventId = transaction.getEventId();
-    final SpanContext spanContext = transaction.getContexts().getTrace();
-
-    // only add slow/frozen frames to transactions created by ActivityLifecycleIntegration
-    // which have the operation UI_LOAD_OP. If a user-defined (or hybrid SDK) transaction
-    // users it, we'll also add the metrics if available
-    if (eventId != null
-        && spanContext != null
-        && spanContext.getOperation().contentEquals(UI_LOAD_OP)) {
-      final Map<String, @NotNull MeasurementValue> framesMetrics =
-          activityFramesTracker.takeMetrics(eventId);
-      if (framesMetrics != null) {
-        transaction.getMeasurements().putAll(framesMetrics);
-      }
-    }
-
-    return transaction;
   }
 
   private void setContributingFlags(SentryTransaction transaction) {
@@ -335,7 +339,6 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         APP_METRICS_ORIGIN,
         new ConcurrentHashMap<>(),
         new ConcurrentHashMap<>(),
-        null,
         defaultSpanData);
   }
 

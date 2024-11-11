@@ -14,7 +14,6 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStreamReader
 import java.nio.file.Files
-import java.util.UUID
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -108,13 +107,13 @@ class CacheStrategyTest {
         val files = createTempFilesSortByOldestToNewest()
 
         val okSession = createSessionMockData(Session.State.Ok, true)
-        val okEnvelope = SentryEnvelope.from(sut.serializer, okSession, null)
-        sut.serializer.serialize(okEnvelope, files[0].outputStream())
+        val okEnvelope = SentryEnvelope.from(sut.serializer.value, okSession, null)
+        sut.serializer.value.serialize(okEnvelope, files[0].outputStream())
 
         val updatedOkSession = okSession.clone()
         updatedOkSession.update(null, null, true)
-        val updatedOkEnvelope = SentryEnvelope.from(sut.serializer, updatedOkSession, null)
-        sut.serializer.serialize(updatedOkEnvelope, files[1].outputStream())
+        val updatedOkEnvelope = SentryEnvelope.from(sut.serializer.value, updatedOkSession, null)
+        sut.serializer.value.serialize(updatedOkEnvelope, files[1].outputStream())
 
         saveSessionToFile(files[2], sut, Session.State.Exited, null)
 
@@ -166,7 +165,7 @@ class CacheStrategyTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2ebcf211e6869b7df92533d2db",
             init,
             123456.toLong(),
             6000.toDouble(),
@@ -178,17 +177,17 @@ class CacheStrategyTest {
         )
 
     private fun getSessionFromFile(file: File, sut: CacheStrategy): Session {
-        val envelope = sut.serializer.deserializeEnvelope(file.inputStream())
+        val envelope = sut.serializer.value.deserializeEnvelope(file.inputStream())
         val item = envelope!!.items.first()
 
         val reader = InputStreamReader(ByteArrayInputStream(item.data), Charsets.UTF_8)
-        return sut.serializer.deserialize(reader, Session::class.java)!!
+        return sut.serializer.value.deserialize(reader, Session::class.java)!!
     }
 
     private fun saveSessionToFile(file: File, sut: CacheStrategy, state: Session.State = Session.State.Ok, init: Boolean? = true) {
         val okSession = createSessionMockData(state, init)
-        val okEnvelope = SentryEnvelope.from(sut.serializer, okSession, null)
-        sut.serializer.serialize(okEnvelope, file.outputStream())
+        val okEnvelope = SentryEnvelope.from(sut.serializer.value, okSession, null)
+        sut.serializer.value.serialize(okEnvelope, file.outputStream())
     }
 
     private fun getOptionsWithRealSerializer(): SentryOptions {

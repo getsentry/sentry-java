@@ -14,12 +14,7 @@ public class PersonService {
         .publishOn(Schedulers.boundedElastic())
         .doOnNext(
             __ -> {
-              Sentry.metrics()
-                  .timing(
-                      "person.insert",
-                      () -> {
-                        Sentry.captureMessage("Creating person");
-                      });
+              Sentry.captureMessage("Creating person");
             })
         .map(__ -> person);
   }

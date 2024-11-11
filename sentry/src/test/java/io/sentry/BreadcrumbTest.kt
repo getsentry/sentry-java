@@ -1,5 +1,6 @@
 package io.sentry
 
+import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -21,6 +22,7 @@ class BreadcrumbTest {
         val level = SentryLevel.DEBUG
         breadcrumb.level = level
         breadcrumb.category = "category"
+        breadcrumb.origin = "origin"
 
         val clone = Breadcrumb(breadcrumb)
 
@@ -44,6 +46,7 @@ class BreadcrumbTest {
         val level = SentryLevel.DEBUG
         breadcrumb.level = level
         breadcrumb.category = "category"
+        breadcrumb.origin = "origin"
 
         val clone = Breadcrumb(breadcrumb)
 
@@ -53,6 +56,7 @@ class BreadcrumbTest {
         assertEquals("type", clone.type)
         assertEquals(SentryLevel.DEBUG, clone.level)
         assertEquals("category", clone.category)
+        assertEquals("origin", clone.origin)
     }
 
     @Test
@@ -67,6 +71,7 @@ class BreadcrumbTest {
         val level = SentryLevel.DEBUG
         breadcrumb.level = level
         breadcrumb.category = "category"
+        breadcrumb.origin = "origin"
 
         val clone = Breadcrumb(breadcrumb)
 
@@ -77,6 +82,7 @@ class BreadcrumbTest {
         breadcrumb.type = "newType"
         breadcrumb.level = SentryLevel.FATAL
         breadcrumb.category = "newCategory"
+        breadcrumb.origin = "newOrigin"
 
         assertEquals("message", clone.message)
         assertEquals("data", clone.data["data"])
@@ -86,12 +92,19 @@ class BreadcrumbTest {
         assertEquals("type", clone.type)
         assertEquals(SentryLevel.DEBUG, clone.level)
         assertEquals("category", clone.category)
+        assertEquals("origin", clone.origin)
     }
 
     @Test
     fun `breadcrumb has timestamp when created`() {
         val breadcrumb = Breadcrumb()
         assertNotNull(breadcrumb.timestamp)
+    }
+
+    @Test
+    fun `breadcrumb can be created with Date timestamp`() {
+        val breadcrumb = Breadcrumb(Date(123L))
+        assertEquals(123L, breadcrumb.timestamp.time)
     }
 
     @Test
@@ -129,6 +142,38 @@ class BreadcrumbTest {
         assertEquals("http", breadcrumb.type)
         assertEquals("http", breadcrumb.category)
         assertFalse(breadcrumb.data.containsKey("status_code"))
+    }
+
+    @Test
+    fun `creates HTTP breadcrumb with WARNING level if status code is 4xx`() {
+        val breadcrumb = Breadcrumb.http("http://example.com", "POST", 417)
+        assertEquals("http://example.com", breadcrumb.data["url"])
+        assertEquals("POST", breadcrumb.data["method"])
+        assertEquals("http", breadcrumb.type)
+        assertEquals("http", breadcrumb.category)
+        assertEquals(SentryLevel.WARNING, breadcrumb.level)
+    }
+
+    @Test
+    fun `creates HTTP breadcrumb with error level if status code is 5xx`() {
+        val breadcrumb = Breadcrumb.http("http://example.com", "POST", 502)
+        assertEquals("http://example.com", breadcrumb.data["url"])
+        assertEquals("POST", breadcrumb.data["method"])
+        assertEquals("http", breadcrumb.type)
+        assertEquals("http", breadcrumb.category)
+        assertEquals(502, breadcrumb.data["status_code"])
+        assertEquals(SentryLevel.ERROR, breadcrumb.level)
+    }
+
+    @Test
+    fun `creates HTTP breadcrumb with null level if status code is not 5xx or 4xx`() {
+        val breadcrumb = Breadcrumb.http("http://example.com", "POST", 200)
+        assertEquals("http://example.com", breadcrumb.data["url"])
+        assertEquals("POST", breadcrumb.data["method"])
+        assertEquals("http", breadcrumb.type)
+        assertEquals("http", breadcrumb.category)
+        assertEquals(200, breadcrumb.data["status_code"])
+        assertEquals(null, breadcrumb.level)
     }
 
     @Test

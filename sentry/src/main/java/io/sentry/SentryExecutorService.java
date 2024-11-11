@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -14,6 +15,7 @@ import org.jetbrains.annotations.TestOnly;
 public final class SentryExecutorService implements ISentryExecutorService {
 
   private final @NotNull ScheduledExecutorService executorService;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   @TestOnly
   SentryExecutorService(final @NotNull ScheduledExecutorService executorService) {
@@ -41,7 +43,7 @@ public final class SentryExecutorService implements ISentryExecutorService {
 
   @Override
   public void close(final long timeoutMillis) {
-    synchronized (executorService) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (!executorService.isShutdown()) {
         executorService.shutdown();
         try {
@@ -58,7 +60,7 @@ public final class SentryExecutorService implements ISentryExecutorService {
 
   @Override
   public boolean isClosed() {
-    synchronized (executorService) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return executorService.isShutdown();
     }
   }

@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
-        minSdk = Config.Android.minSdkVersionCompose
+        minSdk = Config.Android.minSdkVersion
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 2
         versionName = project.version.toString()
@@ -92,6 +92,13 @@ android {
             ignore = true
         }
     }
+
+    @Suppress("UnstableApiUsage")
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {
@@ -125,8 +132,8 @@ dependencies {
     implementation(Config.Libs.composeFoundationLayout)
     implementation(Config.Libs.composeNavigation)
     implementation(Config.Libs.composeMaterial)
+    implementation(Config.Libs.composeCoil)
+    implementation(Config.Libs.sentryNativeNdk)
 
     debugImplementation(Config.Libs.leakCanary)
-
-    implementation("io.sentry:sentry-native-ndk:0.7.5")
 }

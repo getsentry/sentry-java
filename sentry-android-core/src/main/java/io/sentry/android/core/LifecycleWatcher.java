@@ -4,11 +4,12 @@ import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import io.sentry.Breadcrumb;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.Session;
-import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,7 +27,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
 
   private @Nullable TimerTask timerTask;
   private final @NotNull Timer timer = new Timer(true);
-  private final @NotNull Object timerLock = new Object();
+  private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
   private final @NotNull IScopes scopes;
   private final boolean enableSessionTracking;
   private final boolean enableAppLifecycleBreadcrumbs;
@@ -90,7 +91,6 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     if (lastUpdatedSession == 0L
         || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
       if (enableSessionTracking) {
-        addSessionBreadcrumb("start");
         scopes.startSession();
       }
       scopes.getOptions().getReplayController().start();
@@ -117,7 +117,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   }
 
   private void scheduleEndSession() {
-    synchronized (timerLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       cancelTask();
       if (timer != null) {
         timerTask =
@@ -125,7 +125,6 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
               @Override
               public void run() {
                 if (enableSessionTracking) {
-                  addSessionBreadcrumb("end");
                   scopes.endSession();
                 }
                 scopes.getOptions().getReplayController().stop();
@@ -138,7 +137,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   }
 
   private void cancelTask() {
-    synchronized (timerLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       if (timerTask != null) {
         timerTask.cancel();
         timerTask = null;
@@ -155,11 +154,6 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
       breadcrumb.setLevel(SentryLevel.INFO);
       scopes.addBreadcrumb(breadcrumb);
     }
-  }
-
-  private void addSessionBreadcrumb(final @NotNull String state) {
-    final Breadcrumb breadcrumb = BreadcrumbFactory.forSession(state);
-    scopes.addBreadcrumb(breadcrumb);
   }
 
   @TestOnly

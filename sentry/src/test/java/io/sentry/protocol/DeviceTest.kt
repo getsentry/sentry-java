@@ -58,7 +58,6 @@ class DeviceTest {
         device.bootTime = Date()
         device.timezone = TimeZone.getDefault()
         device.id = "id"
-        device.language = "language"
         device.connectionType = "connection type"
         device.batteryTemperature = 30f
         device.locale = "en-US"
@@ -99,7 +98,6 @@ class DeviceTest {
         assertEquals(1.5f, clone.screenDensity)
         assertEquals(300, clone.screenDpi)
         assertEquals("id", clone.id)
-        assertEquals("language", clone.language)
         assertEquals("connection type", clone.connectionType)
         assertEquals(30f, clone.batteryTemperature)
         assertEquals("cpu0", clone.cpuDescription)

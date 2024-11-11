@@ -1,11 +1,13 @@
 package io.sentry.android.ndk;
 
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.IDebugImagesLoader;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.ndk.NativeModuleListLoader;
 import io.sentry.protocol.DebugImage;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +28,8 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
   private static @Nullable List<DebugImage> debugImages;
 
   /** we need to lock it because it could be called from different threads */
-  private static final @NotNull Object debugImagesLock = new Object();
+  protected static final @NotNull AutoClosableReentrantLock debugImagesLock =
+      new AutoClosableReentrantLock();
 
   public DebugImagesLoader(
       final @NotNull SentryAndroidOptions options,
@@ -43,7 +46,7 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
    */
   @Override
   public @Nullable List<DebugImage> loadDebugImages() {
-    synchronized (debugImagesLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = debugImagesLock.acquire()) {
       if (debugImages == null) {
         try {
           final io.sentry.ndk.DebugImage[] debugImagesArr = moduleListLoader.loadModuleList();
@@ -75,7 +78,7 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
   /** Clears the caching of debug images on sentry-native and here. */
   @Override
   public void clearDebugImages() {
-    synchronized (debugImagesLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = debugImagesLock.acquire()) {
       try {
         moduleListLoader.clearModuleList();
 

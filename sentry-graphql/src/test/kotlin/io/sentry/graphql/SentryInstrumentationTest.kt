@@ -42,7 +42,7 @@ class SentryInstrumentationTest {
         val scopes = mock<IScopes>()
         lateinit var activeSpan: SentryTracer
 
-        fun getSut(isTransactionActive: Boolean = true, dataFetcherThrows: Boolean = false, beforeSpan: SentryInstrumentation.BeforeSpanCallback? = null): GraphQL {
+        fun getSut(isTransactionActive: Boolean = true, dataFetcherThrows: Boolean = false, beforeSpan: SentryGraphqlInstrumentation.BeforeSpanCallback? = null): GraphQL {
             whenever(scopes.options).thenReturn(SentryOptions())
             activeSpan = SentryTracer(TransactionContext("name", "op"), scopes)
             val schema = """
@@ -132,7 +132,7 @@ class SentryInstrumentationTest {
 
     @Test
     fun `beforeSpan can drop spans`() {
-        val sut = fixture.getSut(beforeSpan = SentryInstrumentation.BeforeSpanCallback { _, _, _ -> null })
+        val sut = fixture.getSut(beforeSpan = SentryGraphqlInstrumentation.BeforeSpanCallback { _, _, _ -> null })
 
         withMockScopes {
             val result = sut.execute("{ shows { id } }")
@@ -150,7 +150,7 @@ class SentryInstrumentationTest {
 
     @Test
     fun `beforeSpan can modify spans`() {
-        val sut = fixture.getSut(beforeSpan = SentryInstrumentation.BeforeSpanCallback { span, _, _ -> span.apply { description = "changed" } })
+        val sut = fixture.getSut(beforeSpan = SentryGraphqlInstrumentation.BeforeSpanCallback { span, _, _ -> span.apply { description = "changed" } })
 
         withMockScopes {
             val result = sut.execute("{ shows { id } }")
@@ -198,7 +198,7 @@ class SentryInstrumentationTest {
             environment,
             executionStrategyParameters,
             false
-        ).withNewState(SentryInstrumentation.TracingState())
+        ).withNewState(SentryGraphqlInstrumentation.TracingState())
         val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, parameters)
         val result = instrumentedDataFetcher.get(environment)
 

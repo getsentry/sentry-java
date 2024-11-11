@@ -16,13 +16,14 @@ import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.SentryUUID;
 import io.sentry.android.core.BuildInfoProvider;
+import io.sentry.android.core.ContextUtils;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
@@ -84,7 +85,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull WindowFrameMetricsManager windowFrameMetricsManager) {
-    Objects.requireNonNull(context, "The context is required");
+    final @NotNull Context appContext =
+        Objects.requireNonNull(
+            ContextUtils.getApplicationContext(context), "The context is required");
     this.logger = Objects.requireNonNull(logger, "Logger is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
@@ -92,7 +95,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
         Objects.requireNonNull(windowFrameMetricsManager, "WindowFrameMetricsManager is required");
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
-    if (!(context instanceof Application)) {
+    if (!(appContext instanceof Application)) {
       return;
     }
     // FrameMetrics api is only available since sdk version N
@@ -110,7 +113,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
     // We have to register the lifecycle callback, even if no profile is started, otherwise when we
     // start a profile, we wouldn't have the current activity and couldn't get the frameMetrics.
-    ((Application) context).registerActivityLifecycleCallbacks(this);
+    ((Application) appContext).registerActivityLifecycleCallbacks(this);
 
     // Most considerations regarding timestamps of frames are inspired from JankStats library:
     // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:metrics/metrics-performance/src/main/java/androidx/metrics/performance/JankStatsApi24Impl.kt
@@ -259,7 +262,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     if (!isAvailable) {
       return null;
     }
-    final String uid = UUID.randomUUID().toString();
+    final String uid = SentryUUID.generateSentryId();
     listenerMap.put(uid, listener);
     trackCurrentWindow();
     return uid;

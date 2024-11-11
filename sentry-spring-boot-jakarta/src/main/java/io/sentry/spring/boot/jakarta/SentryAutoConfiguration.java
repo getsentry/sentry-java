@@ -11,9 +11,9 @@ import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
-import io.sentry.graphql.SentryGraphqlExceptionHandler;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.quartz.SentryJobListener;
+import io.sentry.spring.boot.jakarta.graphql.SentryGraphql22AutoConfiguration;
 import io.sentry.spring.boot.jakarta.graphql.SentryGraphqlAutoConfiguration;
 import io.sentry.spring.jakarta.ContextTagsEventProcessor;
 import io.sentry.spring.jakarta.SentryExceptionResolver;
@@ -176,11 +176,24 @@ public class SentryAutoConfiguration {
     @Import(SentryGraphqlAutoConfiguration.class)
     @Open
     @ConditionalOnClass({
-      SentryGraphqlExceptionHandler.class,
+      io.sentry.graphql.SentryInstrumentation.class,
       DataFetcherExceptionResolverAdapter.class,
       GraphQLError.class
     })
+    @ConditionalOnMissingClass({
+      "io.sentry.graphql22.SentryInstrumentation" // avoid duplicate bean
+    })
     static class GraphqlConfiguration {}
+
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryGraphql22AutoConfiguration.class)
+    @Open
+    @ConditionalOnClass({
+      io.sentry.graphql22.SentryInstrumentation.class,
+      DataFetcherExceptionResolverAdapter.class,
+      GraphQLError.class
+    })
+    static class Graphql22Configuration {}
 
     @Configuration(proxyBeanMethods = false)
     @Import(SentryQuartzConfiguration.class)
@@ -440,10 +453,6 @@ public class SentryAutoConfiguration {
     public SentryTracingCondition() {
       super(ConfigurationPhase.REGISTER_BEAN);
     }
-
-    @ConditionalOnProperty(name = "sentry.enable-tracing")
-    @SuppressWarnings("UnusedNestedClass")
-    private static class SentryEnableTracingCondition {}
 
     @ConditionalOnProperty(name = "sentry.traces-sample-rate")
     @SuppressWarnings("UnusedNestedClass")

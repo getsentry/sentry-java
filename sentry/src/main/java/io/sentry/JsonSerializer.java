@@ -14,7 +14,6 @@ import io.sentry.protocol.Gpu;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
-import io.sentry.protocol.MetricSummary;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkInfo;
@@ -89,7 +88,6 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(MeasurementValue.class, new MeasurementValue.Deserializer());
     deserializersByClass.put(Mechanism.class, new Mechanism.Deserializer());
     deserializersByClass.put(Message.class, new Message.Deserializer());
-    deserializersByClass.put(MetricSummary.class, new MetricSummary.Deserializer());
     deserializersByClass.put(OperatingSystem.class, new OperatingSystem.Deserializer());
     deserializersByClass.put(ProfileChunk.class, new ProfileChunk.Deserializer());
     deserializersByClass.put(ProfileContext.class, new ProfileContext.Deserializer());

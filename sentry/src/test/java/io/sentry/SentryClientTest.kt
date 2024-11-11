@@ -13,7 +13,6 @@ import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
-import io.sentry.metrics.NoopMetricsAggregator
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
@@ -63,7 +62,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -861,7 +859,7 @@ class SentryClientTest {
             environment = "release"
             release = "io.sentry.samples@22.1.1"
             contexts[Contexts.REPLAY_ID] = "64cf554cc8d74c6eafa3e08b7c984f6d"
-            contexts.trace = SpanContext(traceId, SpanId(), "ui.load", null, null)
+            contexts.setTrace(SpanContext(traceId, SpanId(), "ui.load", null, null))
             transaction = "MainActivity"
         }
         val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
@@ -2538,7 +2536,7 @@ class SentryClientTest {
         val preExistingSpanContext = SpanContext("op.load")
 
         val sentryEvent = SentryEvent()
-        sentryEvent.contexts.trace = preExistingSpanContext
+        sentryEvent.contexts.setTrace(preExistingSpanContext)
         sut.captureEvent(sentryEvent, scope)
 
         verify(fixture.transport).send(
@@ -2610,7 +2608,7 @@ class SentryClientTest {
         val preExistingSpanContext = SpanContext("op.load")
 
         val sentryEvent = SentryEvent()
-        sentryEvent.contexts.trace = preExistingSpanContext
+        sentryEvent.contexts.setTrace(preExistingSpanContext)
         sut.captureEvent(sentryEvent, scope)
 
         verify(fixture.transport).send(
@@ -2646,22 +2644,6 @@ class SentryClientTest {
 
         sut.captureEvent(SentryEvent(), Hint())
         verify(fixture.transport).send(anyOrNull(), anyOrNull())
-    }
-
-    @Test
-    fun `no-op metrics aggregator is returned when metrics is disabled`() {
-        val sut = fixture.getSut { options ->
-            options.isEnableMetrics = false
-        }
-        assertSame(NoopMetricsAggregator.getInstance(), sut.metricsAggregator)
-    }
-
-    @Test
-    fun `metrics aggregator is returned when metrics is disabled`() {
-        val sut = fixture.getSut { options ->
-            options.isEnableMetrics = true
-        }
-        assertNotSame(NoopMetricsAggregator.getInstance(), sut.metricsAggregator)
     }
 
     @Test

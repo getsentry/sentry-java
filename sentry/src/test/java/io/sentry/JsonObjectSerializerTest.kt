@@ -10,7 +10,6 @@ import java.util.Calendar
 import java.util.Currency
 import java.util.Locale
 import java.util.TimeZone
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicIntegerArray
 
@@ -240,7 +239,7 @@ internal class JsonObjectSerializerTest {
 
     @Test
     fun `serializing UUID`() {
-        fixture.getSUT().serialize(fixture.writer, fixture.logger, UUID.fromString("828900a5-15dc-413f-8c17-6ef04d74e074"))
+        fixture.getSUT().serialize(fixture.writer, fixture.logger, "828900a5-15dc-413f-8c17-6ef04d74e074")
         verify(fixture.writer).value("828900a5-15dc-413f-8c17-6ef04d74e074")
     }
 

@@ -6,6 +6,7 @@ import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -26,6 +27,8 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   private final @NotNull SentryThreadFactory sentryThreadFactory;
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
   private volatile @Nullable HostnameCache hostnameCache = null;
+  private final @NotNull AutoClosableReentrantLock hostnameCacheLock =
+      new AutoClosableReentrantLock();
 
   public MainEventProcessor(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
@@ -174,7 +177,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
 
   private void ensureHostnameCache() {
     if (hostnameCache == null) {
-      synchronized (this) {
+      try (final @NotNull ISentryLifecycleToken ignored = hostnameCacheLock.acquire()) {
         if (hostnameCache == null) {
           hostnameCache = HostnameCache.getInstance();
         }

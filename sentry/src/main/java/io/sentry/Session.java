@@ -1,13 +1,13 @@
 package io.sentry;
 
 import io.sentry.protocol.User;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.StringUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
@@ -37,7 +37,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
   private final @Nullable String distinctId;
 
   /** the SessionId, sid */
-  private final @Nullable UUID sessionId;
+  private final @Nullable String sessionId;
 
   /** The session init flag */
   private @Nullable Boolean init;
@@ -67,7 +67,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
   private @Nullable String abnormalMechanism;
 
   /** The session lock, ops should be atomic */
-  private final @NotNull Object sessionLock = new Object();
+  private final @NotNull AutoClosableReentrantLock sessionLock = new AutoClosableReentrantLock();
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
@@ -78,7 +78,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
       final @Nullable Date timestamp,
       final int errorCount,
       final @Nullable String distinctId,
-      final @Nullable UUID sessionId,
+      final @Nullable String sessionId,
       final @Nullable Boolean init,
       final @Nullable Long sequence,
       final @Nullable Double duration,
@@ -114,7 +114,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
         DateUtils.getCurrentDateTime(),
         0,
         distinctId,
-        UUID.randomUUID(),
+        SentryUUID.generateSentryId(),
         true,
         null,
         null,
@@ -141,7 +141,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
     return distinctId;
   }
 
-  public @Nullable UUID getSessionId() {
+  public @Nullable String getSessionId() {
     return sessionId;
   }
 
@@ -208,7 +208,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
    * @param timestamp the timestamp or null
    */
   public void end(final @Nullable Date timestamp) {
-    synchronized (sessionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       init = null;
 
       // at this state it might be Crashed already, so we don't check for it.
@@ -262,7 +262,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
       final @Nullable String userAgent,
       final boolean addErrorsCount,
       final @Nullable String abnormalMechanism) {
-    synchronized (sessionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {
         this.status = status;
@@ -365,7 +365,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
       throws IOException {
     writer.beginObject();
     if (sessionId != null) {
-      writer.name(JsonKeys.SID).value(sessionId.toString());
+      writer.name(JsonKeys.SID).value(sessionId);
     }
     if (distinctId != null) {
       writer.name(JsonKeys.DID).value(distinctId);
@@ -434,7 +434,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
       Date timestamp = null;
       Integer errorCount = null; // @NotNull
       String distinctId = null;
-      UUID sessionId = null;
+      String sessionId = null;
       Boolean init = null;
       State status = null; // @NotNull
       Long sequence = null;
@@ -450,12 +450,11 @@ public final class Session implements JsonUnknown, JsonSerializable {
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.SID:
-            String sidString = null;
-            try {
-              sidString = reader.nextStringOrNull();
-              sessionId = UUID.fromString(sidString);
-            } catch (IllegalArgumentException e) {
-              logger.log(SentryLevel.ERROR, "%s sid is not valid.", sidString);
+            String sid = reader.nextStringOrNull();
+            if (sid != null && (sid.length() == 36 || sid.length() == 32)) {
+              sessionId = sid;
+            } else {
+              logger.log(SentryLevel.ERROR, "%s sid is not valid.", sid);
             }
             break;
           case JsonKeys.DID:

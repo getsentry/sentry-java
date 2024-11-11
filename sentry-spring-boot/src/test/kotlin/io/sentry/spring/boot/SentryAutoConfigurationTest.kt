@@ -141,7 +141,7 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues(
             "sentry.dsn=http://key@localhost/proj",
             "sentry.read-timeout-millis=10",
-            "sentry.shutdown-timeout=20",
+            "sentry.shutdown-timeout-millis=20",
             "sentry.flush-timeout-millis=30",
             "sentry.debug=true",
             "sentry.diagnostic-level=INFO",
@@ -161,7 +161,6 @@ class SentryAutoConfigurationTest {
             "sentry.proxy.port=8090",
             "sentry.proxy.user=proxy-user",
             "sentry.proxy.pass=proxy-pass",
-            "sentry.enable-tracing=true",
             "sentry.traces-sample-rate=0.3",
             "sentry.tags.tag1=tag1-value",
             "sentry.tags.tag2=tag2-value",
@@ -174,6 +173,7 @@ class SentryAutoConfigurationTest {
             "sentry.enable-spotlight=true",
             "sentry.spotlight-connection-url=http://local.sentry.io:1234",
             "sentry.force-init=true",
+            "sentry.global-hub-mode=true",
             "sentry.cron.default-checkin-margin=10",
             "sentry.cron.default-max-runtime=30",
             "sentry.cron.default-timezone=America/New_York",
@@ -202,7 +202,6 @@ class SentryAutoConfigurationTest {
             assertThat(options.proxy!!.port).isEqualTo("8090")
             assertThat(options.proxy!!.user).isEqualTo("proxy-user")
             assertThat(options.proxy!!.pass).isEqualTo("proxy-pass")
-            assertThat(options.enableTracing).isEqualTo(true)
             assertThat(options.tracesSampleRate).isEqualTo(0.3)
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
             assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
@@ -212,6 +211,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
             assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
             assertThat(options.isForceInit).isEqualTo(true)
+            assertThat(options.isGlobalHubMode).isEqualTo(true)
             assertThat(options.isEnableSpotlight).isEqualTo(true)
             assertThat(options.spotlightConnectionUrl).isEqualTo("http://local.sentry.io:1234")
             assertThat(options.cron).isNotNull
@@ -241,17 +241,6 @@ class SentryAutoConfigurationTest {
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.tracePropagationTargets).isNotNull().isEmpty()
-        }
-    }
-
-    @Test
-    fun `when setting tracingOrigins it still works`() {
-        contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
-            "sentry.tracing-origins=somehost,otherhost"
-        ).run {
-            val options = it.getBean(SentryProperties::class.java)
-            assertThat(options.tracePropagationTargets).isNotNull().isEqualTo(listOf("somehost", "otherhost"))
         }
     }
 
@@ -473,14 +462,6 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when traces sample rate is set, creates tracing filter`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=0.2")
-            .run {
-                assertThat(it).hasBean("sentryTracingFilter")
-            }
-    }
-
-    @Test
-    fun `when enable tracing is set to false and traces sample rate is set, creates tracing filter`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=0.2")
             .run {
                 assertThat(it).hasBean("sentryTracingFilter")

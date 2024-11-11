@@ -9,9 +9,11 @@ import android.os.Bundle;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -25,7 +27,9 @@ public final class ActivityBreadcrumbsIntegration
   private final @NotNull Application application;
   private @Nullable IScopes scopes;
   private boolean enabled;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
+  // TODO check if locking is even required at all for lifecycle methods
   public ActivityBreadcrumbsIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
   }
@@ -46,7 +50,7 @@ public final class ActivityBreadcrumbsIntegration
     if (enabled) {
       application.registerActivityLifecycleCallbacks(this);
       options.getLogger().log(SentryLevel.DEBUG, "ActivityBreadcrumbIntegration installed.");
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("ActivityBreadcrumbs");
     }
   }
 
@@ -64,40 +68,54 @@ public final class ActivityBreadcrumbsIntegration
   }
 
   @Override
-  public synchronized void onActivityCreated(
+  public void onActivityCreated(
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    addBreadcrumb(activity, "created");
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "created");
+    }
   }
 
   @Override
-  public synchronized void onActivityStarted(final @NotNull Activity activity) {
-    addBreadcrumb(activity, "started");
+  public void onActivityStarted(final @NotNull Activity activity) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "started");
+    }
   }
 
   @Override
-  public synchronized void onActivityResumed(final @NotNull Activity activity) {
-    addBreadcrumb(activity, "resumed");
+  public void onActivityResumed(final @NotNull Activity activity) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "resumed");
+    }
   }
 
   @Override
-  public synchronized void onActivityPaused(final @NotNull Activity activity) {
-    addBreadcrumb(activity, "paused");
+  public void onActivityPaused(final @NotNull Activity activity) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "paused");
+    }
   }
 
   @Override
-  public synchronized void onActivityStopped(final @NotNull Activity activity) {
-    addBreadcrumb(activity, "stopped");
+  public void onActivityStopped(final @NotNull Activity activity) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "stopped");
+    }
   }
 
   @Override
-  public synchronized void onActivitySaveInstanceState(
+  public void onActivitySaveInstanceState(
       final @NotNull Activity activity, final @NotNull Bundle outState) {
-    addBreadcrumb(activity, "saveInstanceState");
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "saveInstanceState");
+    }
   }
 
   @Override
-  public synchronized void onActivityDestroyed(final @NotNull Activity activity) {
-    addBreadcrumb(activity, "destroyed");
+  public void onActivityDestroyed(final @NotNull Activity activity) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "destroyed");
+    }
   }
 
   private void addBreadcrumb(final @NotNull Activity activity, final @NotNull String state) {

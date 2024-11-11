@@ -3,11 +3,13 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.MeasurementUnit;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -37,6 +39,7 @@ public final class ActivityFramesTracker {
       new WeakHashMap<>();
 
   private final @NotNull MainLooperHandler handler;
+  protected @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   public ActivityFramesTracker(
       final @NotNull io.sentry.util.LoadClass loadClass,
@@ -78,13 +81,15 @@ public final class ActivityFramesTracker {
   }
 
   @SuppressWarnings("NullAway")
-  public synchronized void addActivity(final @NotNull Activity activity) {
-    if (!isFrameMetricsAggregatorAvailable()) {
-      return;
-    }
+  public void addActivity(final @NotNull Activity activity) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (!isFrameMetricsAggregatorAvailable()) {
+        return;
+      }
 
-    runSafelyOnUiThread(() -> frameMetricsAggregator.add(activity), "FrameMetricsAggregator.add");
-    snapshotFrameCountsAtStart(activity);
+      runSafelyOnUiThread(() -> frameMetricsAggregator.add(activity), "FrameMetricsAggregator.add");
+      snapshotFrameCountsAtStart(activity);
+    }
   }
 
   private void snapshotFrameCountsAtStart(final @NotNull Activity activity) {
@@ -132,45 +137,46 @@ public final class ActivityFramesTracker {
   }
 
   @SuppressWarnings("NullAway")
-  public synchronized void setMetrics(
-      final @NotNull Activity activity, final @NotNull SentryId transactionId) {
-    if (!isFrameMetricsAggregatorAvailable()) {
-      return;
+  public void setMetrics(final @NotNull Activity activity, final @NotNull SentryId transactionId) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (!isFrameMetricsAggregatorAvailable()) {
+        return;
+      }
+
+      // NOTE: removing an activity does not reset the frame counts, only reset() does
+      // throws IllegalArgumentException when attempting to remove
+      // OnFrameMetricsAvailableListener
+      // that was never added.
+      // there's no contains method.
+      // throws NullPointerException when attempting to remove
+      // OnFrameMetricsAvailableListener and
+      // there was no
+      // Observers, See
+      // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
+      runSafelyOnUiThread(() -> frameMetricsAggregator.remove(activity), null);
+
+      final @Nullable FrameCounts frameCounts = diffFrameCountsAtEnd(activity);
+
+      if (frameCounts == null
+          || (frameCounts.totalFrames == 0
+              && frameCounts.slowFrames == 0
+              && frameCounts.frozenFrames == 0)) {
+        return;
+      }
+
+      final MeasurementValue tfValues =
+          new MeasurementValue(frameCounts.totalFrames, MeasurementUnit.NONE);
+      final MeasurementValue sfValues =
+          new MeasurementValue(frameCounts.slowFrames, MeasurementUnit.NONE);
+      final MeasurementValue ffValues =
+          new MeasurementValue(frameCounts.frozenFrames, MeasurementUnit.NONE);
+      final Map<String, @NotNull MeasurementValue> measurements = new HashMap<>();
+      measurements.put(MeasurementValue.KEY_FRAMES_TOTAL, tfValues);
+      measurements.put(MeasurementValue.KEY_FRAMES_SLOW, sfValues);
+      measurements.put(MeasurementValue.KEY_FRAMES_FROZEN, ffValues);
+
+      activityMeasurements.put(transactionId, measurements);
     }
-
-    // NOTE: removing an activity does not reset the frame counts, only reset() does
-    // throws IllegalArgumentException when attempting to remove
-    // OnFrameMetricsAvailableListener
-    // that was never added.
-    // there's no contains method.
-    // throws NullPointerException when attempting to remove
-    // OnFrameMetricsAvailableListener and
-    // there was no
-    // Observers, See
-    // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
-    runSafelyOnUiThread(() -> frameMetricsAggregator.remove(activity), null);
-
-    final @Nullable FrameCounts frameCounts = diffFrameCountsAtEnd(activity);
-
-    if (frameCounts == null
-        || (frameCounts.totalFrames == 0
-            && frameCounts.slowFrames == 0
-            && frameCounts.frozenFrames == 0)) {
-      return;
-    }
-
-    final MeasurementValue tfValues =
-        new MeasurementValue(frameCounts.totalFrames, MeasurementUnit.NONE);
-    final MeasurementValue sfValues =
-        new MeasurementValue(frameCounts.slowFrames, MeasurementUnit.NONE);
-    final MeasurementValue ffValues =
-        new MeasurementValue(frameCounts.frozenFrames, MeasurementUnit.NONE);
-    final Map<String, @NotNull MeasurementValue> measurements = new HashMap<>();
-    measurements.put(MeasurementValue.KEY_FRAMES_TOTAL, tfValues);
-    measurements.put(MeasurementValue.KEY_FRAMES_SLOW, sfValues);
-    measurements.put(MeasurementValue.KEY_FRAMES_FROZEN, ffValues);
-
-    activityMeasurements.put(transactionId, measurements);
   }
 
   private @Nullable FrameCounts diffFrameCountsAtEnd(final @NotNull Activity activity) {
@@ -192,25 +198,28 @@ public final class ActivityFramesTracker {
   }
 
   @Nullable
-  public synchronized Map<String, @NotNull MeasurementValue> takeMetrics(
-      final @NotNull SentryId transactionId) {
-    if (!isFrameMetricsAggregatorAvailable()) {
-      return null;
-    }
+  public Map<String, @NotNull MeasurementValue> takeMetrics(final @NotNull SentryId transactionId) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (!isFrameMetricsAggregatorAvailable()) {
+        return null;
+      }
 
-    final Map<String, @NotNull MeasurementValue> stringMeasurementValueMap =
-        activityMeasurements.get(transactionId);
-    activityMeasurements.remove(transactionId);
-    return stringMeasurementValueMap;
+      final Map<String, @NotNull MeasurementValue> stringMeasurementValueMap =
+          activityMeasurements.get(transactionId);
+      activityMeasurements.remove(transactionId);
+      return stringMeasurementValueMap;
+    }
   }
 
   @SuppressWarnings("NullAway")
-  public synchronized void stop() {
-    if (isFrameMetricsAggregatorAvailable()) {
-      runSafelyOnUiThread(() -> frameMetricsAggregator.stop(), "FrameMetricsAggregator.stop");
-      frameMetricsAggregator.reset();
+  public void stop() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (isFrameMetricsAggregatorAvailable()) {
+        runSafelyOnUiThread(() -> frameMetricsAggregator.stop(), "FrameMetricsAggregator.stop");
+        frameMetricsAggregator.reset();
+      }
+      activityMeasurements.clear();
     }
-    activityMeasurements.clear();
   }
 
   private void runSafelyOnUiThread(final Runnable runnable, final String tag) {
