@@ -9,6 +9,7 @@ public abstract interface class io/sentry/opentelemetry/IOtelSpanWrapper : io/se
 	public abstract fun isProfileSampled ()Ljava/lang/Boolean;
 	public abstract fun setTransactionName (Ljava/lang/String;)V
 	public abstract fun setTransactionName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
+	public abstract fun storeInContext (Lio/opentelemetry/context/Context;)Lio/opentelemetry/context/Context;
 }
 
 public final class io/sentry/opentelemetry/InternalSemanticAttributes {
