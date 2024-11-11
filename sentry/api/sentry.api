@@ -3265,6 +3265,11 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun updateEndDate (Lio/sentry/SentryDate;)Z
 }
 
+public final class io/sentry/SentryUUID {
+	public static fun generateSentryId ()Ljava/lang/String;
+	public static fun generateSpanId ()Ljava/lang/String;
+}
+
 public final class io/sentry/SentryWrapper {
 	public fun <init> ()V
 	public static fun wrapCallable (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Callable;
@@ -6196,6 +6201,20 @@ public final class io/sentry/util/TracingUtils$TracingHeaders {
 	public fun <init> (Lio/sentry/SentryTraceHeader;Lio/sentry/BaggageHeader;)V
 	public fun getBaggageHeader ()Lio/sentry/BaggageHeader;
 	public fun getSentryTraceHeader ()Lio/sentry/SentryTraceHeader;
+}
+
+public final class io/sentry/util/UUIDGenerator {
+	public fun <init> ()V
+	public static fun randomHalfLengthUUID ()J
+	public static fun randomUUID ()Ljava/util/UUID;
+}
+
+public final class io/sentry/util/UUIDStringUtils {
+	public fun <init> ()V
+	public static fun toSentryIdString (JJ)Ljava/lang/String;
+	public static fun toSentryIdString (Ljava/util/UUID;)Ljava/lang/String;
+	public static fun toSentrySpanIdString (J)Ljava/lang/String;
+	public static fun toSentrySpanIdString (Ljava/util/UUID;)Ljava/lang/String;
 }
 
 public final class io/sentry/util/UrlUtils {
