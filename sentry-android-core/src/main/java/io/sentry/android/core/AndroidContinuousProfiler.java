@@ -152,6 +152,9 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
 
     // check if profiler end successfully
     if (endData == null) {
+      // A problem occurred. Profile chunk is not captured. Let's reset ids.
+      chunkId = SentryId.EMPTY_ID;
+      profilerId = SentryId.EMPTY_ID;
       return;
     }
 

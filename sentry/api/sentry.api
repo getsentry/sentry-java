@@ -308,10 +308,9 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 }
 
 public final class io/sentry/CpuCollectionData {
-	public fun <init> (JDLio/sentry/SentryDate;)V
+	public fun <init> (DLio/sentry/SentryDate;)V
 	public fun getCpuUsagePercentage ()D
 	public fun getTimestamp ()Lio/sentry/SentryDate;
-	public fun getTimestampMillis ()J
 }
 
 public final class io/sentry/CustomSamplingContext {
@@ -1270,10 +1269,9 @@ public final class io/sentry/MeasurementUnit$Information : java/lang/Enum, io/se
 }
 
 public final class io/sentry/MemoryCollectionData {
-	public fun <init> (JJJLio/sentry/SentryDate;)V
 	public fun <init> (JJLio/sentry/SentryDate;)V
+	public fun <init> (JLio/sentry/SentryDate;)V
 	public fun getTimestamp ()Lio/sentry/SentryDate;
-	public fun getTimestampMillis ()J
 	public fun getUsedHeapMemory ()J
 	public fun getUsedNativeMemory ()J
 }

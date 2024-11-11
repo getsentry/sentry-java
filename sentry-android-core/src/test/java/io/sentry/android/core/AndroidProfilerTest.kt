@@ -281,12 +281,12 @@ class AndroidProfilerTest {
         var singleData = PerformanceCollectionData()
         val t1 = mock<SentryDate>()
         val t2 = mock<SentryDate>()
-        singleData.addMemoryData(MemoryCollectionData(1, 2, 3, t1))
-        singleData.addCpuData(CpuCollectionData(1, 1.4, t1))
+        singleData.addMemoryData(MemoryCollectionData(2, 3, t1))
+        singleData.addCpuData(CpuCollectionData(1.4, t1))
         performanceCollectionData.add(singleData)
 
         singleData = PerformanceCollectionData()
-        singleData.addMemoryData(MemoryCollectionData(2, 3, 4, t2))
+        singleData.addMemoryData(MemoryCollectionData(3, 4, t2))
         performanceCollectionData.add(singleData)
 
         profiler.start()

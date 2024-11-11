@@ -331,21 +331,21 @@ public class AndroidProfiler {
           if (cpuData != null) {
             cpuUsageMeasurements.add(
                 new ProfileMeasurementValue(
-                    TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) + timestampDiff,
+                    cpuData.getTimestamp().nanoTimestamp() + timestampDiff,
                     cpuData.getCpuUsagePercentage(),
                     cpuData.getTimestamp()));
           }
           if (memoryData != null && memoryData.getUsedHeapMemory() > -1) {
             memoryUsageMeasurements.add(
                 new ProfileMeasurementValue(
-                    TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
+                    memoryData.getTimestamp().nanoTimestamp() + timestampDiff,
                     memoryData.getUsedHeapMemory(),
                     memoryData.getTimestamp()));
           }
           if (memoryData != null && memoryData.getUsedNativeMemory() > -1) {
             nativeMemoryUsageMeasurements.add(
                 new ProfileMeasurementValue(
-                    TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
+                    memoryData.getTimestamp().nanoTimestamp() + timestampDiff,
                     memoryData.getUsedNativeMemory(),
                     memoryData.getTimestamp()));
           }

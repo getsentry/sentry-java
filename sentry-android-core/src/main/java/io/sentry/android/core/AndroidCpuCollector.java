@@ -86,9 +86,7 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
 
     CpuCollectionData cpuData =
         new CpuCollectionData(
-            System.currentTimeMillis(),
-            (cpuUsagePercentage / (double) numCores) * 100.0,
-            new SentryNanotimeDate());
+            (cpuUsagePercentage / (double) numCores) * 100.0, new SentryNanotimeDate());
 
     performanceCollectionData.addCpuData(cpuData);
   }
