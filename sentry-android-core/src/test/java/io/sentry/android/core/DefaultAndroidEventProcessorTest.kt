@@ -493,12 +493,11 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `Event sets language and locale`() {
+    fun `Event sets locale`() {
         val sut = fixture.getSut(context)
 
         assertNotNull(sut.process(SentryEvent(), Hint())) {
             val device = it.contexts.device!!
-            assertEquals("en", device.language)
             assertEquals("en_US", device.locale)
         }
     }

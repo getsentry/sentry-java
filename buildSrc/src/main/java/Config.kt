@@ -53,7 +53,7 @@ object Config {
         val appCompat = "androidx.appcompat:appcompat:1.3.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
         val okhttp = "com.squareup.okhttp3:okhttp:$okHttpVersion"
-        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.8.1"
+        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.14"
         val constraintLayout = "androidx.constraintlayout:constraintlayout:2.1.3"
 
         private val lifecycleVersion = "2.2.0"
@@ -133,6 +133,7 @@ object Config {
         val p6spy = "p6spy:p6spy:3.9.1"
 
         val graphQlJava = "com.graphql-java:graphql-java:17.3"
+        val graphQlJava22 = "com.graphql-java:graphql-java:22.1"
 
         val quartz = "org.quartz-scheduler:quartz:2.3.0"
 
@@ -147,8 +148,11 @@ object Config {
         val composeActivity = "androidx.activity:activity-compose:1.4.0"
         val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
         val composeUi = "androidx.compose.ui:ui:$composeVersion"
+
+        val composeUiReplay = "androidx.compose.ui:ui:1.5.0" // Note: don't change without testing forwards compatibility
         val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
         val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
+        val composeCoil = "io.coil-kt:coil-compose:2.0.0"
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
 
@@ -198,6 +202,7 @@ object Config {
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
         val javaFaker = "com.github.javafaker:javafaker:1.0.2"
         val msgpack = "org.msgpack:msgpack-core:0.9.8"
+        val leakCanaryInstrumentation = "com.squareup.leakcanary:leakcanary-android-instrumentation:2.14"
     }
 
     object QualityPlugins {
@@ -240,6 +245,7 @@ object Config {
         val SENTRY_APOLLO3_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo3"
         val SENTRY_APOLLO_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo"
         val SENTRY_GRAPHQL_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql"
+        val SENTRY_GRAPHQL22_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql22"
         val SENTRY_QUARTZ_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.quartz"
         val SENTRY_JDBC_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.jdbc"
         val SENTRY_SERVLET_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.servlet"

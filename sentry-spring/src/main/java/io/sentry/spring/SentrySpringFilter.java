@@ -134,10 +134,15 @@ public class SentrySpringFilter extends OncePerRequestFilter {
     return maxRequestBodySize != RequestSize.NONE
         && contentLength != -1
         && contentType != null
-        && MimeType.valueOf(contentType).isCompatibleWith(MediaType.APPLICATION_JSON)
+        && shouldCacheMimeType(contentType)
         && ((maxRequestBodySize == SMALL && contentLength < 1000)
             || (maxRequestBodySize == MEDIUM && contentLength < 10000)
             || maxRequestBodySize == ALWAYS);
+  }
+
+  private static boolean shouldCacheMimeType(String contentType) {
+    return MimeType.valueOf(contentType).isCompatibleWith(MediaType.APPLICATION_JSON)
+        || MimeType.valueOf(contentType).isCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED);
   }
 
   static final class RequestBodyExtractingEventProcessor implements EventProcessor {

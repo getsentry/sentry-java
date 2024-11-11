@@ -53,7 +53,6 @@ class DeviceSerializationTest {
             bootTime = DateUtils.getDateTime("2004-11-04T08:38:00.000Z")
             timezone = TimeZone.getTimeZone("Europe/Vienna")
             id = "e0fa5c8d-83f5-4e70-bc60-1e82ad30e196"
-            language = "6dd45f60-111d-42d8-9204-0452cc836ad8"
             connectionType = "9ceb3a6c-5292-4ed9-8665-5732495e8ed4"
             batteryTemperature = 0.14775127f
             cpuDescription = "cpu0"

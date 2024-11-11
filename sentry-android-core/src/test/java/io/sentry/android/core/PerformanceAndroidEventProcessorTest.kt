@@ -71,7 +71,6 @@ class PerformanceAndroidEventProcessorTest {
         null,
         emptyMap(),
         emptyMap(),
-        null,
         null
     ).also {
         AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
@@ -597,7 +596,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
 
@@ -613,7 +611,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
         tr.spans.add(ttid)
@@ -633,7 +630,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
 
@@ -650,7 +646,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
 
@@ -667,7 +662,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             mutableMapOf<String, Any>(
                 "tag" to "value"
             )
@@ -719,7 +713,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
 
@@ -755,7 +748,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
 
@@ -771,7 +763,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
         tr.spans.add(ttid)
@@ -790,7 +781,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
 
@@ -807,7 +797,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             mutableMapOf<String, Any>(
                 "thread.name" to "main"
             )
@@ -826,7 +815,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             mutableMapOf<String, Any>(
                 "thread.name" to "background"
             )
@@ -873,7 +861,7 @@ class PerformanceAndroidEventProcessorTest {
             AppStartType.UNKNOWN -> "ui.load"
         }
         val txn = SentryTransaction(fixture.tracer)
-        txn.contexts.trace = SpanContext(op, TracesSamplingDecision(false))
+        txn.contexts.setTrace(SpanContext(op, TracesSamplingDecision(false)))
         return txn
     }
 }

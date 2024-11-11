@@ -36,8 +36,6 @@ import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint
 import io.sentry.graphql.ExceptionReporter.ExceptionDetails
-import io.sentry.graphql.SentryInstrumentation.SENTRY_EXCEPTIONS_CONTEXT_KEY
-import io.sentry.graphql.SentryInstrumentation.TracingState
 import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -66,7 +64,7 @@ class SentryInstrumentationAnotherTest {
         lateinit var graphQLContext: GraphQLContext
         lateinit var subscriptionHandler: SentrySubscriptionHandler
         lateinit var exceptionReporter: ExceptionReporter
-        internal lateinit var instrumentationState: TracingState
+        internal lateinit var instrumentationState: SentryGraphqlInstrumentation.TracingState
         lateinit var instrumentationExecuteOperationParameters: InstrumentationExecuteOperationParameters
         val query = """query greeting(name: "somename")"""
         val variables = mapOf("variableA" to "value a")
@@ -82,7 +80,7 @@ class SentryInstrumentationAnotherTest {
             }
 
             val defaultGraphQLContext = mapOf(
-                SentryInstrumentation.SENTRY_SCOPES_CONTEXT_KEY to scopes
+                SentryGraphqlInstrumentation.SENTRY_SCOPES_CONTEXT_KEY to scopes
             )
             val mergedField =
                 MergedField.newMergedField().addField(Field.newField("myFieldName").build()).build()
@@ -128,7 +126,7 @@ class SentryInstrumentationAnotherTest {
                 .fields(MergedSelectionSet.newMergedSelectionSet().build())
                 .field(mergedField)
                 .build()
-            instrumentationState = SentryInstrumentation.TracingState().also {
+            instrumentationState = SentryGraphqlInstrumentation.TracingState().also {
                 if (isTransactionActive && addTransactionToTracingState) {
                     it.transaction = activeSpan
                 }
@@ -260,7 +258,7 @@ class SentryInstrumentationAnotherTest {
         val instrumentation = fixture.getSut(isTransactionActive = true, operation = OperationDefinition.Operation.MUTATION, graphQLContextParam = emptyMap(), addTransactionToTracingState = false)
         withMockScopes {
             instrumentation.beginExecution(fixture.instrumentationExecutionParameters)
-            assertSame(fixture.scopes, fixture.instrumentationExecutionParameters.graphQLContext.get<IScopes>(SentryInstrumentation.SENTRY_SCOPES_CONTEXT_KEY))
+            assertSame(fixture.scopes, fixture.instrumentationExecutionParameters.graphQLContext.get<IScopes>(SentryGraphqlInstrumentation.SENTRY_SCOPES_CONTEXT_KEY))
             assertNotNull(fixture.instrumentationState.transaction)
         }
     }
@@ -298,8 +296,8 @@ class SentryInstrumentationAnotherTest {
         val exception = IllegalStateException("some exception")
         val instrumentation = fixture.getSut(
             graphQLContextParam = mapOf(
-                SENTRY_EXCEPTIONS_CONTEXT_KEY to listOf(exception),
-                SentryInstrumentation.SENTRY_SCOPES_CONTEXT_KEY to fixture.scopes
+                SentryGraphqlInstrumentation.SENTRY_EXCEPTIONS_CONTEXT_KEY to listOf(exception),
+                SentryGraphqlInstrumentation.SENTRY_SCOPES_CONTEXT_KEY to fixture.scopes
             )
         )
         val executionResult = ExecutionResultImpl.newExecutionResult()

@@ -12,7 +12,6 @@ public enum DataCategory {
   Attachment("attachment"),
   Monitor("monitor"),
   Profile("profile"),
-  MetricBucket("metric_bucket"),
   Transaction("transaction"),
   Replay("replay"),
   Span("span"),

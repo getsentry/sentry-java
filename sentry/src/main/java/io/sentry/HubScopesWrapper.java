@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -273,11 +272,6 @@ public final class HubScopesWrapper implements IHub {
     return scopes.startTransaction(transactionContext, transactionOptions);
   }
 
-  @Override
-  public @Nullable SentryTraceHeader traceHeaders() {
-    return scopes.traceHeaders();
-  }
-
   @ApiStatus.Internal
   @Override
   public void setSpanContext(
@@ -342,12 +336,6 @@ public final class HubScopesWrapper implements IHub {
   @Override
   public @Nullable RateLimiter getRateLimiter() {
     return scopes.getRateLimiter();
-  }
-
-  @ApiStatus.Experimental
-  @Override
-  public @NotNull MetricsApi metrics() {
-    return scopes.metrics();
   }
 
   @Override

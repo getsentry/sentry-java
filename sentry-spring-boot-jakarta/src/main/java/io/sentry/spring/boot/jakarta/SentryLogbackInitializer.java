@@ -21,7 +21,7 @@ import org.springframework.core.ResolvableType;
 
 /** Registers {@link SentryAppender} after Spring context gets refreshed. */
 @Open
-class SentryLogbackInitializer implements GenericApplicationListener {
+public class SentryLogbackInitializer implements GenericApplicationListener {
   private final @NotNull SentryProperties sentryProperties;
   private final @NotNull List<String> loggers;
   @Nullable private SentryAppender sentryAppender;

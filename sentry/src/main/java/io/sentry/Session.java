@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.User;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.StringUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -67,7 +68,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
   private @Nullable String abnormalMechanism;
 
   /** The session lock, ops should be atomic */
-  private final @NotNull Object sessionLock = new Object();
+  private final @NotNull AutoClosableReentrantLock sessionLock = new AutoClosableReentrantLock();
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, Object> unknown;
@@ -208,7 +209,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
    * @param timestamp the timestamp or null
    */
   public void end(final @Nullable Date timestamp) {
-    synchronized (sessionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       init = null;
 
       // at this state it might be Crashed already, so we don't check for it.
@@ -262,7 +263,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
       final @Nullable String userAgent,
       final boolean addErrorsCount,
       final @Nullable String abnormalMechanism) {
-    synchronized (sessionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {
         this.status = status;
