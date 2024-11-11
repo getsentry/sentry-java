@@ -14,6 +14,13 @@ public final class ScopesStorageFactory {
 
   public static @NotNull IScopesStorage create(
       final @NotNull LoadClass loadClass, final @NotNull ILogger logger) {
+    final @NotNull IScopesStorage storage = createInternal(loadClass, logger);
+    storage.init();
+    return storage;
+  }
+
+  private static @NotNull IScopesStorage createInternal(
+      final @NotNull LoadClass loadClass, final @NotNull ILogger logger) {
     if (loadClass.isClassAvailable(OTEL_SCOPES_STORAGE, logger)) {
       Class<?> otelScopesStorageClazz = loadClass.loadClass(OTEL_SCOPES_STORAGE, logger);
       if (otelScopesStorageClazz != null) {

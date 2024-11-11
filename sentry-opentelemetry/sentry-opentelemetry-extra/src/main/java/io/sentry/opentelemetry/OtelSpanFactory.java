@@ -1,13 +1,16 @@
 package io.sentry.opentelemetry;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.TraceFlags;
 import io.opentelemetry.api.trace.TraceState;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.context.Context;
 import io.sentry.Baggage;
+import io.sentry.BuildConfig;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ISpanFactory;
@@ -33,6 +36,15 @@ import org.jetbrains.annotations.Nullable;
 public final class OtelSpanFactory implements ISpanFactory {
 
   private final @NotNull SentryWeakSpanStorage storage = SentryWeakSpanStorage.getInstance();
+  private final @Nullable OpenTelemetry openTelemetry;
+
+  public OtelSpanFactory(final @Nullable OpenTelemetry openTelemetry) {
+    this.openTelemetry = openTelemetry;
+  }
+
+  public OtelSpanFactory() {
+    this(null);
+  }
 
   @Override
   public @NotNull ITransaction createTransaction(
@@ -145,7 +157,14 @@ public final class OtelSpanFactory implements ISpanFactory {
   }
 
   private @NotNull Tracer getTracer() {
-    return GlobalOpenTelemetry.getTracer(
-        "sentry-instrumentation-scope-name", "sentry-instrumentation-scope-version");
+    return getTracerProvider().get("sentry-opentelemetry", BuildConfig.VERSION_NAME);
+  }
+
+  private @NotNull TracerProvider getTracerProvider() {
+    System.out.println("hello from " + toString());
+    if (openTelemetry != null) {
+      return openTelemetry.getTracerProvider();
+    }
+    return GlobalOpenTelemetry.getTracerProvider();
   }
 }

@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import graphql.GraphQLError;
 import io.sentry.EventProcessor;
 import io.sentry.IScopes;
+import io.sentry.ISpanFactory;
 import io.sentry.ITransportFactory;
 import io.sentry.InitPriority;
 import io.sentry.Integration;
@@ -28,6 +29,7 @@ import io.sentry.spring.jakarta.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameterPointcutConfiguration;
 import io.sentry.spring.jakarta.exception.SentryExceptionParameterAdviceConfiguration;
+import io.sentry.spring.jakarta.opentelemetry.SentryOpenTelemetryConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.jakarta.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter;
@@ -117,10 +119,21 @@ public class SentryAutoConfiguration {
       return new InAppIncludesResolver();
     }
 
+    // TODO ensure agent (auto-init) is not active
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryOpenTelemetryConfiguration.class)
+    @Open
+    @ConditionalOnClass({
+      io.opentelemetry.api.OpenTelemetry.class,
+      io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider.class
+    })
+    static class OpenTelemetryConfiguration {}
+
     @Bean
     public @NotNull IScopes sentryHub(
         final @NotNull List<Sentry.OptionsConfiguration<SentryOptions>> optionsConfigurations,
         final @NotNull SentryProperties options,
+        final @NotNull ObjectProvider<ISpanFactory> spanFactory,
         final @NotNull ObjectProvider<GitProperties> gitProperties) {
       optionsConfigurations.forEach(
           optionsConfiguration -> optionsConfiguration.configure(options));
@@ -130,6 +143,7 @@ public class SentryAutoConfiguration {
               options.setRelease(git.getCommitId());
             }
           });
+      spanFactory.ifAvailable(options::setSpanFactory);
 
       options.setSentryClientName(
           BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
