@@ -9,10 +9,11 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Experimental
 public final class OpenTelemetryUtil {
 
-  public static void applyOpenTelemetryOptions(final @Nullable SentryOptions options) {
+  public static void applyOpenTelemetryOptions(
+      final @Nullable SentryOptions options, final boolean isAgent) {
     if (options != null) {
       options.setSpanFactory(SentrySpanFactoryHolder.getSpanFactory());
-      options.setIgnoredSpanOrigins(SpanUtils.ignoredSpanOriginsForOpenTelemetry());
+      options.setIgnoredSpanOrigins(SpanUtils.ignoredSpanOriginsForOpenTelemetry(isAgent));
     }
   }
 }

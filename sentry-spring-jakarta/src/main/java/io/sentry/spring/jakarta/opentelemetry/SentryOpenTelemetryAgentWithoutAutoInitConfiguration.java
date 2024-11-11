@@ -29,7 +29,7 @@ public class SentryOpenTelemetryAgentWithoutAutoInitConfiguration {
     return options -> {
       SentryIntegrationPackageStorage.getInstance()
           .addIntegration("SpringBoot3OpenTelemetryAgentWithoutAutoInit");
-      OpenTelemetryUtil.applyOpenTelemetryOptions(options);
+      OpenTelemetryUtil.applyOpenTelemetryOptions(options, true);
     };
   }
 }

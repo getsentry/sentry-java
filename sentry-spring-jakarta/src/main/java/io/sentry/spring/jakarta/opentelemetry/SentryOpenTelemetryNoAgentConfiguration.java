@@ -32,7 +32,7 @@ public class SentryOpenTelemetryNoAgentConfiguration {
       SentryIntegrationPackageStorage.getInstance()
           .addIntegration("SpringBoot3OpenTelemetryNoAgent");
       SentryAutoConfigurationCustomizerProvider.skipInit = true;
-      OpenTelemetryUtil.applyOpenTelemetryOptions(options);
+      OpenTelemetryUtil.applyOpenTelemetryOptions(options, false);
     };
   }
 }

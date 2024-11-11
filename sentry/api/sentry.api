@@ -6172,7 +6172,7 @@ public final class io/sentry/util/SentryRandom {
 
 public final class io/sentry/util/SpanUtils {
 	public fun <init> ()V
-	public static fun ignoredSpanOriginsForOpenTelemetry ()Ljava/util/List;
+	public static fun ignoredSpanOriginsForOpenTelemetry (Z)Ljava/util/List;
 	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
 }
 
