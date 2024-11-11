@@ -31,8 +31,6 @@ public class PersonController {
   @GetMapping("{id}")
   @WithSpan("personSpanThroughOtelAnnotation")
   Person person(@PathVariable Long id) {
-    ISpan annotationSpan = Sentry.getSpan();
-    System.out.println(annotationSpan);
     Span span =
         openTelemetry
             .getTracer("tracerForSpringBootDemo")
