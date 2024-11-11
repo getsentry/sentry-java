@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.LoadClass;
+import io.sentry.util.Platform;
 import java.lang.reflect.InvocationTargetException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -21,23 +22,25 @@ public final class ScopesStorageFactory {
 
   private static @NotNull IScopesStorage createInternal(
       final @NotNull LoadClass loadClass, final @NotNull ILogger logger) {
-    if (loadClass.isClassAvailable(OTEL_SCOPES_STORAGE, logger)) {
-      Class<?> otelScopesStorageClazz = loadClass.loadClass(OTEL_SCOPES_STORAGE, logger);
-      if (otelScopesStorageClazz != null) {
-        try {
-          final @Nullable Object otelScopesStorage =
-              otelScopesStorageClazz.getDeclaredConstructor().newInstance();
-          if (otelScopesStorage != null && otelScopesStorage instanceof IScopesStorage) {
-            return (IScopesStorage) otelScopesStorage;
+    if (Platform.isJvm()) {
+      if (loadClass.isClassAvailable(OTEL_SCOPES_STORAGE, logger)) {
+        Class<?> otelScopesStorageClazz = loadClass.loadClass(OTEL_SCOPES_STORAGE, logger);
+        if (otelScopesStorageClazz != null) {
+          try {
+            final @Nullable Object otelScopesStorage =
+                otelScopesStorageClazz.getDeclaredConstructor().newInstance();
+            if (otelScopesStorage != null && otelScopesStorage instanceof IScopesStorage) {
+              return (IScopesStorage) otelScopesStorage;
+            }
+          } catch (InstantiationException e) {
+            // TODO log
+          } catch (IllegalAccessException e) {
+            // TODO log
+          } catch (InvocationTargetException e) {
+            // TODO log
+          } catch (NoSuchMethodException e) {
+            // TODO log
           }
-        } catch (InstantiationException e) {
-          // TODO log
-        } catch (IllegalAccessException e) {
-          // TODO log
-        } catch (InvocationTargetException e) {
-          // TODO log
-        } catch (NoSuchMethodException e) {
-          // TODO log
         }
       }
     }

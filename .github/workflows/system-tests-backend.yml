@@ -92,7 +92,7 @@ jobs:
 
       - name: Start server and run integration test for sentry-cli commands
         run: |
-          test/system-test-sentry-server-start.sh > sentry-mock-server.txt 2>&1 & test/system-test-spring-server-start.sh "${{ matrix.sample }}" "${{ matrix.agent }}" "${{ matrix.agent-auto-init }}" > spring-server.txt 2>&1 & test/wait-for-spring.sh && ./gradlew :sentry-samples:${{ matrix.sample }}:systemTest
+          test/system-test-run.sh "${{ matrix.sample }}" "${{ matrix.agent }}" "${{ matrix.agent-auto-init }}"
 
       - name: Upload test results
         if: always()

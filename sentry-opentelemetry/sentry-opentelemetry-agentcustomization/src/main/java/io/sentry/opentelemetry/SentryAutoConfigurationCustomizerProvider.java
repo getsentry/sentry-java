@@ -9,7 +9,6 @@ import io.sentry.InitPriority;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
-import io.sentry.SentrySpanFactoryHolder;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryPackage;
 import java.io.IOException;
@@ -33,9 +32,6 @@ public final class SentryAutoConfigurationCustomizerProvider
   public void customize(AutoConfigurationCustomizer autoConfiguration) {
     ensureSentryOtelStorageIsInitialized();
     final @Nullable VersionInfoHolder versionInfoHolder = createVersionInfo();
-
-    final @NotNull OtelSpanFactory spanFactory = new OtelSpanFactory();
-    SentrySpanFactoryHolder.setSpanFactory(spanFactory);
 
     if (isSentryAutoInitEnabled()) {
       Sentry.init(
