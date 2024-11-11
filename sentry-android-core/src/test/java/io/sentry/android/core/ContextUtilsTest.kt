@@ -146,7 +146,7 @@ class ContextUtilsTest {
 
     @Test
     fun `when supported abis is specified, getArchitectures returns correct values`() {
-        val architectures = ContextUtils.getArchitectures(BuildInfoProvider(logger))
+        val architectures = ContextUtils.getArchitectures()
         assertEquals("armeabi-v7a", architectures[0])
     }
 

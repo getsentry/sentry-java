@@ -4,9 +4,6 @@ import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_DENIED
 import android.net.ConnectivityManager
 import android.net.ConnectivityManager.NetworkCallback
-import android.net.ConnectivityManager.TYPE_ETHERNET
-import android.net.ConnectivityManager.TYPE_MOBILE
-import android.net.ConnectivityManager.TYPE_WIFI
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkCapabilities.TRANSPORT_CELLULAR
@@ -113,14 +110,6 @@ class AndroidConnectionStatusProviderTest {
     }
 
     @Test
-    fun `When sdkInfoVersion is not min Marshmallow, return null for getConnectionType`() {
-        val buildInfo = mock<BuildInfoProvider>()
-        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
-
-        assertNull(AndroidConnectionStatusProvider.getConnectionType(mock(), mock(), buildInfo))
-    }
-
-    @Test
     fun `When there's no permission, return null for getConnectionType`() {
         whenever(contextMock.checkPermission(any(), any(), any())).thenReturn(PERMISSION_DENIED)
 
@@ -147,14 +136,6 @@ class AndroidConnectionStatusProviderTest {
     }
 
     @Test
-    fun `When network is TYPE_WIFI, return wifi`() {
-        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
-        whenever(networkInfo.type).thenReturn(TYPE_WIFI)
-
-        assertEquals("wifi", AndroidConnectionStatusProvider.getConnectionType(contextMock, mock(), buildInfo))
-    }
-
-    @Test
     fun `When network capabilities has TRANSPORT_ETHERNET, return ethernet`() {
         whenever(networkCapabilities.hasTransport(eq(TRANSPORT_ETHERNET))).thenReturn(true)
 
@@ -165,30 +146,8 @@ class AndroidConnectionStatusProviderTest {
     }
 
     @Test
-    fun `When network is TYPE_ETHERNET, return ethernet`() {
-        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
-        whenever(networkInfo.type).thenReturn(TYPE_ETHERNET)
-
-        assertEquals(
-            "ethernet",
-            AndroidConnectionStatusProvider.getConnectionType(contextMock, mock(), buildInfo)
-        )
-    }
-
-    @Test
     fun `When network capabilities has TRANSPORT_CELLULAR, return cellular`() {
         whenever(networkCapabilities.hasTransport(eq(TRANSPORT_CELLULAR))).thenReturn(true)
-
-        assertEquals(
-            "cellular",
-            AndroidConnectionStatusProvider.getConnectionType(contextMock, mock(), buildInfo)
-        )
-    }
-
-    @Test
-    fun `When network is TYPE_MOBILE, return cellular`() {
-        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
-        whenever(networkInfo.type).thenReturn(TYPE_MOBILE)
 
         assertEquals(
             "cellular",
@@ -232,19 +191,9 @@ class AndroidConnectionStatusProviderTest {
     }
 
     @Test
-    fun `When sdkInfoVersion is not min Lollipop, do not unregister any NetworkCallback`() {
-        val buildInfo = mock<BuildInfoProvider>()
-        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
-        whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
-        AndroidConnectionStatusProvider.unregisterNetworkCallback(contextMock, mock(), buildInfo, mock())
-
-        verify(connectivityManager, never()).unregisterNetworkCallback(any<NetworkCallback>())
-    }
-
-    @Test
     fun `unregisterNetworkCallback calls connectivityManager unregisterDefaultNetworkCallback`() {
         whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
-        AndroidConnectionStatusProvider.unregisterNetworkCallback(contextMock, mock(), buildInfo, mock())
+        AndroidConnectionStatusProvider.unregisterNetworkCallback(contextMock, mock(), mock())
 
         verify(connectivityManager).unregisterNetworkCallback(any<NetworkCallback>())
     }
@@ -255,15 +204,6 @@ class AndroidConnectionStatusProviderTest {
         whenever(connectivityManager.activeNetwork).thenThrow(SecurityException("Android OS Bug"))
 
         assertNull(AndroidConnectionStatusProvider.getConnectionType(contextMock, mock(), buildInfo))
-    }
-
-    @Test
-    fun `When connectivityManager getActiveNetworkInfo throws an exception, getConnectionType returns null`() {
-        whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
-        whenever(connectivityManager.activeNetworkInfo).thenThrow(SecurityException("Android OS Bug"))
-
-        assertNull(AndroidConnectionStatusProvider.getConnectionType(contextMock, mock(), buildInfo))
-        assertEquals(IConnectionStatusProvider.ConnectionStatus.UNKNOWN, connectionStatusProvider.connectionStatus)
     }
 
     @Test
@@ -289,7 +229,7 @@ class AndroidConnectionStatusProviderTest {
 
         var failed = false
         try {
-            AndroidConnectionStatusProvider.unregisterNetworkCallback(contextMock, mock(), buildInfo, mock())
+            AndroidConnectionStatusProvider.unregisterNetworkCallback(contextMock, mock(), mock())
         } catch (t: Throwable) {
             failed = true
         }
