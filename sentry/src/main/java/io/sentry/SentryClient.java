@@ -14,10 +14,11 @@ import io.sentry.transport.RateLimiter;
 import io.sentry.util.CheckInUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import io.sentry.util.Random;
+import io.sentry.util.SentryRandom;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,7 +38,6 @@ public final class SentryClient implements ISentryClient {
 
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
-  private final @Nullable SecureRandom random;
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
 
   @Override
@@ -57,8 +57,6 @@ public final class SentryClient implements ISentryClient {
 
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
-
-    this.random = options.getSampleRate() == null ? null : new SecureRandom();
   }
 
   private boolean shouldApplyScopeData(
@@ -1185,6 +1183,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private boolean sample() {
+    final @Nullable Random random = options.getSampleRate() == null ? null : SentryRandom.current();
     // https://docs.sentry.io/development/sdk-dev/features/#event-sampling
     if (options.getSampleRate() != null && random != null) {
       final double sampling = options.getSampleRate();

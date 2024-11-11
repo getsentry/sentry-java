@@ -14,7 +14,6 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStreamReader
 import java.nio.file.Files
-import java.util.UUID
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -166,7 +165,7 @@ class CacheStrategyTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2ebcf211e6869b7df92533d2db",
             init,
             123456.toLong(),
             6000.toDouble(),

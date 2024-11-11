@@ -1,0 +1,11 @@
+appId: io.sentry.uitest.android.critical
+---
+- launchApp
+- tapOn: "Write Corrupted Envelope"
+# The close here ensures the next corrupted envelope
+# will be present on the next app launch
+- tapOn: "Close SDK"
+- tapOn: "Write Corrupted Envelope"
+- stopApp
+- launchApp
+- assertVisible: "Welcome!"
