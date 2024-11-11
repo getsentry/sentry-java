@@ -372,6 +372,17 @@ class JsonSerializerTest {
     }
 
     @Test
+    fun `session deserializes 32 character id`() {
+        val sessionId = "c81d4e2ebcf211e6869b7df92533d2db"
+        val session = createSessionMockData("c81d4e2ebcf211e6869b7df92533d2db")
+        val jsonSession = serializeToString(session)
+        // reversing, so we can assert values and not a json string
+        val expectedSession = fixture.serializer.deserialize(StringReader(jsonSession), Session::class.java)
+
+        assertSessionData(expectedSession, "c81d4e2ebcf211e6869b7df92533d2db")
+    }
+
+    @Test
     fun `When deserializing an Envelope, all the values should be set to the SentryEnvelope object`() {
         val jsonEnvelope = FileFromResources.invoke("envelope_session.txt")
         val envelope = fixture.serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))
@@ -1248,9 +1259,9 @@ class JsonSerializerTest {
         assertEquals(replayRecording, deserializedRecording)
     }
 
-    private fun assertSessionData(expectedSession: Session?) {
+    private fun assertSessionData(expectedSession: Session?, expectedSessionId: String = "c81d4e2e-bcf2-11e6-869b-7df92533d2db") {
         assertNotNull(expectedSession)
-        assertEquals(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"), expectedSession.sessionId)
+        assertEquals(expectedSessionId, expectedSession.sessionId)
         assertEquals("123", expectedSession.distinctId)
         assertTrue(expectedSession.init!!)
         assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.started!!))
@@ -1280,14 +1291,14 @@ class JsonSerializerTest {
     private fun generateEmptySentryEvent(date: Date = Date()): SentryEvent =
         SentryEvent(date)
 
-    private fun createSessionMockData(): Session =
+    private fun createSessionMockData(sessionId: String = "c81d4e2e-bcf2-11e6-869b-7df92533d2db"): Session =
         Session(
             Session.State.Ok,
             DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
             DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            sessionId,
             true,
             123456.toLong(),
             6000.toDouble(),
