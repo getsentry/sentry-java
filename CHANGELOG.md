@@ -2,17 +2,56 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- Use String instead of UUID for SessionId ([#3834](https://github.com/getsentry/sentry-java/pull/3834))
+  - The `Session` constructor now takes a `String` instead of a `UUID` for the `sessionId` parameter.
+  - `Session.getSessionId()` now returns a `String` instead of a `UUID`.
+- The Android minSdk level for all Android modules is now 21 ([#3852](https://github.com/getsentry/sentry-java/pull/3852))
+- The minSdk level for sentry-android-ndk changed from 19 to 21 ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
+
 ### Features
 
+- Spring Boot now automatically detects if OpenTelemetry is available and makes use of it ([#3846](https://github.com/getsentry/sentry-java/pull/3846))
+  - This is only enabled if there is no OpenTelemetry agent available
+  - We prefer to use the OpenTelemetry agent as it offers more auto instrumentation
+  - In some cases the OpenTelemetry agent cannot be used, please see https://opentelemetry.io/docs/zero-code/java/spring-boot-starter/ for more details on when to prefer the Agent and when the Spring Boot starter makes more sense.
+  - In this mode the SDK makes use of the `OpenTelemetry` bean that is created by `opentelemetry-spring-boot-starter` instead of `GlobalOpenTelemetry`
+- Spring Boot now automatically detects our OpenTelemetry agent if its auto init is disabled ([#3848](https://github.com/getsentry/sentry-java/pull/3848))
+  - This means Spring Boot config mechanisms can now be combined with our OpenTelemetry agent
+  - The `sentry-opentelemetry-extra` module has been removed again, most classes have been moved to `sentry-opentelemetry-bootstrap` which is loaded into the bootstrap classloader (i.e. `null`) when our Java agent is used. The rest has been moved into `sentry-opentelemetry-agentcustomization` and is loaded into the agent classloader when our Java agent is used.
+  - The `sentry-opentelemetry-bootstrap` and `sentry-opentelemetry-agentcustomization` modules can be used without the agent as well, in which case all classes are loaded into the application classloader. Check out our `sentry-samples-spring-boot-jakarta-opentelemetry-noagent` sample.
+  - In this mode the SDK makes use of `GlobalOpenTelemetry`
+- Automatically set span factory based on presence of OpenTelemetry ([#3858](https://github.com/getsentry/sentry-java/pull/3858))
+  - `SentrySpanFactoryHolder` has been removed as it is no longer required.
+- Add a sample for showcasing Sentry with OpenTelemetry for Spring Boot 3 with our Java agent (`sentry-samples-spring-boot-jakarta-opentelemetry`) ([#3856](https://github.com/getsentry/sentry-java/pull/3828))
+- Add a sample for showcasing Sentry with OpenTelemetry for Spring Boot 3 without our Java agent (`sentry-samples-spring-boot-jakarta-opentelemetry-noagent`) ([#3856](https://github.com/getsentry/sentry-java/pull/3856))
 - Add `globalHubMode` to options ([#3805](https://github.com/getsentry/sentry-java/pull/3805))
   - `globalHubMode` used to only be a param on `Sentry.init`. To make it easier to be used in e.g. Desktop environments, we now additionally added it as an option on SentryOptions that can also be set via `sentry.properties`.
   - If both the param on `Sentry.init` and the option are set, the option will win. By default the option is set to `null` meaning whatever is passed to `Sentry.init` takes effect.
 - Lazy uuid generation for SentryId and SpanId ([#3770](https://github.com/getsentry/sentry-java/pull/3770))
+- Faster generation of Sentry and Span IDs ([#3818](https://github.com/getsentry/sentry-java/pull/3818))
+  - Uses faster implementation to convert UUID to SentryID String
+  - Uses faster Random implementation to generate UUIDs
+- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
+- Android 15: Add support for 16KB page sizes ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
+  - See https://developer.android.com/guide/practices/page-sizes for more details
 
 ### Fixes
 
+- The Sentry OpenTelemetry Java agent now makes sure Sentry `Scopes` storage is initialized even if the agents auto init is disabled ([#3848](https://github.com/getsentry/sentry-java/pull/3848))
+  - This is required for all integrations to work together with our OpenTelemetry Java agent if its auto init has been disabled and the SDKs init should be used instead.
+- Do not ignore certain span origins for OpenTelemetry without agent ([#3856](https://github.com/getsentry/sentry-java/pull/3856))
 - Add `auto.graphql.graphql22` to ignored span origins when using OpenTelemetry ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
 - The Spring Boot 3 WebFlux sample now uses our GraphQL v22 integration ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
+- Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
+
+
+### Dependencies
+
+- Bump Native SDK from v0.7.5 to v0.7.8 ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
+    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#078)
+    - [diff](https://github.com/getsentry/sentry-native/compare/0.7.5...0.7.8)
 
 ### Behavioural Changes
 
@@ -262,6 +301,48 @@ You may also use `LifecycleHelper.close(token)`, e.g. in case you need to pass t
 
 - Report exceptions returned by Throwable.getSuppressed() to Sentry as exception groups ([#3396] https://github.com/getsentry/sentry-java/pull/3396)
 
+
+## 7.16.0
+
+### Features
+
+- Add meta option to attach ANR thread dumps ([#3791](https://github.com/getsentry/sentry-java/pull/3791))
+
+### Fixes
+
+- Cache parsed Dsn ([#3796](https://github.com/getsentry/sentry-java/pull/3796))
+- fix invalid profiles when the transaction name is empty ([#3747](https://github.com/getsentry/sentry-java/pull/3747))
+- Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
+- Vendor `java.util.Random` and replace `java.security.SecureRandom` usages ([#3783](https://github.com/getsentry/sentry-java/pull/3783))
+- Fix potential ANRs due to NDK scope sync ([#3754](https://github.com/getsentry/sentry-java/pull/3754))
+- Fix potential ANRs due to NDK System.loadLibrary calls ([#3670](https://github.com/getsentry/sentry-java/pull/3670))
+- Fix slow `Log` calls on app startup ([#3793](https://github.com/getsentry/sentry-java/pull/3793))
+- Fix slow Integration name parsing ([#3794](https://github.com/getsentry/sentry-java/pull/3794))
+- Session Replay: Reduce startup and capture overhead ([#3799](https://github.com/getsentry/sentry-java/pull/3799))
+- Load lazy fields on init in the background ([#3803](https://github.com/getsentry/sentry-java/pull/3803))
+- Replace setOf with HashSet.add ([#3801](https://github.com/getsentry/sentry-java/pull/3801))
+
+### Breaking changes
+
+- The method `addIntegrationToSdkVersion(Ljava/lang/Class;)V` has been removed from the core (`io.sentry:sentry`) package. Please make sure all of the packages (e.g. `io.sentry:sentry-android-core`, `io.sentry:sentry-android-fragment`, `io.sentry:sentry-okhttp`  and others) are all aligned and using the same version to prevent the `NoSuchMethodError` exception.
+
+## 7.16.0-alpha.1
+
+### Features
+
+- Add meta option to attach ANR thread dumps ([#3791](https://github.com/getsentry/sentry-java/pull/3791))
+
+### Fixes
+
+- Cache parsed Dsn ([#3796](https://github.com/getsentry/sentry-java/pull/3796))
+- fix invalid profiles when the transaction name is empty ([#3747](https://github.com/getsentry/sentry-java/pull/3747))
+- Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
+- Vendor `java.util.Random` and replace `java.security.SecureRandom` usages ([#3783](https://github.com/getsentry/sentry-java/pull/3783))
+- Fix potential ANRs due to NDK scope sync ([#3754](https://github.com/getsentry/sentry-java/pull/3754))
+- Fix potential ANRs due to NDK System.loadLibrary calls ([#3670](https://github.com/getsentry/sentry-java/pull/3670))
+- Fix slow `Log` calls on app startup ([#3793](https://github.com/getsentry/sentry-java/pull/3793))
+- Fix slow Integration name parsing ([#3794](https://github.com/getsentry/sentry-java/pull/3794))
+- Session Replay: Reduce startup and capture overhead ([#3799](https://github.com/getsentry/sentry-java/pull/3799))
 
 ## 7.15.0
 

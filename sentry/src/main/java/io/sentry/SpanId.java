@@ -3,14 +3,13 @@ package io.sentry;
 import static io.sentry.util.StringUtils.PROPER_NIL_UUID;
 
 import io.sentry.util.LazyEvaluator;
-import io.sentry.util.StringUtils;
 import java.io.IOException;
 import java.util.Objects;
-import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 
 public final class SpanId implements JsonSerializable {
-  public static final SpanId EMPTY_ID = new SpanId(PROPER_NIL_UUID);
+  public static final SpanId EMPTY_ID =
+      new SpanId(PROPER_NIL_UUID.replace("-", "").substring(0, 16));
 
   private final @NotNull LazyEvaluator<String> lazyValue;
 
@@ -20,12 +19,7 @@ public final class SpanId implements JsonSerializable {
   }
 
   public SpanId() {
-    this.lazyValue =
-        new LazyEvaluator<>(
-            () ->
-                StringUtils.normalizeUUID(UUID.randomUUID().toString())
-                    .replace("-", "")
-                    .substring(0, 16));
+    this.lazyValue = new LazyEvaluator<>(SentryUUID::generateSpanId);
   }
 
   @Override

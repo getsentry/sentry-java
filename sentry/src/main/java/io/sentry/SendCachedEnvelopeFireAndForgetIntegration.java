@@ -81,7 +81,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
     options
         .getLogger()
         .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
-    addIntegrationToSdkVersion(getClass());
+    addIntegrationToSdkVersion("SendCachedEnvelopeFireAndForget");
 
     sendCachedEnvelopes(scopes, options);
   }

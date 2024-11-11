@@ -13,7 +13,6 @@ import java.util.Currency
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -71,7 +70,7 @@ class MapObjectReaderTest {
         writer.name("MapOfLists").value(logger, mapOf("metric_a" to listOf("foo")))
         writer.name("Locale").value(logger, Locale.US)
         writer.name("URI").value(logger, URI.create("http://www.example.com"))
-        writer.name("UUID").value(logger, UUID.fromString("00000000-1111-2222-3333-444444444444"))
+        writer.name("UUID").value(logger, "00000000-1111-2222-3333-444444444444")
         writer.name("Currency").value(logger, Currency.getInstance("EUR"))
         writer.name("Enum").value(logger, MapObjectWriterTest.BasicEnum.A)
         writer.name("data").value(logger, mapOf("screen" to "MainActivity"))
@@ -96,8 +95,8 @@ class MapObjectReaderTest {
         assertEquals(Currency.getInstance("EUR"), Currency.getInstance(reader.nextString()))
         assertEquals("UUID", reader.nextName())
         assertEquals(
-            UUID.fromString("00000000-1111-2222-3333-444444444444"),
-            UUID.fromString(reader.nextString())
+            "00000000-1111-2222-3333-444444444444",
+            reader.nextString()
         )
         assertEquals("URI", reader.nextName())
         assertEquals(URI.create("http://www.example.com"), URI.create(reader.nextString()))
