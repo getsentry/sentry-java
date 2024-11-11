@@ -188,19 +188,19 @@ public class AndroidProfiler {
                 }
               });
 
-    // We stop profiling after a timeout to avoid huge profiles to be sent
-    try {
-      if (timeoutExecutorService != null) {
-        scheduledFinish =
-            timeoutExecutorService.schedule(
-                () -> endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
+      // We stop profiling after a timeout to avoid huge profiles to be sent
+      try {
+        if (timeoutExecutorService != null) {
+          scheduledFinish =
+              timeoutExecutorService.schedule(
+                  () -> endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
+        }
+      } catch (RejectedExecutionException e) {
+        logger.log(
+            SentryLevel.ERROR,
+            "Failed to call the executor. Profiling will not be automatically finished. Did you call Sentry.close()?",
+            e);
       }
-    } catch (RejectedExecutionException e) {
-      logger.log(
-          SentryLevel.ERROR,
-          "Failed to call the executor. Profiling will not be automatically finished. Did you call Sentry.close()?",
-          e);
-    }
 
       profileStartNanos = SystemClock.elapsedRealtimeNanos();
       final @NotNull Date profileStartTimestamp = DateUtils.getCurrentDateTime();
