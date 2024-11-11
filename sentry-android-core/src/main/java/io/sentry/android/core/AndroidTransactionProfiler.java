@@ -121,8 +121,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
             (int) SECONDS.toMicros(1) / profilingTracesHz,
             frameMetricsCollector,
             executorService,
-            logger,
-            buildInfoProvider);
+            logger);
   }
 
   @Override
