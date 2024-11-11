@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RejectedExecutionException;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -91,8 +89,7 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
             (int) SECONDS.toMicros(1) / profilingTracesHz,
             frameMetricsCollector,
             null,
-            logger,
-            buildInfoProvider);
+            logger);
   }
 
   public synchronized void setScopes(final @NotNull IScopes scopes) {
@@ -127,14 +124,13 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
       chunkId = new SentryId();
     }
 
-
     try {
       closeFuture = executorService.schedule(() -> stop(true), MAX_CHUNK_DURATION_MILLIS);
     } catch (RejectedExecutionException e) {
       logger.log(
-        SentryLevel.ERROR,
-        "Failed to schedule profiling chunk finish. Did you call Sentry.close()?",
-        e);
+          SentryLevel.ERROR,
+          "Failed to schedule profiling chunk finish. Did you call Sentry.close()?",
+          e);
     }
   }
 

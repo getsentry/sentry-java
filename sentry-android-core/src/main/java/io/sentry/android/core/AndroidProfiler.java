@@ -13,8 +13,8 @@ import io.sentry.MemoryCollectionData;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
-import io.sentry.SentryUUID;
 import io.sentry.SentryNanotimeDate;
+import io.sentry.SentryUUID;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
@@ -144,47 +144,47 @@ public class AndroidProfiler {
               new SentryFrameMetricsCollector.FrameMetricsCollectorListener() {
                 float lastRefreshRate = 0;
 
-              @Override
-              public void onFrameMetricCollected(
-                  final long frameStartNanos,
-                  final long frameEndNanos,
-                  final long durationNanos,
-                  final long delayNanos,
-                  final boolean isSlow,
-                  final boolean isFrozen,
-                  final float refreshRate) {
-                // profileStartNanos is calculated through SystemClock.elapsedRealtimeNanos(),
-                // but frameEndNanos uses System.nanotime(), so we convert it to get the timestamp
-                // relative to profileStartNanos
-                final SentryDate timestamp = new SentryNanotimeDate();
-                final long frameTimestampRelativeNanos =
-                    frameEndNanos
-                        - System.nanoTime()
-                        + SystemClock.elapsedRealtimeNanos()
-                        - profileStartNanos;
+                @Override
+                public void onFrameMetricCollected(
+                    final long frameStartNanos,
+                    final long frameEndNanos,
+                    final long durationNanos,
+                    final long delayNanos,
+                    final boolean isSlow,
+                    final boolean isFrozen,
+                    final float refreshRate) {
+                  // profileStartNanos is calculated through SystemClock.elapsedRealtimeNanos(),
+                  // but frameEndNanos uses System.nanotime(), so we convert it to get the timestamp
+                  // relative to profileStartNanos
+                  final SentryDate timestamp = new SentryNanotimeDate();
+                  final long frameTimestampRelativeNanos =
+                      frameEndNanos
+                          - System.nanoTime()
+                          + SystemClock.elapsedRealtimeNanos()
+                          - profileStartNanos;
 
-                // We don't allow negative relative timestamps.
-                // So we add a check, even if this should never happen.
-                if (frameTimestampRelativeNanos < 0) {
-                  return;
+                  // We don't allow negative relative timestamps.
+                  // So we add a check, even if this should never happen.
+                  if (frameTimestampRelativeNanos < 0) {
+                    return;
+                  }
+                  if (isFrozen) {
+                    frozenFrameRenderMeasurements.addLast(
+                        new ProfileMeasurementValue(
+                            frameTimestampRelativeNanos, durationNanos, timestamp));
+                  } else if (isSlow) {
+                    slowFrameRenderMeasurements.addLast(
+                        new ProfileMeasurementValue(
+                            frameTimestampRelativeNanos, durationNanos, timestamp));
+                  }
+                  if (refreshRate != lastRefreshRate) {
+                    lastRefreshRate = refreshRate;
+                    screenFrameRateMeasurements.addLast(
+                        new ProfileMeasurementValue(
+                            frameTimestampRelativeNanos, refreshRate, timestamp));
+                  }
                 }
-                if (isFrozen) {
-                  frozenFrameRenderMeasurements.addLast(
-                      new ProfileMeasurementValue(
-                          frameTimestampRelativeNanos, durationNanos, timestamp));
-                } else if (isSlow) {
-                  slowFrameRenderMeasurements.addLast(
-                      new ProfileMeasurementValue(
-                          frameTimestampRelativeNanos, durationNanos, timestamp));
-                }
-                if (refreshRate != lastRefreshRate) {
-                  lastRefreshRate = refreshRate;
-                  screenFrameRateMeasurements.addLast(
-                      new ProfileMeasurementValue(
-                          frameTimestampRelativeNanos, refreshRate, timestamp));
-                }
-              }
-            });
+              });
 
       // We stop profiling after a timeout to avoid huge profiles to be sent
       try {
