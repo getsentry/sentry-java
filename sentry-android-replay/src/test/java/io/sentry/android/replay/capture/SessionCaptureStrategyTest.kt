@@ -2,7 +2,6 @@ package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
 import io.sentry.Breadcrumb
-import io.sentry.DataCategory
 import io.sentry.DateUtils
 import io.sentry.IHub
 import io.sentry.Scope
@@ -39,7 +38,6 @@ import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify

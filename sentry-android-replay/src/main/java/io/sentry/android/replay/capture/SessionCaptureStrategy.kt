@@ -1,9 +1,6 @@
 package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
-import io.sentry.DataCategory.All
-import io.sentry.DataCategory.Replay
-import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.IHub
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
