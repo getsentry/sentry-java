@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         targetSdk = Config.Android.targetSdkVersion
-        minSdk = Config.Android.minSdkVersionReplay
+        minSdk = Config.Android.minSdkVersion
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 

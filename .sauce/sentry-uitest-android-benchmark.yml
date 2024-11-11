@@ -33,7 +33,7 @@ suites:
       useTestOrchestrator: true
     devices:
       - id: Samsung_Galaxy_S10_Plus_11_real_us # Samsung Galaxy S10+ - api 30 (11) - high end
-      - id: Samsung_Galaxy_A71_5G_real_us # Samsung Galaxy A71 5G - api 30 (11) - mid end
+      - id: Google_Pixel_4a_real_us # Google Pixel 4a - api 30 (11) - mid end
       - id: Google_Pixel_3a_real # Google Pixel 3a - api 30 (11) - low end
 
   - name: "Android 10 (api 29)"
@@ -42,7 +42,7 @@ suites:
       useTestOrchestrator: true
     devices:
       - id: Google_Pixel_3a_XL_real # Google Pixel 3a XL - api 29 (10)
-      - id: Motorola_Moto_G_Power_real_us # Motorola Moto G Power - api 29 (10)
+      - id: OnePlus_6T_real # OnePlus 6T - api 29 (10)
 
 # At the time of writing (July, 4, 2022), the market share per android version is:
 # 12.0 = 17.54%, 11.0 = 31.65%, 10.0 = 21.92%

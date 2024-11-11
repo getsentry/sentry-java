@@ -33,11 +33,7 @@ object Config {
     object Android {
         private val sdkVersion = 34
 
-        val minSdkVersion = 19
-        val minSdkVersionOkHttp = 21
-        val minSdkVersionReplay = 19
-        val minSdkVersionNdk = 19
-        val minSdkVersionCompose = 21
+        val minSdkVersion = 21
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
 
@@ -157,6 +153,8 @@ object Config {
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
 
+        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.8"
+
         object OpenTelemetry {
             val otelVersion = "1.41.0"
             val otelAlphaVersion = "$otelVersion-alpha"
@@ -180,18 +178,17 @@ object Config {
     }
 
     object TestLibs {
-        private val androidxTestVersion = "1.5.0"
         private val espressoVersion = "3.5.0"
 
         val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
         val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
-        val androidxCore = "androidx.test:core:$androidxTestVersion"
-        val androidxRunner = "androidx.test:runner:$androidxTestVersion"
-        val androidxTestCoreKtx = "androidx.test:core-ktx:$androidxTestVersion"
-        val androidxTestRules = "androidx.test:rules:$androidxTestVersion"
+        val androidxCore = "androidx.test:core:1.6.1"
+        val androidxRunner = "androidx.test:runner:1.6.2"
+        val androidxTestCoreKtx = "androidx.test:core-ktx:1.6.1"
+        val androidxTestRules = "androidx.test:rules:1.6.1"
         val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
         val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
-        val androidxTestOrchestrator = "androidx.test:orchestrator:1.4.2"
+        val androidxTestOrchestrator = "androidx.test:orchestrator:1.5.0"
         val androidxJunit = "androidx.test.ext:junit:1.1.5"
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
         val robolectric = "org.robolectric:robolectric:4.10.3"

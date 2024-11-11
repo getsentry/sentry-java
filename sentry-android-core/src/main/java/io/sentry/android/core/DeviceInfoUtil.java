@@ -109,7 +109,7 @@ public final class DeviceInfoUtil {
     device.setFamily(ContextUtils.getFamily(options.getLogger()));
     device.setModel(Build.MODEL);
     device.setModelId(Build.ID);
-    device.setArchs(ContextUtils.getArchitectures(buildInfoProvider));
+    device.setArchs(ContextUtils.getArchitectures());
 
     device.setOrientation(getOrientation());
     if (isEmulator != null) {

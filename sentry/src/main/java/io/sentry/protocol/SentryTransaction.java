@@ -28,7 +28,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Internal
 public final class SentryTransaction extends SentryBaseEvent
     implements JsonUnknown, JsonSerializable {
   /** The transaction name. */
