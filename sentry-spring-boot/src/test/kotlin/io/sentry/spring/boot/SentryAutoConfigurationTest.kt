@@ -169,6 +169,7 @@ class SentryAutoConfigurationTest {
             "sentry.enabled=false",
             "sentry.send-modules=false",
             "sentry.ignored-checkins=slug1,slugB",
+            "sentry.ignored-transactions=transactionName1,transactionNameB",
             "sentry.enable-backpressure-handling=false",
             "sentry.enable-spotlight=true",
             "sentry.spotlight-connection-url=http://local.sentry.io:1234",
@@ -209,6 +210,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.isEnabled).isEqualTo(false)
             assertThat(options.isSendModules).isEqualTo(false)
             assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
+            assertThat(options.ignoredTransactions).containsOnly("transactionName1", "transactionNameB")
             assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
             assertThat(options.isForceInit).isEqualTo(true)
             assertThat(options.isGlobalHubMode).isEqualTo(true)

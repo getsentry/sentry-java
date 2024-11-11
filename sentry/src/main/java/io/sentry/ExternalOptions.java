@@ -48,6 +48,7 @@ public final class ExternalOptions {
   private @Nullable String spotlightConnectionUrl;
 
   private @Nullable List<String> ignoredCheckIns;
+  private @Nullable List<String> ignoredTransactions;
 
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
@@ -138,6 +139,7 @@ public final class ExternalOptions {
     options.setSendDefaultPii(propertiesProvider.getBooleanProperty("send-default-pii"));
 
     options.setIgnoredCheckIns(propertiesProvider.getList("ignored-checkins"));
+    options.setIgnoredTransactions(propertiesProvider.getList("ignored-transactions"));
 
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
@@ -428,6 +430,14 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable List<String> getIgnoredCheckIns() {
     return ignoredCheckIns;
+  }
+
+  public void setIgnoredTransactions(final @Nullable List<String> ignoredTransactions) {
+    this.ignoredTransactions = ignoredTransactions;
+  }
+
+  public @Nullable List<String> getIgnoredTransactions() {
+    return ignoredTransactions;
   }
 
   @ApiStatus.Experimental
