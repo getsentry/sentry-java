@@ -541,9 +541,9 @@ public class SentryOptions {
   }
 
   /**
-   * Evaluates and parses the DSN. May throw an exception if the DSN is invalid.
-   * Renamed from `getParsedDsn` as this would cause an error when deploying as WAR to
-   * Tomcat due to `JNDI` property binding.
+   * Evaluates and parses the DSN. May throw an exception if the DSN is invalid. Renamed from
+   * `getParsedDsn` as this would cause an error when deploying as WAR to Tomcat due to `JNDI`
+   * property binding.
    *
    * @return the parsed DSN or throws if dsn is invalid
    */
