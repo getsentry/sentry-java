@@ -31,17 +31,17 @@ public final class SentryWeakSpanStorage {
   }
 
   // weak keys, spawns a thread to clean up values that have been garbage collected
-  private final @NotNull WeakConcurrentMap<SpanContext, OtelSpanWrapper> sentrySpans =
+  private final @NotNull WeakConcurrentMap<SpanContext, IOtelSpanWrapper> sentrySpans =
       new WeakConcurrentMap<>(true);
 
   private SentryWeakSpanStorage() {}
 
-  public @Nullable OtelSpanWrapper getSentrySpan(final @NotNull SpanContext spanContext) {
+  public @Nullable IOtelSpanWrapper getSentrySpan(final @NotNull SpanContext spanContext) {
     return sentrySpans.get(spanContext);
   }
 
   public void storeSentrySpan(
-      final @NotNull SpanContext otelSpan, final @NotNull OtelSpanWrapper sentrySpan) {
+      final @NotNull SpanContext otelSpan, final @NotNull IOtelSpanWrapper sentrySpan) {
     this.sentrySpans.put(otelSpan, sentrySpan);
   }
 }

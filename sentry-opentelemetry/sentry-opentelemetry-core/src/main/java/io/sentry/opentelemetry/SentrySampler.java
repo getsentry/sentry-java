@@ -53,7 +53,7 @@ public final class SentrySampler implements Sampler {
     }
     // note: parentLinks seems to usually be empty
     final @Nullable Span parentOtelSpan = Span.fromContextOrNull(parentContext);
-    final @Nullable OtelSpanWrapper parentSentrySpan =
+    final @Nullable IOtelSpanWrapper parentSentrySpan =
         parentOtelSpan != null ? spanStorage.getSentrySpan(parentOtelSpan.getSpanContext()) : null;
 
     if (parentSentrySpan != null) {
@@ -112,7 +112,7 @@ public final class SentrySampler implements Sampler {
   }
 
   private @NotNull SentrySamplingResult copyParentSentryDecision(
-      final @NotNull OtelSpanWrapper parentSentrySpan) {
+      final @NotNull IOtelSpanWrapper parentSentrySpan) {
     final @Nullable TracesSamplingDecision parentSamplingDecision =
         parentSentrySpan.getSamplingDecision();
     if (parentSamplingDecision != null) {

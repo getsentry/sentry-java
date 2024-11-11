@@ -53,6 +53,9 @@ dependencies {
     implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
     implementation(Config.Libs.OpenTelemetry.otelSdk)
+    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+//    implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
+    implementation(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)
 
     // database query tracing
     implementation(projects.sentryJdbc)

@@ -31,23 +31,18 @@ public final class SentryAutoConfigurationCustomizerProvider
 
   @Override
   public void customize(AutoConfigurationCustomizer autoConfiguration) {
-    System.out.println("hello from agent");
+    ensureSentryOtelStorageIsInitialized();
     final @Nullable VersionInfoHolder versionInfoHolder = createVersionInfo();
 
     final @NotNull OtelSpanFactory spanFactory = new OtelSpanFactory();
     SentrySpanFactoryHolder.setSpanFactory(spanFactory);
 
     if (isSentryAutoInitEnabled()) {
-      System.out.println("hello from before agent init");
       Sentry.init(
           options -> {
-            System.out.println("hello from agent init options config block");
             options.setEnableExternalConfiguration(true);
             options.setInitPriority(InitPriority.HIGH);
             OpenTelemetryUtil.applyOpenTelemetryOptions(options);
-            //
-            // options.setIgnoredSpanOrigins(SpanUtils.ignoredSpanOriginsForOpenTelemetry());
-            //            options.setSpanFactory(spanFactory);
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
             if (sdkVersion != null) {
               options.setSdkVersion(sdkVersion);
@@ -67,6 +62,15 @@ public final class SentryAutoConfigurationCustomizerProvider
     autoConfiguration
         .addTracerProviderCustomizer(this::configureSdkTracerProvider)
         .addPropertiesSupplier(this::getDefaultProperties);
+  }
+
+  private static void ensureSentryOtelStorageIsInitialized() {
+    /*
+    accessing Sentry.something will cause ScopesStorageFactory to run,
+    which causes OtelContextScopesStorage.init to register SentryContextStorage
+    as a wrapper. The wrapper can only be set until storage has been initialized by OpenTelemetry.
+    */
+    Sentry.getGlobalScope();
   }
 
   private boolean isSentryAutoInitEnabled() {

@@ -29,7 +29,7 @@ public final class OtelSpanContext extends SpanContext {
   public OtelSpanContext(
       final @NotNull ReadWriteSpan span,
       final @Nullable TracesSamplingDecision samplingDecision,
-      final @Nullable OtelSpanWrapper parentSpan,
+      final @Nullable IOtelSpanWrapper parentSpan,
       final @Nullable SpanId parentSpanId,
       final @Nullable Baggage baggage) {
     super(

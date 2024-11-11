@@ -29,9 +29,9 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class OtelTransactionSpanForwarder implements ITransaction {
 
-  private final @NotNull OtelSpanWrapper rootSpan;
+  private final @NotNull IOtelSpanWrapper rootSpan;
 
-  public OtelTransactionSpanForwarder(final @NotNull OtelSpanWrapper rootSpan) {
+  public OtelTransactionSpanForwarder(final @NotNull IOtelSpanWrapper rootSpan) {
     this.rootSpan = Objects.requireNonNull(rootSpan, "root span is required");
   }
 
