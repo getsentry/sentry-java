@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixes
+
+- Session Replay: Disable replay in session mode when rate limit is active ([#3854](https://github.com/getsentry/sentry-java/pull/3854))
+
+## 7.17.0
+
 ### Features
 
 - Add meta option to set the maximum amount of breadcrumbs to be logged. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
@@ -11,7 +17,9 @@
 
 - Using MaxBreadcrumb with value 0 no longer crashes. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
 - Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
-- Session Replay: Disable replay in session mode when rate limit is active ([#3854](https://github.com/getsentry/sentry-java/pull/3854))
+- Fix standalone tomcat jndi issue ([#3873](https://github.com/getsentry/sentry-java/pull/3873))
+  - Using Sentry Spring Boot on a standalone tomcat caused the following error:
+    - Failed to bind properties under 'sentry.parsed-dsn' to io.sentry.Dsn
 
 ## 7.16.0
 

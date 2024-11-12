@@ -69,6 +69,7 @@ jobs:
           target: 'aosp_atd'
           arch: x86
           channel: canary # Necessary for ATDs
+          disk-size: 4096M
           script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release --daemon
 
       - name: Upload test results
