@@ -398,7 +398,7 @@ public final class Sentry {
     }
 
     // This creates the DSN object and performs some checks
-    options.getParsedDsn();
+    options.retrieveParsedDsn();
 
     ILogger logger = options.getLogger();
 
