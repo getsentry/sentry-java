@@ -1,8 +1,9 @@
-package io.sentry.samples.spring.boot.jakarta;
+package io.sentry.samples.spring.boot;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.sentry.ISpan;
 import io.sentry.Sentry;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +29,7 @@ public class PersonController {
   }
 
   @GetMapping("{id}")
+  @WithSpan("personSpanThroughOtelAnnotation")
   Person person(@PathVariable Long id) {
     Span span = tracer.spanBuilder("spanCreatedThroughOtelApi").startSpan();
     try (final @NotNull Scope spanScope = span.makeCurrent()) {
