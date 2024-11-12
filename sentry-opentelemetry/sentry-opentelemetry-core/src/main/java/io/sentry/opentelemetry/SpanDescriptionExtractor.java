@@ -17,7 +17,7 @@ public final class SpanDescriptionExtractor {
 
   @SuppressWarnings("deprecation")
   public @NotNull OtelSpanInfo extractSpanInfo(
-      final @NotNull SpanData otelSpan, final @Nullable OtelSpanWrapper sentrySpan) {
+      final @NotNull SpanData otelSpan, final @Nullable IOtelSpanWrapper sentrySpan) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
 
     final @Nullable String httpMethod =

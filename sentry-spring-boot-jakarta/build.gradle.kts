@@ -41,7 +41,9 @@ dependencies {
     compileOnly(Config.Libs.springBoot3StarterQuartz)
     compileOnly(Config.Libs.reactorCore)
     compileOnly(Config.Libs.contextPropagation)
+    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
 
     annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
@@ -75,8 +77,14 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterAop)
     testImplementation(Config.Libs.springBoot3StarterQuartz)
     testImplementation(Config.Libs.springBoot3StarterGraphql)
-    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
     testImplementation(Config.Libs.contextPropagation)
+    testImplementation(Config.Libs.OpenTelemetry.otelSdk)
+    testImplementation(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)
+    testImplementation(Config.Libs.springBoot3StarterOpenTelemetry)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 }
 
 configure<SourceSetContainer> {

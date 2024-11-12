@@ -35,6 +35,7 @@ dependencies {
     compileOnly(Config.Libs.servletApiJakarta)
     compileOnly(Config.Libs.slf4jApi)
     compileOnly(Config.Libs.contextPropagation)
+    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
 
     compileOnly(Config.Libs.springWebflux)
 
@@ -46,6 +47,8 @@ dependencies {
     compileOnly(projects.sentryGraphql)
     compileOnly(projects.sentryGraphql22)
     compileOnly(projects.sentryQuartz)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
     // tests
     testImplementation(projects.sentryTestSupport)

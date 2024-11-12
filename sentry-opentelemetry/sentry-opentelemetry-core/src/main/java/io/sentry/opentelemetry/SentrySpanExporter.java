@@ -185,7 +185,7 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     final @NotNull String spanId = spanData.getSpanId();
-    final @Nullable OtelSpanWrapper sentrySpanMaybe =
+    final @Nullable IOtelSpanWrapper sentrySpanMaybe =
         spanStorage.getSentrySpan(spanData.getSpanContext());
     final @NotNull OtelSpanInfo spanInfo =
         spanDescriptionExtractor.extractSpanInfo(spanData, sentrySpanMaybe);
@@ -239,9 +239,9 @@ public final class SentrySpanExporter implements SpanExporter {
   }
 
   private void transferSpanDetails(
-      final @Nullable OtelSpanWrapper sourceSpanMaybe, final @NotNull ISpan targetSpan) {
+      final @Nullable IOtelSpanWrapper sourceSpanMaybe, final @NotNull ISpan targetSpan) {
     if (sourceSpanMaybe != null) {
-      final @NotNull OtelSpanWrapper sourceSpan = sourceSpanMaybe;
+      final @NotNull IOtelSpanWrapper sourceSpan = sourceSpanMaybe;
 
       final @NotNull Contexts contexts = sourceSpan.getContexts();
       targetSpan.getContexts().putAll(contexts);
@@ -263,7 +263,7 @@ public final class SentrySpanExporter implements SpanExporter {
   private @Nullable ITransaction createTransactionForOtelSpan(final @NotNull SpanData span) {
     final @NotNull String spanId = span.getSpanId();
     final @NotNull String traceId = span.getTraceId();
-    final @Nullable OtelSpanWrapper sentrySpanMaybe =
+    final @Nullable IOtelSpanWrapper sentrySpanMaybe =
         spanStorage.getSentrySpan(span.getSpanContext());
     final @Nullable IScopes scopesMaybe =
         sentrySpanMaybe != null ? sentrySpanMaybe.getScopes() : null;
@@ -288,7 +288,7 @@ public final class SentrySpanExporter implements SpanExporter {
     @Nullable Baggage baggage = null;
 
     if (sentrySpanMaybe != null) {
-      final @NotNull OtelSpanWrapper sentrySpan = sentrySpanMaybe;
+      final @NotNull IOtelSpanWrapper sentrySpan = sentrySpanMaybe;
       final @Nullable String transactionNameMaybe = sentrySpan.getTransactionName();
       if (transactionNameMaybe != null) {
         transactionName = transactionNameMaybe;

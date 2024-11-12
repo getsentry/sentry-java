@@ -1,7 +1,7 @@
 package io.sentry.samples.spring.boot.jakarta;
 
+import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
 import io.sentry.ISpan;
 import io.sentry.Sentry;
@@ -22,19 +22,26 @@ public class TodoController {
   private final RestTemplate restTemplate;
   private final WebClient webClient;
   private final RestClient restClient;
-  private final Tracer tracer;
+  private final OpenTelemetry openTelemetry;
 
   public TodoController(
-      RestTemplate restTemplate, WebClient webClient, RestClient restClient, Tracer tracer) {
+      RestTemplate restTemplate,
+      WebClient webClient,
+      RestClient restClient,
+      OpenTelemetry openTelemetry) {
     this.restTemplate = restTemplate;
     this.webClient = webClient;
     this.restClient = restClient;
-    this.tracer = tracer;
+    this.openTelemetry = openTelemetry;
   }
 
   @GetMapping("/todo/{id}")
   Todo todo(@PathVariable Long id) {
-    Span otelSpan = tracer.spanBuilder("todoSpanOtelApi").startSpan();
+    Span otelSpan =
+        openTelemetry
+            .getTracer("tracerForSpringBootDemo")
+            .spanBuilder("todoSpanOtelApi")
+            .startSpan();
     try (final @NotNull Scope spanScope = otelSpan.makeCurrent()) {
       ISpan sentrySpan = Sentry.getSpan().startChild("todoSpanSentryApi");
       try {
@@ -67,7 +74,11 @@ public class TodoController {
 
   @GetMapping("/todo-restclient/{id}")
   Todo todoRestClient(@PathVariable Long id) {
-    Span span = tracer.spanBuilder("todoRestClientSpanOtelApi").startSpan();
+    Span span =
+        openTelemetry
+            .getTracer("tracerForSpringBootDemo")
+            .spanBuilder("todoRestClientSpanOtelApi")
+            .startSpan();
     try (final @NotNull Scope spanScope = span.makeCurrent()) {
       ISpan sentrySpan = Sentry.getSpan().startChild("todoRestClientSpanSentryApi");
       try {

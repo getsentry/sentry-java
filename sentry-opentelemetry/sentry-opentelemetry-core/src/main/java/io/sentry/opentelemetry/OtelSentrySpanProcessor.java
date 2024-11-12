@@ -47,7 +47,7 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
             ? scopesFromContext.forkedCurrentScope("spanprocessor")
             : Sentry.forkedRootScopes("spanprocessor");
 
-    final @Nullable OtelSpanWrapper sentryParentSpan =
+    final @Nullable IOtelSpanWrapper sentryParentSpan =
         spanStorage.getSentrySpan(otelSpan.getParentSpanContext());
     @NotNull
     TracesSamplingDecision samplingDecision =
@@ -98,7 +98,7 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
     final @NotNull SpanContext spanContext = otelSpan.getSpanContext();
     final @NotNull SentryDate startTimestamp =
         new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos());
-    final @NotNull OtelSpanWrapper sentrySpan =
+    final @NotNull IOtelSpanWrapper sentrySpan =
         new OtelSpanWrapper(
             otelSpan,
             scopes,
@@ -129,7 +129,7 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
 
   @Override
   public void onEnd(final @NotNull ReadableSpan spanBeingEnded) {
-    final @Nullable OtelSpanWrapper sentrySpan =
+    final @Nullable IOtelSpanWrapper sentrySpan =
         spanStorage.getSentrySpan(spanBeingEnded.getSpanContext());
     if (sentrySpan != null) {
       final @NotNull SentryDate finishDate =

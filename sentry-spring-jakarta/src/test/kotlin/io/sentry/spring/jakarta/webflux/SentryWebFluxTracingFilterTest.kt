@@ -146,7 +146,7 @@ class SentryWebFluxTracingFilterTest {
 
     @Test
     fun `does not set span status for response status that dont match predefined span statuses`() {
-        val filter = fixture.getSut(status = HttpStatus.FOUND)
+        val filter = fixture.getSut(status = HttpStatus.INSUFFICIENT_STORAGE)
 
         withMockScopes {
             filter.filter(fixture.exchange, fixture.chain).block()
