@@ -52,7 +52,7 @@ class OtelSentrySpanProcessorTest {
 
         val options = SentryOptions().also {
             it.dsn = "https://key@sentry.io/proj"
-            it.ignoredSpanOrigins = SpanUtils.ignoredSpanOriginsForOpenTelemetry()
+            it.ignoredSpanOrigins = SpanUtils.ignoredSpanOriginsForOpenTelemetry(false)
             it.spanFactory = OtelSpanFactory()
             it.sampleRate = 1.0
             it.tracesSampleRate = 1.0
@@ -290,35 +290,6 @@ class OtelSentrySpanProcessorTest {
 
         endSpanWithStatus(otelSpan, StatusCode.OK)
         thenSpanIsFinished(otelSpan)
-    }
-
-    // TODO [POTEL]
-    @Test
-    @Ignore
-    fun `links error to OTEL transaction`() {
-        fixture.setup()
-        val extractedContext = whenExtractingHeaders()
-
-        extractedContext.makeCurrent().use { _ ->
-            val otelSpan = givenSpanBuilder().startSpan()
-            thenSentrySpanIsCreated(otelSpan, isContinued = true)
-
-            otelSpan.makeCurrent().use { _ ->
-                val processedEvent = OpenTelemetryLinkErrorEventProcessor(fixture.scopes).process(
-                    SentryEvent(),
-                    Hint()
-                )
-                val traceContext = processedEvent!!.contexts.trace!!
-
-                assertEquals(SENTRY_TRACE_ID, traceContext.traceId.toString())
-                assertEquals(otelSpan.spanContext.spanId, traceContext.spanId.toString())
-                assertEquals("cedf5b7571cb4972", traceContext.parentSpanId.toString())
-                assertEquals("spanContextOp", traceContext.operation)
-            }
-
-            otelSpan.end()
-//            thenTransactionIsFinished()
-        }
     }
 
     private fun givenSpanBuilder(spanKind: SpanKind = SpanKind.SERVER, parentSpan: Span? = null): SpanBuilder {

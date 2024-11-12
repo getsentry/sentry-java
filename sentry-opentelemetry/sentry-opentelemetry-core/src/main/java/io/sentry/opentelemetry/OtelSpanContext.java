@@ -116,9 +116,9 @@ public final class OtelSpanContext extends SpanContext {
 
   @Override
   public @Nullable Boolean getSampled() {
-    Boolean superSampled = super.getSampled();
-    if (superSampled != null) {
-      return superSampled;
+    Boolean isSuperSampled = super.getSampled();
+    if (isSuperSampled != null) {
+      return isSuperSampled;
     }
     final @Nullable ReadWriteSpan otelSpan = span.get();
     if (otelSpan != null) {
