@@ -9,6 +9,7 @@ import io.sentry.PropagationContext;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -115,5 +116,33 @@ public final class TracingUtils {
     public @Nullable BaggageHeader getBaggageHeader() {
       return baggageHeader;
     }
+  }
+
+  /** Checks if a transaction is to be ignored. */
+  @ApiStatus.Internal
+  public static boolean isIgnored(
+      final @Nullable List<String> ignoredTransactions, final @Nullable String transactionName) {
+    if (transactionName == null) {
+      return false;
+    }
+    if (ignoredTransactions == null || ignoredTransactions.isEmpty()) {
+      return false;
+    }
+
+    for (final String ignoredSlug : ignoredTransactions) {
+      if (ignoredSlug.equalsIgnoreCase(transactionName)) {
+        return true;
+      }
+
+      try {
+        if (transactionName.matches(ignoredSlug)) {
+          return true;
+        }
+      } catch (Throwable t) {
+        // ignore invalid regex
+      }
+    }
+
+    return false;
   }
 }
