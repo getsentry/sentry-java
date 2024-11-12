@@ -6,11 +6,6 @@
   "description": "c204b6c7-9753-4d45-927d-b19789bfc9a5",
   "status": "resource_exhausted",
   "origin": "auto.test.unit.spancontext",
-  "data":
-  {
-    "thread.name": "test",
-    "thread.id": 10
-  },
   "tags":
   {
     "2a5fa3f5-7b87-487f-aaa5-84567aa73642": "4781d51a-c5af-47f2-a4ed-f030c9b3e194",
@@ -19,6 +14,8 @@
   },
   "data":
   {
-    "spanContextDataKey": "spanContextDataValue"
+    "spanContextDataKey": "spanContextDataValue",
+    "thread.name": "test",
+    "thread.id": 10
   }
 }

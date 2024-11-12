@@ -353,8 +353,8 @@ class AndroidContinuousProfilerTest {
         val performanceCollector = mock<CompositePerformanceCollector>()
         val collectionData = PerformanceCollectionData()
 
-        collectionData.addMemoryData(MemoryCollectionData(1, 2, 3, SentryNanotimeDate()))
-        collectionData.addCpuData(CpuCollectionData(1, 3.0, SentryNanotimeDate()))
+        collectionData.addMemoryData(MemoryCollectionData(2, 3, SentryNanotimeDate()))
+        collectionData.addCpuData(CpuCollectionData(3.0, SentryNanotimeDate()))
         whenever(performanceCollector.stop(any<String>())).thenReturn(listOf(collectionData))
 
         fixture.options.compositePerformanceCollector = performanceCollector
