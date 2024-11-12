@@ -262,6 +262,13 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with ignoredTransactions`() {
+        withPropertiesFile("ignored-transactions=transactionName1,transactionName2") { options ->
+            assertTrue(options.ignoredTransactions!!.containsAll(listOf("transactionName1", "transactionName2")))
+        }
+    }
+
+    @Test
     fun `creates options with enableBackpressureHandling set to false`() {
         withPropertiesFile("enable-backpressure-handling=false") { options ->
             assertTrue(options.isEnableBackpressureHandling == false)

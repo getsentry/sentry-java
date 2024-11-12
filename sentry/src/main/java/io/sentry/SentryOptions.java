@@ -465,6 +465,8 @@ public class SentryOptions {
   /** Contains a list of span origins for which spans / transactions should not be created. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredSpanOrigins = null;
 
+  private @Nullable List<String> ignoredTransactions = null;
+
   @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
@@ -2186,6 +2188,26 @@ public class SentryOptions {
     return ignoredCheckIns;
   }
 
+  public @Nullable List<String> getIgnoredTransactions() {
+    return ignoredTransactions;
+  }
+
+  @ApiStatus.Experimental
+  public void setIgnoredTransactions(final @Nullable List<String> ignoredTransactions) {
+    if (ignoredTransactions == null) {
+      this.ignoredTransactions = null;
+    } else {
+      @NotNull final List<String> filtered = new ArrayList<>();
+      for (String transactionName : ignoredTransactions) {
+        if (transactionName != null && !transactionName.isEmpty()) {
+          filtered.add(transactionName);
+        }
+      }
+
+      this.ignoredTransactions = filtered;
+    }
+  }
+
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
   @ApiStatus.Internal
   public @NotNull SentryDateProvider getDateProvider() {
@@ -2666,6 +2688,10 @@ public class SentryOptions {
     if (options.getIgnoredCheckIns() != null) {
       final List<String> ignoredCheckIns = new ArrayList<>(options.getIgnoredCheckIns());
       setIgnoredCheckIns(ignoredCheckIns);
+    }
+    if (options.getIgnoredTransactions() != null) {
+      final List<String> ignoredTransactions = new ArrayList<>(options.getIgnoredTransactions());
+      setIgnoredTransactions(ignoredTransactions);
     }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
