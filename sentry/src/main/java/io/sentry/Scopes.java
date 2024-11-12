@@ -31,7 +31,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   private final @Nullable Scopes parentScopes;
 
   private final @NotNull String creator;
-  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
+  private final @NotNull CompositePerformanceCollector compositePerformanceCollector;
   private final @NotNull MetricsApi metricsApi;
 
   private final @NotNull CombinedScopeView combinedScope;
@@ -59,7 +59,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
     final @NotNull SentryOptions options = getOptions();
     validateOptions(options);
-    this.transactionPerformanceCollector = options.getTransactionPerformanceCollector();
+    this.compositePerformanceCollector = options.getCompositePerformanceCollector();
     this.metricsApi = new MetricsApi(this);
   }
 
@@ -412,7 +412,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
         configureScope(ScopeType.ISOLATION, scope -> scope.clear());
         getOptions().getTransactionProfiler().close();
         getOptions().getContinuousProfiler().close();
-        getOptions().getTransactionPerformanceCollector().close();
+        getOptions().getCompositePerformanceCollector().close();
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
         if (isRestarting) {
           executorService.submit(
@@ -905,10 +905,10 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
       transaction =
           spanFactory.createTransaction(
-              transactionContext, this, transactionOptions, transactionPerformanceCollector);
+              transactionContext, this, transactionOptions, compositePerformanceCollector);
       //          new SentryTracer(
       //              transactionContext, this, transactionOptions,
-      // transactionPerformanceCollector);
+      // compositePerformanceCollector);
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it

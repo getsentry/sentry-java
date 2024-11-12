@@ -1796,13 +1796,13 @@ class ScopesTest {
         val executor = mock<ISentryExecutorService>()
         val profiler = mock<ITransactionProfiler>()
         val continuousProfiler = mock<IContinuousProfiler>()
-        val performanceCollector = mock<TransactionPerformanceCollector>()
+        val performanceCollector = mock<CompositePerformanceCollector>()
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
             cacheDirPath = file.absolutePath
             executorService = executor
             setTransactionProfiler(profiler)
-            transactionPerformanceCollector = performanceCollector
+            compositePerformanceCollector = performanceCollector
             setContinuousProfiler(continuousProfiler)
         }
         val sut = createScopes(options)

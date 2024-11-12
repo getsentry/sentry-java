@@ -5,7 +5,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface TransactionPerformanceCollector {
+public interface CompositePerformanceCollector {
 
   /** Starts collecting performance data and span related data (e.g. slow/frozen frames). */
   void start(@NotNull ITransaction transaction);

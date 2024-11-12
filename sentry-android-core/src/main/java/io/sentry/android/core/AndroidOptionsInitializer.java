@@ -6,7 +6,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
-import io.sentry.DefaultTransactionPerformanceCollector;
+import io.sentry.DefaultCompositePerformanceCollector;
 import io.sentry.ILogger;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpConnectionStatusProvider;
@@ -245,7 +245,7 @@ final class AndroidOptionsInitializer {
                     "options.getFrameMetricsCollector is required")));
       }
     }
-    options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
+    options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
 
     if (options.getCacheDirPath() != null) {
       if (options.isEnableScopePersistence()) {

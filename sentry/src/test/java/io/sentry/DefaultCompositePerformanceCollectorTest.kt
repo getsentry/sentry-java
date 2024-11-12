@@ -23,9 +23,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class DefaultTransactionPerformanceCollectorTest {
+class DefaultCompositePerformanceCollectorTest {
 
-    private val className = "io.sentry.DefaultTransactionPerformanceCollector"
+    private val className = "io.sentry.DefaultCompositePerformanceCollector"
     private val ctorTypes: Array<Class<*>> = arrayOf(SentryOptions::class.java)
     private val fixture = Fixture()
     private val threadChecker = ThreadChecker.getInstance()
@@ -51,7 +51,7 @@ class DefaultTransactionPerformanceCollectorTest {
             whenever(scopes.options).thenReturn(options)
         }
 
-        fun getSut(memoryCollector: IPerformanceSnapshotCollector? = JavaMemoryCollector(), cpuCollector: IPerformanceSnapshotCollector? = mockCpuCollector, executorService: ISentryExecutorService = deferredExecutorService): TransactionPerformanceCollector {
+        fun getSut(memoryCollector: IPerformanceSnapshotCollector? = JavaMemoryCollector(), cpuCollector: IPerformanceSnapshotCollector? = mockCpuCollector, executorService: ISentryExecutorService = deferredExecutorService): CompositePerformanceCollector {
             options.dsn = "https://key@sentry.io/proj"
             options.executorService = executorService
             if (cpuCollector != null) {
@@ -62,7 +62,7 @@ class DefaultTransactionPerformanceCollectorTest {
             }
             transaction1 = SentryTracer(TransactionContext("", ""), scopes)
             transaction2 = SentryTracer(TransactionContext("", ""), scopes)
-            val collector = DefaultTransactionPerformanceCollector(options)
+            val collector = DefaultCompositePerformanceCollector(options)
             val timer: Timer = collector.getProperty("timer") ?: Timer(true)
             mockTimer = spy(timer)
             collector.injectForField("timer", mockTimer)

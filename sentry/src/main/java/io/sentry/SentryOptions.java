@@ -425,8 +425,8 @@ public class SentryOptions {
   private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 
   /** Performance collector that collect performance stats while transactions run. */
-  private @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
-      NoOpTransactionPerformanceCollector.getInstance();
+  private @NotNull CompositePerformanceCollector compositePerformanceCollector =
+      NoOpCompositePerformanceCollector.getInstance();
 
   /** Enables the time-to-full-display spans in navigation transactions. */
   private boolean enableTimeToFullDisplayTracing = false;
@@ -2103,24 +2103,24 @@ public class SentryOptions {
   }
 
   /**
-   * Gets the performance collector used to collect performance stats while transactions run.
+   * Gets the performance collector used to collect performance stats in a time period.
    *
    * @return the performance collector.
    */
   @ApiStatus.Internal
-  public @NotNull TransactionPerformanceCollector getTransactionPerformanceCollector() {
-    return transactionPerformanceCollector;
+  public @NotNull CompositePerformanceCollector getCompositePerformanceCollector() {
+    return compositePerformanceCollector;
   }
 
   /**
-   * Sets the performance collector used to collect performance stats while transactions run.
+   * Sets the performance collector used to collect performance stats in a time period.
    *
-   * @param transactionPerformanceCollector the performance collector.
+   * @param compositePerformanceCollector the performance collector.
    */
   @ApiStatus.Internal
-  public void setTransactionPerformanceCollector(
-      final @NotNull TransactionPerformanceCollector transactionPerformanceCollector) {
-    this.transactionPerformanceCollector = transactionPerformanceCollector;
+  public void setCompositePerformanceCollector(
+      final @NotNull CompositePerformanceCollector compositePerformanceCollector) {
+    this.compositePerformanceCollector = compositePerformanceCollector;
   }
 
   /**

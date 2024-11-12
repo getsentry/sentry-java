@@ -6,7 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.DefaultTransactionPerformanceCollector
+import io.sentry.DefaultCompositePerformanceCollector
 import io.sentry.ILogger
 import io.sentry.MainEventProcessor
 import io.sentry.NoOpContinuousProfiler
@@ -650,10 +650,10 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `DefaultTransactionPerformanceCollector is set to options`() {
+    fun `DefaultCompositePerformanceCollector is set to options`() {
         fixture.initSut()
 
-        assertIs<DefaultTransactionPerformanceCollector>(fixture.sentryOptions.transactionPerformanceCollector)
+        assertIs<DefaultCompositePerformanceCollector>(fixture.sentryOptions.compositePerformanceCollector)
     }
 
     @Test

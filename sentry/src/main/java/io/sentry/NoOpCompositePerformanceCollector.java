@@ -4,16 +4,16 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class NoOpTransactionPerformanceCollector implements TransactionPerformanceCollector {
+public final class NoOpCompositePerformanceCollector implements CompositePerformanceCollector {
 
-  private static final NoOpTransactionPerformanceCollector instance =
-      new NoOpTransactionPerformanceCollector();
+  private static final NoOpCompositePerformanceCollector instance =
+      new NoOpCompositePerformanceCollector();
 
-  public static NoOpTransactionPerformanceCollector getInstance() {
+  public static NoOpCompositePerformanceCollector getInstance() {
     return instance;
   }
 
-  private NoOpTransactionPerformanceCollector() {}
+  private NoOpCompositePerformanceCollector() {}
 
   @Override
   public void start(@NotNull ITransaction transaction) {}

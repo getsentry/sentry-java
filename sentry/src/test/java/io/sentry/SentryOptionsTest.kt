@@ -295,8 +295,8 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options is initialized, transactionPerformanceCollector is set`() {
-        assertIs<TransactionPerformanceCollector>(SentryOptions().transactionPerformanceCollector)
+    fun `when options is initialized, compositePerformanceCollector is set`() {
+        assertIs<CompositePerformanceCollector>(SentryOptions().compositePerformanceCollector)
     }
 
     @Test
@@ -516,16 +516,16 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options are initialized, TransactionPerformanceCollector is a NoOp`() {
-        assertEquals(SentryOptions().transactionPerformanceCollector, NoOpTransactionPerformanceCollector.getInstance())
+    fun `when options are initialized, CompositePerformanceCollector is a NoOp`() {
+        assertEquals(SentryOptions().compositePerformanceCollector, NoOpCompositePerformanceCollector.getInstance())
     }
 
     @Test
-    fun `when setTransactionPerformanceCollector is called, overrides default`() {
-        val performanceCollector = mock<TransactionPerformanceCollector>()
+    fun `when setCompositePerformanceCollector is called, overrides default`() {
+        val performanceCollector = mock<CompositePerformanceCollector>()
         val options = SentryOptions()
-        options.transactionPerformanceCollector = performanceCollector
-        assertEquals(performanceCollector, options.transactionPerformanceCollector)
+        options.compositePerformanceCollector = performanceCollector
+        assertEquals(performanceCollector, options.compositePerformanceCollector)
     }
 
     @Test

@@ -71,6 +71,7 @@ dependencies {
     api(projects.sentry)
     api(projects.sentryAndroidCore)
 
+    //noinspection GradleDependency
     implementation("io.sentry:sentry-native-ndk:0.7.5")
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)

@@ -4,6 +4,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.annotation.SuppressLint;
 import android.os.Build;
+import io.sentry.CompositePerformanceCollector;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
@@ -12,7 +13,6 @@ import io.sentry.PerformanceCollectionData;
 import io.sentry.ProfileChunk;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.TransactionPerformanceCollector;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.SentryId;
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
   private boolean isRunning = false;
   private @Nullable IScopes scopes;
   private @Nullable Future<?> stopFuture;
-  private @Nullable TransactionPerformanceCollector performanceCollector;
+  private @Nullable CompositePerformanceCollector performanceCollector;
   private final @NotNull List<ProfileChunk.Builder> payloadBuilders = new ArrayList<>();
   private @NotNull SentryId profilerId = SentryId.EMPTY_ID;
   private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
@@ -90,7 +90,7 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
 
   public synchronized void setScopes(final @NotNull IScopes scopes) {
     this.scopes = scopes;
-    this.performanceCollector = scopes.getOptions().getTransactionPerformanceCollector();
+    this.performanceCollector = scopes.getOptions().getCompositePerformanceCollector();
   }
 
   public synchronized void start() {

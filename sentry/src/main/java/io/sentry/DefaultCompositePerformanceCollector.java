@@ -14,8 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class DefaultTransactionPerformanceCollector
-    implements TransactionPerformanceCollector {
+public final class DefaultCompositePerformanceCollector implements CompositePerformanceCollector {
   private static final long TRANSACTION_COLLECTION_INTERVAL_MILLIS = 100;
   private static final long TRANSACTION_COLLECTION_TIMEOUT_MILLIS = 30000;
   private final @NotNull Object timerLock = new Object();
@@ -30,7 +29,7 @@ public final class DefaultTransactionPerformanceCollector
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
   private long lastCollectionTimestamp = 0;
 
-  public DefaultTransactionPerformanceCollector(final @NotNull SentryOptions options) {
+  public DefaultCompositePerformanceCollector(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
     this.snapshotCollectors = new ArrayList<>();
     this.continuousCollectors = new ArrayList<>();
