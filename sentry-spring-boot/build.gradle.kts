@@ -68,7 +68,13 @@ dependencies {
     testImplementation(Config.Libs.springBootStarterSecurity)
     testImplementation(Config.Libs.springBootStarterAop)
     testImplementation(Config.Libs.springBootStarterQuartz)
+    testImplementation(Config.Libs.OpenTelemetry.otelSdk)
+    testImplementation(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)
+    testImplementation(Config.Libs.springBoot3StarterOpenTelemetry)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 }
 
 configure<SourceSetContainer> {
