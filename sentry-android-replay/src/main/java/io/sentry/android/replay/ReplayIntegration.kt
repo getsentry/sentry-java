@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.os.Build
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
-import io.sentry.DataCategory
 import io.sentry.DataCategory.All
 import io.sentry.DataCategory.Replay
 import io.sentry.IConnectionStatusProvider.ConnectionStatus
@@ -300,7 +299,8 @@ public class ReplayIntegration(
         }
 
         if (hub?.rateLimiter?.isActiveForCategory(All) == true ||
-            hub?.rateLimiter?.isActiveForCategory(Replay) == true) {
+            hub?.rateLimiter?.isActiveForCategory(Replay) == true
+        ) {
             pause()
         } else {
             resume()
@@ -319,9 +319,12 @@ public class ReplayIntegration(
      */
     private fun checkCanRecord() {
         if (captureStrategy is SessionCaptureStrategy &&
-            (options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
-                hub?.rateLimiter?.isActiveForCategory(All) == true ||
-                hub?.rateLimiter?.isActiveForCategory(Replay) == true)) {
+            (
+                options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
+                    hub?.rateLimiter?.isActiveForCategory(All) == true ||
+                    hub?.rateLimiter?.isActiveForCategory(Replay) == true
+                )
+        ) {
             pause()
         }
     }

@@ -38,7 +38,6 @@ import org.mockito.kotlin.whenever
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

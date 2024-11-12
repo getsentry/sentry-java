@@ -5,7 +5,6 @@ import static io.sentry.SentryLevel.INFO;
 
 import io.sentry.DataCategory;
 import io.sentry.Hint;
-import io.sentry.IConnectionStatusProvider;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
@@ -39,14 +38,15 @@ public final class RateLimiter implements Closeable {
   private final @NotNull Map<DataCategory, @NotNull Date> sentryRetryAfterLimit =
       new ConcurrentHashMap<>();
   private final @NotNull List<IRateLimitObserver> rateLimitObservers = new CopyOnWriteArrayList<>();
-  private final @NotNull TimerTask timerTask = new TimerTask() {
-    @Override public void run() {
-      notifyRateLimitObservers(false);
-    }
-  };
+  private final @NotNull TimerTask timerTask =
+      new TimerTask() {
+        @Override
+        public void run() {
+          notifyRateLimitObservers(false);
+        }
+      };
   private @Nullable Timer timer = null;
   private final @NotNull Object timerLock = new Object();
-
 
   public RateLimiter(
       final @NotNull ICurrentDateProvider currentDateProvider,
@@ -355,8 +355,9 @@ public final class RateLimiter implements Closeable {
 
   public interface IRateLimitObserver {
     /**
-     * Invoked whenever the rate limit changed. You should use {@link RateLimiter#isActiveForCategory(DataCategory)}
-     * to check whether the category you're interested in has changed.
+     * Invoked whenever the rate limit changed. You should use {@link
+     * RateLimiter#isActiveForCategory(DataCategory)} to check whether the category you're
+     * interested in has changed.
      *
      * @param applied true if the rate limit was applied, false if it was lifted
      */
