@@ -3,6 +3,7 @@ package io.sentry.android.replay.viewhierarchy
 import android.annotation.TargetApi
 import android.graphics.Rect
 import android.view.View
+import android.view.ViewParent
 import android.widget.ImageView
 import android.widget.TextView
 import io.sentry.SentryOptions
@@ -236,6 +237,10 @@ sealed class ViewHierarchyNode(
         private const val SENTRY_UNMASK_TAG = "sentry-unmask"
         private const val SENTRY_MASK_TAG = "sentry-mask"
 
+        private fun Class<*>.isAssignableFrom(className: String): Boolean {
+            return this.name.equals(className)
+        }
+
         private fun Class<*>.isAssignableFrom(set: Set<String>): Boolean {
             var cls: Class<*>? = this
             while (cls != null) {
@@ -261,11 +266,30 @@ sealed class ViewHierarchyNode(
                 return true
             }
 
+            if (!this.isMaskContainer(options) &&
+                this.parent != null &&
+                this.parent.isUnmaskContainer(options)
+            ) {
+                return false
+            }
+
             if (this.javaClass.isAssignableFrom(options.experimental.sessionReplay.unmaskViewClasses)) {
                 return false
             }
 
             return this.javaClass.isAssignableFrom(options.experimental.sessionReplay.maskViewClasses)
+        }
+
+        private fun ViewParent.isUnmaskContainer(options: SentryOptions): Boolean {
+            val unmaskContainer =
+                options.experimental.sessionReplay.unmaskViewContainerClass ?: return false
+            return this.javaClass.isAssignableFrom(unmaskContainer)
+        }
+
+        private fun View.isMaskContainer(options: SentryOptions): Boolean {
+            val unmaskContainer =
+                options.experimental.sessionReplay.maskViewContainerClass ?: return false
+            return this.javaClass.isAssignableFrom(unmaskContainer)
         }
 
         fun fromView(view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryOptions): ViewHierarchyNode {
