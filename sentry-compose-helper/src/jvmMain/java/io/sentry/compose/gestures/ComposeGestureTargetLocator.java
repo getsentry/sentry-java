@@ -106,6 +106,7 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
               // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/platform/TestTag.kt;l=34;drc=dcaa116fbfda77e64a319e1668056ce3b032469f
               try {
                 final Field tagField = modifier.getClass().getField("tag");
+                tagField.setAccessible(true);
                 final @Nullable Object value = tagField.get(modifier);
                 if (value instanceof String) {
                   lastKnownTag = (String) value;
