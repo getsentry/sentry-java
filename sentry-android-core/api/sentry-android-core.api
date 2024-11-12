@@ -400,6 +400,17 @@ public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentr
 	public static fun snapshotViewHierarchyAsData (Landroid/app/Activity;Lio/sentry/util/thread/IMainThreadChecker;Lio/sentry/ISerializer;Lio/sentry/ILogger;)[B
 }
 
+public class io/sentry/android/core/anr/AnrException : java/lang/Exception {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public class io/sentry/android/core/anr/AnrWatchdog {
+	public fun <init> ()V
+	public fun start ()V
+	public fun stop ()V
+}
+
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {
 	public static final field LAST_ANR_REPORT Ljava/lang/String;
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
