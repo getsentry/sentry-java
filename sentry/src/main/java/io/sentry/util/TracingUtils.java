@@ -118,7 +118,7 @@ public final class TracingUtils {
     }
   }
 
-  /** Checks if a transaction has been ignored. */
+  /** Checks if a transaction is to be ignored. */
   @ApiStatus.Internal
   public static boolean isIgnored(
       final @Nullable List<String> ignoredTransactions, final @Nullable String transactionName) {
