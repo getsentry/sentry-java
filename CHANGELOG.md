@@ -25,6 +25,11 @@
   - In this mode the SDK makes use of `GlobalOpenTelemetry`
 - Automatically set span factory based on presence of OpenTelemetry ([#3858](https://github.com/getsentry/sentry-java/pull/3858))
   - `SentrySpanFactoryHolder` has been removed as it is no longer required.
+- Add `ignoredTransactions` option to filter out transactions by name ([#3871](https://github.com/getsentry/sentry-java/pull/3871))
+  - can be used via ENV vars, e.g. `SENTRY_IGNORED_TRANSACTIONS=POST /person/,GET /pers.*`
+  - can also be set in options directly, e.g. `options.setIgnoredTransactions(...)`
+  - can also be set in `sentry.properties`, e.g. `ignored-transactions=POST /person/,GET /pers.*`
+  - can also be set in Spring config `application.properties`, e.g. `sentry.ignored-transactions=POST /person/,GET /pers.*`
 - Add a sample for showcasing Sentry with OpenTelemetry for Spring Boot 3 with our Java agent (`sentry-samples-spring-boot-jakarta-opentelemetry`) ([#3856](https://github.com/getsentry/sentry-java/pull/3828))
 - Add a sample for showcasing Sentry with OpenTelemetry for Spring Boot 3 without our Java agent (`sentry-samples-spring-boot-jakarta-opentelemetry-noagent`) ([#3856](https://github.com/getsentry/sentry-java/pull/3856))
 - Add a sample for showcasing Sentry with OpenTelemetry (`sentry-samples-console-opentelemetry-noagent`) ([#3856](https://github.com/getsentry/sentry-java/pull/3862))
