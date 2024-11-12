@@ -17,9 +17,6 @@ import android.view.PixelCopy
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.WindowManager
-import io.sentry.DataCategory.All
-import io.sentry.DataCategory.Replay
-import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryLevel.WARNING
@@ -33,7 +30,6 @@ import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
-import io.sentry.transport.RateLimiter
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
@@ -47,7 +43,7 @@ internal class ScreenshotRecorder(
     val config: ScreenshotRecorderConfig,
     val options: SentryOptions,
     val mainLooperHandler: MainLooperHandler,
-    private val screenshotRecorderCallback: ScreenshotRecorderCallback?,
+    private val screenshotRecorderCallback: ScreenshotRecorderCallback?
 ) : ViewTreeObserver.OnDrawListener {
 
     private val recorder by lazy {
