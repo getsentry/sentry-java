@@ -19,9 +19,7 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor
 import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.UrlAttributes
-import io.sentry.Hint
 import io.sentry.IScopes
-import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.util.SpanUtils
@@ -32,7 +30,6 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.net.http.HttpHeaders
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
