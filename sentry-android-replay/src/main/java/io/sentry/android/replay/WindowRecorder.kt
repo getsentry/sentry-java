@@ -19,7 +19,6 @@ internal class WindowRecorder(
     private val options: SentryOptions,
     private val screenshotRecorderCallback: ScreenshotRecorderCallback? = null,
     private val mainLooperHandler: MainLooperHandler,
-    private val rateLimiter: RateLimiter?
 ) : Recorder, OnRootViewsChangedListener {
 
     internal companion object {
@@ -54,7 +53,7 @@ internal class WindowRecorder(
             return
         }
 
-        recorder = ScreenshotRecorder(recorderConfig, options, mainLooperHandler, screenshotRecorderCallback, rateLimiter)
+        recorder = ScreenshotRecorder(recorderConfig, options, mainLooperHandler, screenshotRecorderCallback)
         capturingTask = capturer.scheduleAtFixedRateSafely(
             options,
             "$TAG.capture",
@@ -86,10 +85,6 @@ internal class WindowRecorder(
     override fun close() {
         stop()
         capturer.gracefullyShutdown(options)
-    }
-
-    override fun setReplayStrategy(isSession: Boolean) {
-        recorder?.isSession?.set(isSession)
     }
 
     private class RecorderExecutorServiceThreadFactory : ThreadFactory {

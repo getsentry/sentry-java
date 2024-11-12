@@ -7,6 +7,12 @@ import android.graphics.Bitmap
 import android.os.Build
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
+import io.sentry.DataCategory.All
+import io.sentry.DataCategory.Replay
+import io.sentry.IConnectionStatusProvider.ConnectionStatus
+import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
+import io.sentry.IConnectionStatusProvider.IConnectionStatusObserver
 import io.sentry.IHub
 import io.sentry.Integration
 import io.sentry.NoOpReplayBreadcrumbConverter
@@ -32,6 +38,7 @@ import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.hints.Backfillable
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.transport.RateLimiter.IRateLimitObserver
 import io.sentry.util.FileUtils
 import io.sentry.util.HintUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
@@ -48,7 +55,14 @@ public class ReplayIntegration(
     private val recorderProvider: (() -> Recorder)? = null,
     private val recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)? = null,
     private val replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
-) : Integration, Closeable, ScreenshotRecorderCallback, TouchRecorderCallback, ReplayController, ComponentCallbacks {
+) : Integration,
+    Closeable,
+    ScreenshotRecorderCallback,
+    TouchRecorderCallback,
+    ReplayController,
+    ComponentCallbacks,
+    IConnectionStatusObserver,
+    IRateLimitObserver {
 
     // needed for the Java's call site
     constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
@@ -109,10 +123,12 @@ public class ReplayIntegration(
         }
 
         this.hub = hub
-        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, mainLooperHandler, hub.rateLimiter)
+        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, mainLooperHandler)
         gestureRecorder = gestureRecorderProvider?.invoke() ?: GestureRecorder(options, this)
         isEnabled.set(true)
 
+        options.connectionStatusProvider.addConnectionStatusObserver(this)
+        hub.rateLimiter?.addRateLimitObserver(this)
         try {
             context.registerComponentCallbacks(this)
         } catch (e: Throwable) {
@@ -157,10 +173,6 @@ public class ReplayIntegration(
 
         captureStrategy?.start(recorderConfig)
         recorder?.start(recorderConfig)
-        // TODO: move this here
-        // TODO: add 2 listeners here: OnRateLimit(category, applied) and OnConnectionChanged(connected)
-        // TODO: when they are fired, call either recorder?.resume() + strategy.resume() or recorder?.pause() + strategy.pause()
-        recorder?.setReplayStrategy(captureStrategy is SessionCaptureStrategy)
         registerRootViewListeners()
     }
 
@@ -188,7 +200,6 @@ public class ReplayIntegration(
             captureStrategy?.segmentTimestamp = newTimestamp
         })
         captureStrategy = captureStrategy?.convert()
-        recorder?.setReplayStrategy(captureStrategy is SessionCaptureStrategy)
     }
 
     override fun getReplayId(): SentryId = captureStrategy?.currentReplayId ?: SentryId.EMPTY_ID
@@ -227,12 +238,14 @@ public class ReplayIntegration(
         hub?.configureScope { screen = it.screen?.substringAfterLast('.') }
         captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
             addFrame(bitmap, frameTimeStamp, screen)
+            checkCanRecord()
         }
     }
 
     override fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long) {
         captureStrategy?.onScreenshotRecorded { _ ->
             addFrame(screenshot, frameTimestamp)
+            checkCanRecord()
         }
     }
 
@@ -241,6 +254,8 @@ public class ReplayIntegration(
             return
         }
 
+        options.connectionStatusProvider.removeConnectionStatusObserver(this)
+        hub?.rateLimiter?.removeRateLimitObserver(this)
         try {
             context.unregisterComponentCallbacks(this)
         } catch (ignored: Throwable) {
@@ -264,10 +279,49 @@ public class ReplayIntegration(
         recorder?.start(recorderConfig)
     }
 
+    override fun onConnectionStatusChanged(status: ConnectionStatus) {
+        if (captureStrategy !is SessionCaptureStrategy) {
+            // we only want to stop recording when offline for session mode
+            return
+        }
+
+        if (status == DISCONNECTED) {
+            pause()
+        } else {
+            // being positive for other states, even if it's NO_PERMISSION
+            resume()
+        }
+    }
+
+    override fun onRateLimitChanged(applied: Boolean) {
+        if (captureStrategy !is SessionCaptureStrategy) {
+            // we only want to stop recording when rate-limited for session mode
+            return
+        }
+
+        if (hub?.rateLimiter?.isActiveForCategories(All, Replay) == true) {
+            pause()
+        } else {
+            resume()
+        }
+    }
+
     override fun onLowMemory() = Unit
 
     override fun onTouchEvent(event: MotionEvent) {
         captureStrategy?.onTouchEvent(event)
+    }
+
+    /**
+     * Check if we're offline or rate-limited and pause for session mode to not overflow the
+     * envelope cache.
+     */
+    private fun checkCanRecord() {
+        if (captureStrategy is SessionCaptureStrategy &&
+            (options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
+                hub?.rateLimiter?.isActiveForCategories(All, Replay) == true)) {
+            pause()
+        }
     }
 
     private fun registerRootViewListeners() {

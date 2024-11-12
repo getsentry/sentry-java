@@ -48,7 +48,6 @@ internal class ScreenshotRecorder(
     val options: SentryOptions,
     val mainLooperHandler: MainLooperHandler,
     private val screenshotRecorderCallback: ScreenshotRecorderCallback?,
-    private val rateLimiter: RateLimiter?
 ) : ViewTreeObserver.OnDrawListener {
 
     private val recorder by lazy {
@@ -72,21 +71,10 @@ internal class ScreenshotRecorder(
     private val contentChanged = AtomicBoolean(false)
     private val isCapturing = AtomicBoolean(true)
     private var lastScreenshot: Bitmap? = null
-    internal val isSession = AtomicBoolean(false)
 
     fun capture() {
         if (!isCapturing.get()) {
             options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
-            return
-        }
-
-        if (isSession.get() && options.connectionStatusProvider.connectionStatus == DISCONNECTED) {
-            options.logger.log(DEBUG, "Skipping screenshot recording, no internet connection")
-            return
-        }
-
-        if (isSession.get() && (rateLimiter?.isActiveForCategory(All) == true || rateLimiter?.isActiveForCategory(Replay) == true)) {
-            options.logger.log(DEBUG, "Skipping screenshot recording, rate limit is active")
             return
         }
 
