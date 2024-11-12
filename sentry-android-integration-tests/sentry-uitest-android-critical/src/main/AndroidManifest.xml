@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:label="Sentry UI Tests Critical"
+        android:supportsRtl="true"
+        tools:targetApi="31">
+        <meta-data android:name="io.sentry.dsn" android:value="https://5b38df1abca1468bac6d7517530f6802@o447951.ingest.us.sentry.io/5428559" />
+        <meta-data android:name="io.sentry.debug" android:value="true" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

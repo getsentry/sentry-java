@@ -8,15 +8,13 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
-val sentryAndroidSdkName: String by project
-
 android {
     compileSdk = Config.Android.compileSdkVersion
     namespace = "io.sentry.android.ndk"
 
     defaultConfig {
         targetSdk = Config.Android.targetSdkVersion
-        minSdk = Config.Android.minSdkVersionNdk // NDK requires a higher API level than core.
+        minSdk = Config.Android.minSdkVersion
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 
@@ -71,12 +69,12 @@ dependencies {
     api(projects.sentry)
     api(projects.sentryAndroidCore)
 
-    implementation("io.sentry:sentry-native-ndk:0.7.8")
+    implementation(Config.Libs.sentryNativeNdk)
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(Config.TestLibs.kotlinTestJunit)
-
     testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(projects.sentryTestSupport)
 }

@@ -23,6 +23,7 @@ import io.sentry.android.replay.capture.SessionCaptureStrategy
 import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.android.replay.gestures.TouchRecorderCallback
 import io.sentry.android.replay.util.MainLooperHandler
+import io.sentry.android.replay.util.appContext
 import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.cache.PersistingScopeObserver
@@ -34,9 +35,9 @@ import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
 import io.sentry.util.HintUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
+import io.sentry.util.Random
 import java.io.Closeable
 import java.io.File
-import java.security.SecureRandom
 import java.util.LinkedList
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
@@ -51,7 +52,7 @@ public class ReplayIntegration(
 
     // needed for the Java's call site
     constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
-        context,
+        context.appContext(),
         dateProvider,
         null,
         null,
@@ -67,7 +68,7 @@ public class ReplayIntegration(
         replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
         mainLooperHandler: MainLooperHandler? = null,
         gestureRecorderProvider: (() -> GestureRecorder)? = null
-    ) : this(context, dateProvider, recorderProvider, recorderConfigProvider, replayCacheProvider) {
+    ) : this(context.appContext(), dateProvider, recorderProvider, recorderConfigProvider, replayCacheProvider) {
         this.replayCaptureStrategyProvider = replayCaptureStrategyProvider
         this.mainLooperHandler = mainLooperHandler ?: MainLooperHandler()
         this.gestureRecorderProvider = gestureRecorderProvider
@@ -77,7 +78,7 @@ public class ReplayIntegration(
     private var scopes: IScopes? = null
     private var recorder: Recorder? = null
     private var gestureRecorder: GestureRecorder? = null
-    private val random by lazy { SecureRandom() }
+    private val random by lazy { Random() }
     private val rootViewsSpy by lazy(NONE) { RootViewsSpy.install() }
 
     // TODO: probably not everything has to be thread-safe here
@@ -118,7 +119,7 @@ public class ReplayIntegration(
             options.logger.log(INFO, "ComponentCallbacks is not available, orientation changes won't be handled by Session replay", e)
         }
 
-        addIntegrationToSdkVersion(javaClass)
+        addIntegrationToSdkVersion("Replay")
         SentryIntegrationPackageStorage.getInstance()
             .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
 

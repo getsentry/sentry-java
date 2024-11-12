@@ -3,8 +3,6 @@ package io.sentry;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
-import io.sentry.metrics.LocalMetricsAggregator;
-import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -14,15 +12,12 @@ import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
+public final class Scopes implements IScopes {
 
   private final @NotNull IScope scope;
   private final @NotNull IScope isolationScope;
@@ -32,7 +27,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
   private final @NotNull String creator;
   private final @NotNull CompositePerformanceCollector compositePerformanceCollector;
-  private final @NotNull MetricsApi metricsApi;
 
   private final @NotNull CombinedScopeView combinedScope;
 
@@ -60,7 +54,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     final @NotNull SentryOptions options = getOptions();
     validateOptions(options);
     this.compositePerformanceCollector = options.getCompositePerformanceCollector();
-    this.metricsApi = new MetricsApi(this);
   }
 
   public @NotNull String getCreator() {
@@ -930,13 +923,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return transaction;
   }
 
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @Override
-  public @Nullable SentryTraceHeader traceHeaders() {
-    return getTraceparent();
-  }
-
   @Override
   @ApiStatus.Internal
   public void setSpanContext(
@@ -1098,61 +1084,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
   @Override
   public @Nullable RateLimiter getRateLimiter() {
     return getClient().getRateLimiter();
-  }
-
-  @Override
-  public @NotNull MetricsApi metrics() {
-    return metricsApi;
-  }
-
-  @Override
-  public @NotNull IMetricsAggregator getMetricsAggregator() {
-    return getClient().getMetricsAggregator();
-  }
-
-  @Override
-  public @NotNull Map<String, String> getDefaultTagsForMetrics() {
-    if (!getOptions().isEnableDefaultTagsForMetrics()) {
-      return Collections.emptyMap();
-    }
-
-    final @NotNull Map<String, String> tags = new HashMap<>();
-    final @Nullable String release = getOptions().getRelease();
-    if (release != null) {
-      tags.put("release", release);
-    }
-
-    final @Nullable String environment = getOptions().getEnvironment();
-    if (environment != null) {
-      tags.put("environment", environment);
-    }
-
-    final @Nullable String txnName = getCombinedScopeView().getTransactionName();
-    if (txnName != null) {
-      tags.put("transaction", txnName);
-    }
-    return Collections.unmodifiableMap(tags);
-  }
-
-  @Override
-  public @Nullable ISpan startSpanForMetric(@NotNull String op, @NotNull String description) {
-    final @Nullable ISpan span = getSpan();
-    if (span != null) {
-      return span.startChild(op, description);
-    }
-    return null;
-  }
-
-  @Override
-  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
-    if (!getOptions().isEnableSpanLocalMetricAggregation()) {
-      return null;
-    }
-    final @Nullable ISpan span = getSpan();
-    if (span != null) {
-      return span.getLocalMetricsAggregator();
-    }
-    return null;
   }
 
   private static void validateOptions(final @NotNull SentryOptions options) {

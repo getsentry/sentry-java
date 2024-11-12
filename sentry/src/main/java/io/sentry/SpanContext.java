@@ -1,7 +1,6 @@
 package io.sentry;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -43,13 +42,12 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   /** Describes the status of the Transaction. */
   protected @Nullable SpanStatus status;
 
-  protected final @NotNull Map<String, Object> data;
-
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
   protected @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
 
-  /** Describes the status of the Transaction. */
   protected @Nullable String origin = DEFAULT_ORIGIN;
+
+  protected @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
 
   private @Nullable Map<String, Object> unknown;
 
@@ -100,7 +98,6 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.origin = origin;
     final IThreadChecker threadChecker =
         ScopesAdapter.getInstance().getOptions().getThreadChecker();
-    this.data = new ConcurrentHashMap<>();
     this.data.put(
         SpanDataConvention.THREAD_ID, String.valueOf(threadChecker.currentThreadSystemId()));
     this.data.put(SpanDataConvention.THREAD_NAME, threadChecker.getCurrentThreadName());
@@ -134,8 +131,6 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     final Map<String, Object> copiedData = CollectionUtils.newConcurrentHashMap(spanContext.data);
     if (copiedData != null) {
       this.data = copiedData;
-    } else {
-      this.data = new ConcurrentHashMap<>();
     }
   }
 
@@ -238,10 +233,6 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     return origin;
   }
 
-  public @NotNull Map<String, Object> getData() {
-    return data;
-  }
-
   public void setOrigin(final @Nullable String origin) {
     this.origin = origin;
   }
@@ -256,6 +247,14 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
 
   public @Nullable Baggage getBaggage() {
     return baggage;
+  }
+
+  public @NotNull Map<String, Object> getData() {
+    return data;
+  }
+
+  public void setData(final @NotNull String key, final @NotNull Object value) {
+    data.put(key, value);
   }
 
   @ApiStatus.Internal
@@ -328,9 +327,11 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     if (origin != null) {
       writer.name(JsonKeys.ORIGIN).value(logger, origin);
     }
-    writer.name(JsonKeys.DATA).value(logger, data);
     if (!tags.isEmpty()) {
       writer.name(JsonKeys.TAGS).value(logger, tags);
+    }
+    if (!data.isEmpty()) {
+      writer.name(JsonKeys.DATA).value(logger, data);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -365,8 +366,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       String description = null;
       SpanStatus status = null;
       String origin = null;
-      Map<String, Object> data = null;
       Map<String, String> tags = null;
+      Map<String, Object> data = null;
 
       Map<String, Object> unknown = null;
       while (reader.peek() == JsonToken.NAME) {
@@ -393,13 +394,13 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
           case JsonKeys.ORIGIN:
             origin = reader.nextString();
             break;
-          case Request.JsonKeys.DATA:
-            data = (Map<String, Object>) reader.nextObjectOrNull();
-            break;
           case JsonKeys.TAGS:
             tags =
                 CollectionUtils.newConcurrentHashMap(
                     (Map<String, String>) reader.nextObjectOrNull());
+            break;
+          case JsonKeys.DATA:
+            data = (Map<String, Object>) reader.nextObjectOrNull();
             break;
           default:
             if (unknown == null) {
@@ -438,12 +439,15 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       spanContext.setDescription(description);
       spanContext.setStatus(status);
       spanContext.setOrigin(origin);
-      if (data != null) {
-        spanContext.data.putAll(data);
-      }
+
       if (tags != null) {
         spanContext.tags = tags;
       }
+
+      if (data != null) {
+        spanContext.data = data;
+      }
+
       spanContext.setUnknown(unknown);
       reader.endObject();
       return spanContext;

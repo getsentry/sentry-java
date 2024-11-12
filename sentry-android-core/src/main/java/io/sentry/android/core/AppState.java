@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import io.sentry.ISentryLifecycleToken;
+import io.sentry.util.AutoClosableReentrantLock;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -9,6 +11,7 @@ import org.jetbrains.annotations.TestOnly;
 @ApiStatus.Internal
 public final class AppState {
   private static @NotNull AppState instance = new AppState();
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   private AppState() {}
 
@@ -27,7 +30,9 @@ public final class AppState {
     return inBackground;
   }
 
-  synchronized void setInBackground(final boolean inBackground) {
-    this.inBackground = inBackground;
+  void setInBackground(final boolean inBackground) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      this.inBackground = inBackground;
+    }
   }
 }

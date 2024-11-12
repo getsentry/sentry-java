@@ -16,11 +16,10 @@ public class AndroidMemoryCollector implements IPerformanceSnapshotCollector {
 
   @Override
   public void collect(final @NotNull PerformanceCollectionData performanceCollectionData) {
-    long now = System.currentTimeMillis();
     long usedMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
     long usedNativeMemory = Debug.getNativeHeapSize() - Debug.getNativeHeapFreeSize();
     MemoryCollectionData memoryData =
-        new MemoryCollectionData(now, usedMemory, usedNativeMemory, new SentryNanotimeDate());
+        new MemoryCollectionData(usedMemory, usedNativeMemory, new SentryNanotimeDate());
     performanceCollectionData.addMemoryData(memoryData);
   }
 }

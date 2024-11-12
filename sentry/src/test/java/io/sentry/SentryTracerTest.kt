@@ -815,13 +815,13 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `sets ITransaction data as extra in SentryTransaction`() {
+    fun `sets ITransaction data as tracecontext data in SentryTransaction`() {
         val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(true))
         transaction.setData("key", "val")
         transaction.finish()
         verify(fixture.scopes).captureTransaction(
             check {
-                assertEquals("val", it.getExtra("key"))
+                assertEquals("val", it.contexts.trace?.data?.get("key"))
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),

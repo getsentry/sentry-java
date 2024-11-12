@@ -26,7 +26,11 @@ public final class AndroidLogger implements ILogger {
       final @NotNull SentryLevel level,
       final @NotNull String message,
       final @Nullable Object... args) {
-    Log.println(toLogcatLevel(level), tag, String.format(message, args));
+    if (args == null || args.length == 0) {
+      Log.println(toLogcatLevel(level), tag, message);
+    } else {
+      Log.println(toLogcatLevel(level), tag, String.format(message, args));
+    }
   }
 
   @SuppressWarnings("AnnotateFormatMethod")
@@ -36,7 +40,11 @@ public final class AndroidLogger implements ILogger {
       final @Nullable Throwable throwable,
       final @NotNull String message,
       final @Nullable Object... args) {
-    log(level, String.format(message, args), throwable);
+    if (args == null || args.length == 0) {
+      log(level, message, throwable);
+    } else {
+      log(level, String.format(message, args), throwable);
+    }
   }
 
   @Override

@@ -1,5 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
     id("com.android.library")
@@ -17,7 +18,7 @@ android {
 
     defaultConfig {
         targetSdk = Config.Android.targetSdkVersion
-        minSdk = Config.Android.minSdkVersionReplay
+        minSdk = Config.Android.minSdkVersion
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 
@@ -25,9 +26,20 @@ android {
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
     }
 
+    buildFeatures {
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
+        useLiveLiterals = false
+    }
+
     buildTypes {
         getByName("debug")
-        getByName("release")
+        getByName("release") {
+            consumerProguardFiles("proguard-rules.pro")
+        }
     }
 
     kotlinOptions {
@@ -65,6 +77,7 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
+    compileOnly(Config.Libs.composeUiReplay)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     // tests
@@ -77,9 +90,19 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
+    testImplementation(Config.Libs.composeActivity)
+    testImplementation(Config.Libs.composeUi)
+    testImplementation(Config.Libs.composeCoil)
+    testImplementation(Config.Libs.composeFoundation)
+    testImplementation(Config.Libs.composeFoundationLayout)
+    testImplementation(Config.Libs.composeMaterial)
 }
 
 tasks.withType<Detekt> {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
+}
+
+tasks.withType<KotlinCompilationTask<*>>().configureEach {
+    compilerOptions.freeCompilerArgs.add("-opt-in=androidx.compose.ui.ExperimentalComposeUiApi")
 }

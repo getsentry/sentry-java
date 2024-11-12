@@ -55,7 +55,7 @@ class SentryNavigationListenerTest {
             toRoute: String? = "route",
             toId: String? = "destination-id-1",
             enableBreadcrumbs: Boolean = true,
-            enableTracing: Boolean = true,
+            enableNavigationTracing: Boolean = true,
             enableScreenTracking: Boolean = true,
             tracesSampleRate: Double? = 1.0,
             hasViewIdInRes: Boolean = true,
@@ -100,7 +100,7 @@ class SentryNavigationListenerTest {
             return SentryNavigationListener(
                 scopes,
                 enableBreadcrumbs,
-                enableTracing,
+                enableNavigationTracing,
                 traceOriginAppendix
             )
         }
@@ -203,7 +203,7 @@ class SentryNavigationListenerTest {
 
     @Test
     fun `onDestinationChanged does not start tracing when tracing is disabled`() {
-        val sut = fixture.getSut(enableTracing = false)
+        val sut = fixture.getSut(enableNavigationTracing = false)
 
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
@@ -215,7 +215,7 @@ class SentryNavigationListenerTest {
 
     @Test
     fun `onDestinationChanged does not start tracing when tracesSampleRate is not set`() {
-        val sut = fixture.getSut(enableTracing = true, tracesSampleRate = null)
+        val sut = fixture.getSut(enableNavigationTracing = true, tracesSampleRate = null)
 
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
@@ -361,7 +361,7 @@ class SentryNavigationListenerTest {
 
     @Test
     fun `starts new trace if performance is disabled`() {
-        val sut = fixture.getSut(enableTracing = false)
+        val sut = fixture.getSut(enableNavigationTracing = false)
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> =
             ArgumentCaptor.forClass(ScopeCallback::class.java)

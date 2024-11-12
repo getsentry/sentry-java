@@ -49,6 +49,7 @@ public class io/sentry/spring/jakarta/SentryRequestHttpServletRequestProcessor :
 }
 
 public class io/sentry/spring/jakarta/SentryRequestResolver {
+	protected static final field staticLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun resolveSentryRequest (Ljakarta/servlet/http/HttpServletRequest;)Lio/sentry/protocol/Request;
 }
@@ -174,6 +175,14 @@ public final class io/sentry/spring/jakarta/graphql/SentryDgsSubscriptionHandler
 	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IScopes;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
 }
 
+public class io/sentry/spring/jakarta/graphql/SentryGraphql22Configuration {
+	public fun <init> ()V
+	public fun exceptionResolverAdapter ()Lio/sentry/spring/jakarta/graphql/SentryDataFetcherExceptionResolverAdapter;
+	public fun graphqlBeanPostProcessor ()Lio/sentry/spring/jakarta/graphql/SentryGraphqlBeanPostProcessor;
+	public fun sentryInstrumentationWebMvc (Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql22/SentryInstrumentation;
+	public fun sentryInstrumentationWebflux (Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql22/SentryInstrumentation;
+}
+
 public final class io/sentry/spring/jakarta/graphql/SentryGraphqlBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor, org/springframework/core/PriorityOrdered {
 	public fun <init> ()V
 	public fun getOrder ()I
@@ -184,8 +193,8 @@ public class io/sentry/spring/jakarta/graphql/SentryGraphqlConfiguration {
 	public fun <init> ()V
 	public fun exceptionResolverAdapter ()Lio/sentry/spring/jakarta/graphql/SentryDataFetcherExceptionResolverAdapter;
 	public fun graphqlBeanPostProcessor ()Lio/sentry/spring/jakarta/graphql/SentryGraphqlBeanPostProcessor;
-	public fun sourceBuilderCustomizerWebflux ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
-	public fun sourceBuilderCustomizerWebmvc ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
+	public fun sentryInstrumentationWebMvc (Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql/SentryInstrumentation;
+	public fun sentryInstrumentationWebflux (Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql/SentryInstrumentation;
 }
 
 public final class io/sentry/spring/jakarta/graphql/SentrySpringSubscriptionHandler : io/sentry/graphql/SentrySubscriptionHandler {

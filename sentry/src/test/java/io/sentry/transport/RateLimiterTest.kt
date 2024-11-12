@@ -20,7 +20,6 @@ import io.sentry.TransactionContext
 import io.sentry.UserFeedback
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
-import io.sentry.metrics.EncodedMetrics
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
@@ -103,14 +102,13 @@ class RateLimiterTest {
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
         val transaction = SentryTransaction(SentryTracer(TransactionContext("name", "op"), scopes))
         val transactionItem = SentryEnvelopeItem.fromEvent(fixture.serializer, transaction)
-        val statsdItem = SentryEnvelopeItem.fromMetrics(EncodedMetrics(emptyMap()))
-        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, transactionItem, statsdItem))
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, transactionItem))
 
         rateLimiter.updateRetryAfterLimits("1:transaction:key, 1:default;error;metric_bucket;security:organization", null, 1)
 
         val result = rateLimiter.filter(envelope, Hint())
         assertNotNull(result)
-        assertEquals(3, result.items.count())
+        assertEquals(2, result.items.count())
     }
 
     @Test
@@ -201,9 +199,8 @@ class RateLimiterTest {
         val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
         val profileItem = SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, fixture.serializer)
         val checkInItem = SentryEnvelopeItem.fromCheckIn(fixture.serializer, CheckIn("monitor-slug-1", CheckInStatus.ERROR))
-        val statsdItem = SentryEnvelopeItem.fromMetrics(EncodedMetrics(emptyMap()))
 
-        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem, profileItem, checkInItem, statsdItem))
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem, profileItem, checkInItem))
 
         rateLimiter.updateRetryAfterLimits(null, null, 429)
         val result = rateLimiter.filter(envelope, Hint())
@@ -216,7 +213,6 @@ class RateLimiterTest {
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(attachmentItem))
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileItem))
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(checkInItem))
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(statsdItem))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -273,71 +269,6 @@ class RateLimiterTest {
         assertEquals(1, result.items.toList().size)
 
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileItem))
-        verifyNoMoreInteractions(fixture.clientReportRecorder)
-    }
-
-    @Test
-    fun `drop metrics items as lost`() {
-        val rateLimiter = fixture.getSUT()
-        val scopes = mock<IScopes>()
-        whenever(scopes.options).thenReturn(SentryOptions())
-
-        val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
-        val f = File.createTempFile("test", "trace")
-        val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
-        val profileItem = SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(f, transaction), 1000, fixture.serializer)
-        val statsdItem = SentryEnvelopeItem.fromMetrics(EncodedMetrics(emptyMap()))
-        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, profileItem, statsdItem))
-
-        rateLimiter.updateRetryAfterLimits("60:metric_bucket:key", null, 1)
-        val result = rateLimiter.filter(envelope, Hint())
-
-        assertNotNull(result)
-        assertEquals(2, result.items.toList().size)
-
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(statsdItem))
-        verifyNoMoreInteractions(fixture.clientReportRecorder)
-    }
-
-    @Test
-    fun `drop metrics items if namespace is custom`() {
-        val rateLimiter = fixture.getSUT()
-        val statsdItem = SentryEnvelopeItem.fromMetrics(EncodedMetrics(emptyMap()))
-        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(statsdItem))
-
-        rateLimiter.updateRetryAfterLimits("60:metric_bucket:key:quota_exceeded:custom", null, 1)
-        val result = rateLimiter.filter(envelope, Hint())
-        assertNull(result)
-
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(statsdItem))
-        verifyNoMoreInteractions(fixture.clientReportRecorder)
-    }
-
-    @Test
-    fun `drop metrics items if namespaces is empty`() {
-        val rateLimiter = fixture.getSUT()
-        val statsdItem = SentryEnvelopeItem.fromMetrics(EncodedMetrics(emptyMap()))
-        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(statsdItem))
-
-        rateLimiter.updateRetryAfterLimits("60:metric_bucket:key:quota_exceeded::", null, 1)
-        val result = rateLimiter.filter(envelope, Hint())
-        assertNull(result)
-
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(statsdItem))
-        verifyNoMoreInteractions(fixture.clientReportRecorder)
-    }
-
-    @Test
-    fun `drop metrics items if namespaces is not present`() {
-        val rateLimiter = fixture.getSUT()
-        val statsdItem = SentryEnvelopeItem.fromMetrics(EncodedMetrics(emptyMap()))
-        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(statsdItem))
-
-        rateLimiter.updateRetryAfterLimits("60:metric_bucket:key:quota_exceeded", null, 1)
-        val result = rateLimiter.filter(envelope, Hint())
-        assertNull(result)
-
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(statsdItem))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 

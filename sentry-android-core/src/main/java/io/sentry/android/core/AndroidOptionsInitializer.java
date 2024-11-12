@@ -8,6 +8,7 @@ import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultCompositePerformanceCollector;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.NoOpContinuousProfiler;
@@ -93,10 +94,7 @@ final class AndroidOptionsInitializer {
       final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The context is required.");
 
-    // it returns null if ContextImpl, so let's check for nullability
-    if (context.getApplicationContext() != null) {
-      context = context.getApplicationContext();
-    }
+    context = ContextUtils.getApplicationContext(context);
 
     Objects.requireNonNull(options, "The options object is required.");
     Objects.requireNonNull(logger, "The ILogger object is required.");
@@ -165,7 +163,7 @@ final class AndroidOptionsInitializer {
       // Check if the profiler was already instantiated in the app start.
       // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
       // state of the profiler, and it's only possible retaining the instance.
-      synchronized (AppStartMetrics.getInstance()) {
+      try (final @NotNull ISentryLifecycleToken ignored = AppStartMetrics.staticLock.acquire()) {
         final @Nullable ITransactionProfiler appStartProfiler =
             AppStartMetrics.getInstance().getAppStartProfiler();
         if (appStartProfiler != null) {
@@ -233,8 +231,7 @@ final class AndroidOptionsInitializer {
     options.setThreadChecker(AndroidThreadChecker.getInstance());
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
-      options.addPerformanceCollector(
-          new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
+      options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
 
       if (options.isEnablePerformanceV2()) {
         options.addPerformanceCollector(

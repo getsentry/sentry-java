@@ -1,6 +1,6 @@
 package io.sentry.spring.jakarta.graphql;
 
-import static io.sentry.graphql.SentryInstrumentation.SENTRY_SCOPES_CONTEXT_KEY;
+import static io.sentry.graphql.SentryGraphqlInstrumentation.SENTRY_SCOPES_CONTEXT_KEY;
 
 import graphql.GraphQLContext;
 import io.sentry.Breadcrumb;

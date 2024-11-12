@@ -161,7 +161,7 @@ internal abstract class BaseCaptureStrategy(
     override fun onTouchEvent(event: MotionEvent) {
         val rrwebEvents = gestureConverter.convert(event, recorderConfig)
         if (rrwebEvents != null) {
-            synchronized(currentEventsLock) {
+            currentEventsLock.acquire().use {
                 currentEvents += rrwebEvents
             }
         }

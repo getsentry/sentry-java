@@ -50,7 +50,7 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
-    implementation(projects.sentryGraphql)
+    implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
 
     // database query tracing
@@ -64,6 +64,7 @@ dependencies {
     testImplementation("ch.qos.logback:logback-classic:1.3.5")
     testImplementation(Config.Libs.slf4jApi2)
     testImplementation(Config.Libs.apolloKotlin)
+    testImplementation(projects.sentry)
 }
 
 configure<SourceSetContainer> {
@@ -76,7 +77,7 @@ tasks.register<Test>("systemTest").configure {
     group = "verification"
     description = "Runs the System tests"
 
-//    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+    maxParallelForks = 1
 
     // Cap JVM args per test
     minHeapSize = "128m"

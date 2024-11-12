@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 public final class DefaultCompositePerformanceCollector implements CompositePerformanceCollector {
   private static final long TRANSACTION_COLLECTION_INTERVAL_MILLIS = 100;
   private static final long TRANSACTION_COLLECTION_TIMEOUT_MILLIS = 30000;
-  private final @NotNull Object timerLock = new Object();
+  private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
   private volatile @Nullable Timer timer = null;
   private final @NotNull Map<String, List<PerformanceCollectionData>> performanceDataMap =
       new ConcurrentHashMap<>();
@@ -98,7 +99,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
       performanceDataMap.put(id, new ArrayList<>());
     }
     if (!isStarted.getAndSet(true)) {
-      synchronized (timerLock) {
+      try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
         if (timer == null) {
           timer = new Timer(true);
         }
@@ -201,7 +202,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
       collector.clear();
     }
     if (isStarted.getAndSet(false)) {
-      synchronized (timerLock) {
+      try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
         if (timer != null) {
           timer.cancel();
           timer = null;

@@ -7,17 +7,18 @@ import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
-import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +44,9 @@ public final class SentryAndroid {
   private static final String TIMBER_CLASS_NAME = "timber.log.Timber";
   private static final String FRAGMENT_CLASS_NAME =
       "androidx.fragment.app.FragmentManager$FragmentLifecycleCallbacks";
+
+  protected static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
 
   private SentryAndroid() {}
 
@@ -85,12 +89,11 @@ public final class SentryAndroid {
    * @param configuration Sentry.OptionsConfiguration configuration handler
    */
   @SuppressLint("NewApi")
-  public static synchronized void init(
+  public static void init(
       @NotNull final Context context,
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
-
-    try {
+    try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
       Sentry.init(
           OptionsContainer.create(SentryAndroidOptions.class),
           options -> {
@@ -173,7 +176,6 @@ public final class SentryAndroid {
                 }
               });
           if (!sessionStarted.get()) {
-            scopes.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
             scopes.startSession();
           }
         }

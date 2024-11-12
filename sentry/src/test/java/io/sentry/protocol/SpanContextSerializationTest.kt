@@ -38,6 +38,7 @@ class SpanContextSerializationTest {
             setTag("ba9ce913-269f-4c03-882d-8ca5e6991b14", "35a74e90-8db8-4610-a411-872cbc1030ac")
             data[SpanDataConvention.THREAD_NAME] = "test"
             data[SpanDataConvention.THREAD_ID] = 10
+            setData("spanContextDataKey", "spanContextDataValue")
         }
     }
     private val fixture = Fixture()

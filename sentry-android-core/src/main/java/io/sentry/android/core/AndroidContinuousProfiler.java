@@ -18,6 +18,7 @@ import io.sentry.protocol.SentryId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -84,8 +85,7 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
             (int) SECONDS.toMicros(1) / profilingTracesHz,
             frameMetricsCollector,
             null,
-            logger,
-            buildInfoProvider);
+            logger);
   }
 
   public synchronized void setScopes(final @NotNull IScopes scopes) {
@@ -125,7 +125,14 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
       performanceCollector.start(chunkId.toString());
     }
 
-    stopFuture = executorService.schedule(() -> stop(true), MAX_CHUNK_DURATION_MILLIS);
+    try {
+      stopFuture = executorService.schedule(() -> stop(true), MAX_CHUNK_DURATION_MILLIS);
+    } catch (RejectedExecutionException e) {
+      logger.log(
+          SentryLevel.ERROR,
+          "Failed to schedule profiling chunk finish. Did you call Sentry.close()?",
+          e);
+    }
   }
 
   public synchronized void stop() {
@@ -158,16 +165,18 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
 
     // check if profiler end successfully
     if (endData == null) {
-      return;
-    }
-
-    // The scopes can be null if the profiler is started before the SDK is initialized (app start
-    //  profiling), meaning there's no scopes to send the chunks. In that case, we store the data
-    //  in a list and send it when the next chunk is finished.
-    synchronized (payloadBuilders) {
-      payloadBuilders.add(
-          new ProfileChunk.Builder(
-              profilerId, chunkId, endData.measurementsMap, endData.traceFile));
+      logger.log(
+          SentryLevel.ERROR,
+          "An error occurred while collecting a profile chunk, and it won't be sent.");
+    } else {
+      // The scopes can be null if the profiler is started before the SDK is initialized (app start
+      //  profiling), meaning there's no scopes to send the chunks. In that case, we store the data
+      //  in a list and send it when the next chunk is finished.
+      synchronized (payloadBuilders) {
+        payloadBuilders.add(
+            new ProfileChunk.Builder(
+                profilerId, chunkId, endData.measurementsMap, endData.traceFile));
+      }
     }
 
     isRunning = false;
@@ -189,9 +198,6 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
   }
 
   public synchronized void close() {
-    if (stopFuture != null) {
-      stopFuture.cancel(true);
-    }
     stop();
   }
 

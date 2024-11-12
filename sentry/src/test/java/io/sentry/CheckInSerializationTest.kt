@@ -22,15 +22,17 @@ class CheckInSerializationTest {
 
         fun getSut(type: MonitorScheduleType): CheckIn {
             return CheckIn("some_slug", CheckInStatus.ERROR).apply {
-                contexts.trace = TransactionContext.fromPropagationContext(
-                    PropagationContext().also {
-                        it.traceId = SentryId("f382e3180c714217a81371f8c644aefe")
-                        it.spanId = SpanId("85694b9f567145a6")
+                contexts.setTrace(
+                    TransactionContext.fromPropagationContext(
+                        PropagationContext().also {
+                            it.traceId = SentryId("f382e3180c714217a81371f8c644aefe")
+                            it.spanId = SpanId("85694b9f567145a6")
+                        }
+                    ).apply {
+                        data[SpanDataConvention.THREAD_ID] = 10
+                        data[SpanDataConvention.THREAD_NAME] = "test"
                     }
-                ).apply {
-                    data[SpanDataConvention.THREAD_ID] = 10
-                    data[SpanDataConvention.THREAD_NAME] = "test"
-                }
+                )
                 duration = 12.3
                 environment = "env"
                 release = "1.0.1"

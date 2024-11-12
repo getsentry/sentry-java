@@ -1,10 +1,10 @@
 package io.sentry;
 
-import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.thread.IThreadChecker;
@@ -41,7 +41,8 @@ public final class SentryTracer implements ITransaction {
   private volatile @Nullable TimerTask deadlineTimeoutTask;
 
   private volatile @Nullable Timer timer = null;
-  private final @NotNull Object timerLock = new Object();
+  private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
+  private final @NotNull AutoClosableReentrantLock tracerLock = new AutoClosableReentrantLock();
 
   private final @NotNull AtomicBoolean isIdleFinishTimerRunning = new AtomicBoolean(false);
   private final @NotNull AtomicBoolean isDeadlineTimerRunning = new AtomicBoolean(false);
@@ -110,7 +111,7 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public void scheduleFinish() {
-    synchronized (timerLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       if (timer != null) {
         final @Nullable Long idleTimeout = transactionOptions.getIdleTimeout();
 
@@ -261,7 +262,7 @@ public final class SentryTracer implements ITransaction {
       final SentryTransaction transaction = new SentryTransaction(this);
 
       if (timer != null) {
-        synchronized (timerLock) {
+        try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
           if (timer != null) {
             cancelIdleTimer();
             cancelDeadlineTimer();
@@ -289,7 +290,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   private void cancelIdleTimer() {
-    synchronized (timerLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       if (idleTimeoutTask != null) {
         idleTimeoutTask.cancel();
         isIdleFinishTimerRunning.set(false);
@@ -301,7 +302,7 @@ public final class SentryTracer implements ITransaction {
   private void scheduleDeadlineTimeout() {
     final @Nullable Long deadlineTimeOut = transactionOptions.getDeadlineTimeout();
     if (deadlineTimeOut != null) {
-      synchronized (timerLock) {
+      try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
         if (timer != null) {
           cancelDeadlineTimer();
           isDeadlineTimerRunning.set(true);
@@ -329,7 +330,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   private void cancelDeadlineTimer() {
-    synchronized (timerLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       if (deadlineTimeoutTask != null) {
         deadlineTimeoutTask.cancel();
         isDeadlineTimerRunning.set(false);
@@ -657,7 +658,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   private void updateBaggageValues() {
-    synchronized (this) {
+    try (final @NotNull ISentryLifecycleToken ignored = tracerLock.acquire()) {
       if (baggage.isMutable()) {
         final AtomicReference<SentryId> replayId = new AtomicReference<>();
         scopes.configureScope(
@@ -1002,11 +1003,6 @@ public final class SentryTracer implements ITransaction {
   @Override
   public boolean isNoOp() {
     return false;
-  }
-
-  @Override
-  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
-    return root.getLocalMetricsAggregator();
   }
 
   private static final class FinishStatus {

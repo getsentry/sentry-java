@@ -20,7 +20,6 @@ import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Date
-import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -75,7 +74,7 @@ class OutboxSenderTest {
     @Test
     fun `when parser is EnvelopeReader and serializer returns SentryEvent, event captured, file is deleted `() {
         fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
-        val expected = SentryEvent(SentryId(UUID.fromString("9ec79c33-ec99-42ab-8353-589fcb2e04dc")), Date())
+        val expected = SentryEvent(SentryId("9ec79c33-ec99-42ab-8353-589fcb2e04dc"), Date())
         whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(expected)
         val sut = fixture.getSut()
         val path = getTempEnvelope()

@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         targetSdk = Config.Android.targetSdkVersion
-        minSdk = Config.Android.minSdkVersionNdk
+        minSdk = Config.Android.minSdkVersion
     }
 
     buildFeatures {

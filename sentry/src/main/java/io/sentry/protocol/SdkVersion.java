@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -98,38 +97,10 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
     SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
   }
 
-  /**
-   * Gets installed Sentry packages as list
-   *
-   * @deprecated use {@link SdkVersion#getPackageSet()} ()}
-   */
-  @Deprecated
-  public @Nullable List<SentryPackage> getPackages() {
-    final Set<SentryPackage> packages =
-        deserializedPackages != null
-            ? deserializedPackages
-            : SentryIntegrationPackageStorage.getInstance().getPackages();
-    return new CopyOnWriteArrayList<>(packages);
-  }
-
   public @NotNull Set<SentryPackage> getPackageSet() {
     return deserializedPackages != null
         ? deserializedPackages
         : SentryIntegrationPackageStorage.getInstance().getPackages();
-  }
-
-  /**
-   * Gets installed Sentry integration names as list
-   *
-   * @deprecated use {@link SdkVersion#getIntegrationSet()}
-   */
-  @Deprecated
-  public @Nullable List<String> getIntegrations() {
-    final Set<String> integrations =
-        deserializedIntegrations != null
-            ? deserializedIntegrations
-            : SentryIntegrationPackageStorage.getInstance().getIntegrations();
-    return new CopyOnWriteArrayList<>(integrations);
   }
 
   public @NotNull Set<String> getIntegrationSet() {

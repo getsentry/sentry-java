@@ -2,30 +2,30 @@ package io.sentry.android.replay
 
 import io.sentry.SentryReplayOptions
 
-// since we don't have getters for redactAllText and redactAllImages, they won't be accessible as
+// since we don't have getters for maskAllText and maskAllimages, they won't be accessible as
 // properties in Kotlin, therefore we create these extensions where a getter is dummy, but a setter
 // delegates to the corresponding method in SentryReplayOptions
 
 /**
- * Redact all text content. Draws a rectangle of text bounds with text color on top. By default
- * only views extending TextView are redacted.
+ * Mask all text content. Draws a rectangle of text bounds with text color on top. By default
+ * only views extending TextView are masked.
  *
  * <p>Default is enabled.
  */
-var SentryReplayOptions.redactAllText: Boolean
+var SentryReplayOptions.maskAllText: Boolean
     @Deprecated("Getter is unsupported.", level = DeprecationLevel.ERROR)
     get() = error("Getter not supported")
-    set(value) = setRedactAllText(value)
+    set(value) = setMaskAllText(value)
 
 /**
- * Redact all image content. Draws a rectangle of image bounds with image's dominant color on top.
+ * Mask all image content. Draws a rectangle of image bounds with image's dominant color on top.
  * By default only views extending ImageView with BitmapDrawable or custom Drawable type are
- * redacted. ColorDrawable, InsetDrawable, VectorDrawable are all considered non-PII, as they come
+ * masked. ColorDrawable, InsetDrawable, VectorDrawable are all considered non-PII, as they come
  * from the apk.
  *
  * <p>Default is enabled.
  */
-var SentryReplayOptions.redactAllImages: Boolean
+var SentryReplayOptions.maskAllImages: Boolean
     @Deprecated("Getter is unsupported.", level = DeprecationLevel.ERROR)
     get() = error("Getter not supported")
-    set(value) = setRedactAllImages(value)
+    set(value) = setMaskAllImages(value)

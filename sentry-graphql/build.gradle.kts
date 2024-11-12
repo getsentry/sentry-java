@@ -22,6 +22,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
+    api(projects.sentryGraphqlCore)
     compileOnly(Config.Libs.graphQlJava)
 
     compileOnly(Config.CompileOnly.nopen)

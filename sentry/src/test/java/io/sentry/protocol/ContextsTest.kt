@@ -19,7 +19,7 @@ class ContextsTest {
         contexts.setRuntime(SentryRuntime())
         contexts.setGpu(Gpu())
         contexts.setResponse(Response())
-        contexts.trace = SpanContext("op")
+        contexts.setTrace(SpanContext("op"))
         contexts.profile = ProfileContext(SentryId())
 
         val clone = Contexts(contexts)
@@ -42,7 +42,7 @@ class ContextsTest {
         val contexts = Contexts()
         val id = SentryId()
         contexts["some-property"] = "some-value"
-        contexts.trace = SpanContext("op")
+        contexts.setTrace(SpanContext("op"))
         contexts.trace!!.description = "desc"
         contexts.profile = ProfileContext(id)
 

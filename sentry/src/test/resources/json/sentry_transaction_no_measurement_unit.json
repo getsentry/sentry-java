@@ -28,20 +28,7 @@
                 "value": 1,
                 "unit": "test"
               }
-            },
-          "_metrics_summary": {
-            "d:custom/background_operation@second": [
-              {
-                "min": 1.0,
-                "max": 2.0,
-                "sum": 3.0,
-                "count": 2,
-                "tags": {
-                  "environment": "production"
-                }
-              }
-            ]
-          }
+            }
         }
     ],
     "type": "transaction",
@@ -57,19 +44,6 @@
           "unit": "test"
         }
     },
-  "_metrics_summary": {
-    "d:custom/background_operation@second": [
-      {
-        "min": 5.0,
-        "max": 6.0,
-        "sum": 11.0,
-        "count": 3,
-        "tags": {
-          "environment": "production"
-        }
-      }
-    ]
-  },
     "transaction_info": {
       "source": "custom"
     },
@@ -133,7 +107,6 @@
             "boot_time": "2004-11-04T08:38:00.000Z",
             "timezone": "Europe/Vienna",
             "id": "e0fa5c8d-83f5-4e70-bc60-1e82ad30e196",
-            "language": "6dd45f60-111d-42d8-9204-0452cc836ad8",
             "connection_type": "9ceb3a6c-5292-4ed9-8665-5732495e8ed4",
             "battery_temperature": 0.14775127
         },
@@ -182,6 +155,10 @@
                 "2a5fa3f5-7b87-487f-aaa5-84567aa73642": "4781d51a-c5af-47f2-a4ed-f030c9b3e194",
                 "29106d7d-7fa4-444f-9d34-b9d7510c69ab": "218c23ea-694a-497e-bf6d-e5f26f1ad7bd",
                 "ba9ce913-269f-4c03-882d-8ca5e6991b14": "35a74e90-8db8-4610-a411-872cbc1030ac"
+            },
+            "data":
+            {
+              "spanContextDataKey": "spanContextDataValue"
             }
         }
     },
@@ -262,6 +239,7 @@
                 "6607d106-d426-462b-af74-f29fce978e48": "149bb94a-1387-4484-90be-2df15d1322ab"
             },
             "category": "b6eea851-5ae5-40ed-8fdd-5e1a655a879c",
+            "origin": "4d8085ef-22fc-49d5-801e-55d509fd1a1c",
             "level": "debug"
         }
     ],

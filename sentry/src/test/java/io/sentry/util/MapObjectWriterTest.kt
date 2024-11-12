@@ -12,7 +12,6 @@ import java.util.Currency
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicIntegerArray
 import kotlin.test.Test
@@ -61,7 +60,7 @@ class MapObjectWriterTest {
         writer.name("AtomicBoolean").value(logger, AtomicBoolean(false))
         writer.name("URI").value(logger, URI.create("http://www.example.com"))
         writer.name("InetAddress").value(logger, Inet4Address.getByName("1.1.1.1"))
-        writer.name("UUID").value(logger, UUID.fromString("00000000-1111-2222-3333-444444444444"))
+        writer.name("UUID").value(logger, "00000000-1111-2222-3333-444444444444")
         writer.name("Currency").value(logger, Currency.getInstance("EUR"))
         writer.name("Calendar").value(
             logger,
