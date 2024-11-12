@@ -159,19 +159,18 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
 
     // check if profiler end successfully
     if (endData == null) {
-      // A problem occurred. Profile chunk is not captured. Let's reset ids.
-      chunkId = SentryId.EMPTY_ID;
-      profilerId = SentryId.EMPTY_ID;
-      return;
-    }
-
-    // The scopes can be null if the profiler is started before the SDK is initialized (app start
-    //  profiling), meaning there's no scopes to send the chunks. In that case, we store the data
-    //  in a list and send it when the next chunk is finished.
-    synchronized (payloadBuilders) {
-      payloadBuilders.add(
-          new ProfileChunk.Builder(
-              profilerId, chunkId, endData.measurementsMap, endData.traceFile));
+      logger.log(
+          SentryLevel.ERROR,
+          "An error occurred while collecting a profile chunk, and it won't be sent.");
+    } else {
+      // The scopes can be null if the profiler is started before the SDK is initialized (app start
+      //  profiling), meaning there's no scopes to send the chunks. In that case, we store the data
+      //  in a list and send it when the next chunk is finished.
+      synchronized (payloadBuilders) {
+        payloadBuilders.add(
+            new ProfileChunk.Builder(
+                profilerId, chunkId, endData.measurementsMap, endData.traceFile));
+      }
     }
 
     isRunning = false;
