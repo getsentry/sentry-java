@@ -21,7 +21,7 @@ final class RequestDetailsResolver {
 
   @NotNull
   RequestDetails resolve() {
-    final Dsn dsn = options.getParsedDsn();
+    final Dsn dsn = options.retrieveParsedDsn();
     final URI sentryUri = dsn.getSentryUri();
     final String envelopeUrl = sentryUri.resolve(sentryUri.getPath() + "/envelope/").toString();
 
