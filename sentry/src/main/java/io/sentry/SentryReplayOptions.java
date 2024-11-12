@@ -81,14 +81,10 @@ public final class SentryReplayOptions {
    */
   private Set<String> unmaskViewClasses = new CopyOnWriteArraySet<>();
 
-  /**
-   * The class name of the view container that masks all of its children.
-   */
+  /** The class name of the view container that masks all of its children. */
   private @Nullable String maskViewContainerClass = null;
 
-  /**
-   * The class name of the view container that unmasks its direct children.
-   */
+  /** The class name of the view container that unmasks its direct children. */
   private @Nullable String unmaskViewContainerClass = null;
 
   /**
