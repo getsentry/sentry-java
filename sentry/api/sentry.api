@@ -3581,6 +3581,7 @@ public class io/sentry/SpanContext : io/sentry/JsonSerializable, io/sentry/JsonU
 	public fun copyForChild (Ljava/lang/String;Lio/sentry/SpanId;Lio/sentry/SpanId;)Lio/sentry/SpanContext;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getBaggage ()Lio/sentry/Baggage;
+	public fun getData ()Ljava/util/Map;
 	public fun getDescription ()Ljava/lang/String;
 	public fun getInstrumenter ()Lio/sentry/Instrumenter;
 	public fun getOperation ()Ljava/lang/String;
@@ -3615,6 +3616,7 @@ public final class io/sentry/SpanContext$Deserializer : io/sentry/JsonDeserializ
 }
 
 public final class io/sentry/SpanContext$JsonKeys {
+	public static final field DATA Ljava/lang/String;
 	public static final field DESCRIPTION Ljava/lang/String;
 	public static final field OP Ljava/lang/String;
 	public static final field ORIGIN Ljava/lang/String;
@@ -6542,6 +6544,7 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 
 public abstract interface class io/sentry/util/thread/IThreadChecker {
 	public abstract fun currentThreadSystemId ()J
+	public abstract fun getCurrentThreadName ()Ljava/lang/String;
 	public abstract fun isMainThread ()Z
 	public abstract fun isMainThread (J)Z
 	public abstract fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
@@ -6551,6 +6554,7 @@ public abstract interface class io/sentry/util/thread/IThreadChecker {
 public final class io/sentry/util/thread/NoOpThreadChecker : io/sentry/util/thread/IThreadChecker {
 	public fun <init> ()V
 	public fun currentThreadSystemId ()J
+	public fun getCurrentThreadName ()Ljava/lang/String;
 	public static fun getInstance ()Lio/sentry/util/thread/NoOpThreadChecker;
 	public fun isMainThread ()Z
 	public fun isMainThread (J)Z
@@ -6560,6 +6564,7 @@ public final class io/sentry/util/thread/NoOpThreadChecker : io/sentry/util/thre
 
 public final class io/sentry/util/thread/ThreadChecker : io/sentry/util/thread/IThreadChecker {
 	public fun currentThreadSystemId ()J
+	public fun getCurrentThreadName ()Ljava/lang/String;
 	public static fun getInstance ()Lio/sentry/util/thread/ThreadChecker;
 	public fun isMainThread ()Z
 	public fun isMainThread (J)Z

@@ -1428,6 +1428,7 @@ class SentryTracerTest {
     fun `when a span is launched on the main thread, the thread info should be set correctly`() {
         val threadChecker = mock<IThreadChecker>()
         whenever(threadChecker.isMainThread).thenReturn(true)
+        whenever(threadChecker.currentThreadName).thenReturn("main")
 
         val tracer = fixture.getSut(optionsConfiguration = { options ->
             options.threadChecker = threadChecker
@@ -1441,6 +1442,7 @@ class SentryTracerTest {
     fun `when a span is launched on the background thread, the thread info should be set correctly`() {
         val threadChecker = mock<IThreadChecker>()
         whenever(threadChecker.isMainThread).thenReturn(false)
+        whenever(threadChecker.currentThreadName).thenReturn("test")
 
         val tracer = fixture.getSut(optionsConfiguration = { options ->
             options.threadChecker = threadChecker

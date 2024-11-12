@@ -1057,6 +1057,7 @@ class JsonSerializerTest {
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
         trace.sampled = true
+        trace.data["dataKey"] = "dataValue"
         val tracer = SentryTracer(trace, fixture.scopes)
         tracer.setData("dataKey", "dataValue")
         val span = tracer.startChild("child")
@@ -1091,6 +1092,9 @@ class JsonSerializerTest {
         val jsonTrace = (element["contexts"] as Map<*, *>)["trace"] as Map<*, *>
         assertNotNull(jsonTrace["trace_id"] as String)
         assertNotNull(jsonTrace["span_id"] as String)
+        assertNotNull(jsonTrace["data"] as Map<*, *>) {
+            assertEquals("dataValue", it["dataKey"])
+        }
         assertEquals("http", jsonTrace["op"] as String)
         assertEquals("some request", jsonTrace["description"] as String)
         assertEquals("ok", jsonTrace["status"] as String)
@@ -1109,7 +1113,10 @@ class JsonSerializerTest {
                               "trace_id": "b156a475de54423d9c1571df97ec7eb6",
                               "span_id": "0a53026963414893",
                               "op": "http",
-                              "status": "ok"
+                              "status": "ok",
+                              "data": {
+                                "data-key": "data-value"
+                              }
                             },
                             "custom": {
                               "some-key": "some-value"
@@ -1149,6 +1156,7 @@ class JsonSerializerTest {
         assertEquals("b156a475de54423d9c1571df97ec7eb6", transaction.contexts.trace!!.traceId.toString())
         assertEquals("0a53026963414893", transaction.contexts.trace!!.spanId.toString())
         assertEquals("http", transaction.contexts.trace!!.operation)
+        assertEquals("data-value", transaction.contexts.trace!!.data["data-key"])
         assertNotNull(transaction.contexts["custom"])
         assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
 

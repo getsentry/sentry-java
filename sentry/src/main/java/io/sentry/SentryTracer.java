@@ -7,6 +7,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
+import io.sentry.util.thread.IThreadChecker;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -518,17 +519,14 @@ public final class SentryTracer implements ITransaction {
       //                }
       //              });
       //      span.setDescription(description);
-      final long threadId = scopes.getOptions().getThreadChecker().currentThreadSystemId();
+      final @NotNull IThreadChecker threadChecker = scopes.getOptions().getThreadChecker();
       final SentryId profilerId = scopes.getOptions().getContinuousProfiler().getProfilerId();
       if (!profilerId.equals(SentryId.EMPTY_ID)) {
         span.setData(SpanDataConvention.PROFILER_ID, profilerId.toString());
       }
-      span.setData(SpanDataConvention.THREAD_ID, String.valueOf(threadId));
       span.setData(
-          SpanDataConvention.THREAD_NAME,
-          scopes.getOptions().getThreadChecker().isMainThread()
-              ? "main"
-              : Thread.currentThread().getName());
+          SpanDataConvention.THREAD_ID, String.valueOf(threadChecker.currentThreadSystemId()));
+      span.setData(SpanDataConvention.THREAD_NAME, threadChecker.getCurrentThreadName());
       this.children.add(span);
       if (compositePerformanceCollector != null) {
         compositePerformanceCollector.onSpanStarted(span);

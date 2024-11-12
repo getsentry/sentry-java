@@ -1275,6 +1275,7 @@ class SentryTest {
         override fun isMainThread(): Boolean = false
         override fun isMainThread(sentryThread: SentryThread): Boolean = false
         override fun currentThreadSystemId(): Long = 0
+        override fun getCurrentThreadName(): String = ""
     }
 
     private class CustomMemoryCollector :

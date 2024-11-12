@@ -81,7 +81,7 @@ public final class SentryTransaction extends SentryBaseEvent
 
     final SpanContext tracerContext = sentryTracer.getSpanContext();
     // tags must be placed on the root of the transaction instead of contexts.trace.tags
-    contexts.setTrace(
+    final @NotNull SpanContext traceContext =
         new SpanContext(
             tracerContext.getTraceId(),
             tracerContext.getSpanId(),
@@ -90,7 +90,9 @@ public final class SentryTransaction extends SentryBaseEvent
             tracerContext.getDescription(),
             tracerContext.getSamplingDecision(),
             tracerContext.getStatus(),
-            tracerContext.getOrigin()));
+            tracerContext.getOrigin());
+    traceContext.getData().putAll(tracerContext.getData());
+    contexts.setTrace(traceContext);
     for (final Map.Entry<String, String> tag : tracerContext.getTags().entrySet()) {
       this.setTag(tag.getKey(), tag.getValue());
     }
