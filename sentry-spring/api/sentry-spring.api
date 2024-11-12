@@ -194,6 +194,17 @@ public final class io/sentry/spring/graphql/SentrySpringSubscriptionHandler : io
 	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IScopes;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
 }
 
+public class io/sentry/spring/opentelemetry/SentryOpenTelemetryAgentWithoutAutoInitConfiguration {
+	public fun <init> ()V
+	public fun sentryOpenTelemetryOptionsConfiguration ()Lio/sentry/Sentry$OptionsConfiguration;
+}
+
+public class io/sentry/spring/opentelemetry/SentryOpenTelemetryNoAgentConfiguration {
+	public fun <init> ()V
+	public static fun openTelemetrySpanFactory (Lio/opentelemetry/api/OpenTelemetry;)Lio/sentry/ISpanFactory;
+	public fun sentryOpenTelemetryOptionsConfiguration ()Lio/sentry/Sentry$OptionsConfiguration;
+}
+
 public class io/sentry/spring/tracing/SentryAdviceConfiguration {
 	public fun <init> ()V
 	public fun sentrySpanAdvice ()Lorg/aopalliance/aop/Advice;

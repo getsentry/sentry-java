@@ -38,6 +38,9 @@ dependencies {
     compileOnly(projects.sentryGraphql)
     compileOnly(Config.Libs.springBootStarterQuartz)
     compileOnly(projects.sentryQuartz)
+    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
