@@ -299,7 +299,8 @@ public class ReplayIntegration(
             return
         }
 
-        if (hub?.rateLimiter?.isActiveForCategories(All, Replay) == true) {
+        if (hub?.rateLimiter?.isActiveForCategory(All) == true ||
+            hub?.rateLimiter?.isActiveForCategory(Replay) == true) {
             pause()
         } else {
             resume()
@@ -319,7 +320,8 @@ public class ReplayIntegration(
     private fun checkCanRecord() {
         if (captureStrategy is SessionCaptureStrategy &&
             (options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
-                hub?.rateLimiter?.isActiveForCategories(All, Replay) == true)) {
+                hub?.rateLimiter?.isActiveForCategory(All) == true ||
+                hub?.rateLimiter?.isActiveForCategory(Replay) == true)) {
             pause()
         }
     }

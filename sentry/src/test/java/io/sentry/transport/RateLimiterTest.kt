@@ -27,6 +27,7 @@ import io.sentry.metrics.EncodedMetrics
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import org.awaitility.kotlin.await
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.same
@@ -36,6 +37,8 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -376,5 +379,50 @@ class RateLimiterTest {
 
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(replayItem))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
+    fun `apply rate limits notifies observers`() {
+        val rateLimiter = fixture.getSUT()
+
+        var applied = false
+        rateLimiter.addRateLimitObserver {
+            applied = it
+        }
+        rateLimiter.updateRetryAfterLimits("60:replay:key", null, 1)
+
+        assertTrue(applied)
+    }
+
+    @Test
+    fun `apply rate limits schedules a timer to notify observers of lifted limits`() {
+        val rateLimiter = fixture.getSUT()
+
+        var applied = true
+        rateLimiter.addRateLimitObserver {
+            applied = it
+        }
+        rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
+
+        // wait for 1.5s to ensure the timer has run after 1s
+        await.atLeast(1500L, MILLISECONDS)
+        assertFalse(applied)
+    }
+
+    @Test
+    fun `close cancels the timer`() {
+        val rateLimiter = fixture.getSUT()
+
+        var applied = true
+        rateLimiter.addRateLimitObserver {
+            applied = it
+        }
+
+        rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
+        rateLimiter.close()
+
+        // wait for 1.5s to ensure the timer has run after 1s
+        await.atLeast(1500L, MILLISECONDS)
+        assertTrue(applied)
     }
 }

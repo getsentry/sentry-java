@@ -9,6 +9,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
+import io.sentry.IConnectionStatusProvider.ConnectionStatus.CONNECTED
+import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.IHub
 import io.sentry.Scope
 import io.sentry.ScopeCallback
@@ -26,6 +28,7 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.capture.CaptureStrategy
+import io.sentry.android.replay.capture.SessionCaptureStrategy
 import io.sentry.android.replay.capture.SessionCaptureStrategyTest.Fixture.Companion.VIDEO_DURATION
 import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.cache.PersistingScopeObserver
@@ -38,6 +41,7 @@ import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.transport.RateLimiter
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
@@ -48,6 +52,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -82,10 +87,12 @@ class ReplayIntegrationTest {
             }
         }
         val scope = Scope(options)
+        val rateLimiter = mock<RateLimiter>()
         val hub = mock<IHub> {
             doAnswer {
                 ((it.arguments[0]) as ScopeCallback).run(scope)
             }.whenever(mock).configureScope(any<ScopeCallback>())
+            on { rateLimiter }.thenReturn(rateLimiter)
         }
 
         val replayCache = mock<ReplayCache> {
@@ -98,6 +105,8 @@ class ReplayIntegrationTest {
             context: Context,
             sessionSampleRate: Double = 1.0,
             onErrorSampleRate: Double = 1.0,
+            isOffline: Boolean = false,
+            isRateLimited: Boolean = false,
             recorderProvider: (() -> Recorder)? = null,
             replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
             recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)? = null,
@@ -107,6 +116,12 @@ class ReplayIntegrationTest {
             options.run {
                 experimental.sessionReplay.onErrorSampleRate = onErrorSampleRate
                 experimental.sessionReplay.sessionSampleRate = sessionSampleRate
+                connectionStatusProvider = mock {
+                    on { connectionStatus }.thenReturn(if (isOffline) DISCONNECTED else CONNECTED)
+                }
+            }
+            if (isRateLimited) {
+                whenever(rateLimiter.isActiveForCategory(any())).thenReturn(true)
             }
             return ReplayIntegration(
                 context,
@@ -566,5 +581,111 @@ class ReplayIntegrationTest {
         replay.onScreenshotRecorded(mock<Bitmap>())
 
         verify(fixture.replayCache).addFrame(any<Bitmap>(), any(), eq("MainActivity"))
+    }
+
+    @Test
+    fun `onScreenshotRecorded pauses replay when offline for sessions`() {
+        val captureStrategy = SessionCaptureStrategy(fixture.options, null, CurrentDateProvider.getInstance())
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy },
+            isOffline = true
+        )
+
+        replay.register(fixture.hub, fixture.options)
+        replay.start()
+        replay.onScreenshotRecorded(mock<Bitmap>())
+
+        verify(recorder).pause()
+    }
+
+    @Test
+    fun `onScreenshotRecorded pauses replay when rate-limited for sessions`() {
+        val captureStrategy = SessionCaptureStrategy(fixture.options, null, CurrentDateProvider.getInstance())
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy },
+            isRateLimited = true
+        )
+
+        replay.register(fixture.hub, fixture.options)
+        replay.start()
+        replay.onScreenshotRecorded(mock<Bitmap>())
+
+        verify(recorder).pause()
+    }
+
+    @Test
+    fun `onConnectionStatusChanged pauses replay when offline for sessions`() {
+        val captureStrategy = SessionCaptureStrategy(fixture.options, null, CurrentDateProvider.getInstance())
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy }
+        )
+
+        replay.register(fixture.hub, fixture.options)
+        replay.start()
+        replay.onConnectionStatusChanged(DISCONNECTED)
+
+        verify(recorder).pause()
+    }
+
+    @Test
+    fun `onConnectionStatusChanged resumes replay when back-online for sessions`() {
+        val captureStrategy = SessionCaptureStrategy(fixture.options, null, CurrentDateProvider.getInstance())
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy }
+        )
+
+        replay.register(fixture.hub, fixture.options)
+        replay.start()
+        replay.onConnectionStatusChanged(CONNECTED)
+
+        verify(recorder).resume()
+    }
+
+    @Test
+    fun `onRateLimitChanged pauses replay when rate-limited for sessions`() {
+        val captureStrategy = SessionCaptureStrategy(fixture.options, null, CurrentDateProvider.getInstance())
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy },
+            isRateLimited = true
+        )
+
+        replay.register(fixture.hub, fixture.options)
+        replay.start()
+        replay.onRateLimitChanged(true)
+
+        verify(recorder).pause()
+    }
+
+    @Test
+    fun `onRateLimitChanged resumes replay when rate-limit lifted for sessions`() {
+        val captureStrategy = SessionCaptureStrategy(fixture.options, null, CurrentDateProvider.getInstance())
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy },
+            isRateLimited = false
+        )
+
+        replay.register(fixture.hub, fixture.options)
+        replay.start()
+        replay.onRateLimitChanged(false)
+
+        verify(recorder).resume()
     }
 }

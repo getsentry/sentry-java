@@ -27,7 +27,6 @@ import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
-import io.sentry.transport.RateLimiter
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.ArgumentMatchers.anyInt
@@ -37,7 +36,6 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -71,7 +69,6 @@ class SessionCaptureStrategyTest {
             doAnswer {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }.whenever(it).configureScope(any())
-            doReturn(mock<RateLimiter>()).whenever(it).rateLimiter
         }
         var persistedSegment = LinkedHashMap<String, String?>()
         val replayCache = mock<ReplayCache> {

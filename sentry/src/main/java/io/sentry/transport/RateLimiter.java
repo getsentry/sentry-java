@@ -103,15 +103,6 @@ public final class RateLimiter implements Closeable {
     return envelope;
   }
 
-  public boolean isActiveForCategories(final @NotNull DataCategory... dataCategories) {
-    for (DataCategory dataCategory : dataCategories) {
-      if (isActiveForCategory(dataCategory)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public boolean isActiveForCategory(final @NotNull DataCategory dataCategory) {
     final Date currentDate = new Date(currentDateProvider.getCurrentTimeMillis());
