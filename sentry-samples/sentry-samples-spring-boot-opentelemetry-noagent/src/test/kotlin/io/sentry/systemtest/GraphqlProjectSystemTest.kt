@@ -24,7 +24,7 @@ class GraphqlProjectSystemTest {
         testHelper.ensureNoErrors(response)
         assertEquals("proj-slug", response?.data?.project?.slug)
         testHelper.ensureTransactionReceived { transaction ->
-            testHelper.doesTransactionContainSpanWithOp(transaction, "query ProjectQuery")
+            testHelper.doesTransactionContainSpanWithDescription(transaction, "Query.project")
         }
     }
 
@@ -35,7 +35,7 @@ class GraphqlProjectSystemTest {
         testHelper.ensureNoErrors(response)
         assertNotNull(response?.data?.addProject)
         testHelper.ensureTransactionReceived { transaction ->
-            testHelper.doesTransactionContainSpanWithOp(transaction, "mutation AddProjectMutation")
+            testHelper.doesTransactionContainSpanWithDescription(transaction, "Mutation.addProject")
         }
     }
 
@@ -49,7 +49,7 @@ class GraphqlProjectSystemTest {
             error.message?.message?.startsWith("Unresolved RuntimeException for executionId ") ?: false
         }
         testHelper.ensureTransactionReceived { transaction ->
-            testHelper.doesTransactionContainSpanWithOp(transaction, "mutation AddProjectMutation")
+            testHelper.doesTransactionContainSpanWithDescription(transaction, "Mutation.addProject")
         }
     }
 }
