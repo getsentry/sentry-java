@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.0.0-beta.2
 
 ### Breaking Changes
 
@@ -40,7 +40,6 @@
 - Faster generation of Sentry and Span IDs ([#3818](https://github.com/getsentry/sentry-java/pull/3818))
   - Uses faster implementation to convert UUID to SentryID String
   - Uses faster Random implementation to generate UUIDs
-- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
 - Android 15: Add support for 16KB page sizes ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
   - See https://developer.android.com/guide/practices/page-sizes for more details
 
@@ -53,7 +52,6 @@
   - Starting a child span from a transaction that wasn't in the current `Context` lead to multiple transactions being created (one for the transaction and another per span created).
 - Add `auto.graphql.graphql22` to ignored span origins when using OpenTelemetry ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
 - The Spring Boot 3 WebFlux sample now uses our GraphQL v22 integration ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
-- Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
 - All status codes below 400 are now mapped to `SpanStatus.OK` ([#3869](https://github.com/getsentry/sentry-java/pull/3869))
 
 
@@ -311,6 +309,20 @@ You may also use `LifecycleHelper.close(token)`, e.g. in case you need to pass t
 
 - Report exceptions returned by Throwable.getSuppressed() to Sentry as exception groups ([#3396] https://github.com/getsentry/sentry-java/pull/3396)
 
+## 7.17.0
+
+### Features
+
+- Add meta option to set the maximum amount of breadcrumbs to be logged. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
+- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
+
+### Fixes
+
+- Using MaxBreadcrumb with value 0 no longer crashes. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
+- Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
+- Fix standalone tomcat jndi issue ([#3873](https://github.com/getsentry/sentry-java/pull/3873))
+    - Using Sentry Spring Boot on a standalone tomcat caused the following error:
+        - Failed to bind properties under 'sentry.parsed-dsn' to io.sentry.Dsn
 
 ## 7.16.0
 

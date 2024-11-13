@@ -394,8 +394,8 @@ class SentryAndroidTest {
         }
     }
 
-//    @Test
-//    @Config(sdk = [30])
+    @Test
+    @Config(sdk = [30])
     fun `AnrV2 events get enriched with previously persisted scope and options data, the new data gets persisted after that`() {
         val cacheDir = tmpDir.newFolder().absolutePath
         fixture.addAppExitInfo(timestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1))
