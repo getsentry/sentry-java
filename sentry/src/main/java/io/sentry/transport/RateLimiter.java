@@ -38,13 +38,6 @@ public final class RateLimiter implements Closeable {
   private final @NotNull Map<DataCategory, @NotNull Date> sentryRetryAfterLimit =
       new ConcurrentHashMap<>();
   private final @NotNull List<IRateLimitObserver> rateLimitObservers = new CopyOnWriteArrayList<>();
-  private final @NotNull TimerTask timerTask =
-      new TimerTask() {
-        @Override
-        public void run() {
-          notifyRateLimitObservers(false);
-        }
-      };
   private @Nullable Timer timer = null;
   private final @NotNull Object timerLock = new Object();
 
@@ -305,7 +298,14 @@ public final class RateLimiter implements Closeable {
           timer = new Timer(true);
         }
 
-        timer.schedule(timerTask, date);
+        timer.schedule(
+            new TimerTask() {
+              @Override
+              public void run() {
+                notifyRateLimitObservers(false);
+              }
+            },
+            date);
       }
     }
   }

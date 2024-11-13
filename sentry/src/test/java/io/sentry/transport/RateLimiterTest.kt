@@ -37,7 +37,7 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.io.File
 import java.util.UUID
-import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -397,31 +397,31 @@ class RateLimiterTest {
     fun `apply rate limits schedules a timer to notify observers of lifted limits`() {
         val rateLimiter = fixture.getSUT()
 
-        var applied = true
+        val applied = AtomicBoolean(true)
         rateLimiter.addRateLimitObserver {
-            applied = it
+            applied.set(it)
         }
         rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
 
         // wait for 1.5s to ensure the timer has run after 1s
-        await.atLeast(1500L, MILLISECONDS)
-        assertFalse(applied)
+        await.untilFalse(applied)
+        assertFalse(applied.get())
     }
 
     @Test
     fun `close cancels the timer`() {
         val rateLimiter = fixture.getSUT()
 
-        var applied = true
+        val applied = AtomicBoolean(true)
         rateLimiter.addRateLimitObserver {
-            applied = it
+            applied.set(it)
         }
 
         rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
         rateLimiter.close()
 
         // wait for 1.5s to ensure the timer has run after 1s
-        await.atLeast(1500L, MILLISECONDS)
-        assertTrue(applied)
+        await.untilTrue(applied)
+        assertTrue(applied.get())
     }
 }
