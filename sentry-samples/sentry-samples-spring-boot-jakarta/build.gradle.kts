@@ -81,6 +81,8 @@ tasks.register<Test>("systemTest").configure {
     group = "verification"
     description = "Runs the System tests"
 
+    outputs.upToDateWhen { false }
+
     maxParallelForks = 1
 
     // Cap JVM args per test

@@ -96,9 +96,7 @@ dependencies {
     implementation(projects.sentryLogback)
     implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
-    implementation(Config.Libs.springBoot3StarterOpenTelemetry)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    implementation(Config.Libs.OpenTelemetry.otelSdk)
 
     // database query tracing
     implementation(projects.sentryJdbc)
@@ -129,7 +127,8 @@ tasks.register<Test>("systemTest").configure {
     group = "verification"
     description = "Runs the System tests"
 
-//    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+    outputs.upToDateWhen { false }
+
     maxParallelForks = 1
 
     // Cap JVM args per test
