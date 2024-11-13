@@ -24,6 +24,13 @@ jobs:
         agent-auto-init: [ "true" ]
         include:
           - sample: "sentry-samples-spring-boot"
+          - sample: "sentry-samples-spring-boot-opentelemetry-noagent"
+          - sample: "sentry-samples-spring-boot-opentelemetry"
+            agent: "1"
+            agent-auto-init: "true"
+          - sample: "sentry-samples-spring-boot-opentelemetry"
+            agent: "1"
+            agent-auto-init: "false"
           - sample: "sentry-samples-spring-boot-webflux-jakarta"
           - sample: "sentry-samples-spring-boot-webflux"
           - sample: "sentry-samples-spring-boot-jakarta-opentelemetry-noagent"

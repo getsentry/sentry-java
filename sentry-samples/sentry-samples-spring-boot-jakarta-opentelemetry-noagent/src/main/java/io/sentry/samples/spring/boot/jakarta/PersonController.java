@@ -1,7 +1,7 @@
 package io.sentry.samples.spring.boot.jakarta;
 
-import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.sentry.ISpan;
@@ -20,22 +20,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/person/")
 public class PersonController {
   private final PersonService personService;
-  private final OpenTelemetry openTelemetry;
+  private final Tracer tracer;
   private static final Logger LOGGER = LoggerFactory.getLogger(PersonController.class);
 
-  public PersonController(PersonService personService, OpenTelemetry openTelemetry) {
+  public PersonController(PersonService personService, Tracer tracer) {
     this.personService = personService;
-    this.openTelemetry = openTelemetry;
+    this.tracer = tracer;
   }
 
   @GetMapping("{id}")
   @WithSpan("personSpanThroughOtelAnnotation")
   Person person(@PathVariable Long id) {
-    Span span =
-        openTelemetry
-            .getTracer("tracerForSpringBootDemo")
-            .spanBuilder("spanCreatedThroughOtelApi")
-            .startSpan();
+    Span span = tracer.spanBuilder("spanCreatedThroughOtelApi").startSpan();
     try (final @NotNull Scope spanScope = span.makeCurrent()) {
       ISpan currentSpan = Sentry.getSpan();
       ISpan sentrySpan = currentSpan.startChild("spanCreatedThroughSentryApi");
@@ -52,11 +48,7 @@ public class PersonController {
 
   @PostMapping
   Person create(@RequestBody Person person) {
-    Span span =
-        openTelemetry
-            .getTracer("tracerForSpringBootDemo")
-            .spanBuilder("spanCreatedThroughOtelApi")
-            .startSpan();
+    Span span = tracer.spanBuilder("spanCreatedThroughOtelApi").startSpan();
     try (final @NotNull Scope spanScope = span.makeCurrent()) {
       ISpan sentrySpan = Sentry.getSpan().startChild("spanCreatedThroughSentryApi");
       try {
