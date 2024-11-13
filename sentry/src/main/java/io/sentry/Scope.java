@@ -786,7 +786,9 @@ public final class Scope implements IScope {
    * @return the breadcrumbs queue
    */
   static @NotNull Queue<Breadcrumb> createBreadcrumbsList(final int maxBreadcrumb) {
-    return SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxBreadcrumb));
+    return maxBreadcrumb > 0
+        ? SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxBreadcrumb))
+        : SynchronizedQueue.synchronizedQueue(new DisabledQueue<>());
   }
 
   /**

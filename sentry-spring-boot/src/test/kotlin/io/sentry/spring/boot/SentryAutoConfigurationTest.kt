@@ -734,7 +734,7 @@ class SentryAutoConfigurationTest {
         SentryIntegrationPackageStorage.getInstance().clearStorage()
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
             .run {
-                assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBoot3OpenTelemetryAgentWithoutAutoInit"))
+                assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryAgentWithoutAutoInit"))
             }
     }
 
@@ -743,7 +743,7 @@ class SentryAutoConfigurationTest {
         SentryIntegrationPackageStorage.getInstance().clearStorage()
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBoot3OpenTelemetryAgentWithoutAutoInit"))
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryAgentWithoutAutoInit"))
             }
     }
 
@@ -753,39 +753,39 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
             .withClassLoader(FilteredClassLoader(AgentMarker::class.java))
             .run {
-                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBoot3OpenTelemetryAgentWithoutAutoInit"))
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryAgentWithoutAutoInit"))
             }
     }
 
     @Test
-    fun `when AgentMarker is not on the classpath but OpenTelemetry is, runs SpringBoot3OpenTelemetryNoAgent`() {
+    fun `when AgentMarker is not on the classpath but OpenTelemetry is, runs SpringBootOpenTelemetryNoAgent`() {
         SentryIntegrationPackageStorage.getInstance().clearStorage()
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withClassLoader(FilteredClassLoader(AgentMarker::class.java))
             .withUserConfiguration(OtelBeanConfig::class.java)
             .run {
-                assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBoot3OpenTelemetryNoAgent"))
+                assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryNoAgent"))
             }
     }
 
     @Test
-    fun `when AgentMarker and OpenTelemetry are not on the classpath, does not run SpringBoot3OpenTelemetryNoAgent`() {
+    fun `when AgentMarker and OpenTelemetry are not on the classpath, does not run SpringBootOpenTelemetryNoAgent`() {
         SentryIntegrationPackageStorage.getInstance().clearStorage()
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withClassLoader(FilteredClassLoader(AgentMarker::class.java, OpenTelemetry::class.java))
             .run {
-                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBoot3OpenTelemetryNoAgent"))
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryNoAgent"))
             }
     }
 
     @Test
-    fun `when AgentMarker and SentryAutoConfigurationCustomizerProvider are not on the classpath, does not run SpringBoot3OpenTelemetryNoAgent`() {
+    fun `when AgentMarker and SentryAutoConfigurationCustomizerProvider are not on the classpath, does not run SpringBootOpenTelemetryNoAgent`() {
         SentryIntegrationPackageStorage.getInstance().clearStorage()
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withClassLoader(FilteredClassLoader(AgentMarker::class.java, SentryAutoConfigurationCustomizerProvider::class.java))
             .withUserConfiguration(OtelBeanConfig::class.java)
             .run {
-                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBoot3OpenTelemetryNoAgent"))
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryNoAgent"))
             }
     }
 
@@ -795,7 +795,7 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withClassLoader(FilteredClassLoader(AgentMarker::class.java))
             .run {
-                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBoot3OpenTelemetryAgentWithoutAutoInit"))
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryAgentWithoutAutoInit"))
             }
     }
 
