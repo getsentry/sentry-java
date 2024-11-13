@@ -102,7 +102,7 @@ class AnrV2IntegrationTest {
             timestamp: Long? = null,
             importance: Int? = null,
             addTrace: Boolean = true,
-            addBadTrace: Boolean = true
+            addBadTrace: Boolean = false
         ) {
             val builder = ApplicationExitInfoBuilder.newBuilder()
             if (reason != null) {
