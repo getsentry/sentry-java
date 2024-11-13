@@ -7,12 +7,14 @@ import com.jakewharton.nopen.annotation.Open;
 import com.p6spy.engine.common.StatementInformation;
 import com.p6spy.engine.event.SimpleJdbcEventListener;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.Span;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.sql.SQLException;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +28,8 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
   private static final @NotNull ThreadLocal<ISpan> CURRENT_SPAN = new ThreadLocal<>();
 
   private volatile @Nullable DatabaseUtils.DatabaseDetails cachedDatabaseDetails = null;
-  private final @NotNull Object databaseDetailsLock = new Object();
+  protected final @NotNull AutoClosableReentrantLock databaseDetailsLock =
+      new AutoClosableReentrantLock();
 
   public SentryJdbcEventListener(final @NotNull IScopes scopes) {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
@@ -92,7 +95,7 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
   private @NotNull DatabaseUtils.DatabaseDetails getOrComputeDatabaseDetails(
       final @NotNull StatementInformation statementInformation) {
     if (cachedDatabaseDetails == null) {
-      synchronized (databaseDetailsLock) {
+      try (final @NotNull ISentryLifecycleToken ignored = databaseDetailsLock.acquire()) {
         if (cachedDatabaseDetails == null) {
           cachedDatabaseDetails = DatabaseUtils.readFrom(statementInformation);
         }

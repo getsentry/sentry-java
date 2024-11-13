@@ -6,7 +6,6 @@ import org.mockito.kotlin.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 
@@ -87,11 +86,6 @@ class NoOpHubTest {
 
     @Test
     fun `clone returns the same instance`() = assertSame(NoOpHub.getInstance(), sut.clone())
-
-    @Test
-    fun `traceHeaders is not null`() {
-        assertNotNull(sut.traceHeaders())
-    }
 
     @Test
     fun `getSpan returns null`() {

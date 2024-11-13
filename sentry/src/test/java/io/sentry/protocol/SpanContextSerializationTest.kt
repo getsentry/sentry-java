@@ -6,6 +6,7 @@ import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
 import io.sentry.SpanContext
+import io.sentry.SpanDataConvention
 import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
@@ -35,6 +36,9 @@ class SpanContextSerializationTest {
             setTag("2a5fa3f5-7b87-487f-aaa5-84567aa73642", "4781d51a-c5af-47f2-a4ed-f030c9b3e194")
             setTag("29106d7d-7fa4-444f-9d34-b9d7510c69ab", "218c23ea-694a-497e-bf6d-e5f26f1ad7bd")
             setTag("ba9ce913-269f-4c03-882d-8ca5e6991b14", "35a74e90-8db8-4610-a411-872cbc1030ac")
+            data[SpanDataConvention.THREAD_NAME] = "test"
+            data[SpanDataConvention.THREAD_ID] = 10
+            setData("spanContextDataKey", "spanContextDataValue")
         }
     }
     private val fixture = Fixture()

@@ -49,6 +49,7 @@ public class io/sentry/spring/SentryRequestHttpServletRequestProcessor : io/sent
 }
 
 public class io/sentry/spring/SentryRequestResolver {
+	protected static final field staticLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun resolveSentryRequest (Ljavax/servlet/http/HttpServletRequest;)Lio/sentry/protocol/Request;
 }
@@ -184,8 +185,8 @@ public class io/sentry/spring/graphql/SentryGraphqlConfiguration {
 	public fun <init> ()V
 	public fun exceptionResolverAdapter ()Lio/sentry/spring/graphql/SentryDataFetcherExceptionResolverAdapter;
 	public fun graphqlBeanPostProcessor ()Lio/sentry/spring/graphql/SentryGraphqlBeanPostProcessor;
-	public fun sourceBuilderCustomizerWebflux ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
-	public fun sourceBuilderCustomizerWebmvc ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
+	public fun sentryInstrumentationWebMvc (Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql/SentryInstrumentation;
+	public fun sentryInstrumentationWebflux (Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql/SentryInstrumentation;
 }
 
 public final class io/sentry/spring/graphql/SentrySpringSubscriptionHandler : io/sentry/graphql/SentrySubscriptionHandler {

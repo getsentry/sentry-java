@@ -3,6 +3,7 @@ package io.sentry;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import io.sentry.transport.RateLimiter;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.File;
@@ -23,6 +24,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
   private @Nullable SendFireAndForget sender;
   private final AtomicBoolean isInitialized = new AtomicBoolean(false);
   private final AtomicBoolean isClosed = new AtomicBoolean(false);
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   public interface SendFireAndForget {
     void send();
@@ -79,7 +81,7 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
     options
         .getLogger()
         .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
-    addIntegrationToSdkVersion(getClass());
+    addIntegrationToSdkVersion("SendCachedEnvelopeFireAndForget");
 
     sendCachedEnvelopes(scopes, options);
   }
@@ -101,9 +103,9 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
   }
 
   @SuppressWarnings({"FutureReturnValueIgnored", "NullAway"})
-  private synchronized void sendCachedEnvelopes(
+  private void sendCachedEnvelopes(
       final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
-    try {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       options
           .getExecutorService()
           .submit(

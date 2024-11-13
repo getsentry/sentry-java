@@ -22,16 +22,6 @@ class TransactionContextTest {
     }
 
     @Test
-    fun `when context is created from trace header, parent sampling decision is set`() {
-        val header = SentryTraceHeader(SentryId(), SpanId(), true)
-        val context = TransactionContext.fromSentryTrace("name", "op", header)
-        assertNull(context.sampled)
-        assertNull(context.profileSampled)
-        assertTrue(context.parentSampled!!)
-        assertFalse(context.isForNextAppStart)
-    }
-
-    @Test
     fun `when context is created from propagation context, parent sampling decision of false is set from trace header`() {
         val logger = mock<ILogger>()
         val propagationContext = PropagationContext.fromHeaders(

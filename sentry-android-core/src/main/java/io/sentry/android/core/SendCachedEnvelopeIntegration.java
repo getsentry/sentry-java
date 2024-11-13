@@ -1,13 +1,17 @@
 package io.sentry.android.core;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import io.sentry.DataCategory;
 import io.sentry.IConnectionStatusProvider;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.transport.RateLimiter;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -33,6 +37,7 @@ final class SendCachedEnvelopeIntegration
   private @Nullable SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget sender;
   private final AtomicBoolean isInitialized = new AtomicBoolean(false);
   private final AtomicBoolean isClosed = new AtomicBoolean(false);
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   public SendCachedEnvelopeIntegration(
       final @NotNull SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory factory,
@@ -54,6 +59,7 @@ final class SendCachedEnvelopeIntegration
       options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
       return;
     }
+    addIntegrationToSdkVersion("SendCachedEnvelope");
 
     sendCachedEnvelopes(scopes, this.options);
   }
@@ -75,9 +81,9 @@ final class SendCachedEnvelopeIntegration
   }
 
   @SuppressWarnings({"NullAway"})
-  private synchronized void sendCachedEnvelopes(
+  private void sendCachedEnvelopes(
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
-    try {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final Future<?> future =
           options
               .getExecutorService()

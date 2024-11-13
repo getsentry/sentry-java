@@ -78,7 +78,6 @@ class ActivityLifecycleIntegrationTest {
         }
         val bundle = mock<Bundle>()
         val activityFramesTracker = mock<ActivityFramesTracker>()
-        val fullyDisplayedReporter = FullyDisplayedReporter.getInstance()
         val transactionFinishedCallback = mock<TransactionFinishedCallback>()
         lateinit var shadowActivityManager: ShadowActivityManager
 
@@ -620,9 +619,28 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         val ttfdSpan = sut.ttfdSpanMap[activity]
         sut.ttidSpanMap.values.first().finish()
-        fixture.fullyDisplayedReporter.reportFullyDrawn()
+        fixture.options.fullyDisplayedReporter.reportFullyDrawn()
         assertTrue(ttfdSpan!!.isFinished)
         assertNotEquals(SpanStatus.CANCELLED, ttfdSpan.status)
+    }
+
+    @Test
+    fun `if ttfd is disabled, no listener is registered for FullyDisplayedReporter`() {
+        val ttfdReporter = mock<FullyDisplayedReporter>()
+
+        val sut = fixture.getSut()
+        fixture.options.apply {
+            tracesSampleRate = 1.0
+            isEnableTimeToFullDisplayTracing = false
+            fullyDisplayedReporter = ttfdReporter
+        }
+
+        sut.register(fixture.scopes, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, mock())
+
+        verify(ttfdReporter, never()).registerFullyDrawnListener(any())
     }
 
     @Test
@@ -799,6 +817,7 @@ class ActivityLifecycleIntegrationTest {
         val appStartMetrics = AppStartMetrics.getInstance()
         appStartMetrics.appStartType = AppStartType.WARM
         appStartMetrics.sdkInitTimeSpan.setStoppedAt(2)
+        appStartMetrics.appStartTimeSpan.setStoppedAt(2)
 
         val endDate = appStartMetrics.sdkInitTimeSpan.projectedStopTimestamp
 
@@ -1360,7 +1379,7 @@ class ActivityLifecycleIntegrationTest {
     fun `starts new trace if performance is disabled`() {
         val sut = fixture.getSut()
         val activity = mock<Activity>()
-        fixture.options.enableTracing = false
+        fixture.options.tracesSampleRate = null
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = Scope(fixture.options)
@@ -1381,7 +1400,7 @@ class ActivityLifecycleIntegrationTest {
     fun `sets the activity as the current screen`() {
         val sut = fixture.getSut()
         val activity = mock<Activity>()
-        fixture.options.enableTracing = false
+        fixture.options.tracesSampleRate = null
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = mock<IScope>()
@@ -1401,7 +1420,7 @@ class ActivityLifecycleIntegrationTest {
     fun `does not start another new trace if one has already been started but does after activity was destroyed`() {
         val sut = fixture.getSut()
         val activity = mock<Activity>()
-        fixture.options.enableTracing = false
+        fixture.options.tracesSampleRate = null
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = Scope(fixture.options)

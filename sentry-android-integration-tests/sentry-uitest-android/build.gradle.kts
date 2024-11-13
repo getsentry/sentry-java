@@ -14,7 +14,7 @@ android {
     namespace = "io.sentry.uitest.android"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersionCompose
+        minSdk = Config.Android.minSdkVersion
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 1
         versionName = "1.0.0"
@@ -109,6 +109,7 @@ dependencies {
     implementation(Config.Libs.androidxRecylerView)
     implementation(Config.Libs.constraintLayout)
     implementation(Config.TestLibs.espressoIdlingResource)
+    implementation(Config.Libs.leakCanary)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -123,6 +124,7 @@ dependencies {
     androidTestImplementation(Config.TestLibs.androidxTestCoreKtx)
     androidTestImplementation(Config.TestLibs.mockWebserver)
     androidTestImplementation(Config.TestLibs.androidxJunit)
+    androidTestImplementation(Config.TestLibs.leakCanaryInstrumentation)
     androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
 }
 

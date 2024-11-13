@@ -115,7 +115,7 @@ class AnrV2EventProcessorTest {
                 persistScope(
                     CONTEXTS_FILENAME,
                     Contexts().apply {
-                        trace = SpanContext("test")
+                        setTrace(SpanContext("test"))
                         setResponse(Response().apply { bodySize = 1024 })
                         setBrowser(Browser().apply { name = "Google Chrome" })
                     }

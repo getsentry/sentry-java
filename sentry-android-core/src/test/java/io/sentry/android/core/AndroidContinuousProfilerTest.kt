@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.CompositePerformanceCollector
 import io.sentry.CpuCollectionData
 import io.sentry.ILogger
 import io.sentry.IScopes
@@ -14,7 +15,6 @@ import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
-import io.sentry.TransactionPerformanceCollector
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.DeferredExecutorService
@@ -264,8 +264,8 @@ class AndroidContinuousProfilerTest {
 
     @Test
     fun `profiler starts performance collector on start`() {
-        val performanceCollector = mock<TransactionPerformanceCollector>()
-        fixture.options.transactionPerformanceCollector = performanceCollector
+        val performanceCollector = mock<CompositePerformanceCollector>()
+        fixture.options.compositePerformanceCollector = performanceCollector
         val profiler = fixture.getSut()
         verify(performanceCollector, never()).start(any<String>())
         profiler.start()
@@ -274,8 +274,8 @@ class AndroidContinuousProfilerTest {
 
     @Test
     fun `profiler stops performance collector on stop`() {
-        val performanceCollector = mock<TransactionPerformanceCollector>()
-        fixture.options.transactionPerformanceCollector = performanceCollector
+        val performanceCollector = mock<CompositePerformanceCollector>()
+        fixture.options.compositePerformanceCollector = performanceCollector
         val profiler = fixture.getSut()
         profiler.start()
         verify(performanceCollector, never()).stop(any<String>())
@@ -350,14 +350,14 @@ class AndroidContinuousProfilerTest {
     @Test
     fun `profiler sends chunk with measurements`() {
         val executorService = DeferredExecutorService()
-        val performanceCollector = mock<TransactionPerformanceCollector>()
+        val performanceCollector = mock<CompositePerformanceCollector>()
         val collectionData = PerformanceCollectionData()
 
-        collectionData.addMemoryData(MemoryCollectionData(1, 2, 3, SentryNanotimeDate()))
-        collectionData.addCpuData(CpuCollectionData(1, 3.0, SentryNanotimeDate()))
+        collectionData.addMemoryData(MemoryCollectionData(2, 3, SentryNanotimeDate()))
+        collectionData.addCpuData(CpuCollectionData(3.0, SentryNanotimeDate()))
         whenever(performanceCollector.stop(any<String>())).thenReturn(listOf(collectionData))
 
-        fixture.options.transactionPerformanceCollector = performanceCollector
+        fixture.options.compositePerformanceCollector = performanceCollector
         val profiler = fixture.getSut {
             it.executorService = executorService
         }

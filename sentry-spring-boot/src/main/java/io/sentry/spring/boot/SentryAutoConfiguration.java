@@ -423,10 +423,6 @@ public class SentryAutoConfiguration {
       super(ConfigurationPhase.REGISTER_BEAN);
     }
 
-    @ConditionalOnProperty(name = "sentry.enable-tracing")
-    @SuppressWarnings("UnusedNestedClass")
-    private static class SentryEnableTracingCondition {}
-
     @ConditionalOnProperty(name = "sentry.traces-sample-rate")
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryTracesSampleRateCondition {}

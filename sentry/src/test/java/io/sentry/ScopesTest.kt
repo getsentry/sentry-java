@@ -425,7 +425,7 @@ class ScopesTest {
 
         val event = SentryEvent(exception)
         val originalSpanContext = SpanContext("op")
-        event.contexts.trace = originalSpanContext
+        event.contexts.setTrace(originalSpanContext)
 
         val hints = HintUtils.createWithTypeCheckHint({})
         sut.captureEvent(event, hints)
@@ -1796,13 +1796,13 @@ class ScopesTest {
         val executor = mock<ISentryExecutorService>()
         val profiler = mock<ITransactionProfiler>()
         val continuousProfiler = mock<IContinuousProfiler>()
-        val performanceCollector = mock<TransactionPerformanceCollector>()
+        val performanceCollector = mock<CompositePerformanceCollector>()
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
             cacheDirPath = file.absolutePath
             executorService = executor
             setTransactionProfiler(profiler)
-            transactionPerformanceCollector = performanceCollector
+            compositePerformanceCollector = performanceCollector
             setContinuousProfiler(continuousProfiler)
         }
         val sut = createScopes(options)
@@ -1868,29 +1868,6 @@ class ScopesTest {
         }
         val transaction = scopes.startTransaction(TransactionContext("name", "op", TracesSamplingDecision(true)))
         assertTrue(transaction is NoOpTransaction)
-    }
-    //endregion
-
-    //region startTransaction tests
-    @Test
-    fun `when traceHeaders and no transaction is active, traceHeaders are generated from scope`() {
-        val scopes = generateScopes()
-
-        var spanId: SpanId? = null
-        scopes.configureScope { spanId = it.propagationContext.spanId }
-
-        val traceHeader = scopes.traceHeaders()
-        assertNotNull(traceHeader)
-        assertEquals(spanId, traceHeader.spanId)
-    }
-
-    @Test
-    fun `when traceHeaders and there is an active transaction, traceHeaders are not null`() {
-        val scopes = generateScopes()
-        val tx = scopes.startTransaction("aTransaction", "op")
-        scopes.configureScope { it.setTransaction(tx) }
-
-        assertNotNull(scopes.traceHeaders())
     }
     //endregion
 
@@ -2025,13 +2002,6 @@ class ScopesTest {
     }
 
     @Test
-    fun `reportFullDisplayed calls reportFullyDisplayed`() {
-        val scopes = spy(generateScopes())
-        scopes.reportFullDisplayed()
-        verify(scopes).reportFullyDisplayed()
-    }
-
-    @Test
     fun `continueTrace creates propagation context from headers and returns transaction context if performance enabled`() {
         val scopes = generateScopes()
         val traceId = SentryId()
@@ -2071,7 +2041,7 @@ class ScopesTest {
 
     @Test
     fun `continueTrace creates propagation context from headers and returns null if performance disabled`() {
-        val scopes = generateScopes { it.enableTracing = false }
+        val scopes = generateScopes { it.tracesSampleRate = null }
         val traceId = SentryId()
         val parentSpanId = SpanId()
         val transactionContext = scopes.continueTrace("$traceId-$parentSpanId-1", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
@@ -2086,7 +2056,7 @@ class ScopesTest {
 
     @Test
     fun `continueTrace creates new propagation context if header invalid and returns null if performance disabled`() {
-        val scopes = generateScopes { it.enableTracing = false }
+        val scopes = generateScopes { it.tracesSampleRate = null }
         val traceId = SentryId()
         var propagationContextHolder = AtomicReference<PropagationContext>()
 
@@ -2102,137 +2072,6 @@ class ScopesTest {
         }
 
         assertNull(transactionContext)
-    }
-
-    @Test
-    fun `scopes provides no tags for metrics, if metric option is disabled`() {
-        val scopes = generateScopes {
-            it.isEnableMetrics = false
-            it.isEnableDefaultTagsForMetrics = true
-        } as Scopes
-
-        assertTrue(
-            scopes.defaultTagsForMetrics.isEmpty()
-        )
-    }
-
-    @Test
-    fun `scopes provides no tags for metrics, if default tags option is disabled`() {
-        val scopes = generateScopes {
-            it.isEnableMetrics = true
-            it.isEnableDefaultTagsForMetrics = false
-        } as Scopes
-
-        assertTrue(
-            scopes.defaultTagsForMetrics.isEmpty()
-        )
-    }
-
-    @Test
-    fun `scopes provides minimum default tags for metrics, if nothing is set up`() {
-        val scopes = generateScopes {
-            it.isEnableMetrics = true
-            it.isEnableDefaultTagsForMetrics = true
-        } as Scopes
-
-        assertEquals(
-            mapOf(
-                "environment" to "production"
-            ),
-            scopes.defaultTagsForMetrics
-        )
-    }
-
-    @Test
-    fun `scopes provides default tags for metrics, based on options and running transaction`() {
-        val scopes = generateScopes {
-            it.isEnableMetrics = true
-            it.isEnableDefaultTagsForMetrics = true
-            it.environment = "test"
-            it.release = "1.0"
-        } as Scopes
-        scopes.startTransaction(
-            "name",
-            "op",
-            TransactionOptions().apply { isBindToScope = true }
-        )
-
-        assertEquals(
-            mapOf(
-                "environment" to "test",
-                "release" to "1.0",
-                "transaction" to "name"
-            ),
-            scopes.defaultTagsForMetrics
-        )
-    }
-
-    @Test
-    fun `scopes provides no local metric aggregator if metrics feature is disabled`() {
-        val scopes = generateScopes {
-            it.isEnableMetrics = false
-            it.isEnableSpanLocalMetricAggregation = true
-        } as Scopes
-
-        scopes.startTransaction(
-            "name",
-            "op",
-            TransactionOptions().apply { isBindToScope = true }
-        )
-
-        assertNull(scopes.localMetricsAggregator)
-    }
-
-    @Test
-    fun `scopes provides no local metric aggregator if local aggregation feature is disabled`() {
-        val scopes = generateScopes {
-            it.isEnableMetrics = true
-            it.isEnableSpanLocalMetricAggregation = false
-        } as Scopes
-
-        scopes.startTransaction(
-            "name",
-            "op",
-            TransactionOptions().apply { isBindToScope = true }
-        )
-
-        assertNull(scopes.localMetricsAggregator)
-    }
-
-    @Test
-    fun `scopes provides local metric aggregator if feature is enabled`() {
-        val scopes = generateScopes {
-            it.isEnableMetrics = true
-            it.isEnableSpanLocalMetricAggregation = true
-        } as Scopes
-
-        scopes.startTransaction(
-            "name",
-            "op",
-            TransactionOptions().apply { isBindToScope = true }
-        )
-        assertNotNull(scopes.localMetricsAggregator)
-    }
-
-    @Test
-    fun `scopes startSpanForMetric starts a child span`() {
-        val scopes = generateScopes {
-            it.isEnableMetrics = true
-            it.isEnableSpanLocalMetricAggregation = true
-            it.sampleRate = 1.0
-        } as Scopes
-
-        val txn = scopes.startTransaction(
-            "name.txn",
-            "op.txn",
-            TransactionOptions().apply { isBindToScope = true }
-        )
-
-        val span = scopes.startSpanForMetric("op", "key")!!
-
-        assertEquals("op", span.spanContext.op)
-        assertEquals("key", span.spanContext.description)
-        assertEquals(span.spanContext.parentSpanId, txn.spanContext.spanId)
     }
 
     // region replay event tests

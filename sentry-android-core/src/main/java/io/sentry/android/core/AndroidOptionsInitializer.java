@@ -6,9 +6,9 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
-import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.NoOpContinuousProfiler;
@@ -94,10 +94,7 @@ final class AndroidOptionsInitializer {
       final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The context is required.");
 
-    // it returns null if ContextImpl, so let's check for nullability
-    if (context.getApplicationContext() != null) {
-      context = context.getApplicationContext();
-    }
+    context = ContextUtils.getApplicationContext(context);
 
     Objects.requireNonNull(options, "The options object is required.");
     Objects.requireNonNull(logger, "The ILogger object is required.");
@@ -167,7 +164,7 @@ final class AndroidOptionsInitializer {
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
     final @Nullable ITransactionProfiler appStartTransactionProfiler;
     final @Nullable IContinuousProfiler appStartContinuousProfiler;
-    synchronized (appStartMetrics) {
+    try (final @NotNull ISentryLifecycleToken ignored = AppStartMetrics.staticLock.acquire()) {
       appStartTransactionProfiler = appStartMetrics.getAppStartProfiler();
       appStartContinuousProfiler = appStartMetrics.getAppStartContinuousProfiler();
       appStartMetrics.setAppStartProfiler(null);
@@ -217,8 +214,7 @@ final class AndroidOptionsInitializer {
     options.setThreadChecker(AndroidThreadChecker.getInstance());
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
-      options.addPerformanceCollector(
-          new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
+      options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
 
       if (options.isEnablePerformanceV2()) {
         options.addPerformanceCollector(
@@ -229,7 +225,7 @@ final class AndroidOptionsInitializer {
                     "options.getFrameMetricsCollector is required")));
       }
     }
-    options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
+    options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
 
     if (options.getCacheDirPath() != null) {
       if (options.isEnableScopePersistence()) {

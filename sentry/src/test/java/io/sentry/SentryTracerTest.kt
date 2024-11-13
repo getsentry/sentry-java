@@ -32,14 +32,18 @@ class SentryTracerTest {
     private class Fixture {
         val options = SentryOptions()
         val scopes: Scopes
-        val transactionPerformanceCollector: TransactionPerformanceCollector
+        val compositePerformanceCollector: CompositePerformanceCollector
 
         init {
             options.dsn = "https://key@sentry.io/proj"
             options.environment = "environment"
             options.release = "release@3.0.0"
             scopes = spy(createTestScopes(options))
-            transactionPerformanceCollector = spy(DefaultTransactionPerformanceCollector(options))
+            compositePerformanceCollector = spy(
+                DefaultCompositePerformanceCollector(
+                    options
+                )
+            )
         }
 
         fun getSut(
@@ -51,7 +55,7 @@ class SentryTracerTest {
             trimEnd: Boolean = false,
             transactionFinishedCallback: TransactionFinishedCallback? = null,
             samplingDecision: TracesSamplingDecision? = null,
-            performanceCollector: TransactionPerformanceCollector? = transactionPerformanceCollector
+            performanceCollector: CompositePerformanceCollector? = compositePerformanceCollector
         ): SentryTracer {
             optionsConfiguration.configure(options)
 
@@ -811,13 +815,13 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `sets ITransaction data as extra in SentryTransaction`() {
+    fun `sets ITransaction data as tracecontext data in SentryTransaction`() {
         val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(true))
         transaction.setData("key", "val")
         transaction.finish()
         verify(fixture.scopes).captureTransaction(
             check {
-                assertEquals("val", it.getExtra("key"))
+                assertEquals("val", it.contexts.trace?.data?.get("key"))
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
@@ -1085,35 +1089,35 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `when transaction is created, but not profiled, transactionPerformanceCollector is started anyway`() {
+    fun `when transaction is created, but not profiled, compositePerformanceCollector is started anyway`() {
         val transaction = fixture.getSut()
-        verify(fixture.transactionPerformanceCollector).start(anyOrNull<ITransaction>())
+        verify(fixture.compositePerformanceCollector).start(anyOrNull<ITransaction>())
     }
 
     @Test
-    fun `when transaction is created and profiled transactionPerformanceCollector is started`() {
+    fun `when transaction is created and profiled compositePerformanceCollector is started`() {
         val transaction = fixture.getSut(optionsConfiguration = {
             it.profilesSampleRate = 1.0
         }, samplingDecision = TracesSamplingDecision(true, null, true, null))
-        verify(fixture.transactionPerformanceCollector).start(check<ITransaction> { assertEquals(transaction, it) })
+        verify(fixture.compositePerformanceCollector).start(check<ITransaction> { assertEquals(transaction, it) })
     }
 
     @Test
-    fun `when transaction is finished, transactionPerformanceCollector is stopped`() {
+    fun `when transaction is finished, compositePerformanceCollector is stopped`() {
         val transaction = fixture.getSut()
         transaction.finish()
-        verify(fixture.transactionPerformanceCollector).stop(check<ITransaction> { assertEquals(transaction, it) })
+        verify(fixture.compositePerformanceCollector).stop(check<ITransaction> { assertEquals(transaction, it) })
     }
 
     @Test
-    fun `when a span is started and finished the transactionPerformanceCollector gets notified`() {
+    fun `when a span is started and finished the compositePerformanceCollector gets notified`() {
         val transaction = fixture.getSut()
 
         val span = transaction.startChild("op.span")
         span.finish()
 
-        verify(fixture.transactionPerformanceCollector).onSpanStarted(check { assertEquals(span, it) })
-        verify(fixture.transactionPerformanceCollector).onSpanFinished(check { assertEquals(span, it) })
+        verify(fixture.compositePerformanceCollector).onSpanStarted(check { assertEquals(span, it) })
+        verify(fixture.compositePerformanceCollector).onSpanFinished(check { assertEquals(span, it) })
     }
 
     @Test
@@ -1267,7 +1271,7 @@ class SentryTracerTest {
     @Test
     fun `when transaction is finished, collected performance data is cleared`() {
         val data = mutableListOf<PerformanceCollectionData>(mock(), mock())
-        val mockPerformanceCollector = object : TransactionPerformanceCollector {
+        val mockPerformanceCollector = object : CompositePerformanceCollector {
             override fun start(transaction: ITransaction) {}
             override fun start(id: String) {}
             override fun onSpanStarted(span: ISpan) {}
@@ -1424,6 +1428,7 @@ class SentryTracerTest {
     fun `when a span is launched on the main thread, the thread info should be set correctly`() {
         val threadChecker = mock<IThreadChecker>()
         whenever(threadChecker.isMainThread).thenReturn(true)
+        whenever(threadChecker.currentThreadName).thenReturn("main")
 
         val tracer = fixture.getSut(optionsConfiguration = { options ->
             options.threadChecker = threadChecker
@@ -1437,6 +1442,7 @@ class SentryTracerTest {
     fun `when a span is launched on the background thread, the thread info should be set correctly`() {
         val threadChecker = mock<IThreadChecker>()
         whenever(threadChecker.isMainThread).thenReturn(false)
+        whenever(threadChecker.currentThreadName).thenReturn("test")
 
         val tracer = fixture.getSut(optionsConfiguration = { options ->
             options.threadChecker = threadChecker

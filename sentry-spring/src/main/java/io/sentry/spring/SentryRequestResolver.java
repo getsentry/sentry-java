@@ -2,8 +2,10 @@ package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.Request;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
@@ -20,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 
 @Open
 public class SentryRequestResolver {
+  protected static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
   private final @NotNull IScopes scopes;
   private volatile @Nullable List<String> extraSecurityCookies;
 
@@ -71,7 +75,7 @@ public class SentryRequestResolver {
   private List<String> extractSecurityCookieNamesOrUseCached(
       final @NotNull HttpServletRequest httpRequest) {
     if (extraSecurityCookies == null) {
-      synchronized (SentryRequestResolver.class) {
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (extraSecurityCookies == null) {
           extraSecurityCookies = extractSecurityCookieNames(httpRequest);
         }
