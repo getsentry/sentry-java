@@ -6,6 +6,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
+import io.sentry.DefaultCompositePerformanceCollector;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
