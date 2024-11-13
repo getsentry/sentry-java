@@ -174,47 +174,12 @@ final class AndroidOptionsInitializer {
       appStartMetrics.setAppStartContinuousProfiler(null);
     }
 
-    if (options.isProfilingEnabled() || options.getProfilesSampleRate() != null) {
-      options.setContinuousProfiler(NoOpContinuousProfiler.getInstance());
-      // This is a safeguard, but it should never happen, as the app start profiler should be the
-      // continuous one.
-      if (appStartContinuousProfiler != null) {
-        appStartContinuousProfiler.close();
-      }
-      if (appStartTransactionProfiler != null) {
-        options.setTransactionProfiler(appStartTransactionProfiler);
-      } else {
-        options.setTransactionProfiler(
-            new AndroidTransactionProfiler(
-                context,
-                options,
-                buildInfoProvider,
-                Objects.requireNonNull(
-                    options.getFrameMetricsCollector(),
-                    "options.getFrameMetricsCollector is required")));
-      }
-    } else {
-      options.setTransactionProfiler(NoOpTransactionProfiler.getInstance());
-      // This is a safeguard, but it should never happen, as the app start profiler should be the
-      // transaction one.
-      if (appStartTransactionProfiler != null) {
-        appStartTransactionProfiler.close();
-      }
-      if (appStartContinuousProfiler != null) {
-        options.setContinuousProfiler(appStartContinuousProfiler);
-      } else {
-        options.setContinuousProfiler(
-            new AndroidContinuousProfiler(
-                buildInfoProvider,
-                Objects.requireNonNull(
-                    options.getFrameMetricsCollector(),
-                    "options.getFrameMetricsCollector is required"),
-                options.getLogger(),
-                options.getProfilingTracesDirPath(),
-                options.getProfilingTracesHz(),
-                options.getExecutorService()));
-      }
-    }
+    setupProfiler(
+        options,
+        context,
+        buildInfoProvider,
+        appStartTransactionProfiler,
+        appStartContinuousProfiler);
 
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
     options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
@@ -271,6 +236,56 @@ final class AndroidOptionsInitializer {
         options.addScopeObserver(new PersistingScopeObserver(options));
       }
       options.addOptionsObserver(new PersistingOptionsObserver(options));
+    }
+  }
+
+  /** Setup the correct profiler (transaction or continuous) based on the options. */
+  private static void setupProfiler(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull Context context,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @Nullable ITransactionProfiler appStartTransactionProfiler,
+      final @Nullable IContinuousProfiler appStartContinuousProfiler) {
+    if (options.isProfilingEnabled() || options.getProfilesSampleRate() != null) {
+      options.setContinuousProfiler(NoOpContinuousProfiler.getInstance());
+      // This is a safeguard, but it should never happen, as the app start profiler should be the
+      // continuous one.
+      if (appStartContinuousProfiler != null) {
+        appStartContinuousProfiler.close();
+      }
+      if (appStartTransactionProfiler != null) {
+        options.setTransactionProfiler(appStartTransactionProfiler);
+      } else {
+        options.setTransactionProfiler(
+            new AndroidTransactionProfiler(
+                context,
+                options,
+                buildInfoProvider,
+                Objects.requireNonNull(
+                    options.getFrameMetricsCollector(),
+                    "options.getFrameMetricsCollector is required")));
+      }
+    } else {
+      options.setTransactionProfiler(NoOpTransactionProfiler.getInstance());
+      // This is a safeguard, but it should never happen, as the app start profiler should be the
+      // transaction one.
+      if (appStartTransactionProfiler != null) {
+        appStartTransactionProfiler.close();
+      }
+      if (appStartContinuousProfiler != null) {
+        options.setContinuousProfiler(appStartContinuousProfiler);
+      } else {
+        options.setContinuousProfiler(
+            new AndroidContinuousProfiler(
+                buildInfoProvider,
+                Objects.requireNonNull(
+                    options.getFrameMetricsCollector(),
+                    "options.getFrameMetricsCollector is required"),
+                options.getLogger(),
+                options.getProfilingTracesDirPath(),
+                options.getProfilingTracesHz(),
+                options.getExecutorService()));
+      }
     }
   }
 
