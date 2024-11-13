@@ -101,7 +101,8 @@ class AnrV2IntegrationTest {
             reason: Int? = ApplicationExitInfo.REASON_ANR,
             timestamp: Long? = null,
             importance: Int? = null,
-            addTrace: Boolean = true
+            addTrace: Boolean = true,
+            addBadTrace: Boolean = true
         ) {
             val builder = ApplicationExitInfoBuilder.newBuilder()
             if (reason != null) {
@@ -117,8 +118,36 @@ class AnrV2IntegrationTest {
                 if (!addTrace) {
                     return
                 }
-                whenever(mock.traceInputStream).thenReturn(
-                    """
+                if (addBadTrace) {
+                    whenever(mock.traceInputStream).thenReturn(
+                        """
+                        Subject: Input dispatching timed out (7985007 com.example.app/com.example.app.ui.MainActivity (server) is not responding. Waited 5000ms for FocusEvent(hasFocus=false))
+                        Here are no Binder-related exception messages available.
+                        Pid(12233) have D state thread(tid:12236 name:Signal Catcher)
+
+
+                        RssHwmKb: 823716
+                        RssKb: 548348
+                        RssAnonKb: 382156
+                        RssShmemKb: 13304
+                        VmSwapKb: 82484
+
+
+                        --- CriticalEventLog ---
+                        capacity: 20
+                        timestamp_ms: 1731507490032
+                        window_ms: 300000
+
+                        ----- dumping pid: 12233 at 313446151
+                        libdebuggerd_client: unexpected registration response: 0
+
+                        ----- Waiting Channels: pid 12233 at 2024-11-13 19:48:09.980104540+0530 -----
+                        Cmd line: com.example.app:mainProcess
+                        """.trimIndent().byteInputStream()
+                    )
+                } else {
+                    whenever(mock.traceInputStream).thenReturn(
+                        """
 "main" prio=5 tid=1 Blocked
   | group="main" sCount=1 ucsCount=0 flags=1 obj=0x72a985e0 self=0xb400007cabc57380
   | sysTid=28941 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
@@ -147,8 +176,9 @@ class AnrV2IntegrationTest {
   native: #02 pc 00000000000b63b0  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+208) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
   native: #03 pc 00000000000530b8  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
   (no managed stack frames)
-                    """.trimIndent().byteInputStream()
-                )
+                        """.trimIndent().byteInputStream()
+                    )
+                }
             }
             shadowActivityManager.addApplicationExitInfo(exitInfo)
         }
@@ -546,6 +576,16 @@ class AnrV2IntegrationTest {
     fun `when traceInputStream is null, does not report ANR`() {
         val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
         fixture.addAppExitInfo(timestamp = newTimestamp, addTrace = false)
+
+        integration.register(fixture.hub, fixture.options)
+
+        verify(fixture.hub, never()).captureEvent(any(), anyOrNull<Hint>())
+    }
+
+    @Test
+    fun `when traceInputStream has bad data, does not report ANR`() {
+        val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
+        fixture.addAppExitInfo(timestamp = newTimestamp, addBadTrace = true)
 
         integration.register(fixture.hub, fixture.options)
 
