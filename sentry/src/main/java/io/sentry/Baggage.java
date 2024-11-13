@@ -133,7 +133,7 @@ public final class Baggage {
     final Baggage baggage = new Baggage(options.getLogger());
     final SpanContext trace = event.getContexts().getTrace();
     baggage.setTraceId(trace != null ? trace.getTraceId().toString() : null);
-    baggage.setPublicKey(options.getParsedDsn().getPublicKey());
+    baggage.setPublicKey(options.retrieveParsedDsn().getPublicKey());
     baggage.setRelease(event.getRelease());
     baggage.setEnvironment(event.getEnvironment());
     baggage.setTransaction(event.getTransaction());
@@ -383,7 +383,7 @@ public final class Baggage {
       final @Nullable String transactionName,
       final @Nullable TransactionNameSource transactionNameSource) {
     setTraceId(traceId.toString());
-    setPublicKey(sentryOptions.getParsedDsn().getPublicKey());
+    setPublicKey(sentryOptions.retrieveParsedDsn().getPublicKey());
     setRelease(sentryOptions.getRelease());
     setEnvironment(sentryOptions.getEnvironment());
     setTransaction(isHighQualityTransactionName(transactionNameSource) ? transactionName : null);
@@ -400,7 +400,7 @@ public final class Baggage {
     final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
     final @NotNull SentryId replayId = scope.getReplayId();
     setTraceId(propagationContext.getTraceId().toString());
-    setPublicKey(options.getParsedDsn().getPublicKey());
+    setPublicKey(options.retrieveParsedDsn().getPublicKey());
     setRelease(options.getRelease());
     setEnvironment(options.getEnvironment());
     if (!SentryId.EMPTY_ID.equals(replayId)) {

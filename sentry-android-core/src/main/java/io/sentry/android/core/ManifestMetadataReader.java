@@ -104,6 +104,8 @@ final class ManifestMetadataReader {
 
   static final String FORCE_INIT = "io.sentry.force-init";
 
+  static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -203,6 +205,9 @@ final class ManifestMetadataReader {
                 logger,
                 SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS,
                 options.getSessionTrackingIntervalMillis()));
+
+        options.setMaxBreadcrumbs(
+            (int) readLong(metadata, logger, MAX_BREADCRUMBS, options.getMaxBreadcrumbs()));
 
         options.setEnableActivityLifecycleBreadcrumbs(
             readBool(
