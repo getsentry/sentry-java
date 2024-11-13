@@ -7,7 +7,6 @@ import io.sentry.SpanDataConvention
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebSpanEvent
-import java.util.Locale
 import kotlin.LazyThreadSafetyMode.NONE
 
 public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
@@ -128,7 +127,7 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
 
     private fun String.snakeToCamelCase(): String {
         return replace(snakecasePattern) {
-            it.value.last().toString().toUpperCase(Locale.ROOT)
+            it.value.last().toString().uppercase()
         }
     }
 

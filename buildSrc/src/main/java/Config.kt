@@ -3,15 +3,17 @@ import java.math.BigDecimal
 
 object Config {
     val AGP = System.getenv("VERSION_AGP") ?: "8.6.0"
-    val kotlinVersion = "1.9.22"
+    val kotlinVersion = "1.9.24"
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
     val springBoot3Version = "3.3.2"
-    val kotlinCompatibleLanguageVersion = "1.4"
+    val kotlinCompatibleLanguageVersion = "1.6"
 
-    val composeVersion = "1.5.12"
-    val androidComposeCompilerVersion = "1.5.10"
+    // see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
+    // see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
+    val composeVersion = "1.6.11"
+    val androidComposeCompilerVersion = "1.5.14"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"

@@ -7,8 +7,8 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
-import kotlin.test.assertNotNull
 
 class SentrySupportSQLiteOpenHelperTest {
 
@@ -47,13 +47,13 @@ class SentrySupportSQLiteOpenHelperTest {
     @Test
     fun `writableDatabase returns a SentrySupportSQLiteDatabase`() {
         val openHelper = fixture.getSut()
-        assertNotNull(openHelper.writableDatabase)
+        assertIs<SentrySupportSQLiteDatabase>(openHelper.writableDatabase)
     }
 
     @Test
     fun `create returns a SentrySupportSQLiteOpenHelper wrapper`() {
         val openHelper: SupportSQLiteOpenHelper = SentrySupportSQLiteOpenHelper.Companion.create(fixture.mockOpenHelper)
-        assertNotNull(openHelper)
+        assertIs<SentrySupportSQLiteDatabase>(openHelper.writableDatabase)
         assertNotEquals(fixture.mockOpenHelper, openHelper)
     }
 

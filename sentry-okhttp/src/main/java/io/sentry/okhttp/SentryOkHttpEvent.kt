@@ -20,7 +20,6 @@ import io.sentry.util.Platform
 import io.sentry.util.UrlUtils
 import okhttp3.Request
 import okhttp3.Response
-import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
@@ -66,7 +65,7 @@ internal class SentryOkHttpEvent(private val hub: IHub, private val request: Req
         callRootSpan?.setData("url", url)
         callRootSpan?.setData("host", host)
         callRootSpan?.setData("path", encodedPath)
-        callRootSpan?.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT))
+        callRootSpan?.setData(SpanDataConvention.HTTP_METHOD_KEY, method.uppercase())
     }
 
     /**
