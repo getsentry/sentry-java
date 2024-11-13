@@ -35,49 +35,6 @@ tasks.withType<KotlinCompile> {
     }
 }
 
-//tasks.getByName<BootRun>("bootRun") {
-//    val versionName = project.properties["versionName"] as String
-//    val agentProjectId = projects.sentryOpentelemetry.sentryOpentelemetryAgent.identityPath.toString()
-//    val agentProjectPath = project(agentProjectId).projectDir.absolutePath
-//    val agentJarPath = "$agentProjectPath/build/libs/sentry-opentelemetry-agent-$versionName.jar"
-//
-//    systemProperty("SENTRY_DSN", "http://502f25099c204a2fbf4cb16edc5975d1@localhost:8000/0")
-//    systemProperty("SENTRY_AUTO_INIT", "true")
-//    systemProperty("SENTRY_TRACES_SAMPLE_RATE", "1.0")
-//    systemProperty("OTEL_TRACES_EXPORTER", "none")
-//    systemProperty("OTEL_METRICS_EXPORTER", "none")
-//    systemProperty("OTEL_LOGS_EXPORTER", "none")
-//
-//    jvmArgs =
-//        listOf("-Dotel.javaagent.debug=true", "-javaagent:$agentJarPath")
-//}
-
-tasks.register<BootRun>("bootRunWithAgent").configure {
-    group = "application"
-
-    val mainBootRunTask = tasks.getByName<BootRun>("bootRun")
-    mainClass = mainBootRunTask.mainClass
-    classpath = mainBootRunTask.classpath
-
-    val versionName = project.properties["versionName"] as String
-    val agentProjectId = projects.sentryOpentelemetry.sentryOpentelemetryAgent.identityPath.toString()
-    val agentProjectPath = project(agentProjectId).projectDir.absolutePath
-    val agentJarPath = "$agentProjectPath/build/libs/sentry-opentelemetry-agent-$versionName.jar"
-
-    println("#######")
-    println(agentJarPath)
-
-    systemProperty("SENTRY_DSN", "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563")
-    systemProperty("SENTRY_AUTO_INIT", "true")
-    systemProperty("SENTRY_TRACES_SAMPLE_RATE", "1.0")
-    systemProperty("OTEL_TRACES_EXPORTER", "none")
-    systemProperty("OTEL_METRICS_EXPORTER", "none")
-    systemProperty("OTEL_LOGS_EXPORTER", "none")
-
-    jvmArgs =
-        listOf("-Dotel.javaagent.debug=true", "-javaagent:$agentJarPath")
-}
-
 dependencies {
     implementation(Config.Libs.springBoot3StarterSecurity)
     implementation(Config.Libs.springBoot3StarterActuator)
@@ -121,6 +78,30 @@ configure<SourceSetContainer> {
     test {
         java.srcDir("src/test/java")
     }
+}
+
+tasks.register<BootRun>("bootRunWithAgent").configure {
+    group = "application"
+
+    val mainBootRunTask = tasks.getByName<BootRun>("bootRun")
+    mainClass = mainBootRunTask.mainClass
+    classpath = mainBootRunTask.classpath
+
+    val versionName = project.properties["versionName"] as String
+    val agentProjectId = projects.sentryOpentelemetry.sentryOpentelemetryAgent.identityPath.toString()
+    val agentProjectPath = project(agentProjectId).projectDir.absolutePath
+    val agentJarPath = "$agentProjectPath/build/libs/sentry-opentelemetry-agent-$versionName.jar"
+
+    val dsn = System.getenv("SENTRY_DSN") ?: "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563"
+    environment("SENTRY_DSN", dsn)
+    environment("SENTRY_AUTO_INIT", "true")
+    environment("SENTRY_TRACES_SAMPLE_RATE", "1.0")
+    environment("OTEL_TRACES_EXPORTER", "none")
+    environment("OTEL_METRICS_EXPORTER", "none")
+    environment("OTEL_LOGS_EXPORTER", "none")
+
+    jvmArgs =
+        listOf("-Dotel.javaagent.debug=true", "-javaagent:$agentJarPath")
 }
 
 tasks.register<Test>("systemTest").configure {
