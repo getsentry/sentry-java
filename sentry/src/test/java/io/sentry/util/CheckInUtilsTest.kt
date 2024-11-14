@@ -85,6 +85,39 @@ class CheckInUtilsTest {
     }
 
     @Test
+    fun `sends check-in for wrapped supplier with environment`() {
+        Mockito.mockStatic(Sentry::class.java).use { sentry ->
+            val hub = mock<IHub>()
+            sentry.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(hub)
+            whenever(hub.options).thenReturn(SentryOptions())
+            val returnValue = CheckInUtils.withCheckIn("monitor-1", "environment-1") {
+                return@withCheckIn "test1"
+            }
+
+            assertEquals("test1", returnValue)
+            inOrder(hub) {
+                verify(hub).pushScope()
+                verify(hub).configureScope(any())
+                verify(hub).captureCheckIn(
+                    check {
+                        assertEquals("monitor-1", it.monitorSlug)
+                        assertEquals("environment-1", it.environment)
+                        assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
+                    }
+                )
+                verify(hub).captureCheckIn(
+                    check {
+                        assertEquals("monitor-1", it.monitorSlug)
+                        assertEquals("environment-1", it.environment)
+                        assertEquals(CheckInStatus.OK.apiName(), it.status)
+                    }
+                )
+                verify(hub).popScope()
+            }
+        }
+    }
+
+    @Test
     fun `sends check-in for wrapped supplier with exception`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
             val hub = mock<IHub>()
