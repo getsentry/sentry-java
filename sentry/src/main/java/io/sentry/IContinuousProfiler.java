@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,8 +13,9 @@ public interface IContinuousProfiler {
 
   void stop();
 
-  void setScopes(final @NotNull IScopes scopes);
-
   /** Cancel the profiler and stops it. Used on SDK close. */
   void close();
+
+  @NotNull
+  SentryId getProfilerId();
 }

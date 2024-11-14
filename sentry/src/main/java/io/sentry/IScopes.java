@@ -592,6 +592,10 @@ public interface IScopes {
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions);
 
+  void startProfiler();
+
+  void stopProfiler();
+
   /**
    * Associates {@link ISpan} and the transaction name with the {@link Throwable}. Used to determine
    * in which trace the exception has been thrown in framework integrations.

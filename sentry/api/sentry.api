@@ -311,6 +311,16 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun withTransaction (Lio/sentry/Scope$IWithTransaction;)V
 }
 
+public abstract interface class io/sentry/CompositePerformanceCollector {
+	public abstract fun close ()V
+	public abstract fun onSpanFinished (Lio/sentry/ISpan;)V
+	public abstract fun onSpanStarted (Lio/sentry/ISpan;)V
+	public abstract fun start (Lio/sentry/ITransaction;)V
+	public abstract fun start (Ljava/lang/String;)V
+	public abstract fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
+	public abstract fun stop (Ljava/lang/String;)Ljava/util/List;
+}
+
 public final class io/sentry/CpuCollectionData {
 	public fun <init> (DLio/sentry/SentryDate;)V
 	public fun getCpuUsagePercentage ()D
@@ -367,6 +377,17 @@ public final class io/sentry/DeduplicateMultithreadedEventProcessor : io/sentry/
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 }
 
+public final class io/sentry/DefaultCompositePerformanceCollector : io/sentry/CompositePerformanceCollector {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun close ()V
+	public fun onSpanFinished (Lio/sentry/ISpan;)V
+	public fun onSpanStarted (Lio/sentry/ISpan;)V
+	public fun start (Lio/sentry/ITransaction;)V
+	public fun start (Ljava/lang/String;)V
+	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
+	public fun stop (Ljava/lang/String;)Ljava/util/List;
+}
+
 public final class io/sentry/DefaultScopesStorage : io/sentry/IScopesStorage {
 	public fun <init> ()V
 	public fun close ()V
@@ -377,16 +398,7 @@ public final class io/sentry/DefaultScopesStorage : io/sentry/IScopesStorage {
 public final class io/sentry/DefaultSpanFactory : io/sentry/ISpanFactory {
 	public fun <init> ()V
 	public fun createSpan (Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/SpanContext;Lio/sentry/ISpan;)Lio/sentry/ISpan;
-	public fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/TransactionPerformanceCollector;)Lio/sentry/ITransaction;
-}
-
-public final class io/sentry/DefaultTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
-	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun close ()V
-	public fun onSpanFinished (Lio/sentry/ISpan;)V
-	public fun onSpanStarted (Lio/sentry/ISpan;)V
-	public fun start (Lio/sentry/ITransaction;)V
-	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
+	public fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/CompositePerformanceCollector;)Lio/sentry/ITransaction;
 }
 
 public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
@@ -607,8 +619,10 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
+	public fun startProfiler ()V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public fun stopProfiler ()V
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -672,8 +686,10 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
+	public fun startProfiler ()V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public fun stopProfiler ()V
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -700,8 +716,8 @@ public abstract interface class io/sentry/IConnectionStatusProvider$IConnectionS
 
 public abstract interface class io/sentry/IContinuousProfiler {
 	public abstract fun close ()V
+	public abstract fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isRunning ()Z
-	public abstract fun setScopes (Lio/sentry/IScopes;)V
 	public abstract fun start ()V
 	public abstract fun stop ()V
 }
@@ -908,11 +924,13 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setTransaction (Ljava/lang/String;)V
 	public abstract fun setUser (Lio/sentry/protocol/User;)V
+	public abstract fun startProfiler ()V
 	public abstract fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 	public abstract fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public abstract fun stopProfiler ()V
 	public abstract fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public abstract fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -1018,7 +1036,7 @@ public abstract interface class io/sentry/ISpan {
 
 public abstract interface class io/sentry/ISpanFactory {
 	public abstract fun createSpan (Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/SpanContext;Lio/sentry/ISpan;)Lio/sentry/ISpan;
-	public abstract fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/TransactionPerformanceCollector;)Lio/sentry/ITransaction;
+	public abstract fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/CompositePerformanceCollector;)Lio/sentry/ITransaction;
 }
 
 public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
@@ -1358,6 +1376,17 @@ public final class io/sentry/MonitorScheduleUnit : java/lang/Enum {
 	public static fun values ()[Lio/sentry/MonitorScheduleUnit;
 }
 
+public final class io/sentry/NoOpCompositePerformanceCollector : io/sentry/CompositePerformanceCollector {
+	public fun close ()V
+	public static fun getInstance ()Lio/sentry/NoOpCompositePerformanceCollector;
+	public fun onSpanFinished (Lio/sentry/ISpan;)V
+	public fun onSpanStarted (Lio/sentry/ISpan;)V
+	public fun start (Lio/sentry/ITransaction;)V
+	public fun start (Ljava/lang/String;)V
+	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
+	public fun stop (Ljava/lang/String;)Ljava/util/List;
+}
+
 public final class io/sentry/NoOpConnectionStatusProvider : io/sentry/IConnectionStatusProvider {
 	public fun <init> ()V
 	public fun addConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)Z
@@ -1369,8 +1398,8 @@ public final class io/sentry/NoOpConnectionStatusProvider : io/sentry/IConnectio
 public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfiler {
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/NoOpContinuousProfiler;
+	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun isRunning ()Z
-	public fun setScopes (Lio/sentry/IScopes;)V
 	public fun start ()V
 	public fun stop ()V
 }
@@ -1440,8 +1469,10 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
+	public fun startProfiler ()V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public fun stopProfiler ()V
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -1600,8 +1631,10 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
+	public fun startProfiler ()V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public fun stopProfiler ()V
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -1661,7 +1694,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 
 public final class io/sentry/NoOpSpanFactory : io/sentry/ISpanFactory {
 	public fun createSpan (Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/SpanContext;Lio/sentry/ISpan;)Lio/sentry/ISpan;
-	public fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/TransactionPerformanceCollector;)Lio/sentry/ITransaction;
+	public fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/CompositePerformanceCollector;)Lio/sentry/ITransaction;
 	public static fun getInstance ()Lio/sentry/NoOpSpanFactory;
 }
 
@@ -1716,15 +1749,6 @@ public final class io/sentry/NoOpTransaction : io/sentry/ITransaction {
 	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
 	public fun traceContext ()Lio/sentry/TraceContext;
 	public fun updateEndDate (Lio/sentry/SentryDate;)Z
-}
-
-public final class io/sentry/NoOpTransactionPerformanceCollector : io/sentry/TransactionPerformanceCollector {
-	public fun close ()V
-	public static fun getInstance ()Lio/sentry/NoOpTransactionPerformanceCollector;
-	public fun onSpanFinished (Lio/sentry/ISpan;)V
-	public fun onSpanStarted (Lio/sentry/ISpan;)V
-	public fun start (Lio/sentry/ITransaction;)V
-	public fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
 
 public final class io/sentry/NoOpTransactionProfiler : io/sentry/ITransactionProfiler {
@@ -1860,7 +1884,7 @@ public final class io/sentry/ProfileChunk$JsonKeys {
 	public fun <init> ()V
 }
 
-public class io/sentry/ProfileContext : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+public final class io/sentry/ProfileContext : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/ProfileContext;)V
@@ -2262,8 +2286,10 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
+	public fun startProfiler ()V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public fun stopProfiler ()V
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -2327,8 +2353,10 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
+	public fun startProfiler ()V
 	public fun startSession ()V
 	public fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public fun stopProfiler ()V
 	public fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -2431,12 +2459,14 @@ public final class io/sentry/Sentry {
 	public static fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public static fun setTransaction (Ljava/lang/String;)V
 	public static fun setUser (Lio/sentry/protocol/User;)V
+	public static fun startProfiler ()V
 	public static fun startSession ()V
 	public static fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Lio/sentry/TransactionContext;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
 	public static fun startTransaction (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/TransactionOptions;)Lio/sentry/ITransaction;
+	public static fun stopProfiler ()V
 	public static fun withIsolationScope (Lio/sentry/ScopeCallback;)V
 	public static fun withScope (Lio/sentry/ScopeCallback;)V
 }
@@ -2452,10 +2482,12 @@ public final class io/sentry/SentryAppStartProfilingOptions : io/sentry/JsonSeri
 	public fun getProfilingTracesHz ()I
 	public fun getTraceSampleRate ()Ljava/lang/Double;
 	public fun getUnknown ()Ljava/util/Map;
+	public fun isContinuousProfilingEnabled ()Z
 	public fun isProfileSampled ()Z
 	public fun isProfilingEnabled ()Z
 	public fun isTraceSampled ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setContinuousProfilingEnabled (Z)V
 	public fun setProfileSampleRate (Ljava/lang/Double;)V
 	public fun setProfileSampled (Z)V
 	public fun setProfilingEnabled (Z)V
@@ -2473,6 +2505,7 @@ public final class io/sentry/SentryAppStartProfilingOptions$Deserializer : io/se
 }
 
 public final class io/sentry/SentryAppStartProfilingOptions$JsonKeys {
+	public static final field IS_CONTINUOUS_PROFILING_ENABLED Ljava/lang/String;
 	public static final field IS_PROFILING_ENABLED Ljava/lang/String;
 	public static final field PROFILE_SAMPLED Ljava/lang/String;
 	public static final field PROFILE_SAMPLE_RATE Ljava/lang/String;
@@ -2899,9 +2932,11 @@ public class io/sentry/SentryOptions {
 	public fun getBundleIds ()Ljava/util/Set;
 	public fun getCacheDirPath ()Ljava/lang/String;
 	public fun getClientReportRecorder ()Lio/sentry/clientreport/IClientReportRecorder;
+	public fun getCompositePerformanceCollector ()Lio/sentry/CompositePerformanceCollector;
 	public fun getConnectionStatusProvider ()Lio/sentry/IConnectionStatusProvider;
 	public fun getConnectionTimeoutMillis ()I
 	public fun getContextTags ()Ljava/util/List;
+	public fun getContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getCron ()Lio/sentry/SentryOptions$Cron;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
 	public fun getDebugMetaLoader ()Lio/sentry/internal/debugmeta/IDebugMetaLoader;
@@ -2968,7 +3003,6 @@ public class io/sentry/SentryOptions {
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
-	public fun getTransactionPerformanceCollector ()Lio/sentry/TransactionPerformanceCollector;
 	public fun getTransactionProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getTransportFactory ()Lio/sentry/ITransportFactory;
 	public fun getTransportGate ()Lio/sentry/transport/ITransportGate;
@@ -2976,6 +3010,7 @@ public class io/sentry/SentryOptions {
 	public fun isAttachServerName ()Z
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
+	public fun isContinuousProfilingEnabled ()Z
 	public fun isDebug ()Z
 	public fun isEnableAppStartProfiling ()Z
 	public fun isEnableAutoSessionTracking ()Z
@@ -3012,8 +3047,10 @@ public class io/sentry/SentryOptions {
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
 	public fun setBeforeSendTransaction (Lio/sentry/SentryOptions$BeforeSendTransactionCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
+	public fun setCompositePerformanceCollector (Lio/sentry/CompositePerformanceCollector;)V
 	public fun setConnectionStatusProvider (Lio/sentry/IConnectionStatusProvider;)V
 	public fun setConnectionTimeoutMillis (I)V
+	public fun setContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDebug (Z)V
@@ -3092,7 +3129,6 @@ public class io/sentry/SentryOptions {
 	public fun setTraceSampling (Z)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
-	public fun setTransactionPerformanceCollector (Lio/sentry/TransactionPerformanceCollector;)V
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
@@ -3579,6 +3615,7 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field HTTP_RESPONSE_CONTENT_LENGTH_KEY Ljava/lang/String;
 	public static final field HTTP_START_TIMESTAMP Ljava/lang/String;
 	public static final field HTTP_STATUS_CODE_KEY Ljava/lang/String;
+	public static final field PROFILER_ID Ljava/lang/String;
 	public static final field THREAD_ID Ljava/lang/String;
 	public static final field THREAD_NAME Ljava/lang/String;
 }
@@ -3760,14 +3797,6 @@ public final class io/sentry/TransactionOptions : io/sentry/SpanOptions {
 	public fun setSpanFactory (Lio/sentry/ISpanFactory;)V
 	public fun setTransactionFinishedCallback (Lio/sentry/TransactionFinishedCallback;)V
 	public fun setWaitForChildren (Z)V
-}
-
-public abstract interface class io/sentry/TransactionPerformanceCollector {
-	public abstract fun close ()V
-	public abstract fun onSpanFinished (Lio/sentry/ISpan;)V
-	public abstract fun onSpanStarted (Lio/sentry/ISpan;)V
-	public abstract fun start (Lio/sentry/ITransaction;)V
-	public abstract fun stop (Lio/sentry/ITransaction;)Ljava/util/List;
 }
 
 public final class io/sentry/TypeCheckHint {
@@ -6341,6 +6370,7 @@ public final class io/sentry/util/UrlUtils$UrlDetails {
 
 public abstract interface class io/sentry/util/thread/IThreadChecker {
 	public abstract fun currentThreadSystemId ()J
+	public abstract fun getCurrentThreadName ()Ljava/lang/String;
 	public abstract fun isMainThread ()Z
 	public abstract fun isMainThread (J)Z
 	public abstract fun isMainThread (Lio/sentry/protocol/SentryThread;)Z
@@ -6350,6 +6380,7 @@ public abstract interface class io/sentry/util/thread/IThreadChecker {
 public final class io/sentry/util/thread/NoOpThreadChecker : io/sentry/util/thread/IThreadChecker {
 	public fun <init> ()V
 	public fun currentThreadSystemId ()J
+	public fun getCurrentThreadName ()Ljava/lang/String;
 	public static fun getInstance ()Lio/sentry/util/thread/NoOpThreadChecker;
 	public fun isMainThread ()Z
 	public fun isMainThread (J)Z
@@ -6359,6 +6390,7 @@ public final class io/sentry/util/thread/NoOpThreadChecker : io/sentry/util/thre
 
 public final class io/sentry/util/thread/ThreadChecker : io/sentry/util/thread/IThreadChecker {
 	public fun currentThreadSystemId ()J
+	public fun getCurrentThreadName ()Ljava/lang/String;
 	public static fun getInstance ()Lio/sentry/util/thread/ThreadChecker;
 	public fun isMainThread ()Z
 	public fun isMainThread (J)Z

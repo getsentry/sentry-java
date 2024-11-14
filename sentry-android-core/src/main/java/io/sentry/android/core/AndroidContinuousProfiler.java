@@ -4,11 +4,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.annotation.SuppressLint;
 import android.os.Build;
+import io.sentry.CompositePerformanceCollector;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.ISentryExecutorService;
+import io.sentry.NoOpScopes;
+import io.sentry.PerformanceCollectionData;
 import io.sentry.ProfileChunk;
+import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
@@ -28,7 +32,6 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
 
   private final @NotNull ILogger logger;
   private final @Nullable String profilingTracesDirPath;
-  private final boolean isProfilingEnabled;
   private final int profilingTracesHz;
   private final @NotNull ISentryExecutorService executorService;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -37,7 +40,8 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
   private @Nullable AndroidProfiler profiler = null;
   private boolean isRunning = false;
   private @Nullable IScopes scopes;
-  private @Nullable Future<?> closeFuture;
+  private @Nullable Future<?> stopFuture;
+  private @Nullable CompositePerformanceCollector performanceCollector;
   private final @NotNull List<ProfileChunk.Builder> payloadBuilders = new ArrayList<>();
   private @NotNull SentryId profilerId = SentryId.EMPTY_ID;
   private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
@@ -47,14 +51,12 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
       final @NotNull ILogger logger,
       final @Nullable String profilingTracesDirPath,
-      final boolean isProfilingEnabled,
       final int profilingTracesHz,
       final @NotNull ISentryExecutorService executorService) {
     this.logger = logger;
     this.frameMetricsCollector = frameMetricsCollector;
     this.buildInfoProvider = buildInfoProvider;
     this.profilingTracesDirPath = profilingTracesDirPath;
-    this.isProfilingEnabled = isProfilingEnabled;
     this.profilingTracesHz = profilingTracesHz;
     this.executorService = executorService;
   }
@@ -65,10 +67,6 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
       return;
     }
     isInitialized = true;
-    if (!isProfilingEnabled) {
-      logger.log(SentryLevel.INFO, "Profiling is disabled in options.");
-      return;
-    }
     if (profilingTracesDirPath == null) {
       logger.log(
           SentryLevel.WARNING,
@@ -92,11 +90,14 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
             logger);
   }
 
-  public synchronized void setScopes(final @NotNull IScopes scopes) {
-    this.scopes = scopes;
-  }
-
   public synchronized void start() {
+    if ((scopes == null || scopes != NoOpScopes.getInstance())
+        && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
+      this.scopes = Sentry.getCurrentScopes();
+      this.performanceCollector =
+          Sentry.getCurrentScopes().getOptions().getCompositePerformanceCollector();
+    }
+
     // Debug.startMethodTracingSampling() is only available since Lollipop, but Android Profiler
     // causes crashes on api 21 -> https://github.com/getsentry/sentry-java/issues/3392
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) return;
@@ -124,8 +125,12 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
       chunkId = new SentryId();
     }
 
+    if (performanceCollector != null) {
+      performanceCollector.start(chunkId.toString());
+    }
+
     try {
-      closeFuture = executorService.schedule(() -> stop(true), MAX_CHUNK_DURATION_MILLIS);
+      stopFuture = executorService.schedule(() -> stop(true), MAX_CHUNK_DURATION_MILLIS);
     } catch (RejectedExecutionException e) {
       logger.log(
           SentryLevel.ERROR,
@@ -140,8 +145,8 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
 
   @SuppressLint("NewApi")
   private synchronized void stop(final boolean restartProfiler) {
-    if (closeFuture != null) {
-      closeFuture.cancel(true);
+    if (stopFuture != null) {
+      stopFuture.cancel(true);
     }
     // check if profiler was created and it's running
     if (profiler == null || !isRunning) {
@@ -154,8 +159,13 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
       return;
     }
 
-    // todo add PerformanceCollectionData
-    final AndroidProfiler.ProfileEndData endData = profiler.endAndCollect(false, null);
+    List<PerformanceCollectionData> performanceCollectionData = null;
+    if (performanceCollector != null) {
+      performanceCollectionData = performanceCollector.stop(chunkId.toString());
+    }
+
+    final AndroidProfiler.ProfileEndData endData =
+        profiler.endAndCollect(false, performanceCollectionData);
 
     // check if profiler end successfully
     if (endData == null) {
@@ -195,6 +205,11 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
     stop();
   }
 
+  @Override
+  public @NotNull SentryId getProfilerId() {
+    return profilerId;
+  }
+
   private void sendChunks(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     try {
       options
@@ -224,7 +239,7 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
 
   @VisibleForTesting
   @Nullable
-  Future<?> getCloseFuture() {
-    return closeFuture;
+  Future<?> getStopFuture() {
+    return stopFuture;
   }
 }

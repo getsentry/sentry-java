@@ -26,7 +26,7 @@ public final class Scopes implements IScopes {
   private final @Nullable Scopes parentScopes;
 
   private final @NotNull String creator;
-  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
+  private final @NotNull CompositePerformanceCollector compositePerformanceCollector;
 
   private final @NotNull CombinedScopeView combinedScope;
 
@@ -53,7 +53,7 @@ public final class Scopes implements IScopes {
 
     final @NotNull SentryOptions options = getOptions();
     validateOptions(options);
-    this.transactionPerformanceCollector = options.getTransactionPerformanceCollector();
+    this.compositePerformanceCollector = options.getCompositePerformanceCollector();
   }
 
   public @NotNull String getCreator() {
@@ -404,7 +404,8 @@ public final class Scopes implements IScopes {
         configureScope(scope -> scope.clear());
         configureScope(ScopeType.ISOLATION, scope -> scope.clear());
         getOptions().getTransactionProfiler().close();
-        getOptions().getTransactionPerformanceCollector().close();
+        getOptions().getContinuousProfiler().close();
+        getOptions().getCompositePerformanceCollector().close();
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
         if (isRestarting) {
           executorService.submit(
@@ -897,10 +898,10 @@ public final class Scopes implements IScopes {
 
       transaction =
           spanFactory.createTransaction(
-              transactionContext, this, transactionOptions, transactionPerformanceCollector);
+              transactionContext, this, transactionOptions, compositePerformanceCollector);
       //          new SentryTracer(
       //              transactionContext, this, transactionOptions,
-      // transactionPerformanceCollector);
+      // compositePerformanceCollector);
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it
@@ -920,6 +921,34 @@ public final class Scopes implements IScopes {
       transaction.makeCurrent();
     }
     return transaction;
+  }
+
+  @Override
+  public void startProfiler() {
+    if (getOptions().isContinuousProfilingEnabled()) {
+      getOptions().getLogger().log(SentryLevel.DEBUG, "Started continuous Profiling.");
+      getOptions().getContinuousProfiler().start();
+    } else {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
+    }
+  }
+
+  @Override
+  public void stopProfiler() {
+    if (getOptions().isContinuousProfilingEnabled()) {
+      getOptions().getLogger().log(SentryLevel.DEBUG, "Stopped continuous Profiling.");
+      getOptions().getContinuousProfiler().stop();
+    } else {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
+    }
   }
 
   @Override

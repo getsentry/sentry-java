@@ -7,6 +7,7 @@ import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
+import io.sentry.util.thread.IThreadChecker;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -50,7 +51,7 @@ public final class SentryTracer implements ITransaction {
   private @NotNull TransactionNameSource transactionNameSource;
   private final @NotNull Instrumenter instrumenter;
   private final @NotNull Contexts contexts = new Contexts();
-  private final @Nullable TransactionPerformanceCollector transactionPerformanceCollector;
+  private final @Nullable CompositePerformanceCollector compositePerformanceCollector;
   private final @NotNull TransactionOptions transactionOptions;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IScopes scopes) {
@@ -68,7 +69,7 @@ public final class SentryTracer implements ITransaction {
       final @NotNull TransactionContext context,
       final @NotNull IScopes scopes,
       final @NotNull TransactionOptions transactionOptions,
-      final @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
+      final @Nullable CompositePerformanceCollector compositePerformanceCollector) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(scopes, "scopes are required");
 
@@ -77,7 +78,7 @@ public final class SentryTracer implements ITransaction {
     this.name = context.getName();
     this.instrumenter = context.getInstrumenter();
     this.scopes = scopes;
-    this.transactionPerformanceCollector = transactionPerformanceCollector;
+    this.compositePerformanceCollector = compositePerformanceCollector;
     this.transactionNameSource = context.getTransactionNameSource();
     this.transactionOptions = transactionOptions;
 
@@ -87,10 +88,16 @@ public final class SentryTracer implements ITransaction {
       this.baggage = new Baggage(scopes.getOptions().getLogger());
     }
 
+    final @NotNull SentryId continuousProfilerId =
+        scopes.getOptions().getContinuousProfiler().getProfilerId();
+    if (!continuousProfilerId.equals(SentryId.EMPTY_ID)) {
+      this.contexts.setProfile(new ProfileContext(continuousProfilerId));
+    }
+
     // We are currently sending the performance data only in profiles, but we are always sending
     // performance measurements.
-    if (transactionPerformanceCollector != null) {
-      transactionPerformanceCollector.start(this);
+    if (compositePerformanceCollector != null) {
+      compositePerformanceCollector.start(this);
     }
 
     if (transactionOptions.getIdleTimeout() != null
@@ -220,8 +227,8 @@ public final class SentryTracer implements ITransaction {
               finishedCallback.execute(this);
             }
 
-            if (transactionPerformanceCollector != null) {
-              performanceCollectionData.set(transactionPerformanceCollector.stop(this));
+            if (compositePerformanceCollector != null) {
+              performanceCollectionData.set(compositePerformanceCollector.stop(this));
             }
           });
 
@@ -469,8 +476,8 @@ public final class SentryTracer implements ITransaction {
               spanContext,
               spanOptions,
               finishingSpan -> {
-                if (transactionPerformanceCollector != null) {
-                  transactionPerformanceCollector.onSpanFinished(finishingSpan);
+                if (compositePerformanceCollector != null) {
+                  compositePerformanceCollector.onSpanFinished(finishingSpan);
                 }
                 final FinishStatus finishStatus = this.finishStatus;
                 if (transactionOptions.getIdleTimeout() != null) {
@@ -495,8 +502,8 @@ public final class SentryTracer implements ITransaction {
       //              timestamp,
       //              spanOptions,
       //              finishingSpan -> {
-      //                if (transactionPerformanceCollector != null) {
-      //                  transactionPerformanceCollector.onSpanFinished(finishingSpan);
+      //                if (compositePerformanceCollector != null) {
+      //                  compositePerformanceCollector.onSpanFinished(finishingSpan);
       //                }
       //                final FinishStatus finishStatus = this.finishStatus;
       //                if (transactionOptions.getIdleTimeout() != null) {
@@ -513,16 +520,17 @@ public final class SentryTracer implements ITransaction {
       //                }
       //              });
       //      span.setDescription(description);
-      final long threadId = scopes.getOptions().getThreadChecker().currentThreadSystemId();
-      span.setData(SpanDataConvention.THREAD_ID, String.valueOf(threadId));
+      final @NotNull IThreadChecker threadChecker = scopes.getOptions().getThreadChecker();
+      final SentryId profilerId = scopes.getOptions().getContinuousProfiler().getProfilerId();
+      if (!profilerId.equals(SentryId.EMPTY_ID)) {
+        span.setData(SpanDataConvention.PROFILER_ID, profilerId.toString());
+      }
       span.setData(
-          SpanDataConvention.THREAD_NAME,
-          scopes.getOptions().getThreadChecker().isMainThread()
-              ? "main"
-              : Thread.currentThread().getName());
+          SpanDataConvention.THREAD_ID, String.valueOf(threadChecker.currentThreadSystemId()));
+      span.setData(SpanDataConvention.THREAD_NAME, threadChecker.getCurrentThreadName());
       this.children.add(span);
-      if (transactionPerformanceCollector != null) {
-        transactionPerformanceCollector.onSpanStarted(span);
+      if (compositePerformanceCollector != null) {
+        compositePerformanceCollector.onSpanStarted(span);
       }
       return span;
     } else {

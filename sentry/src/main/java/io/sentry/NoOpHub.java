@@ -244,6 +244,12 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public void startProfiler() {}
+
+  @Override
+  public void stopProfiler() {}
+
+  @Override
   public void setSpanContext(
       final @NotNull Throwable throwable,
       final @NotNull ISpan spanContext,

@@ -239,6 +239,12 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
+  public void startProfiler() {}
+
+  @Override
+  public void stopProfiler() {}
+
+  @Override
   public void setSpanContext(
       final @NotNull Throwable throwable,
       final @NotNull ISpan spanContext,

@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Process;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
+import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
@@ -100,6 +101,11 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       if (appStartProfiler != null) {
         appStartProfiler.close();
       }
+      final @Nullable IContinuousProfiler appStartContinuousProfiler =
+          AppStartMetrics.getInstance().getAppStartContinuousProfiler();
+      if (appStartContinuousProfiler != null) {
+        appStartContinuousProfiler.close();
+      }
     }
   }
 
@@ -132,46 +138,77 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
         return;
       }
 
+      if (profilingOptions.isContinuousProfilingEnabled()) {
+        createAndStartContinuousProfiler(context, profilingOptions, appStartMetrics);
+        return;
+      }
+
       if (!profilingOptions.isProfilingEnabled()) {
         logger.log(
             SentryLevel.INFO, "Profiling is not enabled. App start profiling will not start.");
         return;
       }
 
-      final @NotNull TracesSamplingDecision appStartSamplingDecision =
-          new TracesSamplingDecision(
-              profilingOptions.isTraceSampled(),
-              profilingOptions.getTraceSampleRate(),
-              profilingOptions.isProfileSampled(),
-              profilingOptions.getProfileSampleRate());
-      // We store any sampling decision, so we can respect it when the first transaction starts
-      appStartMetrics.setAppStartSamplingDecision(appStartSamplingDecision);
-
-      if (!(appStartSamplingDecision.getProfileSampled()
-          && appStartSamplingDecision.getSampled())) {
-        logger.log(SentryLevel.DEBUG, "App start profiling was not sampled. It will not start.");
-        return;
-      }
-      logger.log(SentryLevel.DEBUG, "App start profiling started.");
-
-      final @NotNull ITransactionProfiler appStartProfiler =
-          new AndroidTransactionProfiler(
-              context,
-              buildInfoProvider,
-              new SentryFrameMetricsCollector(context, logger, buildInfoProvider),
-              logger,
-              profilingOptions.getProfilingTracesDirPath(),
-              profilingOptions.isProfilingEnabled(),
-              profilingOptions.getProfilingTracesHz(),
-              new SentryExecutorService());
-      appStartMetrics.setAppStartProfiler(appStartProfiler);
-      appStartProfiler.start();
+      createAndStartTransactionProfiler(context, profilingOptions, appStartMetrics);
 
     } catch (FileNotFoundException e) {
       logger.log(SentryLevel.ERROR, "App start profiling config file not found. ", e);
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error reading app start profiling config file. ", e);
     }
+  }
+
+  private void createAndStartContinuousProfiler(
+      final @NotNull Context context,
+      final @NotNull SentryAppStartProfilingOptions profilingOptions,
+      final @NotNull AppStartMetrics appStartMetrics) {
+    final @NotNull IContinuousProfiler appStartContinuousProfiler =
+        new AndroidContinuousProfiler(
+            buildInfoProvider,
+            new SentryFrameMetricsCollector(
+                context.getApplicationContext(), logger, buildInfoProvider),
+            logger,
+            profilingOptions.getProfilingTracesDirPath(),
+            profilingOptions.getProfilingTracesHz(),
+            new SentryExecutorService());
+    appStartMetrics.setAppStartProfiler(null);
+    appStartMetrics.setAppStartContinuousProfiler(appStartContinuousProfiler);
+    logger.log(SentryLevel.DEBUG, "App start continuous profiling started.");
+    appStartContinuousProfiler.start();
+  }
+
+  private void createAndStartTransactionProfiler(
+      final @NotNull Context context,
+      final @NotNull SentryAppStartProfilingOptions profilingOptions,
+      final @NotNull AppStartMetrics appStartMetrics) {
+    final @NotNull TracesSamplingDecision appStartSamplingDecision =
+        new TracesSamplingDecision(
+            profilingOptions.isTraceSampled(),
+            profilingOptions.getTraceSampleRate(),
+            profilingOptions.isProfileSampled(),
+            profilingOptions.getProfileSampleRate());
+    // We store any sampling decision, so we can respect it when the first transaction starts
+    appStartMetrics.setAppStartSamplingDecision(appStartSamplingDecision);
+
+    if (!(appStartSamplingDecision.getProfileSampled() && appStartSamplingDecision.getSampled())) {
+      logger.log(SentryLevel.DEBUG, "App start profiling was not sampled. It will not start.");
+      return;
+    }
+
+    final @NotNull ITransactionProfiler appStartProfiler =
+        new AndroidTransactionProfiler(
+            context,
+            buildInfoProvider,
+            new SentryFrameMetricsCollector(context, logger, buildInfoProvider),
+            logger,
+            profilingOptions.getProfilingTracesDirPath(),
+            profilingOptions.isProfilingEnabled(),
+            profilingOptions.getProfilingTracesHz(),
+            new SentryExecutorService());
+    appStartMetrics.setAppStartContinuousProfiler(null);
+    appStartMetrics.setAppStartProfiler(appStartProfiler);
+    logger.log(SentryLevel.DEBUG, "App start profiling started.");
+    appStartProfiler.start();
   }
 
   @SuppressLint("NewApi")

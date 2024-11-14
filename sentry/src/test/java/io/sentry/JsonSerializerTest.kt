@@ -1068,6 +1068,7 @@ class JsonSerializerTest {
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
         trace.sampled = true
+        trace.data["dataKey"] = "dataValue"
         val tracer = SentryTracer(trace, fixture.scopes)
         tracer.setData("dataKey", "dataValue")
         val span = tracer.startChild("child")
@@ -1101,6 +1102,9 @@ class JsonSerializerTest {
         assertEquals("dataValue", (jsonTrace["data"] as Map<*, *>)["dataKey"] as String)
         assertNotNull(jsonTrace["trace_id"] as String)
         assertNotNull(jsonTrace["span_id"] as String)
+        assertNotNull(jsonTrace["data"] as Map<*, *>) {
+            assertEquals("dataValue", it["dataKey"])
+        }
         assertEquals("http", jsonTrace["op"] as String)
         assertEquals("some request", jsonTrace["description"] as String)
         assertEquals("ok", jsonTrace["status"] as String)
@@ -1163,7 +1167,7 @@ class JsonSerializerTest {
         assertEquals("0a53026963414893", transaction.contexts.trace!!.spanId.toString())
         assertEquals("http", transaction.contexts.trace!!.operation)
         assertNotNull(transaction.contexts["custom"])
-        assertEquals("transactionDataValue", transaction.contexts.trace!!.data!!["transactionDataKey"])
+        assertEquals("transactionDataValue", transaction.contexts.trace!!.data["transactionDataKey"])
         assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
 
         assertEquals("extraValue", transaction.getExtra("extraKey"))
@@ -1226,7 +1230,8 @@ class JsonSerializerTest {
         val actual = serializeToString(appStartProfilingOptions)
 
         val expected = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"trace_sampled\":false," +
-            "\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false,\"profiling_traces_hz\":65}"
+            "\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false," +
+            "\"is_continuous_profiling_enabled\":false,\"profiling_traces_hz\":65}"
 
         assertEquals(expected, actual)
     }
@@ -1243,6 +1248,7 @@ class JsonSerializerTest {
         assertEquals(appStartProfilingOptions.profileSampled, actual.profileSampled)
         assertEquals(appStartProfilingOptions.profileSampleRate, actual.profileSampleRate)
         assertEquals(appStartProfilingOptions.isProfilingEnabled, actual.isProfilingEnabled)
+        assertEquals(appStartProfilingOptions.isContinuousProfilingEnabled, actual.isContinuousProfilingEnabled)
         assertEquals(appStartProfilingOptions.profilingTracesHz, actual.profilingTracesHz)
         assertEquals(appStartProfilingOptions.profilingTracesDirPath, actual.profilingTracesDirPath)
         assertNull(actual.unknown)
@@ -1546,6 +1552,7 @@ class JsonSerializerTest {
         profileSampled = true
         profileSampleRate = 0.8
         isProfilingEnabled = false
+        isContinuousProfilingEnabled = false
         profilingTracesHz = 65
     }
 

@@ -353,8 +353,11 @@ public class SentryOptions {
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
 
-  /** Listener interface to perform operations when a transaction is started or ended */
+  /** Profiler that runs when a transaction is started until it's finished. */
   private @NotNull ITransactionProfiler transactionProfiler = NoOpTransactionProfiler.getInstance();
+
+  /** Profiler that runs continuously until stopped. */
+  private @NotNull IContinuousProfiler continuousProfiler = NoOpContinuousProfiler.getInstance();
 
   /**
    * Contains a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
@@ -427,8 +430,8 @@ public class SentryOptions {
   private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 
   /** Performance collector that collect performance stats while transactions run. */
-  private @NotNull TransactionPerformanceCollector transactionPerformanceCollector =
-      NoOpTransactionPerformanceCollector.getInstance();
+  private @NotNull CompositePerformanceCollector compositePerformanceCollector =
+      NoOpCompositePerformanceCollector.getInstance();
 
   /** Enables the time-to-full-display spans in navigation transactions. */
   private boolean enableTimeToFullDisplayTracing = false;
@@ -1665,6 +1668,28 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the continuous profiler.
+   *
+   * @return the continuous profiler.
+   */
+  public @NotNull IContinuousProfiler getContinuousProfiler() {
+    return continuousProfiler;
+  }
+
+  /**
+   * Sets the continuous profiler. It only has effect if no profiler was already set.
+   *
+   * @param continuousProfiler - the continuous profiler
+   */
+  public void setContinuousProfiler(final @Nullable IContinuousProfiler continuousProfiler) {
+    // We allow to set the profiler only if it was not set before, and we don't allow to unset it.
+    if (this.continuousProfiler == NoOpContinuousProfiler.getInstance()
+        && continuousProfiler != null) {
+      this.continuousProfiler = continuousProfiler;
+    }
+  }
+
+  /**
    * Returns if profiling is enabled for transactions.
    *
    * @return if profiling is enabled for transactions.
@@ -1672,6 +1697,17 @@ public class SentryOptions {
   public boolean isProfilingEnabled() {
     return (getProfilesSampleRate() != null && getProfilesSampleRate() > 0)
         || getProfilesSampler() != null;
+  }
+
+  /**
+   * Returns if continuous profiling is enabled. This means that no profile sample rate has been
+   * set.
+   *
+   * @return if continuous profiling is enabled.
+   */
+  @ApiStatus.Internal
+  public boolean isContinuousProfilingEnabled() {
+    return getProfilesSampleRate() == null && getProfilesSampler() == null;
   }
 
   /**
@@ -1997,24 +2033,24 @@ public class SentryOptions {
   }
 
   /**
-   * Gets the performance collector used to collect performance stats while transactions run.
+   * Gets the performance collector used to collect performance stats in a time period.
    *
    * @return the performance collector.
    */
   @ApiStatus.Internal
-  public @NotNull TransactionPerformanceCollector getTransactionPerformanceCollector() {
-    return transactionPerformanceCollector;
+  public @NotNull CompositePerformanceCollector getCompositePerformanceCollector() {
+    return compositePerformanceCollector;
   }
 
   /**
-   * Sets the performance collector used to collect performance stats while transactions run.
+   * Sets the performance collector used to collect performance stats in a time period.
    *
-   * @param transactionPerformanceCollector the performance collector.
+   * @param compositePerformanceCollector the performance collector.
    */
   @ApiStatus.Internal
-  public void setTransactionPerformanceCollector(
-      final @NotNull TransactionPerformanceCollector transactionPerformanceCollector) {
-    this.transactionPerformanceCollector = transactionPerformanceCollector;
+  public void setCompositePerformanceCollector(
+      final @NotNull CompositePerformanceCollector compositePerformanceCollector) {
+    this.compositePerformanceCollector = compositePerformanceCollector;
   }
 
   /**

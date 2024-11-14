@@ -1277,6 +1277,52 @@ class SentryTest {
         assertNotSame(s1, s2)
     }
 
+    @Test
+    fun `startProfiler starts the continuous profiler`() {
+        val profiler = mock<IContinuousProfiler>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setContinuousProfiler(profiler)
+        }
+        Sentry.startProfiler()
+        verify(profiler).start()
+    }
+
+    @Test
+    fun `startProfiler is ignored when continuous profiling is disabled`() {
+        val profiler = mock<IContinuousProfiler>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setContinuousProfiler(profiler)
+            it.profilesSampleRate = 1.0
+        }
+        Sentry.startProfiler()
+        verify(profiler, never()).start()
+    }
+
+    @Test
+    fun `stopProfiler stops the continuous profiler`() {
+        val profiler = mock<IContinuousProfiler>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setContinuousProfiler(profiler)
+        }
+        Sentry.stopProfiler()
+        verify(profiler).stop()
+    }
+
+    @Test
+    fun `stopProfiler is ignored when continuous profiling is disabled`() {
+        val profiler = mock<IContinuousProfiler>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setContinuousProfiler(profiler)
+            it.profilesSampleRate = 1.0
+        }
+        Sentry.stopProfiler()
+        verify(profiler, never()).stop()
+    }
+
     private class InMemoryOptionsObserver : IOptionsObserver {
         var release: String? = null
             private set
@@ -1328,6 +1374,7 @@ class SentryTest {
         override fun isMainThread(): Boolean = false
         override fun isMainThread(sentryThread: SentryThread): Boolean = false
         override fun currentThreadSystemId(): Long = 0
+        override fun getCurrentThreadName(): String = ""
     }
 
     private class CustomMemoryCollector :

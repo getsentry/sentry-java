@@ -1,6 +1,8 @@
 package io.sentry
 
+import io.sentry.protocol.SentryId
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
 class NoOpContinuousProfilerTest {
@@ -22,4 +24,9 @@ class NoOpContinuousProfilerTest {
     @Test
     fun `close does not throw`() =
         profiler.close()
+
+    @Test
+    fun `getProfilerId returns Empty SentryId`() {
+        assertEquals(profiler.profilerId, SentryId.EMPTY_ID)
+    }
 }
