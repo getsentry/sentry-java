@@ -280,6 +280,16 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.startTransaction(transactionContext, transactionOptions);
   }
 
+  @Override
+  public void startProfiler() {
+    Sentry.startProfiler();
+  }
+
+  @Override
+  public void stopProfiler() {
+    Sentry.stopProfiler();
+  }
+
   @ApiStatus.Internal
   @Override
   public void setSpanContext(

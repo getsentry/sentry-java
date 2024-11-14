@@ -41,7 +41,6 @@ public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IConti
 	public fun close ()V
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun isRunning ()Z
-	public fun setScopes (Lio/sentry/IScopes;)V
 	public fun start ()V
 	public fun stop ()V
 }
@@ -448,6 +447,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun addActivityLifecycleTimeSpans (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)V
 	public fun clear ()V
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
+	public fun getAppStartContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
@@ -466,6 +466,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
 	public fun registerApplicationForegroundCheck (Landroid/app/Application;)V
 	public fun setAppLaunchedInForeground (Z)V
+	public fun setAppStartContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
 	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V

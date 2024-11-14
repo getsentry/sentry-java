@@ -265,4 +265,14 @@ class ScopesAdapterTest {
         ScopesAdapter.getInstance().reportFullyDisplayed()
         verify(scopes).reportFullyDisplayed()
     }
+
+    @Test fun `startProfiler calls Scopes`() {
+        ScopesAdapter.getInstance().startProfiler()
+        verify(scopes).startProfiler()
+    }
+
+    @Test fun `stopProfiler calls Scopes`() {
+        ScopesAdapter.getInstance().stopProfiler()
+        verify(scopes).stopProfiler()
+    }
 }

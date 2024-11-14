@@ -9,8 +9,10 @@ import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.ISentryExecutorService;
+import io.sentry.NoOpScopes;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.ProfileChunk;
+import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
@@ -88,12 +90,14 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
             logger);
   }
 
-  public synchronized void setScopes(final @NotNull IScopes scopes) {
-    this.scopes = scopes;
-    this.performanceCollector = scopes.getOptions().getCompositePerformanceCollector();
-  }
-
   public synchronized void start() {
+    if ((scopes == null || scopes != NoOpScopes.getInstance())
+        && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
+      this.scopes = Sentry.getCurrentScopes();
+      this.performanceCollector =
+          Sentry.getCurrentScopes().getOptions().getCompositePerformanceCollector();
+    }
+
     // Debug.startMethodTracingSampling() is only available since Lollipop, but Android Profiler
     // causes crashes on api 21 -> https://github.com/getsentry/sentry-java/issues/3392
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) return;

@@ -193,42 +193,47 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options is initialized, isProfilingEnabled is false`() {
+    fun `when options is initialized, isProfilingEnabled is false and isContinuousProfilingEnabled is true`() {
         assertFalse(SentryOptions().isProfilingEnabled)
+        assertTrue(SentryOptions().isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampleRate is null and profilesSampler is null, isProfilingEnabled is false`() {
+    fun `when profilesSampleRate is null and profilesSampler is null, isProfilingEnabled is false and isContinuousProfilingEnabled is true`() {
         val options = SentryOptions().apply {
             this.profilesSampleRate = null
             this.profilesSampler = null
         }
         assertFalse(options.isProfilingEnabled)
+        assertTrue(options.isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampleRate is 0 and profilesSampler is null, isProfilingEnabled is false`() {
+    fun `when profilesSampleRate is 0 and profilesSampler is null, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
             this.profilesSampleRate = 0.0
             this.profilesSampler = null
         }
         assertFalse(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampleRate is set to a value higher than 0, isProfilingEnabled is true`() {
+    fun `when profilesSampleRate is set to a value higher than 0, isProfilingEnabled is true and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
             this.profilesSampleRate = 0.1
         }
         assertTrue(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampler is set to a value, isProfilingEnabled is true`() {
+    fun `when profilesSampler is set to a value, isProfilingEnabled is true and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
             this.profilesSampler = SentryOptions.ProfilesSamplerCallback { 1.0 }
         }
         assertTrue(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
     }
 
     @Test

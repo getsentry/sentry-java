@@ -11,6 +11,7 @@ import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
 import io.sentry.MemoryCollectionData
 import io.sentry.PerformanceCollectionData
+import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
 import io.sentry.SentryTracer
@@ -80,7 +81,7 @@ class AndroidContinuousProfilerTest {
                 options.profilingTracesDirPath,
                 options.profilingTracesHz,
                 options.executorService
-            ).also { it.setScopes(scopes) }
+            )
         }
     }
 
@@ -118,6 +119,8 @@ class AndroidContinuousProfilerTest {
         // Profiler doesn't start if the folder doesn't exists.
         // Usually it's generated when calling Sentry.init, but for tests we can create it manually.
         File(fixture.options.profilingTracesDirPath!!).mkdirs()
+
+        Sentry.setCurrentScopes(fixture.scopes)
     }
 
     @AfterTest

@@ -1230,7 +1230,8 @@ class JsonSerializerTest {
         val actual = serializeToString(appStartProfilingOptions)
 
         val expected = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"trace_sampled\":false," +
-            "\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false,\"profiling_traces_hz\":65}"
+            "\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false," +
+            "\"is_continuous_profiling_enabled\":false,\"profiling_traces_hz\":65}"
 
         assertEquals(expected, actual)
     }
@@ -1247,6 +1248,7 @@ class JsonSerializerTest {
         assertEquals(appStartProfilingOptions.profileSampled, actual.profileSampled)
         assertEquals(appStartProfilingOptions.profileSampleRate, actual.profileSampleRate)
         assertEquals(appStartProfilingOptions.isProfilingEnabled, actual.isProfilingEnabled)
+        assertEquals(appStartProfilingOptions.isContinuousProfilingEnabled, actual.isContinuousProfilingEnabled)
         assertEquals(appStartProfilingOptions.profilingTracesHz, actual.profilingTracesHz)
         assertEquals(appStartProfilingOptions.profilingTracesDirPath, actual.profilingTracesDirPath)
         assertNull(actual.unknown)
@@ -1550,6 +1552,7 @@ class JsonSerializerTest {
         profileSampled = true
         profileSampleRate = 0.8
         isProfilingEnabled = false
+        isContinuousProfilingEnabled = false
         profilingTracesHz = 65
     }
 
