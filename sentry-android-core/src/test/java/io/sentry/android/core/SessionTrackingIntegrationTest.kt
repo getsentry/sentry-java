@@ -10,6 +10,7 @@ import io.sentry.CheckIn
 import io.sentry.Hint
 import io.sentry.IScope
 import io.sentry.ISentryClient
+import io.sentry.ProfileChunk
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
@@ -173,6 +174,10 @@ class SessionTrackingIntegrationTest {
             hint: Hint?,
             profilingTraceData: ProfilingTraceData?
         ): SentryId {
+            TODO("Not yet implemented")
+        }
+
+        override fun captureProfileChunk(profileChunk: ProfileChunk, scope: IScope?): SentryId {
             TODO("Not yet implemented")
         }
 

@@ -1576,6 +1576,52 @@ class ScopesTest {
     }
     //endregion
 
+    //region captureProfileChunk tests
+    @Test
+    fun `when captureProfileChunk is called on disabled client, do nothing`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = createScopes(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        sut.close()
+
+        sut.captureProfileChunk(mock())
+        verify(mockClient, never()).captureProfileChunk(any(), any())
+        verify(mockClient, never()).captureProfileChunk(any(), any())
+    }
+
+    @Test
+    fun `when captureProfileChunk, captureProfileChunk on the client should be called`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
+        sut.bindClient(mockClient)
+
+        val profileChunk = mock<ProfileChunk>()
+        sut.captureProfileChunk(profileChunk)
+        verify(mockClient).captureProfileChunk(eq(profileChunk), any())
+    }
+
+    @Test
+    fun `when profileChunk is called, lastEventId is not set`() {
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            setSerializer(mock())
+        }
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
+        sut.bindClient(mockClient)
+        sut.captureProfileChunk(mock())
+        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
+    }
+    //endregion
+
     //region profiling tests
 
     @Test
@@ -1749,18 +1795,21 @@ class ScopesTest {
     fun `Scopes should close the sentry executor processor, profiler and performance collector on close call`() {
         val executor = mock<ISentryExecutorService>()
         val profiler = mock<ITransactionProfiler>()
-        val performanceCollector = mock<TransactionPerformanceCollector>()
+        val continuousProfiler = mock<IContinuousProfiler>()
+        val performanceCollector = mock<CompositePerformanceCollector>()
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
             cacheDirPath = file.absolutePath
             executorService = executor
             setTransactionProfiler(profiler)
-            transactionPerformanceCollector = performanceCollector
+            compositePerformanceCollector = performanceCollector
+            setContinuousProfiler(continuousProfiler)
         }
         val sut = createScopes(options)
         sut.close()
         verify(executor).close(any())
         verify(profiler).close()
+        verify(continuousProfiler).close()
         verify(performanceCollector).close()
     }
 
@@ -2109,6 +2158,56 @@ class ScopesTest {
 
         val transaction = scopes.startTransaction(transactionContext, transactionOptions)
         assertEquals("other.span.origin", transaction.spanContext.origin)
+    }
+
+    @Test
+    fun `startProfiler starts the continuous profiler`() {
+        val profiler = mock<IContinuousProfiler>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+        }
+        scopes.startProfiler()
+        verify(profiler).start()
+    }
+
+    @Test
+    fun `stopProfiler stops the continuous profiler`() {
+        val profiler = mock<IContinuousProfiler>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+        }
+        scopes.stopProfiler()
+        verify(profiler).stop()
+    }
+
+    @Test
+    fun `startProfiler logs instructions if continuous profiling is disabled`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.profilesSampleRate = 1.0
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        scopes.startProfiler()
+        verify(profiler, never()).start()
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."))
+    }
+
+    @Test
+    fun `stopProfiler logs instructions if continuous profiling is disabled`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.profilesSampleRate = 1.0
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        scopes.stopProfiler()
+        verify(profiler, never()).stop()
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."))
     }
 
     private val dsnTest = "https://key@sentry.io/proj"

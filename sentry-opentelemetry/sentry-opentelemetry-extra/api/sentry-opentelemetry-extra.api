@@ -21,7 +21,7 @@ public final class io/sentry/opentelemetry/OtelSpanContext : io/sentry/SpanConte
 public final class io/sentry/opentelemetry/OtelSpanFactory : io/sentry/ISpanFactory {
 	public fun <init> ()V
 	public fun createSpan (Lio/sentry/IScopes;Lio/sentry/SpanOptions;Lio/sentry/SpanContext;Lio/sentry/ISpan;)Lio/sentry/ISpan;
-	public fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/TransactionPerformanceCollector;)Lio/sentry/ITransaction;
+	public fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/CompositePerformanceCollector;)Lio/sentry/ITransaction;
 }
 
 public final class io/sentry/opentelemetry/OtelSpanWrapper : io/sentry/ISpan {

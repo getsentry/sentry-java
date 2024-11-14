@@ -193,42 +193,47 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options is initialized, isProfilingEnabled is false`() {
+    fun `when options is initialized, isProfilingEnabled is false and isContinuousProfilingEnabled is true`() {
         assertFalse(SentryOptions().isProfilingEnabled)
+        assertTrue(SentryOptions().isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampleRate is null and profilesSampler is null, isProfilingEnabled is false`() {
+    fun `when profilesSampleRate is null and profilesSampler is null, isProfilingEnabled is false and isContinuousProfilingEnabled is true`() {
         val options = SentryOptions().apply {
             this.profilesSampleRate = null
             this.profilesSampler = null
         }
         assertFalse(options.isProfilingEnabled)
+        assertTrue(options.isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampleRate is 0 and profilesSampler is null, isProfilingEnabled is false`() {
+    fun `when profilesSampleRate is 0 and profilesSampler is null, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
             this.profilesSampleRate = 0.0
             this.profilesSampler = null
         }
         assertFalse(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampleRate is set to a value higher than 0, isProfilingEnabled is true`() {
+    fun `when profilesSampleRate is set to a value higher than 0, isProfilingEnabled is true and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
             this.profilesSampleRate = 0.1
         }
         assertTrue(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampler is set to a value, isProfilingEnabled is true`() {
+    fun `when profilesSampler is set to a value, isProfilingEnabled is true and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
             this.profilesSampler = SentryOptions.ProfilesSamplerCallback { 1.0 }
         }
         assertTrue(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
     }
 
     @Test
@@ -250,13 +255,18 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options is initialized, transactionPerformanceCollector is set`() {
-        assertIs<TransactionPerformanceCollector>(SentryOptions().transactionPerformanceCollector)
+    fun `when options is initialized, compositePerformanceCollector is set`() {
+        assertIs<CompositePerformanceCollector>(SentryOptions().compositePerformanceCollector)
     }
 
     @Test
     fun `when options is initialized, transactionProfiler is noop`() {
         assert(SentryOptions().transactionProfiler == NoOpTransactionProfiler.getInstance())
+    }
+
+    @Test
+    fun `when options is initialized, continuousProfiler is noop`() {
+        assert(SentryOptions().continuousProfiler == NoOpContinuousProfiler.getInstance())
     }
 
     @Test
@@ -466,16 +476,16 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options are initialized, TransactionPerformanceCollector is a NoOp`() {
-        assertEquals(SentryOptions().transactionPerformanceCollector, NoOpTransactionPerformanceCollector.getInstance())
+    fun `when options are initialized, CompositePerformanceCollector is a NoOp`() {
+        assertEquals(SentryOptions().compositePerformanceCollector, NoOpCompositePerformanceCollector.getInstance())
     }
 
     @Test
-    fun `when setTransactionPerformanceCollector is called, overrides default`() {
-        val performanceCollector = mock<TransactionPerformanceCollector>()
+    fun `when setCompositePerformanceCollector is called, overrides default`() {
+        val performanceCollector = mock<CompositePerformanceCollector>()
         val options = SentryOptions()
-        options.transactionPerformanceCollector = performanceCollector
-        assertEquals(performanceCollector, options.transactionPerformanceCollector)
+        options.compositePerformanceCollector = performanceCollector
+        assertEquals(performanceCollector, options.compositePerformanceCollector)
     }
 
     @Test

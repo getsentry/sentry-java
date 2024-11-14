@@ -32,6 +32,10 @@ class NoOpHubTest {
         assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock<Hint>()))
 
     @Test
+    fun `captureProfileChunk returns empty SentryId`() =
+        assertEquals(SentryId.EMPTY_ID, sut.captureProfileChunk(mock()))
+
+    @Test
     fun `captureException returns empty SentryId`() =
         assertEquals(SentryId.EMPTY_ID, sut.captureException(RuntimeException()))
 
@@ -111,4 +115,10 @@ class NoOpHubTest {
         sut.withScope(scopeCallback)
         verify(scopeCallback).run(NoOpScope.getInstance())
     }
+
+    @Test
+    fun `startProfiler doesnt throw`() = sut.startProfiler()
+
+    @Test
+    fun `stopProfiler doesnt throw`() = sut.stopProfiler()
 }

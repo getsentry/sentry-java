@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
+import io.sentry.util.thread.IThreadChecker;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
@@ -95,6 +96,11 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.description = description;
     this.status = status;
     this.origin = origin;
+    final IThreadChecker threadChecker =
+        ScopesAdapter.getInstance().getOptions().getThreadChecker();
+    this.data.put(
+        SpanDataConvention.THREAD_ID, String.valueOf(threadChecker.currentThreadSystemId()));
+    this.data.put(SpanDataConvention.THREAD_NAME, threadChecker.getCurrentThreadName());
   }
 
   /**
@@ -110,9 +116,20 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.op = spanContext.op;
     this.description = spanContext.description;
     this.status = spanContext.status;
+    this.origin = spanContext.origin;
     final Map<String, String> copiedTags = CollectionUtils.newConcurrentHashMap(spanContext.tags);
     if (copiedTags != null) {
       this.tags = copiedTags;
+    }
+    final Map<String, Object> copiedUnknown =
+        CollectionUtils.newConcurrentHashMap(spanContext.unknown);
+    if (copiedUnknown != null) {
+      this.unknown = copiedUnknown;
+    }
+    this.baggage = spanContext.baggage;
+    final Map<String, Object> copiedData = CollectionUtils.newConcurrentHashMap(spanContext.data);
+    if (copiedData != null) {
+      this.data = copiedData;
     }
   }
 

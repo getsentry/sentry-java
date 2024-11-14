@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.NotNull;
 
 public final class NoOpContinuousProfiler implements IContinuousProfiler {
@@ -19,13 +20,15 @@ public final class NoOpContinuousProfiler implements IContinuousProfiler {
   public void stop() {}
 
   @Override
-  public void setScopes(@NotNull IScopes scopes) {}
-
-  @Override
   public boolean isRunning() {
     return false;
   }
 
   @Override
   public void close() {}
+
+  @Override
+  public @NotNull SentryId getProfilerId() {
+    return SentryId.EMPTY_ID;
+  }
 }
