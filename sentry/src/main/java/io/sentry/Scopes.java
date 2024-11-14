@@ -924,6 +924,34 @@ public final class Scopes implements IScopes {
   }
 
   @Override
+  public void startProfiler() {
+    if (getOptions().isContinuousProfilingEnabled()) {
+      getOptions().getLogger().log(SentryLevel.DEBUG, "Started continuous Profiling.");
+      getOptions().getContinuousProfiler().start();
+    } else {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
+    }
+  }
+
+  @Override
+  public void stopProfiler() {
+    if (getOptions().isContinuousProfilingEnabled()) {
+      getOptions().getLogger().log(SentryLevel.DEBUG, "Stopped continuous Profiling.");
+      getOptions().getContinuousProfiler().stop();
+    } else {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
+    }
+  }
+
+  @Override
   @ApiStatus.Internal
   public void setSpanContext(
       final @NotNull Throwable throwable,

@@ -277,6 +277,16 @@ public final class HubScopesWrapper implements IHub {
     return scopes.startTransaction(transactionContext, transactionOptions);
   }
 
+  @Override
+  public void startProfiler() {
+    scopes.startProfiler();
+  }
+
+  @Override
+  public void stopProfiler() {
+    scopes.stopProfiler();
+  }
+
   @ApiStatus.Internal
   @Override
   public void setSpanContext(

@@ -265,4 +265,14 @@ class HubAdapterTest {
         HubAdapter.getInstance().reportFullyDisplayed()
         verify(scopes).reportFullyDisplayed()
     }
+
+    @Test fun `startProfiler calls Hub`() {
+        HubAdapter.getInstance().startProfiler()
+        verify(scopes).startProfiler()
+    }
+
+    @Test fun `stopProfiler calls Hub`() {
+        HubAdapter.getInstance().stopProfiler()
+        verify(scopes).stopProfiler()
+    }
 }

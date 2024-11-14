@@ -2160,6 +2160,56 @@ class ScopesTest {
         assertEquals("other.span.origin", transaction.spanContext.origin)
     }
 
+    @Test
+    fun `startProfiler starts the continuous profiler`() {
+        val profiler = mock<IContinuousProfiler>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+        }
+        scopes.startProfiler()
+        verify(profiler).start()
+    }
+
+    @Test
+    fun `stopProfiler stops the continuous profiler`() {
+        val profiler = mock<IContinuousProfiler>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+        }
+        scopes.stopProfiler()
+        verify(profiler).stop()
+    }
+
+    @Test
+    fun `startProfiler logs instructions if continuous profiling is disabled`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.profilesSampleRate = 1.0
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        scopes.startProfiler()
+        verify(profiler, never()).start()
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."))
+    }
+
+    @Test
+    fun `stopProfiler logs instructions if continuous profiling is disabled`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.profilesSampleRate = 1.0
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        scopes.stopProfiler()
+        verify(profiler, never()).stop()
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."))
+    }
+
     private val dsnTest = "https://key@sentry.io/proj"
 
     private fun generateScopes(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): IScopes {
