@@ -4,19 +4,33 @@
 
 ### Features
 
-- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
 - Android 15: Add support for 16KB page sizes ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
   - See https://developer.android.com/guide/practices/page-sizes for more details
 
 ### Fixes
 
-- Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
+- Ensure android initialization process continues even if options configuration block throws an exception ([#3887](https://github.com/getsentry/sentry-java/pull/3887))
 
 ### Dependencies
 
 - Bump Native SDK from v0.7.2 to v0.7.8 ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#078)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.8)
+
+## 7.17.0
+
+### Features
+
+- Add meta option to set the maximum amount of breadcrumbs to be logged. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
+- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
+
+### Fixes
+
+- Using MaxBreadcrumb with value 0 no longer crashes. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
+- Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
+- Fix standalone tomcat jndi issue ([#3873](https://github.com/getsentry/sentry-java/pull/3873))
+  - Using Sentry Spring Boot on a standalone tomcat caused the following error:
+    - Failed to bind properties under 'sentry.parsed-dsn' to io.sentry.Dsn
 
 ## 7.16.0
 
