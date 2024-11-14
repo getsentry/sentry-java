@@ -6,9 +6,10 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
-import io.sentry.DefaultTransactionPerformanceCollector;
+import io.sentry.DefaultCompositePerformanceCollector;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.NoOpContinuousProfiler;
@@ -94,10 +95,7 @@ final class AndroidOptionsInitializer {
       final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The context is required.");
 
-    // it returns null if ContextImpl, so let's check for nullability
-    if (context.getApplicationContext() != null) {
-      context = context.getApplicationContext();
-    }
+    context = ContextUtils.getApplicationContext(context);
 
     Objects.requireNonNull(options, "The options object is required.");
     Objects.requireNonNull(logger, "The ILogger object is required.");
@@ -167,13 +165,84 @@ final class AndroidOptionsInitializer {
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
     final @Nullable ITransactionProfiler appStartTransactionProfiler;
     final @Nullable IContinuousProfiler appStartContinuousProfiler;
-    synchronized (appStartMetrics) {
+    try (final @NotNull ISentryLifecycleToken ignored = AppStartMetrics.staticLock.acquire()) {
       appStartTransactionProfiler = appStartMetrics.getAppStartProfiler();
       appStartContinuousProfiler = appStartMetrics.getAppStartContinuousProfiler();
       appStartMetrics.setAppStartProfiler(null);
       appStartMetrics.setAppStartContinuousProfiler(null);
     }
 
+    setupProfiler(
+        options,
+        context,
+        buildInfoProvider,
+        appStartTransactionProfiler,
+        appStartContinuousProfiler);
+
+    options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
+    options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
+
+    final boolean isAndroidXScrollViewAvailable =
+        loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
+    final boolean isComposeUpstreamAvailable =
+        loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
+
+    if (options.getGestureTargetLocators().isEmpty()) {
+      final List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>(2);
+      gestureTargetLocators.add(new AndroidViewGestureTargetLocator(isAndroidXScrollViewAvailable));
+
+      final boolean isComposeAvailable =
+          (isComposeUpstreamAvailable
+              && loadClass.isClassAvailable(
+                  SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME, options));
+
+      if (isComposeAvailable) {
+        gestureTargetLocators.add(new ComposeGestureTargetLocator(options.getLogger()));
+      }
+      options.setGestureTargetLocators(gestureTargetLocators);
+    }
+
+    if (options.getViewHierarchyExporters().isEmpty()
+        && isComposeUpstreamAvailable
+        && loadClass.isClassAvailable(
+            SENTRY_COMPOSE_VIEW_HIERARCHY_INTEGRATION_CLASS_NAME, options)) {
+
+      final List<ViewHierarchyExporter> viewHierarchyExporters = new ArrayList<>(1);
+      viewHierarchyExporters.add(new ComposeViewHierarchyExporter(options.getLogger()));
+      options.setViewHierarchyExporters(viewHierarchyExporters);
+    }
+
+    options.setThreadChecker(AndroidThreadChecker.getInstance());
+    if (options.getPerformanceCollectors().isEmpty()) {
+      options.addPerformanceCollector(new AndroidMemoryCollector());
+      options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
+
+      if (options.isEnablePerformanceV2()) {
+        options.addPerformanceCollector(
+            new SpanFrameMetricsCollector(
+                options,
+                Objects.requireNonNull(
+                    options.getFrameMetricsCollector(),
+                    "options.getFrameMetricsCollector is required")));
+      }
+    }
+    options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
+
+    if (options.getCacheDirPath() != null) {
+      if (options.isEnableScopePersistence()) {
+        options.addScopeObserver(new PersistingScopeObserver(options));
+      }
+      options.addOptionsObserver(new PersistingOptionsObserver(options));
+    }
+  }
+
+  /** Setup the correct profiler (transaction or continuous) based on the options. */
+  private static void setupProfiler(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull Context context,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @Nullable ITransactionProfiler appStartTransactionProfiler,
+      final @Nullable IContinuousProfiler appStartContinuousProfiler) {
     if (options.isProfilingEnabled() || options.getProfilesSampleRate() != null) {
       options.setContinuousProfiler(NoOpContinuousProfiler.getInstance());
       // This is a safeguard, but it should never happen, as the app start profiler should be the
@@ -214,63 +283,6 @@ final class AndroidOptionsInitializer {
                 options.getProfilingTracesHz(),
                 options.getExecutorService()));
       }
-    }
-
-    options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
-    options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
-
-    final boolean isAndroidXScrollViewAvailable =
-        loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
-    final boolean isComposeUpstreamAvailable =
-        loadClass.isClassAvailable(COMPOSE_CLASS_NAME, options);
-
-    if (options.getGestureTargetLocators().isEmpty()) {
-      final List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>(2);
-      gestureTargetLocators.add(new AndroidViewGestureTargetLocator(isAndroidXScrollViewAvailable));
-
-      final boolean isComposeAvailable =
-          (isComposeUpstreamAvailable
-              && loadClass.isClassAvailable(
-                  SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME, options));
-
-      if (isComposeAvailable) {
-        gestureTargetLocators.add(new ComposeGestureTargetLocator(options.getLogger()));
-      }
-      options.setGestureTargetLocators(gestureTargetLocators);
-    }
-
-    if (options.getViewHierarchyExporters().isEmpty()
-        && isComposeUpstreamAvailable
-        && loadClass.isClassAvailable(
-            SENTRY_COMPOSE_VIEW_HIERARCHY_INTEGRATION_CLASS_NAME, options)) {
-
-      final List<ViewHierarchyExporter> viewHierarchyExporters = new ArrayList<>(1);
-      viewHierarchyExporters.add(new ComposeViewHierarchyExporter(options.getLogger()));
-      options.setViewHierarchyExporters(viewHierarchyExporters);
-    }
-
-    options.setThreadChecker(AndroidThreadChecker.getInstance());
-    if (options.getPerformanceCollectors().isEmpty()) {
-      options.addPerformanceCollector(new AndroidMemoryCollector());
-      options.addPerformanceCollector(
-          new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
-
-      if (options.isEnablePerformanceV2()) {
-        options.addPerformanceCollector(
-            new SpanFrameMetricsCollector(
-                options,
-                Objects.requireNonNull(
-                    options.getFrameMetricsCollector(),
-                    "options.getFrameMetricsCollector is required")));
-      }
-    }
-    options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
-
-    if (options.getCacheDirPath() != null) {
-      if (options.isEnableScopePersistence()) {
-        options.addScopeObserver(new PersistingScopeObserver(options));
-      }
-      options.addOptionsObserver(new PersistingOptionsObserver(options));
     }
   }
 

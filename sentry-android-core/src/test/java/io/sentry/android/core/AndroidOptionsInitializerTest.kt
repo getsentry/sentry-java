@@ -6,7 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.DefaultTransactionPerformanceCollector
+import io.sentry.DefaultCompositePerformanceCollector
 import io.sentry.IContinuousProfiler
 import io.sentry.ILogger
 import io.sentry.ITransactionProfiler
@@ -104,7 +104,6 @@ class AndroidOptionsInitializerTest {
         }
 
         fun initSutWithClassLoader(
-            minApi: Int = Build.VERSION_CODES.KITKAT,
             classesToLoad: List<String> = emptyList(),
             isFragmentAvailable: Boolean = false,
             isTimberAvailable: Boolean = false,
@@ -117,7 +116,7 @@ class AndroidOptionsInitializerTest {
                 }
             )
             sentryOptions.isDebug = true
-            val buildInfo = createBuildInfo(minApi)
+            val buildInfo = createBuildInfo()
             val loadClass = createClassMock(classesToLoad)
             val activityFramesTracker = ActivityFramesTracker(loadClass, sentryOptions)
 
@@ -148,9 +147,9 @@ class AndroidOptionsInitializerTest {
             )
         }
 
-        private fun createBuildInfo(minApi: Int): BuildInfoProvider {
+        private fun createBuildInfo(): BuildInfoProvider {
             val buildInfo = mock<BuildInfoProvider>()
-            whenever(buildInfo.sdkInfoVersion).thenReturn(minApi)
+            whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
             return buildInfo
         }
 
@@ -632,11 +631,30 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be available`() {
+    fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be unavailable`() {
         fixture.initSut(
             hasAppContext = true,
             useRealContext = true,
             configureOptions = {
+                isEnableFramesTracking = true
+            }
+        )
+
+        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
+            .first { it is ActivityLifecycleIntegration }
+
+        assertFalse(
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+        )
+    }
+
+    @Test
+    fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be available if perfv2 is false`() {
+        fixture.initSut(
+            hasAppContext = true,
+            useRealContext = true,
+            configureOptions = {
+                isEnablePerformanceV2 = false
                 isEnableFramesTracking = true
             }
         )
@@ -664,12 +682,32 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `When Frames Tracking is initially disabled, but enabled via configureOptions it should be available`() {
+    fun `When Frames Tracking is initially disabled, but enabled via configureOptions it should be unavailable`() {
         fixture.sentryOptions.isEnableFramesTracking = false
         fixture.initSut(
             hasAppContext = true,
             useRealContext = true,
             configureOptions = {
+                isEnableFramesTracking = true
+            }
+        )
+
+        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
+            .first { it is ActivityLifecycleIntegration }
+
+        assertFalse(
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+        )
+    }
+
+    @Test
+    fun `When Frames Tracking is initially disabled, but enabled via configureOptions it should be available if perfv2 is false`() {
+        fixture.sentryOptions.isEnableFramesTracking = false
+        fixture.initSut(
+            hasAppContext = true,
+            useRealContext = true,
+            configureOptions = {
+                isEnablePerformanceV2 = false
                 isEnableFramesTracking = true
             }
         )
@@ -733,10 +771,10 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `DefaultTransactionPerformanceCollector is set to options`() {
+    fun `DefaultCompositePerformanceCollector is set to options`() {
         fixture.initSut()
 
-        assertIs<DefaultTransactionPerformanceCollector>(fixture.sentryOptions.transactionPerformanceCollector)
+        assertIs<DefaultCompositePerformanceCollector>(fixture.sentryOptions.compositePerformanceCollector)
     }
 
     @Test

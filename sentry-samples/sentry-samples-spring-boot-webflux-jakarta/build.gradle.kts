@@ -27,7 +27,8 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
-    implementation(projects.sentryGraphql)
+    implementation(projects.sentryJdbc)
+    implementation(projects.sentryGraphql22)
 
     testImplementation(Config.Libs.springBoot3StarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
@@ -56,7 +57,7 @@ tasks.register<Test>("systemTest").configure {
     group = "verification"
     description = "Runs the System tests"
 
-//    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+    maxParallelForks = 1
 
     // Cap JVM args per test
     minHeapSize = "128m"

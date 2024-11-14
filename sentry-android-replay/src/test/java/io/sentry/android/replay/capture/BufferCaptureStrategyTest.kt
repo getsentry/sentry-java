@@ -20,6 +20,7 @@ import io.sentry.android.replay.capture.BufferCaptureStrategyTest.Fixture.Compan
 import io.sentry.protocol.SentryId
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.util.Random
 import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -35,7 +36,6 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
-import java.security.SecureRandom
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -97,7 +97,7 @@ class BufferCaptureStrategyTest {
                 options,
                 scopes,
                 dateProvider,
-                SecureRandom(),
+                Random(),
                 mock {
                     doAnswer { invocation ->
                         (invocation.arguments[0] as Runnable).run()

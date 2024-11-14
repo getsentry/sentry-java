@@ -337,16 +337,6 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `profiler ignores profilingTracesIntervalMillis`() {
-        fixture.options.apply {
-            profilingTracesIntervalMillis = 0
-        }
-        val profiler = fixture.getSut(context)
-        profiler.start()
-        assertEquals(1, profiler.transactionsCounter)
-    }
-
-    @Test
     fun `profiler never use background threads`() {
         val profiler = fixture.getSut(context)
         val mockExecutorService: ISentryExecutorService = mock()
@@ -358,6 +348,17 @@ class AndroidTransactionProfilerTest {
         val profilingTraceData: ProfilingTraceData? = profiler.onTransactionFinish(fixture.transaction1, null, fixture.options)
         assertNotNull(profilingTraceData)
         verify(mockExecutorService, never()).submit(any<Callable<*>>())
+    }
+
+    @Test
+    fun `profiling transaction with empty name fallbacks to unknown`() {
+        val profiler = fixture.getSut(context)
+        profiler.start()
+        profiler.bindTransaction(fixture.transaction1)
+        val profilingTraceData = profiler.onTransactionFinish(fixture.transaction1, null, fixture.options)
+        assertNotNull(profilingTraceData)
+        assertEquals("unknown", profilingTraceData.transactionName)
+        assertEquals("unknown", profilingTraceData.transactions.first().name)
     }
 
     @Test
@@ -459,12 +460,12 @@ class AndroidTransactionProfilerTest {
         val profiler = fixture.getSut(context)
         val performanceCollectionData = ArrayList<PerformanceCollectionData>()
         var singleData = PerformanceCollectionData()
-        singleData.addMemoryData(MemoryCollectionData(1, 2, 3, mock()))
-        singleData.addCpuData(CpuCollectionData(1, 1.4, mock()))
+        singleData.addMemoryData(MemoryCollectionData(2, 3, mock()))
+        singleData.addCpuData(CpuCollectionData(1.4, mock()))
         performanceCollectionData.add(singleData)
 
         singleData = PerformanceCollectionData()
-        singleData.addMemoryData(MemoryCollectionData(2, 3, 4, mock()))
+        singleData.addMemoryData(MemoryCollectionData(3, 4, mock()))
         performanceCollectionData.add(singleData)
 
         profiler.start()

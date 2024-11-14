@@ -7,6 +7,7 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.EventProcessorUtils;
 import io.sentry.util.ExceptionUtils;
@@ -76,13 +77,15 @@ public final class Scope implements IScope {
   private volatile @Nullable Session session;
 
   /** Session lock, Ops should be atomic */
-  private final @NotNull Object sessionLock = new Object();
+  private final @NotNull AutoClosableReentrantLock sessionLock = new AutoClosableReentrantLock();
 
   /** Transaction lock, Ops should be atomic */
-  private final @NotNull Object transactionLock = new Object();
+  private final @NotNull AutoClosableReentrantLock transactionLock =
+      new AutoClosableReentrantLock();
 
   /** PropagationContext lock, Ops should be atomic */
-  private final @NotNull Object propagationContextLock = new Object();
+  private final @NotNull AutoClosableReentrantLock propagationContextLock =
+      new AutoClosableReentrantLock();
 
   /** Scope's contexts */
   private @NotNull Contexts contexts = new Contexts();
@@ -266,7 +269,7 @@ public final class Scope implements IScope {
    */
   @Override
   public void setTransaction(final @Nullable ITransaction transaction) {
-    synchronized (transactionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = transactionLock.acquire()) {
       this.transaction = transaction;
 
       for (final IScopeObserver observer : options.getScopeObservers()) {
@@ -510,7 +513,7 @@ public final class Scope implements IScope {
   /** Clears the transaction. */
   @Override
   public void clearTransaction() {
-    synchronized (transactionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = transactionLock.acquire()) {
       transaction = null;
     }
     transactionName = null;
@@ -831,7 +834,7 @@ public final class Scope implements IScope {
   @Override
   public Session withSession(final @NotNull IWithSession sessionCallback) {
     Session cloneSession = null;
-    synchronized (sessionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       sessionCallback.accept(session);
 
       if (session != null) {
@@ -863,7 +866,7 @@ public final class Scope implements IScope {
   public SessionPair startSession() {
     Session previousSession;
     SessionPair pair = null;
-    synchronized (sessionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       if (session != null) {
         // Assumes session will NOT flush itself (Not passing any scopes to it)
         session.end();
@@ -937,7 +940,7 @@ public final class Scope implements IScope {
   @Override
   public Session endSession() {
     Session previousSession = null;
-    synchronized (sessionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       if (session != null) {
         session.end();
         previousSession = session.clone();
@@ -955,7 +958,7 @@ public final class Scope implements IScope {
   @ApiStatus.Internal
   @Override
   public void withTransaction(final @NotNull IWithTransaction callback) {
-    synchronized (transactionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = transactionLock.acquire()) {
       callback.accept(transaction);
     }
   }
@@ -1000,7 +1003,7 @@ public final class Scope implements IScope {
   @Override
   public @NotNull PropagationContext withPropagationContext(
       final @NotNull IWithPropagationContext callback) {
-    synchronized (propagationContextLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = propagationContextLock.acquire()) {
       callback.accept(propagationContext);
       return new PropagationContext(propagationContext);
     }

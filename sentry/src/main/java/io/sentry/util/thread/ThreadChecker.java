@@ -45,6 +45,11 @@ public final class ThreadChecker implements IThreadChecker {
   }
 
   @Override
+  public @NotNull String getCurrentThreadName() {
+    return Thread.currentThread().getName();
+  }
+
+  @Override
   public long currentThreadSystemId() {
     return Thread.currentThread().getId();
   }

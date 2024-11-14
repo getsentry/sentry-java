@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -294,12 +293,6 @@ public final class HubAdapter implements IHub {
     return Sentry.getCurrentScopes().captureProfileChunk(profilingContinuousData);
   }
 
-  @Deprecated
-  @Override
-  public @Nullable SentryTraceHeader traceHeaders() {
-    return Sentry.traceHeaders();
-  }
-
   @Override
   public void setSpanContext(
       final @NotNull Throwable throwable,
@@ -371,10 +364,5 @@ public final class HubAdapter implements IHub {
   @Override
   public @Nullable RateLimiter getRateLimiter() {
     return Sentry.getCurrentScopes().getRateLimiter();
-  }
-
-  @Override
-  public @NotNull MetricsApi metrics() {
-    return Sentry.getCurrentScopes().metrics();
   }
 }

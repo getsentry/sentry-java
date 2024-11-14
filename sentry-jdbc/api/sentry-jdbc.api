@@ -15,6 +15,7 @@ public final class io/sentry/jdbc/DatabaseUtils$DatabaseDetails {
 }
 
 public class io/sentry/jdbc/SentryJdbcEventListener : com/p6spy/engine/event/SimpleJdbcEventListener {
+	protected final field databaseDetailsLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun onAfterAnyExecute (Lcom/p6spy/engine/common/StatementInformation;JLjava/sql/SQLException;)V

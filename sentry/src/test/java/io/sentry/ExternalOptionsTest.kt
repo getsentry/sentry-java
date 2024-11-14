@@ -107,13 +107,6 @@ class ExternalOptionsTest {
     }
 
     @Test
-    fun `creates options with enableTracing using external properties`() {
-        withPropertiesFile("enable-tracing=true") {
-            assertEquals(true, it.enableTracing)
-        }
-    }
-
-    @Test
     fun `creates options with tracesSampleRate using external properties`() {
         withPropertiesFile("traces-sample-rate=0.2") {
             assertEquals(0.2, it.tracesSampleRate)
@@ -311,6 +304,20 @@ class ExternalOptionsTest {
     fun `creates options with spotlightConnectionUrl set`() {
         withPropertiesFile("spotlight-connection-url=http://local.sentry.io:1234") { options ->
             assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
+        }
+    }
+
+    @Test
+    fun `creates options with globalHubMode set to true`() {
+        withPropertiesFile("global-hub-mode=true") { options ->
+            assertTrue(options.isGlobalHubMode == true)
+        }
+    }
+
+    @Test
+    fun `creates options with globalHubMode set to false`() {
+        withPropertiesFile("global-hub-mode=false") { options ->
+            assertTrue(options.isGlobalHubMode == false)
         }
     }
 

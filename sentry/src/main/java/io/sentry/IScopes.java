@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -598,17 +597,6 @@ public interface IScopes {
   void stopProfiler();
 
   /**
-   * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
-   * &lt;meta&gt; HTML tags. Also see {@link IScopes#getBaggage()}.
-   *
-   * @deprecated please use {@link IScopes#getTraceparent()} instead.
-   * @return sentry trace header or null
-   */
-  @Deprecated
-  @Nullable
-  SentryTraceHeader traceHeaders();
-
-  /**
    * Associates {@link ISpan} and the transaction name with the {@link Throwable}. Used to determine
    * in which trace the exception has been thrown in framework integrations.
    *
@@ -672,14 +660,6 @@ public interface IScopes {
   void reportFullyDisplayed();
 
   /**
-   * @deprecated See {@link IScopes#reportFullyDisplayed()}.
-   */
-  @Deprecated
-  default void reportFullDisplayed() {
-    reportFullyDisplayed();
-  }
-
-  /**
    * Continue a trace based on HTTP header values. If no "sentry-trace" header is provided a random
    * trace ID and span ID is created.
    *
@@ -716,10 +696,6 @@ public interface IScopes {
   @ApiStatus.Internal
   @Nullable
   RateLimiter getRateLimiter();
-
-  @ApiStatus.Experimental
-  @NotNull
-  MetricsApi metrics();
 
   default boolean isNoOp() {
     return false;

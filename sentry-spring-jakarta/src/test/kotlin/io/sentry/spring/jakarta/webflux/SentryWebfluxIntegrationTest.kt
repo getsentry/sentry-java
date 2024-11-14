@@ -179,7 +179,7 @@ open class App {
             it.dsn = "http://key@localhost/proj"
             it.setDebug(true)
             it.setTransportFactory(transportFactory)
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.isEnableBackpressureHandling = false
         }
     }
