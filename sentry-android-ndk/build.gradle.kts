@@ -98,6 +98,13 @@ android {
     }
 
     ndkVersion = "23.1.7779620"
+    
+    @Suppress("UnstableApiUsage")
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {

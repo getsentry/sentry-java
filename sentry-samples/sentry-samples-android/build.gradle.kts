@@ -112,6 +112,13 @@ android {
     androidComponents.beforeVariants {
         it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
+
+    @Suppress("UnstableApiUsage")
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {
