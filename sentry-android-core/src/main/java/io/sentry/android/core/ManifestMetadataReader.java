@@ -104,6 +104,8 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_METRICS = "io.sentry.enable-metrics";
 
+  static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
+
   static final String REPLAYS_SESSION_SAMPLE_RATE = "io.sentry.session-replay.session-sample-rate";
 
   static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.session-replay.on-error-sample-rate";
@@ -212,6 +214,9 @@ final class ManifestMetadataReader {
                 logger,
                 SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS,
                 options.getSessionTrackingIntervalMillis()));
+
+        options.setMaxBreadcrumbs(
+            (int) readLong(metadata, logger, MAX_BREADCRUMBS, options.getMaxBreadcrumbs()));
 
         options.setEnableActivityLifecycleBreadcrumbs(
             readBool(
@@ -492,7 +497,7 @@ final class ManifestMetadataReader {
   private static @NotNull Double readDouble(
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     // manifest meta-data only reads float
-    final Double value = ((Float) metadata.getFloat(key, -1)).doubleValue();
+    final Double value = ((Number) metadata.getFloat(key, metadata.getInt(key, -1))).doubleValue();
     logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
