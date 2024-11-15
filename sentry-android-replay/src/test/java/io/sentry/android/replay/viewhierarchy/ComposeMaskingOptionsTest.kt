@@ -50,6 +50,7 @@ class ComposeMaskingOptionsTest {
     @Before
     fun setup() {
         System.setProperty("robolectric.areWindowsMarkedVisible", "true")
+        System.setProperty("robolectric.pixelCopyRenderMode", "hardware")
         ComposeMaskingOptionsActivity.textModifierApplier = null
         ComposeMaskingOptionsActivity.containerModifierApplier = null
     }
