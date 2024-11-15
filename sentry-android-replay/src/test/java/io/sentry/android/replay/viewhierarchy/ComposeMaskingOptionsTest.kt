@@ -3,6 +3,7 @@ package io.sentry.android.replay.viewhierarchy
 import android.app.Activity
 import android.net.Uri
 import android.os.Bundle
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +35,7 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarch
 import org.junit.Before
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric.buildActivity
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.io.File
 import kotlin.test.Test
@@ -55,6 +57,7 @@ class ComposeMaskingOptionsTest {
     @Test
     fun `when maskAllText is set all Text nodes are masked`() {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.maskAllText = true
@@ -70,6 +73,7 @@ class ComposeMaskingOptionsTest {
     @Test
     fun `when maskAllText is set to false all Text nodes are unmasked`() {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.maskAllText = false
@@ -83,6 +87,7 @@ class ComposeMaskingOptionsTest {
     @Test
     fun `when maskAllImages is set all Image nodes are masked`() {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.maskAllImages = true
@@ -96,6 +101,7 @@ class ComposeMaskingOptionsTest {
     @Test
     fun `when maskAllImages is set to false all Image nodes are unmasked`() {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.maskAllImages = false
@@ -110,6 +116,7 @@ class ComposeMaskingOptionsTest {
     fun `when sentry-mask modifier is set masks the node`() {
         ComposeMaskingOptionsActivity.textModifierApplier = { Modifier.sentryReplayMask() }
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.maskAllText = false
@@ -130,6 +137,7 @@ class ComposeMaskingOptionsTest {
     fun `when sentry-unmask modifier is set unmasks the node`() {
         ComposeMaskingOptionsActivity.textModifierApplier = { Modifier.sentryReplayUnmask() }
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.maskAllText = true
@@ -150,6 +158,7 @@ class ComposeMaskingOptionsTest {
     fun `when view is not visible, does not mask the view`() {
         ComposeMaskingOptionsActivity.textModifierApplier = { Modifier.semantics { invisibleToUser() } }
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
             experimental.sessionReplay.maskAllText = true
@@ -169,6 +178,7 @@ class ComposeMaskingOptionsTest {
     fun `when a container view is unmasked its children are not unmasked`() {
         ComposeMaskingOptionsActivity.containerModifierApplier = { Modifier.sentryReplayUnmask() }
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions()
 
