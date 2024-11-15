@@ -10,6 +10,7 @@ import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.HintUtils;
@@ -78,7 +79,7 @@ public final class RateLimiter {
       if (toSend.isEmpty()) {
         options.getLogger().log(SentryLevel.INFO, "Envelope discarded due all items rate limited.");
 
-        markHintWhenSendingFailed(hint, false);
+        markHintWhenSendingFailed(hint, false, envelope);
         return null;
       }
 
@@ -134,10 +135,29 @@ public final class RateLimiter {
    *
    * @param hint the Hints
    * @param retry if event should be retried or not
+   * @param envelope the envelope
    */
-  private static void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
+  private void markHintWhenSendingFailed(
+      final @NotNull Hint hint, final boolean retry, @NotNull SentryEnvelope envelope) {
     HintUtils.runIfHasType(hint, SubmissionResult.class, result -> result.setResult(false));
     HintUtils.runIfHasType(hint, Retryable.class, retryable -> retryable.setRetry(retry));
+    HintUtils.runIfHasType(
+        hint,
+        DiskFlushNotification.class,
+        (diskFlushNotification) -> {
+          if (diskFlushNotification.isFlushable(envelope.getHeader().getEventId())) {
+            diskFlushNotification.markFlushed();
+            options
+                .getLogger()
+                .log(SentryLevel.DEBUG, "Disk flush envelope fired due to rate limit");
+          } else {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Not firing envelope flush (rate limit based) as there's an ongoing transaction");
+          }
+        });
   }
 
   /**
