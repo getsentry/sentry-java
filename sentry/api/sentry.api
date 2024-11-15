@@ -5564,13 +5564,20 @@ public final class io/sentry/transport/NoOpTransportGate : io/sentry/transport/I
 	public fun isConnected ()Z
 }
 
-public final class io/sentry/transport/RateLimiter {
+public final class io/sentry/transport/RateLimiter : java/io/Closeable {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/SentryOptions;)V
+	public fun addRateLimitObserver (Lio/sentry/transport/RateLimiter$IRateLimitObserver;)V
+	public fun close ()V
 	public fun filter (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
 	public fun isActiveForCategory (Lio/sentry/DataCategory;)Z
 	public fun isAnyRateLimitActive ()Z
+	public fun removeRateLimitObserver (Lio/sentry/transport/RateLimiter$IRateLimitObserver;)V
 	public fun updateRetryAfterLimits (Ljava/lang/String;Ljava/lang/String;I)V
+}
+
+public abstract interface class io/sentry/transport/RateLimiter$IRateLimitObserver {
+	public abstract fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 }
 
 public final class io/sentry/transport/ReusableCountLatch {
