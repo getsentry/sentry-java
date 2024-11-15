@@ -547,13 +547,15 @@ public class SentryOptions {
   }
 
   /**
-   * Evaluates and parses the DSN. May throw an exception if the DSN is invalid.
+   * Evaluates and parses the DSN. May throw an exception if the DSN is invalid. Renamed from
+   * `getParsedDsn` as this would cause an error when deploying as WAR to Tomcat due to `JNDI`
+   * property binding.
    *
    * @return the parsed DSN or throws if dsn is invalid
    */
   @ApiStatus.Internal
   @NotNull
-  Dsn getParsedDsn() throws IllegalArgumentException {
+  Dsn retrieveParsedDsn() throws IllegalArgumentException {
     return parsedDsn.getValue();
   }
 
@@ -2481,7 +2483,7 @@ public class SentryOptions {
    */
   void loadLazyFields() {
     getSerializer();
-    getParsedDsn();
+    retrieveParsedDsn();
     getEnvelopeReader();
     getDateProvider();
   }
