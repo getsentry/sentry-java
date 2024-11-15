@@ -20,6 +20,10 @@
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#078)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.8)
 
+### Breaking Changes
+
+- The Kotlin Language version is now set to 1.6  ([#3839](https://github.com/getsentry/sentry-java/pull/3839))
+
 ## 7.17.0
 
 ### Features
