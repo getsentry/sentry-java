@@ -14,6 +14,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -58,7 +59,9 @@ public final class SentryUnityExceptionFactory {
    */
   private @NotNull List<SentryException> getSentryExceptions(
     final @NotNull Deque<SentryException> exceptions) {
-    return new ArrayList<>(exceptions);
+    final List<SentryException> exceptionsList = new ArrayList<>(exceptions);
+    Collections.reverse(exceptionsList);
+    return exceptionsList;
   }
 
   /**
@@ -101,22 +104,22 @@ public final class SentryUnityExceptionFactory {
         // ignore
       }
     } else {
-      final Package exceptionPackage = throwable.getClass().getPackage();
-      final String fullClassName = throwable.getClass().getName();
-
-      final String exceptionClassName =
-        exceptionPackage != null
-          ? fullClassName.replace(exceptionPackage.getName() + ".", "")
-          : fullClassName;
-
-      final String exceptionPackageName =
-        exceptionPackage != null ? exceptionPackage.getName() : null;
-
-      exception.setThreadId(threadId);
-      exception.setType(exceptionClassName);
-      exception.setMechanism(exceptionMechanism);
-      exception.setModule(exceptionPackageName);
-      exception.setValue(exceptionMessage);
+      //final Package exceptionPackage = throwable.getClass().getPackage();
+      //final String fullClassName = throwable.getClass().getName();
+      //
+      //final String exceptionClassName =
+      //  exceptionPackage != null
+      //    ? fullClassName.replace(exceptionPackage.getName() + ".", "")
+      //    : fullClassName;
+      //
+      //final String exceptionPackageName =
+      //  exceptionPackage != null ? exceptionPackage.getName() : null;
+      //
+      //exception.setThreadId(threadId);
+      //exception.setType(exceptionClassName);
+      //exception.setMechanism(exceptionMechanism);
+      //exception.setModule(exceptionPackageName);
+      //exception.setValue(exceptionMessage);
     }
 
     return exception;
@@ -161,7 +164,9 @@ public final class SentryUnityExceptionFactory {
       SentryException exception =
         getSentryException(
           currentThrowable, exceptionMechanism, thread.getId(), frames, snapshot);
-      exceptions.addFirst(exception);
+      if (exception.getType() != null) {
+        exceptions.addFirst(exception);
+      }
       currentThrowable = currentThrowable.getCause();
     }
 

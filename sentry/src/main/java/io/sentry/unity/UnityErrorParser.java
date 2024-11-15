@@ -5,6 +5,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,9 +43,11 @@ public final class UnityErrorParser {
       if (matches(beginNativeSignalRe, text)) {
         final String signal = beginNativeSignalRe.group(2);
         exception.setType(signal);
-        final Map<String, Object> meta = new HashMap<>(2);
-        meta.put("signal", signal);
-        meta.put("number", getInteger(beginNativeSignalRe, 1, null));
+        final Map<String, Object> meta = new HashMap<>(1);
+        final Map<String, Object> signalMap = new HashMap<>(2);
+        signalMap.put("name", signal);
+        signalMap.put("number", getInteger(beginNativeSignalRe, 1, null));
+        meta.put("signal", signalMap);
 
         final @Nullable Mechanism mechanism = exception.getMechanism();
         if (mechanism != null) {
@@ -98,25 +101,25 @@ public final class UnityErrorParser {
       final String text = line.text;
       if (matches(nativeFrameRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
-        frame.setInstructionAddr(nativeFrameRe.group(1));
+        frame.setInstructionAddr(convertToHex(nativeFrameRe.group(1)));
         frame.setPackage(nativeFrameRe.group(2));
         frame.setFunction(nativeFrameRe.group(3));
         frame.setLineno(getInteger(nativeFrameRe, 4, null));
         frames.add(frame);
       } else if (matches(nativeFrameNoLocRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
-        frame.setInstructionAddr(nativeFrameNoLocRe.group(1));
+        frame.setInstructionAddr(convertToHex(nativeFrameNoLocRe.group(1)));
         frame.setPackage(nativeFrameNoLocRe.group(2));
         frame.setFunction(nativeFrameNoLocRe.group(3));
         frames.add(frame);
       } else if (matches(nativeFrameNoFunRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
-        frame.setInstructionAddr(nativeFrameNoFunRe.group(1));
+        frame.setInstructionAddr(convertToHex(nativeFrameNoFunRe.group(1)));
         frame.setPackage(nativeFrameNoFunRe.group(2));
         frames.add(frame);
       } else if (finds(registerRe, text)) {
         do {
-          registers.put(registerRe.group(1), registerRe.group(2));
+          registers.put(registerRe.group(1), convertToHex(registerRe.group(2)));
         } while (registerRe.find());
       }
     }
@@ -126,6 +129,11 @@ public final class UnityErrorParser {
     final SentryStackTrace stackTrace = new SentryStackTrace(frames);
     stackTrace.setRegisters(registers);
     return stackTrace;
+  }
+
+  private String convertToHex(final String value) {
+    BigInteger registerValue = new BigInteger(value, 16);
+    return "0x" + registerValue.toString(16);
   }
 
   private boolean matches(final @NotNull Matcher matcher, final @NotNull String text) {
