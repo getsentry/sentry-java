@@ -139,9 +139,9 @@ class ComposeMaskingOptionsTest {
         assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
         textNodes.forEach {
             if ((it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text == "Make Request") {
-                assertFalse(it.shouldMask)
+                assertFalse(it.shouldMask, "Node with text ${(it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text} should not be masked")
             } else {
-                assertTrue(it.shouldMask)
+                assertTrue(it.shouldMask, "Node with text ${(it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text} should be masked")
             }
         }
     }
