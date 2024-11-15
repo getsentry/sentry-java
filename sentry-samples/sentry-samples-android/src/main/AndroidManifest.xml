@@ -41,7 +41,16 @@
 
         <activity
             android:name=".SecondActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:process=":unity"/>
+
+<!--        <provider-->
+<!--            android:name="io.sentry.android.core.SentryInitProvider"-->
+<!--            android:authorities="${applicationId}.SentryInitProvider"-->
+<!--            android:exported="false"-->
+<!--            android:process=":unity"-->
+<!--            tools:node="merge"-->
+<!--          />-->
 
         <activity
             android:name=".ThirdActivityFragment"
@@ -74,6 +83,7 @@
 
         <!--    how to enable Sentry's debug mode-->
         <meta-data android:name="io.sentry.debug" android:value="${sentryDebug}" />
+        <meta-data android:name="io.sentry.auto-init" android:value="false" />
 
         <!--    how to set a custom debug level-->
         <!--    <meta-data android:name="io.sentry.debug.level" android:value="info" />-->
@@ -168,7 +178,7 @@
 
       <meta-data android:name="io.sentry.enable-metrics" android:value="true" />
 
-      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1" />
+      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="0" />
       <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="true" />
     </application>
 </manifest>

@@ -66,7 +66,17 @@ public class MainActivity extends AppCompatActivity {
 
     binding.crashFromJava.setOnClickListener(
         view -> {
-          throw new RuntimeException("Uncaught Exception from Java.");
+          final String message = "*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\nVersion '2020.3.48f1 (b805b124c6b7)', Build type 'Release', Scripting Backend 'il2cpp', CPU 'armeabi-v7a'\nBuild fingerprint: 'xiaomi/cactus/cactus:9/PPR1.180610.011/V11.0.9.0.PCBMIXM:user/release-keys'\nRevision: '0'\nABI: 'arm'\nTimestamp: 2024-11-14 14:25:05+0530\npid: 23910, tid: 24255, name: UnityMain  \u003E\u003E\u003E com.winzo.gold:gameProcess \u003C\u003C\u003C\nuid: 10151\nsignal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x2a\nCause: null pointer dereference\n    r0  00000000  r1  7dd96aa8  r2  83c472b8  r3  83c473a0\n    r4  83c473a0  r5  00000000  r6  00000000  r7  83c472b8\n    r8  00000000  r9  000000ff  r10 000000a0  r11 00001180\n    ip  ffffffec  sp  83c47268  lr  6dcb7953  pc  7ddd3fd4\n\nbacktrace:\n      #00 pc 0098dfd4  /data/app/com.winzo.gold-QfypLwbH1ldLqZgaAor-Uw==/lib/arm/libil2cpp.so (BuildId: 008f8b67eb23e524e5a80af60ee8d260c6bcbbd9)\n";
+          final Error rootCause = new Error(message);
+          final StackTraceElement[] stackTraceElements = new StackTraceElement[1];
+          stackTraceElements[0] = new StackTraceElement("libunity", "0x98dfd4", null, -1);
+          rootCause.setStackTrace(stackTraceElements);
+
+          final String errorMessage = "FATAL EXCEPTION [UnityMain]\nUnity version     : 2020.3.48f1\nDevice model      : Xiaomi Redmi 6A\nDevice fingerprint: xiaomi/cactus/cactus:9/PPR1.180610.011/V11.0.9.0.PCBMIXM:user/release-keys\nBuild Type        : Release\nScripting Backend : IL2CPP\nABI               : armeabi-v7a\nStrip Engine Code : true\n";
+          final Error error = new Error(errorMessage, rootCause);
+          error.setStackTrace(new StackTraceElement[]{});
+          throw error;
+          //throw new Error("Uncaught Exception from Java.");
         });
 
     binding.sendMessage.setOnClickListener(view -> Sentry.captureMessage("Some message."));

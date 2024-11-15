@@ -246,7 +246,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
 
   private void setExceptions(final @NotNull SentryEvent event) {
     final Throwable throwable = event.getThrowableMechanism();
-    if (throwable != null) {
+    if (event.getExceptions() == null && throwable != null) {
       event.setExceptions(sentryExceptionFactory.getSentryExceptions(throwable));
     }
   }

@@ -2,6 +2,7 @@ package io.sentry.samples.android
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import io.sentry.Sentry
@@ -16,6 +17,7 @@ class SecondActivity : AppCompatActivity() {
     private lateinit var repos: List<Repo>
 
     private lateinit var binding: ActivitySecondBinding
+    val mutex: Any = Any()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,7 +28,38 @@ class SecondActivity : AppCompatActivity() {
         binding = ActivitySecondBinding.inflate(layoutInflater)
 
         binding.doRequest.setOnClickListener {
-            updateRepos()
+//            updateRepos()
+
+            // Try cause ANR by blocking for 10 seconds.
+            // By default the SDK sends an event if blocked by at least 5 seconds.
+            // Keep clicking on the ANR button till you've gotten the "App. isn''t responding" dialog,
+            // then either click on Wait or Close, at this point you should have seen an event on
+            // Sentry.
+            // NOTE: By default it doesn't raise if the debugger is attached. That can also be
+            // configured.
+            Thread {
+                synchronized(mutex) {
+                    while (true) {
+                        try {
+                            Thread.sleep(10000)
+                        } catch (e: InterruptedException) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            }
+                .start()
+
+            Handler()
+                .postDelayed(
+                    {
+                        synchronized(mutex) {
+                            // Shouldn't happen
+                            throw IllegalStateException()
+                        }
+                    },
+                    1000
+                )
         }
 
         binding.backMain.setOnClickListener {
