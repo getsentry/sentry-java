@@ -291,7 +291,7 @@ public final class RateLimiter implements Closeable {
     if (oldDate == null || date.after(oldDate)) {
       sentryRetryAfterLimit.put(dataCategory, date);
 
-      notifyRateLimitObservers(true);
+      notifyRateLimitObservers();
 
       synchronized (timerLock) {
         if (timer == null) {
@@ -302,7 +302,7 @@ public final class RateLimiter implements Closeable {
             new TimerTask() {
               @Override
               public void run() {
-                notifyRateLimitObservers(false);
+                notifyRateLimitObservers();
               }
             },
             date);
@@ -329,9 +329,9 @@ public final class RateLimiter implements Closeable {
     return retryAfterMillis;
   }
 
-  private void notifyRateLimitObservers(final boolean applied) {
+  private void notifyRateLimitObservers() {
     for (IRateLimitObserver observer : rateLimitObservers) {
-      observer.onRateLimitChanged(applied);
+      observer.onRateLimitChanged(this);
     }
   }
 
@@ -351,6 +351,7 @@ public final class RateLimiter implements Closeable {
         timer = null;
       }
     }
+    rateLimitObservers.clear();
   }
 
   public interface IRateLimitObserver {
@@ -359,8 +360,9 @@ public final class RateLimiter implements Closeable {
      * RateLimiter#isActiveForCategory(DataCategory)} to check whether the category you're
      * interested in has changed.
      *
-     * @param applied true if the rate limit was applied, false if it was lifted
+     * @param rateLimiter this {@link RateLimiter} instance which you can use to check if the rate
+     *     limit is active for a specific category
      */
-    void onRateLimitChanged(boolean applied);
+    void onRateLimitChanged(@NotNull RateLimiter rateLimiter);
   }
 }

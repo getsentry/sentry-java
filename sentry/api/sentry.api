@@ -5577,7 +5577,7 @@ public final class io/sentry/transport/RateLimiter : java/io/Closeable {
 }
 
 public abstract interface class io/sentry/transport/RateLimiter$IRateLimitObserver {
-	public abstract fun onRateLimitChanged (Z)V
+	public abstract fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 }
 
 public final class io/sentry/transport/ReusableCountLatch {

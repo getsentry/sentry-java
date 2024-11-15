@@ -71,7 +71,7 @@ public final class io/sentry/android/replay/ReplayIntegration : android/content/
 	public fun onConfigurationChanged (Landroid/content/res/Configuration;)V
 	public fun onConnectionStatusChanged (Lio/sentry/IConnectionStatusProvider$ConnectionStatus;)V
 	public fun onLowMemory ()V
-	public fun onRateLimitChanged (Z)V
+	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 	public fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
 	public fun onScreenshotRecorded (Ljava/io/File;J)V
 	public fun onTouchEvent (Landroid/view/MotionEvent;)V

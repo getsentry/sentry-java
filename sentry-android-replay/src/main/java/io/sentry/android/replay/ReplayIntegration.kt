@@ -37,6 +37,7 @@ import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.hints.Backfillable
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.transport.RateLimiter
 import io.sentry.transport.RateLimiter.IRateLimitObserver
 import io.sentry.util.FileUtils
 import io.sentry.util.HintUtils
@@ -292,15 +293,13 @@ public class ReplayIntegration(
         }
     }
 
-    override fun onRateLimitChanged(applied: Boolean) {
+    override fun onRateLimitChanged(rateLimiter: RateLimiter) {
         if (captureStrategy !is SessionCaptureStrategy) {
             // we only want to stop recording when rate-limited for session mode
             return
         }
 
-        if (hub?.rateLimiter?.isActiveForCategory(All) == true ||
-            hub?.rateLimiter?.isActiveForCategory(Replay) == true
-        ) {
+        if (rateLimiter.isActiveForCategory(All) || rateLimiter.isActiveForCategory(Replay)) {
             pause()
         } else {
             resume()
