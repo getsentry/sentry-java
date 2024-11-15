@@ -6,6 +6,7 @@
 
 - Android 15: Add support for 16KB page sizes ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
   - See https://developer.android.com/guide/practices/page-sizes for more details
+- Session Replay: Add `beforeSendReplay` callback ([#3855](https://github.com/getsentry/sentry-java/pull/3855))
 
 ### Fixes
 
