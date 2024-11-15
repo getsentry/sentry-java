@@ -25,7 +25,7 @@ kotlin {
 }
 
 dependencies {
-    api(projects.sentry)
+    api(project(":sentry"))
 
     compileOnly(Config.Libs.okhttp)
 
@@ -38,7 +38,7 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
-    testImplementation(projects.sentryTestSupport)
+    testImplementation(project(":sentry-test-support"))
     testImplementation(Config.Libs.okhttp)
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)

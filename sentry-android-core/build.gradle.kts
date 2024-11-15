@@ -73,12 +73,12 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 dependencies {
-    api(projects.sentry)
-    compileOnly(projects.sentryAndroidFragment)
-    compileOnly(projects.sentryAndroidTimber)
-    compileOnly(projects.sentryAndroidReplay)
-    compileOnly(projects.sentryCompose)
-    compileOnly(projects.sentryComposeHelper)
+    api(project(":sentry"))
+    compileOnly(project(":sentry-android-fragment"))
+    compileOnly(project(":sentry-android-timber"))
+    compileOnly(project(":sentry-android-replay"))
+    compileOnly(project(":sentry-compose"))
+    compileOnly(project(":sentry-compose-helper"))
 
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)
@@ -102,12 +102,12 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
-    testImplementation(projects.sentryTestSupport)
-    testImplementation(projects.sentryAndroidFragment)
-    testImplementation(projects.sentryAndroidTimber)
-    testImplementation(projects.sentryAndroidReplay)
-    testImplementation(projects.sentryComposeHelper)
-    testImplementation(projects.sentryAndroidNdk)
+    testImplementation(project(":sentry-test-support"))
+    testImplementation(project(":sentry-android-fragment"))
+    testImplementation(project(":sentry-android-timber"))
+    testImplementation(project(":sentry-android-replay"))
+    testImplementation(project(":sentry-compose-helper"))
+    testImplementation(project(":sentry-android-ndk"))
     testRuntimeOnly(Config.Libs.composeUi)
     testRuntimeOnly(Config.Libs.timber)
     testRuntimeOnly(Config.Libs.fragment)

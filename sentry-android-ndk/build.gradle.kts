@@ -98,13 +98,13 @@ android {
 }
 
 dependencies {
-    api(projects.sentry)
-    api(projects.sentryAndroidCore)
+    api(project(":sentry"))
+    api(project(":sentry-android-core"))
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(projects.sentryTestSupport)
+    testImplementation(project(":sentry-test-support"))
 }

@@ -16,7 +16,7 @@ kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
-                implementation(projects.sentry)
+                implementation(project(":sentry"))
 
                 compileOnly(compose.runtime)
                 compileOnly(compose.ui)

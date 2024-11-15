@@ -60,7 +60,7 @@ kotlin {
 }
 
 dependencies {
-    api(projects.sentry)
+    api(project(":sentry"))
 
     compileOnly(Config.Libs.fragment)
 

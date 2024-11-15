@@ -1,8 +1,7 @@
-package io.sentry.unity;
+package io.sentry.android.core.unity;
 
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SentryStackFrame;
-import io.sentry.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

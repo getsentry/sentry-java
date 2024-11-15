@@ -1,16 +1,12 @@
-package io.sentry.unity;
+package io.sentry.android.core.unity;
 
-import io.sentry.SentryStackTraceFactory;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
-import io.sentry.protocol.SentryThread;
 import io.sentry.util.Objects;
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -76,7 +72,7 @@ public final class SentryUnityExceptionFactory {
    * @param threadId The optional id of a {@link Thread} which the exception originated. Or null if
    *     not known.
    * @param frames stack frames that should be assigned to the stacktrace of this exception.
-   * @param snapshot if the captured {@link java.lang.Thread}'s stacktrace is a snapshot, See {@link
+   * @param snapshot if the captured {@link Thread}'s stacktrace is a snapshot, See {@link
    *     SentryStackTrace#getSnapshot()}
    */
   private @NotNull SentryException getSentryException(

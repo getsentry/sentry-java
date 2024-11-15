@@ -16,11 +16,9 @@
  * limitations under the License.
  */
 
-package io.sentry.unity;
+package io.sentry.android.core.unity;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import org.jetbrains.annotations.ApiStatus;

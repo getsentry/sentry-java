@@ -42,13 +42,13 @@ kotlin {
                 compileOnly(compose.runtime)
                 compileOnly(compose.ui)
 
-                compileOnly(projects.sentryComposeHelper)
+                compileOnly(project(":sentry-compose-helper"))
             }
         }
         val androidMain by getting {
             dependencies {
-                api(projects.sentry)
-                api(projects.sentryAndroidNavigation)
+                api(project(":sentry"))
+                api(project(":sentry-android-navigation"))
 
                 compileOnly(Config.Libs.composeNavigation)
                 implementation(Config.Libs.lifecycleCommonJava8)
@@ -140,7 +140,7 @@ val embedComposeHelperConfig by configurations.creating {
 
 dependencies {
     embedComposeHelperConfig(
-        project(":" + projects.sentryComposeHelper.name, "embeddedJar")
+        project(":" + project(":sentry-compose-helper").name, "embeddedJar")
     )
 }
 

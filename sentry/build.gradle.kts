@@ -33,7 +33,7 @@ dependencies {
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.TestLibs.javaFaker)
     testImplementation(Config.TestLibs.msgpack)
-    testImplementation(projects.sentryTestSupport)
+    testImplementation(project(":sentry-test-support"))
 }
 
 configure<SourceSetContainer> {

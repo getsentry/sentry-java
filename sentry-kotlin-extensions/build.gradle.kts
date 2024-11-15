@@ -21,7 +21,7 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    api(projects.sentry)
+    api(project(":sentry"))
     compileOnly(Config.Libs.coroutinesCore)
 
     compileOnly(Config.CompileOnly.nopen)
@@ -30,7 +30,7 @@ dependencies {
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // tests
-    testImplementation(projects.sentryTestSupport)
+    testImplementation(project(":sentry-test-support"))
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)

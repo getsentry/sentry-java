@@ -1,12 +1,23 @@
-package io.sentry;
+package io.sentry.android.core;
 
+import io.sentry.EventProcessor;
+import io.sentry.Hint;
+import io.sentry.SentryEvent;
+import io.sentry.SentryOptions;
+import io.sentry.SentryReplayEvent;
+import io.sentry.android.core.unity.SentryUnityExceptionFactory;
+import io.sentry.android.core.unity.SentryUnityStackTraceFactory;
 import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.protocol.DebugImage;
+import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryTransaction;
-import io.sentry.unity.SentryUnityExceptionFactory;
-import io.sentry.unity.SentryUnityStackTraceFactory;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,7 +27,7 @@ public final class UnityMainEventProcessor implements EventProcessor, Closeable 
   private final @NotNull SentryUnityExceptionFactory sentryUnityExceptionFactory;
   private final @NotNull SentryOptions options;
 
-  public UnityMainEventProcessor(final @NotNull SentryOptions options) {
+  public UnityMainEventProcessor(final @NotNull SentryAndroidOptions options) {
     this.options = options;
     final SentryUnityStackTraceFactory sentryStackTraceFactory =
       new SentryUnityStackTraceFactory(this.options);
@@ -43,9 +54,22 @@ public final class UnityMainEventProcessor implements EventProcessor, Closeable 
     //mechanism.setSynthetic(true);
 
     event.setExceptions(sentryUnityExceptionFactory.getSentryExceptions(throwableMechanism));
-
     event.setPlatform(PLATFORM_NATIVE);
+    List<DebugImage> debugImages = ((SentryAndroidOptions) options).getDebugImagesLoader().loadDebugImages();
+    if (debugImages != null && !debugImages.isEmpty()) {
+      DebugMeta debugMeta = event.getDebugMeta();
 
+      if (debugMeta == null) {
+        debugMeta = new DebugMeta();
+      }
+      if (debugMeta.getImages() == null) {
+        debugMeta.setImages(debugImages);
+      } else {
+        debugMeta.getImages().addAll(debugImages);
+      }
+
+      //event.setDebugMeta(debugMeta);
+    }
 
     return event;
   }

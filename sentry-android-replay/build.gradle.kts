@@ -75,14 +75,15 @@ kotlin {
 }
 
 dependencies {
-    api(projects.sentry)
+    api(project(":sentry"))
+    compileOnly("androidx.appcompat:appcompat:1.7.0")
 
     compileOnly(Config.Libs.composeUiReplay)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     // tests
-    testImplementation(projects.sentryTestSupport)
-    testImplementation(projects.sentryAndroidCore)
+    testImplementation(project(":sentry-test-support"))
+    testImplementation(project(":sentry-android-core"))
     testImplementation(Config.TestLibs.robolectric)
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.androidxRunner)

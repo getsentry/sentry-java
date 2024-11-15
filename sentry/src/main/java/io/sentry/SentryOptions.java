@@ -2598,7 +2598,6 @@ public class SentryOptions {
       integrations.add(new ShutdownHookIntegration());
       integrations.add(new SpotlightIntegration());
 
-      eventProcessors.add(new UnityMainEventProcessor(this));
       eventProcessors.add(new MainEventProcessor(this));
       eventProcessors.add(new DuplicateEventDetectionEventProcessor(this));
 

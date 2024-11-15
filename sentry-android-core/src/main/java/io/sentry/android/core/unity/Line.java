@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package io.sentry.unity;
+package io.sentry.android.core.unity;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;

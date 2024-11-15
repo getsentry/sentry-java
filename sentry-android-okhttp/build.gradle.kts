@@ -62,15 +62,15 @@ kotlin {
 }
 
 dependencies {
-    api(projects.sentry)
-    api(projects.sentryOkhttp)
+    api(project(":sentry"))
+    api(project(":sentry-okhttp"))
 
     compileOnly(Config.Libs.okhttp)
 
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     // tests
-    testImplementation(projects.sentryTestSupport)
+    testImplementation(project(":sentry-test-support"))
     testImplementation(Config.Libs.okhttp)
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.androidxJunit)

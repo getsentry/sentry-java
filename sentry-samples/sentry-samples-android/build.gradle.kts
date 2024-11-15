@@ -106,12 +106,17 @@ dependencies {
 
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
-    implementation(projects.sentryAndroid)
-    implementation(projects.sentryAndroidOkhttp)
-    implementation(projects.sentryAndroidFragment)
-    implementation(projects.sentryAndroidTimber)
-    implementation(projects.sentryCompose)
-    implementation(projects.sentryComposeHelper)
+    implementation(project(":sentry-android"))
+    implementation(project(":sentry-android-okhttp"))
+    implementation(project(":sentry-android-fragment"))
+    implementation(project(":sentry-android-timber"))
+    implementation(project(":sentry-compose"))
+    implementation(project(":sentry-compose-helper"))
+//    implementation(projects.sentryAndroidOkhttp)
+//    implementation(projects.sentryAndroidFragment)
+//    implementation(projects.sentryAndroidTimber)
+//    implementation(projects.sentryCompose)
+//    implementation(projects.sentryComposeHelper)
     implementation(Config.Libs.fragment)
     implementation(Config.Libs.timber)
 

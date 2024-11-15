@@ -1,6 +1,5 @@
-package io.sentry.unity;
+package io.sentry.android.core.unity;
 
-import io.sentry.Sentry;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryStackFrame;

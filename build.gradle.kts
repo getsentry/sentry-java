@@ -51,29 +51,28 @@ apiValidation {
             "io.sentry.android.core.internal"
         )
     )
-    ignoredProjects.addAll(
-        listOf(
-            "sentry-samples-android",
-            "sentry-samples-console",
-            "sentry-samples-jul",
-            "sentry-samples-log4j2",
-            "sentry-samples-logback",
-            "sentry-samples-openfeign",
-            "sentry-samples-servlet",
-            "sentry-samples-spring",
-            "sentry-samples-spring-jakarta",
-            "sentry-samples-spring-boot",
-            "sentry-samples-spring-boot-jakarta",
-            "sentry-samples-spring-boot-webflux",
-            "sentry-samples-spring-boot-webflux-jakarta",
-            "sentry-uitest-android",
-            "sentry-uitest-android-benchmark",
-            "sentry-uitest-android-critical",
-            "test-app-plain",
-            "test-app-sentry",
-            "sentry-samples-netflix-dgs"
-        )
-    )
+//    ignoredProjects.addAll(
+//        listOf(
+//            "sentry-samples-android",
+//            "sentry-samples-console",
+//            "sentry-samples-jul",
+//            "sentry-samples-log4j2",
+//            "sentry-samples-logback",
+//            "sentry-samples-openfeign",
+//            "sentry-samples-servlet",
+//            "sentry-samples-spring",
+//            "sentry-samples-spring-jakarta",
+//            "sentry-samples-spring-boot",
+//            "sentry-samples-spring-boot-jakarta",
+//            "sentry-samples-spring-boot-webflux",
+//            "sentry-samples-spring-boot-webflux-jakarta",
+//            "sentry-uitest-android",
+//            "sentry-uitest-android-benchmark",
+//            "test-app-plain",
+//            "test-app-sentry",
+//            "sentry-samples-netflix-dgs"
+//        )
+//    )
 }
 
 allprojects {
