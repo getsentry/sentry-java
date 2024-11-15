@@ -3,6 +3,7 @@ package io.sentry.transport
 import io.sentry.Attachment
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
+import io.sentry.DataCategory.Replay
 import io.sentry.Hint
 import io.sentry.IHub
 import io.sentry.ILogger
@@ -386,7 +387,7 @@ class RateLimiterTest {
 
         var applied = false
         rateLimiter.addRateLimitObserver {
-            applied = it
+            applied = rateLimiter.isActiveForCategory(Replay)
         }
         rateLimiter.updateRetryAfterLimits("60:replay:key", null, 1)
 
@@ -396,14 +397,14 @@ class RateLimiterTest {
     @Test
     fun `apply rate limits schedules a timer to notify observers of lifted limits`() {
         val rateLimiter = fixture.getSUT()
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 1, 2001)
 
         val applied = AtomicBoolean(true)
         rateLimiter.addRateLimitObserver {
-            applied.set(it)
+            applied.set(rateLimiter.isActiveForCategory(Replay))
         }
         rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
 
-        // wait for 1.5s to ensure the timer has run after 1s
         await.untilFalse(applied)
         assertFalse(applied.get())
     }
@@ -411,10 +412,11 @@ class RateLimiterTest {
     @Test
     fun `close cancels the timer`() {
         val rateLimiter = fixture.getSUT()
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 1, 2001)
 
         val applied = AtomicBoolean(true)
         rateLimiter.addRateLimitObserver {
-            applied.set(it)
+            applied.set(rateLimiter.isActiveForCategory(Replay))
         }
 
         rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
