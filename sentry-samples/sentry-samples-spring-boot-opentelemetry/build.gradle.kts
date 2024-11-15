@@ -88,9 +88,10 @@ tasks.register<BootRun>("bootRunWithAgent").configure {
     val agentJarPath = "$agentProjectPath/build/libs/sentry-opentelemetry-agent-$versionName.jar"
 
     val dsn = System.getenv("SENTRY_DSN") ?: "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563"
+    val tracesSampleRate = System.getenv("SENTRY_TRACES_SAMPLE_RATE") ?: "1"
+
     environment("SENTRY_DSN", dsn)
-    environment("SENTRY_AUTO_INIT", "true")
-    environment("SENTRY_TRACES_SAMPLE_RATE", "1.0")
+    environment("SENTRY_TRACES_SAMPLE_RATE", tracesSampleRate)
     environment("OTEL_TRACES_EXPORTER", "none")
     environment("OTEL_METRICS_EXPORTER", "none")
     environment("OTEL_LOGS_EXPORTER", "none")
