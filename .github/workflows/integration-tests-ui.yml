@@ -42,7 +42,7 @@ jobs:
         run: make assembleUiTests
 
       - name: Install SauceLabs CLI
-        uses: saucelabs/saucectl-run-action@39e4f0666ca8ecb4b60847213c6e0fbd6a0c2bd8 # pin@v3
+        uses: saucelabs/saucectl-run-action@39e4f0666ca8ecb4b60847213c6e0fbd6a0c2bd8 # pin@v4.3.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
