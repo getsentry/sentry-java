@@ -143,7 +143,7 @@ final class AndroidOptionsInitializer {
           new AndroidConnectionStatusProvider(context, options.getLogger(), buildInfoProvider));
     }
 
-    //options.addEventProcessor(new UnityMainEventProcessor(options));
+    options.addEventProcessor(new UnityMainEventProcessor(options));
     options.addEventProcessor(new DeduplicateMultithreadedEventProcessor(options));
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));

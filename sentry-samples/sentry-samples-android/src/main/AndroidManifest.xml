@@ -178,7 +178,7 @@
 
       <meta-data android:name="io.sentry.enable-metrics" android:value="true" />
 
-      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="0" />
-      <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="true" />
+      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1" />
+      <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="false" />
     </application>
 </manifest>

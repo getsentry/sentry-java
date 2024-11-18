@@ -68,7 +68,7 @@ public final class UnityMainEventProcessor implements EventProcessor, Closeable 
         debugMeta.getImages().addAll(debugImages);
       }
 
-      //event.setDebugMeta(debugMeta);
+      event.setDebugMeta(debugMeta);
     }
 
     return event;
