@@ -306,7 +306,7 @@ public class ReplayIntegration(
         }
     }
 
-    override fun onLowMemory() : Unit = Unit
+    override fun onLowMemory(): Unit = Unit
 
     override fun onTouchEvent(event: MotionEvent) {
         captureStrategy?.onTouchEvent(event)
