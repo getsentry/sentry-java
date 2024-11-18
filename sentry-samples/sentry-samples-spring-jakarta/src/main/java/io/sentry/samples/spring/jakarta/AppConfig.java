@@ -1,6 +1,6 @@
 package io.sentry.samples.spring.jakarta;
 
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.spring.jakarta.SentryUserFilter;
 import io.sentry.spring.jakarta.SentryUserProvider;
 import java.util.List;
@@ -14,7 +14,7 @@ public class AppConfig {
 
   @Bean
   SentryUserFilter sentryUserFilter(
-      final IHub hub, final List<SentryUserProvider> sentryUserProviders) {
-    return new SentryUserFilter(hub, sentryUserProviders);
+      final IScopes scopes, final List<SentryUserProvider> sentryUserProviders) {
+    return new SentryUserFilter(scopes, sentryUserProviders);
   }
 }

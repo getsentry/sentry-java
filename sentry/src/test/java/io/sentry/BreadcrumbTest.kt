@@ -145,6 +145,38 @@ class BreadcrumbTest {
     }
 
     @Test
+    fun `creates HTTP breadcrumb with WARNING level if status code is 4xx`() {
+        val breadcrumb = Breadcrumb.http("http://example.com", "POST", 417)
+        assertEquals("http://example.com", breadcrumb.data["url"])
+        assertEquals("POST", breadcrumb.data["method"])
+        assertEquals("http", breadcrumb.type)
+        assertEquals("http", breadcrumb.category)
+        assertEquals(SentryLevel.WARNING, breadcrumb.level)
+    }
+
+    @Test
+    fun `creates HTTP breadcrumb with error level if status code is 5xx`() {
+        val breadcrumb = Breadcrumb.http("http://example.com", "POST", 502)
+        assertEquals("http://example.com", breadcrumb.data["url"])
+        assertEquals("POST", breadcrumb.data["method"])
+        assertEquals("http", breadcrumb.type)
+        assertEquals("http", breadcrumb.category)
+        assertEquals(502, breadcrumb.data["status_code"])
+        assertEquals(SentryLevel.ERROR, breadcrumb.level)
+    }
+
+    @Test
+    fun `creates HTTP breadcrumb with null level if status code is not 5xx or 4xx`() {
+        val breadcrumb = Breadcrumb.http("http://example.com", "POST", 200)
+        assertEquals("http://example.com", breadcrumb.data["url"])
+        assertEquals("POST", breadcrumb.data["method"])
+        assertEquals("http", breadcrumb.type)
+        assertEquals("http", breadcrumb.category)
+        assertEquals(200, breadcrumb.data["status_code"])
+        assertEquals(null, breadcrumb.level)
+    }
+
+    @Test
     fun `creates navigation breadcrumb`() {
         val breadcrumb = Breadcrumb.navigation("from", "to")
         assertEquals("from", breadcrumb.data["from"])

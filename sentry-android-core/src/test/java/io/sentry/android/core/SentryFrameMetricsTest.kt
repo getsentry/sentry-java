@@ -6,6 +6,15 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SentryFrameMetricsTest {
+    @Test
+    fun addFastFrame() {
+        val frameMetrics = SentryFrameMetrics()
+        frameMetrics.addFrame(10, 0, false, false)
+        assertEquals(1, frameMetrics.normalFrameCount)
+
+        frameMetrics.addFrame(10, 0, false, false)
+        assertEquals(2, frameMetrics.normalFrameCount)
+    }
 
     @Test
     fun addSlowFrame() {
@@ -34,12 +43,10 @@ class SentryFrameMetricsTest {
     @Test
     fun totalFrameCount() {
         val frameMetrics = SentryFrameMetrics()
-        // Normal frames are ignored
         frameMetrics.addFrame(10, 0, false, false)
-        // Slow and frozen frames are considered
         frameMetrics.addFrame(116, 100, true, false)
         frameMetrics.addFrame(1016, 1000, true, true)
-        assertEquals(2, frameMetrics.slowFrozenFrameCount)
+        assertEquals(3, frameMetrics.totalFrameCount)
     }
 
     @Test
@@ -50,11 +57,12 @@ class SentryFrameMetricsTest {
         frameMetrics.addFrame(1016, 1000, true, true)
 
         val dup = frameMetrics.duplicate()
+        assertEquals(1, dup.normalFrameCount)
         assertEquals(1, dup.slowFrameCount)
         assertEquals(100, dup.slowFrameDelayNanos)
         assertEquals(1, dup.frozenFrameCount)
         assertEquals(1000, dup.frozenFrameDelayNanos)
-        assertEquals(2, dup.slowFrozenFrameCount)
+        assertEquals(3, dup.totalFrameCount)
     }
 
     @Test
@@ -81,7 +89,7 @@ class SentryFrameMetricsTest {
         assertEquals(1, diff.frozenFrameCount)
         assertEquals(1000, diff.frozenFrameDelayNanos)
 
-        assertEquals(2, diff.slowFrozenFrameCount)
+        assertEquals(2, diff.totalFrameCount)
     }
 
     @Test
@@ -94,11 +102,12 @@ class SentryFrameMetricsTest {
 
         frameMetrics.clear()
 
+        assertEquals(0, frameMetrics.normalFrameCount)
         assertEquals(0, frameMetrics.slowFrameCount)
         assertEquals(0, frameMetrics.slowFrameDelayNanos)
         assertEquals(0, frameMetrics.frozenFrameCount)
         assertEquals(0, frameMetrics.frozenFrameDelayNanos)
-        assertEquals(0, frameMetrics.slowFrozenFrameCount)
+        assertEquals(0, frameMetrics.totalFrameCount)
     }
 
     @Test

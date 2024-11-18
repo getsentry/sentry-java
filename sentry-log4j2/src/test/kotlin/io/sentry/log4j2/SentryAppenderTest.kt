@@ -1,7 +1,8 @@
 package io.sentry.log4j2
 
-import io.sentry.HubAdapter
 import io.sentry.ITransportFactory
+import io.sentry.InitPriority
+import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.checkEvent
@@ -49,7 +50,7 @@ class SentryAppenderTest {
             }
             loggerContext.start()
             val config: Configuration = loggerContext.configuration
-            val appender = SentryAppender("sentry", null, "http://key@localhost/proj", minimumBreadcrumbLevel, minimumEventLevel, debug, this.transportFactory, HubAdapter.getInstance(), contextTags?.toTypedArray())
+            val appender = SentryAppender("sentry", null, "http://key@localhost/proj", minimumBreadcrumbLevel, minimumEventLevel, debug, this.transportFactory, ScopesAdapter.getInstance(), contextTags?.toTypedArray())
             config.addAppender(appender)
 
             val ref = AppenderRef.createAppenderRef("sentry", null, null)
@@ -78,15 +79,17 @@ class SentryAppenderTest {
     @BeforeTest
     fun `clear MDC`() {
         ThreadContext.clearAll()
+        Sentry.close()
     }
 
     @Test
-    fun `does not initialize Sentry if Sentry is already enabled`() {
+    fun `does not initialize Sentry if Sentry is already enabled with higher prio`() {
         Sentry.init {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
             it.setTransportFactory(fixture.transportFactory)
             it.isEnableBackpressureHandling = false
+            it.initPriority = InitPriority.LOW
         }
         val logger = fixture.getSut()
         logger.error("testing environment field")
@@ -446,6 +449,6 @@ class SentryAppenderTest {
     @Test
     fun `sets the debug mode`() {
         fixture.getSut(debug = true)
-        assertTrue(HubAdapter.getInstance().options.isDebug)
+        assertTrue(ScopesAdapter.getInstance().options.isDebug)
     }
 }

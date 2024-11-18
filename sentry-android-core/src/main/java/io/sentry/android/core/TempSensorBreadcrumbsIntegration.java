@@ -11,10 +11,12 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -26,12 +28,12 @@ public final class TempSensorBreadcrumbsIntegration
     implements Integration, Closeable, SensorEventListener {
 
   private final @NotNull Context context;
-  private @Nullable IHub hub;
+  private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
 
   @TestOnly @Nullable SensorManager sensorManager;
   private boolean isClosed = false;
-  private final @NotNull Object startLock = new Object();
+  private final @NotNull AutoClosableReentrantLock startLock = new AutoClosableReentrantLock();
 
   public TempSensorBreadcrumbsIntegration(final @NotNull Context context) {
     this.context =
@@ -39,8 +41,8 @@ public final class TempSensorBreadcrumbsIntegration
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    this.hub = Objects.requireNonNull(hub, "Hub is required");
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -60,7 +62,7 @@ public final class TempSensorBreadcrumbsIntegration
             .getExecutorService()
             .submit(
                 () -> {
-                  synchronized (startLock) {
+                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
                     if (!isClosed) {
                       startSensorListener(options);
                     }
@@ -101,7 +103,7 @@ public final class TempSensorBreadcrumbsIntegration
 
   @Override
   public void close() throws IOException {
-    synchronized (startLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
       isClosed = true;
     }
     if (sensorManager != null) {
@@ -122,7 +124,7 @@ public final class TempSensorBreadcrumbsIntegration
       return;
     }
 
-    if (hub != null) {
+    if (scopes != null) {
       final Breadcrumb breadcrumb = new Breadcrumb();
       breadcrumb.setType("system");
       breadcrumb.setCategory("device.event");
@@ -135,7 +137,7 @@ public final class TempSensorBreadcrumbsIntegration
       final Hint hint = new Hint();
       hint.set(ANDROID_SENSOR_EVENT, event);
 
-      hub.addBreadcrumb(breadcrumb, hint);
+      scopes.addBreadcrumb(breadcrumb, hint);
     }
   }
 

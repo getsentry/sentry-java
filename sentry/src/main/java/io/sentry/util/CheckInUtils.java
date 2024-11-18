@@ -3,7 +3,8 @@ package io.sentry.util;
 import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
 import io.sentry.DateUtils;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.MonitorConfig;
 import io.sentry.Sentry;
 import io.sentry.protocol.SentryId;
@@ -32,35 +33,36 @@ public final class CheckInUtils {
       final @Nullable MonitorConfig monitorConfig,
       final @NotNull Callable<U> callable)
       throws Exception {
-    final @NotNull IHub hub = Sentry.getCurrentHub();
-    final long startTime = System.currentTimeMillis();
-    boolean didError = false;
+    try (final @NotNull ISentryLifecycleToken ignored =
+            Sentry.forkedScopes("CheckInUtils").makeCurrent()) {
+      final @NotNull IScopes scopes = Sentry.getCurrentScopes();
+      final long startTime = System.currentTimeMillis();
+      boolean didError = false;
 
-    hub.pushScope();
-    TracingUtils.startNewTrace(hub);
+      TracingUtils.startNewTrace(scopes);
 
-    CheckIn inProgressCheckIn = new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS);
-    if (monitorConfig != null) {
-      inProgressCheckIn.setMonitorConfig(monitorConfig);
-    }
-    if (environment != null) {
-      inProgressCheckIn.setEnvironment(environment);
-    }
-    @Nullable SentryId checkInId = hub.captureCheckIn(inProgressCheckIn);
-    try {
-      return callable.call();
-    } catch (Throwable t) {
-      didError = true;
-      throw t;
-    } finally {
-      final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
-      CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
-      if (environment != null) {
-        checkIn.setEnvironment(environment);
+      CheckIn inProgressCheckIn = new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS);
+      if (monitorConfig != null) {
+        inProgressCheckIn.setMonitorConfig(monitorConfig);
       }
-      checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
-      hub.captureCheckIn(checkIn);
-      hub.popScope();
+      if (environment != null) {
+        inProgressCheckIn.setEnvironment(environment);
+      }
+      @Nullable SentryId checkInId = scopes.captureCheckIn(inProgressCheckIn);
+      try {
+        return callable.call();
+      } catch (Throwable t) {
+        didError = true;
+        throw t;
+      } finally {
+        final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
+        CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
+        if (environment != null) {
+          checkIn.setEnvironment(environment);
+        }
+        checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
+        scopes.captureCheckIn(checkIn);
+      }
     }
   }
 
@@ -82,14 +84,14 @@ public final class CheckInUtils {
   }
 
   /**
-  * Helper method to send monitor check-ins for a {@link Callable}
-  *
-  * @param monitorSlug - the slug of the monitor
-  * @param environment - the name of the environment
-  * @param callable - the {@link Callable} to be called
-  * @return the return value of the {@link Callable}
-  * @param <U> - the result type of the {@link Callable}
-  */
+   * Helper method to send monitor check-ins for a {@link Callable}
+   *
+   * @param monitorSlug - the slug of the monitor
+   * @param environment - the name of the environment
+   * @param callable - the {@link Callable} to be called
+   * @return the return value of the {@link Callable}
+   * @param <U> - the result type of the {@link Callable}
+   */
   public static <U> U withCheckIn(
       final @NotNull String monitorSlug,
       final @Nullable String environment,

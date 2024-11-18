@@ -1,6 +1,6 @@
 package io.sentry.instrumentation.file
 
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
@@ -8,7 +8,7 @@ import io.sentry.SpanStatus
 import io.sentry.SpanStatus.INTERNAL_ERROR
 import io.sentry.TransactionContext
 import io.sentry.protocol.SentryStackFrame
-import io.sentry.util.thread.MainThreadChecker
+import io.sentry.util.thread.ThreadChecker
 import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -29,7 +29,7 @@ import kotlin.test.assertTrue
 class SentryFileInputStreamTest {
 
     class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         lateinit var sentryTracer: SentryTracer
         private val options = SentryOptions()
 
@@ -40,21 +40,21 @@ class SentryFileInputStreamTest {
             sendDefaultPii: Boolean = false
         ): SentryFileInputStream {
             tmpFile?.writeText("Text")
-            whenever(hub.options).thenReturn(
+            whenever(scopes.options).thenReturn(
                 options.apply {
                     isSendDefaultPii = sendDefaultPii
-                    mainThreadChecker = MainThreadChecker.getInstance()
+                    threadChecker = ThreadChecker.getInstance()
                     addInAppInclude("org.junit")
                 }
             )
-            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
             if (activeTransaction) {
-                whenever(hub.span).thenReturn(sentryTracer)
+                whenever(scopes.span).thenReturn(sentryTracer)
             }
             return if (fileDescriptor == null) {
-                SentryFileInputStream(tmpFile, hub)
+                SentryFileInputStream(tmpFile, scopes)
             } else {
-                SentryFileInputStream(fileDescriptor, hub)
+                SentryFileInputStream(fileDescriptor, scopes)
             }
         }
 
@@ -62,13 +62,13 @@ class SentryFileInputStreamTest {
             tmpFile: File? = null,
             delegate: FileInputStream
         ): SentryFileInputStream {
-            whenever(hub.options).thenReturn(options)
-            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
-            whenever(hub.span).thenReturn(sentryTracer)
+            whenever(scopes.options).thenReturn(options)
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
+            whenever(scopes.span).thenReturn(sentryTracer)
             return SentryFileInputStream.Factory.create(
                 delegate,
                 tmpFile,
-                hub
+                scopes
             ) as SentryFileInputStream
         }
     }

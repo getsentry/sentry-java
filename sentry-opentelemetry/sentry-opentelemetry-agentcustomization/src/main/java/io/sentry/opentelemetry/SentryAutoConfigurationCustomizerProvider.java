@@ -4,7 +4,8 @@ import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizer;
 import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizerProvider;
 import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
 import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
-import io.sentry.Instrumenter;
+import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
+import io.sentry.InitPriority;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
@@ -25,15 +26,19 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryAutoConfigurationCustomizerProvider
     implements AutoConfigurationCustomizerProvider {
 
+  public static volatile boolean skipInit = false;
+
   @Override
   public void customize(AutoConfigurationCustomizer autoConfiguration) {
+    ensureSentryOtelStorageIsInitialized();
     final @Nullable VersionInfoHolder versionInfoHolder = createVersionInfo();
+
     if (isSentryAutoInitEnabled()) {
       Sentry.init(
           options -> {
             options.setEnableExternalConfiguration(true);
-            options.setInstrumenter(Instrumenter.OTEL);
-            options.addEventProcessor(new OpenTelemetryLinkErrorEventProcessor());
+            options.setInitPriority(InitPriority.HIGH);
+            OpenTelemetryUtil.applyOpenTelemetryOptions(options, true);
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
             if (sdkVersion != null) {
               options.setSdkVersion(sdkVersion);
@@ -55,7 +60,19 @@ public final class SentryAutoConfigurationCustomizerProvider
         .addPropertiesSupplier(this::getDefaultProperties);
   }
 
+  private static void ensureSentryOtelStorageIsInitialized() {
+    /*
+    accessing Sentry.something will cause ScopesStorageFactory to run,
+    which causes OtelContextScopesStorage.init to register SentryContextStorage
+    as a wrapper. The wrapper can only be set until storage has been initialized by OpenTelemetry.
+    */
+    Sentry.getGlobalScope();
+  }
+
   private boolean isSentryAutoInitEnabled() {
+    if (skipInit) {
+      return false;
+    }
     final @Nullable String sentryAutoInit = System.getenv("SENTRY_AUTO_INIT");
 
     if (sentryAutoInit != null) {
@@ -140,7 +157,10 @@ public final class SentryAutoConfigurationCustomizerProvider
 
   private SdkTracerProviderBuilder configureSdkTracerProvider(
       SdkTracerProviderBuilder tracerProvider, ConfigProperties config) {
-    return tracerProvider.addSpanProcessor(new SentrySpanProcessor());
+    return tracerProvider
+        .setSampler(new SentrySampler())
+        .addSpanProcessor(new OtelSentrySpanProcessor())
+        .addSpanProcessor(BatchSpanProcessor.builder(new SentrySpanExporter()).build());
   }
 
   private Map<String, String> getDefaultProperties() {

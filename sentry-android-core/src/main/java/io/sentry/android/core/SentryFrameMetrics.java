@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 final class SentryFrameMetrics {
 
+  private int normalFrameCount;
   private int slowFrameCount;
   private int frozenFrameCount;
 
@@ -17,11 +18,15 @@ final class SentryFrameMetrics {
   public SentryFrameMetrics() {}
 
   public SentryFrameMetrics(
+      final int normalFrameCount,
       final int slowFrameCount,
       final long slowFrameDelayNanos,
       final int frozenFrameCount,
       final long frozenFrameDelayNanos,
       final long totalDurationNanos) {
+
+    this.normalFrameCount = normalFrameCount;
+
     this.slowFrameCount = slowFrameCount;
     this.slowFrameDelayNanos = slowFrameDelayNanos;
 
@@ -42,7 +47,13 @@ final class SentryFrameMetrics {
     } else if (isSlow) {
       slowFrameDelayNanos += delayNanos;
       slowFrameCount += 1;
+    } else {
+      normalFrameCount += 1;
     }
+  }
+
+  public int getNormalFrameCount() {
+    return normalFrameCount;
   }
 
   public int getSlowFrameCount() {
@@ -61,9 +72,8 @@ final class SentryFrameMetrics {
     return frozenFrameDelayNanos;
   }
 
-  /** Returns the sum of the slow and frozen frames. */
-  public int getSlowFrozenFrameCount() {
-    return slowFrameCount + frozenFrameCount;
+  public int getTotalFrameCount() {
+    return normalFrameCount + slowFrameCount + frozenFrameCount;
   }
 
   public long getTotalDurationNanos() {
@@ -71,6 +81,8 @@ final class SentryFrameMetrics {
   }
 
   public void clear() {
+    normalFrameCount = 0;
+
     slowFrameCount = 0;
     slowFrameDelayNanos = 0;
 
@@ -83,6 +95,7 @@ final class SentryFrameMetrics {
   @NotNull
   public SentryFrameMetrics duplicate() {
     return new SentryFrameMetrics(
+        normalFrameCount,
         slowFrameCount,
         slowFrameDelayNanos,
         frozenFrameCount,
@@ -97,6 +110,7 @@ final class SentryFrameMetrics {
   @NotNull
   public SentryFrameMetrics diffTo(final @NotNull SentryFrameMetrics other) {
     return new SentryFrameMetrics(
+        normalFrameCount - other.normalFrameCount,
         slowFrameCount - other.slowFrameCount,
         slowFrameDelayNanos - other.slowFrameDelayNanos,
         frozenFrameCount - other.frozenFrameCount,
@@ -109,7 +123,8 @@ final class SentryFrameMetrics {
    *     to 0
    */
   public boolean containsValidData() {
-    return slowFrameCount >= 0
+    return normalFrameCount >= 0
+        && slowFrameCount >= 0
         && slowFrameDelayNanos >= 0
         && frozenFrameCount >= 0
         && frozenFrameDelayNanos >= 0

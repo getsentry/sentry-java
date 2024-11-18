@@ -299,7 +299,6 @@ class BaggageTest {
         baggage.environment = null
         baggage.transaction = null
         baggage.userId = null
-        baggage.userSegment = null
 
         assertEquals("", baggage.toHeaderString(null))
     }
@@ -317,11 +316,10 @@ class BaggageTest {
         baggage.setEnvironment("production")
         baggage.setTransaction("TX")
         baggage.setUserId(userId)
-        baggage.setUserSegment("segmentA")
         baggage.setSampleRate((1.0 / 3.0).toString())
         baggage.setSampled("true")
 
-        assertEquals("sentry-environment=production,sentry-public_key=$publicKey,sentry-release=1.0-rc.1,sentry-sample_rate=0.3333333333333333,sentry-sampled=true,sentry-trace_id=$traceId,sentry-transaction=TX,sentry-user_id=$userId,sentry-user_segment=segmentA", baggage.toHeaderString(null))
+        assertEquals("sentry-environment=production,sentry-public_key=$publicKey,sentry-release=1.0-rc.1,sentry-sample_rate=0.3333333333333333,sentry-sampled=true,sentry-trace_id=$traceId,sentry-transaction=TX,sentry-user_id=$userId", baggage.toHeaderString(null))
     }
 
     @Test

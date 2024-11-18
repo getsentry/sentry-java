@@ -9,18 +9,19 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
-import io.sentry.IHub;
 import io.sentry.ILogger;
+import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryDateProvider;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.TypeCheckHint;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -33,7 +34,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
   private final @NotNull Context context;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull ILogger logger;
-  private final @NotNull Object lock = new Object();
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private volatile boolean isClosed;
   private @Nullable SentryOptions options;
 
@@ -50,10 +51,9 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
     this.logger = Objects.requireNonNull(logger, "ILogger is required");
   }
 
-  @SuppressLint("NewApi")
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(hub, "Hub is required");
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(scopes, "Scopes are required");
     SentryAndroidOptions androidOptions =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -86,10 +86,10 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
                       return;
                     }
 
-                    synchronized (lock) {
+                    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
                       networkCallback =
                           new NetworkBreadcrumbsNetworkCallback(
-                              hub, buildInfoProvider, options.getDateProvider());
+                              scopes, buildInfoProvider, options.getDateProvider());
 
                       final boolean registered =
                           AndroidConnectionStatusProvider.registerNetworkCallback(
@@ -120,10 +120,10 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
           .getExecutorService()
           .submit(
               () -> {
-                synchronized (lock) {
+                try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
                   if (networkCallback != null) {
                     AndroidConnectionStatusProvider.unregisterNetworkCallback(
-                        context, logger, buildInfoProvider, networkCallback);
+                        context, logger, networkCallback);
                     logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration removed.");
                   }
                   networkCallback = null;
@@ -134,10 +134,8 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
     }
   }
 
-  @SuppressLint("ObsoleteSdkInt")
-  @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
   static final class NetworkBreadcrumbsNetworkCallback extends ConnectivityManager.NetworkCallback {
-    final @NotNull IHub hub;
+    final @NotNull IScopes scopes;
     final @NotNull BuildInfoProvider buildInfoProvider;
 
     @Nullable Network currentNetwork = null;
@@ -147,10 +145,10 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
     final @NotNull SentryDateProvider dateProvider;
 
     NetworkBreadcrumbsNetworkCallback(
-        final @NotNull IHub hub,
+        final @NotNull IScopes scopes,
         final @NotNull BuildInfoProvider buildInfoProvider,
         final @NotNull SentryDateProvider dateProvider) {
-      this.hub = Objects.requireNonNull(hub, "Hub is required");
+      this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
       this.buildInfoProvider =
           Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
       this.dateProvider = Objects.requireNonNull(dateProvider, "SentryDateProvider is required");
@@ -162,7 +160,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
         return;
       }
       final Breadcrumb breadcrumb = createBreadcrumb("NETWORK_AVAILABLE");
-      hub.addBreadcrumb(breadcrumb);
+      scopes.addBreadcrumb(breadcrumb);
       currentNetwork = network;
       lastCapabilities = null;
     }
@@ -192,7 +190,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
       }
       Hint hint = new Hint();
       hint.set(TypeCheckHint.ANDROID_NETWORK_CAPABILITIES, connectionDetail);
-      hub.addBreadcrumb(breadcrumb, hint);
+      scopes.addBreadcrumb(breadcrumb, hint);
     }
 
     @Override
@@ -201,7 +199,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
         return;
       }
       final Breadcrumb breadcrumb = createBreadcrumb("NETWORK_LOST");
-      hub.addBreadcrumb(breadcrumb);
+      scopes.addBreadcrumb(breadcrumb);
       currentNetwork = null;
       lastCapabilities = null;
     }
@@ -246,8 +244,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
     final boolean isVpn;
     final @NotNull String type;
 
-    @SuppressLint({"NewApi", "ObsoleteSdkInt"})
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @SuppressLint({"NewApi"})
     NetworkBreadcrumbConnectionDetail(
         final @NotNull NetworkCapabilities networkCapabilities,
         final @NotNull BuildInfoProvider buildInfoProvider,
@@ -264,7 +261,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
       this.signalStrength = strength > -100 ? strength : 0;
       this.isVpn = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN);
       String connectionType =
-          AndroidConnectionStatusProvider.getConnectionType(networkCapabilities, buildInfoProvider);
+          AndroidConnectionStatusProvider.getConnectionType(networkCapabilities);
       this.type = connectionType != null ? connectionType : "";
       this.timestampNanos = capabilityNanos;
     }

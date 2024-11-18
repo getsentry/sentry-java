@@ -2,7 +2,7 @@ package io.sentry.spring.boot.jakarta
 
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -37,21 +37,21 @@ import kotlin.test.assertTrue
 class SentrySpanRestTemplateCustomizerTest {
     class Fixture {
         val sentryOptions = SentryOptions()
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val restTemplate = RestTemplateBuilder()
             .setConnectTimeout(Duration.ofSeconds(2))
             .setReadTimeout(Duration.ofSeconds(2))
             .build()
         var mockServer = MockWebServer()
         val transaction: SentryTracer
-        internal val customizer = SentrySpanRestTemplateCustomizer(hub)
+        internal val customizer = SentrySpanRestTemplateCustomizer(scopes)
         val url = mockServer.url("/test/123").toString()
         val scope = Scope(sentryOptions)
 
         init {
-            whenever(hub.options).thenReturn(sentryOptions)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
-            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
+            whenever(scopes.options).thenReturn(sentryOptions)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
+            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), scopes)
         }
 
         fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN, includeMockServerInTracingOrigins: Boolean = true): RestTemplate {
@@ -74,7 +74,7 @@ class SentrySpanRestTemplateCustomizerTest {
             )
 
             if (isTransactionActive) {
-                whenever(hub.span).thenReturn(transaction)
+                whenever(scopes.span).thenReturn(transaction)
             }
 
             return restTemplate
@@ -209,7 +209,7 @@ class SentrySpanRestTemplateCustomizerTest {
     @Test
     fun `when transaction is active adds breadcrumb when http calls succeeds`() {
         fixture.getSut(isTransactionActive = true).postForObject(fixture.url, "content", String::class.java)
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])
@@ -227,7 +227,7 @@ class SentrySpanRestTemplateCustomizerTest {
             fixture.getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject(fixture.url, String::class.java)
         } catch (e: Throwable) {
         }
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])
@@ -240,7 +240,7 @@ class SentrySpanRestTemplateCustomizerTest {
     @Test
     fun `when transaction is not active adds breadcrumb when http calls succeeds`() {
         fixture.getSut(isTransactionActive = false).postForObject(fixture.url, "content", String::class.java)
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])
@@ -258,7 +258,7 @@ class SentrySpanRestTemplateCustomizerTest {
             fixture.getSut(isTransactionActive = false, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject(fixture.url, String::class.java)
         } catch (e: Throwable) {
         }
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])

@@ -61,10 +61,24 @@ class SdkInitTests : BaseUiTest() {
             it.isDebug = true
         }
         relayIdlingResource.increment()
+        relayIdlingResource.increment()
         transaction.finish()
         sampleScenario.moveToState(Lifecycle.State.DESTROYED)
         val transaction2 = Sentry.startTransaction("e2etests2", "testInit")
         transaction2.finish()
+
+        relay.assert {
+            findEnvelope {
+                assertEnvelopeTransaction(
+                    it.items.toList(),
+                    AndroidLogger()
+                ).transaction == "e2etests"
+            }.assert {
+                val transactionItem: SentryTransaction = it.assertTransaction()
+                it.assertNoOtherItems()
+                assertEquals("e2etests", transactionItem.transaction)
+            }
+        }
 
         relay.assert {
             findEnvelope {

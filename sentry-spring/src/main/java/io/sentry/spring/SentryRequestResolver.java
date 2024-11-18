@@ -1,9 +1,11 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.Request;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
@@ -20,11 +22,13 @@ import org.jetbrains.annotations.Nullable;
 
 @Open
 public class SentryRequestResolver {
-  private final @NotNull IHub hub;
+  protected static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
+  private final @NotNull IScopes scopes;
   private volatile @Nullable List<String> extraSecurityCookies;
 
-  public SentryRequestResolver(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "options is required");
+  public SentryRequestResolver(final @NotNull IScopes scopes) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
   }
 
   // httpRequest.getRequestURL() returns StringBuffer which is considered an obsolete class.
@@ -40,7 +44,7 @@ public class SentryRequestResolver {
         extractSecurityCookieNamesOrUseCached(httpRequest);
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest, additionalSecurityCookieNames));
 
-    if (hub.getOptions().isSendDefaultPii()) {
+    if (scopes.getOptions().isSendDefaultPii()) {
       String cookieName = HttpUtils.COOKIE_HEADER_NAME;
       final @Nullable List<String> filteredHeaders =
           HttpUtils.filterOutSecurityCookiesFromHeader(
@@ -57,7 +61,8 @@ public class SentryRequestResolver {
     final Map<String, String> headersMap = new HashMap<>();
     for (String headerName : Collections.list(request.getHeaderNames())) {
       // do not copy personal information identifiable headers
-      if (hub.getOptions().isSendDefaultPii() || !HttpUtils.containsSensitiveHeader(headerName)) {
+      if (scopes.getOptions().isSendDefaultPii()
+          || !HttpUtils.containsSensitiveHeader(headerName)) {
         final @Nullable List<String> filteredHeaders =
             HttpUtils.filterOutSecurityCookiesFromHeader(
                 request.getHeaders(headerName), headerName, additionalSecurityCookieNames);
@@ -70,7 +75,7 @@ public class SentryRequestResolver {
   private List<String> extractSecurityCookieNamesOrUseCached(
       final @NotNull HttpServletRequest httpRequest) {
     if (extraSecurityCookies == null) {
-      synchronized (SentryRequestResolver.class) {
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (extraSecurityCookies == null) {
           extraSecurityCookies = extractSecurityCookieNames(httpRequest);
         }
@@ -94,7 +99,8 @@ public class SentryRequestResolver {
         }
       }
     } catch (Throwable t) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(SentryLevel.WARNING, "Failed to extract session cookie name from request.", t);
     }

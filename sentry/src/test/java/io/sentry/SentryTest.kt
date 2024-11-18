@@ -15,9 +15,11 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryThread
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.test.createSentryClientMock
+import io.sentry.test.injectForField
 import io.sentry.util.PlatformTestManipulator
-import io.sentry.util.thread.IMainThreadChecker
-import io.sentry.util.thread.MainThreadChecker
+import io.sentry.util.thread.IThreadChecker
+import io.sentry.util.thread.ThreadChecker
 import org.awaitility.kotlin.await
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -31,6 +33,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.io.Closeable
 import java.io.File
 import java.io.FileReader
 import java.nio.file.Files
@@ -41,11 +44,14 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryTest {
@@ -63,27 +69,103 @@ class SentryTest {
     }
 
     @Test
-    fun `init multiple times calls hub close with isRestarting true`() {
-        val hub = mock<IHub>()
+    fun `init multiple times calls scopes close with isRestarting true`() {
+        val scopes = mock<IScopes>()
         Sentry.init {
             it.dsn = dsn
         }
-        Sentry.setCurrentHub(hub)
+        Sentry.setCurrentScopes(scopes)
         Sentry.init {
             it.dsn = dsn
         }
-        verify(hub).close(eq(true))
+        verify(scopes).close(eq(true))
     }
 
     @Test
-    fun `close calls hub close with isRestarting false`() {
-        val hub = mock<IHub>()
+    fun `init multiple times calls close on previous options not new`() {
+        val profiler1 = mock<ITransactionProfiler>()
+        val profiler2 = mock<ITransactionProfiler>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setTransactionProfiler(profiler1)
+        }
+        verify(profiler1, never()).close()
+
+        Sentry.init {
+            it.dsn = dsn
+            it.setTransactionProfiler(profiler2)
+        }
+        verify(profiler2, never()).close()
+        verify(profiler1).close()
+
+        Sentry.close()
+        verify(profiler2).close()
+    }
+
+    @Test
+    fun `init multiple times calls close on previous integrations not new`() {
+        val integration1 = mock<CloseableIntegration>()
+        val integration2 = mock<CloseableIntegration>()
+        Sentry.init {
+            it.dsn = dsn
+            it.addIntegration(integration1)
+        }
+        verify(integration1, never()).close()
+
+        Sentry.init {
+            it.dsn = dsn
+            it.addIntegration(integration2)
+        }
+        verify(integration2, never()).close()
+        verify(integration1).close()
+
+        Sentry.close()
+        verify(integration2).close()
+    }
+
+    interface CloseableIntegration : Integration, Closeable
+
+    @Test
+    fun `global client is enabled after restart`() {
+        val scopes = mock<IScopes>()
+        whenever(scopes.close()).then { Sentry.getGlobalScope().client.close() }
+        whenever(scopes.close(anyOrNull())).then { Sentry.getGlobalScope().client.close() }
+
         Sentry.init {
             it.dsn = dsn
         }
-        Sentry.setCurrentHub(hub)
+        Sentry.setCurrentScopes(scopes)
+        Sentry.init {
+            it.dsn = dsn
+        }
+        verify(scopes).close(eq(true))
+        assertTrue(Sentry.getGlobalScope().client.isEnabled)
+    }
+
+    @Test
+    fun `global client is disabled after close`() {
+        val scopes = mock<IScopes>()
+        whenever(scopes.close()).then { Sentry.getGlobalScope().client.close() }
+        whenever(scopes.close(anyOrNull())).then { Sentry.getGlobalScope().client.close() }
+
+        Sentry.init {
+            it.dsn = dsn
+        }
+        Sentry.setCurrentScopes(scopes)
         Sentry.close()
-        verify(hub).close(eq(false))
+        verify(scopes).close(eq(false))
+        assertFalse(Sentry.getGlobalScope().client.isEnabled)
+    }
+
+    @Test
+    fun `close calls scopes close with isRestarting false`() {
+        val scopes = mock<IScopes>()
+        Sentry.init {
+            it.dsn = dsn
+        }
+        Sentry.setCurrentScopes(scopes)
+        Sentry.close()
+        verify(scopes).close(eq(false))
     }
 
     @Test
@@ -213,7 +295,7 @@ class SentryTest {
             Sentry.init {
                 it.isEnableExternalConfiguration = true
             }
-            assertTrue(HubAdapter.getInstance().isEnabled)
+            assertTrue(ScopesAdapter.getInstance().isEnabled)
         } finally {
             temporaryFolder.delete()
         }
@@ -229,10 +311,10 @@ class SentryTest {
         Sentry.setTag("none", "shouldNotExist")
 
         var value: String? = null
-        Sentry.getCurrentHub().configureScope {
+        Sentry.getCurrentScopes().configureScope {
             value = it.tags[value]
         }
-        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+        assertTrue(Sentry.getCurrentScopes().isNoOp)
         assertNull(value)
     }
 
@@ -245,10 +327,10 @@ class SentryTest {
         Sentry.setTag("none", "shouldNotExist")
 
         var value: String? = null
-        Sentry.getCurrentHub().configureScope {
+        Sentry.getCurrentScopes().configureScope {
             value = it.tags[value]
         }
-        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+        assertTrue(Sentry.getCurrentScopes().isNoOp)
         assertNull(value)
     }
 
@@ -266,8 +348,8 @@ class SentryTest {
     fun `captureUserFeedback gets forwarded to client`() {
         Sentry.init { it.dsn = dsn }
 
-        val client = mock<ISentryClient>()
-        Sentry.getCurrentHub().bindClient(client)
+        val client = createSentryClientMock()
+        Sentry.getCurrentScopes().bindClient(client)
 
         val userFeedback = UserFeedback(SentryId.EMPTY_ID)
         Sentry.captureUserFeedback(userFeedback)
@@ -369,11 +451,11 @@ class SentryTest {
     }
 
     @Test
-    fun `using sentry before calling init creates NoOpHub but after init Sentry uses a new clone`() {
-        // noop as not yet initialized, caches NoOpHub in ThreadLocal
+    fun `using sentry before calling init creates NoOpScopes but after init Sentry uses a new clone`() {
+        // noop as not yet initialized, caches NoOpScopes in ThreadLocal
         Sentry.captureMessage("noop caused")
 
-        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+        assertTrue(Sentry.getCurrentScopes().isNoOp)
 
         // init Sentry in another thread
         val thread = Thread() {
@@ -387,18 +469,18 @@ class SentryTest {
 
         Sentry.captureMessage("should work now")
 
-        val hub = Sentry.getCurrentHub()
-        assertNotNull(hub)
-        assertFalse(hub is NoOpHub)
+        val scopes = Sentry.getCurrentScopes()
+        assertNotNull(scopes)
+        assertFalse(scopes.isNoOp)
     }
 
     @Test
-    fun `main hub can be cloned and does not share scope with current hub`() {
-        // noop as not yet initialized, caches NoOpHub in ThreadLocal
+    fun `main scopes can be cloned and does not share scope with current scopes`() {
+        // noop as not yet initialized, caches NoOpScopes in ThreadLocal
         Sentry.addBreadcrumb("breadcrumbNoOp")
         Sentry.captureMessage("messageNoOp")
 
-        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+        assertTrue(Sentry.getCurrentScopes().isNoOp)
 
         val capturedEvents = mutableListOf<SentryEvent>()
 
@@ -418,38 +500,38 @@ class SentryTest {
 
         Sentry.addBreadcrumb("breadcrumbCurrent")
 
-        val hub = Sentry.getCurrentHub()
-        assertNotNull(hub)
-        assertFalse(hub is NoOpHub)
+        val scopes = Sentry.getCurrentScopes()
+        assertNotNull(scopes)
+        assertFalse(Sentry.getCurrentScopes().isNoOp)
 
-        val newMainHubClone = Sentry.cloneMainHub()
-        newMainHubClone.addBreadcrumb("breadcrumbMainClone")
+        val forkedRootScopes = Sentry.forkedRootScopes("test")
+        forkedRootScopes.addBreadcrumb("breadcrumbMainClone")
 
-        hub.captureMessage("messageCurrent")
-        newMainHubClone.captureMessage("messageMainClone")
+        scopes.captureMessage("messageCurrent")
+        forkedRootScopes.captureMessage("messageMainClone")
 
         assertEquals(2, capturedEvents.size)
         val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
-        val currentHubEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+        val currentScopesEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
 
         assertNotNull(mainCloneEvent)
         assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
         assertNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
         assertNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
 
-        assertNotNull(currentHubEvent)
-        assertNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
-        assertNotNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
-        assertNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
+        assertNotNull(currentScopesEvent)
+        assertNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
+        assertNotNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
+        assertNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
     }
 
     @Test
-    fun `main hub is not cloned in global hub mode and shares scope with current hub`() {
-        // noop as not yet initialized, caches NoOpHub in ThreadLocal
+    fun `main scopes is not cloned in global scopes mode and shares scope with current scopes`() {
+        // noop as not yet initialized, caches NoOpScopes in ThreadLocal
         Sentry.addBreadcrumb("breadcrumbNoOp")
         Sentry.captureMessage("messageNoOp")
 
-        assertTrue(Sentry.getCurrentHub() is NoOpHub)
+        assertTrue(Sentry.getCurrentScopes().isNoOp)
 
         val capturedEvents = mutableListOf<SentryEvent>()
 
@@ -469,29 +551,29 @@ class SentryTest {
 
         Sentry.addBreadcrumb("breadcrumbCurrent")
 
-        val hub = Sentry.getCurrentHub()
-        assertNotNull(hub)
-        assertFalse(hub is NoOpHub)
+        val scopes = Sentry.getCurrentScopes()
+        assertNotNull(scopes)
+        assertFalse(scopes.isNoOp)
 
-        val newMainHubClone = Sentry.cloneMainHub()
-        newMainHubClone.addBreadcrumb("breadcrumbMainClone")
+        val forkedRootScopes = Sentry.forkedRootScopes("test")
+        forkedRootScopes.addBreadcrumb("breadcrumbMainClone")
 
-        hub.captureMessage("messageCurrent")
-        newMainHubClone.captureMessage("messageMainClone")
+        scopes.captureMessage("messageCurrent")
+        forkedRootScopes.captureMessage("messageMainClone")
 
         assertEquals(2, capturedEvents.size)
         val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
-        val currentHubEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+        val currentScopesEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
 
         assertNotNull(mainCloneEvent)
         assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
         assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
         assertNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
 
-        assertNotNull(currentHubEvent)
-        assertNotNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
-        assertNotNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
-        assertNull(currentHubEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
+        assertNotNull(currentScopesEvent)
+        assertNotNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
+        assertNotNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbCurrent" })
+        assertNull(currentScopesEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbNoOp" })
     }
 
     @Test
@@ -612,7 +694,7 @@ class SentryTest {
             sentryOptions = it
         }
 
-        assertTrue { sentryOptions!!.mainThreadChecker is MainThreadChecker }
+        assertTrue { sentryOptions!!.threadChecker is ThreadChecker }
     }
 
     @Test
@@ -621,11 +703,11 @@ class SentryTest {
 
         Sentry.init {
             it.dsn = dsn
-            it.mainThreadChecker = CustomMainThreadChecker()
+            it.threadChecker = CustomThreadChecker()
             sentryOptions = it
         }
 
-        assertTrue { sentryOptions!!.mainThreadChecker is CustomMainThreadChecker }
+        assertTrue { sentryOptions!!.threadChecker is CustomThreadChecker }
     }
 
     @Test
@@ -669,25 +751,14 @@ class SentryTest {
     }
 
     @Test
-    fun `reportFullyDisplayed calls hub reportFullyDisplayed`() {
-        val hub = mock<IHub>()
+    fun `reportFullyDisplayed calls scopes reportFullyDisplayed`() {
+        val scopes = mock<IScopes>()
         Sentry.init {
             it.dsn = dsn
         }
-        Sentry.setCurrentHub(hub)
+        Sentry.setCurrentScopes(scopes)
         Sentry.reportFullyDisplayed()
-        verify(hub).reportFullyDisplayed()
-    }
-
-    @Test
-    fun `reportFullDisplayed calls reportFullyDisplayed`() {
-        val hub = mock<IHub>()
-        Sentry.init {
-            it.dsn = dsn
-        }
-        Sentry.setCurrentHub(hub)
-        Sentry.reportFullDisplayed()
-        verify(hub).reportFullyDisplayed()
+        verify(scopes).reportFullyDisplayed()
     }
 
     @Test
@@ -808,11 +879,11 @@ class SentryTest {
                 it.serializer.deserialize(previousSessionFile.bufferedReader(), Session::class.java)!!.environment
             )
 
-            it.addIntegration { hub, _ ->
+            it.addIntegration { scopes, _ ->
                 // this is just a hack to trigger the previousSessionFlush latch, so the finalizer
                 // does not time out waiting. We have to do it as integration, because this is where
-                // the hub is already initialized
-                hub.startSession()
+                // the scopes is already initialized
+                scopes.startSession()
             }
         }
 
@@ -862,8 +933,8 @@ class SentryTest {
     fun `captureCheckIn gets forwarded to client`() {
         Sentry.init { it.dsn = dsn }
 
-        val client = mock<ISentryClient>()
-        Sentry.getCurrentHub().bindClient(client)
+        val client = createSentryClientMock()
+        Sentry.getCurrentScopes().bindClient(client)
 
         val checkIn = CheckIn("some_slug", CheckInStatus.OK)
         Sentry.captureCheckIn(checkIn)
@@ -912,24 +983,30 @@ class SentryTest {
     }
 
     @Test
-    fun `getSpan calls hub getSpan`() {
-        val hub = mock<IHub>()
-        Sentry.init({
-            it.dsn = dsn
-        }, false)
-        Sentry.setCurrentHub(hub)
+    fun `getSpan calls scopes getSpan`() {
+        val scopes = mock<IScopes>()
+        val options = SentryOptions().also { it.dsn = dsn }
+        whenever(scopes.options).thenReturn(options)
+
+        Sentry.init(options)
+
+        Sentry.setCurrentScopes(scopes)
         Sentry.getSpan()
-        verify(hub).span
+        verify(scopes).span
     }
 
     @Test
-    fun `getSpan calls returns root span if globalhub mode is enabled on Android`() {
+    fun `getSpan calls returns root span if globalHubMode is enabled on Android`() {
+        var sentryOptions: CustomAndroidOptions? = null
         PlatformTestManipulator.pretendIsAndroid(true)
-        Sentry.init({
+        Sentry.init(OptionsContainer.create(CustomAndroidOptions::class.java), {
             it.dsn = dsn
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.sampleRate = 1.0
+            it.mockName()
+            sentryOptions = it
         }, true)
+        sentryOptions?.resetName()
 
         val transaction = Sentry.startTransaction("name", "op-root", TransactionOptions().also { it.isBindToScope = true })
         transaction.startChild("op-child")
@@ -940,11 +1017,11 @@ class SentryTest {
     }
 
     @Test
-    fun `getSpan calls returns child span if globalhub mode is enabled, but the platform is not Android`() {
+    fun `getSpan calls returns child span if globalHubMode is enabled, but the platform is not Android`() {
         PlatformTestManipulator.pretendIsAndroid(false)
         Sentry.init({
             it.dsn = dsn
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.sampleRate = 1.0
         }, false)
 
@@ -956,10 +1033,10 @@ class SentryTest {
     }
 
     @Test
-    fun `getSpan calls returns child span if globalhub mode is disabled`() {
+    fun `getSpan calls returns child span if globalHubMode is disabled`() {
         Sentry.init({
             it.dsn = dsn
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.sampleRate = 1.0
         }, false)
 
@@ -999,7 +1076,7 @@ class SentryTest {
         val mockProfilesSampler = mock<ProfilesSamplerCallback>()
         Sentry.init {
             it.dsn = dsn
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.isEnableAppStartProfiling = true
             it.profilesSampleRate = 1.0
             it.tracesSampler = mockSampleTracer
@@ -1030,7 +1107,7 @@ class SentryTest {
         val mockProfilesSampler = mock<ProfilesSamplerCallback>()
         Sentry.init {
             it.dsn = dsn
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.isEnableAppStartProfiling = true
             it.profilesSampleRate = 1.0
             it.tracesSampler = mockSampleTracer
@@ -1049,7 +1126,7 @@ class SentryTest {
         val mockProfilesSampler = mock<ProfilesSamplerCallback>()
         Sentry.init {
             it.dsn = dsn
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.isEnableAppStartProfiling = true
             it.profilesSampleRate = 1.0
             it.tracesSampler = mockSampleTracer
@@ -1063,16 +1140,14 @@ class SentryTest {
     }
 
     @Test
-    fun `init does not call app start profiling samplers if enableTracing is false`() {
+    fun `init does not call app start profiling samplers if performance is disabled`() {
         val logger = mock<ILogger>()
-        val mockTraceSampler = mock<TracesSamplerCallback>()
         val mockProfilesSampler = mock<ProfilesSamplerCallback>()
         Sentry.init {
             it.dsn = dsn
-            it.enableTracing = false
+            it.tracesSampleRate = null
             it.isEnableAppStartProfiling = true
             it.profilesSampleRate = 1.0
-            it.tracesSampler = mockTraceSampler
             it.profilesSampler = mockProfilesSampler
             it.executorService = ImmediateExecutorService()
             it.cacheDirPath = getTempPath()
@@ -1080,7 +1155,6 @@ class SentryTest {
             it.setLogger(logger)
         }
         verify(logger).log(eq(SentryLevel.INFO), eq("Tracing is disabled and app start profiling will not start."))
-        verify(mockTraceSampler, never()).sample(any())
         verify(mockProfilesSampler, never()).sample(any())
     }
 
@@ -1100,7 +1174,7 @@ class SentryTest {
     }
 
     @Test
-    fun `init creates app start profiling config if isEnableAppStartProfiling and enableTracing is true`() {
+    fun `init creates app start profiling config if isEnableAppStartProfiling and performance is enabled`() {
         val path = getTempPath()
         File(path).mkdirs()
         val appStartProfilingConfigFile = File(path, "app_start_profiling_config")
@@ -1111,7 +1185,7 @@ class SentryTest {
             it.cacheDirPath = path
             it.isEnableAppStartProfiling = true
             it.profilesSampleRate = 1.0
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.executorService = ImmediateExecutorService()
         }
         assertTrue(appStartProfilingConfigFile.exists())
@@ -1124,7 +1198,7 @@ class SentryTest {
         Sentry.init {
             it.dsn = dsn
             it.cacheDirPath = path
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
             it.tracesSampleRate = 0.5
             it.isEnableAppStartProfiling = true
             it.profilesSampleRate = 0.2
@@ -1142,15 +1216,65 @@ class SentryTest {
     }
 
     @Test
-    fun `metrics calls hub getMetrics`() {
-        val hub = mock<IHub>()
-        Sentry.init({
-            it.dsn = dsn
-        }, false)
-        Sentry.setCurrentHub(hub)
+    fun `init on Android throws when not using SentryAndroidOptions`() {
+        PlatformTestManipulator.pretendIsAndroid(true)
+        assertFails("You are running Android. Please, use SentryAndroid.init.") {
+            Sentry.init {
+                it.dsn = dsn
+            }
+        }
+        PlatformTestManipulator.pretendIsAndroid(false)
+    }
 
-        Sentry.metrics()
-        verify(hub).metrics()
+    @Test
+    fun `init on Android works when using SentryAndroidOptions`() {
+        PlatformTestManipulator.pretendIsAndroid(true)
+        val options = CustomAndroidOptions().also {
+            it.dsn = dsn
+            it.mockName()
+        }
+        Sentry.init(options)
+        options.resetName()
+        PlatformTestManipulator.pretendIsAndroid(false)
+    }
+
+    @Test
+    fun `init on Java works when not using SentryAndroidOptions`() {
+        Sentry.init {
+            it.dsn = dsn
+        }
+    }
+
+    @Test
+    fun `if globalHubMode on options is not set, uses false from init param`() {
+        Sentry.init({ o -> o.dsn = dsn }, false)
+        val s1 = Sentry.forkedRootScopes("s1")
+        val s2 = Sentry.forkedRootScopes("s2")
+        assertNotSame(s1, s2)
+    }
+
+    @Test
+    fun `if globalHubMode on options is not set, uses true from init param`() {
+        Sentry.init({ o -> o.dsn = dsn }, true)
+        val s1 = Sentry.forkedRootScopes("s1")
+        val s2 = Sentry.forkedRootScopes("s2")
+        assertSame(s1, s2)
+    }
+
+    @Test
+    fun `if globalHubMode on options is set, ignores false from init param`() {
+        Sentry.init({ o -> o.dsn = dsn; o.isGlobalHubMode = true }, false)
+        val s1 = Sentry.forkedRootScopes("s1")
+        val s2 = Sentry.forkedRootScopes("s2")
+        assertSame(s1, s2)
+    }
+
+    @Test
+    fun `if globalHubMode on options is set, ignores true from init param`() {
+        Sentry.init({ o -> o.dsn = dsn; o.isGlobalHubMode = false }, true)
+        val s1 = Sentry.forkedRootScopes("s1")
+        val s2 = Sentry.forkedRootScopes("s2")
+        assertNotSame(s1, s2)
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {
@@ -1198,11 +1322,12 @@ class SentryTest {
         }
     }
 
-    private class CustomMainThreadChecker : IMainThreadChecker {
+    private class CustomThreadChecker : IThreadChecker {
         override fun isMainThread(threadId: Long): Boolean = false
         override fun isMainThread(thread: Thread): Boolean = false
         override fun isMainThread(): Boolean = false
         override fun isMainThread(sentryThread: SentryThread): Boolean = false
+        override fun currentThreadSystemId(): Long = 0
     }
 
     private class CustomMemoryCollector :
@@ -1232,5 +1357,25 @@ class SentryTest {
         // sanity check
         assertFalse(tempFile.exists())
         return tempFile.absolutePath
+    }
+
+    /**
+     * Custom SentryOptions for Android.
+     * It needs to call [mockName] to change its name in io.sentry.android.core.SentryAndroidOptions.
+     *  The name cannot be changed right away, because Sentry.init instantiates the options through reflection.
+     *  So the name should be changed in option configuration.
+     * After the test, it needs to call [resetName] to reset the name back to io.sentry.SentryTest$CustomAndroidOptions,
+     *  since it's cached internally and would break subsequent tests otherwise.
+     */
+    private class CustomAndroidOptions : SentryOptions() {
+        init {
+            resetName()
+        }
+        fun mockName() {
+            javaClass.injectForField("name", "io.sentry.android.core.SentryAndroidOptions")
+        }
+        fun resetName() {
+            javaClass.injectForField("name", "io.sentry.SentryTest\$CustomAndroidOptions")
+        }
     }
 }

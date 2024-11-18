@@ -7,7 +7,7 @@ import io.sentry.DataCategory
 import io.sentry.DateUtils
 import io.sentry.EventProcessor
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.NoOpLogger
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
@@ -24,7 +24,6 @@ import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.UserFeedback
 import io.sentry.dsnString
 import io.sentry.hints.Retryable
-import io.sentry.metrics.EncodedMetrics
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
@@ -49,9 +48,9 @@ class ClientReportTest {
     @Test
     fun `lost envelope can be recorded`() {
         givenClientReportRecorder()
-        val hub = mock<IHub>()
-        whenever(hub.options).thenReturn(opts)
-        val transaction = SentryTracer(TransactionContext("name", "op"), hub)
+        val scopes = mock<IScopes>()
+        whenever(scopes.options).thenReturn(opts)
+        val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
 
         val lostClientReport = ClientReport(
             DateUtils.getCurrentDateTime(),
@@ -70,14 +69,13 @@ class ClientReportTest {
             SentryEnvelopeItem.fromUserFeedback(opts.serializer, UserFeedback(SentryId(UUID.randomUUID()))),
             SentryEnvelopeItem.fromAttachment(opts.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000),
             SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, opts.serializer),
-            SentryEnvelopeItem.fromCheckIn(opts.serializer, CheckIn("monitor-slug-1", CheckInStatus.ERROR)),
-            SentryEnvelopeItem.fromMetrics(EncodedMetrics(emptyMap()))
+            SentryEnvelopeItem.fromCheckIn(opts.serializer, CheckIn("monitor-slug-1", CheckInStatus.ERROR))
         )
 
         clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
 
         val clientReportAtEnd = clientReportRecorder.resetCountsAndGenerateClientReport()
-        testHelper.assertTotalCount(15, clientReportAtEnd)
+        testHelper.assertTotalCount(14, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.SAMPLE_RATE, DataCategory.Error, 3, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.BEFORE_SEND, DataCategory.Error, 2, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.QUEUE_OVERFLOW, DataCategory.Transaction, 1, clientReportAtEnd)
@@ -89,15 +87,14 @@ class ClientReportTest {
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Attachment, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Profile, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Monitor, 1, clientReportAtEnd)
-        testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.MetricBucket, 1, clientReportAtEnd)
     }
 
     @Test
     fun `lost transaction records dropped spans`() {
         givenClientReportRecorder()
-        val hub = mock<IHub>()
-        whenever(hub.options).thenReturn(opts)
-        val transaction = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), hub)
+        val scopes = mock<IScopes>()
+        whenever(scopes.options).thenReturn(opts)
+        val transaction = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), scopes)
         transaction.startChild("lost span", "span1").finish()
         transaction.startChild("lost span", "span2").finish()
         transaction.startChild("lost span", "span3").finish()

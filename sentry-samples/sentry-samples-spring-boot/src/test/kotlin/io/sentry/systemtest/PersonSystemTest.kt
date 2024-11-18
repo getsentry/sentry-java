@@ -14,17 +14,18 @@ class PersonSystemTest {
     @Before
     fun setup() {
         testHelper = TestHelper("http://localhost:8080")
+        testHelper.reset()
     }
 
     @Test
     fun `get person fails`() {
-        testHelper.snapshotEnvelopeCount()
-
         val restClient = testHelper.restClient
         restClient.getPerson(1L)
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, restClient.lastKnownStatusCode)
 
-        testHelper.ensureEnvelopeCountIncreased()
+        testHelper.ensureTransactionReceived { transaction ->
+            testHelper.doesTransactionHaveOp(transaction, "http.server")
+        }
     }
 
     @Test
@@ -36,5 +37,10 @@ class PersonSystemTest {
 
         assertEquals(person.firstName, returnedPerson!!.firstName)
         assertEquals(person.lastName, returnedPerson!!.lastName)
+
+        testHelper.ensureTransactionReceived { transaction ->
+            testHelper.doesTransactionContainSpanWithOp(transaction, "PersonService.create") &&
+                testHelper.doesTransactionContainSpanWithOp(transaction, "db.query")
+        }
     }
 }

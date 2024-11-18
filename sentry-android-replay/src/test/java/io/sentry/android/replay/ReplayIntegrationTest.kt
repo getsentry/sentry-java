@@ -9,7 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryEvent
@@ -82,7 +82,7 @@ class ReplayIntegrationTest {
             }
         }
         val scope = Scope(options)
-        val hub = mock<IHub> {
+        val scopes = mock<IScopes> {
             doAnswer {
                 ((it.arguments[0]) as ScopeCallback).run(scope)
             }.whenever(mock).configureScope(any<ScopeCallback>())
@@ -134,7 +134,7 @@ class ReplayIntegrationTest {
     fun `when API is below 26, does not register`() {
         val replay = fixture.getSut(context)
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
 
         assertFalse(replay.isEnabled.get())
     }
@@ -143,7 +143,7 @@ class ReplayIntegrationTest {
     fun `when no sample rate is set, does not register`() {
         val replay = fixture.getSut(context, 0.0, 0.0)
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
 
         assertFalse(replay.isEnabled.get())
     }
@@ -156,7 +156,7 @@ class ReplayIntegrationTest {
             mock()
         })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
 
         assertTrue(replay.isEnabled.get())
         assertTrue(recorderCreated)
@@ -178,7 +178,7 @@ class ReplayIntegrationTest {
         val captureStrategy = mock<CaptureStrategy>()
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
 
         assertTrue(replay.isRecording)
@@ -189,7 +189,7 @@ class ReplayIntegrationTest {
         val captureStrategy = mock<CaptureStrategy>()
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
         replay.start()
 
@@ -206,7 +206,7 @@ class ReplayIntegrationTest {
         val captureStrategy = mock<CaptureStrategy>()
         val replay = fixture.getSut(context, onErrorSampleRate = 0.0, sessionSampleRate = 0.0, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
 
         verify(captureStrategy, never()).start(
@@ -222,7 +222,7 @@ class ReplayIntegrationTest {
         val captureStrategy = mock<CaptureStrategy>()
         val replay = fixture.getSut(context, sessionSampleRate = 0.0, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
 
         verify(captureStrategy, times(1)).start(
@@ -238,7 +238,7 @@ class ReplayIntegrationTest {
         val recorder = mock<Recorder>()
         val replay = fixture.getSut(context, recorderProvider = { recorder })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
 
         verify(recorder).start(any())
@@ -249,7 +249,7 @@ class ReplayIntegrationTest {
         val captureStrategy = mock<CaptureStrategy>()
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.resume()
 
         verify(captureStrategy, never()).resume()
@@ -261,7 +261,7 @@ class ReplayIntegrationTest {
         val recorder = mock<Recorder>()
         val replay = fixture.getSut(context, recorderProvider = { recorder }, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
         replay.resume()
 
@@ -274,7 +274,7 @@ class ReplayIntegrationTest {
         val captureStrategy = mock<CaptureStrategy>()
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
 
         val event = SentryEvent().apply {
             exceptions = listOf(SentryException())
@@ -291,7 +291,7 @@ class ReplayIntegrationTest {
         }
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
 
         val event = SentryEvent().apply {
@@ -309,7 +309,7 @@ class ReplayIntegrationTest {
         }
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
 
         val id = SentryId()
@@ -329,7 +329,7 @@ class ReplayIntegrationTest {
         val captureStrategy = mock<CaptureStrategy>()
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.pause()
 
         verify(captureStrategy, never()).pause()
@@ -341,7 +341,7 @@ class ReplayIntegrationTest {
         val recorder = mock<Recorder>()
         val replay = fixture.getSut(context, recorderProvider = { recorder }, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
         replay.pause()
 
@@ -355,7 +355,7 @@ class ReplayIntegrationTest {
         val recorder = mock<Recorder>()
         val replay = fixture.getSut(context, recorderProvider = { recorder }, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.stop()
 
         verify(captureStrategy, never()).stop()
@@ -374,7 +374,7 @@ class ReplayIntegrationTest {
             gestureRecorderProvider = { gestureRecorder }
         )
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
         replay.stop()
 
@@ -389,7 +389,7 @@ class ReplayIntegrationTest {
         val recorder = mock<Recorder>()
         val captureStrategy = mock<CaptureStrategy>()
         val replay = fixture.getSut(context, recorderProvider = { recorder }, replayCaptureStrategyProvider = { captureStrategy })
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
 
         replay.close()
@@ -407,7 +407,7 @@ class ReplayIntegrationTest {
         val recorder = mock<Recorder>()
         val replay = fixture.getSut(context, recorderProvider = { recorder }, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.onConfigurationChanged(mock())
 
         verify(captureStrategy, never()).onConfigurationChanged(any())
@@ -427,7 +427,7 @@ class ReplayIntegrationTest {
             recorderConfigProvider = { configChanged = it; recorderConfig }
         )
 
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
         replay.onConfigurationChanged(mock())
 
@@ -485,10 +485,10 @@ class ReplayIntegrationTest {
         }
 
         val replay = fixture.getSut(context)
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
 
         assertTrue(oldReplay.exists()) // should not be deleted until the video is packed into envelope
-        verify(fixture.hub).captureReplay(
+        verify(fixture.scopes).captureReplay(
             check {
                 assertEquals(oldReplayId, it.replayId)
                 assertEquals(ReplayType.SESSION, it.replayType)
@@ -544,7 +544,7 @@ class ReplayIntegrationTest {
             on { currentReplayId }.thenReturn(replayId)
         }
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
 
         assertTrue(scopeCache.exists())
         assertFalse(evenOlderReplay.exists())
@@ -559,8 +559,8 @@ class ReplayIntegrationTest {
         }
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
-        fixture.hub.configureScope { it.screen = "MainActivity" }
-        replay.register(fixture.hub, fixture.options)
+        fixture.scopes.configureScope { it.screen = "MainActivity" }
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
 
         replay.onScreenshotRecorded(mock<Bitmap>())

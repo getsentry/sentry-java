@@ -2,7 +2,7 @@ package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
 import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
@@ -19,11 +19,11 @@ import java.util.concurrent.ScheduledExecutorService
 
 internal class SessionCaptureStrategy(
     private val options: SentryOptions,
-    private val hub: IHub?,
+    private val scopes: IScopes?,
     private val dateProvider: ICurrentDateProvider,
     executor: ScheduledExecutorService? = null,
     replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
-) : BaseCaptureStrategy(options, hub, dateProvider, executor, replayCacheProvider) {
+) : BaseCaptureStrategy(options, scopes, dateProvider, executor, replayCacheProvider) {
 
     internal companion object {
         private const val TAG = "SessionCaptureStrategy"
@@ -38,7 +38,7 @@ internal class SessionCaptureStrategy(
         super.start(recorderConfig, segmentId, replayId, replayType)
         // only set replayId on the scope if it's a full session, otherwise all events will be
         // tagged with the replay that might never be sent when we're recording in buffer mode
-        hub?.configureScope {
+        scopes?.configureScope {
             it.replayId = currentReplayId
             screenAtStart = it.screen?.substringAfterLast('.')
         }
@@ -47,7 +47,7 @@ internal class SessionCaptureStrategy(
     override fun pause() {
         createCurrentSegment("pause") { segment ->
             if (segment is ReplaySegment.Created) {
-                segment.capture(hub)
+                segment.capture(scopes)
 
                 currentSegment++
             }
@@ -59,11 +59,11 @@ internal class SessionCaptureStrategy(
         val replayCacheDir = cache?.replayCacheDir
         createCurrentSegment("stop") { segment ->
             if (segment is ReplaySegment.Created) {
-                segment.capture(hub)
+                segment.capture(scopes)
             }
             FileUtils.deleteRecursively(replayCacheDir)
         }
-        hub?.configureScope { it.replayId = SentryId.EMPTY_ID }
+        scopes?.configureScope { it.replayId = SentryId.EMPTY_ID }
         super.stop()
     }
 
@@ -109,7 +109,7 @@ internal class SessionCaptureStrategy(
                         width
                     )
                 if (segment is ReplaySegment.Created) {
-                    segment.capture(hub)
+                    segment.capture(scopes)
                     currentSegment++
                     // set next segment timestamp as close to the previous one as possible to avoid gaps
                     segmentTimestamp = segment.replay.timestamp
@@ -126,7 +126,7 @@ internal class SessionCaptureStrategy(
     override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
         createCurrentSegment("onConfigurationChanged") { segment ->
             if (segment is ReplaySegment.Created) {
-                segment.capture(hub)
+                segment.capture(scopes)
 
                 currentSegment++
                 // set next segment timestamp as close to the previous one as possible to avoid gaps

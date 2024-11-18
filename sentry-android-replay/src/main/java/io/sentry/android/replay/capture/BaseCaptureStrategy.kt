@@ -3,7 +3,7 @@ package io.sentry.android.replay.capture
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
@@ -44,7 +44,7 @@ import kotlin.reflect.KProperty
 
 internal abstract class BaseCaptureStrategy(
     private val options: SentryOptions,
-    private val hub: IHub?,
+    private val scopes: IScopes?,
     private val dateProvider: ICurrentDateProvider,
     executor: ScheduledExecutorService? = null,
     private val replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
@@ -138,7 +138,7 @@ internal abstract class BaseCaptureStrategy(
         events: LinkedList<RRWebEvent> = this.currentEvents
     ): ReplaySegment =
         createSegment(
-            hub,
+            scopes,
             options,
             duration,
             currentSegmentTimestamp,
@@ -161,7 +161,7 @@ internal abstract class BaseCaptureStrategy(
     override fun onTouchEvent(event: MotionEvent) {
         val rrwebEvents = gestureConverter.convert(event, recorderConfig)
         if (rrwebEvents != null) {
-            synchronized(currentEventsLock) {
+            currentEventsLock.acquire().use {
                 currentEvents += rrwebEvents
             }
         }
@@ -200,13 +200,17 @@ internal abstract class BaseCaptureStrategy(
             private val value = AtomicReference(initialValue)
 
             private fun runInBackground(task: () -> Unit) {
-                if (options.mainThreadChecker.isMainThread) {
+                if (options.threadChecker.isMainThread) {
                     persistingExecutor.submitSafely(options, "$TAG.runInBackground") {
                         task()
                     }
                 } else {
                     task()
                 }
+            }
+
+            init {
+                runInBackground { onChange(propertyName, initialValue, initialValue) }
             }
 
             override fun getValue(thisRef: Any?, property: KProperty<*>): T? = value.get()

@@ -1,6 +1,6 @@
 package io.sentry.instrumentation.file;
 
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
@@ -28,8 +28,8 @@ final class FileIOSpanManager {
 
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
 
-  static @Nullable ISpan startSpan(final @NotNull IHub hub, final @NotNull String op) {
-    final ISpan parent = Platform.isAndroid() ? hub.getTransaction() : hub.getSpan();
+  static @Nullable ISpan startSpan(final @NotNull IScopes scopes, final @NotNull String op) {
+    final ISpan parent = Platform.isAndroid() ? scopes.getTransaction() : scopes.getSpan();
     return parent != null ? parent.startChild(op) : null;
   }
 
@@ -102,7 +102,7 @@ final class FileIOSpanManager {
         currentSpan.setDescription(byteCountToString);
       }
       currentSpan.setData("file.size", byteCount);
-      final boolean isMainThread = options.getMainThreadChecker().isMainThread();
+      final boolean isMainThread = options.getThreadChecker().isMainThread();
       currentSpan.setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread);
       if (isMainThread) {
         currentSpan.setData(

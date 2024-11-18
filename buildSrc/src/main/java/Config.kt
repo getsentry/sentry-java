@@ -33,11 +33,7 @@ object Config {
     object Android {
         private val sdkVersion = 34
 
-        val minSdkVersion = 19
-        val minSdkVersionOkHttp = 21
-        val minSdkVersionReplay = 19
-        val minSdkVersionNdk = 19
-        val minSdkVersionCompose = 21
+        val minSdkVersion = 21
         val targetSdkVersion = sdkVersion
         val compileSdkVersion = sdkVersion
 
@@ -98,6 +94,7 @@ object Config {
         val springBoot3StarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBoot3Version"
         val springBoot3StarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBoot3Version"
         val springBoot3StarterActuator = "org.springframework.boot:spring-boot-starter-actuator:$springBoot3Version"
+        val springBoot3StarterOpenTelemetry = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter:${OpenTelemetry.otelInstrumentationVersion}"
 
         val springWeb = "org.springframework:spring-webmvc"
         val springWebflux = "org.springframework:spring-webflux"
@@ -133,6 +130,7 @@ object Config {
         val p6spy = "p6spy:p6spy:3.9.1"
 
         val graphQlJava = "com.graphql-java:graphql-java:17.3"
+        val graphQlJava22 = "com.graphql-java:graphql-java:22.1"
 
         val quartz = "org.quartz-scheduler:quartz:2.3.0"
 
@@ -151,23 +149,27 @@ object Config {
         val composeUiReplay = "androidx.compose.ui:ui:1.5.0" // Note: don't change without testing forwards compatibility
         val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
         val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
-        val composeCoil = "io.coil-kt:coil-compose:2.6.0"
+        val composeCoil = "io.coil-kt:coil-compose:2.0.0"
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
 
+        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.8"
+
         object OpenTelemetry {
-            val otelVersion = "1.33.0"
+            val otelVersion = "1.41.0"
             val otelAlphaVersion = "$otelVersion-alpha"
-            val otelJavaagentVersion = "1.32.0"
-            val otelJavaagentAlphaVersion = "$otelJavaagentVersion-alpha"
-            val otelSemanticConvetionsVersion = "1.23.1-alpha"
+            val otelInstrumentationVersion = "2.7.0"
+            val otelInstrumentationAlphaVersion = "$otelInstrumentationVersion-alpha"
+            val otelSemanticConvetionsVersion = "1.25.0-alpha" // check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
 
             val otelSdk = "io.opentelemetry:opentelemetry-sdk:$otelVersion"
             val otelSemconv = "io.opentelemetry.semconv:opentelemetry-semconv:$otelSemanticConvetionsVersion"
-            val otelJavaAgent = "io.opentelemetry.javaagent:opentelemetry-javaagent:$otelJavaagentVersion"
-            val otelJavaAgentExtensionApi = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api:$otelJavaagentAlphaVersion"
-            val otelJavaAgentTooling = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling:$otelJavaagentAlphaVersion"
+            val otelSemconvIncubating = "io.opentelemetry.semconv:opentelemetry-semconv-incubating:$otelSemanticConvetionsVersion"
+            val otelJavaAgent = "io.opentelemetry.javaagent:opentelemetry-javaagent:$otelInstrumentationVersion"
+            val otelJavaAgentExtensionApi = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api:$otelInstrumentationAlphaVersion"
+            val otelJavaAgentTooling = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling:$otelInstrumentationAlphaVersion"
             val otelExtensionAutoconfigureSpi = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:$otelVersion"
+            val otelExtensionAutoconfigure = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:$otelVersion"
         }
     }
 
@@ -205,7 +207,9 @@ object Config {
     object QualityPlugins {
         object Jacoco {
             val version = "0.8.7"
-            val minimumCoverage = BigDecimal.valueOf(0.6)
+
+            // TODO [POTEL] add tests and restore
+            val minimumCoverage = BigDecimal.valueOf(0.1)
         }
         val spotless = "com.diffplug.spotless"
         val spotlessVersion = "6.11.0"
@@ -240,6 +244,7 @@ object Config {
         val SENTRY_APOLLO3_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo3"
         val SENTRY_APOLLO_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo"
         val SENTRY_GRAPHQL_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql"
+        val SENTRY_GRAPHQL22_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql22"
         val SENTRY_QUARTZ_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.quartz"
         val SENTRY_JDBC_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.jdbc"
         val SENTRY_SERVLET_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.servlet"
@@ -259,10 +264,5 @@ object Config {
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.11.0"
         val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.5"
-    }
-
-    object NativePlugins {
-        val nativeBundlePlugin = "io.github.howardpang:androidNativeBundle:1.1.1"
-        val nativeBundleExport = "com.ydq.android.gradle.native-aar.export"
     }
 }

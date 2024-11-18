@@ -5,7 +5,7 @@ import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ReplayRecording
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
@@ -17,6 +17,7 @@ import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
+import io.sentry.util.AutoClosableReentrantLock
 import java.io.File
 import java.util.Date
 import java.util.LinkedList
@@ -56,10 +57,10 @@ internal interface CaptureStrategy {
     fun close()
 
     companion object {
-        internal val currentEventsLock = Any()
+        internal val currentEventsLock = AutoClosableReentrantLock()
 
         fun createSegment(
-            hub: IHub?,
+            scopes: IScopes?,
             options: SentryOptions,
             duration: Long,
             currentSegmentTimestamp: Date,
@@ -86,7 +87,7 @@ internal interface CaptureStrategy {
 
             val replayBreadcrumbs: List<Breadcrumb> = if (breadcrumbs == null) {
                 var crumbs = emptyList<Breadcrumb>()
-                hub?.configureScope { scope ->
+                scopes?.configureScope { scope ->
                     crumbs = ArrayList(scope.breadcrumbs)
                 }
                 crumbs
@@ -207,7 +208,7 @@ internal interface CaptureStrategy {
             until: Long,
             callback: ((RRWebEvent) -> Unit)? = null
         ) {
-            synchronized(currentEventsLock) {
+            currentEventsLock.acquire().use {
                 var event = events.peek()
                 while (event != null && event.timestamp < until) {
                     callback?.invoke(event)
@@ -224,8 +225,8 @@ internal interface CaptureStrategy {
             val replay: SentryReplayEvent,
             val recording: ReplayRecording
         ) : ReplaySegment() {
-            fun capture(hub: IHub?, hint: Hint = Hint()) {
-                hub?.captureReplay(replay, hint.apply { replayRecording = recording })
+            fun capture(scopes: IScopes?, hint: Hint = Hint()) {
+                scopes?.captureReplay(replay, hint.apply { replayRecording = recording })
             }
 
             fun setSegmentId(segmentId: Int) {

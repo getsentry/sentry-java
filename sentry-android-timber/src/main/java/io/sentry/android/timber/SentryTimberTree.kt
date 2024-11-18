@@ -2,7 +2,7 @@ package io.sentry.android.timber
 
 import android.util.Log
 import io.sentry.Breadcrumb
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.protocol.Message
@@ -13,7 +13,7 @@ import timber.log.Timber
  */
 @Suppress("TooManyFunctions") // we have to override all methods to be able to tweak logging
 class SentryTimberTree(
-    private val hub: IHub,
+    private val scopes: IScopes,
     private val minEventLevel: SentryLevel,
     private val minBreadcrumbLevel: SentryLevel
 ) : Timber.Tree() {
@@ -269,7 +269,7 @@ class SentryTimberTree(
                 logger = "Timber"
             }
 
-            hub.captureEvent(sentryEvent)
+            scopes.captureEvent(sentryEvent)
         }
     }
 
@@ -296,7 +296,7 @@ class SentryTimberTree(
                 else -> null
             }
 
-            breadCrumb?.let { hub.addBreadcrumb(it) }
+            breadCrumb?.let { scopes.addBreadcrumb(it) }
         }
     }
 

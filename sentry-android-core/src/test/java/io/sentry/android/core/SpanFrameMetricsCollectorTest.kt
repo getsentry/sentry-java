@@ -192,7 +192,7 @@ class SpanFrameMetricsCollectorTest {
         sut.onFrameMetricCollected(0, 10, 10, 0, false, false, 60.0f)
         sut.onFrameMetricCollected(16, 48, 32, 16, true, false, 60.0f)
         sut.onFrameMetricCollected(60, 92, 32, 16, true, false, 60.0f)
-        sut.onFrameMetricCollected(100, 800, 700, 784, true, true, 60.0f)
+        sut.onFrameMetricCollected(100, 800, 800, 784, true, true, 60.0f)
 
         // then a second span starts
         fixture.timeNanos = 800
@@ -337,11 +337,10 @@ class SpanFrameMetricsCollectorTest {
         fixture.timeNanos = TimeUnit.SECONDS.toNanos(2)
         sut.onSpanFinished(span)
 
-        // then still 61 frames should be reported (1 second at 60fps with approximation)
-        verify(span).setData("frames.total", 61)
+        // then still 60 frames should be reported (1 second at 60fps)
+        verify(span).setData("frames.total", 60)
         verify(span).setData("frames.slow", 0)
         verify(span).setData("frames.frozen", 0)
-        verify(span).setData("frames.delay", 0.0)
     }
 
     @Test
@@ -365,9 +364,9 @@ class SpanFrameMetricsCollectorTest {
         sut.onSpanFinished(span)
 
         // then
-        // still 61 fps should be reported for 1 seconds (with approximation)
+        // still 60 fps should be reported for 1 seconds
         // and one frame with frame delay should be reported (1s - 16ms)
-        verify(span).setData("frames.total", 62)
+        verify(span).setData("frames.total", 61)
         verify(span).setData("frames.slow", 0)
         verify(span).setData("frames.frozen", 1)
         verify(span).setData(eq("frames.delay"), AdditionalMatchers.eq(0.983333334, 0.01))

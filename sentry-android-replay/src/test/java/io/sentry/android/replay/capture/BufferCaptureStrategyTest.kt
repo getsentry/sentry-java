@@ -2,7 +2,7 @@ package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
 import android.view.MotionEvent
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -59,7 +59,7 @@ class BufferCaptureStrategyTest {
             )
         }
         val scope = Scope(options)
-        val hub = mock<IHub> {
+        val scopes = mock<IScopes> {
             doAnswer {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }.whenever(it).configureScope(any())
@@ -95,7 +95,7 @@ class BufferCaptureStrategyTest {
             }
             return BufferCaptureStrategy(
                 options,
-                hub,
+                scopes,
                 dateProvider,
                 Random(),
                 mock {
@@ -155,7 +155,7 @@ class BufferCaptureStrategyTest {
 
         await.until { strategy.currentSegment == 1 }
 
-        verify(fixture.hub, never()).captureReplay(any(), any())
+        verify(fixture.scopes, never()).captureReplay(any(), any())
         assertEquals(1, strategy.currentSegment)
     }
 
@@ -170,7 +170,7 @@ class BufferCaptureStrategyTest {
 
         strategy.stop()
 
-        verify(fixture.hub, never()).captureReplay(any(), any())
+        verify(fixture.scopes, never()).captureReplay(any(), any())
 
         assertEquals(SentryId.EMPTY_ID, strategy.currentReplayId)
         assertEquals(-1, strategy.currentSegment)
@@ -217,7 +217,7 @@ class BufferCaptureStrategyTest {
 
         await.until { strategy.currentSegment == 1 }
 
-        verify(fixture.hub, never()).captureReplay(any(), any())
+        verify(fixture.scopes, never()).captureReplay(any(), any())
         assertEquals(1, strategy.currentSegment)
     }
 
@@ -276,7 +276,7 @@ class BufferCaptureStrategyTest {
         }
 
         // buffered + current = 2
-        verify(fixture.hub, times(2)).captureReplay(any(), any())
+        verify(fixture.scopes, times(2)).captureReplay(any(), any())
         assertEquals(strategy.currentReplayId, fixture.scope.replayId)
         assertTrue(called)
     }
@@ -291,7 +291,7 @@ class BufferCaptureStrategyTest {
             assertEquals(oldTimestamp!!.time + VIDEO_DURATION, newTimestamp.time)
         }
 
-        verify(fixture.hub).captureReplay(any(), any())
+        verify(fixture.scopes).captureReplay(any(), any())
     }
 
     @Test

@@ -2,9 +2,12 @@ package io.sentry.spring.graphql;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.graphql.SentryGraphqlInstrumentation;
 import io.sentry.graphql.SentryInstrumentation;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.boot.autoconfigure.graphql.GraphQlSourceBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -14,31 +17,38 @@ import org.springframework.core.annotation.Order;
 @Open
 public class SentryGraphqlConfiguration {
 
-  @Bean
+  @Bean(name = "sentryInstrumentation")
+  @ConditionalOnMissingBean
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-  public GraphQlSourceBuilderCustomizer sourceBuilderCustomizerWebmvc() {
+  public SentryInstrumentation sentryInstrumentationWebMvc(
+      final @NotNull ObjectProvider<SentryGraphqlInstrumentation.BeforeSpanCallback>
+              beforeSpanCallback) {
     SentryIntegrationPackageStorage.getInstance().addIntegration("Spring5GrahQLWebMVC");
-    return sourceBuilderCustomizer(false);
+    return createInstrumentation(beforeSpanCallback, false);
   }
 
-  @Bean
+  @Bean(name = "sentryInstrumentation")
+  @ConditionalOnMissingBean
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-  public GraphQlSourceBuilderCustomizer sourceBuilderCustomizerWebflux() {
+  public SentryInstrumentation sentryInstrumentationWebflux(
+      final @NotNull ObjectProvider<SentryGraphqlInstrumentation.BeforeSpanCallback>
+              beforeSpanCallback) {
     SentryIntegrationPackageStorage.getInstance().addIntegration("Spring5GrahQLWebFlux");
-    return sourceBuilderCustomizer(true);
+    return createInstrumentation(beforeSpanCallback, true);
   }
 
   /**
    * We're not setting defaultDataFetcherExceptionHandler here on purpose and instead use the
    * resolver adapter below. This way Springs handler can still forward to other resolver adapters.
    */
-  private GraphQlSourceBuilderCustomizer sourceBuilderCustomizer(final boolean captureRequestBody) {
-    return (builder) ->
-        builder.configureGraphQl(
-            graphQlBuilder ->
-                graphQlBuilder.instrumentation(
-                    new SentryInstrumentation(
-                        null, new SentrySpringSubscriptionHandler(), captureRequestBody)));
+  private SentryInstrumentation createInstrumentation(
+      final @NotNull ObjectProvider<SentryGraphqlInstrumentation.BeforeSpanCallback>
+              beforeSpanCallback,
+      final boolean captureRequestBody) {
+    return new SentryInstrumentation(
+        beforeSpanCallback.getIfAvailable(),
+        new SentrySpringSubscriptionHandler(),
+        captureRequestBody);
   }
 
   @Bean

@@ -20,8 +20,6 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        language: ['cpp', 'java']
 
     steps:
       - name: Checkout Repo
@@ -45,12 +43,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
 
-      - if: matrix.language == 'cpp'
-        name: Build Cpp
-        run: |
-          ./gradlew sentry-android-ndk:buildCMakeRelWithDebInfo
-      - if: matrix.language == 'java'
-        name: Build Java
+      - name: Build Java
         run: |
           ./gradlew buildForCodeQL
 

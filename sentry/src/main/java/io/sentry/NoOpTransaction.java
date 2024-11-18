@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
@@ -50,6 +49,12 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(
+      @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
+    return NoOpSpan.getInstance();
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
       @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp,
@@ -90,13 +95,18 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @Nullable Span getLatestActiveSpan() {
+  public @Nullable ISpan getLatestActiveSpan() {
     return null;
   }
 
   @Override
   public @NotNull SentryId getEventId() {
     return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override
@@ -240,10 +250,5 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public boolean isNoOp() {
     return true;
-  }
-
-  @Override
-  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
-    return null;
   }
 }

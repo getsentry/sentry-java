@@ -4,7 +4,7 @@ import android.content.Context
 import android.telephony.PhoneStateListener
 import android.telephony.TelephonyManager
 import io.sentry.Breadcrumb
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
 import io.sentry.SentryLevel
 import io.sentry.test.DeferredExecutorService
@@ -41,8 +41,8 @@ class PhoneStateBreadcrumbsIntegrationTest {
     @Test
     fun `When system events breadcrumb is enabled, it registers callback`() {
         val sut = fixture.getSut()
-        val hub = mock<IHub>()
-        sut.register(hub, fixture.options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, fixture.options)
         verify(fixture.manager).listen(any(), eq(PhoneStateListener.LISTEN_CALL_STATE))
         assertNotNull(sut.listener)
     }
@@ -50,8 +50,8 @@ class PhoneStateBreadcrumbsIntegrationTest {
     @Test
     fun `Phone state callback is registered in the executorService`() {
         val sut = fixture.getSut(mock())
-        val hub = mock<IHub>()
-        sut.register(hub, fixture.options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, fixture.options)
 
         assertNull(sut.listener)
     }
@@ -59,9 +59,9 @@ class PhoneStateBreadcrumbsIntegrationTest {
     @Test
     fun `When system events breadcrumb is disabled, it doesn't register callback`() {
         val sut = fixture.getSut()
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         sut.register(
-            hub,
+            scopes,
             fixture.options.apply {
                 isEnableSystemEventBreadcrumbs = false
             }
@@ -73,15 +73,15 @@ class PhoneStateBreadcrumbsIntegrationTest {
     @Test
     fun `When ActivityBreadcrumbsIntegration is closed, it should unregister the callback`() {
         val sut = fixture.getSut()
-        val hub = mock<IHub>()
-        sut.register(hub, fixture.options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, fixture.options)
         sut.close()
         verify(fixture.manager).listen(any(), eq(PhoneStateListener.LISTEN_NONE))
         assertNull(sut.listener)
     }
 
     @Test
-    fun `when hub is closed right after start, integration is not registered`() {
+    fun `when scopes is closed right after start, integration is not registered`() {
         val deferredExecutorService = DeferredExecutorService()
         val sut = fixture.getSut(executorService = deferredExecutorService)
         sut.register(mock(), fixture.options)
@@ -94,11 +94,11 @@ class PhoneStateBreadcrumbsIntegrationTest {
     @Test
     fun `When on call state received, added breadcrumb with type and category`() {
         val sut = fixture.getSut()
-        val hub = mock<IHub>()
-        sut.register(hub, fixture.options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, fixture.options)
         sut.listener!!.onCallStateChanged(TelephonyManager.CALL_STATE_RINGING, null)
 
-        verify(hub).addBreadcrumb(
+        verify(scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("device.event", it.category)
                 assertEquals("system", it.type)
@@ -111,18 +111,18 @@ class PhoneStateBreadcrumbsIntegrationTest {
     @Test
     fun `When on idle state received, added breadcrumb with type and category`() {
         val sut = fixture.getSut()
-        val hub = mock<IHub>()
-        sut.register(hub, fixture.options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, fixture.options)
         sut.listener!!.onCallStateChanged(TelephonyManager.CALL_STATE_IDLE, null)
-        verify(hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(scopes, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `When on offhook state received, added breadcrumb with type and category`() {
         val sut = fixture.getSut()
-        val hub = mock<IHub>()
-        sut.register(hub, fixture.options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, fixture.options)
         sut.listener!!.onCallStateChanged(TelephonyManager.CALL_STATE_OFFHOOK, null)
-        verify(hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(scopes, never()).addBreadcrumb(any<Breadcrumb>())
     }
 }

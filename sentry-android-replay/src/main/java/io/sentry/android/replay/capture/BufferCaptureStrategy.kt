@@ -3,7 +3,7 @@ package io.sentry.android.replay.capture
 import android.graphics.Bitmap
 import android.view.MotionEvent
 import io.sentry.DateUtils
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
@@ -25,12 +25,12 @@ import java.util.concurrent.ScheduledExecutorService
 
 internal class BufferCaptureStrategy(
     private val options: SentryOptions,
-    private val hub: IHub?,
+    private val scopes: IScopes?,
     private val dateProvider: ICurrentDateProvider,
     private val random: Random,
     executor: ScheduledExecutorService? = null,
     replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
-) : BaseCaptureStrategy(options, hub, dateProvider, executor = executor, replayCacheProvider = replayCacheProvider) {
+) : BaseCaptureStrategy(options, scopes, dateProvider, executor = executor, replayCacheProvider = replayCacheProvider) {
 
     // TODO: capture envelopes for buffered segments instead, but don't send them until buffer is triggered
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
@@ -72,7 +72,7 @@ internal class BufferCaptureStrategy(
 
         // write replayId to scope right away, so it gets picked up by the event that caused buffer
         // to flush
-        hub?.configureScope {
+        scopes?.configureScope {
             it.replayId = currentReplayId
         }
 
@@ -87,7 +87,7 @@ internal class BufferCaptureStrategy(
             bufferedSegments.capture()
 
             if (segment is ReplaySegment.Created) {
-                segment.capture(hub)
+                segment.capture(scopes)
 
                 // we only want to increment segment_id in the case of success, but currentSegment
                 // might be irrelevant since we changed strategies, so in the callback we increment
@@ -128,7 +128,7 @@ internal class BufferCaptureStrategy(
             return this
         }
         // we hand over replayExecutor to the new strategy to preserve order of execution
-        val captureStrategy = SessionCaptureStrategy(options, hub, dateProvider, replayExecutor)
+        val captureStrategy = SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor)
         captureStrategy.start(recorderConfig, segmentId = currentSegment, replayId = currentReplayId, replayType = BUFFER)
         return captureStrategy
     }
@@ -155,7 +155,7 @@ internal class BufferCaptureStrategy(
     private fun MutableList<ReplaySegment.Created>.capture() {
         var bufferedSegment = removeFirstOrNull()
         while (bufferedSegment != null) {
-            bufferedSegment.capture(hub)
+            bufferedSegment.capture(scopes)
             bufferedSegment = removeFirstOrNull()
             // a short delay between processing envelopes to avoid bursting our server and hitting
             // another rate limit https://develop.sentry.dev/sdk/features/#additional-capabilities

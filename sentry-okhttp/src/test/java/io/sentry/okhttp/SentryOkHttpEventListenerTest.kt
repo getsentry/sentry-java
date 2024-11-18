@@ -1,14 +1,13 @@
 package io.sentry.okhttp
 
 import io.sentry.BaggageHeader
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
-import io.sentry.test.ImmediateExecutorService
 import okhttp3.Call
 import okhttp3.EventListener
 import okhttp3.OkHttpClient
@@ -23,7 +22,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -36,7 +34,7 @@ import kotlin.test.assertTrue
 class SentryOkHttpEventListenerTest {
 
     class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val server = MockWebServer()
         val mockEventListener = mock<EventListener>()
         val mockEventListenerFactory = mock<EventListener.Factory>()
@@ -63,12 +61,12 @@ class SentryOkHttpEventListenerTest {
                 isSendDefaultPii = sendDefaultPii
                 configureOptions(this)
             }
-            whenever(hub.options).thenReturn(options)
+            whenever(scopes.options).thenReturn(options)
 
-            sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
 
             if (isSpanActive) {
-                whenever(hub.span).thenReturn(sentryTracer)
+                whenever(scopes.span).thenReturn(sentryTracer)
             }
             server.enqueue(
                 MockResponse()
@@ -80,12 +78,12 @@ class SentryOkHttpEventListenerTest {
 
             val builder = OkHttpClient.Builder()
             if (useInterceptor) {
-                builder.addInterceptor(SentryOkHttpInterceptor(hub))
+                builder.addInterceptor(SentryOkHttpInterceptor(scopes))
             }
             sentryOkHttpEventListener = when {
-                eventListenerFactory != null -> SentryOkHttpEventListener(hub, eventListenerFactory)
-                eventListener != null -> SentryOkHttpEventListener(hub, eventListener)
-                else -> SentryOkHttpEventListener(hub)
+                eventListenerFactory != null -> SentryOkHttpEventListener(scopes, eventListenerFactory)
+                eventListener != null -> SentryOkHttpEventListener(scopes, eventListener)
+                else -> SentryOkHttpEventListener(scopes)
             }
             return builder.eventListener(sentryOkHttpEventListener).build()
         }
@@ -135,7 +133,7 @@ class SentryOkHttpEventListenerTest {
         val call = sut.newCall(request)
         val response = call.execute()
         val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
-        val callSpan = okHttpEvent?.callRootSpan
+        val callSpan = okHttpEvent?.callSpan
         response.close()
         assertNotNull(callSpan)
         assertEquals(callSpan, fixture.sentryTracer.children.first())
@@ -146,76 +144,40 @@ class SentryOkHttpEventListenerTest {
     }
 
     @Test
-    fun `creates a span for each event`() {
+    fun `adds a data for each event`() {
         val sut = fixture.getSut()
         val request = getRequest()
         val call = sut.newCall(request)
         val response = call.execute()
         val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
-        val callSpan = okHttpEvent?.callRootSpan
+        val callSpan = okHttpEvent?.callSpan
         response.close()
-        assertEquals(8, fixture.sentryTracer.children.size)
-        fixture.sentryTracer.children.forEachIndexed { index, span ->
-            assertTrue(span.isFinished)
-            when (index) {
-                0 -> {
-                    assertEquals(callSpan, span)
-                    assertEquals("GET ${request.url}", span.description)
-                    assertNotNull(span.data["proxies"])
-                    assertNotNull(span.data["domain_name"])
-                    assertNotNull(span.data["dns_addresses"])
-                    assertEquals(201, span.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
-                }
-                1 -> {
-                    assertEquals("http.client.proxy_select", span.operation)
-                    assertEquals("GET ${request.url}", span.description)
-                    assertNotNull(span.data["proxies"])
-                }
-                2 -> {
-                    assertEquals("http.client.dns", span.operation)
-                    assertEquals("GET ${request.url}", span.description)
-                    assertNotNull(span.data["domain_name"])
-                    assertNotNull(span.data["dns_addresses"])
-                }
-                3 -> {
-                    assertEquals("http.client.connect", span.operation)
-                    assertEquals("GET ${request.url}", span.description)
-                }
-                4 -> {
-                    assertEquals("http.client.connection", span.operation)
-                    assertEquals("GET ${request.url}", span.description)
-                }
-                5 -> {
-                    assertEquals("http.client.request_headers", span.operation)
-                    assertEquals("GET ${request.url}", span.description)
-                }
-                6 -> {
-                    assertEquals("http.client.response_headers", span.operation)
-                    assertEquals("GET ${request.url}", span.description)
-                    assertEquals(201, span.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
-                }
-                7 -> {
-                    assertEquals("http.client.response_body", span.operation)
-                    assertEquals("GET ${request.url}", span.description)
-                }
-            }
-        }
+        assertEquals(1, fixture.sentryTracer.children.size)
+        assertNotNull(callSpan)
+        assertNotNull(callSpan.getData("proxies"))
+        assertNotNull(callSpan.getData("domain_name"))
+        assertNotNull(callSpan.getData("dns_addresses"))
+        assertEquals(201, callSpan.getData(SpanDataConvention.HTTP_STATUS_CODE_KEY))
+        assertNotNull(callSpan.getData("http.client.proxy_select_ms"))
+        assertNotNull(callSpan.getData("http.client.resolve_dns_ms"))
+        assertNotNull(callSpan.getData("http.connect_ms"))
+        assertNotNull(callSpan.getData("http.connection_ms"))
+        assertNotNull(callSpan.getData("http.connection.request_headers_ms"))
+        assertNotNull(callSpan.getData("http.connection.response_headers_ms"))
+        assertNotNull(callSpan.getData("http.connection.response_body_ms"))
     }
 
     @Test
-    fun `has requestBody span for requests with body`() {
+    fun `has requestBody data for requests with body`() {
         val sut = fixture.getSut()
         val requestBody = "request body sent in the request"
         val request = postRequest(body = requestBody)
         val call = sut.newCall(request)
         val response = call.execute()
         val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
-        val callSpan = okHttpEvent?.callRootSpan
+        val callSpan = okHttpEvent?.callSpan
         response.close()
-        assertEquals(9, fixture.sentryTracer.children.size)
-        val requestBodySpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.request_body" }
-        assertNotNull(requestBodySpan)
-        assertEquals(requestBody.toByteArray().size.toLong(), requestBodySpan.data["http.request_content_length"])
+        assertNotNull(callSpan?.getData("http.connection.request_body_ms"))
         assertEquals(requestBody.toByteArray().size.toLong(), callSpan?.getData("http.request_content_length"))
     }
 
@@ -227,19 +189,15 @@ class SentryOkHttpEventListenerTest {
         val call = sut.newCall(request)
         val response = call.execute()
         val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
-        val callSpan = okHttpEvent?.callRootSpan
+        val callSpan = okHttpEvent?.callSpan
+        assertNull(callSpan?.getData("http.connection.response_body_ms"))
 
         // Consume the response
         val responseBytes = response.body?.byteStream()?.readBytes()
         assertNotNull(responseBytes)
+        assertNotNull(callSpan?.getData("http.connection.response_body_ms"))
 
         response.close()
-        val requestBodySpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.response_body" }
-        assertNotNull(requestBodySpan)
-        assertEquals(
-            responseBytes.size.toLong(),
-            requestBodySpan.data[SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY]
-        )
         assertEquals(
             responseBytes.size.toLong(),
             callSpan?.getData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY)
@@ -247,13 +205,13 @@ class SentryOkHttpEventListenerTest {
     }
 
     @Test
-    fun `root call span status depends on http status code`() {
+    fun `call span status depends on http status code`() {
         val sut = fixture.getSut(httpStatusCode = 404)
         val request = getRequest()
         val call = sut.newCall(request)
         val response = call.execute()
         val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
-        val callSpan = okHttpEvent?.callRootSpan
+        val callSpan = okHttpEvent?.callSpan
         response.close()
         assertNotNull(callSpan)
         assertEquals(SpanStatus.fromHttpStatusCode(404), callSpan.status)
@@ -283,7 +241,7 @@ class SentryOkHttpEventListenerTest {
 
     @Test
     fun `propagate all calls to the SentryOkHttpEventListener passed in the ctor`() {
-        val originalListener = spy(SentryOkHttpEventListener(fixture.hub, fixture.mockEventListener))
+        val originalListener = spy(SentryOkHttpEventListener(fixture.scopes, fixture.mockEventListener))
         val sut = fixture.getSut(eventListener = originalListener)
         val listener = fixture.sentryOkHttpEventListener
         val request = postRequest(body = "requestBody")
@@ -295,7 +253,7 @@ class SentryOkHttpEventListenerTest {
 
     @Test
     fun `propagate all calls to the SentryOkHttpEventListener factory passed in the ctor`() {
-        val originalListener = spy(SentryOkHttpEventListener(fixture.hub, fixture.mockEventListener))
+        val originalListener = spy(SentryOkHttpEventListener(fixture.scopes, fixture.mockEventListener))
         val sut = fixture.getSut(eventListenerFactory = { originalListener })
         val listener = fixture.sentryOkHttpEventListener
         val request = postRequest(body = "requestBody")
@@ -307,86 +265,23 @@ class SentryOkHttpEventListenerTest {
 
     @Test
     fun `does not duplicated spans if an SentryOkHttpEventListener is passed in the ctor`() {
-        val originalListener = spy(SentryOkHttpEventListener(fixture.hub, fixture.mockEventListener))
+        val originalListener = spy(SentryOkHttpEventListener(fixture.scopes, fixture.mockEventListener))
         val sut = fixture.getSut(eventListener = originalListener)
         val request = postRequest(body = "requestBody")
         val call = sut.newCall(request)
         val response = call.execute()
         response.close()
         // Spans are created by the originalListener, so the listener doesn't create duplicates
-        assertEquals(9, fixture.sentryTracer.children.size)
+        assertEquals(1, fixture.sentryTracer.children.size)
     }
 
     @Test
-    fun `status propagates to parent span and call root span`() {
-        val sut = fixture.getSut(httpStatusCode = 500)
-        val request = getRequest()
-        val call = sut.newCall(request)
-        val response = call.execute()
-        val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
-        val callSpan = okHttpEvent?.callRootSpan
-        val responseHeaderSpan =
-            fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.response_headers" }
-        val connectionSpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.connection" }
-        response.close()
-        assertNotNull(callSpan)
-        assertNotNull(responseHeaderSpan)
-        assertNotNull(connectionSpan)
-        assertEquals(SpanStatus.fromHttpStatusCode(500), callSpan.status)
-        assertEquals(SpanStatus.fromHttpStatusCode(500), responseHeaderSpan.status)
-        assertEquals(SpanStatus.fromHttpStatusCode(500), connectionSpan.status)
-    }
-
-    @Test
-    fun `when response is not closed, root call is trimmed to responseHeadersEnd`() {
-        val sut = fixture.getSut(
-            httpStatusCode = 500,
-            configureOptions = { it.executorService = ImmediateExecutorService() }
-        )
-        val request = getRequest()
-        val call = sut.newCall(request)
-        val response = spy(call.execute())
-        val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
-        val callSpan = okHttpEvent?.callRootSpan
-        val responseHeaderSpan =
-            fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.response_headers" }
-        val responseBodySpan = fixture.sentryTracer.children.firstOrNull { it.operation == "http.client.response_body" }
-
-        // Response is not finished
-        verify(response, never()).close()
-
-        // response body span is never started
-        assertNull(responseBodySpan)
-
-        assertNotNull(callSpan)
-        assertNotNull(responseHeaderSpan)
-
-        // Call span is trimmed to responseHeader finishTimestamp
-        assertEquals(callSpan.finishDate?.nanoTimestamp(), responseHeaderSpan.finishDate?.nanoTimestamp())
-
-        // All children spans of the root call are finished
-        assertTrue(fixture.sentryTracer.children.all { it.isFinished })
-    }
-
-    @Test
-    fun `responseHeadersEnd schedules event finish`() {
-        val listener = SentryOkHttpEventListener(fixture.hub, fixture.mockEventListener)
-        whenever(fixture.hub.options).thenReturn(SentryOptions())
-        val call = mock<Call>()
-        whenever(call.request()).thenReturn(getRequest())
-        val okHttpEvent = mock<SentryOkHttpEvent>()
-        SentryOkHttpEventListener.eventMap[call] = okHttpEvent
-        listener.responseHeadersEnd(call, mock())
-        verify(okHttpEvent).scheduleFinish(any())
-    }
-
-    @Test
-    fun `call root span status is not overridden if not null`() {
+    fun `call span status is not overridden if not null`() {
         val mockListener = mock<EventListener>()
         lateinit var call: Call
         whenever(mockListener.connectStart(any(), anyOrNull(), anyOrNull())).then {
             val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
-            val callSpan = okHttpEvent?.callRootSpan
+            val callSpan = okHttpEvent?.callSpan
             assertNotNull(callSpan)
             assertNull(callSpan.status)
             callSpan.status = SpanStatus.UNKNOWN
@@ -397,7 +292,7 @@ class SentryOkHttpEventListenerTest {
         call = sut.newCall(request)
         val response = call.execute()
         val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
-        val callSpan = okHttpEvent?.callRootSpan
+        val callSpan = okHttpEvent?.callSpan
         assertNotNull(callSpan)
         response.close()
         assertEquals(SpanStatus.UNKNOWN, callSpan.status)
