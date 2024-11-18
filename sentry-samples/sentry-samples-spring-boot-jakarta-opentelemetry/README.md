@@ -1,16 +1,20 @@
 # Sentry Sample Spring Boot 3.0+
 
-Sample application showing how to use Sentry with [Spring boot](http://spring.io/projects/spring-boot) from version `3.0` onwards.
+Sample application showing how to use Sentry with [Spring boot](http://spring.io/projects/spring-boot) from version `3.0` onwards and the Sentry OpenTelemetry agent.
 
 ## How to run? 
 
-To see events triggered in this sample application in your Sentry dashboard, go to `src/main/resources/application.properties` and replace the test DSN with your own DSN.
+Make sure the `sentry-opentelemetry` module is built.
 
 Then, execute a command from the module directory:
 
 ```
-../../gradlew bootRun
+SENTRY_DSN="https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563" SENTRY_DEBUG=true ../../gradlew bootRunWithAgent
 ```
+
+To see events triggered in this sample application in your Sentry dashboard, replace the `SENTRY_DSN` above with your own.
+
+## Http
 
 Make an HTTP request that will trigger events:
 
