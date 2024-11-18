@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@707359876a764dbcdb9da0b0ed08291818310c3d # pin@v3
+        uses: gradle/actions/setup-gradle@e55599fc4d8b81ced2a6234b0b2525b1031e93fa # pin@v3
         with:
           gradle-home-cache-cleanup: true
 
