@@ -237,10 +237,6 @@ sealed class ViewHierarchyNode(
         private const val SENTRY_UNMASK_TAG = "sentry-unmask"
         private const val SENTRY_MASK_TAG = "sentry-mask"
 
-        private fun Class<*>.isAssignableFrom(className: String): Boolean {
-            return this.name.equals(className)
-        }
-
         private fun Class<*>.isAssignableFrom(set: Set<String>): Boolean {
             var cls: Class<*>? = this
             while (cls != null) {
@@ -283,13 +279,13 @@ sealed class ViewHierarchyNode(
         private fun ViewParent.isUnmaskContainer(options: SentryOptions): Boolean {
             val unmaskContainer =
                 options.experimental.sessionReplay.unmaskViewContainerClass ?: return false
-            return this.javaClass.isAssignableFrom(unmaskContainer)
+            return this.javaClass.name == unmaskContainer
         }
 
         private fun View.isMaskContainer(options: SentryOptions): Boolean {
-            val unmaskContainer =
+            val maskContainer =
                 options.experimental.sessionReplay.maskViewContainerClass ?: return false
-            return this.javaClass.isAssignableFrom(unmaskContainer)
+            return this.javaClass.name == maskContainer
         }
 
         fun fromView(view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryOptions): ViewHierarchyNode {
