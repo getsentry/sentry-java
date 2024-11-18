@@ -6,6 +6,7 @@
 
 - Android 15: Add support for 16KB page sizes ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
   - See https://developer.android.com/guide/practices/page-sizes for more details
+- Session Replay: Add `beforeSendReplay` callback ([#3855](https://github.com/getsentry/sentry-java/pull/3855))
 
 ### Fixes
 
@@ -13,6 +14,7 @@
 - Ensure android initialization process continues even if options configuration block throws an exception ([#3887](https://github.com/getsentry/sentry-java/pull/3887))
 - Do not report parsing ANR error when there are no threads ([#3888](https://github.com/getsentry/sentry-java/pull/3888))
   - This should significantly reduce the number of events with message "Sentry Android SDK failed to parse system thread dump..." reported
+- Session Replay: Disable replay in session mode when rate limit is active ([#3854](https://github.com/getsentry/sentry-java/pull/3854))
 
 ### Dependencies
 

@@ -35,7 +35,6 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.LazyThreadSafetyMode.NONE
 import kotlin.math.roundToInt
 
@@ -51,7 +50,6 @@ internal class ScreenshotRecorder(
         Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
     }
     private var rootView: WeakReference<View>? = null
-    private val pendingViewHierarchy = AtomicReference<ViewHierarchyNode>()
     private val maskingPaint by lazy(NONE) { Paint() }
     private val singlePixelBitmap: Bitmap by lazy(NONE) {
         Bitmap.createBitmap(
@@ -230,7 +228,6 @@ internal class ScreenshotRecorder(
         unbind(rootView?.get())
         rootView?.clear()
         lastScreenshot?.recycle()
-        pendingViewHierarchy.set(null)
         isCapturing.set(false)
         recorder.gracefullyShutdown(options)
     }
