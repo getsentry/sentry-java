@@ -2,6 +2,7 @@ package io.sentry.opentelemetry;
 
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.sdk.common.InstrumentationScopeInfo;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
@@ -18,21 +19,23 @@ public final class SpanDescriptionExtractor {
   @SuppressWarnings("deprecation")
   public @NotNull OtelSpanInfo extractSpanInfo(
       final @NotNull SpanData otelSpan, final @Nullable IOtelSpanWrapper sentrySpan) {
-    final @NotNull Attributes attributes = otelSpan.getAttributes();
+    if (isOpenTelemetryAutoInstrumentation(otelSpan)) {
+      final @NotNull Attributes attributes = otelSpan.getAttributes();
 
-    final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
-    if (httpMethod != null) {
-      return descriptionForHttpMethod(otelSpan, httpMethod);
-    }
+      final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
+      if (httpMethod != null) {
+        return descriptionForHttpMethod(otelSpan, httpMethod);
+      }
 
-    final @Nullable String httpRequestMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
-    if (httpRequestMethod != null) {
-      return descriptionForHttpMethod(otelSpan, httpRequestMethod);
-    }
+      final @Nullable String httpRequestMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
+      if (httpRequestMethod != null) {
+        return descriptionForHttpMethod(otelSpan, httpRequestMethod);
+      }
 
-    final @Nullable String dbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
-    if (dbSystem != null) {
-      return descriptionForDbSystem(otelSpan);
+      final @Nullable String dbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
+      if (dbSystem != null) {
+        return descriptionForDbSystem(otelSpan);
+      }
     }
 
     final @NotNull String name = otelSpan.getName();
@@ -40,6 +43,13 @@ public final class SpanDescriptionExtractor {
         sentrySpan != null ? sentrySpan.getDescription() : name;
     final @NotNull String description = maybeDescription != null ? maybeDescription : name;
     return new OtelSpanInfo(name, description, TransactionNameSource.CUSTOM);
+  }
+
+  private boolean isOpenTelemetryAutoInstrumentation(final @NotNull SpanData otelSpan) {
+    final @NotNull InstrumentationScopeInfo instrumentationScopeInfo =
+        otelSpan.getInstrumentationScopeInfo();
+    final @NotNull String instrumentationName = instrumentationScopeInfo.getName();
+    return instrumentationName.startsWith("io.opentelemetry");
   }
 
   @SuppressWarnings("deprecation")
