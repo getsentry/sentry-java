@@ -15,8 +15,11 @@ echo "started spring server ${SAMPLE_MODULE}-${JAVA_AGENT}-${JAVA_AGENT_AUTO_INI
 test/wait-for-spring.sh
 
 ./gradlew :sentry-samples:${SAMPLE_MODULE}:systemTest
+TESTRUN_RETVAL=$?
 
 echo "killing mock server ${SAMPLE_MODULE}-${JAVA_AGENT}-${JAVA_AGENT_AUTO_INIT} with PID ${MOCK_SERVER_PID}"
 kill $SUT_PID
 echo "killing spring server ${SAMPLE_MODULE}-${JAVA_AGENT}-${JAVA_AGENT_AUTO_INIT} with PID ${SUT_PID}"
 kill $MOCK_SERVER_PID
+
+exit $TESTRUN_RETVAL
