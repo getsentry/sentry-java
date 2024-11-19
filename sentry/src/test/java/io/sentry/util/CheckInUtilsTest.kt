@@ -93,6 +93,46 @@ class CheckInUtilsTest {
     }
 
     @Test
+    fun `sends check-in for wrapped supplier with environment`() {
+        Mockito.mockStatic(Sentry::class.java).use { sentry ->
+            val scopes = mock<IScopes>()
+            val lifecycleToken = mock<ISentryLifecycleToken>()
+            sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+            sentry.`when`<Any> { Sentry.forkedScopes(any()) }.then {
+                scopes.forkedScopes("test")
+            }
+            whenever(scopes.forkedScopes(any())).thenReturn(scopes)
+            whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
+            whenever(scopes.options).thenReturn(SentryOptions())
+            val returnValue = CheckInUtils.withCheckIn("monitor-1", "environment-1") {
+                return@withCheckIn "test1"
+            }
+
+            assertEquals("test1", returnValue)
+            inOrder(scopes, lifecycleToken) {
+                verify(scopes).forkedScopes(any())
+                verify(scopes).makeCurrent()
+                verify(scopes).configureScope(any())
+                verify(scopes).captureCheckIn(
+                    check {
+                        assertEquals("monitor-1", it.monitorSlug)
+                        assertEquals("environment-1", it.environment)
+                        assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
+                    }
+                )
+                verify(scopes).captureCheckIn(
+                    check {
+                        assertEquals("monitor-1", it.monitorSlug)
+                        assertEquals("environment-1", it.environment)
+                        assertEquals(CheckInStatus.OK.apiName(), it.status)
+                    }
+                )
+                verify(lifecycleToken).close()
+            }
+        }
+    }
+
+    @Test
     fun `sends check-in for wrapped supplier with exception`() {
         Mockito.mockStatic(Sentry::class.java).use { sentry ->
             val scopes = mock<IScopes>()
