@@ -20,14 +20,12 @@ public final class SpanDescriptionExtractor {
       final @NotNull SpanData otelSpan, final @Nullable IOtelSpanWrapper sentrySpan) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
 
-    final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
+    final @Nullable String httpMethod =
+        attributes.get(HttpAttributes.HTTP_REQUEST_METHOD) != null
+            ? attributes.get(HttpAttributes.HTTP_REQUEST_METHOD)
+            : attributes.get(io.opentelemetry.semconv.SemanticAttributes.HTTP_METHOD);
     if (httpMethod != null) {
       return descriptionForHttpMethod(otelSpan, httpMethod);
-    }
-
-    final @Nullable String httpRequestMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
-    if (httpRequestMethod != null) {
-      return descriptionForHttpMethod(otelSpan, httpRequestMethod);
     }
 
     final @Nullable String dbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
