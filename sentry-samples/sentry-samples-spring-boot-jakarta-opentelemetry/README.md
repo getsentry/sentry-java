@@ -4,7 +4,7 @@ Sample application showing how to use Sentry with [Spring boot](http://spring.io
 
 ## How to run? 
 
-Make sure the `sentry-opentelemetry` module is built.
+Make sure the `sentry-opentelemetry` module is built (`../../gradlew :sentry-opentelemetry:sentry-opentelemetry-agent:assemble`).
 
 Then, execute a command from the module directory:
 
