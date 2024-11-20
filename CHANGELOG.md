@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Send `otel.kind` to Sentry ([#3907](https://github.com/getsentry/sentry-java/pull/3907))
+
 ## 8.0.0-beta.2
 
 ### Breaking Changes
