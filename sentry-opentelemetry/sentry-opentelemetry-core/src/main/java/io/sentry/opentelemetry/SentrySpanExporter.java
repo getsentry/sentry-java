@@ -227,7 +227,7 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     setOtelInstrumentationInfo(spanData, sentryChildSpan);
-
+    setOtelSpanKind(spanData, sentryChildSpan);
     transferSpanDetails(sentrySpanMaybe, sentryChildSpan);
 
     for (SpanNode childNode : spanNode.getChildren()) {
@@ -328,7 +328,7 @@ public final class SentrySpanExporter implements SpanExporter {
     sentryTransaction.setContext("otel", otelContext);
 
     setOtelInstrumentationInfo(span, sentryTransaction);
-
+    setOtelSpanKind(span, sentryTransaction);
     transferSpanDetails(sentrySpanMaybe, sentryTransaction);
 
     return sentryTransaction;
@@ -482,7 +482,8 @@ public final class SentrySpanExporter implements SpanExporter {
     return attributeKeysToRemove.contains(key);
   }
 
-  private void setOtelInstrumentationInfo(SpanData span, ISpan sentryTransaction) {
+  private void setOtelInstrumentationInfo(
+      final @NotNull SpanData span, final @NotNull ISpan sentryTransaction) {
     final @Nullable String otelInstrumentationName = span.getInstrumentationScopeInfo().getName();
     if (otelInstrumentationName != null) {
       sentryTransaction.setData("otel.instrumentation.name", otelInstrumentationName);
@@ -493,6 +494,10 @@ public final class SentrySpanExporter implements SpanExporter {
     if (otelInstrumentationVersion != null) {
       sentryTransaction.setData("otel.instrumentation.version", otelInstrumentationVersion);
     }
+  }
+
+  private void setOtelSpanKind(final @NotNull SpanData otelSpan, final @NotNull ISpan sentrySpan) {
+    sentrySpan.setData("otel.kind", otelSpan.getKind().name());
   }
 
   @Override
