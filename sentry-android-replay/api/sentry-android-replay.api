@@ -57,7 +57,7 @@ public final class io/sentry/android/replay/ReplayCache$Companion {
 	public final fun makeReplayCacheDir (Lio/sentry/SentryOptions;Lio/sentry/protocol/SentryId;)Ljava/io/File;
 }
 
-public final class io/sentry/android/replay/ReplayIntegration : android/content/ComponentCallbacks, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, io/sentry/android/replay/gestures/TouchRecorderCallback, java/io/Closeable {
+public final class io/sentry/android/replay/ReplayIntegration : android/content/ComponentCallbacks, io/sentry/IConnectionStatusProvider$IConnectionStatusObserver, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, io/sentry/android/replay/gestures/TouchRecorderCallback, io/sentry/transport/RateLimiter$IRateLimitObserver, java/io/Closeable {
 	public static final field $stable I
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
@@ -69,7 +69,9 @@ public final class io/sentry/android/replay/ReplayIntegration : android/content/
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun isRecording ()Z
 	public fun onConfigurationChanged (Landroid/content/res/Configuration;)V
+	public fun onConnectionStatusChanged (Lio/sentry/IConnectionStatusProvider$ConnectionStatus;)V
 	public fun onLowMemory ()V
+	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 	public fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
 	public fun onScreenshotRecorded (Ljava/io/File;J)V
 	public fun onTouchEvent (Landroid/view/MotionEvent;)V

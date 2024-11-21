@@ -2800,6 +2800,7 @@ public class io/sentry/SentryOptions {
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeEnvelopeCallback ()Lio/sentry/SentryOptions$BeforeEnvelopeCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
+	public fun getBeforeSendReplay ()Lio/sentry/SentryOptions$BeforeSendReplayCallback;
 	public fun getBeforeSendTransaction ()Lio/sentry/SentryOptions$BeforeSendTransactionCallback;
 	public fun getBundleIds ()Ljava/util/Set;
 	public fun getCacheDirPath ()Ljava/lang/String;
@@ -2916,6 +2917,7 @@ public class io/sentry/SentryOptions {
 	public fun setBeforeBreadcrumb (Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;)V
 	public fun setBeforeEnvelopeCallback (Lio/sentry/SentryOptions$BeforeEnvelopeCallback;)V
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
+	public fun setBeforeSendReplay (Lio/sentry/SentryOptions$BeforeSendReplayCallback;)V
 	public fun setBeforeSendTransaction (Lio/sentry/SentryOptions$BeforeSendTransactionCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
 	public fun setConnectionStatusProvider (Lio/sentry/IConnectionStatusProvider;)V
@@ -3020,6 +3022,10 @@ public abstract interface class io/sentry/SentryOptions$BeforeEnvelopeCallback {
 
 public abstract interface class io/sentry/SentryOptions$BeforeSendCallback {
 	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+}
+
+public abstract interface class io/sentry/SentryOptions$BeforeSendReplayCallback {
+	public abstract fun execute (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 }
 
 public abstract interface class io/sentry/SentryOptions$BeforeSendTransactionCallback {
@@ -3154,19 +3160,23 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getErrorReplayDuration ()J
 	public fun getFrameRate ()I
 	public fun getMaskViewClasses ()Ljava/util/Set;
+	public fun getMaskViewContainerClass ()Ljava/lang/String;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
 	public fun getUnmaskViewClasses ()Ljava/util/Set;
+	public fun getUnmaskViewContainerClass ()Ljava/lang/String;
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
+	public fun setMaskViewContainerClass (Ljava/lang/String;)V
 	public fun setOnErrorSampleRate (Ljava/lang/Double;)V
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
+	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
 }
 
 public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang/Enum {
@@ -5874,13 +5884,20 @@ public final class io/sentry/transport/NoOpTransportGate : io/sentry/transport/I
 	public fun isConnected ()Z
 }
 
-public final class io/sentry/transport/RateLimiter {
+public final class io/sentry/transport/RateLimiter : java/io/Closeable {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/SentryOptions;)V
+	public fun addRateLimitObserver (Lio/sentry/transport/RateLimiter$IRateLimitObserver;)V
+	public fun close ()V
 	public fun filter (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
 	public fun isActiveForCategory (Lio/sentry/DataCategory;)Z
 	public fun isAnyRateLimitActive ()Z
+	public fun removeRateLimitObserver (Lio/sentry/transport/RateLimiter$IRateLimitObserver;)V
 	public fun updateRetryAfterLimits (Ljava/lang/String;Ljava/lang/String;I)V
+}
+
+public abstract interface class io/sentry/transport/RateLimiter$IRateLimitObserver {
+	public abstract fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 }
 
 public final class io/sentry/transport/ReusableCountLatch {

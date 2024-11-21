@@ -133,7 +133,17 @@ public final class SentryAndroid {
                 isTimberAvailable,
                 isReplayAvailable);
 
-            configuration.configure(options);
+            try {
+              configuration.configure(options);
+            } catch (Throwable t) {
+              // let it slip, but log it
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.ERROR,
+                      "Error in the 'OptionsConfiguration.configure' callback.",
+                      t);
+            }
 
             // if SentryPerformanceProvider was disabled or removed,
             // we set the app start / sdk init time here instead

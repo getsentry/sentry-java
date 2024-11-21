@@ -170,6 +170,7 @@ public final class AsyncHttpTransport implements ITransport {
 
   @Override
   public void close(final boolean isRestarting) throws IOException {
+    rateLimiter.close();
     executor.shutdown();
     options.getLogger().log(SentryLevel.DEBUG, "Shutting down");
     try {
