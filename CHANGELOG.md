@@ -9,7 +9,7 @@
 
 ### Fixes
 
-- Do not replace `op` with auto generated content for OpenTelemetry spans with span kind`INTERNAL` ([#3906](https://github.com/getsentry/sentry-java/pull/3906))
+- Do not replace `op` with auto generated content for OpenTelemetry spans with span kind `INTERNAL` ([#3906](https://github.com/getsentry/sentry-java/pull/3906))
 
 ## 8.0.0-beta.2
 
