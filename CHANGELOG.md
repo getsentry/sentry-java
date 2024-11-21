@@ -14,6 +14,10 @@
   - Our `UncaughtExceptionHandlerIntegration` waited for the full flush timeout duration (default 15s) when rate limited. 
 - Do not replace `op` with auto generated content for OpenTelemetry spans with span kind `INTERNAL` ([#3906](https://github.com/getsentry/sentry-java/pull/3906))
 
+### Behavioural Changes
+
+- Send file name and path only if isSendDefaultPii is true ([#3919](https://github.com/getsentry/sentry-java/pull/3919))
+
 ## 8.0.0-beta.2
 
 ### Breaking Changes
