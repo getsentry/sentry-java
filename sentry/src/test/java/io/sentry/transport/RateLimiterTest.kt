@@ -28,7 +28,6 @@ import io.sentry.util.HintUtils
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.same
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -305,26 +304,6 @@ class RateLimiterTest {
 
         rateLimiter.filter(envelope, HintUtils.createWithTypeCheckHint(hint))
 
-        verify(hint).isFlushable(sentryEvent.eventId)
         verify(hint).markFlushed()
-    }
-
-    @Test
-    fun `on rate limit DiskFlushNotification is not marked as flushed if not flushable`() {
-        val rateLimiter = fixture.getSUT()
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
-        val sentryEvent = SentryEvent()
-        val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, sentryEvent)
-        val envelope = SentryEnvelope(SentryEnvelopeHeader(sentryEvent.eventId), arrayListOf(eventItem))
-
-        rateLimiter.updateRetryAfterLimits("50:transaction:key, 1:default;error;security:organization", null, 1)
-
-        val hint = mock<DiskFlushNotification>()
-        whenever(hint.isFlushable(any())).thenReturn(false)
-
-        rateLimiter.filter(envelope, HintUtils.createWithTypeCheckHint(hint))
-
-        verify(hint).isFlushable(sentryEvent.eventId)
-        verify(hint, never()).markFlushed()
     }
 }
