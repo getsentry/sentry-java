@@ -6,6 +6,7 @@
 
 - Send `otel.kind` to Sentry ([#3907](https://github.com/getsentry/sentry-java/pull/3907))
 - Allow passing `environment` to `CheckinUtils.withCheckIn` ([3889](https://github.com/getsentry/sentry-java/pull/3889))
+- Changes up to `7.18.0` have been merged and are now included as well
 
 ### Fixes
 
@@ -55,6 +56,7 @@
   - Uses faster Random implementation to generate UUIDs
 - Android 15: Add support for 16KB page sizes ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
   - See https://developer.android.com/guide/practices/page-sizes for more details
+- Changes up to `7.17.0` have been merged and are now included as well
 
 ### Fixes
 
