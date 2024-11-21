@@ -9,6 +9,8 @@
 
 ### Fixes
 
+- Mark `DiskFlushNotification` hint flushed when rate limited ([#3892](https://github.com/getsentry/sentry-java/pull/3892))
+  - Our `UncaughtExceptionHandlerIntegration` waited for the full flush timeout duration (default 15s) when rate limited. 
 - Do not replace `op` with auto generated content for OpenTelemetry spans with span kind `INTERNAL` ([#3906](https://github.com/getsentry/sentry-java/pull/3906))
 
 ### Behavioural Changes
@@ -72,9 +74,9 @@
 
 ### Dependencies
 
-- Bump Native SDK from v0.7.5 to v0.7.8 ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
-    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#078)
-    - [diff](https://github.com/getsentry/sentry-native/compare/0.7.5...0.7.8)
+- Bump Native SDK from v0.7.5 to v0.7.14 ([#3851](https://github.com/getsentry/sentry-java/pull/3851)) ([#3914](https://github.com/getsentry/sentry-java/pull/3914))
+    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0714)
+    - [diff](https://github.com/getsentry/sentry-native/compare/0.7.5...0.7.14)
 
 ### Behavioural Changes
 

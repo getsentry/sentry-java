@@ -10,6 +10,7 @@ import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.HintUtils;
@@ -135,9 +136,16 @@ public final class RateLimiter {
    * @param hint the Hints
    * @param retry if event should be retried or not
    */
-  private static void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
+  private void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
     HintUtils.runIfHasType(hint, SubmissionResult.class, result -> result.setResult(false));
     HintUtils.runIfHasType(hint, Retryable.class, retryable -> retryable.setRetry(retry));
+    HintUtils.runIfHasType(
+        hint,
+        DiskFlushNotification.class,
+        (diskFlushNotification) -> {
+          diskFlushNotification.markFlushed();
+          options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired due to rate limit");
+        });
   }
 
   /**

@@ -20,9 +20,11 @@ import io.sentry.TransactionContext
 import io.sentry.UserFeedback
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
+import io.sentry.hints.DiskFlushNotification
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.util.HintUtils
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.same
@@ -284,5 +286,21 @@ class RateLimiterTest {
         rateLimiter.updateRetryAfterLimits("50:transaction:key, 1:default;error;security:organization", null, 1)
 
         assertTrue(rateLimiter.isAnyRateLimitActive)
+    }
+
+    @Test
+    fun `on rate limit DiskFlushNotification is marked as flushed`() {
+        val rateLimiter = fixture.getSUT()
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
+        val sentryEvent = SentryEvent()
+        val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, sentryEvent)
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(sentryEvent.eventId), arrayListOf(eventItem))
+
+        rateLimiter.updateRetryAfterLimits("50:transaction:key, 1:default;error;security:organization", null, 1)
+
+        val hint = mock<DiskFlushNotification>()
+        rateLimiter.filter(envelope, HintUtils.createWithTypeCheckHint(hint))
+
+        verify(hint).markFlushed()
     }
 }
