@@ -7,6 +7,11 @@
 - Send `otel.kind` to Sentry ([#3907](https://github.com/getsentry/sentry-java/pull/3907))
 - Allow passing `environment` to `CheckinUtils.withCheckIn` ([3889](https://github.com/getsentry/sentry-java/pull/3889))
 
+### Fixes
+
+- Mark `DiskFlushNotification` hint flushed when rate limited ([#3892](https://github.com/getsentry/sentry-java/pull/3892))
+  - Our `UncaughtExceptionHandlerIntegration` waited for the full flush timeout duration (default 15s) when rate limited. 
+
 ## 8.0.0-beta.2
 
 ### Breaking Changes
