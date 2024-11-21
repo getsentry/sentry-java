@@ -15,3 +15,8 @@ add_subdirectory(${SENTRY_NATIVE_SRC} sentry_build)
 target_link_libraries(sentry-android PRIVATE
     $<BUILD_INTERFACE:sentry::sentry>
 )
+
+# Android 15: Support 16KB page sizes
+# see https://developer.android.com/guide/practices/page-sizes
+target_link_options(sentry PRIVATE "-Wl,-z,max-page-size=16384")
+target_link_options(sentry-android PRIVATE "-Wl,-z,max-page-size=16384")
