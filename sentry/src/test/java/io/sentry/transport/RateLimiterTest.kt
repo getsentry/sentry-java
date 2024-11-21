@@ -25,7 +25,6 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
-import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.same
@@ -300,8 +299,6 @@ class RateLimiterTest {
         rateLimiter.updateRetryAfterLimits("50:transaction:key, 1:default;error;security:organization", null, 1)
 
         val hint = mock<DiskFlushNotification>()
-        whenever(hint.isFlushable(any())).thenReturn(true)
-
         rateLimiter.filter(envelope, HintUtils.createWithTypeCheckHint(hint))
 
         verify(hint).markFlushed()
