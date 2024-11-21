@@ -7,6 +7,10 @@
 - Send `otel.kind` to Sentry ([#3907](https://github.com/getsentry/sentry-java/pull/3907))
 - Allow passing `environment` to `CheckinUtils.withCheckIn` ([3889](https://github.com/getsentry/sentry-java/pull/3889))
 
+### Fixes
+
+- Do not replace `op` with auto generated content for OpenTelemetry spans with span kind `INTERNAL` ([#3906](https://github.com/getsentry/sentry-java/pull/3906))
+
 ## 8.0.0-beta.2
 
 ### Breaking Changes
