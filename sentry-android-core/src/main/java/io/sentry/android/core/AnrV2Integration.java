@@ -313,8 +313,11 @@ public class AnrV2Integration implements Integration, Closeable {
         final ThreadDumpParser threadDumpParser = new ThreadDumpParser(options, isBackground);
         final List<SentryThread> threads = threadDumpParser.parse(lines);
         if (threads.isEmpty()) {
-          // if the list is empty this means our regex matching is garbage and this is still error
-          return new ParseResult(ParseResult.Type.ERROR, dump);
+          // if the list is empty this means the system failed to capture a proper thread dump of
+          // the android threads, and only contains kernel-level threads and statuses, those ANRs
+          // are not actionable and neither they are reported by Google Play Console, so we just
+          // fall back to not reporting them
+          return new ParseResult(ParseResult.Type.NO_DUMP);
         }
         return new ParseResult(ParseResult.Type.DUMP, dump, threads);
       } catch (Throwable e) {

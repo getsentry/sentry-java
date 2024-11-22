@@ -81,6 +81,12 @@ public final class SentryReplayOptions {
    */
   private Set<String> unmaskViewClasses = new CopyOnWriteArraySet<>();
 
+  /** The class name of the view container that masks all of its children. */
+  private @Nullable String maskViewContainerClass = null;
+
+  /** The class name of the view container that unmasks its direct children. */
+  private @Nullable String unmaskViewContainerClass = null;
+
   /**
    * Defines the quality of the session replay. The higher the quality, the more accurate the replay
    * will be, but also more data to transfer and more CPU load, defaults to MEDIUM.
@@ -238,5 +244,26 @@ public final class SentryReplayOptions {
   @ApiStatus.Internal
   public long getSessionDuration() {
     return sessionDuration;
+  }
+
+  @ApiStatus.Internal
+  public void setMaskViewContainerClass(@NotNull String containerClass) {
+    addMaskViewClass(containerClass);
+    maskViewContainerClass = containerClass;
+  }
+
+  @ApiStatus.Internal
+  public void setUnmaskViewContainerClass(@NotNull String containerClass) {
+    unmaskViewContainerClass = containerClass;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable String getMaskViewContainerClass() {
+    return maskViewContainerClass;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable String getUnmaskViewContainerClass() {
+    return unmaskViewContainerClass;
   }
 }

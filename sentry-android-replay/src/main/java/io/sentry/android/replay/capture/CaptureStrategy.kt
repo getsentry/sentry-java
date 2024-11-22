@@ -57,6 +57,7 @@ internal interface CaptureStrategy {
     fun close()
 
     companion object {
+        private const val BREADCRUMB_START_OFFSET = 100L
         internal val currentEventsLock = AutoClosableReentrantLock()
 
         fun createSegment(
@@ -162,7 +163,10 @@ internal interface CaptureStrategy {
 
             val urls = LinkedList<String>()
             breadcrumbs.forEach { breadcrumb ->
-                if (breadcrumb.timestamp.time >= segmentTimestamp.time &&
+                // we add some fixed breadcrumb offset to make sure we don't miss any
+                // breadcrumbs that might be relevant for the current segment, but just happened
+                // earlier than the current segment (e.g. network connectivity changed)
+                if ((breadcrumb.timestamp.time + BREADCRUMB_START_OFFSET) >= segmentTimestamp.time &&
                     breadcrumb.timestamp.time < endTimestamp.time
                 ) {
                     val rrwebEvent = options

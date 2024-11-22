@@ -15,16 +15,21 @@ import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.util.HintUtils;
 import io.sentry.util.StringUtils;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Controls retry limits on different category types sent to Sentry. */
-public final class RateLimiter {
+public final class RateLimiter implements Closeable {
 
   private static final int HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS = 60000;
 
@@ -32,6 +37,9 @@ public final class RateLimiter {
   private final @NotNull SentryOptions options;
   private final @NotNull Map<DataCategory, @NotNull Date> sentryRetryAfterLimit =
       new ConcurrentHashMap<>();
+  private final @NotNull List<IRateLimitObserver> rateLimitObservers = new CopyOnWriteArrayList<>();
+  private @Nullable Timer timer = null;
+  private final @NotNull Object timerLock = new Object();
 
   public RateLimiter(
       final @NotNull ICurrentDateProvider currentDateProvider,
@@ -180,6 +188,8 @@ public final class RateLimiter {
         return DataCategory.Transaction;
       case "check_in":
         return DataCategory.Monitor;
+      case "replay_video":
+        return DataCategory.Replay;
       default:
         return DataCategory.Unknown;
     }
@@ -272,6 +282,23 @@ public final class RateLimiter {
     // only overwrite its previous date if the limit is even longer
     if (oldDate == null || date.after(oldDate)) {
       sentryRetryAfterLimit.put(dataCategory, date);
+
+      notifyRateLimitObservers();
+
+      synchronized (timerLock) {
+        if (timer == null) {
+          timer = new Timer(true);
+        }
+
+        timer.schedule(
+            new TimerTask() {
+              @Override
+              public void run() {
+                notifyRateLimitObservers();
+              }
+            },
+            date);
+      }
     }
   }
 
@@ -292,5 +319,42 @@ public final class RateLimiter {
       }
     }
     return retryAfterMillis;
+  }
+
+  private void notifyRateLimitObservers() {
+    for (IRateLimitObserver observer : rateLimitObservers) {
+      observer.onRateLimitChanged(this);
+    }
+  }
+
+  public void addRateLimitObserver(@NotNull final IRateLimitObserver observer) {
+    rateLimitObservers.add(observer);
+  }
+
+  public void removeRateLimitObserver(@NotNull final IRateLimitObserver observer) {
+    rateLimitObservers.remove(observer);
+  }
+
+  @Override
+  public void close() throws IOException {
+    synchronized (timerLock) {
+      if (timer != null) {
+        timer.cancel();
+        timer = null;
+      }
+    }
+    rateLimitObservers.clear();
+  }
+
+  public interface IRateLimitObserver {
+    /**
+     * Invoked whenever the rate limit changed. You should use {@link
+     * RateLimiter#isActiveForCategory(DataCategory)} to check whether the category you're
+     * interested in has changed.
+     *
+     * @param rateLimiter this {@link RateLimiter} instance which you can use to check if the rate
+     *     limit is active for a specific category
+     */
+    void onRateLimitChanged(@NotNull RateLimiter rateLimiter);
   }
 }

@@ -171,6 +171,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     if (SentryItemType.CheckIn.equals(itemType)) {
       return DataCategory.Monitor;
     }
+    if (SentryItemType.ReplayVideo.equals(itemType)) {
+      return DataCategory.Replay;
+    }
 
     return DataCategory.Default;
   }
