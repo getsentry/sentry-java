@@ -36,11 +36,12 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IContinuousProfiler {
+public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
 	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
 	public fun close ()V
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun isRunning ()Z
+	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 	public fun start ()V
 	public fun stop ()V
 }

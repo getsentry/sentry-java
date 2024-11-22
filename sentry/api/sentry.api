@@ -341,6 +341,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static final field Error Lio/sentry/DataCategory;
 	public static final field Monitor Lio/sentry/DataCategory;
 	public static final field Profile Lio/sentry/DataCategory;
+	public static final field ProfileChunk Lio/sentry/DataCategory;
 	public static final field Replay Lio/sentry/DataCategory;
 	public static final field Security Lio/sentry/DataCategory;
 	public static final field Session Lio/sentry/DataCategory;

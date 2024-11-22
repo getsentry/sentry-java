@@ -1,10 +1,13 @@
 package io.sentry.android.core;
 
+import static io.sentry.DataCategory.All;
+import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.annotation.SuppressLint;
 import android.os.Build;
 import io.sentry.CompositePerformanceCollector;
+import io.sentry.DataCategory;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
@@ -17,6 +20,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.SentryId;
+import io.sentry.transport.RateLimiter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -27,7 +31,8 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
 @ApiStatus.Internal
-public class AndroidContinuousProfiler implements IContinuousProfiler {
+public class AndroidContinuousProfiler
+    implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
   private static final long MAX_CHUNK_DURATION_MILLIS = 10000;
 
   private final @NotNull ILogger logger;
@@ -45,6 +50,7 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
   private final @NotNull List<ProfileChunk.Builder> payloadBuilders = new ArrayList<>();
   private @NotNull SentryId profilerId = SentryId.EMPTY_ID;
   private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
+  private boolean isClosed = false;
 
   public AndroidContinuousProfiler(
       final @NotNull BuildInfoProvider buildInfoProvider,
@@ -91,11 +97,15 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
   }
 
   public synchronized void start() {
-    if ((scopes == null || scopes != NoOpScopes.getInstance())
+    if ((scopes == null || scopes == NoOpScopes.getInstance())
         && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
       this.scopes = Sentry.getCurrentScopes();
       this.performanceCollector =
           Sentry.getCurrentScopes().getOptions().getCompositePerformanceCollector();
+      final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
+      if (rateLimiter != null) {
+        rateLimiter.addRateLimitObserver(this);
+      }
     }
 
     // Debug.startMethodTracingSampling() is only available since Lollipop, but Android Profiler
@@ -107,6 +117,22 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
     // init() didn't create profiler, should never happen
     if (profiler == null) {
       return;
+    }
+
+    if (scopes != null) {
+      final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
+      if (rateLimiter != null
+          && (rateLimiter.isActiveForCategory(All)
+              || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk))) {
+        logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
+        return;
+      }
+
+      // If device is offline, we don't start the profiler, to avoid flooding the cache
+      if (scopes.getOptions().getConnectionStatusProvider().getConnectionStatus() == DISCONNECTED) {
+        logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
+        return;
+      }
     }
 
     final AndroidProfiler.ProfileStartData startData = profiler.start();
@@ -203,6 +229,7 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
 
   public synchronized void close() {
     stop();
+    isClosed = true;
   }
 
   @Override
@@ -216,6 +243,10 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
           .getExecutorService()
           .submit(
               () -> {
+                // SDK is closed, we don't send the chunks
+                if (isClosed) {
+                  return;
+                }
                 final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
                 synchronized (payloadBuilders) {
                   for (ProfileChunk.Builder builder : payloadBuilders) {
@@ -241,5 +272,17 @@ public class AndroidContinuousProfiler implements IContinuousProfiler {
   @Nullable
   Future<?> getStopFuture() {
     return stopFuture;
+  }
+
+  @Override
+  public void onRateLimitChanged(@NotNull RateLimiter rateLimiter) {
+    // We stop the profiler as soon as we are rate limited, to avoid the performance overhead
+    if (rateLimiter.isActiveForCategory(All)
+        || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)) {
+      logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
+      stop();
+    }
+    // If we are not rate limited anymore, we don't do anything: the profile is broken, so it's
+    // useless to restart it automatically
   }
 }
