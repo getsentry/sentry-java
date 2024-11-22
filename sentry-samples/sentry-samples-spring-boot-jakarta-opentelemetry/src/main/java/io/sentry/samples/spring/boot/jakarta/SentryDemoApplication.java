@@ -72,7 +72,7 @@ public class SentryDemoApplication {
   }
 
   @Bean
-  public Tracer getTracer() {
-    return GlobalOpenTelemetry.getTracer("tracerForSpringBootDemo");
+  public Tracer tracer() {
+    return GlobalOpenTelemetry.get().getTracer("tracerForSpringBootDemo");
   }
 }

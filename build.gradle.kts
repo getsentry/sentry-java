@@ -51,6 +51,7 @@ apiValidation {
         listOf(
             "sentry-samples-android",
             "sentry-samples-console",
+            "sentry-samples-console-opentelemetry-noagent",
             "sentry-samples-jul",
             "sentry-samples-log4j2",
             "sentry-samples-logback",
@@ -59,8 +60,11 @@ apiValidation {
             "sentry-samples-spring",
             "sentry-samples-spring-jakarta",
             "sentry-samples-spring-boot",
+            "sentry-samples-spring-boot-opentelemetry",
+            "sentry-samples-spring-boot-opentelemetry-noagent",
             "sentry-samples-spring-boot-jakarta",
             "sentry-samples-spring-boot-jakarta-opentelemetry",
+            "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-spring-boot-webflux-jakarta",
             "sentry-uitest-android",
@@ -223,7 +227,7 @@ spotless {
         target("**/*.java")
         removeUnusedImports()
         googleJavaFormat()
-        targetExclude("**/generated/**", "**/vendor/**")
+        targetExclude("**/generated/**", "**/vendor/**", "**/sentry-native/**")
     }
     kotlin {
         target("**/*.kt")

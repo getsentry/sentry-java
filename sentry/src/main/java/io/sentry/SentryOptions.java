@@ -21,6 +21,7 @@ import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
+import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
@@ -150,6 +151,12 @@ public class SentryOptions {
    * transaction object or nothing to skip reporting the transaction
    */
   private @Nullable BeforeSendTransactionCallback beforeSendTransaction;
+
+  /**
+   * This function is called with an SDK specific replay object and can return a modified replay
+   * object or nothing to skip reporting the replay
+   */
+  private @Nullable BeforeSendReplayCallback beforeSendReplay;
 
   /**
    * This function is called with an SDK specific breadcrumb object before the breadcrumb is added
@@ -467,6 +474,8 @@ public class SentryOptions {
   /** Contains a list of span origins for which spans / transactions should not be created. */
   @ApiStatus.Experimental private @Nullable List<String> ignoredSpanOrigins = null;
 
+  private @Nullable List<String> ignoredTransactions = null;
+
   @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
@@ -553,13 +562,15 @@ public class SentryOptions {
   }
 
   /**
-   * Evaluates and parses the DSN. May throw an exception if the DSN is invalid.
+   * Evaluates and parses the DSN. May throw an exception if the DSN is invalid. Renamed from
+   * `getParsedDsn` as this would cause an error when deploying as WAR to Tomcat due to `JNDI`
+   * property binding.
    *
    * @return the parsed DSN or throws if dsn is invalid
    */
   @ApiStatus.Internal
   @NotNull
-  Dsn getParsedDsn() throws IllegalArgumentException {
+  Dsn retrieveParsedDsn() throws IllegalArgumentException {
     return parsedDsn.getValue();
   }
 
@@ -745,6 +756,24 @@ public class SentryOptions {
   public void setBeforeSendTransaction(
       @Nullable BeforeSendTransactionCallback beforeSendTransaction) {
     this.beforeSendTransaction = beforeSendTransaction;
+  }
+
+  /**
+   * Returns the BeforeSendReplay callback
+   *
+   * @return the beforeSend callback or null if not set
+   */
+  public @Nullable BeforeSendReplayCallback getBeforeSendReplay() {
+    return beforeSendReplay;
+  }
+
+  /**
+   * Sets the beforeSendReplay callback
+   *
+   * @param beforeSendReplay the beforeSend callback
+   */
+  public void setBeforeSendReplay(@Nullable BeforeSendReplayCallback beforeSendReplay) {
+    this.beforeSendReplay = beforeSendReplay;
   }
 
   /**
@@ -2221,6 +2250,26 @@ public class SentryOptions {
     return ignoredCheckIns;
   }
 
+  public @Nullable List<String> getIgnoredTransactions() {
+    return ignoredTransactions;
+  }
+
+  @ApiStatus.Experimental
+  public void setIgnoredTransactions(final @Nullable List<String> ignoredTransactions) {
+    if (ignoredTransactions == null) {
+      this.ignoredTransactions = null;
+    } else {
+      @NotNull final List<String> filtered = new ArrayList<>();
+      for (String transactionName : ignoredTransactions) {
+        if (transactionName != null && !transactionName.isEmpty()) {
+          filtered.add(transactionName);
+        }
+      }
+
+      this.ignoredTransactions = filtered;
+    }
+  }
+
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
   @ApiStatus.Internal
   public @NotNull SentryDateProvider getDateProvider() {
@@ -2451,7 +2500,7 @@ public class SentryOptions {
    */
   void loadLazyFields() {
     getSerializer();
-    getParsedDsn();
+    retrieveParsedDsn();
     getEnvelopeReader();
     getDateProvider();
   }
@@ -2483,6 +2532,23 @@ public class SentryOptions {
      */
     @Nullable
     SentryTransaction execute(@NotNull SentryTransaction transaction, @NotNull Hint hint);
+  }
+
+  /** The BeforeSendReplay callback */
+  public interface BeforeSendReplayCallback {
+
+    /**
+     * Mutate or drop a replay event before being sent. Note that there might be many replay events
+     * for a single replay (i.e. segments), you can check {@link SentryReplayEvent#getReplayId()} to
+     * identify that the segments belong to the same replay.
+     *
+     * @param event the event
+     * @param hint the hint, contains {@link ReplayRecording}, can be accessed via {@link
+     *     Hint#getReplayRecording()}
+     * @return the original event or the mutated event or null if event was dropped
+     */
+    @Nullable
+    SentryReplayEvent execute(@NotNull SentryReplayEvent event, @NotNull Hint hint);
   }
 
   /** The BeforeBreadcrumb callback */
@@ -2579,7 +2645,7 @@ public class SentryOptions {
   private SentryOptions(final boolean empty) {
     experimental = new ExperimentalOptions(empty);
     if (!empty) {
-      setSpanFactory(new DefaultSpanFactory());
+      setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
       executorService = new SentryExecutorService();
@@ -2701,6 +2767,10 @@ public class SentryOptions {
     if (options.getIgnoredCheckIns() != null) {
       final List<String> ignoredCheckIns = new ArrayList<>(options.getIgnoredCheckIns());
       setIgnoredCheckIns(ignoredCheckIns);
+    }
+    if (options.getIgnoredTransactions() != null) {
+      final List<String> ignoredTransactions = new ArrayList<>(options.getIgnoredTransactions());
+      setIgnoredTransactions(ignoredTransactions);
     }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());

@@ -21,12 +21,25 @@ jobs:
       matrix:
         sample: [ "sentry-samples-spring-boot-jakarta" ]
         agent: [ "0" ]
+        agent-auto-init: [ "true" ]
         include:
           - sample: "sentry-samples-spring-boot"
+          - sample: "sentry-samples-spring-boot-opentelemetry-noagent"
+          - sample: "sentry-samples-spring-boot-opentelemetry"
+            agent: "1"
+            agent-auto-init: "true"
+          - sample: "sentry-samples-spring-boot-opentelemetry"
+            agent: "1"
+            agent-auto-init: "false"
           - sample: "sentry-samples-spring-boot-webflux-jakarta"
           - sample: "sentry-samples-spring-boot-webflux"
+          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry-noagent"
           - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
             agent: "1"
+            agent-auto-init: "true"
+          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
+            agent: "1"
+            agent-auto-init: "false"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,7 +56,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@bb0c460cbf5354b0cddd15bacdf0d6aaa3e5a32b # pin@v3
+        uses: gradle/actions/setup-gradle@707359876a764dbcdb9da0b0ed08291818310c3d # pin@v3
         with:
           gradle-home-cache-cleanup: true
 
@@ -86,18 +99,13 @@ jobs:
 
       - name: Start server and run integration test for sentry-cli commands
         run: |
-          test/system-test-sentry-server-start.sh \
-            > sentry-mock-server.txt 2>&1 & \
-          test/system-test-spring-server-start.sh "${{ matrix.sample }}" "${{ matrix.agent }}" \
-            > spring-server.txt 2>&1 & \
-          test/wait-for-spring.sh && \
-          ./gradlew :sentry-samples:${{ matrix.sample }}:systemTest
+          test/system-test-run.sh "${{ matrix.sample }}" "${{ matrix.agent }}" "${{ matrix.agent-auto-init }}"
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.sample }}-system-test
+          name: test-results-${{ matrix.sample }}-${{ matrix.agent }}-${{ matrix.agent-auto-init }}-system-test
           path: |
             **/build/reports/*
             sentry-mock-server.txt

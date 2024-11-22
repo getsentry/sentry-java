@@ -3,26 +3,34 @@ package io.sentry.transport
 import io.sentry.Attachment
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
+import io.sentry.DataCategory.Replay
 import io.sentry.Hint
+import io.sentry.IHub
+import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISerializer
 import io.sentry.NoOpLogger
 import io.sentry.ProfilingTraceData
+import io.sentry.ReplayRecording
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import io.sentry.SentryOptionsManipulator
+import io.sentry.SentryReplayEvent
 import io.sentry.SentryTracer
 import io.sentry.Session
 import io.sentry.TransactionContext
 import io.sentry.UserFeedback
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
+import io.sentry.hints.DiskFlushNotification
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.util.HintUtils
+import org.awaitility.kotlin.await
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.same
@@ -32,6 +40,7 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -284,5 +293,87 @@ class RateLimiterTest {
         rateLimiter.updateRetryAfterLimits("50:transaction:key, 1:default;error;security:organization", null, 1)
 
         assertTrue(rateLimiter.isAnyRateLimitActive)
+    }
+
+    @Test
+    fun `on rate limit DiskFlushNotification is marked as flushed`() {
+        val rateLimiter = fixture.getSUT()
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
+        val sentryEvent = SentryEvent()
+        val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, sentryEvent)
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(sentryEvent.eventId), arrayListOf(eventItem))
+
+        rateLimiter.updateRetryAfterLimits("50:transaction:key, 1:default;error;security:organization", null, 1)
+
+        val hint = mock<DiskFlushNotification>()
+        rateLimiter.filter(envelope, HintUtils.createWithTypeCheckHint(hint))
+
+        verify(hint).markFlushed()
+    }
+
+    @Test
+    fun `drop replay items as lost`() {
+        val rateLimiter = fixture.getSUT()
+        val hub = mock<IHub>()
+        whenever(hub.options).thenReturn(SentryOptions())
+
+        val replayItem = SentryEnvelopeItem.fromReplay(fixture.serializer, mock<ILogger>(), SentryReplayEvent(), ReplayRecording(), false)
+        val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(replayItem, attachmentItem))
+
+        rateLimiter.updateRetryAfterLimits("60:replay:key", null, 1)
+        val result = rateLimiter.filter(envelope, Hint())
+
+        assertNotNull(result)
+        assertEquals(1, result.items.toList().size)
+
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(replayItem))
+        verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
+    fun `apply rate limits notifies observers`() {
+        val rateLimiter = fixture.getSUT()
+
+        var applied = false
+        rateLimiter.addRateLimitObserver {
+            applied = rateLimiter.isActiveForCategory(Replay)
+        }
+        rateLimiter.updateRetryAfterLimits("60:replay:key", null, 1)
+
+        assertTrue(applied)
+    }
+
+    @Test
+    fun `apply rate limits schedules a timer to notify observers of lifted limits`() {
+        val rateLimiter = fixture.getSUT()
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 1, 2001)
+
+        val applied = AtomicBoolean(true)
+        rateLimiter.addRateLimitObserver {
+            applied.set(rateLimiter.isActiveForCategory(Replay))
+        }
+        rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
+
+        await.untilFalse(applied)
+        assertFalse(applied.get())
+    }
+
+    @Test
+    fun `close cancels the timer`() {
+        val rateLimiter = fixture.getSUT()
+        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 1, 2001)
+
+        val applied = AtomicBoolean(true)
+        rateLimiter.addRateLimitObserver {
+            applied.set(rateLimiter.isActiveForCategory(Replay))
+        }
+
+        rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
+        rateLimiter.close()
+
+        // wait for 1.5s to ensure the timer has run after 1s
+        await.untilTrue(applied)
+        assertTrue(applied.get())
     }
 }

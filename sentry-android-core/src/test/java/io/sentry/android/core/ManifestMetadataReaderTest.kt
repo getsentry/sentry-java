@@ -1402,4 +1402,29 @@ class ManifestMetadataReaderTest {
         assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.sessionSampleRate)
         assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
     }
+
+    @Test
+    fun `applyMetadata reads maxBreadcrumbs to options and sets the value if found`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.MAX_BREADCRUMBS to 1)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(1, fixture.options.maxBreadcrumbs)
+    }
+
+    @Test
+    fun `applyMetadata reads maxBreadcrumbs to options and keeps default if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(100, fixture.options.maxBreadcrumbs)
+    }
 }

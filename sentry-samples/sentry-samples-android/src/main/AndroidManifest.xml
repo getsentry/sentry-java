@@ -148,6 +148,9 @@
         <!--    how to enable the attach screenshot feature-->
         <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
 
+        <!--    how many breadcrumbs will be stored-->
+        <meta-data android:name="io.sentry.max-breadcrumbs" android:value="100"/>
+
         <!--    how to enable the attach view hierarchy feature-->
         <meta-data android:name="io.sentry.attach-view-hierarchy" android:value="true" />
 

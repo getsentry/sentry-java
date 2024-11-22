@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 public enum SpanStatus implements JsonSerializable {
   /** Not an error, returned on success. */
-  OK(200, 299),
+  OK(0, 399),
   /** The operation was cancelled, typically by the caller. */
   CANCELLED(499),
   /**

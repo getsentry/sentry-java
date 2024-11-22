@@ -1,6 +1,24 @@
 # Changelog
 
-## Unreleased
+## 8.0.0-beta.3
+
+### Features
+
+- Send `otel.kind` to Sentry ([#3907](https://github.com/getsentry/sentry-java/pull/3907))
+- Allow passing `environment` to `CheckinUtils.withCheckIn` ([3889](https://github.com/getsentry/sentry-java/pull/3889))
+- Changes up to `7.18.0` have been merged and are now included as well
+
+### Fixes
+
+- Mark `DiskFlushNotification` hint flushed when rate limited ([#3892](https://github.com/getsentry/sentry-java/pull/3892))
+  - Our `UncaughtExceptionHandlerIntegration` waited for the full flush timeout duration (default 15s) when rate limited. 
+- Do not replace `op` with auto generated content for OpenTelemetry spans with span kind `INTERNAL` ([#3906](https://github.com/getsentry/sentry-java/pull/3906))
+
+### Behavioural Changes
+
+- Send file name and path only if isSendDefaultPii is true ([#3919](https://github.com/getsentry/sentry-java/pull/3919))
+
+## 8.0.0-beta.2
 
 ### Breaking Changes
 
@@ -9,9 +27,30 @@
   - `Session.getSessionId()` now returns a `String` instead of a `UUID`.
 - The Android minSdk level for all Android modules is now 21 ([#3852](https://github.com/getsentry/sentry-java/pull/3852))
 - The minSdk level for sentry-android-ndk changed from 19 to 21 ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
+- All status codes below 400 are now mapped to `SpanStatus.OK` ([#3869](https://github.com/getsentry/sentry-java/pull/3869))
 
 ### Features
 
+- Spring Boot now automatically detects if OpenTelemetry is available and makes use of it ([#3846](https://github.com/getsentry/sentry-java/pull/3846))
+  - This is only enabled if there is no OpenTelemetry agent available
+  - We prefer to use the OpenTelemetry agent as it offers more auto instrumentation
+  - In some cases the OpenTelemetry agent cannot be used, please see https://opentelemetry.io/docs/zero-code/java/spring-boot-starter/ for more details on when to prefer the Agent and when the Spring Boot starter makes more sense.
+  - In this mode the SDK makes use of the `OpenTelemetry` bean that is created by `opentelemetry-spring-boot-starter` instead of `GlobalOpenTelemetry`
+- Spring Boot now automatically detects our OpenTelemetry agent if its auto init is disabled ([#3848](https://github.com/getsentry/sentry-java/pull/3848))
+  - This means Spring Boot config mechanisms can now be combined with our OpenTelemetry agent
+  - The `sentry-opentelemetry-extra` module has been removed again, most classes have been moved to `sentry-opentelemetry-bootstrap` which is loaded into the bootstrap classloader (i.e. `null`) when our Java agent is used. The rest has been moved into `sentry-opentelemetry-agentcustomization` and is loaded into the agent classloader when our Java agent is used.
+  - The `sentry-opentelemetry-bootstrap` and `sentry-opentelemetry-agentcustomization` modules can be used without the agent as well, in which case all classes are loaded into the application classloader. Check out our `sentry-samples-spring-boot-jakarta-opentelemetry-noagent` sample.
+  - In this mode the SDK makes use of `GlobalOpenTelemetry`
+- Automatically set span factory based on presence of OpenTelemetry ([#3858](https://github.com/getsentry/sentry-java/pull/3858))
+  - `SentrySpanFactoryHolder` has been removed as it is no longer required.
+- Add `ignoredTransactions` option to filter out transactions by name ([#3871](https://github.com/getsentry/sentry-java/pull/3871))
+  - can be used via ENV vars, e.g. `SENTRY_IGNORED_TRANSACTIONS=POST /person/,GET /pers.*`
+  - can also be set in options directly, e.g. `options.setIgnoredTransactions(...)`
+  - can also be set in `sentry.properties`, e.g. `ignored-transactions=POST /person/,GET /pers.*`
+  - can also be set in Spring config `application.properties`, e.g. `sentry.ignored-transactions=POST /person/,GET /pers.*`
+- Add a sample for showcasing Sentry with OpenTelemetry for Spring Boot 3 with our Java agent (`sentry-samples-spring-boot-jakarta-opentelemetry`) ([#3856](https://github.com/getsentry/sentry-java/pull/3828))
+- Add a sample for showcasing Sentry with OpenTelemetry for Spring Boot 3 without our Java agent (`sentry-samples-spring-boot-jakarta-opentelemetry-noagent`) ([#3856](https://github.com/getsentry/sentry-java/pull/3856))
+- Add a sample for showcasing Sentry with OpenTelemetry (`sentry-samples-console-opentelemetry-noagent`) ([#3856](https://github.com/getsentry/sentry-java/pull/3862))
 - Add `globalHubMode` to options ([#3805](https://github.com/getsentry/sentry-java/pull/3805))
   - `globalHubMode` used to only be a param on `Sentry.init`. To make it easier to be used in e.g. Desktop environments, we now additionally added it as an option on SentryOptions that can also be set via `sentry.properties`.
   - If both the param on `Sentry.init` and the option are set, the option will win. By default the option is set to `null` meaning whatever is passed to `Sentry.init` takes effect.
@@ -19,22 +58,27 @@
 - Faster generation of Sentry and Span IDs ([#3818](https://github.com/getsentry/sentry-java/pull/3818))
   - Uses faster implementation to convert UUID to SentryID String
   - Uses faster Random implementation to generate UUIDs
-- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
 - Android 15: Add support for 16KB page sizes ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
   - See https://developer.android.com/guide/practices/page-sizes for more details
+- Changes up to `7.17.0` have been merged and are now included as well
 
 ### Fixes
 
+- The Sentry OpenTelemetry Java agent now makes sure Sentry `Scopes` storage is initialized even if the agents auto init is disabled ([#3848](https://github.com/getsentry/sentry-java/pull/3848))
+  - This is required for all integrations to work together with our OpenTelemetry Java agent if its auto init has been disabled and the SDKs init should be used instead.
+- Do not ignore certain span origins for OpenTelemetry without agent ([#3856](https://github.com/getsentry/sentry-java/pull/3856))
+- Fix `startChild` for span that is not in current OpenTelemetry `Context` ([#3862](https://github.com/getsentry/sentry-java/pull/3862))
+  - Starting a child span from a transaction that wasn't in the current `Context` lead to multiple transactions being created (one for the transaction and another per span created).
 - Add `auto.graphql.graphql22` to ignored span origins when using OpenTelemetry ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
 - The Spring Boot 3 WebFlux sample now uses our GraphQL v22 integration ([#3828](https://github.com/getsentry/sentry-java/pull/3828))
-- Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
+- All status codes below 400 are now mapped to `SpanStatus.OK` ([#3869](https://github.com/getsentry/sentry-java/pull/3869))
 
 
 ### Dependencies
 
-- Bump Native SDK from v0.7.5 to v0.7.8 ([#3851](https://github.com/getsentry/sentry-java/pull/3851))
-    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#078)
-    - [diff](https://github.com/getsentry/sentry-native/compare/0.7.5...0.7.8)
+- Bump Native SDK from v0.7.5 to v0.7.14 ([#3851](https://github.com/getsentry/sentry-java/pull/3851)) ([#3914](https://github.com/getsentry/sentry-java/pull/3914))
+    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0714)
+    - [diff](https://github.com/getsentry/sentry-native/compare/0.7.5...0.7.14)
 
 ### Behavioural Changes
 
@@ -284,6 +328,43 @@ You may also use `LifecycleHelper.close(token)`, e.g. in case you need to pass t
 
 - Report exceptions returned by Throwable.getSuppressed() to Sentry as exception groups ([#3396] https://github.com/getsentry/sentry-java/pull/3396)
 
+## 7.18.0
+
+### Features
+
+- Android 15: Add support for 16KB page sizes ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
+    - See https://developer.android.com/guide/practices/page-sizes for more details
+- Session Replay: Add `beforeSendReplay` callback ([#3855](https://github.com/getsentry/sentry-java/pull/3855))
+- Session Replay: Add support for masking/unmasking view containers ([#3881](https://github.com/getsentry/sentry-java/pull/3881))
+
+### Fixes
+
+- Avoid collecting normal frames ([#3782](https://github.com/getsentry/sentry-java/pull/3782))
+- Ensure android initialization process continues even if options configuration block throws an exception ([#3887](https://github.com/getsentry/sentry-java/pull/3887))
+- Do not report parsing ANR error when there are no threads ([#3888](https://github.com/getsentry/sentry-java/pull/3888))
+    - This should significantly reduce the number of events with message "Sentry Android SDK failed to parse system thread dump..." reported
+- Session Replay: Disable replay in session mode when rate limit is active ([#3854](https://github.com/getsentry/sentry-java/pull/3854))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.2 to v0.7.8 ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
+    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#078)
+    - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.8)
+
+## 7.17.0
+
+### Features
+
+- Add meta option to set the maximum amount of breadcrumbs to be logged. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
+- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
+
+### Fixes
+
+- Using MaxBreadcrumb with value 0 no longer crashes. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
+- Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
+- Fix standalone tomcat jndi issue ([#3873](https://github.com/getsentry/sentry-java/pull/3873))
+    - Using Sentry Spring Boot on a standalone tomcat caused the following error:
+        - Failed to bind properties under 'sentry.parsed-dsn' to io.sentry.Dsn
 
 ## 7.16.0
 

@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import graphql.GraphQLError;
 import io.sentry.EventProcessor;
 import io.sentry.IScopes;
+import io.sentry.ISpanFactory;
 import io.sentry.ITransportFactory;
 import io.sentry.InitPriority;
 import io.sentry.Integration;
@@ -28,6 +29,8 @@ import io.sentry.spring.jakarta.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameterPointcutConfiguration;
 import io.sentry.spring.jakarta.exception.SentryExceptionParameterAdviceConfiguration;
+import io.sentry.spring.jakarta.opentelemetry.SentryOpenTelemetryAgentWithoutAutoInitConfiguration;
+import io.sentry.spring.jakarta.opentelemetry.SentryOpenTelemetryNoAgentConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.jakarta.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter;
@@ -117,10 +120,29 @@ public class SentryAutoConfiguration {
       return new InAppIncludesResolver();
     }
 
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryOpenTelemetryAgentWithoutAutoInitConfiguration.class)
+    @Open
+    @ConditionalOnProperty(name = "sentry.auto-init", havingValue = "false")
+    @ConditionalOnClass(name = {"io.sentry.opentelemetry.agent.AgentMarker"})
+    static class OpenTelemetryAgentWithoutAutoInitConfiguration {}
+
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryOpenTelemetryNoAgentConfiguration.class)
+    @Open
+    @ConditionalOnClass(
+        name = {
+          "io.opentelemetry.api.OpenTelemetry",
+          "io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider"
+        })
+    @ConditionalOnMissingClass("io.sentry.opentelemetry.agent.AgentMarker")
+    static class OpenTelemetryNoAgentConfiguration {}
+
     @Bean
     public @NotNull IScopes sentryHub(
         final @NotNull List<Sentry.OptionsConfiguration<SentryOptions>> optionsConfigurations,
         final @NotNull SentryProperties options,
+        final @NotNull ObjectProvider<ISpanFactory> spanFactory,
         final @NotNull ObjectProvider<GitProperties> gitProperties) {
       optionsConfigurations.forEach(
           optionsConfiguration -> optionsConfiguration.configure(options));
@@ -130,6 +152,7 @@ public class SentryAutoConfiguration {
               options.setRelease(git.getCommitId());
             }
           });
+      spanFactory.ifAvailable(options::setSpanFactory);
 
       options.setSentryClientName(
           BuildConfig.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
@@ -154,21 +177,6 @@ public class SentryAutoConfiguration {
       public @NotNull ContextTagsEventProcessor contextTagsEventProcessor(
           final @NotNull SentryOptions sentryOptions) {
         return new ContextTagsEventProcessor(sentryOptions);
-      }
-    }
-
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnProperty(name = "sentry.auto-init", havingValue = "false")
-    @ConditionalOnClass(io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor.class)
-    @SuppressWarnings("deprecation")
-    @Open
-    static class OpenTelemetryLinkErrorEventProcessorConfiguration {
-
-      @Bean
-      @ConditionalOnMissingBean
-      public @NotNull io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor
-          openTelemetryLinkErrorEventProcessor() {
-        return new io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor();
       }
     }
 

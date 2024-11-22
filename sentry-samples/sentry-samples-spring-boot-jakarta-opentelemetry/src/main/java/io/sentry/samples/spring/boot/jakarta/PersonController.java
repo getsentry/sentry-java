@@ -31,7 +31,8 @@ public class PersonController {
   Person person(@PathVariable Long id) {
     Span span = tracer.spanBuilder("spanCreatedThroughOtelApi").startSpan();
     try (final @NotNull Scope spanScope = span.makeCurrent()) {
-      ISpan sentrySpan = Sentry.getSpan().startChild("spanCreatedThroughSentryApi");
+      ISpan currentSpan = Sentry.getSpan();
+      ISpan sentrySpan = currentSpan.startChild("spanCreatedThroughSentryApi");
       try {
         LOGGER.error("Trying person with id={}", id, new RuntimeException("error while loading"));
         throw new IllegalArgumentException("Something went wrong [id=" + id + "]");

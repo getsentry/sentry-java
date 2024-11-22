@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public interface IScopesStorage {
 
+  void init();
+
   @NotNull
   ISentryLifecycleToken set(final @Nullable IScopes scopes);
 

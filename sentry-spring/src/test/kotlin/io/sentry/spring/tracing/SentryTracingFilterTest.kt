@@ -126,7 +126,7 @@ class SentryTracingFilterTest {
 
     @Test
     fun `does not set span status for response status that dont match predefined span statuses`() {
-        val filter = fixture.getSut(status = 302)
+        val filter = fixture.getSut(status = 507)
 
         filter.doFilter(fixture.request, fixture.response, fixture.chain)
 

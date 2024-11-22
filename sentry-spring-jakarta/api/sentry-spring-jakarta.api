@@ -202,6 +202,17 @@ public final class io/sentry/spring/jakarta/graphql/SentrySpringSubscriptionHand
 	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IScopes;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
 }
 
+public class io/sentry/spring/jakarta/opentelemetry/SentryOpenTelemetryAgentWithoutAutoInitConfiguration {
+	public fun <init> ()V
+	public fun sentryOpenTelemetryOptionsConfiguration ()Lio/sentry/Sentry$OptionsConfiguration;
+}
+
+public class io/sentry/spring/jakarta/opentelemetry/SentryOpenTelemetryNoAgentConfiguration {
+	public fun <init> ()V
+	public static fun openTelemetrySpanFactory (Lio/opentelemetry/api/OpenTelemetry;)Lio/sentry/ISpanFactory;
+	public fun sentryOpenTelemetryOptionsConfiguration ()Lio/sentry/Sentry$OptionsConfiguration;
+}
+
 public class io/sentry/spring/jakarta/tracing/SentryAdviceConfiguration {
 	public fun <init> ()V
 	public fun sentrySpanAdvice ()Lorg/aopalliance/aop/Advice;

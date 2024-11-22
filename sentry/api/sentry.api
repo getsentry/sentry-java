@@ -392,6 +392,7 @@ public final class io/sentry/DefaultScopesStorage : io/sentry/IScopesStorage {
 	public fun <init> ()V
 	public fun close ()V
 	public fun get ()Lio/sentry/IScopes;
+	public fun init ()V
 	public fun set (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
 }
 
@@ -466,6 +467,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
+	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
@@ -503,6 +505,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setGlobalHubMode (Ljava/lang/Boolean;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
+	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
@@ -938,6 +941,7 @@ public abstract interface class io/sentry/IScopes {
 public abstract interface class io/sentry/IScopesStorage {
 	public abstract fun close ()V
 	public abstract fun get ()Lio/sentry/IScopes;
+	public abstract fun init ()V
 	public abstract fun set (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
 }
 
@@ -1648,6 +1652,7 @@ public final class io/sentry/NoOpScopesStorage : io/sentry/IScopesStorage {
 	public fun close ()V
 	public fun get ()Lio/sentry/IScopes;
 	public static fun getInstance ()Lio/sentry/NoOpScopesStorage;
+	public fun init ()V
 	public fun set (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
 }
 
@@ -2928,6 +2933,7 @@ public class io/sentry/SentryOptions {
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeEnvelopeCallback ()Lio/sentry/SentryOptions$BeforeEnvelopeCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
+	public fun getBeforeSendReplay ()Lio/sentry/SentryOptions$BeforeSendReplayCallback;
 	public fun getBeforeSendTransaction ()Lio/sentry/SentryOptions$BeforeSendTransactionCallback;
 	public fun getBundleIds ()Ljava/util/Set;
 	public fun getCacheDirPath ()Ljava/lang/String;
@@ -2958,6 +2964,7 @@ public class io/sentry/SentryOptions {
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getIgnoredSpanOrigins ()Ljava/util/List;
+	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getInitPriority ()Lio/sentry/InitPriority;
@@ -3045,6 +3052,7 @@ public class io/sentry/SentryOptions {
 	public fun setBeforeBreadcrumb (Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;)V
 	public fun setBeforeEnvelopeCallback (Lio/sentry/SentryOptions$BeforeEnvelopeCallback;)V
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
+	public fun setBeforeSendReplay (Lio/sentry/SentryOptions$BeforeSendReplayCallback;)V
 	public fun setBeforeSendTransaction (Lio/sentry/SentryOptions$BeforeSendTransactionCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
 	public fun setCompositePerformanceCollector (Lio/sentry/CompositePerformanceCollector;)V
@@ -3087,6 +3095,7 @@ public class io/sentry/SentryOptions {
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredSpanOrigins (Ljava/util/List;)V
+	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setInitPriority (Lio/sentry/InitPriority;)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
@@ -3149,6 +3158,10 @@ public abstract interface class io/sentry/SentryOptions$BeforeEnvelopeCallback {
 
 public abstract interface class io/sentry/SentryOptions$BeforeSendCallback {
 	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+}
+
+public abstract interface class io/sentry/SentryOptions$BeforeSendReplayCallback {
+	public abstract fun execute (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 }
 
 public abstract interface class io/sentry/SentryOptions$BeforeSendTransactionCallback {
@@ -3283,19 +3296,23 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getErrorReplayDuration ()J
 	public fun getFrameRate ()I
 	public fun getMaskViewClasses ()Ljava/util/Set;
+	public fun getMaskViewContainerClass ()Ljava/lang/String;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
 	public fun getUnmaskViewClasses ()Ljava/util/Set;
+	public fun getUnmaskViewContainerClass ()Ljava/lang/String;
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
+	public fun setMaskViewContainerClass (Ljava/lang/String;)V
 	public fun setOnErrorSampleRate (Ljava/lang/Double;)V
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
+	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
 }
 
 public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang/Enum {
@@ -3306,12 +3323,6 @@ public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang
 	public final field sizeScale F
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public static fun values ()[Lio/sentry/SentryReplayOptions$SentryReplayQuality;
-}
-
-public final class io/sentry/SentrySpanFactoryHolder {
-	public fun <init> ()V
-	public static fun getSpanFactory ()Lio/sentry/ISpanFactory;
-	public static fun setSpanFactory (Lio/sentry/ISpanFactory;)V
 }
 
 public final class io/sentry/SentrySpanStorage {
@@ -3618,6 +3629,11 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field PROFILER_ID Ljava/lang/String;
 	public static final field THREAD_ID Ljava/lang/String;
 	public static final field THREAD_NAME Ljava/lang/String;
+}
+
+public final class io/sentry/SpanFactoryFactory {
+	public fun <init> ()V
+	public static fun create (Lio/sentry/util/LoadClass;Lio/sentry/ILogger;)Lio/sentry/ISpanFactory;
 }
 
 public abstract interface class io/sentry/SpanFinishedCallback {
@@ -6002,13 +6018,20 @@ public final class io/sentry/transport/NoOpTransportGate : io/sentry/transport/I
 	public fun isConnected ()Z
 }
 
-public final class io/sentry/transport/RateLimiter {
+public final class io/sentry/transport/RateLimiter : java/io/Closeable {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/SentryOptions;)V
+	public fun addRateLimitObserver (Lio/sentry/transport/RateLimiter$IRateLimitObserver;)V
+	public fun close ()V
 	public fun filter (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
 	public fun isActiveForCategory (Lio/sentry/DataCategory;)Z
 	public fun isAnyRateLimitActive ()Z
+	public fun removeRateLimitObserver (Lio/sentry/transport/RateLimiter$IRateLimitObserver;)V
 	public fun updateRetryAfterLimits (Ljava/lang/String;Ljava/lang/String;I)V
+}
+
+public abstract interface class io/sentry/transport/RateLimiter$IRateLimitObserver {
+	public abstract fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 }
 
 public final class io/sentry/transport/ReusableCountLatch {
@@ -6047,6 +6070,8 @@ public final class io/sentry/util/CheckInUtils {
 	public fun <init> ()V
 	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
 	public static fun withCheckIn (Ljava/lang/String;Lio/sentry/MonitorConfig;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
+	public static fun withCheckIn (Ljava/lang/String;Ljava/lang/String;Lio/sentry/MonitorConfig;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
+	public static fun withCheckIn (Ljava/lang/String;Ljava/lang/String;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
 	public static fun withCheckIn (Ljava/lang/String;Ljava/util/concurrent/Callable;)Ljava/lang/Object;
 }
 
@@ -6303,7 +6328,7 @@ public final class io/sentry/util/SentryRandom {
 
 public final class io/sentry/util/SpanUtils {
 	public fun <init> ()V
-	public static fun ignoredSpanOriginsForOpenTelemetry ()Ljava/util/List;
+	public static fun ignoredSpanOriginsForOpenTelemetry (Z)Ljava/util/List;
 	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
 }
 
@@ -6325,6 +6350,7 @@ public final class io/sentry/util/StringUtils {
 
 public final class io/sentry/util/TracingUtils {
 	public fun <init> ()V
+	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
 	public static fun maybeUpdateBaggage (Lio/sentry/IScope;Lio/sentry/SentryOptions;)Lio/sentry/PropagationContext;
 	public static fun startNewTrace (Lio/sentry/IScopes;)V
 	public static fun trace (Lio/sentry/IScopes;Ljava/util/List;Lio/sentry/ISpan;)Lio/sentry/util/TracingUtils$TracingHeaders;

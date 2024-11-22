@@ -277,6 +277,17 @@ public final class SentryClient implements ISentryClient {
 
     event = processReplayEvent(event, hint, options.getEventProcessors());
 
+    if (event != null) {
+      event = executeBeforeSendReplay(event, hint);
+
+      if (event == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSendReplay");
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Replay);
+      }
+    }
+
     if (event == null) {
       options.getLogger().log(SentryLevel.DEBUG, "Replay was dropped by Event processors.");
       return SentryId.EMPTY_ID;
@@ -774,6 +785,23 @@ public final class SentryClient implements ISentryClient {
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
 
+    if (TracingUtils.isIgnored(options.getIgnoredTransactions(), transaction.getTransaction())) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction was dropped as transaction name %s is ignored",
+              transaction.getTransaction());
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(
+              DiscardReason.EVENT_PROCESSOR, DataCategory.Span, transaction.getSpans().size() + 1);
+      return SentryId.EMPTY_ID;
+    }
+
     SentryId sentryId = SentryId.EMPTY_ID;
     if (transaction.getEventId() != null) {
       sentryId = transaction.getEventId();
@@ -916,10 +944,9 @@ public final class SentryClient implements ISentryClient {
               SentryLevel.DEBUG,
               "Check-in was dropped as slug %s is ignored",
               checkIn.getMonitorSlug());
-      // TODO in a follow up PR with DataCategory.Monitor
-      //      options
-      //        .getClientReportRecorder()
-      //        .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Monitor);
       return SentryId.EMPTY_ID;
     }
 
@@ -1151,6 +1178,27 @@ public final class SentryClient implements ISentryClient {
       }
     }
     return transaction;
+  }
+
+  private @Nullable SentryReplayEvent executeBeforeSendReplay(
+      @NotNull SentryReplayEvent event, final @NotNull Hint hint) {
+    final SentryOptions.BeforeSendReplayCallback beforeSendReplay = options.getBeforeSendReplay();
+    if (beforeSendReplay != null) {
+      try {
+        event = beforeSendReplay.execute(event, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The BeforeSendReplay callback threw an exception. It will be added as breadcrumb and continue.",
+                e);
+
+        // drop event in case of an error in beforeSend due to PII concerns
+        event = null;
+      }
+    }
+    return event;
   }
 
   @Override

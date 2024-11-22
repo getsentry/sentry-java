@@ -185,7 +185,7 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     final @NotNull String spanId = spanData.getSpanId();
-    final @Nullable OtelSpanWrapper sentrySpanMaybe =
+    final @Nullable IOtelSpanWrapper sentrySpanMaybe =
         spanStorage.getSentrySpan(spanData.getSpanContext());
     final @NotNull OtelSpanInfo spanInfo =
         spanDescriptionExtractor.extractSpanInfo(spanData, sentrySpanMaybe);
@@ -227,7 +227,7 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     setOtelInstrumentationInfo(spanData, sentryChildSpan);
-
+    setOtelSpanKind(spanData, sentryChildSpan);
     transferSpanDetails(sentrySpanMaybe, sentryChildSpan);
 
     for (SpanNode childNode : spanNode.getChildren()) {
@@ -239,9 +239,9 @@ public final class SentrySpanExporter implements SpanExporter {
   }
 
   private void transferSpanDetails(
-      final @Nullable OtelSpanWrapper sourceSpanMaybe, final @NotNull ISpan targetSpan) {
+      final @Nullable IOtelSpanWrapper sourceSpanMaybe, final @NotNull ISpan targetSpan) {
     if (sourceSpanMaybe != null) {
-      final @NotNull OtelSpanWrapper sourceSpan = sourceSpanMaybe;
+      final @NotNull IOtelSpanWrapper sourceSpan = sourceSpanMaybe;
 
       final @NotNull Contexts contexts = sourceSpan.getContexts();
       targetSpan.getContexts().putAll(contexts);
@@ -263,7 +263,7 @@ public final class SentrySpanExporter implements SpanExporter {
   private @Nullable ITransaction createTransactionForOtelSpan(final @NotNull SpanData span) {
     final @NotNull String spanId = span.getSpanId();
     final @NotNull String traceId = span.getTraceId();
-    final @Nullable OtelSpanWrapper sentrySpanMaybe =
+    final @Nullable IOtelSpanWrapper sentrySpanMaybe =
         spanStorage.getSentrySpan(span.getSpanContext());
     final @Nullable IScopes scopesMaybe =
         sentrySpanMaybe != null ? sentrySpanMaybe.getScopes() : null;
@@ -288,7 +288,7 @@ public final class SentrySpanExporter implements SpanExporter {
     @Nullable Baggage baggage = null;
 
     if (sentrySpanMaybe != null) {
-      final @NotNull OtelSpanWrapper sentrySpan = sentrySpanMaybe;
+      final @NotNull IOtelSpanWrapper sentrySpan = sentrySpanMaybe;
       final @Nullable String transactionNameMaybe = sentrySpan.getTransactionName();
       if (transactionNameMaybe != null) {
         transactionName = transactionNameMaybe;
@@ -328,7 +328,7 @@ public final class SentrySpanExporter implements SpanExporter {
     sentryTransaction.setContext("otel", otelContext);
 
     setOtelInstrumentationInfo(span, sentryTransaction);
-
+    setOtelSpanKind(span, sentryTransaction);
     transferSpanDetails(sentrySpanMaybe, sentryTransaction);
 
     return sentryTransaction;
@@ -482,7 +482,8 @@ public final class SentrySpanExporter implements SpanExporter {
     return attributeKeysToRemove.contains(key);
   }
 
-  private void setOtelInstrumentationInfo(SpanData span, ISpan sentryTransaction) {
+  private void setOtelInstrumentationInfo(
+      final @NotNull SpanData span, final @NotNull ISpan sentryTransaction) {
     final @Nullable String otelInstrumentationName = span.getInstrumentationScopeInfo().getName();
     if (otelInstrumentationName != null) {
       sentryTransaction.setData("otel.instrumentation.name", otelInstrumentationName);
@@ -493,6 +494,10 @@ public final class SentrySpanExporter implements SpanExporter {
     if (otelInstrumentationVersion != null) {
       sentryTransaction.setData("otel.instrumentation.version", otelInstrumentationVersion);
     }
+  }
+
+  private void setOtelSpanKind(final @NotNull SpanData otelSpan, final @NotNull ISpan sentrySpan) {
+    sentrySpan.setData("otel.kind", otelSpan.getKind().name());
   }
 
   @Override

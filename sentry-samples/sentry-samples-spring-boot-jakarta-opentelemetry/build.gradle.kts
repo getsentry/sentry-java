@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.springframework.boot.gradle.tasks.run.BootRun
 
 plugins {
     id(Config.BuildPlugins.springBoot) version Config.springBoot3Version
@@ -67,17 +68,49 @@ dependencies {
     testImplementation(Config.Libs.apolloKotlin)
 }
 
+dependencyManagement {
+    imports {
+        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.7.0")
+    }
+}
+
 configure<SourceSetContainer> {
     test {
         java.srcDir("src/test/java")
     }
 }
 
+tasks.register<BootRun>("bootRunWithAgent").configure {
+    group = "application"
+
+    val mainBootRunTask = tasks.getByName<BootRun>("bootRun")
+    mainClass = mainBootRunTask.mainClass
+    classpath = mainBootRunTask.classpath
+
+    val versionName = project.properties["versionName"] as String
+    val agentProjectId = projects.sentryOpentelemetry.sentryOpentelemetryAgent.identityPath.toString()
+    val agentProjectPath = project(agentProjectId).projectDir.absolutePath
+    val agentJarPath = "$agentProjectPath/build/libs/sentry-opentelemetry-agent-$versionName.jar"
+
+    val dsn = System.getenv("SENTRY_DSN") ?: "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563"
+    val tracesSampleRate = System.getenv("SENTRY_TRACES_SAMPLE_RATE") ?: "1"
+
+    environment("SENTRY_DSN", dsn)
+    environment("SENTRY_TRACES_SAMPLE_RATE", tracesSampleRate)
+    environment("OTEL_TRACES_EXPORTER", "none")
+    environment("OTEL_METRICS_EXPORTER", "none")
+    environment("OTEL_LOGS_EXPORTER", "none")
+
+    jvmArgs =
+        listOf("-Dotel.javaagent.debug=true", "-javaagent:$agentJarPath")
+}
+
 tasks.register<Test>("systemTest").configure {
     group = "verification"
     description = "Runs the System tests"
 
-//    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+    outputs.upToDateWhen { false }
+
     maxParallelForks = 1
 
     // Cap JVM args per test

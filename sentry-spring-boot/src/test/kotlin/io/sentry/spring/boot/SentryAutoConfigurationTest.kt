@@ -1,6 +1,7 @@
 package io.sentry.spring.boot
 
 import com.acme.MainBootClass
+import io.opentelemetry.api.OpenTelemetry
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
@@ -12,10 +13,12 @@ import io.sentry.NoOpTransportFactory
 import io.sentry.SamplingContext
 import io.sentry.Sentry
 import io.sentry.SentryEvent
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
-import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor
+import io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider
+import io.sentry.opentelemetry.agent.AgentMarker
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.quartz.SentryJobListener
@@ -169,6 +172,7 @@ class SentryAutoConfigurationTest {
             "sentry.enabled=false",
             "sentry.send-modules=false",
             "sentry.ignored-checkins=slug1,slugB",
+            "sentry.ignored-transactions=transactionName1,transactionNameB",
             "sentry.enable-backpressure-handling=false",
             "sentry.enable-spotlight=true",
             "sentry.spotlight-connection-url=http://local.sentry.io:1234",
@@ -209,6 +213,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.isEnabled).isEqualTo(false)
             assertThat(options.isSendModules).isEqualTo(false)
             assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
+            assertThat(options.ignoredTransactions).containsOnly("transactionName1", "transactionNameB")
             assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
             assertThat(options.isForceInit).isEqualTo(true)
             assertThat(options.isGlobalHubMode).isEqualTo(true)
@@ -725,43 +730,72 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath and auto init off, creates OpenTelemetryLinkErrorEventProcessor`() {
+    fun `when AgentMarker is on the classpath and auto init off, runs SentryOpenTelemetryAgentWithoutAutoInitConfiguration`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
             .run {
-                assertThat(it).hasSingleBean(OpenTelemetryLinkErrorEventProcessor::class.java)
-                val options = it.getBean(SentryOptions::class.java)
-                assertThat(options.eventProcessors).anyMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+                assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryAgentWithoutAutoInit"))
             }
     }
 
     @Test
-    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath but auto init on, does not create OpenTelemetryLinkErrorEventProcessor`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=true")
-            .run {
-                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
-                val options = it.getBean(SentryOptions::class.java)
-                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
-            }
-    }
-
-    @Test
-    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath but auto init default, does not create OpenTelemetryLinkErrorEventProcessor`() {
+    fun `when AgentMarker is on the classpath and auto init on, does not run SentryOpenTelemetryAgentWithoutAutoInitConfiguration`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
-                val options = it.getBean(SentryOptions::class.java)
-                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryAgentWithoutAutoInit"))
             }
     }
 
     @Test
-    fun `when OpenTelemetryLinkErrorEventProcessor is not on the classpath, does not create OpenTelemetryLinkErrorEventProcessor`() {
+    fun `when AgentMarker is not on the classpath and auto init off, does not run SentryOpenTelemetryAgentWithoutAutoInitConfiguration`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
-            .withClassLoader(FilteredClassLoader(OpenTelemetryLinkErrorEventProcessor::class.java))
+            .withClassLoader(FilteredClassLoader(AgentMarker::class.java))
             .run {
-                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
-                val options = it.getBean(SentryOptions::class.java)
-                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryAgentWithoutAutoInit"))
+            }
+    }
+
+    @Test
+    fun `when AgentMarker is not on the classpath but OpenTelemetry is, runs SpringBootOpenTelemetryNoAgent`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(AgentMarker::class.java))
+            .withUserConfiguration(OtelBeanConfig::class.java)
+            .run {
+                assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryNoAgent"))
+            }
+    }
+
+    @Test
+    fun `when AgentMarker and OpenTelemetry are not on the classpath, does not run SpringBootOpenTelemetryNoAgent`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(AgentMarker::class.java, OpenTelemetry::class.java))
+            .run {
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryNoAgent"))
+            }
+    }
+
+    @Test
+    fun `when AgentMarker and SentryAutoConfigurationCustomizerProvider are not on the classpath, does not run SpringBootOpenTelemetryNoAgent`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(AgentMarker::class.java, SentryAutoConfigurationCustomizerProvider::class.java))
+            .withUserConfiguration(OtelBeanConfig::class.java)
+            .run {
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryNoAgent"))
+            }
+    }
+
+    @Test
+    fun `when AgentMarker is not on the classpath and auto init on, does not run SentryOpenTelemetryAgentWithoutAutoInitConfiguration`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(AgentMarker::class.java))
+            .run {
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryAgentWithoutAutoInit"))
             }
     }
 
@@ -1009,6 +1043,16 @@ class SentryAutoConfigurationTest {
 
     class CustomTracesSamplerCallback : SentryOptions.TracesSamplerCallback {
         override fun sample(samplingContext: SamplingContext) = 1.0
+    }
+
+    /**
+     * this should be taken care of by the otel spring starter in a real application
+     */
+    @Configuration
+    open class OtelBeanConfig {
+
+        @Bean
+        open fun openTelemetry() = OpenTelemetry.noop()
     }
 
     open class CustomSentryUserProvider : SentryUserProvider {
