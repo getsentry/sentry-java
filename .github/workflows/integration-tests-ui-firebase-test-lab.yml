@@ -1,0 +1,76 @@
+name: 'Integration Tests'
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Ui tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        device-model: [MediumPhone.arm]
+        device-api-level: [ 30, 31, 32, 33 ]
+
+    # we copy the secret to the env variable in order to access it in the workflow
+    env:
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: 'Set up Java: 17'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@707359876a764dbcdb9da0b0ed08291818310c3d # pin@v3
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Make assembleUiTests
+        run: make assembleUiTests
+
+      - name: 'Install jq'
+        run: 'sudo apt install -y --no-install-recommends jq'
+
+      - name: Install gcloud
+        uses: 'google-github-actions/setup-gcloud@v2'
+        with:
+          version: '>= 363.0.0'
+
+      - name: Configure gcloud
+        run: |
+          echo "$SERVICE_ACCOUNT" > /opt/service_account.json
+          project_id=$(cat /opt/service_account.json | jq -r ".project_id")
+          gcloud auth activate-service-account --key-file=/opt/service_account.json
+          gcloud config set project $project_id
+
+      - name: Firebase Test Lab (Device ${{ matrix.device-model }} API ${{ matrix.device-api-level }})
+        run: |
+          appApk=./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
+          testAppApk=./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
+          attempts=4
+          device-model=${{ matrix.device-model }}
+          device-api-level=${{ matrix.device-api-level }}
+
+          if gcloud firebase test android run --app=$appApk --test=$testAppApk --type=$type --device=$device-model,version=$device-api-level --num-flaky-test-attempts=$attempts
+          then
+              echo "Test execution successfully finished"
+          else
+              status=$?
+              echo "Test execution exited with non-zero exit code: " $status
+          fi
