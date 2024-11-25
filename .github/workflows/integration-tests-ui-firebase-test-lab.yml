@@ -15,9 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        device-model: [MediumPhone.arm, husky, e1q] # Pixel 8 Pro, Galaxy S24
-        device-api-level: [ 34 ]
 
     # we copy the secret to the env variable in order to access it in the workflow
     env:
@@ -59,16 +56,20 @@ jobs:
           gcloud auth activate-service-account --key-file=/opt/service_account.json
           gcloud config set project $project_id
 
-      - name: Firebase Test Lab (Device ${{ matrix.device-model }} API ${{ matrix.device-api-level }})
+      - name: Firebase Test Lab
         run: |
           app_apk=./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
           test_app_apk=./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
           attempts=4
-          device_model=${{ matrix.device-model }}
-          device_api_level=${{ matrix.device-api-level }}
           type=instrumentation
 
-          if gcloud firebase test android run --app=$app_apk --test=$test_app_apk --type=$type --device=^:^model=$device_model:version=$device_api_level --num-flaky-test-attempts=$attempts
+          if gcloud firebase test android run \
+            --app=$app_apk --test=$test_app_apk \
+            --type=$type \
+            --num-flaky-test-attempts=$attempts \
+            --device=^:^model=MediumPhone.arm:version=34 \
+            --device=^:^model=bluejay:version=32 \
+            --device=^:^model=a14xm:version=34 \
           then
               echo "Test execution successfully finished"
           else
