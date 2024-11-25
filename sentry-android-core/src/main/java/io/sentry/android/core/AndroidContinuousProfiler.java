@@ -125,12 +125,16 @@ public class AndroidContinuousProfiler
           && (rateLimiter.isActiveForCategory(All)
               || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk))) {
         logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
+        // Let's stop and reset profiler id, as the profile is now broken anyway
+        stop();
         return;
       }
 
       // If device is offline, we don't start the profiler, to avoid flooding the cache
       if (scopes.getOptions().getConnectionStatusProvider().getConnectionStatus() == DISCONNECTED) {
         logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
+        // Let's stop and reset profiler id, as the profile is now broken anyway
+        stop();
         return;
       }
     }
@@ -176,6 +180,9 @@ public class AndroidContinuousProfiler
     }
     // check if profiler was created and it's running
     if (profiler == null || !isRunning) {
+      // When the profiler is stopped due to an error (e.g. offline or rate limited), reset the ids
+      profilerId = SentryId.EMPTY_ID;
+      chunkId = SentryId.EMPTY_ID;
       return;
     }
 

@@ -20,6 +20,7 @@ import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
+import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getProperty
 import io.sentry.transport.RateLimiter
@@ -40,6 +41,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -430,6 +432,7 @@ class AndroidContinuousProfilerTest {
         // If the SDK is rate limited, the profiler should stop
         profiler.onRateLimitChanged(rateLimiter)
         assertFalse(profiler.isRunning)
+        assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
         verify(fixture.mockLogger).log(eq(SentryLevel.WARNING), eq("SDK is rate limited. Stopping profiler."))
     }
 
@@ -446,6 +449,7 @@ class AndroidContinuousProfilerTest {
         // If the SDK is rate limited, the profiler should never start
         profiler.start()
         assertFalse(profiler.isRunning)
+        assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
         verify(fixture.mockLogger).log(eq(SentryLevel.WARNING), eq("SDK is rate limited. Stopping profiler."))
     }
 
@@ -462,6 +466,7 @@ class AndroidContinuousProfilerTest {
         // If the device is offline, the profiler should never start
         profiler.start()
         assertFalse(profiler.isRunning)
+        assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
         verify(fixture.mockLogger).log(eq(SentryLevel.WARNING), eq("Device is offline. Stopping profiler."))
     }
 }
