@@ -503,6 +503,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setStaticValues(final @NotNull SentryEvent event) {
     mergeUser(event);
     setSideLoadedInfo(event);
+    setSplitApksInfo(event);
   }
 
   private void setPlatform(final @NotNull SentryBaseEvent event) {
@@ -602,6 +603,20 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       }
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
+    }
+  }
+
+  private void setSplitApksInfo(final @NotNull SentryBaseEvent event) {
+    try {
+      final ContextUtils.SplitApksInfo splitApksInfo =
+          ContextUtils.retrieveSplitApksInfo(context, options.getLogger(), buildInfoProvider);
+
+      if (splitApksInfo != null) {
+        final @NotNull Map<String, Object> extras = splitApksInfo.asExtras();
+        event.setExtras(extras);
+      }
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Error getting split apks info.", e);
     }
   }
 

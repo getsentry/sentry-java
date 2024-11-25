@@ -128,6 +128,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     mergeUser(event);
     setDevice(event, errorEvent, applyScopeData);
     setSideLoadedInfo(event);
+    setSplitApksInfo(event);
   }
 
   private boolean shouldApplyScopeData(
@@ -290,6 +291,18 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       }
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
+    }
+  }
+
+  private void setSplitApksInfo(final @NotNull SentryBaseEvent event) {
+    try {
+      final ContextUtils.SplitApksInfo splitApksInfo = deviceInfoUtil.get().getSplitApksInfo();
+      if (splitApksInfo != null) {
+        final @NotNull Map<String, Object> extras = splitApksInfo.asExtras();
+        event.setExtras(extras);
+      }
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Error getting split apks info.", e);
     }
   }
 
