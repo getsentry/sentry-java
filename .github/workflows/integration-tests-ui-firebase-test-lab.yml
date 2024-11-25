@@ -54,7 +54,7 @@ jobs:
 
       - name: Configure gcloud
         run: |
-          echo "$SERVICE_ACCOUNT" > /opt/service_account.json
+          echo "$FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON" > /opt/service_account.json
           project_id=$(cat /opt/service_account.json | jq -r ".project_id")
           gcloud auth activate-service-account --key-file=/opt/service_account.json
           gcloud config set project $project_id
