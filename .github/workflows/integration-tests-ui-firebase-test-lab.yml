@@ -16,8 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        device-model: [MediumPhone.arm]
-        device-api-level: [ 30, 31, 32, 33 ]
+        device-model: [MediumPhone.arm, husky, e1q] # Pixel 8 Pro, Galaxy S24
+        device-api-level: [ 34 ]
 
     # we copy the secret to the env variable in order to access it in the workflow
     env:
@@ -61,13 +61,14 @@ jobs:
 
       - name: Firebase Test Lab (Device ${{ matrix.device-model }} API ${{ matrix.device-api-level }})
         run: |
-          appApk=./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
-          testAppApk=./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
+          app_apk=./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
+          test_app_apk=./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
           attempts=4
-          device-model=${{ matrix.device-model }}
-          device-api-level=${{ matrix.device-api-level }}
+          device_model=${{ matrix.device-model }}
+          device_api_level=${{ matrix.device-api-level }}
+          type=instrumentation
 
-          if gcloud firebase test android run --app=$appApk --test=$testAppApk --type=$type --device=$device-model,version=$device-api-level --num-flaky-test-attempts=$attempts
+          if gcloud firebase test android run --app=$app_apk --test=$test_app_apk --type=$type --device=^:^model=$device_model:version=$device_api_level --num-flaky-test-attempts=$attempts
           then
               echo "Test execution successfully finished"
           else

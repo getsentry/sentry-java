@@ -125,6 +125,7 @@ dependencies {
     androidTestImplementation(Config.TestLibs.mockWebserver)
     androidTestImplementation(Config.TestLibs.androidxJunit)
     androidTestImplementation(Config.TestLibs.leakCanaryInstrumentation)
+    androidTestImplementation("com.google.firebase:testlab-instr-lib:0.2")
     androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
 }
 
