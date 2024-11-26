@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Support HTTP_METHOD and HTTP_REQUEST_METHOD for Otel Spans ([#3930](https://github.com/getsentry/sentry-java/pull/3930))
+
 ## 8.0.0-beta.3
 
 ### Features
