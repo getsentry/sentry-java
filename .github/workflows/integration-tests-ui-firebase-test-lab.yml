@@ -1,4 +1,4 @@
-name: 'Integration Tests'
+name: 'Integration Tests (Firebase Test Lab)'
 on:
   push:
     branches:
@@ -63,16 +63,16 @@ jobs:
           attempts=4
           type=instrumentation
 
-          if gcloud firebase test android run \
+          gcloud firebase test android run \
             --app=$app_apk --test=$test_app_apk \
             --type=$type \
             --num-flaky-test-attempts=$attempts \
             --device=^:^model=MediumPhone.arm:version=34 \
             --device=^:^model=bluejay:version=32 \
-            --device=^:^model=a14xm:version=34 \
-          then
-              echo "Test execution successfully finished"
-          else
-              status=$?
-              echo "Test execution exited with non-zero exit code: " $status
+            --device=^:^model=a14xm:version=34
+
+          status=$?
+          if [ $status -ne 0 ]; then
+              echo "Firebase Test Lab failed with status $status"
+              exit 1
           fi
