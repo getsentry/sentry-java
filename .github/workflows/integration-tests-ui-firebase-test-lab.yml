@@ -18,8 +18,7 @@ jobs:
 
     # we copy the secret to the env variable in order to access it in the workflow
     env:
-      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
-      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+      FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON }}
 
     steps:
       - name: Git checkout
