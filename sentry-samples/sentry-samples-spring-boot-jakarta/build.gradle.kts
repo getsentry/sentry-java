@@ -52,6 +52,9 @@ dependencies {
     implementation(projects.sentryLogback)
     implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
+    implementation(Config.Libs.quartz)
+
+    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     // database query tracing
     implementation(projects.sentryJdbc)
