@@ -46,6 +46,12 @@ configure<SourceSetContainer> {
     }
 }
 
+tasks.jar {
+    manifest {
+        attributes("Automatic-Module-Name" to "io.sentry.log4j2")
+    }
+}
+
 jacoco {
     toolVersion = Config.QualityPlugins.Jacoco.version
 }

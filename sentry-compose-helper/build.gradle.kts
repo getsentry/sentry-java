@@ -53,6 +53,12 @@ artifacts {
     add("embeddedJar", File("$buildDir/libs/sentry-compose-helper-jvm-$version.jar"))
 }
 
+tasks.jar {
+    manifest {
+        attributes("Automatic-Module-Name" to "io.sentry.compose.helper")
+    }
+}
+
 buildConfig {
     sourceSets.getByName("jvmMain") {
         useKotlinOutput()

@@ -50,6 +50,12 @@ configure<SourceSetContainer> {
     }
 }
 
+tasks.jar {
+    manifest {
+        attributes("Automatic-Module-Name" to "io.sentry.apollo")
+    }
+}
+
 jacoco {
     toolVersion = Config.QualityPlugins.Jacoco.version
 }

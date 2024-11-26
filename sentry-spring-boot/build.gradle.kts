@@ -83,6 +83,12 @@ configure<SourceSetContainer> {
     }
 }
 
+tasks.jar {
+    manifest {
+        attributes("Automatic-Module-Name" to "io.sentry.spring.boot")
+    }
+}
+
 jacoco {
     toolVersion = Config.QualityPlugins.Jacoco.version
 }

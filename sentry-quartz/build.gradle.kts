@@ -45,6 +45,12 @@ configure<SourceSetContainer> {
     }
 }
 
+tasks.jar {
+    manifest {
+        attributes("Automatic-Module-Name" to "io.sentry.quartz")
+    }
+}
+
 jacoco {
     toolVersion = Config.QualityPlugins.Jacoco.version
 }
