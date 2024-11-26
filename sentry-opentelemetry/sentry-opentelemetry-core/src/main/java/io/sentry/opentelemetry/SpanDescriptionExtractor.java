@@ -22,9 +22,9 @@ public final class SpanDescriptionExtractor {
       final @NotNull Attributes attributes = otelSpan.getAttributes();
 
       final @Nullable String httpMethod =
-        attributes.get(HttpAttributes.HTTP_REQUEST_METHOD) != null
-          ? attributes.get(HttpAttributes.HTTP_REQUEST_METHOD)
-          : attributes.get(io.opentelemetry.semconv.SemanticAttributes.HTTP_METHOD);
+          attributes.get(HttpAttributes.HTTP_REQUEST_METHOD) != null
+              ? attributes.get(HttpAttributes.HTTP_REQUEST_METHOD)
+              : attributes.get(io.opentelemetry.semconv.SemanticAttributes.HTTP_METHOD);
 
       if (httpMethod != null) {
         return descriptionForHttpMethod(otelSpan, httpMethod);
