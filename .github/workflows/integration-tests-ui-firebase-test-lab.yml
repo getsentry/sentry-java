@@ -18,7 +18,9 @@ jobs:
 
     # we copy the secret to the env variable in order to access it in the workflow
     env:
-      FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON }}
+      # The contents of service_account.json encoded using base64, to avoid any shell escaping issues
+      # base64 -i <file>.json
+      FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON_BASE64 }}
 
     steps:
       - name: Git checkout
@@ -50,9 +52,8 @@ jobs:
 
       - name: Configure gcloud
         run: |
-          echo "$FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON" > /opt/service_account.json
-          project_id=$(cat /opt/service_account.json | jq -r ".project_id")
-          gcloud auth activate-service-account --key-file=/opt/service_account.json
+          echo "$FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON_BASE64" | base64 -d | gcloud auth activate-service-account --key-file=-
+          project_id=$(echo "$FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON_BASE64" | base64 -d | jq -r ".project_id")
           gcloud config set project $project_id
 
       - name: Firebase Test Lab
