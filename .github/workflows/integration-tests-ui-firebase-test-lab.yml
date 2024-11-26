@@ -42,11 +42,8 @@ jobs:
       - name: Make assembleUiTests
         run: make assembleUiTests
 
-      - name: 'Install jq'
-        run: 'sudo apt install -y --no-install-recommends jq'
-
       - name: Install gcloud
-        uses: 'google-github-actions/setup-gcloud@v2'
+        uses: 'google-github-actions/setup-gcloud@6189d56e4096ee891640bb02ac264be376592d6a' # pin 2.1.2
         with:
           version: '>= 363.0.0'
 
