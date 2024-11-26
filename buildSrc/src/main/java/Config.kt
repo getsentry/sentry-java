@@ -132,7 +132,7 @@ object Config {
         val graphQlJava = "com.graphql-java:graphql-java:17.3"
         val graphQlJava22 = "com.graphql-java:graphql-java:22.1"
 
-        val quartz = "org.quartz-scheduler:quartz:2.3.0"
+        val quartz = "org.quartz-scheduler:quartz:2.5.0"
 
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
         val kotlinStdLib = "org.jetbrains.kotlin:kotlin-stdlib"
