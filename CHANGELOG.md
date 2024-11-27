@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Extract OpenTelemetry `URL_PATH` span attribute into description ([#3933](https://github.com/getsentry/sentry-java/pull/3933))
+
 ## 8.0.0-beta.3
 
 ### Features

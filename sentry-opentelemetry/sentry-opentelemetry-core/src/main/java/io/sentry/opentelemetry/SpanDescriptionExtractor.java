@@ -68,11 +68,17 @@ public final class SpanDescriptionExtractor {
       httpPath = httpTarget;
     }
     final @NotNull String op = opBuilder.toString();
+
     final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
     if (urlFull != null) {
       if (httpPath == null) {
         httpPath = urlFull;
       }
+    }
+
+    final @Nullable String urlPath = attributes.get(UrlAttributes.URL_PATH);
+    if (httpPath == null && urlPath != null) {
+      httpPath = urlPath;
     }
 
     if (httpPath == null) {
