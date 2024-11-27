@@ -1,5 +1,6 @@
 package io.sentry.compose.gestures;
 
+import androidx.compose.ui.Modifier;
 import androidx.compose.ui.geometry.Rect;
 import androidx.compose.ui.layout.ModifierInfo;
 import androidx.compose.ui.node.LayoutNode;
@@ -13,6 +14,7 @@ import io.sentry.compose.SentryComposeHelper;
 import io.sentry.compose.helper.BuildConfig;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.gestures.UiElement;
+import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -90,13 +92,28 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
               }
             }
           } else {
+            final @NotNull Modifier modifier = modifierInfo.getModifier();
             // Newer Jetpack Compose 1.5 uses Node modifiers for clicks/scrolls
-            final @Nullable String type = modifierInfo.getModifier().getClass().getCanonicalName();
+            final @Nullable String type = modifier.getClass().getCanonicalName();
             if ("androidx.compose.foundation.ClickableElement".equals(type)
                 || "androidx.compose.foundation.CombinedClickableElement".equals(type)) {
               isClickable = true;
             } else if ("androidx.compose.foundation.ScrollingLayoutElement".equals(type)) {
               isScrollable = true;
+            } else if ("androidx.compose.ui.platform.TestTagElement".equals(type)) {
+              // Newer Jetpack Compose uses TestTagElement as node elements
+              // See
+              // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/platform/TestTag.kt;l=34;drc=dcaa116fbfda77e64a319e1668056ce3b032469f
+              try {
+                final Field tagField = modifier.getClass().getDeclaredField("tag");
+                tagField.setAccessible(true);
+                final @Nullable Object value = tagField.get(modifier);
+                if (value instanceof String) {
+                  lastKnownTag = (String) value;
+                }
+              } catch (Throwable e) {
+                // ignored
+              }
             }
           }
         }
