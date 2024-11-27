@@ -6,6 +6,10 @@
 
 - Extract OpenTelemetry `URL_PATH` span attribute into description ([#3933](https://github.com/getsentry/sentry-java/pull/3933))
 
+### Fixes
+
+- Fix testTag not working for Jetpack Compose user interaction tracking ([#3878](https://github.com/getsentry/sentry-java/pull/3878))
+
 ## 8.0.0-beta.3
 
 ### Features
