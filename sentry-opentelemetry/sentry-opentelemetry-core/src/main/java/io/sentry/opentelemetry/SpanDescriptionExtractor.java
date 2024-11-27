@@ -77,10 +77,8 @@ public final class SpanDescriptionExtractor {
     }
 
     final @Nullable String urlPath = attributes.get(UrlAttributes.URL_PATH);
-    if (urlPath != null) {
-      if (httpPath == null) {
-        httpPath = urlPath;
-      }
+    if (httpPath == null && urlPath != null) {
+      httpPath = urlPath;
     }
 
     if (httpPath == null) {
