@@ -170,6 +170,7 @@ object Config {
             val otelJavaAgentTooling = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling:$otelInstrumentationAlphaVersion"
             val otelExtensionAutoconfigureSpi = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:$otelVersion"
             val otelExtensionAutoconfigure = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:$otelVersion"
+            val otelInstrumentationBom = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:$otelInstrumentationVersion"
         }
     }
 
