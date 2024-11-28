@@ -156,11 +156,11 @@ object Config {
         val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.14"
 
         object OpenTelemetry {
-            val otelVersion = "1.41.0"
+            val otelVersion = "1.44.1"
             val otelAlphaVersion = "$otelVersion-alpha"
-            val otelInstrumentationVersion = "2.7.0"
+            val otelInstrumentationVersion = "2.10.0"
             val otelInstrumentationAlphaVersion = "$otelInstrumentationVersion-alpha"
-            val otelSemanticConvetionsVersion = "1.25.0-alpha" // check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
+            val otelSemanticConvetionsVersion = "1.28.0-alpha" // check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
 
             val otelSdk = "io.opentelemetry:opentelemetry-sdk:$otelVersion"
             val otelSemconv = "io.opentelemetry.semconv:opentelemetry-semconv:$otelSemanticConvetionsVersion"
