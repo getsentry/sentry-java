@@ -12,7 +12,7 @@ import timber.log.Timber
  * Sentry Timber tree which is responsible to capture events via Timber
  */
 @Suppress("TooManyFunctions") // we have to override all methods to be able to tweak logging
-class SentryTimberTree(
+public class SentryTimberTree(
     private val scopes: IScopes,
     private val minEventLevel: SentryLevel,
     private val minBreadcrumbLevel: SentryLevel

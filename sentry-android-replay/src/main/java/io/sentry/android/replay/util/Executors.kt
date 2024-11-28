@@ -1,5 +1,6 @@
 package io.sentry.android.replay.util
 
+import android.annotation.SuppressLint
 import io.sentry.ISentryExecutorService
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
@@ -64,6 +65,7 @@ internal fun ExecutorService.submitSafely(
     }
 }
 
+@SuppressLint("DiscouragedApi")
 internal fun ScheduledExecutorService.scheduleAtFixedRateSafely(
     options: SentryOptions,
     taskName: String,
