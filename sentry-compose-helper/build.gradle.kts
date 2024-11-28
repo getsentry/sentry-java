@@ -21,7 +21,7 @@ kotlin {
                 compileOnly(compose.runtime)
                 compileOnly(compose.ui)
 
-                implementation("androidx.annotation:annotation:1.9.1")
+                compileOnly("androidx.annotation:annotation:1.9.1")
             }
         }
         val jvmTest by getting {
