@@ -57,6 +57,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private @Nullable SentryDate onCreateTime = null;
   private boolean appLaunchTooLong = false;
   private boolean isCallbackRegistered = false;
+  private boolean shouldSendStartMeasurements = true;
 
   public static @NotNull AppStartMetrics getInstance() {
 
@@ -126,19 +127,37 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    * @return A sorted list of all onCreate calls
    */
   public @NotNull List<TimeSpan> getContentProviderOnCreateTimeSpans() {
-    final List<TimeSpan> measurements = new ArrayList<>(contentProviderOnCreates.values());
-    Collections.sort(measurements);
-    return measurements;
+    final List<TimeSpan> spans = new ArrayList<>(contentProviderOnCreates.values());
+    Collections.sort(spans);
+    return spans;
   }
 
   public @NotNull List<ActivityLifecycleTimeSpan> getActivityLifecycleTimeSpans() {
-    final List<ActivityLifecycleTimeSpan> measurements = new ArrayList<>(activityLifecycles);
-    Collections.sort(measurements);
-    return measurements;
+    final List<ActivityLifecycleTimeSpan> spans = new ArrayList<>(activityLifecycles);
+    Collections.sort(spans);
+    return spans;
   }
 
   public void addActivityLifecycleTimeSpans(final @NotNull ActivityLifecycleTimeSpan timeSpan) {
     activityLifecycles.add(timeSpan);
+  }
+
+  public void onAppStartSpansSent() {
+    shouldSendStartMeasurements = false;
+    contentProviderOnCreates.clear();
+    activityLifecycles.clear();
+  }
+
+  public boolean shouldSendStartMeasurements() {
+    return shouldSendStartMeasurements;
+  }
+
+  public void restartAppStart(final long timestampMs) {
+    shouldSendStartMeasurements = true;
+    appStartSpan.reset();
+    appStartSpan.start();
+    appStartSpan.setStartUnixTimeMs(timestampMs);
+    CLASS_LOADED_UPTIME_MS = appStartSpan.getStartUptimeMs();
   }
 
   public long getClassLoadedUptimeMs() {
@@ -188,6 +207,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appLaunchedInForeground = false;
     onCreateTime = null;
     isCallbackRegistered = false;
+    shouldSendStartMeasurements = true;
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
