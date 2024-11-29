@@ -3,7 +3,6 @@ package io.sentry.opentelemetry;
 import static io.sentry.opentelemetry.SentryOtelKeys.SENTRY_SCOPES_KEY;
 
 import io.opentelemetry.context.Context;
-import io.opentelemetry.context.ContextStorage;
 import io.opentelemetry.context.Scope;
 import io.sentry.IScopes;
 import io.sentry.IScopesStorage;
@@ -27,8 +26,8 @@ public final class OtelContextScopesStorage implements IScopesStorage {
      * should try to use OTels StorageProvider mechanism instead.
      */
     //    ContextStorage.addWrapper((storage) -> new SentryContextStorage(storage));
-    ContextStorage.addWrapper(
-        (storage) -> new SentryContextStorage(new SentryOtelThreadLocalStorage()));
+    //    ContextStorage.addWrapper(
+    //        (storage) -> new SentryContextStorage(new SentryOtelThreadLocalStorage()));
   }
 
   @Override
