@@ -448,6 +448,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
 	public fun getSdkInitTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun isAppLaunchedInForeground ()Z
+	public fun isColdStartValid ()Z
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onAppStartSpansSent ()V
 	public static fun onApplicationCreate (Landroid/app/Application;)V

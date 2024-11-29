@@ -116,6 +116,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     return appLaunchedInForeground;
   }
 
+  public boolean isColdStartValid() {
+    return appLaunchedInForeground && !appLaunchTooLong;
+  }
+
   @VisibleForTesting
   public void setAppLaunchedInForeground(final boolean appLaunchedInForeground) {
     this.appLaunchedInForeground = appLaunchedInForeground;
@@ -154,6 +158,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   public void restartAppStart(final long uptimeMillis) {
     shouldSendStartMeasurements = true;
+    appLaunchTooLong = false;
+    appLaunchedInForeground = true;
     appStartSpan.reset();
     appStartSpan.start();
     appStartSpan.setStartedAt(uptimeMillis);
@@ -170,24 +176,20 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    */
   public @NotNull TimeSpan getAppStartTimeSpanWithFallback(
       final @NotNull SentryAndroidOptions options) {
+    // If the app launch took too long or it was launched in the background we return an empty span
+    if (!isColdStartValid()) {
+      return new TimeSpan();
+    }
     if (options.isEnablePerformanceV2()) {
       // Only started when sdk version is >= N
       final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
       if (appStartSpan.hasStarted()) {
-        return validateAppStartSpan(appStartSpan);
+        return appStartSpan;
       }
     }
 
     // fallback: use sdk init time span, as it will always have a start time set
-    return validateAppStartSpan(getSdkInitTimeSpan());
-  }
-
-  private @NotNull TimeSpan validateAppStartSpan(final @NotNull TimeSpan appStartSpan) {
-    // If the app launch took too long or it was launched in the background we return an empty span
-    if (appLaunchTooLong || !appLaunchedInForeground) {
-      return new TimeSpan();
-    }
-    return appStartSpan;
+    return getSdkInitTimeSpan();
   }
 
   @TestOnly
