@@ -22,9 +22,9 @@ class RestTestClient(private val backendBaseUrl: String) : LoggingInsecureRestCl
         }
     }
 
-    fun createPerson(person: Person): Person? {
+    fun createPerson(person: Person, extraHeaders: Map<String, String>? = null): Person? {
         return try {
-            val response = restTemplate().exchange("$backendBaseUrl/person/", HttpMethod.POST, entityWithAuth(person), Person::class.java, person)
+            val response = restTemplate().exchange("$backendBaseUrl/person/", HttpMethod.POST, entityWithAuth(person, extraHeaders), Person::class.java, person)
             lastKnownStatusCode = response.statusCode
             response.body
         } catch (e: HttpStatusCodeException) {
@@ -55,9 +55,12 @@ class RestTestClient(private val backendBaseUrl: String) : LoggingInsecureRestCl
         }
     }
 
-    private fun entityWithAuth(request: Any? = null): HttpEntity<Any?> {
-        val headers = HttpHeaders().also {
-            it.setBasicAuth("user", "password")
+    private fun entityWithAuth(request: Any? = null, extraHeaders: Map<String, String>? = null): HttpEntity<Any?> {
+        val headers = HttpHeaders().also { httpHeaders ->
+            httpHeaders.setBasicAuth("user", "password")
+            extraHeaders?.forEach { key, value ->
+                httpHeaders.set(key, value)
+            }
         }
 
         return HttpEntity<Any?>(request, headers)
