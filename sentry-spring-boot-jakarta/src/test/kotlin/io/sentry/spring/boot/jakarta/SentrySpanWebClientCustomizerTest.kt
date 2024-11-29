@@ -12,6 +12,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
+import io.sentry.mockServerRequestTimeoutMillis
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -30,6 +31,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -130,7 +132,7 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -143,7 +145,7 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -156,7 +158,7 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -169,7 +171,7 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }

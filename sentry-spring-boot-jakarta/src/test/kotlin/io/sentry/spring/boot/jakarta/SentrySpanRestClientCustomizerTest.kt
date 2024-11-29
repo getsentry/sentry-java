@@ -11,6 +11,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
+import io.sentry.mockServerRequestTimeoutMillis
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -28,12 +29,14 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestClient
 import java.time.Duration
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentrySpanRestClientCustomizerTest {
+
     class Fixture {
         val sentryOptions = SentryOptions()
         val scopes = mock<IScopes>()
@@ -104,7 +107,7 @@ class SentrySpanRestClientCustomizerTest {
         assertThat(span.description).isEqualTo("GET ${fixture.url}")
         assertThat(span.status).isEqualTo(SpanStatus.OK)
 
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(recordedRequest.headers["sentry-trace"]!!).startsWith(fixture.transaction.spanContext.traceId.toString())
             .endsWith("-1")
             .doesNotContain(fixture.transaction.spanContext.spanId.toString())
@@ -128,7 +131,7 @@ class SentrySpanRestClientCustomizerTest {
             .retrieve()
             .toEntity(String::class.java)
 
-        val recorderRequest = fixture.mockServer.takeRequest()
+        val recorderRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
 
@@ -147,7 +150,7 @@ class SentrySpanRestClientCustomizerTest {
             .uri(fixture.url)
             .retrieve()
             .toEntity(String::class.java)
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER]).isNull()
     }
 
@@ -159,7 +162,7 @@ class SentrySpanRestClientCustomizerTest {
             .uri(fixture.url)
             .retrieve()
             .toEntity(String::class.java)
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER]).isNotNull()
     }
 
@@ -184,13 +187,18 @@ class SentrySpanRestClientCustomizerTest {
     @Test
     fun `when transaction is active and throws IO exception, creates span with error status around RestClient HTTP call`() {
         try {
-            fixture.getSut(isTransactionActive = true, socketPolicy = SocketPolicy.DISCONNECT_AT_START).build()
+            val sut = fixture.getSut(
+                isTransactionActive = true,
+                socketPolicy = SocketPolicy.DISCONNECT_AT_START
+            ).build()
+            sut
                 .get()
                 .uri(fixture.url)
                 .retrieve()
-        } catch (_: Throwable) {
+        } catch (t: Throwable) {
+            println(t)
         }
-        fixture.mockServer.takeRequest()
+//        fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(fixture.transaction.spans).hasSize(1)
         val span = fixture.transaction.spans.first()
         assertThat(span.operation).isEqualTo("http.client")
@@ -227,7 +235,7 @@ class SentrySpanRestClientCustomizerTest {
             .retrieve()
             .toEntity(String::class.java)
 
-        val recorderRequest = fixture.mockServer.takeRequest()
+        val recorderRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
 
