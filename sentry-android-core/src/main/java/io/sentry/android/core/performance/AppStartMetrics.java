@@ -152,11 +152,11 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     return shouldSendStartMeasurements;
   }
 
-  public void restartAppStart(final long timestampMs) {
+  public void restartAppStart(final long uptimeMillis) {
     shouldSendStartMeasurements = true;
     appStartSpan.reset();
     appStartSpan.start();
-    appStartSpan.setStartUnixTimeMs(timestampMs);
+    appStartSpan.setStartedAt(uptimeMillis);
     CLASS_LOADED_UPTIME_MS = appStartSpan.getStartUptimeMs();
   }
 

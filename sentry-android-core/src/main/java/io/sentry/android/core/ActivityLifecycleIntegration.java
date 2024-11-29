@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import io.sentry.DateUtils;
 import io.sentry.FullyDisplayedReporter;
 import io.sentry.IHub;
 import io.sentry.IScope;
@@ -81,6 +80,7 @@ public final class ActivityLifecycleIntegration
   private final @NotNull WeakHashMap<Activity, ActivityLifecycleTimeSpan> activityLifecycleMap =
       new WeakHashMap<>();
   private @NotNull SentryDate lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
+  private long lastPausedUptimeMillis = 0;
   private @Nullable Future<?> ttfdAutoCloseFuture = null;
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
@@ -384,11 +384,10 @@ public final class ActivityLifecycleIntegration
         hub != null
             ? hub.getOptions().getDateProvider().now()
             : AndroidDateUtils.getCurrentSentryDateTime();
+    lastPausedUptimeMillis = SystemClock.uptimeMillis();
 
     final @NotNull ActivityLifecycleTimeSpan timeSpan = new ActivityLifecycleTimeSpan();
-    timeSpan
-        .getOnCreate()
-        .setStartUnixTimeMs((long) DateUtils.nanosToMillis(lastPausedTime.nanoTimestamp()));
+    timeSpan.getOnCreate().setStartedAt(lastPausedUptimeMillis);
     activityLifecycleMap.put(activity, timeSpan);
   }
 
@@ -501,11 +500,11 @@ public final class ActivityLifecycleIntegration
     // well
     // this ensures any newly launched activity will not use the app start timestamp as txn start
     firstActivityCreated = true;
-    if (hub == null) {
-      lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
-    } else {
-      lastPausedTime = hub.getOptions().getDateProvider().now();
-    }
+    lastPausedTime =
+        hub != null
+            ? hub.getOptions().getDateProvider().now()
+            : AndroidDateUtils.getCurrentSentryDateTime();
+    lastPausedUptimeMillis = SystemClock.uptimeMillis();
   }
 
   @Override
@@ -564,6 +563,7 @@ public final class ActivityLifecycleIntegration
   private void clear() {
     firstActivityCreated = false;
     lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
+    lastPausedUptimeMillis = 0;
     activityLifecycleMap.clear();
   }
 
@@ -711,8 +711,7 @@ public final class ActivityLifecycleIntegration
         TimeSpan appStartSpan = AppStartMetrics.getInstance().getAppStartTimeSpan();
         // If the app start span already started and stopped, it means we are in a warm start
         if (appStartSpan.hasStarted() && appStartSpan.hasStopped()) {
-          AppStartMetrics.getInstance()
-              .restartAppStart((long) DateUtils.nanosToMillis(lastPausedTime.nanoTimestamp()));
+          AppStartMetrics.getInstance().restartAppStart(lastPausedUptimeMillis);
           AppStartMetrics.getInstance().setAppStartType(AppStartMetrics.AppStartType.WARM);
         } else {
           AppStartMetrics.getInstance()

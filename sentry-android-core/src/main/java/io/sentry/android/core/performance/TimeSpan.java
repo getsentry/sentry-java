@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * A measurement for time critical components on a macro (ms) level. Based on {@link
@@ -147,12 +148,9 @@ public class TimeSpan implements Comparable<TimeSpan> {
     }
   }
 
+  @TestOnly
   public void setStartUnixTimeMs(long startUnixTimeMs) {
     this.startUnixTimeMs = startUnixTimeMs;
-
-    final long shiftMs = System.currentTimeMillis() - startUnixTimeMs;
-    this.startUptimeMs = SystemClock.uptimeMillis() - shiftMs;
-    startSystemNanos = System.nanoTime() - TimeUnit.MILLISECONDS.toNanos(shiftMs);
   }
 
   public @Nullable String getDescription() {
