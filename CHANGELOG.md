@@ -5,6 +5,8 @@
 ### Features
 
 - Extract OpenTelemetry `URL_PATH` span attribute into description ([#3933](https://github.com/getsentry/sentry-java/pull/3933))
+- Replace OpenTelemetry `ContextStorage` wrapper with `ContextStorageProvider` ([#3938](https://github.com/getsentry/sentry-java/pull/3938))
+  - The wrapper had to be put in place before any call to `Context` whereas `ContextStorageProvider` is automatically invoked at the correct time.
 
 ### Dependencies
 
