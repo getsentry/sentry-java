@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix incoming defer sampling decision `sentry-trace` header ([#3942](https://github.com/getsentry/sentry-java/pull/3942))
+  - A `sentry-trace` header that only contains trace ID and span ID but no sampled flag (`-1`, `-0` suffix) means the receiving system can make its own sampling decision
+  - When generating `sentry-trace` header from `PropagationContext` we now copy the `sampled` flag.
+  - In `TransactionContext.fromPropagationContext` when there is no parent sampling decision, keep the decision `null` so a new sampling decision is made instead of defaulting to `false`
+
 ## 8.0.0-rc.1
 
 ### Features
@@ -15,10 +24,6 @@
 ### Fixes
 
 - Fix testTag not working for Jetpack Compose user interaction tracking ([#3878](https://github.com/getsentry/sentry-java/pull/3878))
-
-### Dependencies
-
-- Bump OpenTelemetry to 1.44.1, OpenTelemetry Java Agent to 2.10.0 and Semantic Conventions to 1.28.0 ([#3935](https://github.com/getsentry/sentry-java/pull/3935))
 
 ## 8.0.0-beta.3
 
