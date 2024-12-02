@@ -609,8 +609,7 @@ public final class ActivityLifecycleIntegration
     final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
     final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
 
-    // in case the SentryPerformanceProvider is disabled it does not set the app start end times,
-    // and we need to set the end time manually here
+    // and we need to set the end time of the app start here, after the first frame is drawn.
     if (appStartTimeSpan.hasStarted() && appStartTimeSpan.hasNotStopped()) {
       appStartTimeSpan.stop();
     }

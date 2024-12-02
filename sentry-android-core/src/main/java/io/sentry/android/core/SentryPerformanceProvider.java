@@ -47,7 +47,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
   private static final long sdkInitMillis = SystemClock.uptimeMillis();
 
   private @Nullable Application app;
-  private @Nullable Application.ActivityLifecycleCallbacks activityCallback;
 
   private final @NotNull ILogger logger;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -199,37 +198,5 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
     appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
     appStartMetrics.registerApplicationForegroundCheck(app);
-
-    final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
-
-    activityCallback =
-        new ActivityLifecycleCallbacksAdapter() {
-          @Override
-          public void onActivityStarted(@NonNull Activity activity) {
-            if (firstDrawDone.get()) {
-              return;
-            }
-            if (activity.getWindow() != null) {
-              FirstDrawDoneListener.registerForNextDraw(
-                  activity, () -> onAppStartDone(), buildInfoProvider);
-            } else {
-              new Handler(Looper.getMainLooper()).post(() -> onAppStartDone());
-            }
-          }
-        };
-
-    app.registerActivityLifecycleCallbacks(activityCallback);
-  }
-
-  synchronized void onAppStartDone() {
-    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-    appStartMetrics.getSdkInitTimeSpan().stop();
-    appStartMetrics.getAppStartTimeSpan().stop();
-
-    if (app != null) {
-      if (activityCallback != null) {
-        app.unregisterActivityLifecycleCallbacks(activityCallback);
-      }
-    }
   }
 }
