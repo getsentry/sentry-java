@@ -158,22 +158,24 @@ public class ReplayIntegration(
             return
         }
 
-        val isFullSession = random.sample(options.experimental.sessionReplay.sessionSampleRate)
-        if (!isFullSession && !options.experimental.sessionReplay.isSessionReplayForErrorsEnabled) {
-            options.logger.log(INFO, "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified")
-            return
-        }
+        synchronized (this) {
+            val isFullSession = random.sample(options.experimental.sessionReplay.sessionSampleRate)
+            if (!isFullSession && !options.experimental.sessionReplay.isSessionReplayForErrorsEnabled) {
+                options.logger.log(INFO, "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified")
+                return
+            }
 
-        recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
-        captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
-            SessionCaptureStrategy(options, hub, dateProvider, replayCacheProvider = replayCacheProvider)
-        } else {
-            BufferCaptureStrategy(options, hub, dateProvider, random, replayCacheProvider = replayCacheProvider)
-        }
+            recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
+            captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
+                SessionCaptureStrategy(options, hub, dateProvider, replayCacheProvider = replayCacheProvider)
+            } else {
+                BufferCaptureStrategy(options, hub, dateProvider, random, replayCacheProvider = replayCacheProvider)
+            }
 
-        captureStrategy?.start(recorderConfig)
-        recorder?.start(recorderConfig)
-        registerRootViewListeners()
+            captureStrategy?.start(recorderConfig)
+            recorder?.start(recorderConfig)
+            registerRootViewListeners()
+        }
     }
 
     override fun resume() {
@@ -224,13 +226,15 @@ public class ReplayIntegration(
             return
         }
 
-        unregisterRootViewListeners()
-        recorder?.stop()
-        gestureRecorder?.stop()
-        captureStrategy?.stop()
-        isRecording.set(false)
-        captureStrategy?.close()
-        captureStrategy = null
+        synchronized (this) {
+            unregisterRootViewListeners()
+            recorder?.stop()
+            gestureRecorder?.stop()
+            captureStrategy?.stop()
+            isRecording.set(false)
+            captureStrategy?.close()
+            captureStrategy = null
+        }
     }
 
     override fun onScreenshotRecorded(bitmap: Bitmap) {
@@ -270,13 +274,15 @@ public class ReplayIntegration(
             return
         }
 
-        recorder?.stop()
+        synchronized (this) {
+            recorder?.stop()
 
-        // refresh config based on new device configuration
-        recorderConfig = recorderConfigProvider?.invoke(true) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
-        captureStrategy?.onConfigurationChanged(recorderConfig)
+            // refresh config based on new device configuration
+            recorderConfig = recorderConfigProvider?.invoke(true) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
+            captureStrategy?.onConfigurationChanged(recorderConfig)
 
-        recorder?.start(recorderConfig)
+            recorder?.start(recorderConfig)
+        }
     }
 
     override fun onConnectionStatusChanged(status: ConnectionStatus) {
