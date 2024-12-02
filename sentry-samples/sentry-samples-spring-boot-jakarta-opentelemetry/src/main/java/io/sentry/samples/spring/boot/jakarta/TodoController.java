@@ -7,8 +7,6 @@ import io.sentry.ISpan;
 import io.sentry.Sentry;
 import io.sentry.spring.jakarta.webflux.ReactorUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,9 +24,6 @@ public class TodoController {
   private final RestClient restClient;
   private final Tracer tracer;
 
-  @Value("sentry.sample.todo-url")
-  public @Nullable String todoUrl;
-
   public TodoController(
       RestTemplate restTemplate, WebClient webClient, RestClient restClient, Tracer tracer) {
     this.restTemplate = restTemplate;
@@ -43,7 +38,8 @@ public class TodoController {
     try (final @NotNull Scope spanScope = otelSpan.makeCurrent()) {
       ISpan sentrySpan = Sentry.getSpan().startChild("todoSpanSentryApi");
       try {
-        return restTemplate.getForObject(todoUrl + "/todos/{id}", Todo.class, id);
+        return restTemplate.getForObject(
+            "https://jsonplaceholder.typicode.com/todos/{id}", Todo.class, id);
       } finally {
         sentrySpan.finish();
       }
@@ -62,7 +58,7 @@ public class TodoController {
                     x ->
                         webClient
                             .get()
-                            .uri(todoUrl + "/todos/{id}", id)
+                            .uri("https://jsonplaceholder.typicode.com/todos/{id}", id)
                             .retrieve()
                             .bodyToMono(Todo.class)
                             .map(response -> response)))
@@ -75,7 +71,11 @@ public class TodoController {
     try (final @NotNull Scope spanScope = span.makeCurrent()) {
       ISpan sentrySpan = Sentry.getSpan().startChild("todoRestClientSpanSentryApi");
       try {
-        return restClient.get().uri(todoUrl + "/todos/{id}", id).retrieve().body(Todo.class);
+        return restClient
+            .get()
+            .uri("https://jsonplaceholder.typicode.com/todos/{id}", id)
+            .retrieve()
+            .body(Todo.class);
       } finally {
         sentrySpan.finish();
       }
