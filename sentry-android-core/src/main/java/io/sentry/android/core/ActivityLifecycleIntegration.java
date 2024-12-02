@@ -672,6 +672,16 @@ public final class ActivityLifecycleIntegration
   }
 
   @TestOnly
+  @NotNull WeakHashMap<Activity, ActivityLifecycleTimeSpan> getActivityLifecycleMap() {
+    return activityLifecycleMap;
+  }
+
+  @TestOnly
+  void setFirstActivityCreated(boolean firstActivityCreated) {
+    this.firstActivityCreated = firstActivityCreated;
+  }
+
+  @TestOnly
   @NotNull
   ActivityFramesTracker getActivityFramesTracker() {
     return activityFramesTracker;
@@ -697,33 +707,21 @@ public final class ActivityLifecycleIntegration
 
   private void setColdStart(final @Nullable Bundle savedInstanceState) {
     if (!firstActivityCreated) {
-      // if Activity has savedInstanceState then its a warm start
-      // https://developer.android.com/topic/performance/vitals/launch-time#warm
-      // SentryPerformanceProvider sets this already
-      // pre-performance-v2: back-fill with best guess
-      if (options != null && !options.isEnablePerformanceV2()) {
+      final @NotNull TimeSpan appStartSpan = AppStartMetrics.getInstance().getAppStartTimeSpan();
+      // If the app start span already started and stopped, it means the app restarted without
+      //  killing the process, so we are in a warm start
+      // If the app has an invalid cold start, it means it was started in the background, like
+      //  via BroadcastReceiver, so we consider it a warm start
+      if ((appStartSpan.hasStarted() && appStartSpan.hasStopped())
+          || (!AppStartMetrics.getInstance().isColdStartValid())) {
+        AppStartMetrics.getInstance().restartAppStart(lastPausedUptimeMillis);
+        AppStartMetrics.getInstance().setAppStartType(AppStartMetrics.AppStartType.WARM);
+      } else {
         AppStartMetrics.getInstance()
             .setAppStartType(
                 savedInstanceState == null
                     ? AppStartMetrics.AppStartType.COLD
                     : AppStartMetrics.AppStartType.WARM);
-      } else {
-        final @NotNull TimeSpan appStartSpan = AppStartMetrics.getInstance().getAppStartTimeSpan();
-        // If the app start span already started and stopped, it means the app restarted without
-        //  killing the process, so we are in a warm start
-        // If the app has an invalid cold start, it means it was started in the background, like
-        //  via BroadcastReceiver, so we consider it a warm start
-        if ((appStartSpan.hasStarted() && appStartSpan.hasStopped())
-            || (!AppStartMetrics.getInstance().isColdStartValid())) {
-          AppStartMetrics.getInstance().restartAppStart(lastPausedUptimeMillis);
-          AppStartMetrics.getInstance().setAppStartType(AppStartMetrics.AppStartType.WARM);
-        } else {
-          AppStartMetrics.getInstance()
-              .setAppStartType(
-                  savedInstanceState == null
-                      ? AppStartMetrics.AppStartType.COLD
-                      : AppStartMetrics.AppStartType.WARM);
-        }
       }
     }
   }

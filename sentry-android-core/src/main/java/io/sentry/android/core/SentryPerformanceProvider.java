@@ -232,10 +232,4 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       }
     }
   }
-
-  @TestOnly
-  @Nullable
-  Application.ActivityLifecycleCallbacks getActivityCallback() {
-    return activityCallback;
-  }
 }
