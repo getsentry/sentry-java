@@ -12,10 +12,6 @@
 
 - Bump OpenTelemetry to 1.44.1, OpenTelemetry Java Agent to 2.10.0 and Semantic Conventions to 1.28.0 ([#3935](https://github.com/getsentry/sentry-java/pull/3935))
 
-### Dependencies
-
-- Bump OpenTelemetry to 1.44.1, OpenTelemetry Java Agent to 2.10.0 and Semantic Conventions to 1.28.0 ([#3935](https://github.com/getsentry/sentry-java/pull/3935))
-
 ### Fixes
 
 - Fix testTag not working for Jetpack Compose user interaction tracking ([#3878](https://github.com/getsentry/sentry-java/pull/3878))

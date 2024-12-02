@@ -11,6 +11,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
+import io.sentry.mockServerRequestTimeoutMillis
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -29,6 +30,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.RestTemplate
 import java.time.Duration
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -94,7 +96,7 @@ class SentrySpanRestTemplateCustomizerTest {
         assertThat(span.description).isEqualTo("GET ${fixture.url}")
         assertThat(span.status).isEqualTo(SpanStatus.OK)
 
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(recordedRequest.headers["sentry-trace"]!!).startsWith(fixture.transaction.spanContext.traceId.toString())
             .endsWith("-1")
             .doesNotContain(fixture.transaction.spanContext.spanId.toString())
@@ -112,7 +114,7 @@ class SentrySpanRestTemplateCustomizerTest {
 
         sut.exchange(fixture.url, HttpMethod.GET, requestEntity, String::class.java)
 
-        val recorderRequest = fixture.mockServer.takeRequest()
+        val recorderRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
 
@@ -128,7 +130,7 @@ class SentrySpanRestTemplateCustomizerTest {
     fun `when transaction is active and server is not listed in tracing origins, does not add sentry trace header to the request`() {
         fixture.getSut(isTransactionActive = true, includeMockServerInTracingOrigins = false)
             .getForObject(fixture.url, String::class.java)
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER]).isNull()
     }
 
@@ -136,7 +138,7 @@ class SentrySpanRestTemplateCustomizerTest {
     fun `when transaction is active and server is listed in tracing origins, adds sentry trace header to the request`() {
         fixture.getSut(isTransactionActive = true, includeMockServerInTracingOrigins = true)
             .getForObject(fixture.url, String::class.java)
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER]).isNotNull()
     }
 
@@ -185,7 +187,7 @@ class SentrySpanRestTemplateCustomizerTest {
 
         sut.exchange(fixture.url, HttpMethod.GET, requestEntity, String::class.java)
 
-        val recorderRequest = fixture.mockServer.takeRequest()
+        val recorderRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
 
