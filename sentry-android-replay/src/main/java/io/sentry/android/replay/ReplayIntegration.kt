@@ -158,7 +158,7 @@ public class ReplayIntegration(
             return
         }
 
-        synchronized (this) {
+        synchronized(this) {
             val isFullSession = random.sample(options.experimental.sessionReplay.sessionSampleRate)
             if (!isFullSession && !options.experimental.sessionReplay.isSessionReplayForErrorsEnabled) {
                 options.logger.log(INFO, "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified")
@@ -226,7 +226,7 @@ public class ReplayIntegration(
             return
         }
 
-        synchronized (this) {
+        synchronized(this) {
             unregisterRootViewListeners()
             recorder?.stop()
             gestureRecorder?.stop()
@@ -274,7 +274,7 @@ public class ReplayIntegration(
             return
         }
 
-        synchronized (this) {
+        synchronized(this) {
             recorder?.stop()
 
             // refresh config based on new device configuration
