@@ -1,11 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix warm start detection ([#3937](https://github.com/getsentry/sentry-java/pull/3937))
+
 ## 7.18.1
 
 ### Fixes
 
 - Fix testTag not working for Jetpack Compose user interaction tracking ([#3878](https://github.com/getsentry/sentry-java/pull/3878))
-- Fix warm start detection ([#3937](https://github.com/getsentry/sentry-java/pull/3937))
 
 ## 7.18.0
 
