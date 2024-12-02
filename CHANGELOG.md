@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix incoming defer sampling decision `sentry-trace` header ([#3942](https://github.com/getsentry/sentry-java/pull/3942))
+  - A `sentry-trace` header that only contains trace ID and span ID but no sampled flag (`-1`, `-0` suffix) means the receiving system can make its own sampling decision
+  - When generating `sentry-trace` header from `PropagationContext` we now copy the `sampled` flag.
+  - In `TransactionContext.fromPropagationContext` when there is no parent sampling decision, keep the decision `null` so a new sampling decision is made instead of defaulting to `false`
+
 ## 8.0.0-rc.1
 
 ### Features

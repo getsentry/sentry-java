@@ -58,6 +58,7 @@ class TracingUtilsTest {
         assertNotNull(headers.baggageHeader)
         assertEquals(fixture.scope.propagationContext.spanId, headers.sentryTraceHeader.spanId)
         assertEquals(fixture.scope.propagationContext.traceId, headers.sentryTraceHeader.traceId)
+        assertEquals(fixture.scope.propagationContext.isSampled, headers.sentryTraceHeader.isSampled)
         assertTrue(headers.baggageHeader!!.value.contains("some-baggage-key=some-baggage-value"))
         assertTrue(headers.baggageHeader!!.value.contains("sentry-trace_id=${fixture.scope.propagationContext.traceId}"))
         assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
@@ -73,6 +74,55 @@ class TracingUtilsTest {
         assertNotNull(headers.baggageHeader)
         assertEquals(fixture.scope.propagationContext.spanId, headers.sentryTraceHeader.spanId)
         assertEquals(fixture.scope.propagationContext.traceId, headers.sentryTraceHeader.traceId)
+        assertEquals(fixture.scope.propagationContext.isSampled, headers.sentryTraceHeader.isSampled)
+        assertTrue(headers.baggageHeader!!.value.contains("some-baggage-key=some-baggage-value"))
+        assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
+    }
+
+    @Test
+    fun `returns headers if allowed from scope if span is noop sampled=null`() {
+        fixture.setup()
+        fixture.scope.propagationContext.isSampled = null
+
+        val headers = TracingUtils.traceIfAllowed(fixture.scopes, "https://sentry.io/hello", fixture.preExistingBaggage, NoOpSpan.getInstance())
+
+        assertNotNull(headers)
+        assertNotNull(headers.baggageHeader)
+        assertEquals(fixture.scope.propagationContext.spanId, headers.sentryTraceHeader.spanId)
+        assertEquals(fixture.scope.propagationContext.traceId, headers.sentryTraceHeader.traceId)
+        assertEquals(fixture.scope.propagationContext.isSampled, headers.sentryTraceHeader.isSampled)
+        assertTrue(headers.baggageHeader!!.value.contains("some-baggage-key=some-baggage-value"))
+        assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
+    }
+
+    @Test
+    fun `returns headers if allowed from scope if span is noop sampled=true`() {
+        fixture.setup()
+        fixture.scope.propagationContext.isSampled = true
+
+        val headers = TracingUtils.traceIfAllowed(fixture.scopes, "https://sentry.io/hello", fixture.preExistingBaggage, NoOpSpan.getInstance())
+
+        assertNotNull(headers)
+        assertNotNull(headers.baggageHeader)
+        assertEquals(fixture.scope.propagationContext.spanId, headers.sentryTraceHeader.spanId)
+        assertEquals(fixture.scope.propagationContext.traceId, headers.sentryTraceHeader.traceId)
+        assertEquals(fixture.scope.propagationContext.isSampled, headers.sentryTraceHeader.isSampled)
+        assertTrue(headers.baggageHeader!!.value.contains("some-baggage-key=some-baggage-value"))
+        assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
+    }
+
+    @Test
+    fun `returns headers if allowed from scope if span is noop sampled=false`() {
+        fixture.setup()
+        fixture.scope.propagationContext.isSampled = false
+
+        val headers = TracingUtils.traceIfAllowed(fixture.scopes, "https://sentry.io/hello", fixture.preExistingBaggage, NoOpSpan.getInstance())
+
+        assertNotNull(headers)
+        assertNotNull(headers.baggageHeader)
+        assertEquals(fixture.scope.propagationContext.spanId, headers.sentryTraceHeader.spanId)
+        assertEquals(fixture.scope.propagationContext.traceId, headers.sentryTraceHeader.traceId)
+        assertEquals(fixture.scope.propagationContext.isSampled, headers.sentryTraceHeader.isSampled)
         assertTrue(headers.baggageHeader!!.value.contains("some-baggage-key=some-baggage-value"))
         assertFalse(fixture.scope.propagationContext.baggage!!.isMutable)
     }

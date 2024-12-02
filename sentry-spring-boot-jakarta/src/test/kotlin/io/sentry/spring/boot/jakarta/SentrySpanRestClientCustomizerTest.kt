@@ -28,6 +28,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestClient
+import org.springframework.web.client.toEntity
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
@@ -195,10 +196,11 @@ class SentrySpanRestClientCustomizerTest {
                 .get()
                 .uri(fixture.url)
                 .retrieve()
+                .toEntity(String::class.java)
         } catch (t: Throwable) {
             println(t)
         }
-//        fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+        fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(fixture.transaction.spans).hasSize(1)
         val span = fixture.transaction.spans.first()
         assertThat(span.operation).isEqualTo("http.client")
