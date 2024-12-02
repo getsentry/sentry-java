@@ -672,7 +672,8 @@ public final class ActivityLifecycleIntegration
   }
 
   @TestOnly
-  @NotNull WeakHashMap<Activity, ActivityLifecycleTimeSpan> getActivityLifecycleMap() {
+  @NotNull
+  WeakHashMap<Activity, ActivityLifecycleTimeSpan> getActivityLifecycleMap() {
     return activityLifecycleMap;
   }
 
