@@ -9,16 +9,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class OtelSamplingUtil {
 
-  public static @NotNull TracesSamplingDecision extractSamplingDecisionOrDefault(
-      final @NotNull Attributes attributes) {
-    final @Nullable TracesSamplingDecision decision = extractSamplingDecision(attributes);
-    if (decision != null) {
-      return decision;
-    } else {
-      return new TracesSamplingDecision(false);
-    }
-  }
-
   public static @Nullable TracesSamplingDecision extractSamplingDecision(
       final @NotNull Attributes attributes) {
     final @Nullable Boolean sampled = attributes.get(InternalSemanticAttributes.SAMPLED);
