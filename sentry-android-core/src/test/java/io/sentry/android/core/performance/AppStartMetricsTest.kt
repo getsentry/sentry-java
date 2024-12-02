@@ -276,4 +276,50 @@ class AppStartMetricsTest {
         Shadows.shadowOf(Looper.getMainLooper()).idle()
         assertTrue(AppStartMetrics.getInstance().isAppLaunchedInForeground)
     }
+
+    @Test
+    fun `isColdStartValid is false if app was launched in background`() {
+        AppStartMetrics.getInstance().isAppLaunchedInForeground = false
+        assertFalse(AppStartMetrics.getInstance().isColdStartValid)
+    }
+
+    @Test
+    fun `isColdStartValid is false if app launched in more than 1 minute`() {
+        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
+        appStartTimeSpan.start()
+        appStartTimeSpan.stop()
+        appStartTimeSpan.setStartedAt(1)
+        appStartTimeSpan.setStoppedAt(TimeUnit.MINUTES.toMillis(1) + 2)
+        AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
+        assertFalse(AppStartMetrics.getInstance().isColdStartValid)
+    }
+
+    @Test
+    fun `onAppStartSpansSent set measurement flag and clear internal lists`() {
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.addActivityLifecycleTimeSpans(mock())
+        appStartMetrics.contentProviderOnCreateTimeSpans.add(mock())
+        assertTrue(appStartMetrics.shouldSendStartMeasurements())
+        appStartMetrics.onAppStartSpansSent()
+        assertTrue(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
+        assertTrue(appStartMetrics.contentProviderOnCreateTimeSpans.isEmpty())
+        assertFalse(appStartMetrics.shouldSendStartMeasurements())
+    }
+
+    @Test
+    fun `restartAppStart set measurement flag and clear internal lists`() {
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.onAppStartSpansSent()
+        appStartMetrics.isAppLaunchedInForeground = false
+        assertFalse(appStartMetrics.shouldSendStartMeasurements())
+        assertFalse(appStartMetrics.isColdStartValid)
+
+        appStartMetrics.restartAppStart(10)
+
+        assertTrue(appStartMetrics.shouldSendStartMeasurements())
+        assertTrue(appStartMetrics.isColdStartValid)
+        assertTrue(appStartMetrics.appStartTimeSpan.hasStarted())
+        assertTrue(appStartMetrics.appStartTimeSpan.hasNotStopped())
+        assertEquals(10, appStartMetrics.appStartTimeSpan.startUptimeMs)
+    }
 }
