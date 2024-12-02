@@ -75,11 +75,7 @@ public class TodoController {
     try (final @NotNull Scope spanScope = span.makeCurrent()) {
       ISpan sentrySpan = Sentry.getSpan().startChild("todoRestClientSpanSentryApi");
       try {
-        return restClient
-            .get()
-            .uri(todoUrl + "/todos/{id}", id)
-            .retrieve()
-            .body(Todo.class);
+        return restClient.get().uri(todoUrl + "/todos/{id}", id).retrieve().body(Todo.class);
       } finally {
         sentrySpan.finish();
       }
