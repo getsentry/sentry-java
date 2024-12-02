@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Replay integration race condition when the replay configuration changes while the replay starts ([#3950](https://github.com/getsentry/sentry-java/pull/3950))
+
 ## 7.18.1
 
 ### Fixes
@@ -182,15 +188,15 @@
   import io.sentry.android.core.SentryAndroid
 
   SentryAndroid.init(context) { options ->
-   
+
     // Currently under experimental options:
     options.experimental.sessionReplay.sessionSampleRate = 1.0
     options.experimental.sessionReplay.errorSampleRate = 1.0
-  
+
     // To change default redaction behavior (defaults to true)
     options.experimental.sessionReplay.redactAllImages = true
     options.experimental.sessionReplay.redactAllText = true
-  
+
     // To change quality of the recording (defaults to MEDIUM)
     options.experimental.sessionReplay.quality = SentryReplayOptions.SentryReplayQuality.MEDIUM // (LOW|MEDIUM|HIGH)
   }
@@ -279,7 +285,7 @@
 
 ### Features
 
-- Experimental: Add support for Sentry Developer Metrics ([#3205](https://github.com/getsentry/sentry-java/pull/3205), [#3238](https://github.com/getsentry/sentry-java/pull/3238), [#3248](https://github.com/getsentry/sentry-java/pull/3248), [#3250](https://github.com/getsentry/sentry-java/pull/3250))  
+- Experimental: Add support for Sentry Developer Metrics ([#3205](https://github.com/getsentry/sentry-java/pull/3205), [#3238](https://github.com/getsentry/sentry-java/pull/3238), [#3248](https://github.com/getsentry/sentry-java/pull/3248), [#3250](https://github.com/getsentry/sentry-java/pull/3250))
   Use the Metrics API to track processing time, download sizes, user signups, and conversion rates and correlate them back to tracing data in order to get deeper insights and solve issues faster. Our API supports counters, distributions, sets, gauges and timers, and it's easy to get started:
   ```kotlin
   Sentry.metrics()
@@ -426,7 +432,7 @@
 
 Version 7 of the Sentry Android/Java SDK brings a variety of features and fixes. The most notable changes are:
 - Bumping `minSdk` level to 19 (Android 4.4)
-- The SDK will now listen to connectivity changes and try to re-upload cached events when internet connection is re-established additionally to uploading events on app restart 
+- The SDK will now listen to connectivity changes and try to re-upload cached events when internet connection is re-established additionally to uploading events on app restart
 - `Sentry.getSpan` now returns the root transaction, which should improve the span hierarchy and make it leaner
 - Multiple improvements to reduce probability of the SDK causing ANRs
 - New `sentry-okhttp` artifact is unbundled from Android and can be used in pure JVM-only apps
@@ -479,7 +485,7 @@ val transaction = Sentry.startTransaction("name", "op", TransactionOptions().app
 - Automatic user interaction tracking: every click now starts a new automatic transaction ([#2891](https://github.com/getsentry/sentry-java/pull/2891))
     - Previously performing a click on the same UI widget twice would keep the existing transaction running, the new behavior now better aligns with other SDKs
 - Add deadline timeout for automatic transactions ([#2865](https://github.com/getsentry/sentry-java/pull/2865))
-    - This affects all automatically generated transactions on Android (UI, clicks), the default timeout is 30s, meaning the automatic transaction will be force-finished with status `deadline_exceeded` when reaching the deadline 
+    - This affects all automatically generated transactions on Android (UI, clicks), the default timeout is 30s, meaning the automatic transaction will be force-finished with status `deadline_exceeded` when reaching the deadline
 - Set ip_address to {{auto}} by default, even if sendDefaultPII is disabled ([#2860](https://github.com/getsentry/sentry-java/pull/2860))
     - Instead use the "Prevent Storing of IP Addresses" option in the "Security & Privacy" project settings on sentry.io
 - Raw logback message and parameters are now guarded by `sendDefaultPii` if an `encoder` has been configured ([#2976](https://github.com/getsentry/sentry-java/pull/2976))
@@ -748,11 +754,11 @@ val transaction = Sentry.startTransaction("name", "op", TransactionOptions().app
 - Add debouncing mechanism and before-capture callbacks for screenshots and view hierarchies ([#2773](https://github.com/getsentry/sentry-java/pull/2773))
 - Improve ANRv2 implementation ([#2792](https://github.com/getsentry/sentry-java/pull/2792))
   - Add a proguard rule to keep `ApplicationNotResponding` class from obfuscation
-  - Add a new option `setReportHistoricalAnrs`; when enabled, it will report all of the ANRs from the [getHistoricalExitReasons](https://developer.android.com/reference/android/app/ActivityManager?hl=en#getHistoricalProcessExitReasons(java.lang.String,%20int,%20int)) list. 
-  By default, the SDK only reports and enriches the latest ANR and only this one counts towards ANR rate. 
+  - Add a new option `setReportHistoricalAnrs`; when enabled, it will report all of the ANRs from the [getHistoricalExitReasons](https://developer.android.com/reference/android/app/ActivityManager?hl=en#getHistoricalProcessExitReasons(java.lang.String,%20int,%20int)) list.
+  By default, the SDK only reports and enriches the latest ANR and only this one counts towards ANR rate.
   Worth noting that this option is mainly useful when updating the SDK to the version where ANRv2 has been introduced, to report all ANRs happened prior to the SDK update. After that, the SDK will always pick up the latest ANR from the historical exit reasons list on next app restart, so there should be no historical ANRs to report.
   These ANRs are reported with the `HistoricalAppExitInfo` mechanism.
-  - Add a new option `setAttachAnrThreadDump` to send ANR thread dump from the system as an attachment. 
+  - Add a new option `setAttachAnrThreadDump` to send ANR thread dump from the system as an attachment.
   This is only useful as additional information, because the SDK attempts to parse the thread dump into proper threads with stacktraces by default.
   - If [ApplicationExitInfo#getTraceInputStream](https://developer.android.com/reference/android/app/ApplicationExitInfo#getTraceInputStream()) returns null, the SDK no longer reports an ANR event, as these events are not very useful without it.
   - Enhance regex patterns for native stackframes
@@ -770,7 +776,7 @@ import io.sentry.apollo3.sentryTracing
 
 val apolloClient = ApolloClient.Builder()
     .serverUrl("https://example.com/graphql")
-    .sentryTracing(captureFailedRequests = true)    
+    .sentryTracing(captureFailedRequests = true)
     .build()
 ```
 
@@ -802,7 +808,7 @@ val apolloClient = ApolloClient.Builder()
 
 - Introduce new `sentry-android-sqlite` integration ([#2722](https://github.com/getsentry/sentry-java/pull/2722))
     - This integration replaces the old `androidx.sqlite` database instrumentation in the Sentry Android Gradle plugin
-    - A new capability to manually instrument your `androidx.sqlite` databases. 
+    - A new capability to manually instrument your `androidx.sqlite` databases.
       - You can wrap your custom `SupportSQLiteOpenHelper` instance into `SentrySupportSQLiteOpenHelper(myHelper)` if you're not using the Sentry Android Gradle plugin and still benefit from performance auto-instrumentation.
 - Add SentryWrapper for Callable and Supplier Interface ([#2720](https://github.com/getsentry/sentry-java/pull/2720))
 - Load sentry-debug-meta.properties ([#2734](https://github.com/getsentry/sentry-java/pull/2734))
@@ -926,7 +932,7 @@ val apolloClient = ApolloClient.Builder()
 
 ### Features
 
-- Add `name` and `geo` to `User` ([#2556](https://github.com/getsentry/sentry-java/pull/2556)) 
+- Add `name` and `geo` to `User` ([#2556](https://github.com/getsentry/sentry-java/pull/2556))
 - Add breadcrumbs on network changes ([#2608](https://github.com/getsentry/sentry-java/pull/2608))
 - Add time-to-initial-display and time-to-full-display measurements to Activity transactions ([#2611](https://github.com/getsentry/sentry-java/pull/2611))
 - Read integration list written by sentry gradle plugin from manifest ([#2598](https://github.com/getsentry/sentry-java/pull/2598))
