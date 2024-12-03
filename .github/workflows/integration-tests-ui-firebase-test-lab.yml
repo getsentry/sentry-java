@@ -1,0 +1,75 @@
+name: 'Integration Tests (Firebase Test Lab)'
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Ui tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    # we copy the secret to the env variable in order to access it in the workflow
+    env:
+      # The contents of service_account.json encoded using base64, to avoid any shell escaping issues
+      # base64 -i <file>.json
+      FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON_BASE64: ${{ secrets.FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON_BASE64 }}
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: 'Set up Java: 17'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@707359876a764dbcdb9da0b0ed08291818310c3d # pin@v3
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Make assembleUiTests
+        run: make assembleUiTests
+
+      - name: Install gcloud
+        uses: 'google-github-actions/setup-gcloud@6189d56e4096ee891640bb02ac264be376592d6a' # pin 2.1.2
+        with:
+          version: '>= 363.0.0'
+
+      - name: Configure gcloud
+        run: |
+          echo "$FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON_BASE64" | base64 -d | gcloud auth activate-service-account --key-file=-
+          project_id=$(echo "$FIREBASE_TEST_LAB_SERVICE_ACCOUNT_JSON_BASE64" | base64 -d | jq -r ".project_id")
+          gcloud config set project $project_id
+
+      - name: Firebase Test Lab
+        run: |
+          app_apk=./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
+          test_app_apk=./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
+          attempts=4
+          type=instrumentation
+
+          gcloud firebase test android run \
+            --app=$app_apk --test=$test_app_apk \
+            --type=$type \
+            --num-flaky-test-attempts=$attempts \
+            --device=^:^model=MediumPhone.arm:version=34 \
+            --device=^:^model=bluejay:version=32 \
+            --device=^:^model=a14xm:version=34
+
+          status=$?
+          if [ $status -ne 0 ]; then
+              echo "Firebase Test Lab failed with status $status"
+              exit 1
+          fi
