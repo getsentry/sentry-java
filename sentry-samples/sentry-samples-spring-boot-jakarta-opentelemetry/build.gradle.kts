@@ -68,12 +68,6 @@ dependencies {
     testImplementation(Config.Libs.apolloKotlin)
 }
 
-dependencyManagement {
-    imports {
-        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.7.0")
-    }
-}
-
 configure<SourceSetContainer> {
     test {
         java.srcDir("src/test/java")

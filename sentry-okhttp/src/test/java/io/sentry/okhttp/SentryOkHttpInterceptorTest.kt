@@ -19,6 +19,7 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint
 import io.sentry.exception.SentryHttpClientException
+import io.sentry.mockServerRequestTimeoutMillis
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -37,6 +38,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -159,7 +161,7 @@ class SentryOkHttpInterceptorTest {
     fun `when there is an active span and server is listed in tracing origins, adds sentry trace headers to the request`() {
         val sut = fixture.getSut()
         sut.newCall(getRequest()).execute()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -170,7 +172,7 @@ class SentryOkHttpInterceptorTest {
         val sut = fixture.getSut(keepDefaultTracePropagationTargets = true)
 
         sut.newCall(getRequest()).execute()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -180,7 +182,7 @@ class SentryOkHttpInterceptorTest {
     fun `when there is an active span and server is not listed in tracing origins, does not add sentry trace headers to the request`() {
         val sut = fixture.getSut(includeMockServerInTracePropagationTargets = false)
         sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -191,7 +193,7 @@ class SentryOkHttpInterceptorTest {
         val sut = fixture.getSut()
         fixture.options.setTracePropagationTargets(emptyList())
         sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -200,7 +202,7 @@ class SentryOkHttpInterceptorTest {
     fun `when there is no active span, adds sentry trace header to the request from scope`() {
         val sut = fixture.getSut(isSpanActive = false)
         sut.newCall(getRequest()).execute()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -210,7 +212,7 @@ class SentryOkHttpInterceptorTest {
         val sut = fixture.getSut(isSpanActive = false)
         fixture.options.setTracePropagationTargets(listOf("some-host-that-does-not-exist"))
         sut.newCall(getRequest()).execute()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -219,7 +221,7 @@ class SentryOkHttpInterceptorTest {
     fun `when there is an active span, existing baggage headers are merged with sentry baggage into single header`() {
         val sut = fixture.getSut()
         sut.newCall(getRequestWithBaggageHeader()).execute()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
 

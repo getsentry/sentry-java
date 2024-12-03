@@ -68,11 +68,17 @@ public final class SpanDescriptionExtractor {
       httpPath = httpTarget;
     }
     final @NotNull String op = opBuilder.toString();
+
     final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
     if (urlFull != null) {
       if (httpPath == null) {
         httpPath = urlFull;
       }
+    }
+
+    final @Nullable String urlPath = attributes.get(UrlAttributes.URL_PATH);
+    if (httpPath == null && urlPath != null) {
+      httpPath = urlPath;
     }
 
     if (httpPath == null) {
@@ -90,7 +96,14 @@ public final class SpanDescriptionExtractor {
   private OtelSpanInfo descriptionForDbSystem(final @NotNull SpanData otelSpan) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
     @Nullable String dbStatement = attributes.get(DbIncubatingAttributes.DB_STATEMENT);
-    @NotNull String description = dbStatement != null ? dbStatement : otelSpan.getName();
-    return new OtelSpanInfo("db", description, TransactionNameSource.TASK);
+    if (dbStatement != null) {
+      return new OtelSpanInfo("db", dbStatement, TransactionNameSource.TASK);
+    }
+    @Nullable String dbQueryText = attributes.get(DbIncubatingAttributes.DB_QUERY_TEXT);
+    if (dbQueryText != null) {
+      return new OtelSpanInfo("db", dbQueryText, TransactionNameSource.TASK);
+    }
+
+    return new OtelSpanInfo("db", otelSpan.getName(), TransactionNameSource.TASK);
   }
 }
