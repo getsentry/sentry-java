@@ -209,6 +209,16 @@ class SentryApollo3InterceptorTest {
     }
 
     @Test
+    fun `does not add sentry-trace header when span origin is ignored`() {
+        fixture.options.ignoredSpanOrigins = listOf("auto.graphql.apollo3")
+        executeQuery(isSpanActive = false)
+
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+        assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
     fun `when there is an active span, adds sentry trace headers to the request`() {
         executeQuery()
         val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
