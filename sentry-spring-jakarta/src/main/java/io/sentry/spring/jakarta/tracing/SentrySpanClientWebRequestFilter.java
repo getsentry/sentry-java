@@ -13,6 +13,7 @@ import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
+import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
@@ -71,6 +72,10 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
 
   private @NotNull ClientRequest maybeAddTracingHeaders(
       final @NotNull ClientRequest request, final @Nullable ISpan span) {
+    if (isIgnored()) {
+      return request;
+    }
+
     final ClientRequest.Builder requestBuilder = ClientRequest.from(request);
 
     final @Nullable TracingUtils.TracingHeaders tracingHeaders =
@@ -96,6 +101,10 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     }
 
     return requestBuilder.build();
+  }
+
+  private boolean isIgnored() {
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
   }
 
   private void addBreadcrumb(
