@@ -3,7 +3,6 @@ package io.sentry.android.core
 import android.app.Application
 import android.content.pm.ProviderInfo
 import android.os.Build
-import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.JsonSerializer
@@ -12,7 +11,6 @@ import io.sentry.SentryAppStartProfilingOptions
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.performance.AppStartMetrics
-import io.sentry.android.core.performance.AppStartMetrics.AppStartType
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -28,7 +26,6 @@ import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull

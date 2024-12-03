@@ -454,6 +454,7 @@ public final class ActivityLifecycleIntegration
     final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
     if (helper != null) {
       helper.createAndStopOnStartSpan(appStartSpan);
+      // Needed to handle hybrid SDKs
       helper.saveSpanToAppStartMetrics();
     }
   }

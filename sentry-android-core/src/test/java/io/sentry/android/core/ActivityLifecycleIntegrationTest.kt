@@ -1437,7 +1437,7 @@ class ActivityLifecycleIntegrationTest {
         val activity = mock<Activity>()
         // Activity onCreate date will be used
         sut.onActivityPreCreated(activity, fixture.bundle)
-        //sut.onActivityCreated(activity, fixture.bundle)
+        // sut.onActivityCreated(activity, fixture.bundle)
 
         assertFalse(sut.activityLifecycleMap.isEmpty())
         assertTrue(sut.activityLifecycleMap.values.first().onCreate.hasStarted())
