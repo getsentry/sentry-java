@@ -131,6 +131,17 @@ class SentryFeignClientTest {
     }
 
     @Test
+    fun `does not add sentry trace header when span origin is ignored`() {
+        fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
+        fixture.sentryOptions.ignoredSpanOrigins = listOf("auto.http.openfeign")
+        val sut = fixture.getSut(isSpanActive = false)
+        sut.getOk()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+        assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
     fun `when there is no active span, does not add sentry trace header to the request if host is disallowed`() {
         fixture.sentryOptions.setTracePropagationTargets(listOf("some-host-that-does-not-exist"))
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"

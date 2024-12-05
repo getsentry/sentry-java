@@ -15,6 +15,7 @@ import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
+import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import io.sentry.util.UrlUtils;
 import java.io.IOException;
@@ -98,6 +99,10 @@ public final class SentryFeignClient implements Client {
 
   private @NotNull Request maybeAddTracingHeaders(
       final @NotNull Request request, final @Nullable ISpan span) {
+    if (isIgnored()) {
+      return request;
+    }
+
     final @NotNull RequestWrapper requestWrapper = new RequestWrapper(request);
     final @Nullable Collection<String> requestBaggageHeaders =
         request.headers().get(BaggageHeader.BAGGAGE_HEADER);
@@ -122,6 +127,10 @@ public final class SentryFeignClient implements Client {
     }
 
     return requestWrapper.build();
+  }
+
+  private boolean isIgnored() {
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
   }
 
   private void addBreadcrumb(final @NotNull Request request, final @Nullable Response response) {

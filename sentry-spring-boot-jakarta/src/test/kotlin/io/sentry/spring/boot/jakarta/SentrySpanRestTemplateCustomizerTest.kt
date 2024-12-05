@@ -16,6 +16,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Assert.assertNull
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
@@ -196,6 +197,20 @@ class SentrySpanRestTemplateCustomizerTest {
         assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
+    }
+
+    @Test
+    fun `does not add sentry-trace header when span origin is ignored`() {
+        fixture.sentryOptions.ignoredSpanOrigins = listOf("auto.http.spring_jakarta.resttemplate")
+        val sut = fixture.getSut(isTransactionActive = false)
+        val headers = HttpHeaders()
+        val requestEntity = HttpEntity<Unit>(headers)
+
+        sut.exchange(fixture.url, HttpMethod.GET, requestEntity, String::class.java)
+
+        val recorderRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+        assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test
