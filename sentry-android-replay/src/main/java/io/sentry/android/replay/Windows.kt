@@ -25,7 +25,9 @@ import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.view.Window
+import java.io.Closeable
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
 
 /**
@@ -41,35 +43,21 @@ internal val View.phoneWindow: Window?
         return WindowSpy.pullWindow(rootView)
     }
 
+@SuppressLint("PrivateApi")
 internal object WindowSpy {
 
     /**
-     * Originally, DecorView was an inner class of PhoneWindow. In the initial import in 2009,
-     * PhoneWindow is in com.android.internal.policy.impl.PhoneWindow and that didn't change until
-     * API 23.
-     * In API 22: https://android.googlesource.com/platform/frameworks/base/+/android-5.1.1_r38/policy/src/com/android/internal/policy/impl/PhoneWindow.java
-     * PhoneWindow was then moved to android.view and then again to com.android.internal.policy
-     * https://android.googlesource.com/platform/frameworks/base/+/b10e33ff804a831c71be9303146cea892b9aeb5d
-     * https://android.googlesource.com/platform/frameworks/base/+/6711f3b34c2ad9c622f56a08b81e313795fe7647
-     * In API 23: https://android.googlesource.com/platform/frameworks/base/+/android-6.0.0_r1/core/java/com/android/internal/policy/PhoneWindow.java
-     * Then DecorView moved out of PhoneWindow into its own class:
+     * DecorView moved out of PhoneWindow into its own class:
      * https://android.googlesource.com/platform/frameworks/base/+/8804af2b63b0584034f7ec7d4dc701d06e6a8754
      * In API 24: https://android.googlesource.com/platform/frameworks/base/+/android-7.0.0_r1/core/java/com/android/internal/policy/DecorView.java
      */
     private val decorViewClass by lazy(NONE) {
-        val sdkInt = SDK_INT
-        // TODO: we can only consider API 26
-        val decorViewClassName = when {
-            sdkInt >= 24 -> "com.android.internal.policy.DecorView"
-            sdkInt == 23 -> "com.android.internal.policy.PhoneWindow\$DecorView"
-            else -> "com.android.internal.policy.impl.PhoneWindow\$DecorView"
-        }
         try {
-            Class.forName(decorViewClassName)
+            Class.forName("com.android.internal.policy.DecorView")
         } catch (ignored: Throwable) {
             Log.d(
                 "WindowSpy",
-                "Unexpected exception loading $decorViewClassName on API $sdkInt",
+                "Unexpected exception loading DecorView on API $SDK_INT",
                 ignored
             )
             null
@@ -83,18 +71,16 @@ internal object WindowSpy {
      * https://android.googlesource.com/platform/frameworks/base/+/0daf2102a20d224edeb4ee45dd4ee91889ef3e0c
      * Then it was extracted into a separate class.
      *
-     * Hence the change of window field name from "this$0" to "mWindow" on API 24+.
+     * Hence we use "mWindow" on API 24+.
      */
     private val windowField by lazy(NONE) {
         decorViewClass?.let { decorViewClass ->
-            val sdkInt = SDK_INT
-            val fieldName = if (sdkInt >= 24) "mWindow" else "this$0"
             try {
-                decorViewClass.getDeclaredField(fieldName).apply { isAccessible = true }
+                decorViewClass.getDeclaredField("mWindow").apply { isAccessible = true }
             } catch (ignored: NoSuchFieldException) {
                 Log.d(
                     "WindowSpy",
-                    "Unexpected exception retrieving $decorViewClass#$fieldName on API $sdkInt",
+                    "Unexpected exception retrieving $decorViewClass#mWindow on API $SDK_INT",
                     ignored
                 )
                 null
@@ -134,7 +120,9 @@ internal fun interface OnRootViewsChangedListener {
 /**
  * A utility that holds the list of root views that WindowManager updates.
  */
-internal object RootViewsSpy {
+internal class RootViewsSpy private constructor() : Closeable {
+
+    private val isClosed = AtomicBoolean(false)
 
     val listeners: CopyOnWriteArrayList<OnRootViewsChangedListener> = object : CopyOnWriteArrayList<OnRootViewsChangedListener>() {
         override fun add(element: OnRootViewsChangedListener?): Boolean {
@@ -168,13 +156,23 @@ internal object RootViewsSpy {
         }
     }
 
-    fun install(): RootViewsSpy {
-        return apply {
-            // had to do this as a first message of the main thread queue, otherwise if this is
-            // called from ContentProvider, it might be too early and the listener won't be installed
-            Handler(Looper.getMainLooper()).postAtFrontOfQueue {
-                WindowManagerSpy.swapWindowManagerGlobalMViews { mViews ->
-                    delegatingViewList.apply { addAll(mViews) }
+    override fun close() {
+        isClosed.set(true)
+        listeners.clear()
+    }
+
+    companion object {
+        fun install(): RootViewsSpy {
+            return RootViewsSpy().apply {
+                // had to do this on the main thread queue, otherwise if this is
+                // called from ContentProvider, it might be too early and the listener won't be installed
+                Handler(Looper.getMainLooper()).postAtFrontOfQueue {
+                    if (isClosed.get()) {
+                        return@postAtFrontOfQueue
+                    }
+                    WindowManagerSpy.swapWindowManagerGlobalMViews { mViews ->
+                        delegatingViewList.apply { addAll(mViews) }
+                    }
                 }
             }
         }
@@ -206,9 +204,6 @@ internal object WindowManagerSpy {
     // You can discourage me all you want I'll still do it.
     @SuppressLint("PrivateApi", "ObsoleteSdkInt", "DiscouragedPrivateApi")
     fun swapWindowManagerGlobalMViews(swap: (ArrayList<View>) -> ArrayList<View>) {
-        if (SDK_INT < 19) {
-            return
-        }
         try {
             windowManagerInstance?.let { windowManagerInstance ->
                 mViewsField?.let { mViewsField ->
