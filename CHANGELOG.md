@@ -9,6 +9,7 @@
   - When generating `sentry-trace` header from `PropagationContext` we now copy the `sampled` flag.
   - In `TransactionContext.fromPropagationContext` when there is no parent sampling decision, keep the decision `null` so a new sampling decision is made instead of defaulting to `false`
 - Defer sampling decision by setting `sampled` to `null` in `PropagationContext` when using OpenTelemetry in case of an incoming defer sampling `sentry-trace` header. ([#3945](https://github.com/getsentry/sentry-java/pull/3945))
+- Build `PropagationContext` from `SamplingDecision` made by `SentrySampler` instead of parsing headers and potentially ignoring a sampling decision in case a `sentry-trace` header comes in with deferred sampling decision. ([#3947](https://github.com/getsentry/sentry-java/pull/3947))
 
 ## 8.0.0-rc.1
 

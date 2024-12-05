@@ -84,10 +84,8 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
       final @Nullable Boolean sampled = isSampled(otelSpan, samplingDecision);
 
       final @NotNull PropagationContext propagationContext =
-          sentryTraceHeader == null
-              ? new PropagationContext(
-                  new SentryId(traceId), sentrySpanId, sentryParentSpanId, baggage, sampled)
-              : PropagationContext.fromHeaders(sentryTraceHeader, baggage, sentrySpanId);
+          new PropagationContext(
+              new SentryId(traceId), sentrySpanId, sentryParentSpanId, baggage, sampled);
 
       updatePropagationContext(scopes, propagationContext);
     }
