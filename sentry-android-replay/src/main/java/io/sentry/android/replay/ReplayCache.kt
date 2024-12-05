@@ -80,6 +80,7 @@ public class ReplayCache(
         if (replayCacheDir == null || bitmap.isRecycled) {
             return
         }
+        replayCacheDir?.mkdirs()
 
         val screenshot = File(replayCacheDir, "$frameTimestamp.jpg").also {
             it.createNewFile()

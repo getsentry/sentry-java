@@ -31,7 +31,7 @@ class SentryFragmentLifecycleCallbacks(
         enableAutoFragmentLifecycleTracing: Boolean
     ) : this(
         hub = hub,
-        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.values().toSet()
+        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states
             .takeIf { enableFragmentLifecycleBreadcrumbs }
             .orEmpty(),
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
@@ -42,7 +42,7 @@ class SentryFragmentLifecycleCallbacks(
         enableAutoFragmentLifecycleTracing: Boolean = false
     ) : this(
         hub = HubAdapter.getInstance(),
-        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.values().toSet()
+        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states
             .takeIf { enableFragmentLifecycleBreadcrumbs }
             .orEmpty(),
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing

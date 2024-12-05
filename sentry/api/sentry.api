@@ -98,6 +98,7 @@ public final class io/sentry/BaggageHeader {
 
 public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
+	public fun <init> (J)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/util/Date;)V
 	public static fun debug (Ljava/lang/String;)Lio/sentry/Breadcrumb;
@@ -109,6 +110,7 @@ public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/
 	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getMessage ()Ljava/lang/String;
+	public fun getOrigin ()Ljava/lang/String;
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
@@ -127,6 +129,7 @@ public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setMessage (Ljava/lang/String;)V
+	public fun setOrigin (Ljava/lang/String;)V
 	public fun setType (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public static fun transaction (Ljava/lang/String;)Lio/sentry/Breadcrumb;
@@ -148,6 +151,7 @@ public final class io/sentry/Breadcrumb$JsonKeys {
 	public static final field DATA Ljava/lang/String;
 	public static final field LEVEL Ljava/lang/String;
 	public static final field MESSAGE Ljava/lang/String;
+	public static final field ORIGIN Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
@@ -311,7 +315,7 @@ public abstract interface class io/sentry/EventProcessor {
 }
 
 public final class io/sentry/ExperimentalOptions {
-	public fun <init> ()V
+	public fun <init> (Z)V
 	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
 	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 }
@@ -2247,6 +2251,7 @@ public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSeri
 	public static final field CheckIn Lio/sentry/SentryItemType;
 	public static final field ClientReport Lio/sentry/SentryItemType;
 	public static final field Event Lio/sentry/SentryItemType;
+	public static final field Feedback Lio/sentry/SentryItemType;
 	public static final field Profile Lio/sentry/SentryItemType;
 	public static final field ReplayEvent Lio/sentry/SentryItemType;
 	public static final field ReplayRecording Lio/sentry/SentryItemType;
@@ -2262,6 +2267,12 @@ public final class io/sentry/SentryItemType : java/lang/Enum, io/sentry/JsonSeri
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryItemType;
 	public static fun valueOfLabel (Ljava/lang/String;)Lio/sentry/SentryItemType;
 	public static fun values ()[Lio/sentry/SentryItemType;
+}
+
+public final class io/sentry/SentryItemType$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryItemType;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public final class io/sentry/SentryLevel : java/lang/Enum, io/sentry/JsonSerializable {
@@ -2361,6 +2372,7 @@ public class io/sentry/SentryOptions {
 	public fun getBeforeEmitMetricCallback ()Lio/sentry/SentryOptions$BeforeEmitMetricCallback;
 	public fun getBeforeEnvelopeCallback ()Lio/sentry/SentryOptions$BeforeEnvelopeCallback;
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$BeforeSendCallback;
+	public fun getBeforeSendReplay ()Lio/sentry/SentryOptions$BeforeSendReplayCallback;
 	public fun getBeforeSendTransaction ()Lio/sentry/SentryOptions$BeforeSendTransactionCallback;
 	public fun getBundleIds ()Ljava/util/Set;
 	public fun getCacheDirPath ()Ljava/lang/String;
@@ -2476,6 +2488,7 @@ public class io/sentry/SentryOptions {
 	public fun setBeforeEmitMetricCallback (Lio/sentry/SentryOptions$BeforeEmitMetricCallback;)V
 	public fun setBeforeEnvelopeCallback (Lio/sentry/SentryOptions$BeforeEnvelopeCallback;)V
 	public fun setBeforeSend (Lio/sentry/SentryOptions$BeforeSendCallback;)V
+	public fun setBeforeSendReplay (Lio/sentry/SentryOptions$BeforeSendReplayCallback;)V
 	public fun setBeforeSendTransaction (Lio/sentry/SentryOptions$BeforeSendTransactionCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
 	public fun setConnectionStatusProvider (Lio/sentry/IConnectionStatusProvider;)V
@@ -2512,6 +2525,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExecutorService (Lio/sentry/ISentryExecutorService;)V
 	public fun setFlushTimeoutMillis (J)V
+	public fun setFullyDisplayedReporter (Lio/sentry/FullyDisplayedReporter;)V
 	public fun setGestureTargetLocators (Ljava/util/List;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
@@ -2579,6 +2593,10 @@ public abstract interface class io/sentry/SentryOptions$BeforeEnvelopeCallback {
 
 public abstract interface class io/sentry/SentryOptions$BeforeSendCallback {
 	public abstract fun execute (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+}
+
+public abstract interface class io/sentry/SentryOptions$BeforeSendReplayCallback {
+	public abstract fun execute (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 }
 
 public abstract interface class io/sentry/SentryOptions$BeforeSendTransactionCallback {
@@ -2699,26 +2717,37 @@ public final class io/sentry/SentryReplayEvent$ReplayType$Deserializer : io/sent
 }
 
 public final class io/sentry/SentryReplayOptions {
-	public fun <init> ()V
+	public static final field ANDROIDX_MEDIA_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field EXOPLAYER_CLASS_NAME Ljava/lang/String;
+	public static final field EXOPLAYER_STYLED_CLASS_NAME Ljava/lang/String;
+	public static final field IMAGE_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field VIDEO_VIEW_CLASS_NAME Ljava/lang/String;
+	public static final field WEB_VIEW_CLASS_NAME Ljava/lang/String;
 	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
-	public fun addClassToRedact (Ljava/lang/String;)V
+	public fun <init> (Z)V
+	public fun addMaskViewClass (Ljava/lang/String;)V
+	public fun addUnmaskViewClass (Ljava/lang/String;)V
 	public fun getErrorReplayDuration ()J
-	public fun getErrorSampleRate ()Ljava/lang/Double;
 	public fun getFrameRate ()I
+	public fun getMaskViewClasses ()Ljava/util/Set;
+	public fun getMaskViewContainerClass ()Ljava/lang/String;
+	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
-	public fun getRedactAllImages ()Z
-	public fun getRedactAllText ()Z
-	public fun getRedactClasses ()Ljava/util/Set;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
+	public fun getUnmaskViewClasses ()Ljava/util/Set;
+	public fun getUnmaskViewContainerClass ()Ljava/lang/String;
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
-	public fun setErrorSampleRate (Ljava/lang/Double;)V
+	public fun setMaskAllImages (Z)V
+	public fun setMaskAllText (Z)V
+	public fun setMaskViewContainerClass (Ljava/lang/String;)V
+	public fun setOnErrorSampleRate (Ljava/lang/Double;)V
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
-	public fun setRedactAllImages (Z)V
-	public fun setRedactAllText (Z)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
+	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
 }
 
 public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang/Enum {
@@ -5545,13 +5574,20 @@ public final class io/sentry/transport/NoOpTransportGate : io/sentry/transport/I
 	public fun isConnected ()Z
 }
 
-public final class io/sentry/transport/RateLimiter {
+public final class io/sentry/transport/RateLimiter : java/io/Closeable {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/SentryOptions;)V
+	public fun addRateLimitObserver (Lio/sentry/transport/RateLimiter$IRateLimitObserver;)V
+	public fun close ()V
 	public fun filter (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
 	public fun isActiveForCategory (Lio/sentry/DataCategory;)Z
 	public fun isAnyRateLimitActive ()Z
+	public fun removeRateLimitObserver (Lio/sentry/transport/RateLimiter$IRateLimitObserver;)V
 	public fun updateRetryAfterLimits (Ljava/lang/String;Ljava/lang/String;I)V
+}
+
+public abstract interface class io/sentry/transport/RateLimiter$IRateLimitObserver {
+	public abstract fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 }
 
 public final class io/sentry/transport/ReusableCountLatch {
@@ -5671,7 +5707,6 @@ public final class io/sentry/util/HttpUtils {
 
 public final class io/sentry/util/IntegrationUtils {
 	public fun <init> ()V
-	public static fun addIntegrationToSdkVersion (Ljava/lang/Class;)V
 	public static fun addIntegrationToSdkVersion (Ljava/lang/String;)V
 }
 
@@ -5685,6 +5720,8 @@ public final class io/sentry/util/JsonSerializationUtils {
 public final class io/sentry/util/LazyEvaluator {
 	public fun <init> (Lio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun getValue ()Ljava/lang/Object;
+	public fun resetValue ()V
+	public fun setValue (Ljava/lang/Object;)V
 }
 
 public abstract interface class io/sentry/util/LazyEvaluator$Evaluator {
@@ -5788,12 +5825,30 @@ public final class io/sentry/util/PropagationTargetsUtils {
 	public static fun contain (Ljava/util/List;Ljava/net/URI;)Z
 }
 
+public final class io/sentry/util/Random : java/io/Serializable {
+	public fun <init> ()V
+	public fun <init> (J)V
+	public fun nextBoolean ()Z
+	public fun nextBytes ([B)V
+	public fun nextDouble ()D
+	public fun nextFloat ()F
+	public fun nextInt ()I
+	public fun nextInt (I)I
+	public fun nextLong ()J
+	public fun setSeed (J)V
+}
+
 public final class io/sentry/util/SampleRateUtils {
 	public fun <init> ()V
 	public static fun isValidProfilesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;Z)Z
+}
+
+public final class io/sentry/util/SentryRandom {
+	public fun <init> ()V
+	public static fun current ()Lio/sentry/util/Random;
 }
 
 public final class io/sentry/util/StringUtils {

@@ -49,7 +49,7 @@ class SentryNavigationListener @JvmOverloads constructor(
     private var activeTransaction: ITransaction? = null
 
     init {
-        addIntegrationToSdkVersion(javaClass)
+        addIntegrationToSdkVersion("NavigationListener")
         SentryIntegrationPackageStorage.getInstance()
             .addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
     }

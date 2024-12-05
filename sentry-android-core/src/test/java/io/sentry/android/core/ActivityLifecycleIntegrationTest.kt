@@ -78,7 +78,6 @@ class ActivityLifecycleIntegrationTest {
         }
         val bundle = mock<Bundle>()
         val activityFramesTracker = mock<ActivityFramesTracker>()
-        val fullyDisplayedReporter = FullyDisplayedReporter.getInstance()
         val transactionFinishedCallback = mock<TransactionFinishedCallback>()
         lateinit var shadowActivityManager: ShadowActivityManager
 
@@ -619,9 +618,28 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, mock())
         val ttfdSpan = sut.ttfdSpanMap[activity]
         sut.ttidSpanMap.values.first().finish()
-        fixture.fullyDisplayedReporter.reportFullyDrawn()
+        fixture.options.fullyDisplayedReporter.reportFullyDrawn()
         assertTrue(ttfdSpan!!.isFinished)
         assertNotEquals(SpanStatus.CANCELLED, ttfdSpan.status)
+    }
+
+    @Test
+    fun `if ttfd is disabled, no listener is registered for FullyDisplayedReporter`() {
+        val ttfdReporter = mock<FullyDisplayedReporter>()
+
+        val sut = fixture.getSut()
+        fixture.options.apply {
+            tracesSampleRate = 1.0
+            isEnableTimeToFullDisplayTracing = false
+            fullyDisplayedReporter = ttfdReporter
+        }
+
+        sut.register(fixture.hub, fixture.options)
+
+        val activity = mock<Activity>()
+        sut.onActivityCreated(activity, mock())
+
+        verify(ttfdReporter, never()).registerFullyDrawnListener(any())
     }
 
     @Test

@@ -20,6 +20,7 @@ import io.sentry.android.replay.capture.BufferCaptureStrategyTest.Fixture.Compan
 import io.sentry.protocol.SentryId
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.util.Random
 import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -35,7 +36,6 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
-import java.security.SecureRandom
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -83,7 +83,7 @@ class BufferCaptureStrategyTest {
         )
 
         fun getSut(
-            errorSampleRate: Double = 1.0,
+            onErrorSampleRate: Double = 1.0,
             dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
             replayCacheDir: File? = null
         ): BufferCaptureStrategy {
@@ -91,13 +91,13 @@ class BufferCaptureStrategyTest {
                 whenever(replayCache.replayCacheDir).thenReturn(it)
             }
             options.run {
-                experimental.sessionReplay.errorSampleRate = errorSampleRate
+                experimental.sessionReplay.onErrorSampleRate = onErrorSampleRate
             }
             return BufferCaptureStrategy(
                 options,
                 hub,
                 dateProvider,
-                SecureRandom(),
+                Random(),
                 mock {
                     doAnswer { invocation ->
                         (invocation.arguments[0] as Runnable).run()
@@ -256,7 +256,7 @@ class BufferCaptureStrategyTest {
 
     @Test
     fun `captureReplay does not replayId to scope when not sampled`() {
-        val strategy = fixture.getSut(errorSampleRate = 0.0)
+        val strategy = fixture.getSut(onErrorSampleRate = 0.0)
         strategy.start(fixture.recorderConfig)
 
         strategy.captureReplay(false) {}

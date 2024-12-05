@@ -87,7 +87,9 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       final boolean isProfilingEnabled,
       final int profilingTracesHz,
       final @NotNull ISentryExecutorService executorService) {
-    this.context = Objects.requireNonNull(context, "The application context is required");
+    this.context =
+        Objects.requireNonNull(
+            ContextUtils.getApplicationContext(context), "The application context is required");
     this.logger = Objects.requireNonNull(logger, "ILogger is required");
     this.frameMetricsCollector =
         Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");

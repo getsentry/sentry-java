@@ -9,6 +9,15 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentryReplayOptions {
 
+  public static final String TEXT_VIEW_CLASS_NAME = "android.widget.TextView";
+  public static final String IMAGE_VIEW_CLASS_NAME = "android.widget.ImageView";
+  public static final String WEB_VIEW_CLASS_NAME = "android.webkit.WebView";
+  public static final String VIDEO_VIEW_CLASS_NAME = "android.widget.VideoView";
+  public static final String ANDROIDX_MEDIA_VIEW_CLASS_NAME = "androidx.media3.ui.PlayerView";
+  public static final String EXOPLAYER_CLASS_NAME = "com.google.android.exoplayer2.ui.PlayerView";
+  public static final String EXOPLAYER_STYLED_CLASS_NAME =
+      "com.google.android.exoplayer2.ui.StyledPlayerView";
+
   public enum SentryReplayQuality {
     /** Video Scale: 80% Bit Rate: 50.000 */
     LOW(0.8f, 50_000),
@@ -46,33 +55,37 @@ public final class SentryReplayOptions {
    * Specifying 0 means never, 1.0 means always. The value needs to be >= 0.0 and <= 1.0. The
    * default is null (disabled).
    */
-  private @Nullable Double errorSampleRate;
+  private @Nullable Double onErrorSampleRate;
 
   /**
-   * Redact all text content. Draws a rectangle of text bounds with text color on top. By default
-   * only views extending TextView are redacted.
+   * Mask all views with the specified class names. The class name is the fully qualified class name
+   * of the view, e.g. android.widget.TextView. The subclasses of the specified classes will be
+   * masked as well.
    *
-   * <p>Default is enabled.
-   */
-  private boolean redactAllText = true;
-
-  /**
-   * Redact all image content. Draws a rectangle of image bounds with image's dominant color on top.
-   * By default only views extending ImageView with BitmapDrawable or custom Drawable type are
-   * redacted. ColorDrawable, InsetDrawable, VectorDrawable are all considered non-PII, as they come
-   * from the apk.
-   *
-   * <p>Default is enabled.
-   */
-  private boolean redactAllImages = true;
-
-  /**
-   * Redact all views with the specified class names. The class name is the fully qualified class
-   * name of the view, e.g. android.widget.TextView.
+   * <p>If you're using an obfuscation tool, make sure to add the respective proguard rules to keep
+   * the class names.
    *
    * <p>Default is empty.
    */
-  private Set<String> redactClasses = new CopyOnWriteArraySet<>();
+  private Set<String> maskViewClasses = new CopyOnWriteArraySet<>();
+
+  /**
+   * Ignore all views with the specified class names from masking. The class name is the fully
+   * qualified class name of the view, e.g. android.widget.TextView. The subclasses of the specified
+   * classes will be ignored as well.
+   *
+   * <p>If you're using an obfuscation tool, make sure to add the respective proguard rules to keep
+   * the class names.
+   *
+   * <p>Default is empty.
+   */
+  private Set<String> unmaskViewClasses = new CopyOnWriteArraySet<>();
+
+  /** The class name of the view container that masks all of its children. */
+  private @Nullable String maskViewContainerClass = null;
+
+  /** The class name of the view container that unmasks its direct children. */
+  private @Nullable String unmaskViewContainerClass = null;
 
   /**
    * Defines the quality of the session replay. The higher the quality, the more accurate the replay
@@ -95,31 +108,42 @@ public final class SentryReplayOptions {
   /** The maximum duration of a full session replay, defaults to 1h. */
   private long sessionDuration = 60 * 60 * 1000L;
 
-  public SentryReplayOptions() {}
+  public SentryReplayOptions(final boolean empty) {
+    if (!empty) {
+      setMaskAllText(true);
+      setMaskAllImages(true);
+      maskViewClasses.add(WEB_VIEW_CLASS_NAME);
+      maskViewClasses.add(VIDEO_VIEW_CLASS_NAME);
+      maskViewClasses.add(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
+      maskViewClasses.add(EXOPLAYER_CLASS_NAME);
+      maskViewClasses.add(EXOPLAYER_STYLED_CLASS_NAME);
+    }
+  }
 
   public SentryReplayOptions(
-      final @Nullable Double sessionSampleRate, final @Nullable Double errorSampleRate) {
+      final @Nullable Double sessionSampleRate, final @Nullable Double onErrorSampleRate) {
+    this(false);
     this.sessionSampleRate = sessionSampleRate;
-    this.errorSampleRate = errorSampleRate;
+    this.onErrorSampleRate = onErrorSampleRate;
   }
 
   @Nullable
-  public Double getErrorSampleRate() {
-    return errorSampleRate;
+  public Double getOnErrorSampleRate() {
+    return onErrorSampleRate;
   }
 
   public boolean isSessionReplayEnabled() {
     return (getSessionSampleRate() != null && getSessionSampleRate() > 0);
   }
 
-  public void setErrorSampleRate(final @Nullable Double errorSampleRate) {
-    if (!SampleRateUtils.isValidSampleRate(errorSampleRate)) {
+  public void setOnErrorSampleRate(final @Nullable Double onErrorSampleRate) {
+    if (!SampleRateUtils.isValidSampleRate(onErrorSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
-              + errorSampleRate
+              + onErrorSampleRate
               + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
     }
-    this.errorSampleRate = errorSampleRate;
+    this.onErrorSampleRate = onErrorSampleRate;
   }
 
   @Nullable
@@ -128,7 +152,7 @@ public final class SentryReplayOptions {
   }
 
   public boolean isSessionReplayForErrorsEnabled() {
-    return (getErrorSampleRate() != null && getErrorSampleRate() > 0);
+    return (getOnErrorSampleRate() != null && getOnErrorSampleRate() > 0);
   }
 
   public void setSessionSampleRate(final @Nullable Double sessionSampleRate) {
@@ -141,28 +165,56 @@ public final class SentryReplayOptions {
     this.sessionSampleRate = sessionSampleRate;
   }
 
-  public boolean getRedactAllText() {
-    return redactAllText;
+  /**
+   * Mask all text content. Draws a rectangle of text bounds with text color on top. By default only
+   * views extending TextView are masked.
+   *
+   * <p>Default is enabled.
+   */
+  public void setMaskAllText(final boolean maskAllText) {
+    if (maskAllText) {
+      addMaskViewClass(TEXT_VIEW_CLASS_NAME);
+      unmaskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
+    } else {
+      addUnmaskViewClass(TEXT_VIEW_CLASS_NAME);
+      maskViewClasses.remove(TEXT_VIEW_CLASS_NAME);
+    }
   }
 
-  public void setRedactAllText(final boolean redactAllText) {
-    this.redactAllText = redactAllText;
+  /**
+   * Mask all image content. Draws a rectangle of image bounds with image's dominant color on top.
+   * By default only views extending ImageView with BitmapDrawable or custom Drawable type are
+   * masked. ColorDrawable, InsetDrawable, VectorDrawable are all considered non-PII, as they come
+   * from the apk.
+   *
+   * <p>Default is enabled.
+   */
+  public void setMaskAllImages(final boolean maskAllImages) {
+    if (maskAllImages) {
+      addMaskViewClass(IMAGE_VIEW_CLASS_NAME);
+      unmaskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
+    } else {
+      addUnmaskViewClass(IMAGE_VIEW_CLASS_NAME);
+      maskViewClasses.remove(IMAGE_VIEW_CLASS_NAME);
+    }
   }
 
-  public boolean getRedactAllImages() {
-    return redactAllImages;
+  @NotNull
+  public Set<String> getMaskViewClasses() {
+    return this.maskViewClasses;
   }
 
-  public void setRedactAllImages(final boolean redactAllImages) {
-    this.redactAllImages = redactAllImages;
+  public void addMaskViewClass(final @NotNull String className) {
+    this.maskViewClasses.add(className);
   }
 
-  public Set<String> getRedactClasses() {
-    return this.redactClasses;
+  @NotNull
+  public Set<String> getUnmaskViewClasses() {
+    return this.unmaskViewClasses;
   }
 
-  public void addClassToRedact(final String className) {
-    this.redactClasses.add(className);
+  public void addUnmaskViewClass(final @NotNull String className) {
+    this.unmaskViewClasses.add(className);
   }
 
   @ApiStatus.Internal
@@ -192,5 +244,26 @@ public final class SentryReplayOptions {
   @ApiStatus.Internal
   public long getSessionDuration() {
     return sessionDuration;
+  }
+
+  @ApiStatus.Internal
+  public void setMaskViewContainerClass(@NotNull String containerClass) {
+    addMaskViewClass(containerClass);
+    maskViewContainerClass = containerClass;
+  }
+
+  @ApiStatus.Internal
+  public void setUnmaskViewContainerClass(@NotNull String containerClass) {
+    unmaskViewContainerClass = containerClass;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable String getMaskViewContainerClass() {
+    return maskViewContainerClass;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable String getUnmaskViewContainerClass() {
+    return unmaskViewContainerClass;
   }
 }

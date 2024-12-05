@@ -209,10 +209,6 @@ internal abstract class BaseCaptureStrategy(
                 }
             }
 
-            init {
-                runInBackground { onChange(propertyName, initialValue, initialValue) }
-            }
-
             override fun getValue(thisRef: Any?, property: KProperty<*>): T? = value.get()
 
             override fun setValue(thisRef: Any?, property: KProperty<*>, value: T?) {

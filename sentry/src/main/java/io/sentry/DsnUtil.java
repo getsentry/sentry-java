@@ -23,7 +23,7 @@ public final class DsnUtil {
       return false;
     }
 
-    final @NotNull Dsn dsn = new Dsn(dsnString);
+    final @NotNull Dsn dsn = options.retrieveParsedDsn();
     final @NotNull URI sentryUri = dsn.getSentryUri();
     final @Nullable String dsnHost = sentryUri.getHost();
 

@@ -13,7 +13,6 @@ import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.Session;
-import io.sentry.android.core.internal.util.BreadcrumbFactory;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
@@ -130,7 +129,17 @@ public final class SentryAndroid {
                 isTimberAvailable,
                 isReplayAvailable);
 
-            configuration.configure(options);
+            try {
+              configuration.configure(options);
+            } catch (Throwable t) {
+              // let it slip, but log it
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.ERROR,
+                      "Error in the 'OptionsConfiguration.configure' callback.",
+                      t);
+            }
 
             // if SentryPerformanceProvider was disabled or removed,
             // we set the app start / sdk init time here instead
@@ -173,7 +182,6 @@ public final class SentryAndroid {
                 }
               });
           if (!sessionStarted.get()) {
-            hub.addBreadcrumb(BreadcrumbFactory.forSession("session.start"));
             hub.startSession();
           }
         }

@@ -159,10 +159,9 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
       final @NotNull ITransactionProfiler appStartProfiler =
           new AndroidTransactionProfiler(
-              context.getApplicationContext(),
+              context,
               buildInfoProvider,
-              new SentryFrameMetricsCollector(
-                  context.getApplicationContext(), logger, buildInfoProvider),
+              new SentryFrameMetricsCollector(context, logger, buildInfoProvider),
               logger,
               profilingOptions.getProfilingTracesDirPath(),
               profilingOptions.isProfilingEnabled(),

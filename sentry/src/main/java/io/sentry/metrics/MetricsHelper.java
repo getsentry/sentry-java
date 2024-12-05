@@ -1,7 +1,7 @@
 package io.sentry.metrics;
 
 import io.sentry.MeasurementUnit;
-import java.security.SecureRandom;
+import io.sentry.util.Random;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,7 +27,7 @@ public final class MetricsHelper {
   private static final char TAGS_ESCAPE_CHAR = '\\';
 
   private static long FLUSH_SHIFT_MS =
-      (long) (new SecureRandom().nextFloat() * (ROLLUP_IN_SECONDS * 1000f));
+      (long) (new Random().nextFloat() * (ROLLUP_IN_SECONDS * 1000f));
 
   public static long getTimeBucketKey(final long timestampMs) {
     final long seconds = timestampMs / 1000;

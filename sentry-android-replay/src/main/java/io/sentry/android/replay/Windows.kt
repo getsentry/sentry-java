@@ -134,7 +134,7 @@ internal fun interface OnRootViewsChangedListener {
 /**
  * A utility that holds the list of root views that WindowManager updates.
  */
-internal class RootViewsSpy private constructor() {
+internal object RootViewsSpy {
 
     val listeners: CopyOnWriteArrayList<OnRootViewsChangedListener> = object : CopyOnWriteArrayList<OnRootViewsChangedListener>() {
         override fun add(element: OnRootViewsChangedListener?): Boolean {
@@ -168,15 +168,13 @@ internal class RootViewsSpy private constructor() {
         }
     }
 
-    companion object {
-        fun install(): RootViewsSpy {
-            return RootViewsSpy().apply {
-                // had to do this as a first message of the main thread queue, otherwise if this is
-                // called from ContentProvider, it might be too early and the listener won't be installed
-                Handler(Looper.getMainLooper()).postAtFrontOfQueue {
-                    WindowManagerSpy.swapWindowManagerGlobalMViews { mViews ->
-                        delegatingViewList.apply { addAll(mViews) }
-                    }
+    fun install(): RootViewsSpy {
+        return apply {
+            // had to do this as a first message of the main thread queue, otherwise if this is
+            // called from ContentProvider, it might be too early and the listener won't be installed
+            Handler(Looper.getMainLooper()).postAtFrontOfQueue {
+                WindowManagerSpy.swapWindowManagerGlobalMViews { mViews ->
+                    delegatingViewList.apply { addAll(mViews) }
                 }
             }
         }

@@ -114,7 +114,7 @@
 <!--        <meta-data android:name="io.sentry.traces.sample-rate" android:value="0.8" /> -->
 
         <!--    how to enable profiling when starting transactions -->
-        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />
+        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1" />
 
       <!--    how to enable app start profiling -->
         <meta-data android:name="io.sentry.traces.profiling.enable-app-start" android:value="true" />
@@ -152,6 +152,9 @@
         <!--    how to enable the attach screenshot feature-->
         <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
 
+        <!--    how many breadcrumbs will be stored-->
+        <meta-data android:name="io.sentry.max-breadcrumbs" android:value="100"/>
+
         <!--    how to enable the attach view hierarchy feature-->
         <meta-data android:name="io.sentry.attach-view-hierarchy" android:value="true" />
 
@@ -165,8 +168,7 @@
 
       <meta-data android:name="io.sentry.enable-metrics" android:value="true" />
 
-      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1.0" />
-      <meta-data android:name="io.sentry.session-replay.redact-all-text" android:value="false" />
-
+      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1" />
+      <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="true" />
     </application>
 </manifest>

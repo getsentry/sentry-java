@@ -134,7 +134,7 @@ public final class Baggage {
     final Baggage baggage = new Baggage(options.getLogger());
     final SpanContext trace = event.getContexts().getTrace();
     baggage.setTraceId(trace != null ? trace.getTraceId().toString() : null);
-    baggage.setPublicKey(new Dsn(options.getDsn()).getPublicKey());
+    baggage.setPublicKey(options.retrieveParsedDsn().getPublicKey());
     baggage.setRelease(event.getRelease());
     baggage.setEnvironment(event.getEnvironment());
     final User user = event.getUser();
@@ -405,7 +405,7 @@ public final class Baggage {
       final @NotNull SentryOptions sentryOptions,
       final @Nullable TracesSamplingDecision samplingDecision) {
     setTraceId(transaction.getSpanContext().getTraceId().toString());
-    setPublicKey(new Dsn(sentryOptions.getDsn()).getPublicKey());
+    setPublicKey(sentryOptions.retrieveParsedDsn().getPublicKey());
     setRelease(sentryOptions.getRelease());
     setEnvironment(sentryOptions.getEnvironment());
     setUserSegment(user != null ? getSegment(user) : null);
@@ -427,7 +427,7 @@ public final class Baggage {
     final @Nullable User user = scope.getUser();
     final @NotNull SentryId replayId = scope.getReplayId();
     setTraceId(propagationContext.getTraceId().toString());
-    setPublicKey(new Dsn(options.getDsn()).getPublicKey());
+    setPublicKey(options.retrieveParsedDsn().getPublicKey());
     setRelease(options.getRelease());
     setEnvironment(options.getEnvironment());
     if (!SentryId.EMPTY_ID.equals(replayId)) {

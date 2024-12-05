@@ -133,6 +133,12 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private void serializeToDisk(final @NotNull Runnable task) {
+    if (Thread.currentThread().getName().contains("SentryExecutor")) {
+      // we're already on the sentry executor thread, so we can just execute it directly
+      task.run();
+      return;
+    }
+
     try {
       options
           .getExecutorService()

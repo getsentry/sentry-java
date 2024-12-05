@@ -118,7 +118,7 @@ public final class ActivityLifecycleIntegration
 
     application.registerActivityLifecycleCallbacks(this);
     this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
-    addIntegrationToSdkVersion(getClass());
+    addIntegrationToSdkVersion("ActivityLifecycle");
   }
 
   private boolean isPerformanceEnabled(final @NotNull SentryAndroidOptions options) {
@@ -382,7 +382,7 @@ public final class ActivityLifecycleIntegration
 
     firstActivityCreated = true;
 
-    if (fullyDisplayedReporter != null) {
+    if (performanceEnabled && ttfdSpan != null && fullyDisplayedReporter != null) {
       fullyDisplayedReporter.registerFullyDrawnListener(() -> onFullFrameDrawn(ttfdSpan));
     }
   }

@@ -26,8 +26,8 @@ final class ManifestMetadataReader {
   static final String SAMPLE_RATE = "io.sentry.sample-rate";
   static final String ANR_ENABLE = "io.sentry.anr.enable";
   static final String ANR_REPORT_DEBUG = "io.sentry.anr.report-debug";
-
   static final String ANR_TIMEOUT_INTERVAL_MILLIS = "io.sentry.anr.timeout-interval-millis";
+  static final String ANR_ATTACH_THREAD_DUMPS = "io.sentry.anr.attach-thread-dumps";
 
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
@@ -56,7 +56,7 @@ final class ManifestMetadataReader {
   static final String UNCAUGHT_EXCEPTION_HANDLER_ENABLE =
       "io.sentry.uncaught-exception-handler.enable";
 
-  static final String TRACING_ENABLE = "io.sentry.traces.enable";
+  @Deprecated static final String TRACING_ENABLE = "io.sentry.traces.enable";
   static final String TRACES_SAMPLE_RATE = "io.sentry.traces.sample-rate";
   static final String TRACES_ACTIVITY_ENABLE = "io.sentry.traces.activity.enable";
   static final String TRACES_ACTIVITY_AUTO_FINISH_ENABLE =
@@ -104,13 +104,15 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_METRICS = "io.sentry.enable-metrics";
 
+  static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
+
   static final String REPLAYS_SESSION_SAMPLE_RATE = "io.sentry.session-replay.session-sample-rate";
 
-  static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.session-replay.error-sample-rate";
+  static final String REPLAYS_ERROR_SAMPLE_RATE = "io.sentry.session-replay.on-error-sample-rate";
 
-  static final String REPLAYS_REDACT_ALL_TEXT = "io.sentry.session-replay.redact-all-text";
+  static final String REPLAYS_MASK_ALL_TEXT = "io.sentry.session-replay.mask-all-text";
 
-  static final String REPLAYS_REDACT_ALL_IMAGES = "io.sentry.session-replay.redact-all-images";
+  static final String REPLAYS_MASK_ALL_IMAGES = "io.sentry.session-replay.mask-all-images";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -176,6 +178,9 @@ final class ManifestMetadataReader {
                 ANR_TIMEOUT_INTERVAL_MILLIS,
                 options.getAnrTimeoutIntervalMillis()));
 
+        options.setAttachAnrThreadDump(
+            readBool(metadata, logger, ANR_ATTACH_THREAD_DUMPS, options.isAttachAnrThreadDump()));
+
         final String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
 
@@ -209,6 +214,9 @@ final class ManifestMetadataReader {
                 logger,
                 SESSION_TRACKING_TIMEOUT_INTERVAL_MILLIS,
                 options.getSessionTrackingIntervalMillis()));
+
+        options.setMaxBreadcrumbs(
+            (int) readLong(metadata, logger, MAX_BREADCRUMBS, options.getMaxBreadcrumbs()));
 
         options.setEnableActivityLifecycleBreadcrumbs(
             readBool(
@@ -399,32 +407,22 @@ final class ManifestMetadataReader {
           }
         }
 
-        if (options.getExperimental().getSessionReplay().getErrorSampleRate() == null) {
-          final Double errorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
-          if (errorSampleRate != -1) {
-            options.getExperimental().getSessionReplay().setErrorSampleRate(errorSampleRate);
+        if (options.getExperimental().getSessionReplay().getOnErrorSampleRate() == null) {
+          final Double onErrorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
+          if (onErrorSampleRate != -1) {
+            options.getExperimental().getSessionReplay().setOnErrorSampleRate(onErrorSampleRate);
           }
         }
 
         options
             .getExperimental()
             .getSessionReplay()
-            .setRedactAllText(
-                readBool(
-                    metadata,
-                    logger,
-                    REPLAYS_REDACT_ALL_TEXT,
-                    options.getExperimental().getSessionReplay().getRedactAllText()));
+            .setMaskAllText(readBool(metadata, logger, REPLAYS_MASK_ALL_TEXT, true));
 
         options
             .getExperimental()
             .getSessionReplay()
-            .setRedactAllImages(
-                readBool(
-                    metadata,
-                    logger,
-                    REPLAYS_REDACT_ALL_IMAGES,
-                    options.getExperimental().getSessionReplay().getRedactAllImages()));
+            .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
       }
 
       options
@@ -444,7 +442,7 @@ final class ManifestMetadataReader {
       final @NotNull String key,
       final boolean defaultValue) {
     final boolean value = metadata.getBoolean(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
 
@@ -457,10 +455,10 @@ final class ManifestMetadataReader {
     if (metadata.getSerializable(key) != null) {
       final boolean nonNullDefault = defaultValue == null ? false : true;
       final boolean bool = metadata.getBoolean(key, nonNullDefault);
-      logger.log(SentryLevel.DEBUG, "%s read: %s", key, bool);
+      logger.log(SentryLevel.DEBUG, key + " read: " + bool);
       return bool;
     } else {
-      logger.log(SentryLevel.DEBUG, "%s used default %s", key, defaultValue);
+      logger.log(SentryLevel.DEBUG, key + " used default " + defaultValue);
       return defaultValue;
     }
   }
@@ -471,7 +469,7 @@ final class ManifestMetadataReader {
       final @NotNull String key,
       final @Nullable String defaultValue) {
     final String value = metadata.getString(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
 
@@ -481,14 +479,14 @@ final class ManifestMetadataReader {
       final @NotNull String key,
       final @NotNull String defaultValue) {
     final String value = metadata.getString(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
 
   private static @Nullable List<String> readList(
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     final String value = metadata.getString(key);
-    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    logger.log(SentryLevel.DEBUG, key + " read: " + value);
     if (value != null) {
       return Arrays.asList(value.split(",", -1));
     } else {
@@ -499,8 +497,8 @@ final class ManifestMetadataReader {
   private static @NotNull Double readDouble(
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     // manifest meta-data only reads float
-    final Double value = ((Float) metadata.getFloat(key, -1)).doubleValue();
-    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    final Double value = ((Number) metadata.getFloat(key, metadata.getInt(key, -1))).doubleValue();
+    logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
 
@@ -511,7 +509,7 @@ final class ManifestMetadataReader {
       final long defaultValue) {
     // manifest meta-data only reads int if the value is not big enough
     final long value = metadata.getInt(key, (int) defaultValue);
-    logger.log(SentryLevel.DEBUG, "%s read: %s", key, value);
+    logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
 
@@ -531,7 +529,6 @@ final class ManifestMetadataReader {
       if (metadata != null) {
         autoInit = readBool(metadata, logger, AUTO_INIT, true);
       }
-      logger.log(SentryLevel.INFO, "Retrieving auto-init from AndroidManifest.xml");
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Failed to read auto-init from android manifest metadata.", e);
     }

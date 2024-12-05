@@ -121,7 +121,7 @@ public final class UserInteractionIntegration
       if (isAndroidXAvailable) {
         application.registerActivityLifecycleCallbacks(this);
         this.options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration installed.");
-        addIntegrationToSdkVersion(getClass());
+        addIntegrationToSdkVersion("UserInteraction");
       } else {
         options
             .getLogger()

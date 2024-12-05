@@ -1,15 +1,132 @@
 # Changelog
 
-## 7.15.0-alpha.1
-
-### Features
+## Unreleased
 
 - Add support for setting sentry-native handler_strategy ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
 
 ### Dependencies
 
-- Bump `sentry-native` SDK to `d11359b` of [feat/inproc_handler_strategy](https://github.com/getsentry/sentry-native/pull/1027/)
-  - See the following issue for more details: https://github.com/getsentry/sentry-native/issues/1026
+- Bump Native SDK from v0.7.8 to v0.7.16 ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0716)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.16)
+
+## 7.18.1
+
+### Fixes
+
+- Fix testTag not working for Jetpack Compose user interaction tracking ([#3878](https://github.com/getsentry/sentry-java/pull/3878))
+
+## 7.18.0
+
+### Features
+
+- Android 15: Add support for 16KB page sizes ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
+  - See https://developer.android.com/guide/practices/page-sizes for more details
+- Session Replay: Add `beforeSendReplay` callback ([#3855](https://github.com/getsentry/sentry-java/pull/3855))
+- Session Replay: Add support for masking/unmasking view containers ([#3881](https://github.com/getsentry/sentry-java/pull/3881))
+
+### Fixes
+
+- Avoid collecting normal frames ([#3782](https://github.com/getsentry/sentry-java/pull/3782))
+- Ensure android initialization process continues even if options configuration block throws an exception ([#3887](https://github.com/getsentry/sentry-java/pull/3887))
+- Do not report parsing ANR error when there are no threads ([#3888](https://github.com/getsentry/sentry-java/pull/3888))
+  - This should significantly reduce the number of events with message "Sentry Android SDK failed to parse system thread dump..." reported
+- Session Replay: Disable replay in session mode when rate limit is active ([#3854](https://github.com/getsentry/sentry-java/pull/3854))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.2 to v0.7.8 ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#078)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.8)
+
+## 7.17.0
+
+### Features
+
+- Add meta option to set the maximum amount of breadcrumbs to be logged. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
+- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
+
+### Fixes
+
+- Using MaxBreadcrumb with value 0 no longer crashes. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
+- Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
+- Fix standalone tomcat jndi issue ([#3873](https://github.com/getsentry/sentry-java/pull/3873))
+  - Using Sentry Spring Boot on a standalone tomcat caused the following error:
+    - Failed to bind properties under 'sentry.parsed-dsn' to io.sentry.Dsn
+
+## 7.16.0
+
+### Features
+
+- Add meta option to attach ANR thread dumps ([#3791](https://github.com/getsentry/sentry-java/pull/3791))
+
+### Fixes
+
+- Cache parsed Dsn ([#3796](https://github.com/getsentry/sentry-java/pull/3796))
+- fix invalid profiles when the transaction name is empty ([#3747](https://github.com/getsentry/sentry-java/pull/3747))
+- Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
+- Vendor `java.util.Random` and replace `java.security.SecureRandom` usages ([#3783](https://github.com/getsentry/sentry-java/pull/3783))
+- Fix potential ANRs due to NDK scope sync ([#3754](https://github.com/getsentry/sentry-java/pull/3754))
+- Fix potential ANRs due to NDK System.loadLibrary calls ([#3670](https://github.com/getsentry/sentry-java/pull/3670))
+- Fix slow `Log` calls on app startup ([#3793](https://github.com/getsentry/sentry-java/pull/3793))
+- Fix slow Integration name parsing ([#3794](https://github.com/getsentry/sentry-java/pull/3794))
+- Session Replay: Reduce startup and capture overhead ([#3799](https://github.com/getsentry/sentry-java/pull/3799))
+- Load lazy fields on init in the background ([#3803](https://github.com/getsentry/sentry-java/pull/3803))
+- Replace setOf with HashSet.add ([#3801](https://github.com/getsentry/sentry-java/pull/3801))
+
+### Breaking changes
+
+- The method `addIntegrationToSdkVersion(Ljava/lang/Class;)V` has been removed from the core (`io.sentry:sentry`) package. Please make sure all of the packages (e.g. `io.sentry:sentry-android-core`, `io.sentry:sentry-android-fragment`, `io.sentry:sentry-okhttp`  and others) are all aligned and using the same version to prevent the `NoSuchMethodError` exception.
+
+## 7.16.0-alpha.1
+
+### Features
+
+- Add meta option to attach ANR thread dumps ([#3791](https://github.com/getsentry/sentry-java/pull/3791))
+
+### Fixes
+
+- Cache parsed Dsn ([#3796](https://github.com/getsentry/sentry-java/pull/3796))
+- fix invalid profiles when the transaction name is empty ([#3747](https://github.com/getsentry/sentry-java/pull/3747))
+- Deprecate `enableTracing` option ([#3777](https://github.com/getsentry/sentry-java/pull/3777))
+- Vendor `java.util.Random` and replace `java.security.SecureRandom` usages ([#3783](https://github.com/getsentry/sentry-java/pull/3783))
+- Fix potential ANRs due to NDK scope sync ([#3754](https://github.com/getsentry/sentry-java/pull/3754))
+- Fix potential ANRs due to NDK System.loadLibrary calls ([#3670](https://github.com/getsentry/sentry-java/pull/3670))
+- Fix slow `Log` calls on app startup ([#3793](https://github.com/getsentry/sentry-java/pull/3793))
+- Fix slow Integration name parsing ([#3794](https://github.com/getsentry/sentry-java/pull/3794))
+- Session Replay: Reduce startup and capture overhead ([#3799](https://github.com/getsentry/sentry-java/pull/3799))
+
+## 7.15.0
+
+### Features
+
+- Add support for `feedback` envelope header item type ([#3687](https://github.com/getsentry/sentry-java/pull/3687))
+- Add breadcrumb.origin field ([#3727](https://github.com/getsentry/sentry-java/pull/3727))
+- Session Replay: Add options to selectively mask/unmask views captured in replay. The following options are available: ([#3689](https://github.com/getsentry/sentry-java/pull/3689))
+    - `android:tag="sentry-mask|sentry-unmask"` in XML or `view.setTag("sentry-mask|sentry-unmask")` in code tags
+        - if you already have a tag set for a view, you can set a tag by id: `<tag android:id="@id/sentry_privacy" android:value="mask|unmask"/>` in XML or `view.setTag(io.sentry.android.replay.R.id.sentry_privacy, "mask|unmask")` in code
+    - `view.sentryReplayMask()` or `view.sentryReplayUnmask()` extension functions
+    - mask/unmask `View`s of a certain type by adding fully-qualified classname to one of the lists `options.experimental.sessionReplay.addMaskViewClass()` or `options.experimental.sessionReplay.addUnmaskViewClass()`. Note, that all of the view subclasses/subtypes will be masked/unmasked as well
+        - For example, (this is already a default behavior) to mask all `TextView`s and their subclasses (`RadioButton`, `EditText`, etc.): `options.experimental.sessionReplay.addMaskViewClass("android.widget.TextView")`
+        - If you're using code obfuscation, adjust your proguard-rules accordingly, so your custom view class name is not minified
+- Session Replay: Support Jetpack Compose masking ([#3739](https://github.com/getsentry/sentry-java/pull/3739))
+  - To selectively mask/unmask @Composables, use `Modifier.sentryReplayMask()` and `Modifier.sentryReplayUnmask()` modifiers
+- Session Replay: Mask `WebView`, `VideoView` and `androidx.media3.ui.PlayerView` by default ([#3775](https://github.com/getsentry/sentry-java/pull/3775))
+
+### Fixes
+
+- Avoid stopping appStartProfiler after application creation ([#3630](https://github.com/getsentry/sentry-java/pull/3630))
+- Session Replay: Correctly detect dominant color for `TextView`s with Spans ([#3682](https://github.com/getsentry/sentry-java/pull/3682))
+- Fix ensure Application Context is used even when SDK is initialized via Activity Context ([#3669](https://github.com/getsentry/sentry-java/pull/3669))
+- Fix potential ANRs due to `Calendar.getInstance` usage in Breadcrumbs constructor ([#3736](https://github.com/getsentry/sentry-java/pull/3736))
+- Fix potential ANRs due to default integrations ([#3778](https://github.com/getsentry/sentry-java/pull/3778))
+- Lazily initialize heavy `SentryOptions` members to avoid ANRs on app start ([#3749](https://github.com/getsentry/sentry-java/pull/3749))
+
+*Breaking changes*:
+
+- `options.experimental.sessionReplay.errorSampleRate` was renamed to `options.experimental.sessionReplay.onErrorSampleRate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
+- Manifest option `io.sentry.session-replay.error-sample-rate` was renamed to `io.sentry.session-replay.on-error-sample-rate` ([#3637](https://github.com/getsentry/sentry-java/pull/3637))
+- Change `redactAllText` and `redactAllImages` to `maskAllText` and `maskAllImages` ([#3741](https://github.com/getsentry/sentry-java/pull/3741))
 
 ## 7.14.0
 

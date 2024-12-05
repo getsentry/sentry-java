@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import io.sentry.DataCategory;
 import io.sentry.IConnectionStatusProvider;
 import io.sentry.IHub;
@@ -54,6 +56,7 @@ final class SendCachedEnvelopeIntegration
       options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
       return;
     }
+    addIntegrationToSdkVersion("SendCachedEnvelope");
 
     sendCachedEnvelopes(hub, this.options);
   }

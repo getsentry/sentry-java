@@ -7,6 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ThreadDumpParserTest {
 
@@ -94,5 +95,16 @@ class ThreadDumpParserTest {
         assertEquals("syscall", lastFrame.function)
         assertEquals(28, lastFrame.lineno)
         assertNull(lastFrame.isInApp)
+    }
+
+    @Test
+    fun `thread dump garbage`() {
+        val lines = Lines.readLines(File("src/test/resources/thread_dump_bad_data.txt"))
+        val parser = ThreadDumpParser(
+            SentryOptions().apply { addInAppInclude("io.sentry.samples") },
+            false
+        )
+        val threads = parser.parse(lines)
+        assertTrue(threads.isEmpty())
     }
 }

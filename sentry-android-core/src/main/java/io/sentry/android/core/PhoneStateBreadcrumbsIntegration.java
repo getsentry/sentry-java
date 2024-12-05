@@ -28,7 +28,8 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   private final @NotNull Object startLock = new Object();
 
   public PhoneStateBreadcrumbsIntegration(final @NotNull Context context) {
-    this.context = Objects.requireNonNull(context, "Context is required");
+    this.context =
+        Objects.requireNonNull(ContextUtils.getApplicationContext(context), "Context is required");
   }
 
   @Override
@@ -80,7 +81,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
         telephonyManager.listen(listener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
 
         options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
-        addIntegrationToSdkVersion(getClass());
+        addIntegrationToSdkVersion("PhoneStateBreadcrumbs");
       } catch (Throwable e) {
         options
             .getLogger()

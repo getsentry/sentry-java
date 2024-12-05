@@ -77,7 +77,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   public SystemEventsBreadcrumbsIntegration(
       final @NotNull Context context, final @NotNull List<String> actions) {
-    this.context = Objects.requireNonNull(context, "Context is required");
+    this.context =
+        Objects.requireNonNull(ContextUtils.getApplicationContext(context), "Context is required");
     this.actions = Objects.requireNonNull(actions, "Actions list is required");
   }
 
@@ -131,7 +132,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       // registerReceiver can throw SecurityException but it's not documented in the official docs
       ContextUtils.registerReceiver(context, options, receiver, filter);
       options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("SystemEventsBreadcrumbs");
     } catch (Throwable e) {
       options.setEnableSystemEventBreadcrumbs(false);
       options
@@ -210,7 +211,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     private static final long DEBOUNCE_WAIT_TIME_MS = 60 * 1000;
     private final @NotNull IHub hub;
     private final @NotNull SentryAndroidOptions options;
-    private final @NotNull Debouncer debouncer =
+    private final @NotNull Debouncer batteryChangedDebouncer =
         new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
 
     SystemEventsBroadcastReceiver(
@@ -220,19 +221,43 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     }
 
     @Override
-    public void onReceive(Context context, Intent intent) {
-      final boolean shouldDebounce = debouncer.checkForDebounce();
-      final String action = intent.getAction();
+    public void onReceive(final Context context, final @NotNull Intent intent) {
+      final @Nullable String action = intent.getAction();
       final boolean isBatteryChanged = ACTION_BATTERY_CHANGED.equals(action);
-      if (isBatteryChanged && shouldDebounce) {
-        // aligning with iOS which only captures battery status changes every minute at maximum
+
+      // aligning with iOS which only captures battery status changes every minute at maximum
+      if (isBatteryChanged && batteryChangedDebouncer.checkForDebounce()) {
         return;
       }
 
-      final Breadcrumb breadcrumb = new Breadcrumb();
+      final long now = System.currentTimeMillis();
+      try {
+        options
+            .getExecutorService()
+            .submit(
+                () -> {
+                  final Breadcrumb breadcrumb =
+                      createBreadcrumb(now, intent, action, isBatteryChanged);
+                  final Hint hint = new Hint();
+                  hint.set(ANDROID_INTENT, intent);
+                  hub.addBreadcrumb(breadcrumb, hint);
+                });
+      } catch (Throwable t) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, t, "Failed to submit system event breadcrumb action.");
+      }
+    }
+
+    private @NotNull Breadcrumb createBreadcrumb(
+        final long timeMs,
+        final @NotNull Intent intent,
+        final @Nullable String action,
+        boolean isBatteryChanged) {
+      final Breadcrumb breadcrumb = new Breadcrumb(timeMs);
       breadcrumb.setType("system");
       breadcrumb.setCategory("device.event");
-      String shortAction = StringUtils.getStringAfterDot(action);
+      final String shortAction = StringUtils.getStringAfterDot(action);
       if (shortAction != null) {
         breadcrumb.setData("action", shortAction);
       }
@@ -272,11 +297,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         }
       }
       breadcrumb.setLevel(SentryLevel.INFO);
-
-      final Hint hint = new Hint();
-      hint.set(ANDROID_INTENT, intent);
-
-      hub.addBreadcrumb(breadcrumb, hint);
+      return breadcrumb;
     }
   }
 }

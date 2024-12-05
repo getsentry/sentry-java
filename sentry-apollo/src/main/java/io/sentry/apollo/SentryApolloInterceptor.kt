@@ -40,7 +40,7 @@ class SentryApolloInterceptor(
     constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
 
     init {
-        addIntegrationToSdkVersion(javaClass)
+        addIntegrationToSdkVersion("Apollo")
         SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
     }
 

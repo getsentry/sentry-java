@@ -56,10 +56,17 @@ Sentry SDK for Java and Android
 | sentry-opentelemetry-core               | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-core)                             |
 | sentry-okhttp                           | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-okhttp/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-okhttp)                                                     |
 
+# Releases
 
+This repo uses the following ways to release SDK updates:
+
+- `Pre-release`: We create pre-releases (alpha, beta, RC,…) for larger and potentially more impactful changes, such as new features or major versions.
+- `Latest`: We continuously release major/minor/hotfix versions from the `main` branch. These releases go through all our internal quality gates and are very safe to use and intended to be the default for most teams.
+- `Stable`: We promote releases from `Latest` when they have been used in the field for some time and in scale, considering time since release, adoption, and other quality and stability metrics. These releases will be indicated on the releases page (https://github.com/getsentry/sentry-java/releases/) with the `Stable` suffix.
 
 # Useful links and docs
 
+* A deep dive into how we built [Session Replay for Android](https://www.droidcon.com/2024/11/22/rewind-and-resolve-a-deep-dive-into-building-session-replay-for-android/) at Droidcon London 2024.
 * Current Javadocs [generated from source code](https://getsentry.github.io/sentry-java/).
 * Java SDK version 1.x [can still be found here](https://docs.sentry.io/clients/java/).
 * Migration page from [sentry-android 1.x and 2.x to sentry-android 4.x](https://docs.sentry.io/platforms/android/migration/).

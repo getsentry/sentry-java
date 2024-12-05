@@ -144,7 +144,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
     // Transaction info
     this.transactions = transactions;
-    this.transactionName = transactionName;
+    this.transactionName = transactionName.isEmpty() ? "unknown" : transactionName;
     this.durationNs = durationNanos;
 
     // App info

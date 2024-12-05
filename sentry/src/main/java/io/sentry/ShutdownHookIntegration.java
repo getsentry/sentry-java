@@ -37,7 +37,7 @@ public final class ShutdownHookIntegration implements Integration, Closeable {
           () -> {
             runtime.addShutdownHook(thread);
             options.getLogger().log(SentryLevel.DEBUG, "ShutdownHookIntegration installed.");
-            addIntegrationToSdkVersion(getClass());
+            addIntegrationToSdkVersion("ShutdownHook");
           });
     } else {
       options.getLogger().log(SentryLevel.INFO, "enableShutdownHook is disabled.");

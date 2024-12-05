@@ -217,6 +217,10 @@ public final class Sentry {
    * @param options options the SentryOptions
    * @param globalHubMode the globalHubMode
    */
+  @SuppressWarnings({
+    "Convert2MethodRef",
+    "FutureReturnValueIgnored"
+  }) // older AGP versions do not support method references
   private static synchronized void init(
       final @NotNull SentryOptions options, final boolean globalHubMode) {
     if (isEnabled()) {
@@ -229,6 +233,18 @@ public final class Sentry {
 
     if (!initConfigurations(options)) {
       return;
+    }
+
+    // load lazy fields of the options in a separate thread
+    try {
+      options.getExecutorService().submit(() -> options.loadLazyFields());
+    } catch (RejectedExecutionException e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Failed to call the executor. Lazy fields will not be loaded. Did you call Sentry.close()?",
+              e);
     }
 
     options.getLogger().log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
@@ -357,7 +373,7 @@ public final class Sentry {
                   observer.setEnvironment(options.getEnvironment());
                   observer.setTags(options.getTags());
                   observer.setReplayErrorSampleRate(
-                      options.getExperimental().getSessionReplay().getErrorSampleRate());
+                      options.getExperimental().getSessionReplay().getOnErrorSampleRate());
                 }
               });
     } catch (Throwable e) {
@@ -381,8 +397,8 @@ public final class Sentry {
           "DSN is required. Use empty string or set enabled to false in SentryOptions to disable SDK.");
     }
 
-    @SuppressWarnings("unused")
-    final Dsn parsedDsn = new Dsn(dsn);
+    // This creates the DSN object and performs some checks
+    options.retrieveParsedDsn();
 
     ILogger logger = options.getLogger();
 
