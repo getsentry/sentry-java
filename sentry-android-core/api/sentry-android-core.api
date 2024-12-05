@@ -424,6 +424,20 @@ public class io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapte
 	public fun onActivityStopped (Landroid/app/Activity;)V
 }
 
+public class io/sentry/android/core/performance/ActivityLifecycleSpanHelper {
+	public fun <init> (Ljava/lang/String;)V
+	public fun clear ()V
+	public fun createAndStopOnCreateSpan (Lio/sentry/ISpan;)V
+	public fun createAndStopOnStartSpan (Lio/sentry/ISpan;)V
+	public fun getOnCreateSpan ()Lio/sentry/ISpan;
+	public fun getOnCreateStartTimestamp ()Lio/sentry/SentryDate;
+	public fun getOnStartSpan ()Lio/sentry/ISpan;
+	public fun getOnStartStartTimestamp ()Lio/sentry/SentryDate;
+	public fun saveSpanToAppStartMetrics ()V
+	public fun setOnCreateStartTimestamp (Lio/sentry/SentryDate;)V
+	public fun setOnStartStartTimestamp (Lio/sentry/SentryDate;)V
+}
+
 public class io/sentry/android/core/performance/ActivityLifecycleTimeSpan : java/lang/Comparable {
 	public fun <init> ()V
 	public fun compareTo (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)I
@@ -436,6 +450,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun <init> ()V
 	public fun addActivityLifecycleTimeSpans (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)V
 	public fun clear ()V
+	public fun createProcessInitSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
@@ -495,6 +510,7 @@ public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable 
 	public fun setStartUnixTimeMs (J)V
 	public fun setStartedAt (J)V
 	public fun setStoppedAt (J)V
+	public fun setup (Ljava/lang/String;JJJ)V
 	public fun start ()V
 	public fun stop ()V
 }

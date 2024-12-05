@@ -13,7 +13,6 @@ import io.sentry.SpanContext;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
-import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.App;
@@ -219,8 +218,8 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   private void attachAppStartSpans(
       final @NotNull AppStartMetrics appStartMetrics, final @NotNull SentryTransaction txn) {
 
-    // data will be filled only for cold and warm app starts
-    if (appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.UNKNOWN) {
+    // We include process init, content providers and application.onCreate spans only on cold start
+    if (appStartMetrics.getAppStartType() != AppStartMetrics.AppStartType.COLD) {
       return;
     }
 
@@ -234,80 +233,44 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     @Nullable SpanId parentSpanId = null;
     final @NotNull List<SentrySpan> spans = txn.getSpans();
     for (final @NotNull SentrySpan span : spans) {
-      if (span.getOp().contentEquals(APP_START_COLD)
-          || span.getOp().contentEquals(APP_START_WARM)) {
+      if (span.getOp().contentEquals(APP_START_COLD)) {
         parentSpanId = span.getSpanId();
         break;
       }
     }
 
-    // We include process init, content providers and application.onCreate spans only on cold start
-    if (appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.COLD) {
-      // Process init
-      final long classInitUptimeMs = appStartMetrics.getClassLoadedUptimeMs();
-      final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
-      if (appStartTimeSpan.hasStarted()
-          && Math.abs(classInitUptimeMs - appStartTimeSpan.getStartUptimeMs())
-              <= MAX_PROCESS_INIT_APP_START_DIFF_MS) {
-        final @NotNull TimeSpan processInitTimeSpan = new TimeSpan();
-        processInitTimeSpan.setStartedAt(appStartTimeSpan.getStartUptimeMs());
-        processInitTimeSpan.setStartUnixTimeMs(appStartTimeSpan.getStartTimestampMs());
+    // Process init
+    final long classInitUptimeMs = appStartMetrics.getClassLoadedUptimeMs();
+    final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
+    if (appStartTimeSpan.hasStarted()
+        && Math.abs(classInitUptimeMs - appStartTimeSpan.getStartUptimeMs())
+            <= MAX_PROCESS_INIT_APP_START_DIFF_MS) {
+      final @NotNull TimeSpan processInitTimeSpan = appStartMetrics.createProcessInitSpan();
 
-        processInitTimeSpan.setStoppedAt(classInitUptimeMs);
-        processInitTimeSpan.setDescription("Process Initialization");
+      txn.getSpans()
+          .add(
+              timeSpanToSentrySpan(
+                  processInitTimeSpan, parentSpanId, traceId, APP_METRICS_PROCESS_INIT_OP));
+    }
 
+    // Content Providers
+    final @NotNull List<TimeSpan> contentProviderOnCreates =
+        appStartMetrics.getContentProviderOnCreateTimeSpans();
+    if (!contentProviderOnCreates.isEmpty()) {
+      for (final @NotNull TimeSpan contentProvider : contentProviderOnCreates) {
         txn.getSpans()
             .add(
                 timeSpanToSentrySpan(
-                    processInitTimeSpan, parentSpanId, traceId, APP_METRICS_PROCESS_INIT_OP));
-      }
-
-      // Content Providers
-      final @NotNull List<TimeSpan> contentProviderOnCreates =
-          appStartMetrics.getContentProviderOnCreateTimeSpans();
-      if (!contentProviderOnCreates.isEmpty()) {
-        for (final @NotNull TimeSpan contentProvider : contentProviderOnCreates) {
-          txn.getSpans()
-              .add(
-                  timeSpanToSentrySpan(
-                      contentProvider, parentSpanId, traceId, APP_METRICS_CONTENT_PROVIDER_OP));
-        }
-      }
-
-      // Application.onCreate
-      final @NotNull TimeSpan appOnCreate = appStartMetrics.getApplicationOnCreateTimeSpan();
-      if (appOnCreate.hasStopped()) {
-        txn.getSpans()
-            .add(
-                timeSpanToSentrySpan(
-                    appOnCreate, parentSpanId, traceId, APP_METRICS_APPLICATION_OP));
+                    contentProvider, parentSpanId, traceId, APP_METRICS_CONTENT_PROVIDER_OP));
       }
     }
 
-    // Activities
-    final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycleTimeSpans =
-        appStartMetrics.getActivityLifecycleTimeSpans();
-    for (ActivityLifecycleTimeSpan activityTimeSpan : activityLifecycleTimeSpans) {
-      if (activityTimeSpan.getOnCreate().hasStarted()
-          && activityTimeSpan.getOnCreate().hasStopped()) {
-        txn.getSpans()
-            .add(
-                timeSpanToSentrySpan(
-                    activityTimeSpan.getOnCreate(),
-                    parentSpanId,
-                    traceId,
-                    APP_METRICS_ACTIVITIES_OP));
-      }
-      if (activityTimeSpan.getOnStart().hasStarted()
-          && activityTimeSpan.getOnStart().hasStopped()) {
-        txn.getSpans()
-            .add(
-                timeSpanToSentrySpan(
-                    activityTimeSpan.getOnStart(),
-                    parentSpanId,
-                    traceId,
-                    APP_METRICS_ACTIVITIES_OP));
-      }
+    // Application.onCreate
+    final @NotNull TimeSpan appOnCreate = appStartMetrics.getApplicationOnCreateTimeSpan();
+    if (appOnCreate.hasStopped()) {
+      txn.getSpans()
+          .add(
+              timeSpanToSentrySpan(appOnCreate, parentSpanId, traceId, APP_METRICS_APPLICATION_OP));
     }
   }
 

@@ -90,6 +90,20 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
+   * @return the app start span Uses Process.getStartUptimeMillis() as start timestamp, which
+   *     requires API level 24+
+   */
+  public @NotNull TimeSpan createProcessInitSpan() {
+    final @NotNull TimeSpan processInitSpan = new TimeSpan();
+    processInitSpan.setup(
+        "Process Initialization",
+        appStartSpan.getStartTimestampMs(),
+        appStartSpan.getStartUptimeMs(),
+        CLASS_LOADED_UPTIME_MS);
+    return processInitSpan;
+  }
+
+  /**
    * @return the SDK init time span, as measured pre-performance-v2 Uses ContentProvider/Sdk init
    *     time as start timestamp
    *     <p>Data is filled by either {@link io.sentry.android.core.SentryPerformanceProvider} with a

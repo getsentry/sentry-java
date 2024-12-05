@@ -101,29 +101,6 @@ class SentryPerformanceProviderTest {
         assertTrue(AppStartMetrics.getInstance().appStartTimeSpan.hasStarted())
     }
 
-    @Test
-    fun `provider sets both appstart and sdk init start + end times`() {
-        val provider = fixture.getSut()
-        provider.onAppStartDone()
-
-        val metrics = AppStartMetrics.getInstance()
-        assertTrue(metrics.appStartTimeSpan.hasStarted())
-        assertTrue(metrics.appStartTimeSpan.hasStopped())
-
-        assertTrue(metrics.sdkInitTimeSpan.hasStarted())
-        assertTrue(metrics.sdkInitTimeSpan.hasStopped())
-    }
-
-    @Test
-    fun `provider properly registers and unregisters ActivityLifecycleCallbacks`() {
-        val provider = fixture.getSut()
-
-        // It register once for the provider itself and once for the appStartMetrics
-        verify(fixture.mockContext, times(2)).registerActivityLifecycleCallbacks(any())
-        provider.onAppStartDone()
-        verify(fixture.mockContext).unregisterActivityLifecycleCallbacks(any())
-    }
-
     //region app start profiling
     @Test
     fun `when config file does not exists, nothing happens`() {

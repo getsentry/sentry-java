@@ -280,21 +280,10 @@ class PerformanceAndroidEventProcessorTest {
                 "application.load" == it.op
             }
         )
-
-        assertTrue(
-            tr.spans.any {
-                "activity.load" == it.op && "MainActivity.onCreate" == it.description
-            }
-        )
-        assertTrue(
-            tr.spans.any {
-                "activity.load" == it.op && "MainActivity.onStart" == it.description
-            }
-        )
     }
 
     @Test
-    fun `adds app start metrics to app warm start txn`() {
+    fun `does not add app start metrics to app warm start txn`() {
         // given some app start metrics
         val appStartMetrics = AppStartMetrics.getInstance()
         appStartMetrics.appStartType = AppStartType.WARM
@@ -337,10 +326,6 @@ class PerformanceAndroidEventProcessorTest {
         assertFalse(tr.spans.any { "process.load" == it.op })
         assertFalse(tr.spans.any { "contentprovider.load" == it.op })
         assertFalse(tr.spans.any { "application.load" == it.op })
-
-        // activity spans should be attached
-        assertTrue(tr.spans.any { "activity.load" == it.op && "MainActivity.onCreate" == it.description })
-        assertTrue(tr.spans.any { "activity.load" == it.op && "MainActivity.onStart" == it.description })
     }
 
     @Test

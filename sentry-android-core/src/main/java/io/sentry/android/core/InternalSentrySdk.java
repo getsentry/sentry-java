@@ -213,14 +213,7 @@ public final class InternalSentrySdk {
     final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
     final @NotNull List<Map<String, Object>> spans = new ArrayList<>();
 
-    final @NotNull TimeSpan processInitNativeSpan = new TimeSpan();
-    processInitNativeSpan.setStartedAt(metrics.getAppStartTimeSpan().getStartUptimeMs());
-    processInitNativeSpan.setStartUnixTimeMs(
-        metrics.getAppStartTimeSpan().getStartTimestampMs()); // This has to go after setStartedAt
-    processInitNativeSpan.setStoppedAt(metrics.getClassLoadedUptimeMs());
-    processInitNativeSpan.setDescription("Process Initialization");
-
-    addTimeSpanToSerializedSpans(processInitNativeSpan, spans);
+    addTimeSpanToSerializedSpans(metrics.createProcessInitSpan(), spans);
     addTimeSpanToSerializedSpans(metrics.getApplicationOnCreateTimeSpan(), spans);
 
     for (final TimeSpan span : metrics.getContentProviderOnCreateTimeSpans()) {
