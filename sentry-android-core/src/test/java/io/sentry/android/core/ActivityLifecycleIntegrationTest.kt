@@ -784,6 +784,7 @@ class ActivityLifecycleIntegrationTest {
         val endDate = appStartMetrics.sdkInitTimeSpan.projectedStopTimestamp
 
         val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
         sut.onActivityCreated(activity, fixture.bundle)
 
         val appStartSpan = fixture.transaction.children.first { it.operation.startsWith("app.start.warm") }
@@ -893,6 +894,7 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime(date)
 
         val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, fixture.bundle)
         sut.onActivityCreated(activity, fixture.bundle)
 
         val span = fixture.transaction.children.first()
@@ -934,6 +936,7 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime(date, stopDate)
 
         val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, null)
         sut.onActivityCreated(activity, null)
 
         val span = fixture.transaction.children.first()
@@ -954,6 +957,7 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime(date)
 
         val activity = mock<Activity>()
+        sut.onActivityPreCreated(activity, null)
         sut.onActivityCreated(activity, null)
 
         val span = fixture.transaction.children.first()
@@ -1424,7 +1428,7 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `On activity preCreated onCreate span is created`() {
+    fun `On activity preCreated onCreate span is started`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
         sut.register(fixture.hub, fixture.options)
@@ -1432,16 +1436,14 @@ class ActivityLifecycleIntegrationTest {
         val date = SentryNanotimeDate(Date(1), 0)
         setAppStartTime(date)
 
-        assertTrue(sut.activityLifecycleMap.isEmpty())
+        assertTrue(sut.activitySpanHelpers.isEmpty())
 
         val activity = mock<Activity>()
-        // Activity onCreate date will be used
+        // Activity onPreCreate date will be used
         sut.onActivityPreCreated(activity, fixture.bundle)
-        // sut.onActivityCreated(activity, fixture.bundle)
 
-        assertFalse(sut.activityLifecycleMap.isEmpty())
-        assertTrue(sut.activityLifecycleMap.values.first().onCreate.hasStarted())
-        assertFalse(sut.activityLifecycleMap.values.first().onCreate.hasStopped())
+        assertFalse(sut.activitySpanHelpers.isEmpty())
+        assertNotNull(sut.activitySpanHelpers[activity]!!.onCreateStartTimestamp)
     }
 
     @Test
@@ -1456,29 +1458,50 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime(appStartDate)
 
         sut.register(fixture.hub, fixture.options)
-        assertTrue(sut.activityLifecycleMap.isEmpty())
+        assertTrue(sut.activitySpanHelpers.isEmpty())
 
         sut.onActivityPreCreated(activity, null)
 
-        assertFalse(sut.activityLifecycleMap.isEmpty())
-        val activityLifecycleSpan = sut.activityLifecycleMap.values.first()
-        assertTrue(activityLifecycleSpan.onCreate.hasStarted())
+        assertFalse(sut.activitySpanHelpers.isEmpty())
+        val helper = sut.activitySpanHelpers.values.first()
+        assertNotNull(helper.onCreateStartTimestamp)
         assertEquals(startDate.nanoTimestamp(), sut.getProperty<SentryDate>("lastPausedTime").nanoTimestamp())
 
         sut.onActivityCreated(activity, null)
         assertNotNull(sut.appStartSpan)
 
         sut.onActivityPostCreated(activity, null)
-        assertTrue(activityLifecycleSpan.onCreate.hasStopped())
+        assertTrue(helper.onCreateSpan!!.isFinished)
 
         sut.onActivityPreStarted(activity)
-        assertTrue(activityLifecycleSpan.onStart.hasStarted())
+        assertNotNull(helper.onStartStartTimestamp)
 
         sut.onActivityStarted(activity)
         assertTrue(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
 
         sut.onActivityPostStarted(activity)
-        assertTrue(activityLifecycleSpan.onStart.hasStopped())
+        assertTrue(helper.onStartSpan!!.isFinished)
+        assertFalse(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
+    }
+
+    @Test
+    fun `Save activity lifecycle spans in AppStartMetrics onPostSarted`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        val appStartMetrics = AppStartMetrics.getInstance()
+        val activity = mock<Activity>()
+        setAppStartTime()
+
+        sut.register(fixture.hub, fixture.options)
+        assertTrue(sut.activitySpanHelpers.isEmpty())
+
+        sut.onActivityPreCreated(activity, null)
+        sut.onActivityCreated(activity, null)
+        sut.onActivityPostCreated(activity, null)
+        sut.onActivityPreStarted(activity)
+        sut.onActivityStarted(activity)
+        assertTrue(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
+        sut.onActivityPostStarted(activity)
         assertFalse(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
     }
 
@@ -1494,23 +1517,41 @@ class ActivityLifecycleIntegrationTest {
         setAppStartTime(appStartDate)
 
         sut.register(fixture.hub, fixture.options)
-        assertTrue(sut.activityLifecycleMap.isEmpty())
+        assertTrue(sut.activitySpanHelpers.isEmpty())
 
         sut.onActivityCreated(activity, null)
 
-        assertFalse(sut.activityLifecycleMap.isEmpty())
-        val activityLifecycleSpan = sut.activityLifecycleMap.values.first()
-        assertTrue(activityLifecycleSpan.onCreate.hasStarted())
+        assertFalse(sut.activitySpanHelpers.isEmpty())
+        val helper = sut.activitySpanHelpers.values.first()
+        assertNotNull(helper.onCreateStartTimestamp)
         assertEquals(startDate.nanoTimestamp(), sut.getProperty<SentryDate>("lastPausedTime").nanoTimestamp())
         assertNotNull(sut.appStartSpan)
 
         sut.onActivityStarted(activity)
-        assertTrue(activityLifecycleSpan.onCreate.hasStopped())
-        assertTrue(activityLifecycleSpan.onStart.hasStarted())
+        assertTrue(helper.onCreateSpan!!.isFinished)
+        assertNotNull(helper.onStartStartTimestamp)
         assertTrue(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
 
         sut.onActivityResumed(activity)
-        assertTrue(activityLifecycleSpan.onStart.hasStopped())
+        assertTrue(helper.onStartSpan!!.isFinished)
+        assertFalse(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
+    }
+
+    @Test
+    fun `Save activity lifecycle spans in AppStartMetrics onResumed on API lower than 29`() {
+        val sut = fixture.getSut(apiVersion = Build.VERSION_CODES.P)
+        fixture.options.tracesSampleRate = 1.0
+        val appStartMetrics = AppStartMetrics.getInstance()
+        val activity = mock<Activity>()
+        setAppStartTime()
+
+        sut.register(fixture.hub, fixture.options)
+        assertTrue(sut.activitySpanHelpers.isEmpty())
+
+        sut.onActivityCreated(activity, null)
+        sut.onActivityStarted(activity)
+        assertTrue(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
+        sut.onActivityResumed(activity)
         assertFalse(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
     }
 
@@ -1556,6 +1597,7 @@ class ActivityLifecycleIntegrationTest {
         val lastUptimeMillis = sut.getProperty<Long>("lastPausedUptimeMillis")
         assertNotEquals(0, lastUptimeMillis)
 
+        sut.onActivityPreCreated(activity, null)
         sut.onActivityCreated(activity, null)
         // AppStartMetrics app start time is set to Activity preCreated timestamp
         assertEquals(lastUptimeMillis, appStartMetrics.appStartTimeSpan.startUptimeMs)
