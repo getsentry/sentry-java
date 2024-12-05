@@ -34,7 +34,7 @@ final class DisabledQueue<E> extends AbstractCollection<E> implements Queue<E>, 
    */
   @Override
   public boolean isEmpty() {
-    return false;
+    return true;
   }
 
   /** Does nothing. */
