@@ -164,12 +164,14 @@ class ActivityLifecycleSpanHelperTest {
         val onCreate = appStartMetrics.activityLifecycleTimeSpans.first().onCreate
         val onStart = appStartMetrics.activityLifecycleTimeSpans.first().onStart
 
+        // Check onCreate TimeSpan has same values as helper.onCreateSpan
         assertNotNull(onCreate)
         assertEquals(helper.onCreateSpan!!.startDate.nanoTimestamp(), onCreate.startTimestamp!!.nanoTimestamp())
         val spanOnCreateDurationNanos = helper.onCreateSpan!!.finishDate!!.diff(helper.onCreateSpan!!.startDate)
         assertEquals(onCreate.durationMs, TimeUnit.NANOSECONDS.toMillis(spanOnCreateDurationNanos))
         assertEquals(onCreate.description, helper.onCreateSpan!!.description)
 
+        // Check onStart TimeSpan has same values as helper.onStartSpan
         assertNotNull(onStart)
         assertEquals(helper.onStartSpan!!.startDate.nanoTimestamp(), onStart.startTimestamp!!.nanoTimestamp())
         val spanOnStartDurationNanos = helper.onStartSpan!!.finishDate!!.diff(helper.onStartSpan!!.startDate)
