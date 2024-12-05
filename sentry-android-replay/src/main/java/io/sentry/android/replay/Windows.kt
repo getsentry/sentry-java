@@ -123,12 +123,15 @@ internal fun interface OnRootViewsChangedListener {
 internal class RootViewsSpy private constructor() : Closeable {
 
     private val isClosed = AtomicBoolean(false)
+    private val viewListLock = Any()
 
     val listeners: CopyOnWriteArrayList<OnRootViewsChangedListener> = object : CopyOnWriteArrayList<OnRootViewsChangedListener>() {
         override fun add(element: OnRootViewsChangedListener?): Boolean {
-            // notify listener about existing root views immediately
-            delegatingViewList.forEach {
-                element?.onRootViewsChanged(it, true)
+            synchronized(viewListLock) {
+                // notify listener about existing root views immediately
+                delegatingViewList.forEach {
+                    element?.onRootViewsChanged(it, true)
+                }
             }
             return super.add(element)
         }
@@ -171,7 +174,9 @@ internal class RootViewsSpy private constructor() : Closeable {
                         return@postAtFrontOfQueue
                     }
                     WindowManagerSpy.swapWindowManagerGlobalMViews { mViews ->
-                        delegatingViewList.apply { addAll(mViews) }
+                        synchronized(viewListLock) {
+                            delegatingViewList.apply { addAll(mViews) }
+                        }
                     }
                 }
             }
