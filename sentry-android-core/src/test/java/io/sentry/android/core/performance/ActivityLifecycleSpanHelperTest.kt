@@ -49,7 +49,6 @@ class ActivityLifecycleSpanHelperTest {
     }
     private val fixture = Fixture()
 
-
     @Test
     fun `createAndStopOnCreateSpan creates and finishes onCreate span`() {
         val helper = fixture.getSut()
@@ -177,6 +176,4 @@ class ActivityLifecycleSpanHelperTest {
         assertEquals(onStart.durationMs, TimeUnit.NANOSECONDS.toMillis(spanOnStartDurationNanos))
         assertEquals(onStart.description, helper.onStartSpan!!.description)
     }
-
-
 }
