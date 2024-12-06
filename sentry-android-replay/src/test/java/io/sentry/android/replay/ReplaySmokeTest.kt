@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 @RunWith(AndroidJUnit4::class)
 @Config(
@@ -199,6 +200,40 @@ class ReplaySmokeTest {
                 assertEquals(0, videoEvents?.first()?.segmentId)
             }
         )
+    }
+
+    @Test
+    fun `works when double inited`() {
+        fixture.options.experimental.sessionReplay.sessionSampleRate = 1.0
+        fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+
+        // first init + close
+        val falseHub = mock<IHub> {
+            doAnswer {
+                (it.arguments[0] as ScopeCallback).run(fixture.scope)
+            }.whenever(it).configureScope(any())
+        }
+        val falseReplay: ReplayIntegration = fixture.getSut(context)
+        falseReplay.register(falseHub, fixture.options)
+        falseReplay.start()
+        falseReplay.close()
+
+        // second init
+        val captured = AtomicBoolean(false)
+        whenever(fixture.hub.captureReplay(any(), anyOrNull())).then {
+            captured.set(true)
+        }
+        val replay: ReplayIntegration = fixture.getSut(context)
+        replay.register(fixture.hub, fixture.options)
+        replay.start()
+
+        val controller = buildActivity(ExampleActivity::class.java, null).setup()
+        controller.create().start().resume()
+        // wait for windows to be registered in our listeners
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertNotEquals(falseReplay.rootViewsSpy, replay.rootViewsSpy)
+        assertEquals(0, falseReplay.rootViewsSpy.listeners.size)
     }
 }
 

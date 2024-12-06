@@ -17,20 +17,25 @@ class GestureRecorder(
 ) : OnRootViewsChangedListener {
 
     private val rootViews = ArrayList<WeakReference<View>>()
+    private val rootViewsLock = Any()
 
     override fun onRootViewsChanged(root: View, added: Boolean) {
-        if (added) {
-            rootViews.add(WeakReference(root))
-            root.startGestureTracking()
-        } else {
-            root.stopGestureTracking()
-            rootViews.removeAll { it.get() == root }
+        synchronized(rootViewsLock) {
+            if (added) {
+                rootViews.add(WeakReference(root))
+                root.startGestureTracking()
+            } else {
+                root.stopGestureTracking()
+                rootViews.removeAll { it.get() == root }
+            }
         }
     }
 
     fun stop() {
-        rootViews.forEach { it.get()?.stopGestureTracking() }
-        rootViews.clear()
+        synchronized(rootViewsLock) {
+            rootViews.forEach { it.get()?.stopGestureTracking() }
+            rootViews.clear()
+        }
     }
 
     private fun View.startGestureTracking() {
@@ -53,8 +58,9 @@ class GestureRecorder(
             return
         }
 
-        if (window.callback is SentryReplayGestureRecorder) {
-            val delegate = (window.callback as SentryReplayGestureRecorder).delegate
+        val callback = window.callback
+        if (callback is SentryReplayGestureRecorder) {
+            val delegate = callback.delegate
             window.callback = delegate
         }
     }

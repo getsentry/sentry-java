@@ -23,8 +23,10 @@ import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.util.MainLooperHandler
+import io.sentry.android.replay.util.addOnDrawListenerSafe
 import io.sentry.android.replay.util.getVisibleRects
 import io.sentry.android.replay.util.gracefullyShutdown
+import io.sentry.android.replay.util.removeOnDrawListenerSafe
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
@@ -204,13 +206,13 @@ internal class ScreenshotRecorder(
 
         // next bind the new root
         rootView = WeakReference(root)
-        root.viewTreeObserver?.addOnDrawListener(this)
+        root.addOnDrawListenerSafe(this)
         // invalidate the flag to capture the first frame after new window is attached
         contentChanged.set(true)
     }
 
     fun unbind(root: View?) {
-        root?.viewTreeObserver?.removeOnDrawListener(this)
+        root?.removeOnDrawListenerSafe(this)
     }
 
     fun pause() {
@@ -220,7 +222,7 @@ internal class ScreenshotRecorder(
 
     fun resume() {
         // can't use bind() as it will invalidate the weakref
-        rootView?.get()?.viewTreeObserver?.addOnDrawListener(this)
+        rootView?.get()?.addOnDrawListenerSafe(this)
         isCapturing.set(true)
     }
 

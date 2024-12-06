@@ -26,6 +26,7 @@ internal class WindowRecorder(
 
     private val isRecording = AtomicBoolean(false)
     private val rootViews = ArrayList<WeakReference<View>>()
+    private val rootViewsLock = Any()
     private var recorder: ScreenshotRecorder? = null
     private var capturingTask: ScheduledFuture<*>? = null
     private val capturer by lazy {
@@ -33,16 +34,20 @@ internal class WindowRecorder(
     }
 
     override fun onRootViewsChanged(root: View, added: Boolean) {
-        if (added) {
-            rootViews.add(WeakReference(root))
-            recorder?.bind(root)
-        } else {
-            recorder?.unbind(root)
-            rootViews.removeAll { it.get() == root }
+        synchronized(rootViewsLock) {
+            if (added) {
+                rootViews.add(WeakReference(root))
+                recorder?.bind(root)
+            } else {
+                recorder?.unbind(root)
+                rootViews.removeAll { it.get() == root }
 
-            val newRoot = rootViews.lastOrNull()?.get()
-            if (newRoot != null && root != newRoot) {
-                recorder?.bind(newRoot)
+                val newRoot = rootViews.lastOrNull()?.get()
+                if (newRoot != null && root != newRoot) {
+                    recorder?.bind(newRoot)
+                } else {
+                    Unit // synchronized block wants us to return something lol
+                }
             }
         }
     }
@@ -72,9 +77,11 @@ internal class WindowRecorder(
     }
 
     override fun stop() {
-        rootViews.forEach { recorder?.unbind(it.get()) }
+        synchronized(rootViewsLock) {
+            rootViews.forEach { recorder?.unbind(it.get()) }
+            rootViews.clear()
+        }
         recorder?.close()
-        rootViews.clear()
         recorder = null
         capturingTask?.cancel(false)
         capturingTask = null

@@ -93,7 +93,7 @@ public class ReplayIntegration(
     private var recorder: Recorder? = null
     private var gestureRecorder: GestureRecorder? = null
     private val random by lazy { Random() }
-    private val rootViewsSpy by lazy(NONE) { RootViewsSpy.install() }
+    internal val rootViewsSpy by lazy(NONE) { RootViewsSpy.install() }
 
     // TODO: probably not everything has to be thread-safe here
     internal val isEnabled = AtomicBoolean(false)
@@ -263,6 +263,7 @@ public class ReplayIntegration(
         stop()
         recorder?.close()
         recorder = null
+        rootViewsSpy.close()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
