@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +51,7 @@ public class AndroidContinuousProfiler
   private final @NotNull List<ProfileChunk.Builder> payloadBuilders = new ArrayList<>();
   private @NotNull SentryId profilerId = SentryId.EMPTY_ID;
   private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
-  private @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
+  private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
 
   public AndroidContinuousProfiler(
       final @NotNull BuildInfoProvider buildInfoProvider,
