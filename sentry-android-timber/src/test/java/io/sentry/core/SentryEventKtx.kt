@@ -1,8 +1,10 @@
-package io.sentry
+package io.sentry.core
+
+import io.sentry.SentryEvent
 
 /**
  * package-private hack.
  */
-fun SentryEvent.getExc(): Throwable? {
+internal fun SentryEvent.getExc(): Throwable? {
     return this.throwable
 }

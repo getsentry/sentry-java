@@ -5,7 +5,7 @@ import android.view.View
 /**
  * Marks this view to be masked in session replay.
  */
-fun View.sentryReplayMask() {
+public fun View.sentryReplayMask() {
     setTag(R.id.sentry_privacy, "mask")
 }
 
@@ -13,6 +13,6 @@ fun View.sentryReplayMask() {
  * Marks this view to be unmasked in session replay.
  * All its content will be visible in the replay, use with caution.
  */
-fun View.sentryReplayUnmask() {
+public fun View.sentryReplayUnmask() {
     setTag(R.id.sentry_privacy, "unmask")
 }

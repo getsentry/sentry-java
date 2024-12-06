@@ -12,7 +12,7 @@ import io.sentry.SentryReplayOptions
  *
  * <p>Default is enabled.
  */
-var SentryReplayOptions.maskAllText: Boolean
+public var SentryReplayOptions.maskAllText: Boolean
     @Deprecated("Getter is unsupported.", level = DeprecationLevel.ERROR)
     get() = error("Getter not supported")
     set(value) = setMaskAllText(value)
@@ -25,7 +25,7 @@ var SentryReplayOptions.maskAllText: Boolean
  *
  * <p>Default is enabled.
  */
-var SentryReplayOptions.maskAllImages: Boolean
+public var SentryReplayOptions.maskAllImages: Boolean
     @Deprecated("Getter is unsupported.", level = DeprecationLevel.ERROR)
     get() = error("Getter not supported")
     set(value) = setMaskAllImages(value)

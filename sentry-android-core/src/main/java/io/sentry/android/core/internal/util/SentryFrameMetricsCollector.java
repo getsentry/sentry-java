@@ -68,7 +68,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     this(context, logger, buildInfoProvider, new WindowFrameMetricsManager() {});
   }
 
-  @SuppressWarnings("deprecation")
   @SuppressLint({"NewApi", "DiscouragedPrivateApi"})
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
@@ -79,7 +78,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   }
 
   @SuppressWarnings("deprecation")
-  @SuppressLint({"NewApi", "DiscouragedPrivateApi"})
+  @SuppressLint({"NewApi", "PrivateApi"})
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull ILogger logger,

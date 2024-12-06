@@ -12,7 +12,6 @@ import io.sentry.util.Platform
 import io.sentry.util.UrlUtils
 import okhttp3.Request
 import okhttp3.Response
-import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -56,7 +55,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
         callSpan?.setData("url", url)
         callSpan?.setData("host", host)
         callSpan?.setData("path", encodedPath)
-        callSpan?.setData(SpanDataConvention.HTTP_METHOD_KEY, method.uppercase(Locale.ROOT))
+        callSpan?.setData(SpanDataConvention.HTTP_METHOD_KEY, method.uppercase())
     }
 
     /**
