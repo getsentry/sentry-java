@@ -19,7 +19,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.TextView
-import androidx.annotation.RequiresApi
 import io.sentry.SentryOptions
 import io.sentry.android.replay.viewhierarchy.ComposeViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
@@ -181,7 +180,6 @@ class AndroidTextLayout(private val layout: Layout) : TextLayout {
     override fun getLineStart(line: Int): Int = layout.getLineStart(line)
 }
 
-@RequiresApi(VERSION_CODES.JELLY_BEAN)
 internal fun View?.addOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListener) {
     if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
         return
@@ -189,7 +187,6 @@ internal fun View?.addOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListen
     viewTreeObserver.addOnDrawListener(listener)
 }
 
-@RequiresApi(VERSION_CODES.JELLY_BEAN)
 internal fun View?.removeOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListener) {
     if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
         return
