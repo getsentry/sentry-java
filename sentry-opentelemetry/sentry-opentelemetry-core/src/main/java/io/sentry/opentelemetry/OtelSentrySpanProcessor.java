@@ -49,9 +49,9 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
 
     final @Nullable IOtelSpanWrapper sentryParentSpan =
         spanStorage.getSentrySpan(otelSpan.getParentSpanContext());
-    @NotNull
+    @Nullable
     TracesSamplingDecision samplingDecision =
-        OtelSamplingUtil.extractSamplingDecisionOrDefault(otelSpan.toSpanData().getAttributes());
+        OtelSamplingUtil.extractSamplingDecision(otelSpan.toSpanData().getAttributes());
     @Nullable Baggage baggage = null;
     @Nullable SpanId sentryParentSpanId = null;
     otelSpan.setAttribute(IS_REMOTE_PARENT, otelSpan.getParentSpanContext().isRemote());
@@ -81,16 +81,11 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
         }
       }
 
-      final boolean sampled =
-          samplingDecision != null
-              ? samplingDecision.getSampled()
-              : otelSpan.getSpanContext().isSampled();
+      final @Nullable Boolean sampled = isSampled(otelSpan, samplingDecision);
 
       final @NotNull PropagationContext propagationContext =
-          sentryTraceHeader == null
-              ? new PropagationContext(
-                  new SentryId(traceId), sentrySpanId, sentryParentSpanId, baggage, sampled)
-              : PropagationContext.fromHeaders(sentryTraceHeader, baggage, sentrySpanId);
+          new PropagationContext(
+              new SentryId(traceId), sentrySpanId, sentryParentSpanId, baggage, sampled);
 
       updatePropagationContext(scopes, propagationContext);
     }
@@ -109,6 +104,21 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
             baggage);
     sentrySpan.getSpanContext().setOrigin(SentrySpanExporter.TRACE_ORIGIN);
     spanStorage.storeSentrySpan(spanContext, sentrySpan);
+  }
+
+  private @Nullable Boolean isSampled(
+      final @NotNull ReadWriteSpan otelSpan,
+      final @Nullable TracesSamplingDecision samplingDecision) {
+    if (samplingDecision != null) {
+      return samplingDecision.getSampled();
+    }
+
+    if (otelSpan.getSpanContext().isSampled()) {
+      return true;
+    }
+
+    // tracing without performance
+    return null;
   }
 
   private static void updatePropagationContext(

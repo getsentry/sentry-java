@@ -18,6 +18,7 @@ import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import okhttp3.Interceptor
@@ -93,16 +94,21 @@ public open class SentryOkHttpInterceptor(
         try {
             val requestBuilder = request.newBuilder()
 
-            TracingUtils.traceIfAllowed(
-                scopes,
-                request.url.toString(),
-                request.headers(BaggageHeader.BAGGAGE_HEADER),
-                span
-            )?.let { tracingHeaders ->
-                requestBuilder.addHeader(tracingHeaders.sentryTraceHeader.name, tracingHeaders.sentryTraceHeader.value)
-                tracingHeaders.baggageHeader?.let {
-                    requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
-                    requestBuilder.addHeader(it.name, it.value)
+            if (!isIgnored()) {
+                TracingUtils.traceIfAllowed(
+                    scopes,
+                    request.url.toString(),
+                    request.headers(BaggageHeader.BAGGAGE_HEADER),
+                    span
+                )?.let { tracingHeaders ->
+                    requestBuilder.addHeader(
+                        tracingHeaders.sentryTraceHeader.name,
+                        tracingHeaders.sentryTraceHeader.value
+                    )
+                    tracingHeaders.baggageHeader?.let {
+                        requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
+                        requestBuilder.addHeader(it.name, it.value)
+                    }
                 }
             }
 
@@ -142,6 +148,10 @@ public open class SentryOkHttpInterceptor(
                 sendBreadcrumb(request, code, response, startTimestamp)
             }
         }
+    }
+
+    private fun isIgnored(): Boolean {
+        return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
     }
 
     private fun sendBreadcrumb(

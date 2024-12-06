@@ -18,6 +18,7 @@ import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
+import io.sentry.util.SpanUtils;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -52,7 +53,7 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
       final @NotNull IScopes requestScopes,
       final @NotNull ServerHttpRequest request,
       final @NotNull String origin) {
-    if (requestScopes.isEnabled()) {
+    if (requestScopes.isEnabled() && !isIgnored(requestScopes, origin)) {
       final @NotNull HttpHeaders headers = request.getHeaders();
       final @Nullable String sentryTraceHeader =
           headers.getFirst(SentryTraceHeader.SENTRY_TRACE_HEADER);
@@ -67,6 +68,10 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
     }
 
     return null;
+  }
+
+  private boolean isIgnored(final @NotNull IScopes scopes, final @NotNull String origin) {
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), origin);
   }
 
   protected void doFinally(

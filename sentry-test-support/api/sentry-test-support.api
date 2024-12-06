@@ -5,6 +5,7 @@ public final class io/sentry/AssertionsKt {
 	public static synthetic fun assertEnvelopeTransaction$default (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
 	public static final fun checkEvent (Lkotlin/jvm/functions/Function1;)Lio/sentry/SentryEnvelope;
 	public static final fun checkTransaction (Lkotlin/jvm/functions/Function1;)Lio/sentry/SentryEnvelope;
+	public static final fun getMockServerRequestTimeoutMillis ()J
 }
 
 public final class io/sentry/SkipError : java/lang/Error {

@@ -1969,6 +1969,23 @@ class ScopesTest {
     }
 
     @Test
+    fun `continueTrace creates propagation context from headers and returns transaction context if performance enabled no sampled value`() {
+        val scopes = generateScopes()
+        val traceId = SentryId()
+        val parentSpanId = SpanId()
+        val transactionContext = scopes.continueTrace("$traceId-$parentSpanId", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
+
+        scopes.configureScope { scope ->
+            assertEquals(traceId, scope.propagationContext.traceId)
+            assertEquals(parentSpanId, scope.propagationContext.parentSpanId)
+        }
+
+        assertEquals(traceId, transactionContext!!.traceId)
+        assertEquals(parentSpanId, transactionContext!!.parentSpanId)
+        assertEquals(null, transactionContext!!.parentSamplingDecision)
+    }
+
+    @Test
     fun `continueTrace creates new propagation context if header invalid and returns transaction context if performance enabled`() {
         val scopes = generateScopes()
         val traceId = SentryId()
