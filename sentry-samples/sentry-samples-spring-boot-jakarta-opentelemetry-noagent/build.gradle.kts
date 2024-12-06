@@ -53,8 +53,7 @@ dependencies {
     implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
     implementation(Config.Libs.springBoot3StarterOpenTelemetry)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentless)
 
     // database query tracing
     implementation(projects.sentryJdbc)
@@ -71,7 +70,7 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.7.0")
+        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:${Config.Libs.OpenTelemetry.otelInstrumentationVersion}")
     }
 }
 
