@@ -103,6 +103,11 @@ public final class io/sentry/opentelemetry/SentryContextStorage : io/opentelemet
 	public fun current ()Lio/opentelemetry/context/Context;
 }
 
+public final class io/sentry/opentelemetry/SentryContextStorageProvider : io/opentelemetry/context/ContextStorageProvider {
+	public fun <init> ()V
+	public fun get ()Lio/opentelemetry/context/ContextStorage;
+}
+
 public final class io/sentry/opentelemetry/SentryContextWrapper : io/opentelemetry/context/Context {
 	public fun get (Lio/opentelemetry/context/ContextKey;)Ljava/lang/Object;
 	public fun toString ()Ljava/lang/String;

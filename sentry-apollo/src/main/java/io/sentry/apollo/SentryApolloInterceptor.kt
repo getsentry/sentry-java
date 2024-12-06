@@ -25,6 +25,7 @@ import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
+import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import java.util.concurrent.Executor
 
@@ -114,7 +115,7 @@ class SentryApolloInterceptor(
     private fun addTracingHeaders(request: InterceptorRequest, span: ISpan?): RequestHeaders {
         val requestHeaderBuilder = request.requestHeaders.toBuilder()
 
-        if (scopes.options.isTraceSampling) {
+        if (scopes.options.isTraceSampling && !isIgnored()) {
             // we have no access to URI, no way to verify tracing origins
             TracingUtils.trace(
                 scopes,
@@ -132,6 +133,10 @@ class SentryApolloInterceptor(
         }
 
         return requestHeaderBuilder.build()
+    }
+
+    private fun isIgnored(): Boolean {
+        return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
     }
 
     private fun startChild(request: InterceptorRequest, activeSpan: ISpan): ISpan {
