@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,7 +52,7 @@ public class AndroidContinuousProfiler
   private final @NotNull List<ProfileChunk.Builder> payloadBuilders = new ArrayList<>();
   private @NotNull SentryId profilerId = SentryId.EMPTY_ID;
   private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
-  private boolean isClosed = false;
+  private @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
 
   public AndroidContinuousProfiler(
       final @NotNull BuildInfoProvider buildInfoProvider,
@@ -236,7 +238,7 @@ public class AndroidContinuousProfiler
 
   public synchronized void close() {
     stop();
-    isClosed = true;
+    isClosed.set(true);
   }
 
   @Override
@@ -251,7 +253,7 @@ public class AndroidContinuousProfiler
           .submit(
               () -> {
                 // SDK is closed, we don't send the chunks
-                if (isClosed) {
+                if (isClosed.get()) {
                   return;
                 }
                 final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
