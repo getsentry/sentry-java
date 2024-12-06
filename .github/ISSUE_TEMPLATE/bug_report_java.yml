@@ -15,6 +15,7 @@ body:
         - sentry-apollo-3
         - sentry-kotlin-extensions
         - sentry-opentelemetry-agent
+        - sentry-opentelemetry-agentless
         - sentry-opentelemetry-core
         - sentry-servlet
         - sentry-servlet-jakarta
