@@ -20,7 +20,7 @@ public final class NoOpSpanFactory implements ISpanFactory {
       @NotNull TransactionContext context,
       @NotNull IScopes scopes,
       @NotNull TransactionOptions transactionOptions,
-      @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
+      @Nullable CompositePerformanceCollector compositePerformanceCollector) {
     return NoOpTransaction.getInstance();
   }
 

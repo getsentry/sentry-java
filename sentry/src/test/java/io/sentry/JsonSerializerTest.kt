@@ -28,8 +28,11 @@ import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.io.StringReader
 import java.io.StringWriter
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.nio.file.Files
 import java.util.Date
+import java.util.HashMap
 import java.util.TimeZone
 import java.util.UUID
 import kotlin.test.BeforeTest
@@ -501,9 +504,28 @@ class JsonSerializerTest {
     }
 
     @Test
+    fun `serializes profile context`() {
+        val profileContext = ProfileContext(SentryId("3367f5196c494acaae85bbbd535379ac"))
+        val expected = """{"profiler_id":"3367f5196c494acaae85bbbd535379ac"}"""
+        val json = serializeToString(profileContext)
+        assertEquals(expected, json)
+    }
+
+    @Test
+    fun `deserializes profile context`() {
+        val json = """{"profiler_id":"3367f5196c494acaae85bbbd535379ac"}"""
+        val actual = fixture.serializer.deserialize(StringReader(json), ProfileContext::class.java)
+        assertNotNull(actual) {
+            assertEquals(SentryId("3367f5196c494acaae85bbbd535379ac"), it.profilerId)
+        }
+    }
+
+    @Test
     fun `serializes profilingTraceData`() {
         val profilingTraceData = ProfilingTraceData(fixture.traceFile, NoOpTransaction.getInstance())
         val now = Date()
+        val measurementNow = SentryNanotimeDate()
+        val measurementNowSeconds = BigDecimal.valueOf(DateUtils.nanosToSeconds(measurementNow.nanoTimestamp())).setScale(6, RoundingMode.DOWN).toDouble()
         profilingTraceData.androidApiLevel = 21
         profilingTraceData.deviceLocale = "deviceLocale"
         profilingTraceData.deviceManufacturer = "deviceManufacturer"
@@ -533,22 +555,22 @@ class JsonSerializerTest {
                 ProfileMeasurement.ID_SCREEN_FRAME_RATES to
                     ProfileMeasurement(
                         ProfileMeasurement.UNIT_HZ,
-                        listOf(ProfileMeasurementValue(1, 60.1))
+                        listOf(ProfileMeasurementValue(1, 60.1, measurementNow))
                     ),
                 ProfileMeasurement.ID_MEMORY_FOOTPRINT to
                     ProfileMeasurement(
                         ProfileMeasurement.UNIT_BYTES,
-                        listOf(ProfileMeasurementValue(2, 100.52))
+                        listOf(ProfileMeasurementValue(2, 100.52, measurementNow))
                     ),
                 ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to
                     ProfileMeasurement(
                         ProfileMeasurement.UNIT_BYTES,
-                        listOf(ProfileMeasurementValue(3, 104.52))
+                        listOf(ProfileMeasurementValue(3, 104.52, measurementNow))
                     ),
                 ProfileMeasurement.ID_CPU_USAGE to
                     ProfileMeasurement(
                         ProfileMeasurement.UNIT_PERCENT,
-                        listOf(ProfileMeasurementValue(5, 10.52))
+                        listOf(ProfileMeasurementValue(5, 10.52, measurementNow))
                     )
             )
         )
@@ -604,7 +626,8 @@ class JsonSerializerTest {
                         "values" to listOf(
                             mapOf(
                                 "value" to 60.1,
-                                "elapsed_since_start_ns" to "1"
+                                "elapsed_since_start_ns" to "1",
+                                "timestamp" to measurementNowSeconds
                             )
                         )
                     ),
@@ -614,7 +637,8 @@ class JsonSerializerTest {
                         "values" to listOf(
                             mapOf(
                                 "value" to 100.52,
-                                "elapsed_since_start_ns" to "2"
+                                "elapsed_since_start_ns" to "2",
+                                "timestamp" to measurementNowSeconds
                             )
                         )
                     ),
@@ -624,7 +648,8 @@ class JsonSerializerTest {
                         "values" to listOf(
                             mapOf(
                                 "value" to 104.52,
-                                "elapsed_since_start_ns" to "3"
+                                "elapsed_since_start_ns" to "3",
+                                "timestamp" to measurementNowSeconds
                             )
                         )
                     ),
@@ -634,7 +659,8 @@ class JsonSerializerTest {
                         "values" to listOf(
                             mapOf(
                                 "value" to 10.52,
-                                "elapsed_since_start_ns" to "5"
+                                "elapsed_since_start_ns" to "5",
+                                "timestamp" to measurementNowSeconds
                             )
                         )
                     )
@@ -765,23 +791,23 @@ class JsonSerializerTest {
         val expectedMeasurements = mapOf(
             ProfileMeasurement.ID_SCREEN_FRAME_RATES to ProfileMeasurement(
                 ProfileMeasurement.UNIT_HZ,
-                listOf(ProfileMeasurementValue(1, 60.1))
+                listOf(ProfileMeasurementValue(1, 60.1, mock()))
             ),
             ProfileMeasurement.ID_FROZEN_FRAME_RENDERS to ProfileMeasurement(
                 ProfileMeasurement.UNIT_NANOSECONDS,
-                listOf(ProfileMeasurementValue(2, 100))
+                listOf(ProfileMeasurementValue(2, 100, mock()))
             ),
             ProfileMeasurement.ID_MEMORY_FOOTPRINT to ProfileMeasurement(
                 ProfileMeasurement.UNIT_BYTES,
-                listOf(ProfileMeasurementValue(3, 1000))
+                listOf(ProfileMeasurementValue(3, 1000, mock()))
             ),
             ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to ProfileMeasurement(
                 ProfileMeasurement.UNIT_BYTES,
-                listOf(ProfileMeasurementValue(4, 1100))
+                listOf(ProfileMeasurementValue(4, 1100, mock()))
             ),
             ProfileMeasurement.ID_CPU_USAGE to ProfileMeasurement(
                 ProfileMeasurement.UNIT_PERCENT,
-                listOf(ProfileMeasurementValue(5, 17.04))
+                listOf(ProfileMeasurementValue(5, 17.04, mock()))
             )
         )
         assertEquals(expectedMeasurements, profilingTraceData.measurementsMap)
@@ -798,10 +824,11 @@ class JsonSerializerTest {
 
     @Test
     fun `serializes profileMeasurement`() {
-        val measurementValues = listOf(ProfileMeasurementValue(1, 2), ProfileMeasurementValue(3, 4))
+        val now = SentryNanotimeDate(Date(1), 1)
+        val measurementValues = listOf(ProfileMeasurementValue(1, 2, now), ProfileMeasurementValue(3, 4, now))
         val profileMeasurement = ProfileMeasurement(ProfileMeasurement.UNIT_NANOSECONDS, measurementValues)
         val actual = serializeToString(profileMeasurement)
-        val expected = "{\"unit\":\"nanosecond\",\"values\":[{\"value\":2.0,\"elapsed_since_start_ns\":\"1\"},{\"value\":4.0,\"elapsed_since_start_ns\":\"3\"}]}"
+        val expected = "{\"unit\":\"nanosecond\",\"values\":[{\"value\":2.0,\"elapsed_since_start_ns\":\"1\",\"timestamp\":0.001000},{\"value\":4.0,\"elapsed_since_start_ns\":\"3\",\"timestamp\":0.001000}]}"
         assertEquals(expected, actual)
     }
 
@@ -810,22 +837,22 @@ class JsonSerializerTest {
         val json = """{
             "unit":"hz",
             "values":[
-                {"value":"60.1","elapsed_since_start_ns":"1"},{"value":"100","elapsed_since_start_ns":"2"}
+                {"value":"60.1","elapsed_since_start_ns":"1"},{"value":"100","elapsed_since_start_ns":"2", "timestamp": 0.001}
             ]
         }"""
         val profileMeasurement = fixture.serializer.deserialize(StringReader(json), ProfileMeasurement::class.java)
         val expected = ProfileMeasurement(
             ProfileMeasurement.UNIT_HZ,
-            listOf(ProfileMeasurementValue(1, 60.1), ProfileMeasurementValue(2, 100))
+            listOf(ProfileMeasurementValue(1, 60.1, SentryNanotimeDate(Date(0), 0)), ProfileMeasurementValue(2, 100, SentryNanotimeDate(Date(1), 1)))
         )
         assertEquals(expected, profileMeasurement)
     }
 
     @Test
     fun `serializes profileMeasurementValue`() {
-        val profileMeasurementValue = ProfileMeasurementValue(1, 2)
+        val profileMeasurementValue = ProfileMeasurementValue(1, 2, SentryNanotimeDate(Date(1), 1))
         val actual = serializeToString(profileMeasurementValue)
-        val expected = "{\"value\":2.0,\"elapsed_since_start_ns\":\"1\"}"
+        val expected = "{\"value\":2.0,\"elapsed_since_start_ns\":\"1\",\"timestamp\":0.001000}"
         assertEquals(expected, actual)
     }
 
@@ -833,10 +860,205 @@ class JsonSerializerTest {
     fun `deserializes profileMeasurementValue`() {
         val json = """{"value":"60.1","elapsed_since_start_ns":"1"}"""
         val profileMeasurementValue = fixture.serializer.deserialize(StringReader(json), ProfileMeasurementValue::class.java)
-        val expected = ProfileMeasurementValue(1, 60.1)
+        val expected = ProfileMeasurementValue(1, 60.1, mock())
         assertEquals(expected, profileMeasurementValue)
         assertEquals(60.1, profileMeasurementValue?.value)
         assertEquals("1", profileMeasurementValue?.relativeStartNs)
+        assertEquals(0.0, profileMeasurementValue?.timestamp)
+    }
+
+    @Test
+    fun `deserializes profileMeasurementValue with timestamp`() {
+        val json = """{"value":"60.1","elapsed_since_start_ns":"1","timestamp":0.001000}"""
+        val profileMeasurementValue = fixture.serializer.deserialize(StringReader(json), ProfileMeasurementValue::class.java)
+        val expected = ProfileMeasurementValue(1, 60.1, SentryNanotimeDate(Date(1), 1))
+        assertEquals(expected, profileMeasurementValue)
+        assertEquals(60.1, profileMeasurementValue?.value)
+        assertEquals("1", profileMeasurementValue?.relativeStartNs)
+        assertEquals(0.001, profileMeasurementValue?.timestamp)
+    }
+
+    @Test
+    fun `serializes profileChunk`() {
+        val profilerId = SentryId()
+        val chunkId = SentryId()
+        fixture.options.sdkVersion = SdkVersion("test", "1.2.3")
+        fixture.options.release = "release"
+        fixture.options.environment = "environment"
+        val profileChunk = ProfileChunk(profilerId, chunkId, fixture.traceFile, HashMap(), fixture.options)
+        val measurementNow = SentryNanotimeDate()
+        val measurementNowSeconds =
+            BigDecimal.valueOf(DateUtils.nanosToSeconds(measurementNow.nanoTimestamp())).setScale(6, RoundingMode.DOWN)
+                .toDouble()
+        profileChunk.sampledProfile = "sampled profile in base 64"
+        profileChunk.measurements.putAll(
+            hashMapOf(
+                ProfileMeasurement.ID_SCREEN_FRAME_RATES to
+                    ProfileMeasurement(
+                        ProfileMeasurement.UNIT_HZ,
+                        listOf(ProfileMeasurementValue(1, 60.1, measurementNow))
+                    ),
+                ProfileMeasurement.ID_MEMORY_FOOTPRINT to
+                    ProfileMeasurement(
+                        ProfileMeasurement.UNIT_BYTES,
+                        listOf(ProfileMeasurementValue(2, 100.52, measurementNow))
+                    ),
+                ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to
+                    ProfileMeasurement(
+                        ProfileMeasurement.UNIT_BYTES,
+                        listOf(ProfileMeasurementValue(3, 104.52, measurementNow))
+                    ),
+                ProfileMeasurement.ID_CPU_USAGE to
+                    ProfileMeasurement(
+                        ProfileMeasurement.UNIT_PERCENT,
+                        listOf(ProfileMeasurementValue(5, 10.52, measurementNow))
+                    )
+            )
+        )
+
+        val actual = serializeToString(profileChunk)
+        val reader = StringReader(actual)
+        val objectReader = JsonObjectReader(reader)
+        val element = JsonObjectDeserializer().deserialize(objectReader) as Map<*, *>
+
+        assertEquals("android", element["platform"] as String)
+        assertEquals(profilerId.toString(), element["profiler_id"] as String)
+        assertEquals(chunkId.toString(), element["chunk_id"] as String)
+        assertEquals("environment", element["environment"] as String)
+        assertEquals("release", element["release"] as String)
+        assertEquals(mapOf("name" to "test", "version" to "1.2.3"), element["client_sdk"] as Map<String, String>)
+        assertEquals("2", element["version"] as String)
+        assertEquals("sampled profile in base 64", element["sampled_profile"] as String)
+        assertEquals(
+            mapOf(
+                ProfileMeasurement.ID_SCREEN_FRAME_RATES to
+                    mapOf(
+                        "unit" to ProfileMeasurement.UNIT_HZ,
+                        "values" to listOf(
+                            mapOf(
+                                "value" to 60.1,
+                                "elapsed_since_start_ns" to "1",
+                                "timestamp" to measurementNowSeconds
+                            )
+                        )
+                    ),
+                ProfileMeasurement.ID_MEMORY_FOOTPRINT to
+                    mapOf(
+                        "unit" to ProfileMeasurement.UNIT_BYTES,
+                        "values" to listOf(
+                            mapOf(
+                                "value" to 100.52,
+                                "elapsed_since_start_ns" to "2",
+                                "timestamp" to measurementNowSeconds
+                            )
+                        )
+                    ),
+                ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to
+                    mapOf(
+                        "unit" to ProfileMeasurement.UNIT_BYTES,
+                        "values" to listOf(
+                            mapOf(
+                                "value" to 104.52,
+                                "elapsed_since_start_ns" to "3",
+                                "timestamp" to measurementNowSeconds
+                            )
+                        )
+                    ),
+                ProfileMeasurement.ID_CPU_USAGE to
+                    mapOf(
+                        "unit" to ProfileMeasurement.UNIT_PERCENT,
+                        "values" to listOf(
+                            mapOf(
+                                "value" to 10.52,
+                                "elapsed_since_start_ns" to "5",
+                                "timestamp" to measurementNowSeconds
+                            )
+                        )
+                    )
+            ),
+            element["measurements"]
+        )
+    }
+
+    @Test
+    fun `deserializes profileChunk`() {
+        val profilerId = SentryId()
+        val chunkId = SentryId()
+        val json = """{
+                            "client_sdk":{"name":"test","version":"1.2.3"},
+                            "chunk_id":"$chunkId",
+                            "environment":"environment",
+                            "platform":"android",
+                            "profiler_id":"$profilerId",
+                            "release":"release",
+                            "sampled_profile":"sampled profile in base 64",
+                            "version":"2",
+                            "measurements":{
+                                "screen_frame_rates": {
+                                    "unit":"hz",
+                                    "values":[
+                                        {"value":"60.1","elapsed_since_start_ns":"1"}
+                                    ]
+                                },
+                                "frozen_frame_renders": {
+                                    "unit":"nanosecond",
+                                    "values":[
+                                        {"value":"100","elapsed_since_start_ns":"2"}
+                                    ]
+                                },
+                                "memory_footprint": {
+                                    "unit":"byte",
+                                    "values":[
+                                        {"value":"1000","elapsed_since_start_ns":"3"}
+                                    ]
+                                },
+                                "memory_native_footprint": {
+                                    "unit":"byte",
+                                    "values":[
+                                        {"value":"1100","elapsed_since_start_ns":"4"}
+                                    ]
+                                },
+                                "cpu_usage": {
+                                    "unit":"percent",
+                                    "values":[
+                                        {"value":"17.04","elapsed_since_start_ns":"5"}
+                                    ]
+                                }
+                            }
+                            }"""
+        val profileChunk = fixture.serializer.deserialize(StringReader(json), ProfileChunk::class.java)
+        assertNotNull(profileChunk)
+        assertEquals(SdkVersion("test", "1.2.3"), profileChunk.clientSdk)
+        assertEquals(chunkId, profileChunk.chunkId)
+        assertEquals("environment", profileChunk.environment)
+        assertEquals("android", profileChunk.platform)
+        assertEquals(profilerId, profileChunk.profilerId)
+        assertEquals("release", profileChunk.release)
+        assertEquals("sampled profile in base 64", profileChunk.sampledProfile)
+        assertEquals("2", profileChunk.version)
+        val expectedMeasurements = mapOf(
+            ProfileMeasurement.ID_SCREEN_FRAME_RATES to ProfileMeasurement(
+                ProfileMeasurement.UNIT_HZ,
+                listOf(ProfileMeasurementValue(1, 60.1, mock()))
+            ),
+            ProfileMeasurement.ID_FROZEN_FRAME_RENDERS to ProfileMeasurement(
+                ProfileMeasurement.UNIT_NANOSECONDS,
+                listOf(ProfileMeasurementValue(2, 100, mock()))
+            ),
+            ProfileMeasurement.ID_MEMORY_FOOTPRINT to ProfileMeasurement(
+                ProfileMeasurement.UNIT_BYTES,
+                listOf(ProfileMeasurementValue(3, 1000, mock()))
+            ),
+            ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to ProfileMeasurement(
+                ProfileMeasurement.UNIT_BYTES,
+                listOf(ProfileMeasurementValue(4, 1100, mock()))
+            ),
+            ProfileMeasurement.ID_CPU_USAGE to ProfileMeasurement(
+                ProfileMeasurement.UNIT_PERCENT,
+                listOf(ProfileMeasurementValue(5, 17.04, mock()))
+            )
+        )
+        assertEquals(expectedMeasurements, profileChunk.measurements)
     }
 
     @Test
@@ -846,6 +1068,7 @@ class JsonSerializerTest {
         trace.status = SpanStatus.OK
         trace.setTag("myTag", "myValue")
         trace.sampled = true
+        trace.data["dataKey"] = "dataValue"
         val tracer = SentryTracer(trace, fixture.scopes)
         tracer.setData("dataKey", "dataValue")
         val span = tracer.startChild("child")
@@ -879,6 +1102,9 @@ class JsonSerializerTest {
         assertEquals("dataValue", (jsonTrace["data"] as Map<*, *>)["dataKey"] as String)
         assertNotNull(jsonTrace["trace_id"] as String)
         assertNotNull(jsonTrace["span_id"] as String)
+        assertNotNull(jsonTrace["data"] as Map<*, *>) {
+            assertEquals("dataValue", it["dataKey"])
+        }
         assertEquals("http", jsonTrace["op"] as String)
         assertEquals("some request", jsonTrace["description"] as String)
         assertEquals("ok", jsonTrace["status"] as String)
@@ -941,7 +1167,7 @@ class JsonSerializerTest {
         assertEquals("0a53026963414893", transaction.contexts.trace!!.spanId.toString())
         assertEquals("http", transaction.contexts.trace!!.operation)
         assertNotNull(transaction.contexts["custom"])
-        assertEquals("transactionDataValue", transaction.contexts.trace!!.data!!["transactionDataKey"])
+        assertEquals("transactionDataValue", transaction.contexts.trace!!.data["transactionDataKey"])
         assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
 
         assertEquals("extraValue", transaction.getExtra("extraKey"))
@@ -1004,7 +1230,8 @@ class JsonSerializerTest {
         val actual = serializeToString(appStartProfilingOptions)
 
         val expected = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"trace_sampled\":false," +
-            "\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false,\"profiling_traces_hz\":65}"
+            "\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false," +
+            "\"is_continuous_profiling_enabled\":false,\"profiling_traces_hz\":65}"
 
         assertEquals(expected, actual)
     }
@@ -1021,6 +1248,7 @@ class JsonSerializerTest {
         assertEquals(appStartProfilingOptions.profileSampled, actual.profileSampled)
         assertEquals(appStartProfilingOptions.profileSampleRate, actual.profileSampleRate)
         assertEquals(appStartProfilingOptions.isProfilingEnabled, actual.isProfilingEnabled)
+        assertEquals(appStartProfilingOptions.isContinuousProfilingEnabled, actual.isContinuousProfilingEnabled)
         assertEquals(appStartProfilingOptions.profilingTracesHz, actual.profilingTracesHz)
         assertEquals(appStartProfilingOptions.profilingTracesDirPath, actual.profilingTracesDirPath)
         assertNull(actual.unknown)
@@ -1324,6 +1552,7 @@ class JsonSerializerTest {
         profileSampled = true
         profileSampleRate = 0.8
         isProfilingEnabled = false
+        isContinuousProfilingEnabled = false
         profilingTracesHz = 65
     }
 

@@ -11,8 +11,8 @@ public final class DefaultSpanFactory implements ISpanFactory {
       final @NotNull TransactionContext context,
       final @NotNull IScopes scopes,
       final @NotNull TransactionOptions transactionOptions,
-      final @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
-    return new SentryTracer(context, scopes, transactionOptions, transactionPerformanceCollector);
+      final @Nullable CompositePerformanceCollector compositePerformanceCollector) {
+    return new SentryTracer(context, scopes, transactionOptions, compositePerformanceCollector);
   }
 
   @Override

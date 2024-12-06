@@ -1049,6 +1049,16 @@ public final class Sentry {
     return getCurrentScopes().startTransaction(transactionContext, transactionOptions);
   }
 
+  /** Starts the continuous profiler, if enabled. */
+  public static void startProfiler() {
+    getCurrentScopes().startProfiler();
+  }
+
+  /** Starts the continuous profiler, if enabled. */
+  public static void stopProfiler() {
+    getCurrentScopes().stopProfiler();
+  }
+
   /**
    * Gets the current active transaction or span.
    *

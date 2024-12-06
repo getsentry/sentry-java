@@ -34,6 +34,11 @@ public final class NoOpThreadChecker implements IThreadChecker {
   }
 
   @Override
+  public @NotNull String getCurrentThreadName() {
+    return "";
+  }
+
+  @Override
   public long currentThreadSystemId() {
     return 0;
   }

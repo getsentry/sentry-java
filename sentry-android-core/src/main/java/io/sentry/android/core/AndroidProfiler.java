@@ -11,7 +11,9 @@ import io.sentry.ISentryExecutorService;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.MemoryCollectionData;
 import io.sentry.PerformanceCollectionData;
+import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
+import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryUUID;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.profilemeasurements.ProfileMeasurement;
@@ -93,7 +95,7 @@ public class AndroidProfiler {
   private final @NotNull ArrayDeque<ProfileMeasurementValue> frozenFrameRenderMeasurements =
       new ArrayDeque<>();
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap = new HashMap<>();
-  private final @NotNull ISentryExecutorService executorService;
+  private final @Nullable ISentryExecutorService timeoutExecutorService;
   private final @NotNull ILogger logger;
   private boolean isRunning = false;
   protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
@@ -102,13 +104,14 @@ public class AndroidProfiler {
       final @NotNull String tracesFilesDirPath,
       final int intervalUs,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
-      final @NotNull ISentryExecutorService executorService,
+      final @Nullable ISentryExecutorService timeoutExecutorService,
       final @NotNull ILogger logger) {
     this.traceFilesDir =
         new File(Objects.requireNonNull(tracesFilesDirPath, "TracesFilesDirPath is required"));
     this.intervalUs = intervalUs;
     this.logger = Objects.requireNonNull(logger, "Logger is required");
-    this.executorService = Objects.requireNonNull(executorService, "ExecutorService is required.");
+    // Timeout executor is nullable, as timeouts will not be there for continuous profiling
+    this.timeoutExecutorService = timeoutExecutorService;
     this.frameMetricsCollector =
         Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
   }
@@ -153,6 +156,7 @@ public class AndroidProfiler {
                   // profileStartNanos is calculated through SystemClock.elapsedRealtimeNanos(),
                   // but frameEndNanos uses System.nanotime(), so we convert it to get the timestamp
                   // relative to profileStartNanos
+                  final SentryDate timestamp = new SentryNanotimeDate();
                   final long frameTimestampRelativeNanos =
                       frameEndNanos
                           - System.nanoTime()
@@ -166,23 +170,29 @@ public class AndroidProfiler {
                   }
                   if (isFrozen) {
                     frozenFrameRenderMeasurements.addLast(
-                        new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
+                        new ProfileMeasurementValue(
+                            frameTimestampRelativeNanos, durationNanos, timestamp));
                   } else if (isSlow) {
                     slowFrameRenderMeasurements.addLast(
-                        new ProfileMeasurementValue(frameTimestampRelativeNanos, durationNanos));
+                        new ProfileMeasurementValue(
+                            frameTimestampRelativeNanos, durationNanos, timestamp));
                   }
                   if (refreshRate != lastRefreshRate) {
                     lastRefreshRate = refreshRate;
                     screenFrameRateMeasurements.addLast(
-                        new ProfileMeasurementValue(frameTimestampRelativeNanos, refreshRate));
+                        new ProfileMeasurementValue(
+                            frameTimestampRelativeNanos, refreshRate, timestamp));
                   }
                 }
               });
 
       // We stop profiling after a timeout to avoid huge profiles to be sent
       try {
-        scheduledFinish =
-            executorService.schedule(() -> endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
+        if (timeoutExecutorService != null) {
+          scheduledFinish =
+              timeoutExecutorService.schedule(
+                  () -> endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
+        }
       } catch (RejectedExecutionException e) {
         logger.log(
             SentryLevel.ERROR,
@@ -227,8 +237,7 @@ public class AndroidProfiler {
       try {
         // If there is any problem with the file this method could throw, but the start is also
         // wrapped, so this should never happen (except for tests, where this is the only method
-        // that
-        // throws)
+        // that throws)
         Debug.stopMethodTracing();
       } catch (Throwable e) {
         logger.log(SentryLevel.ERROR, "Error while stopping profiling: ", e);
@@ -315,20 +324,23 @@ public class AndroidProfiler {
           if (cpuData != null) {
             cpuUsageMeasurements.add(
                 new ProfileMeasurementValue(
-                    TimeUnit.MILLISECONDS.toNanos(cpuData.getTimestampMillis()) + timestampDiff,
-                    cpuData.getCpuUsagePercentage()));
+                    cpuData.getTimestamp().nanoTimestamp() + timestampDiff,
+                    cpuData.getCpuUsagePercentage(),
+                    cpuData.getTimestamp()));
           }
           if (memoryData != null && memoryData.getUsedHeapMemory() > -1) {
             memoryUsageMeasurements.add(
                 new ProfileMeasurementValue(
-                    TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
-                    memoryData.getUsedHeapMemory()));
+                    memoryData.getTimestamp().nanoTimestamp() + timestampDiff,
+                    memoryData.getUsedHeapMemory(),
+                    memoryData.getTimestamp()));
           }
           if (memoryData != null && memoryData.getUsedNativeMemory() > -1) {
             nativeMemoryUsageMeasurements.add(
                 new ProfileMeasurementValue(
-                    TimeUnit.MILLISECONDS.toNanos(memoryData.getTimestampMillis()) + timestampDiff,
-                    memoryData.getUsedNativeMemory()));
+                    memoryData.getTimestamp().nanoTimestamp() + timestampDiff,
+                    memoryData.getUsedNativeMemory(),
+                    memoryData.getTimestamp()));
           }
         }
       }

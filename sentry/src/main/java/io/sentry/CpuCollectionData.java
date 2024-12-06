@@ -1,19 +1,20 @@
 package io.sentry;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
 public final class CpuCollectionData {
-  final long timestampMillis;
   final double cpuUsagePercentage;
+  final @NotNull SentryDate timestamp;
 
-  public CpuCollectionData(final long timestampMillis, final double cpuUsagePercentage) {
-    this.timestampMillis = timestampMillis;
+  public CpuCollectionData(final double cpuUsagePercentage, final @NotNull SentryDate timestamp) {
     this.cpuUsagePercentage = cpuUsagePercentage;
+    this.timestamp = timestamp;
   }
 
-  public long getTimestampMillis() {
-    return timestampMillis;
+  public @NotNull SentryDate getTimestamp() {
+    return timestamp;
   }
 
   public double getCpuUsagePercentage() {

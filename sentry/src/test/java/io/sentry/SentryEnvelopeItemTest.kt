@@ -463,6 +463,94 @@ class SentryEnvelopeItemTest {
     }
 
     @Test
+    fun `fromProfileChunk saves file as Base64`() {
+        val file = File(fixture.pathname)
+        val profileChunk = mock<ProfileChunk> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        file.writeBytes(fixture.bytes)
+        val chunk = SentryEnvelopeItem.fromProfileChunk(profileChunk, mock()).data
+        verify(profileChunk).sampledProfile =
+            Base64.encodeToString(fixture.bytes, Base64.NO_WRAP or Base64.NO_PADDING)
+    }
+
+    @Test
+    fun `fromProfileChunk deletes file only after reading data`() {
+        val file = File(fixture.pathname)
+        val profileChunk = mock<ProfileChunk> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        file.writeBytes(fixture.bytes)
+        assert(file.exists())
+        val chunk = SentryEnvelopeItem.fromProfileChunk(profileChunk, mock())
+        assert(file.exists())
+        chunk.data
+        assertFalse(file.exists())
+    }
+
+    @Test
+    fun `fromProfileChunk with invalid file throws`() {
+        val file = File(fixture.pathname)
+        val profileChunk = mock<ProfileChunk> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        assertFailsWith<SentryEnvelopeException>("Dropping profiling trace data, because the file ${file.path} doesn't exists") {
+            SentryEnvelopeItem.fromProfileChunk(profileChunk, mock()).data
+        }
+    }
+
+    @Test
+    fun `fromProfileChunk with unreadable file throws`() {
+        val file = File(fixture.pathname)
+        val profileChunk = mock<ProfileChunk> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+        file.writeBytes(fixture.bytes)
+        file.setReadable(false)
+        assertFailsWith<IOException>("Dropping profiling trace data, because the file ${file.path} doesn't exists") {
+            SentryEnvelopeItem.fromProfileChunk(profileChunk, mock()).data
+        }
+    }
+
+    @Test
+    fun `fromProfileChunk with empty file throws`() {
+        val file = File(fixture.pathname)
+        file.writeBytes(ByteArray(0))
+        val profileChunk = mock<ProfileChunk> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        val chunk = SentryEnvelopeItem.fromProfileChunk(profileChunk, mock())
+        assertFailsWith<SentryEnvelopeException>("Profiling trace file is empty") {
+            chunk.data
+        }
+    }
+
+    @Test
+    fun `fromProfileChunk with file too big`() {
+        val file = File(fixture.pathname)
+        val maxSize = 50 * 1024 * 1024 // 50MB
+        file.writeBytes(ByteArray((maxSize + 1)) { 0 })
+        val profileChunk = mock<ProfileChunk> {
+            whenever(it.traceFile).thenReturn(file)
+        }
+
+        val exception = assertFailsWith<IOException> {
+            SentryEnvelopeItem.fromProfileChunk(profileChunk, mock()).data
+        }
+
+        assertEquals(
+            "Reading file failed, because size located at " +
+                "'${fixture.pathname}' with ${file.length()} bytes is bigger than the maximum " +
+                "allowed size of $maxSize bytes.",
+            exception.message
+        )
+    }
+
+    @Test
     fun `fromReplay encodes payload into msgpack`() {
         val file = Files.createTempFile("replay", "").toFile()
         val videoBytes =
