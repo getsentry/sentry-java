@@ -184,6 +184,8 @@ public final class RateLimiter implements Closeable {
         return DataCategory.Attachment;
       case "profile":
         return DataCategory.Profile;
+      case "profile_chunk":
+        return DataCategory.ProfileChunk;
       case "transaction":
         return DataCategory.Transaction;
       case "check_in":

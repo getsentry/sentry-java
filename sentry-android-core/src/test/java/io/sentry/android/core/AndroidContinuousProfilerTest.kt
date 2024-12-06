@@ -6,6 +6,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.CompositePerformanceCollector
 import io.sentry.CpuCollectionData
+import io.sentry.DataCategory
+import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
@@ -18,8 +20,10 @@ import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
+import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getProperty
+import io.sentry.transport.RateLimiter
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
@@ -37,6 +41,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -393,5 +398,75 @@ class AndroidContinuousProfilerTest {
         // Now the executor is used to send the chunk
         executorService.runAll()
         verify(fixture.scopes, times(2)).captureProfileChunk(any())
+    }
+
+    @Test
+    fun `profiler does not send chunks after close`() {
+        val executorService = DeferredExecutorService()
+        val profiler = fixture.getSut {
+            it.executorService = executorService
+        }
+        profiler.start()
+        assertTrue(profiler.isRunning)
+
+        // We close the profiler, which should prevent sending additional chunks
+        profiler.close()
+
+        // The executor used to send the chunk doesn't do anything
+        executorService.runAll()
+        verify(fixture.scopes, never()).captureProfileChunk(any())
+    }
+
+    @Test
+    fun `profiler stops when rate limited`() {
+        val executorService = DeferredExecutorService()
+        val profiler = fixture.getSut {
+            it.executorService = executorService
+        }
+        val rateLimiter = mock<RateLimiter>()
+        whenever(rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)).thenReturn(true)
+
+        profiler.start()
+        assertTrue(profiler.isRunning)
+
+        // If the SDK is rate limited, the profiler should stop
+        profiler.onRateLimitChanged(rateLimiter)
+        assertFalse(profiler.isRunning)
+        assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
+        verify(fixture.mockLogger).log(eq(SentryLevel.WARNING), eq("SDK is rate limited. Stopping profiler."))
+    }
+
+    @Test
+    fun `profiler does not start when rate limited`() {
+        val executorService = DeferredExecutorService()
+        val profiler = fixture.getSut {
+            it.executorService = executorService
+        }
+        val rateLimiter = mock<RateLimiter>()
+        whenever(rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)).thenReturn(true)
+        whenever(fixture.scopes.rateLimiter).thenReturn(rateLimiter)
+
+        // If the SDK is rate limited, the profiler should never start
+        profiler.start()
+        assertFalse(profiler.isRunning)
+        assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
+        verify(fixture.mockLogger).log(eq(SentryLevel.WARNING), eq("SDK is rate limited. Stopping profiler."))
+    }
+
+    @Test
+    fun `profiler does not start when offline`() {
+        val executorService = DeferredExecutorService()
+        val profiler = fixture.getSut {
+            it.executorService = executorService
+            it.connectionStatusProvider = mock { provider ->
+                whenever(provider.connectionStatus).thenReturn(IConnectionStatusProvider.ConnectionStatus.DISCONNECTED)
+            }
+        }
+
+        // If the device is offline, the profiler should never start
+        profiler.start()
+        assertFalse(profiler.isRunning)
+        assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
+        verify(fixture.mockLogger).log(eq(SentryLevel.WARNING), eq("Device is offline. Stopping profiler."))
     }
 }
