@@ -273,7 +273,7 @@ class SentrySpringFilterTest {
 
                 verify(fixture.chain).doFilter(
                     check {
-                        assertEquals(param.expectedToBeCached, it is CachedBodyHttpServletRequest)
+                        assertEquals(param.expectedToBeCached, it is SentryContentCachingRequestWrapper)
                     },
                     any()
                 )
