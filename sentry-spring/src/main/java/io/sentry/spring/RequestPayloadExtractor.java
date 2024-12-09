@@ -17,8 +17,12 @@ final class RequestPayloadExtractor {
     // request body can be read only once from the stream
     // original request can be replaced with ContentCachingRequestWrapper in SentrySpringFilter
     if (request instanceof ContentCachingRequestWrapper) {
+      final ContentCachingRequestWrapper cachedRequest = (ContentCachingRequestWrapper) request;
       try {
-        final byte[] body = StreamUtils.copyToByteArray(request.getInputStream());
+        final byte[] body =
+            cachedRequest.getInputStream().isFinished()
+                ? cachedRequest.getContentAsByteArray()
+                : StreamUtils.copyToByteArray(cachedRequest.getInputStream());
         return new String(body, StandardCharsets.UTF_8);
       } catch (IOException e) {
         options.getLogger().log(SentryLevel.ERROR, "Failed to set request body", e);
