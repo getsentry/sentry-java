@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <!-- WRITE_EXTERNAL_STORAGE is not needed on Android 10 (API level 29) or higher. -->
+
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+  <uses-permission android:name="android.permission.INTERNET"/>
+
+  <instrumentation
+    android:name="androidx.test.runner.AndroidJUnitRunner"
+    android:targetPackage="io.sentry.uitest.android">
+
+    <meta-data
+      android:name="screenCaptureProcessors"
+      android:value="com.google.firebase.testlab.screenshot.FirebaseScreenCaptureProcessor" />
+  </instrumentation>
+
+</manifest>

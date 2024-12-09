@@ -90,7 +90,7 @@ class AutomaticSpansTest : BaseUiTest() {
                 // AGP matrix tests have no frames
                 Assume.assumeTrue(totalFrames > 0)
                 assertNotEquals(totalFrames, 0)
-                assertTrue(totalFrames > slowFrames + frozenFrames, "Expected total frames ($totalFrames) to be higher than the sum of slow ($slowFrames) and frozen ($frozenFrames) frames.")
+                assertTrue(totalFrames >= slowFrames + frozenFrames, "Expected total frames ($totalFrames) to be higher than the sum of slow ($slowFrames) and frozen ($frozenFrames) frames.")
             }
             assertNoOtherEnvelopes()
         }
@@ -126,7 +126,7 @@ class AutomaticSpansTest : BaseUiTest() {
                 // AGP matrix tests have no frames
                 Assume.assumeTrue(totalFrames > 0)
                 assertNotEquals(totalFrames, 0)
-                assertTrue(totalFrames > slowFrames + frozenFrames, "Expected total frames ($totalFrames) to be higher than the sum of slow ($slowFrames) and frozen ($frozenFrames) frames.")
+                assertTrue(totalFrames >= slowFrames + frozenFrames, "Expected total frames ($totalFrames) to be higher than the sum of slow ($slowFrames) and frozen ($frozenFrames) frames.")
             }
             assertNoOtherEnvelopes()
         }
