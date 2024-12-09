@@ -46,16 +46,12 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SentrySpanExporter implements SpanExporter {
   private volatile boolean stopped = false;
-  // TODO [POTEL] should we clear out old finished spans after a while?
   private final List<SpanData> finishedSpans = new CopyOnWriteArrayList<>();
   private final @NotNull SentryWeakSpanStorage spanStorage = SentryWeakSpanStorage.getInstance();
   private final @NotNull SpanDescriptionExtractor spanDescriptionExtractor =
       new SpanDescriptionExtractor();
   private final @NotNull IScopes scopes;
 
-  // TODO [POTEL] should we also ignore "process.command_args"
-  // (`ResourceAttributes.PROCESS_COMMAND_ARGS`)?
-  // As these are apparently so long that information that is added after it is lost
   private final @NotNull List<String> attributeKeysToRemove =
       Arrays.asList(
           InternalSemanticAttributes.IS_REMOTE_PARENT.getKey(),
@@ -189,7 +185,7 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     final @NotNull String spanId = spanData.getSpanId();
-    final @Nullable OtelSpanWrapper sentrySpanMaybe =
+    final @Nullable IOtelSpanWrapper sentrySpanMaybe =
         spanStorage.getSentrySpan(spanData.getSpanContext());
     final @NotNull OtelSpanInfo spanInfo =
         spanDescriptionExtractor.extractSpanInfo(spanData, sentrySpanMaybe);
@@ -205,7 +201,6 @@ public final class SentrySpanExporter implements SpanExporter {
             spanData.getParentSpanId());
     final @NotNull SentryDate startDate = new SentryLongDate(spanData.getStartEpochNanos());
     final @NotNull SpanOptions spanOptions = new SpanOptions();
-    // TODO [POTEL] op and description might have been overriden
     final @NotNull io.sentry.SpanContext spanContext =
         parentSentrySpan
             .getSpanContext()
@@ -214,13 +209,11 @@ public final class SentrySpanExporter implements SpanExporter {
                 parentSentrySpan.getSpanContext().getSpanId(),
                 new SpanId(spanId));
     spanContext.setDescription(spanInfo.getDescription());
-    spanContext.setInstrumenter(Instrumenter.OTEL);
+    spanContext.setInstrumenter(Instrumenter.SENTRY);
     if (sentrySpanMaybe != null) {
       spanContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
       spanOptions.setOrigin(sentrySpanMaybe.getSpanContext().getOrigin());
     } else {
-      // TODO [POTEL] Check if we want to use `instrumentationScopeInfo.name` and append it to
-      // `auto.otel`
       spanOptions.setOrigin(TRACE_ORIGIN);
     }
 
@@ -234,7 +227,7 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     setOtelInstrumentationInfo(spanData, sentryChildSpan);
-
+    setOtelSpanKind(spanData, sentryChildSpan);
     transferSpanDetails(sentrySpanMaybe, sentryChildSpan);
 
     for (SpanNode childNode : spanNode.getChildren()) {
@@ -246,9 +239,9 @@ public final class SentrySpanExporter implements SpanExporter {
   }
 
   private void transferSpanDetails(
-      final @Nullable OtelSpanWrapper sourceSpanMaybe, final @NotNull ISpan targetSpan) {
+      final @Nullable IOtelSpanWrapper sourceSpanMaybe, final @NotNull ISpan targetSpan) {
     if (sourceSpanMaybe != null) {
-      final @NotNull OtelSpanWrapper sourceSpan = sourceSpanMaybe;
+      final @NotNull IOtelSpanWrapper sourceSpan = sourceSpanMaybe;
 
       final @NotNull Contexts contexts = sourceSpan.getContexts();
       targetSpan.getContexts().putAll(contexts);
@@ -257,15 +250,6 @@ public final class SentrySpanExporter implements SpanExporter {
       for (Map.Entry<String, Object> entry : data.entrySet()) {
         targetSpan.setData(entry.getKey(), entry.getValue());
       }
-
-      // TODO [POTEL] this is not an OtelSpanWrapper since it's created with default span factory
-      //      if (sentryChildSpan instanceof OtelSpanWrapper) {
-      //        final @NotNull OtelSpanWrapper sentryChildSpanWrapper = (OtelSpanWrapper)
-      // sentryChildSpan;
-      //        final @NotNull Map<String, MeasurementValue> measurements =
-      // sentrySpan.getMeasurements();
-      //        sentryChildSpanWrapper.addAllMeasurements(measurements);
-      //      }
 
       final @NotNull Map<String, String> tags = sourceSpan.getTags();
       for (Map.Entry<String, String> entry : tags.entrySet()) {
@@ -279,7 +263,7 @@ public final class SentrySpanExporter implements SpanExporter {
   private @Nullable ITransaction createTransactionForOtelSpan(final @NotNull SpanData span) {
     final @NotNull String spanId = span.getSpanId();
     final @NotNull String traceId = span.getTraceId();
-    final @Nullable OtelSpanWrapper sentrySpanMaybe =
+    final @Nullable IOtelSpanWrapper sentrySpanMaybe =
         spanStorage.getSentrySpan(span.getSpanContext());
     final @Nullable IScopes scopesMaybe =
         sentrySpanMaybe != null ? sentrySpanMaybe.getScopes() : null;
@@ -304,7 +288,7 @@ public final class SentrySpanExporter implements SpanExporter {
     @Nullable Baggage baggage = null;
 
     if (sentrySpanMaybe != null) {
-      final @NotNull OtelSpanWrapper sentrySpan = sentrySpanMaybe;
+      final @NotNull IOtelSpanWrapper sentrySpan = sentrySpanMaybe;
       final @Nullable String transactionNameMaybe = sentrySpan.getTransactionName();
       if (transactionNameMaybe != null) {
         transactionName = transactionNameMaybe;
@@ -319,7 +303,6 @@ public final class SentrySpanExporter implements SpanExporter {
       baggage = spanContext.getBaggage();
     }
 
-    // TODO [POTEL] parentSamplingDecision?
     final @NotNull TransactionContext transactionContext =
         new TransactionContext(new SentryId(traceId), sentrySpanId, parentSpanId, null, baggage);
 
@@ -329,7 +312,7 @@ public final class SentrySpanExporter implements SpanExporter {
         transactionName == null ? DEFAULT_TRANSACTION_NAME : transactionName);
     transactionContext.setTransactionNameSource(transactionNameSource);
     transactionContext.setOperation(spanInfo.getOp());
-    transactionContext.setInstrumenter(Instrumenter.OTEL);
+    transactionContext.setInstrumenter(Instrumenter.SENTRY);
     if (sentrySpanMaybe != null) {
       transactionContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
       transactionOptions.setOrigin(sentrySpanMaybe.getSpanContext().getOrigin());
@@ -345,7 +328,7 @@ public final class SentrySpanExporter implements SpanExporter {
     sentryTransaction.setContext("otel", otelContext);
 
     setOtelInstrumentationInfo(span, sentryTransaction);
-
+    setOtelSpanKind(span, sentryTransaction);
     transferSpanDetails(sentrySpanMaybe, sentryTransaction);
 
     return sentryTransaction;
@@ -445,7 +428,6 @@ public final class SentrySpanExporter implements SpanExporter {
   private SpanStatus mapOtelStatus(
       final @NotNull SpanData otelSpanData, final @NotNull ISpan sentrySpan) {
     final @Nullable SpanStatus existingStatus = sentrySpan.getStatus();
-    // TODO [POTEL] do we want the unknown error check here?
     if (existingStatus != null && existingStatus != SpanStatus.UNKNOWN_ERROR) {
       return existingStatus;
     }
@@ -500,7 +482,8 @@ public final class SentrySpanExporter implements SpanExporter {
     return attributeKeysToRemove.contains(key);
   }
 
-  private void setOtelInstrumentationInfo(SpanData span, ISpan sentryTransaction) {
+  private void setOtelInstrumentationInfo(
+      final @NotNull SpanData span, final @NotNull ISpan sentryTransaction) {
     final @Nullable String otelInstrumentationName = span.getInstrumentationScopeInfo().getName();
     if (otelInstrumentationName != null) {
       sentryTransaction.setData("otel.instrumentation.name", otelInstrumentationName);
@@ -511,6 +494,10 @@ public final class SentrySpanExporter implements SpanExporter {
     if (otelInstrumentationVersion != null) {
       sentryTransaction.setData("otel.instrumentation.version", otelInstrumentationVersion);
     }
+  }
+
+  private void setOtelSpanKind(final @NotNull SpanData otelSpan, final @NotNull ISpan sentrySpan) {
+    sentrySpan.setData("otel.kind", otelSpan.getKind().name());
   }
 
   @Override

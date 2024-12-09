@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         targetSdk = Config.Android.targetSdkVersion
-        minSdk = Config.Android.minSdkVersionNdk
+        minSdk = Config.Android.minSdkVersion
     }
 
     buildFeatures {
@@ -35,4 +35,5 @@ android {
 dependencies {
     api(projects.sentryAndroidCore)
     api(projects.sentryAndroidNdk)
+    api(projects.sentryAndroidReplay)
 }

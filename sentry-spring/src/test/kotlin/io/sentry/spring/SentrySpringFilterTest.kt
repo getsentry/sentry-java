@@ -249,7 +249,8 @@ class SentrySpringFilterTest {
             TestParams(maxRequestBodySize = SMALL, body = "x".repeat(1001), expectedToBeCached = false),
             TestParams(maxRequestBodySize = MEDIUM, body = "x".repeat(1001), expectedToBeCached = true),
             TestParams(maxRequestBodySize = MEDIUM, body = "x".repeat(10001), expectedToBeCached = false),
-            TestParams(maxRequestBodySize = ALWAYS, body = "x".repeat(10001), expectedToBeCached = true)
+            TestParams(maxRequestBodySize = ALWAYS, body = "x".repeat(10001), expectedToBeCached = true),
+            TestParams(maxRequestBodySize = SMALL, body = "xxx", contentType = "application/x-www-form-urlencoded", expectedToBeCached = true)
         )
 
         params.forEach { param ->

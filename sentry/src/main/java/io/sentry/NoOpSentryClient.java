@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.metrics.NoopMetricsAggregator;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.RateLimiter;
@@ -67,12 +66,13 @@ final class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
-  public @Nullable RateLimiter getRateLimiter() {
-    return null;
+  public @NotNull SentryId captureReplayEvent(
+      @NotNull SentryReplayEvent event, @Nullable IScope scope, @Nullable Hint hint) {
+    return SentryId.EMPTY_ID;
   }
 
   @Override
-  public @NotNull IMetricsAggregator getMetricsAggregator() {
-    return NoopMetricsAggregator.getInstance();
+  public @Nullable RateLimiter getRateLimiter() {
+    return null;
   }
 }

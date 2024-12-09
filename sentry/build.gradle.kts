@@ -32,6 +32,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.TestLibs.javaFaker)
+    testImplementation(Config.TestLibs.msgpack)
     testImplementation(projects.sentryTestSupport)
 }
 

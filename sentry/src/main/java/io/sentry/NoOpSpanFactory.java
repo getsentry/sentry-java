@@ -32,14 +32,4 @@ public final class NoOpSpanFactory implements ISpanFactory {
       @Nullable ISpan parentSpan) {
     return NoOpSpan.getInstance();
   }
-
-  @Override
-  public @Nullable ISpan retrieveCurrentSpan(IScopes scopes) {
-    return NoOpSpan.getInstance();
-  }
-
-  @Override
-  public @Nullable ISpan retrieveCurrentSpan(IScope scope) {
-    return NoOpSpan.getInstance();
-  }
 }

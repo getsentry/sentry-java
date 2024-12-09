@@ -77,6 +77,7 @@ abstract class BaseUiTest {
      */
     protected fun initSentry(
         relayWaitForRequests: Boolean = false,
+        context: Context = this.context,
         optionsConfiguration: ((options: SentryAndroidOptions) -> Unit)? = null
     ) {
         relay.waitForRequests = relayWaitForRequests

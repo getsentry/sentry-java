@@ -60,7 +60,7 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       return;
     }
 
-    final @Nullable OtelSpanWrapper sentrySpan = spanStorage.getSentrySpan(otelSpanContext);
+    final @Nullable IOtelSpanWrapper sentrySpan = spanStorage.getSentrySpan(otelSpanContext);
     if (sentrySpan == null || sentrySpan.isNoOp()) {
       scopes
           .getOptions()

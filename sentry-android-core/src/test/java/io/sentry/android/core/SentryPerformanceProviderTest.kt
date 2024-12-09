@@ -18,6 +18,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
@@ -164,7 +165,8 @@ class SentryPerformanceProviderTest {
     fun `provider properly registers and unregisters ActivityLifecycleCallbacks`() {
         val provider = fixture.getSut()
 
-        verify(fixture.mockContext).registerActivityLifecycleCallbacks(any())
+        // It register once for the provider itself and once for the appStartMetrics
+        verify(fixture.mockContext, times(2)).registerActivityLifecycleCallbacks(any())
         provider.onAppStartDone()
         verify(fixture.mockContext).unregisterActivityLifecycleCallbacks(any())
     }
@@ -182,15 +184,6 @@ class SentryPerformanceProviderTest {
         fixture.getSut { config ->
             writeConfig(config)
             config.setReadable(false)
-        }
-        assertNull(AppStartMetrics.getInstance().appStartProfiler)
-        verify(fixture.logger, never()).log(any(), any())
-    }
-
-    @Test
-    fun `when SDK is lower than 21, nothing happens`() {
-        fixture.getSut(sdkVersion = Build.VERSION_CODES.KITKAT) { config ->
-            writeConfig(config)
         }
         assertNull(AppStartMetrics.getInstance().appStartProfiler)
         verify(fixture.logger, never()).log(any(), any())

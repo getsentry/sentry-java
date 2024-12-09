@@ -1,5 +1,6 @@
 package io.sentry.android.navigation
 
+import android.content.Context
 import android.content.res.Resources.NotFoundException
 import android.os.Bundle
 import androidx.navigation.NavController
@@ -48,7 +49,7 @@ class SentryNavigationListener @JvmOverloads constructor(
     private var activeTransaction: ITransaction? = null
 
     init {
-        addIntegrationToSdkVersion(javaClass)
+        addIntegrationToSdkVersion("NavigationListener")
         SentryIntegrationPackageStorage.getInstance()
             .addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
     }
@@ -59,9 +60,15 @@ class SentryNavigationListener @JvmOverloads constructor(
         arguments: Bundle?
     ) {
         val toArguments = arguments.refined()
-
         addBreadcrumb(destination, toArguments)
-        startTracing(controller, destination, toArguments)
+
+        val routeName = destination.extractName(controller.context)
+        if (routeName != null) {
+            if (scopes.options.isEnableScreenTracking) {
+                scopes.configureScope { it.screen = routeName }
+            }
+            startTracing(routeName, destination, toArguments)
+        }
         previousDestinationRef = WeakReference(destination)
         previousArgs = arguments
     }
@@ -95,7 +102,7 @@ class SentryNavigationListener @JvmOverloads constructor(
     }
 
     private fun startTracing(
-        controller: NavController,
+        routeName: String,
         destination: NavDestination,
         arguments: Map<String, Any?>
     ) {
@@ -118,20 +125,6 @@ class SentryNavigationListener @JvmOverloads constructor(
             return
         }
 
-        @Suppress("SwallowedException") // we swallow it on purpose
-        var name = destination.route ?: try {
-            controller.context.resources.getResourceEntryName(destination.id)
-        } catch (e: NotFoundException) {
-            scopes.options.logger.log(
-                DEBUG,
-                "Destination id cannot be retrieved from Resources, no transaction captured."
-            )
-            return
-        }
-
-        // we add '/' to the name to match dart and web pattern
-        name = "/" + name.substringBefore('/') // strip out arguments from the tx name
-
         val transactionOptions = TransactionOptions().also {
             it.isWaitForChildren = true
             it.idleTimeout = scopes.options.idleTimeout
@@ -140,7 +133,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         }
 
         val transaction = scopes.startTransaction(
-            TransactionContext(name, TransactionNameSource.ROUTE, NAVIGATION_OP),
+            TransactionContext(routeName, TransactionNameSource.ROUTE, NAVIGATION_OP),
             transactionOptions
         )
 
@@ -183,6 +176,22 @@ class SentryNavigationListener @JvmOverloads constructor(
                 it != NavController.KEY_DEEP_LINK_INTENT // there's a lot of unrelated stuff
             }.associateWith { args[it] }
         } ?: emptyMap()
+
+    @Suppress("SwallowedException") // we swallow it on purpose
+    private fun NavDestination.extractName(context: Context): String? {
+        val name = route ?: try {
+            context.resources.getResourceEntryName(id)
+        } catch (e: NotFoundException) {
+            scopes.options.logger.log(
+                DEBUG,
+                "Destination id cannot be retrieved from Resources, no transaction captured."
+            )
+            null
+        } ?: return null
+
+        // we add '/' to the name to match dart and web pattern
+        return "/" + name.substringBefore('/') // strip out arguments from the tx name
+    }
 
     companion object {
         const val NAVIGATION_OP = "navigation"

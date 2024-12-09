@@ -15,12 +15,15 @@ import android.os.StatFs;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.OperatingSystem;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.io.File;
 import java.util.Calendar;
 import java.util.Collections;
@@ -38,6 +41,9 @@ public final class DeviceInfoUtil {
 
   @SuppressLint("StaticFieldLeak")
   private static volatile DeviceInfoUtil instance;
+
+  private static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
 
   private final @NotNull Context context;
   private final @NotNull SentryAndroidOptions options;
@@ -73,9 +79,9 @@ public final class DeviceInfoUtil {
   public static DeviceInfoUtil getInstance(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     if (instance == null) {
-      synchronized (DeviceInfoUtil.class) {
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (instance == null) {
-          instance = new DeviceInfoUtil(context.getApplicationContext(), options);
+          instance = new DeviceInfoUtil(ContextUtils.getApplicationContext(context), options);
         }
       }
     }
@@ -103,7 +109,7 @@ public final class DeviceInfoUtil {
     device.setFamily(ContextUtils.getFamily(options.getLogger()));
     device.setModel(Build.MODEL);
     device.setModelId(Build.ID);
-    device.setArchs(ContextUtils.getArchitectures(buildInfoProvider));
+    device.setArchs(ContextUtils.getArchitectures());
 
     device.setOrientation(getOrientation());
     if (isEmulator != null) {
@@ -127,9 +133,6 @@ public final class DeviceInfoUtil {
     }
 
     final @NotNull Locale locale = Locale.getDefault();
-    if (device.getLanguage() == null) {
-      device.setLanguage(locale.getLanguage());
-    }
     if (device.getLocale() == null) {
       device.setLocale(locale.toString()); // eg en_US
     }
@@ -184,8 +187,8 @@ public final class DeviceInfoUtil {
   private void setDeviceIO(final @NotNull Device device, final boolean includeDynamicData) {
     final Intent batteryIntent = getBatteryIntent();
     if (batteryIntent != null) {
-      device.setBatteryLevel(getBatteryLevel(batteryIntent));
-      device.setCharging(isCharging(batteryIntent));
+      device.setBatteryLevel(getBatteryLevel(batteryIntent, options));
+      device.setCharging(isCharging(batteryIntent, options));
       device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
     }
 
@@ -270,7 +273,8 @@ public final class DeviceInfoUtil {
    * @return the device's current battery level (as a percentage of total), or null if unknown
    */
   @Nullable
-  private Float getBatteryLevel(final @NotNull Intent batteryIntent) {
+  public static Float getBatteryLevel(
+      final @NotNull Intent batteryIntent, final @NotNull SentryOptions options) {
     try {
       int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
       int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
@@ -294,7 +298,8 @@ public final class DeviceInfoUtil {
    * @return whether or not the device is currently plugged in and charging, or null if unknown
    */
   @Nullable
-  private Boolean isCharging(final @NotNull Intent batteryIntent) {
+  public static Boolean isCharging(
+      final @NotNull Intent batteryIntent, final @NotNull SentryOptions options) {
     try {
       int plugged = batteryIntent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
       return plugged == BatteryManager.BATTERY_PLUGGED_AC

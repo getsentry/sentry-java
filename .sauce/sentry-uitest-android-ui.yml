@@ -11,12 +11,20 @@ sauce:
       - android
 
 defaults:
-  timeout: 40m
+  timeout: 45m
 
 espresso:
   app: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
   testApp: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
 suites:
+
+  - name: "Android 14 Ui test (api 34)"
+    testOptions:
+      clearPackageData: true
+      useTestOrchestrator: true
+    devices:
+      - name: ".*"
+        platformVersion: "14"
 
   - name: "Android 13 Ui test (api 33)"
     testOptions:
@@ -26,29 +34,13 @@ suites:
       - name: ".*"
         platformVersion: "13"
 
-  - name: "Android 12 Ui test (api 31)"
-    testOptions:
-      clearPackageData: true
-      useTestOrchestrator: true
-    devices:
-      - name: ".*"
-        platformVersion: "12"
-
-  - name: "Android 11 Ui test (api 30)"
+  - name: "Android 11 Ui test (api 31)"
     testOptions:
       clearPackageData: true
       useTestOrchestrator: true
     devices:
       - name: ".*"
         platformVersion: "11"
-
-  - name: "Android 10 Ui test (api 29)"
-    testOptions:
-      clearPackageData: true
-      useTestOrchestrator: true
-    devices:
-      - name: ".*"
-        platformVersion: "10"
 
 # Controls what artifacts to fetch when the suite on Sauce Cloud has finished.
 artifacts:

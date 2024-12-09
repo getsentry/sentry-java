@@ -5,7 +5,7 @@ import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.util.HintUtils
-import io.sentry.util.thread.NoOpMainThreadChecker
+import io.sentry.util.thread.NoOpThreadChecker
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.check
@@ -20,7 +20,6 @@ import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Date
-import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -38,7 +37,7 @@ class OutboxSenderTest {
         init {
             whenever(options.dsn).thenReturn("https://key@sentry.io/proj")
             whenever(options.dateProvider).thenReturn(SentryNanotimeDateProvider())
-            whenever(options.mainThreadChecker).thenReturn(NoOpMainThreadChecker.getInstance())
+            whenever(options.threadChecker).thenReturn(NoOpThreadChecker.getInstance())
             whenever(scopes.options).thenReturn(this.options)
         }
 
@@ -74,7 +73,7 @@ class OutboxSenderTest {
     @Test
     fun `when parser is EnvelopeReader and serializer returns SentryEvent, event captured, file is deleted `() {
         fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
-        val expected = SentryEvent(SentryId(UUID.fromString("9ec79c33-ec99-42ab-8353-589fcb2e04dc")), Date())
+        val expected = SentryEvent(SentryId("9ec79c33-ec99-42ab-8353-589fcb2e04dc"), Date())
         whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(expected)
         val sut = fixture.getSut()
         val path = getTempEnvelope()

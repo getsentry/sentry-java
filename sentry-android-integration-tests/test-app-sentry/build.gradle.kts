@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.java.tests.perf.appsentry"
-        minSdk = Config.Android.minSdkVersionNdk
+        minSdk = Config.Android.minSdkVersion
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 1
         versionName = "1.0"

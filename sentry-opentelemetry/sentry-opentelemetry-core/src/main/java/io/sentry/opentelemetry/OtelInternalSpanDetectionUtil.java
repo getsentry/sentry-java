@@ -38,20 +38,18 @@ public final class OtelInternalSpanDetectionUtil {
       return true;
     }
 
-    // TODO [POTEL] should check if enabled but multi init with different options makes testing hard
-    // atm
-    //    if (scopes.getOptions().isEnableSpotlight()) {
-    final @Nullable String optionsSpotlightUrl = scopes.getOptions().getSpotlightConnectionUrl();
-    final @NotNull String spotlightUrl =
-        optionsSpotlightUrl != null ? optionsSpotlightUrl : "http://localhost:8969/stream";
+    if (scopes.getOptions().isEnableSpotlight()) {
+      final @Nullable String optionsSpotlightUrl = scopes.getOptions().getSpotlightConnectionUrl();
+      final @NotNull String spotlightUrl =
+          optionsSpotlightUrl != null ? optionsSpotlightUrl : "http://localhost:8969/stream";
 
-    if (containsSpotlightUrl(fullUrl, spotlightUrl)) {
-      return true;
+      if (containsSpotlightUrl(fullUrl, spotlightUrl)) {
+        return true;
+      }
+      if (containsSpotlightUrl(httpUrl, spotlightUrl)) {
+        return true;
+      }
     }
-    if (containsSpotlightUrl(httpUrl, spotlightUrl)) {
-      return true;
-    }
-    //    }
 
     return false;
   }

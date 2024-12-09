@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 public enum SpanStatus implements JsonSerializable {
   /** Not an error, returned on success. */
-  OK(200, 299),
+  OK(0, 399),
   /** The operation was cancelled, typically by the caller. */
   CANCELLED(499),
   /**
@@ -129,8 +129,8 @@ public enum SpanStatus implements JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<SpanStatus> {
 
     @Override
-    public @NotNull SpanStatus deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull SpanStatus deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       return SpanStatus.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
     }
   }

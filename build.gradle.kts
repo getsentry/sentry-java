@@ -37,6 +37,7 @@ buildscript {
 
         classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
         classpath(Config.BuildPlugins.composeGradlePlugin)
+        classpath(Config.BuildPlugins.commonsCompressOverride)
     }
 }
 
@@ -50,6 +51,7 @@ apiValidation {
         listOf(
             "sentry-samples-android",
             "sentry-samples-console",
+            "sentry-samples-console-opentelemetry-noagent",
             "sentry-samples-jul",
             "sentry-samples-log4j2",
             "sentry-samples-logback",
@@ -58,11 +60,16 @@ apiValidation {
             "sentry-samples-spring",
             "sentry-samples-spring-jakarta",
             "sentry-samples-spring-boot",
+            "sentry-samples-spring-boot-opentelemetry",
+            "sentry-samples-spring-boot-opentelemetry-noagent",
             "sentry-samples-spring-boot-jakarta",
+            "sentry-samples-spring-boot-jakarta-opentelemetry",
+            "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-spring-boot-webflux-jakarta",
             "sentry-uitest-android",
             "sentry-uitest-android-benchmark",
+            "sentry-uitest-android-critical",
             "test-app-plain",
             "test-app-sentry",
             "sentry-samples-netflix-dgs"
@@ -108,6 +115,7 @@ subprojects {
         "sentry-android-navigation",
         "sentry-android-ndk",
         "sentry-android-sqlite",
+        "sentry-android-replay",
         "sentry-android-timber"
     )
     if (jacocoAndroidModules.contains(name)) {
@@ -219,7 +227,7 @@ spotless {
         target("**/*.java")
         removeUnusedImports()
         googleJavaFormat()
-        targetExclude("**/generated/**", "**/vendor/**")
+        targetExclude("**/generated/**", "**/vendor/**", "**/sentry-native/**")
     }
     kotlin {
         target("**/*.kt")
@@ -291,7 +299,9 @@ private val androidLibs = setOf(
     "sentry-android-fragment",
     "sentry-android-navigation",
     "sentry-android-timber",
-    "sentry-compose-android"
+    "sentry-compose-android",
+    "sentry-android-sqlite",
+    "sentry-android-replay"
 )
 
 private val androidXLibs = listOf(

@@ -6,6 +6,7 @@ import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.os.Looper
 import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -28,6 +29,7 @@ import io.sentry.UncaughtExceptionHandlerIntegration
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
+import io.sentry.android.replay.ReplayIntegration
 import io.sentry.android.timber.SentryTimberIntegration
 import io.sentry.cache.IEnvelopeCache
 import io.sentry.cache.PersistingOptionsObserver
@@ -54,6 +56,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
@@ -332,20 +335,44 @@ class SentryAndroidTest {
         verify(client, times(1)).captureSession(any(), any())
     }
 
+    @Test
+    @Config(sdk = [26])
+    fun `init starts session replay if app is in foreground`() {
+        initSentryWithForegroundImportance(true) { _ ->
+            assertTrue(Sentry.getCurrentHub().options.replayController.isRecording())
+        }
+    }
+
+    @Test
+    @Config(sdk = [26])
+    fun `init does not start session replay if the app is in background`() {
+        initSentryWithForegroundImportance(false) { _ ->
+            assertFalse(Sentry.getCurrentHub().options.replayController.isRecording())
+        }
+    }
+
+    @Test
+    fun `When initializing Sentry a callback is added to application by appStartMetrics`() {
+        val mockContext = ContextUtilsTestHelper.createMockContext(true)
+        SentryAndroid.init(mockContext) {
+            it.dsn = "https://key@sentry.io/123"
+        }
+        verify(mockContext.applicationContext as Application).registerActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
+    }
+
     private fun initSentryWithForegroundImportance(
         inForeground: Boolean,
         optionsConfig: (SentryAndroidOptions) -> Unit = {},
         callback: (session: Session?) -> Unit
     ) {
-        val context = ContextUtilsTestHelper.createMockContext()
-
-        Mockito.mockStatic(ContextUtils::class.java).use { mockedContextUtils ->
+        Mockito.mockStatic(ContextUtils::class.java, Mockito.CALLS_REAL_METHODS).use { mockedContextUtils ->
             mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance() }
                 .thenReturn(inForeground)
             SentryAndroid.init(context) { options ->
                 options.release = "prod"
                 options.dsn = "https://key@sentry.io/123"
                 options.isEnableAutoSessionTracking = true
+                options.experimental.sessionReplay.onErrorSampleRate = 1.0
                 optionsConfig(options)
             }
 
@@ -415,8 +442,10 @@ class SentryAndroidTest {
         await.withAlias("Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout")
             .untilTrue(asserted)
 
+        // Execute all posted tasks
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
         // assert that persisted values have changed
-        options.executorService.close(5000L) // finalizes all enqueued persisting tasks
         assertEquals(
             "TestActivity",
             PersistingScopeObserver.read(options, TRANSACTION_FILENAME, String::class.java)
@@ -433,7 +462,7 @@ class SentryAndroidTest {
         fixture.initSut(context = mock<Application>()) { options ->
             optionsRef = options
             options.dsn = "https://key@sentry.io/123"
-            assertEquals(20, options.integrations.size)
+            assertEquals(21, options.integrations.size)
             options.integrations.removeAll {
                 it is UncaughtExceptionHandlerIntegration ||
                     it is ShutdownHookIntegration ||
@@ -453,7 +482,8 @@ class SentryAndroidTest {
                     it is NetworkBreadcrumbsIntegration ||
                     it is TempSensorBreadcrumbsIntegration ||
                     it is PhoneStateBreadcrumbsIntegration ||
-                    it is SpotlightIntegration
+                    it is SpotlightIntegration ||
+                    it is ReplayIntegration
             }
         }
         assertEquals(0, optionsRef.integrations.size)
@@ -486,6 +516,19 @@ class SentryAndroidTest {
 
         assertEquals(99, AppStartMetrics.getInstance().sdkInitTimeSpan.startUptimeMs)
         assertEquals(99, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
+    }
+
+    @Test
+    fun `if the config options block throws still intializes android event processors`() {
+        lateinit var optionsRef: SentryOptions
+        fixture.initSut(context = mock<Application>()) { options ->
+            optionsRef = options
+            options.dsn = "https://key@sentry.io/123"
+            throw RuntimeException("Boom!")
+        }
+
+        assertTrue(optionsRef.eventProcessors.any { it is DefaultAndroidEventProcessor })
+        assertTrue(optionsRef.eventProcessors.any { it is AnrV2EventProcessor })
     }
 
     private fun prefillScopeCache(cacheDir: String) {

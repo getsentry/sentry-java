@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
-import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,40 +17,6 @@ public final class TransactionContext extends SpanContext {
   private @Nullable TracesSamplingDecision parentSamplingDecision;
   private boolean isForNextAppStart = false;
 
-  /**
-   * Creates {@link TransactionContext} from sentry-trace header.
-   *
-   * @param name - the transaction name
-   * @param operation - the operation
-   * @param sentryTrace - the sentry-trace header
-   * @deprecated use {@link Sentry#continueTrace(String, List)} and setters for name and operation
-   *     here instead.
-   * @return the transaction contexts
-   */
-  @Deprecated
-  public static @NotNull TransactionContext fromSentryTrace(
-      final @NotNull String name,
-      final @NotNull String operation,
-      final @NotNull SentryTraceHeader sentryTrace) {
-    @Nullable Boolean parentSampled = sentryTrace.isSampled();
-    TracesSamplingDecision samplingDecision =
-        parentSampled == null ? null : new TracesSamplingDecision(parentSampled);
-
-    TransactionContext transactionContext =
-        new TransactionContext(
-            sentryTrace.getTraceId(),
-            new SpanId(),
-            sentryTrace.getSpanId(),
-            samplingDecision,
-            null);
-
-    transactionContext.setName(name);
-    transactionContext.setTransactionNameSource(TransactionNameSource.CUSTOM);
-    transactionContext.setOperation(operation);
-
-    return transactionContext;
-  }
-
   @ApiStatus.Internal
   public static TransactionContext fromPropagationContext(
       final @NotNull PropagationContext propagationContext) {
@@ -65,11 +30,12 @@ public final class TransactionContext extends SpanContext {
       baggage.freeze();
 
       Double sampleRate = baggage.getSampleRateDouble();
-      Boolean sampled = parentSampled != null ? parentSampled.booleanValue() : false;
-      if (sampleRate != null) {
-        samplingDecision = new TracesSamplingDecision(sampled, sampleRate);
-      } else {
-        samplingDecision = new TracesSamplingDecision(sampled);
+      if (parentSampled != null) {
+        if (sampleRate != null) {
+          samplingDecision = new TracesSamplingDecision(parentSampled.booleanValue(), sampleRate);
+        } else {
+          samplingDecision = new TracesSamplingDecision(parentSampled.booleanValue());
+        }
       }
     }
 

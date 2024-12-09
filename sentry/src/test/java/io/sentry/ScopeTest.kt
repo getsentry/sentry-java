@@ -2,6 +2,7 @@ package io.sentry
 
 import io.sentry.SentryLevel.WARNING
 import io.sentry.protocol.Request
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
 import io.sentry.test.callMethod
 import org.junit.Assert.assertArrayEquals
@@ -738,7 +739,7 @@ class ScopeTest {
             whenever(mock.spanContext).thenReturn(SpanContext("ui.load"))
         }
         verify(observer).setTransaction(eq("main"))
-        verify(observer).setTrace(argThat { operation == "ui.load" })
+        verify(observer).setTrace(argThat { operation == "ui.load" }, eq(scope))
     }
 
     @Test
@@ -751,7 +752,7 @@ class ScopeTest {
 
         scope.transaction = null
         verify(observer).setTransaction(null)
-        verify(observer).setTrace(null)
+        verify(observer).setTrace(null, scope)
     }
 
     @Test
@@ -767,11 +768,11 @@ class ScopeTest {
             whenever(mock.spanContext).thenReturn(SpanContext("ui.load"))
         }
         verify(observer).setTransaction(eq("main"))
-        verify(observer).setTrace(argThat { operation == "ui.load" })
+        verify(observer).setTrace(argThat { operation == "ui.load" }, eq(scope))
 
         scope.clearTransaction()
         verify(observer).setTransaction(null)
-        verify(observer).setTrace(null)
+        verify(observer).setTrace(null, scope)
     }
 
     @Test
@@ -816,6 +817,21 @@ class ScopeTest {
             argThat {
                 (get("test") as Obj).stuff == 3
             }
+        )
+    }
+
+    @Test
+    fun `Scope set propagation context sync scopes`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            addScopeObserver(observer)
+        }
+        val scope = Scope(options)
+
+        scope.propagationContext = PropagationContext(SentryId("64cf554cc8d74c6eafa3e08b7c984f6d"), SpanId(), null, null, null)
+        verify(observer).setTrace(
+            argThat { traceId.toString() == "64cf554cc8d74c6eafa3e08b7c984f6d" },
+            eq(scope)
         )
     }
 
@@ -1011,6 +1027,17 @@ class ScopeTest {
                 assertEquals("MainActivity", contexts.app?.viewNames?.first())
             }
         )
+    }
+
+    @Test
+    fun `creating a new scope won't crash if max breadcrumbs is set to zero`() {
+        val options = SentryOptions().apply {
+            maxBreadcrumbs = 0
+        }
+        val scope = Scope(options)
+
+        // expect no exception to be thrown
+        // previously was crashing, see https://github.com/getsentry/sentry-java/issues/3313
     }
 
     private fun eventProcessor(): EventProcessor {

@@ -37,7 +37,7 @@ class SentryUserFilterTest {
         id = "user-id"
         ipAddress = "192.168.0.1"
         email = "john.doe@example.com"
-        others = mapOf("key" to "value")
+        data = mapOf("key" to "value")
     }
 
     @Test
@@ -100,17 +100,17 @@ class SentryUserFilterTest {
     }
 
     @Test
-    fun `merges user#others with existing user#others set on SentryEvent`() {
+    fun `merges user#data with existing user#data set on SentryEvent`() {
         val filter = fixture.getSut(
             userProviders = listOf(
                 SentryUserProvider {
                     User().apply {
-                        others = mapOf("key" to "value")
+                        data = mapOf("key" to "value")
                     }
                 },
                 SentryUserProvider {
                     User().apply {
-                        others = mapOf("new-key" to "new-value")
+                        data = mapOf("new-key" to "new-value")
                     }
                 }
             )
@@ -120,7 +120,7 @@ class SentryUserFilterTest {
 
         verify(fixture.scopes).setUser(
             check {
-                assertEquals(mapOf("key" to "value", "new-key" to "new-value"), it.others)
+                assertEquals(mapOf("key" to "value", "new-key" to "new-value"), it.data)
             }
         )
     }
@@ -174,6 +174,6 @@ class SentryUserFilterTest {
         assertEquals(user1.id, user2.id)
         assertEquals(user1.ipAddress, user2.ipAddress)
         assertEquals(user1.email, user2.email)
-        assertEquals(user1.others, user2.others)
+        assertEquals(user1.data, user2.data)
     }
 }

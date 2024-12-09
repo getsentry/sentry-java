@@ -9,14 +9,17 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
-        minSdk = Config.Android.minSdkVersionCompose
+        minSdk = Config.Android.minSdkVersion
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 2
         versionName = project.version.toString()
 
         externalNativeBuild {
             cmake {
-                arguments.add(0, "-DANDROID_STL=c++_shared")
+                // Android 15: As we're using an older version of AGP / NDK, the STL is not 16kb page aligned yet
+                // Our example code doesn't use the STL, so we simply disable it
+                // See https://developer.android.com/guide/practices/page-sizes
+                arguments.add(0, "-DANDROID_STL=none")
             }
         }
 
@@ -92,6 +95,13 @@ android {
             ignore = true
         }
     }
+
+    @Suppress("UnstableApiUsage")
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {
@@ -125,8 +135,8 @@ dependencies {
     implementation(Config.Libs.composeFoundationLayout)
     implementation(Config.Libs.composeNavigation)
     implementation(Config.Libs.composeMaterial)
+    implementation(Config.Libs.composeCoil)
+    implementation(Config.Libs.sentryNativeNdk)
 
     debugImplementation(Config.Libs.leakCanary)
-
-    implementation("io.sentry:sentry-native-ndk:0.7.5")
 }

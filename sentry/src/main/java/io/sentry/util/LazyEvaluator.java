@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import io.sentry.ISentryLifecycleToken;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,8 +11,10 @@ import org.jetbrains.annotations.Nullable;
  */
 @ApiStatus.Internal
 public final class LazyEvaluator<T> {
-  private @Nullable T value = null;
+
+  private volatile @Nullable T value = null;
   private final @NotNull Evaluator<T> evaluator;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   /**
    * Class that evaluates a function lazily. It means the evaluator function is called only when
@@ -24,15 +27,38 @@ public final class LazyEvaluator<T> {
   }
 
   /**
-   * Executes the evaluator function and caches its result, so that it's called only once.
+   * Executes the evaluator function and caches its result, so that it's called only once, unless
+   * resetValue is called.
    *
    * @return The result of the evaluator function.
    */
-  public synchronized @NotNull T getValue() {
+  public @NotNull T getValue() {
     if (value == null) {
-      value = evaluator.evaluate();
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        if (value == null) {
+          value = evaluator.evaluate();
+        }
+      }
     }
+
+    //noinspection DataFlowIssue
     return value;
+  }
+
+  public void setValue(final @Nullable T value) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      this.value = value;
+    }
+  }
+
+  /**
+   * Resets the internal value and forces the evaluator function to be called the next time
+   * getValue() is called.
+   */
+  public void resetValue() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      this.value = null;
+    }
   }
 
   public interface Evaluator<T> {

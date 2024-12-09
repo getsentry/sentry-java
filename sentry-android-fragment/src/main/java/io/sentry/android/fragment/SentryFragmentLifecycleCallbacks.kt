@@ -31,7 +31,7 @@ class SentryFragmentLifecycleCallbacks(
         enableAutoFragmentLifecycleTracing: Boolean
     ) : this(
         scopes = scopes,
-        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.values().toSet()
+        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states
             .takeIf { enableFragmentLifecycleBreadcrumbs }
             .orEmpty(),
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
@@ -42,7 +42,7 @@ class SentryFragmentLifecycleCallbacks(
         enableAutoFragmentLifecycleTracing: Boolean = false
     ) : this(
         scopes = ScopesAdapter.getInstance(),
-        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.values().toSet()
+        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states
             .takeIf { enableFragmentLifecycleBreadcrumbs }
             .orEmpty(),
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
@@ -81,6 +81,9 @@ class SentryFragmentLifecycleCallbacks(
         // we only start the tracing for the fragment if the fragment has been added to its activity
         // and not only to the backstack
         if (fragment.isAdded) {
+            if (scopes.options.isEnableScreenTracking) {
+                scopes.configureScope { it.screen = getFragmentName(fragment) }
+            }
             startTracing(fragment)
         }
     }

@@ -3,9 +3,11 @@ package io.sentry
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.profilemeasurements.ProfileMeasurementValue
 import io.sentry.protocol.Device
+import io.sentry.protocol.ReplayRecordingSerializationTest
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryReplayEventSerializationTest
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import org.junit.After
@@ -370,6 +372,17 @@ class JsonSerializerTest {
     }
 
     @Test
+    fun `session deserializes 32 character id`() {
+        val sessionId = "c81d4e2ebcf211e6869b7df92533d2db"
+        val session = createSessionMockData("c81d4e2ebcf211e6869b7df92533d2db")
+        val jsonSession = serializeToString(session)
+        // reversing, so we can assert values and not a json string
+        val expectedSession = fixture.serializer.deserialize(StringReader(jsonSession), Session::class.java)
+
+        assertSessionData(expectedSession, "c81d4e2ebcf211e6869b7df92533d2db")
+    }
+
+    @Test
     fun `When deserializing an Envelope, all the values should be set to the SentryEnvelope object`() {
         val jsonEnvelope = FileFromResources.invoke("envelope_session.txt")
         val envelope = fixture.serializer.deserializeEnvelope(ByteArrayInputStream(jsonEnvelope.toByteArray(Charsets.UTF_8)))
@@ -443,16 +456,16 @@ class JsonSerializerTest {
 
     @Test
     fun `serializes trace context`() {
-        val traceContext = SentryEnvelopeHeader(null, null, TraceContext(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", "userId", "transaction", "0.5", "true"))
-        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","user_id":"userId","transaction":"transaction","sample_rate":"0.5","sampled":"true"}}"""
+        val traceContext = SentryEnvelopeHeader(null, null, TraceContext(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", "userId", "transaction", "0.5", "true", SentryId("3367f5196c494acaae85bbbd535379aa")))
+        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","user_id":"userId","transaction":"transaction","sample_rate":"0.5","sampled":"true","replay_id":"3367f5196c494acaae85bbbd535379aa"}}"""
         val json = serializeToString(traceContext)
         assertEquals(expected, json)
     }
 
     @Test
     fun `serializes trace context with user having null id`() {
-        val traceContext = SentryEnvelopeHeader(null, null, TraceContext(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", null, "transaction", "0.6", "false"))
-        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction","sample_rate":"0.6","sampled":"false"}}"""
+        val traceContext = SentryEnvelopeHeader(null, null, TraceContext(SentryId("3367f5196c494acaae85bbbd535379ac"), "key", "release", "environment", null, "transaction", "0.6", "false", SentryId("3367f5196c494acaae85bbbd535379aa")))
+        val expected = """{"trace":{"trace_id":"3367f5196c494acaae85bbbd535379ac","public_key":"key","release":"release","environment":"environment","transaction":"transaction","sample_rate":"0.6","sampled":"false","replay_id":"3367f5196c494acaae85bbbd535379aa"}}"""
         val json = serializeToString(traceContext)
         assertEquals(expected, json)
     }
@@ -565,7 +578,7 @@ class JsonSerializerTest {
                 mapOf(
                     "trace_id" to "00000000000000000000000000000000",
                     "relative_cpu_end_ms" to null,
-                    "name" to "",
+                    "name" to "unknown",
                     "relative_start_ns" to 1,
                     "relative_end_ns" to null,
                     "id" to "00000000000000000000000000000000",
@@ -574,7 +587,7 @@ class JsonSerializerTest {
                 mapOf(
                     "trace_id" to "00000000000000000000000000000000",
                     "relative_cpu_end_ms" to null,
-                    "name" to "",
+                    "name" to "unknown",
                     "relative_start_ns" to 2,
                     "relative_end_ns" to null,
                     "id" to "00000000000000000000000000000000",
@@ -853,8 +866,6 @@ class JsonSerializerTest {
         assertNotNull(element["spans"] as List<*>)
         assertEquals("myValue", (element["tags"] as Map<*, *>)["myTag"] as String)
 
-        assertEquals("dataValue", (element["extra"] as Map<*, *>)["dataKey"] as String)
-
         val jsonSpan = (element["spans"] as List<*>)[0] as Map<*, *>
         assertNotNull(jsonSpan["trace_id"])
         assertNotNull(jsonSpan["span_id"])
@@ -865,6 +876,7 @@ class JsonSerializerTest {
         assertNotNull(jsonSpan["start_timestamp"])
 
         val jsonTrace = (element["contexts"] as Map<*, *>)["trace"] as Map<*, *>
+        assertEquals("dataValue", (jsonTrace["data"] as Map<*, *>)["dataKey"] as String)
         assertNotNull(jsonTrace["trace_id"] as String)
         assertNotNull(jsonTrace["span_id"] as String)
         assertEquals("http", jsonTrace["op"] as String)
@@ -885,7 +897,10 @@ class JsonSerializerTest {
                               "trace_id": "b156a475de54423d9c1571df97ec7eb6",
                               "span_id": "0a53026963414893",
                               "op": "http",
-                              "status": "ok"
+                              "status": "ok",
+                              "data": {
+                                "transactionDataKey": "transactionDataValue"
+                              }
                             },
                             "custom": {
                               "some-key": "some-value"
@@ -926,6 +941,7 @@ class JsonSerializerTest {
         assertEquals("0a53026963414893", transaction.contexts.trace!!.spanId.toString())
         assertEquals("http", transaction.contexts.trace!!.operation)
         assertNotNull(transaction.contexts["custom"])
+        assertEquals("transactionDataValue", transaction.contexts.trace!!.data!!["transactionDataKey"])
         assertEquals("some-value", (transaction.contexts["custom"] as Map<*, *>)["some-key"])
 
         assertEquals("extraValue", transaction.getExtra("extraKey"))
@@ -1229,9 +1245,23 @@ class JsonSerializerTest {
         )
     }
 
-    private fun assertSessionData(expectedSession: Session?) {
+    @Test
+    fun `ser deser replay data`() {
+        val replayEvent = SentryReplayEventSerializationTest.Fixture().getSut()
+        val replayRecording = ReplayRecordingSerializationTest.Fixture().getSut()
+        val serializedEvent = serializeToString(replayEvent)
+        val serializedRecording = serializeToString(replayRecording)
+
+        val deserializedEvent = fixture.serializer.deserialize(StringReader(serializedEvent), SentryReplayEvent::class.java)
+        val deserializedRecording = fixture.serializer.deserialize(StringReader(serializedRecording), ReplayRecording::class.java)
+
+        assertEquals(replayEvent, deserializedEvent)
+        assertEquals(replayRecording, deserializedRecording)
+    }
+
+    private fun assertSessionData(expectedSession: Session?, expectedSessionId: String = "c81d4e2e-bcf2-11e6-869b-7df92533d2db") {
         assertNotNull(expectedSession)
-        assertEquals(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"), expectedSession.sessionId)
+        assertEquals(expectedSessionId, expectedSession.sessionId)
         assertEquals("123", expectedSession.distinctId)
         assertTrue(expectedSession.init!!)
         assertEquals("2020-02-07T14:16:00.000Z", DateUtils.getTimestamp(expectedSession.started!!))
@@ -1261,14 +1291,14 @@ class JsonSerializerTest {
     private fun generateEmptySentryEvent(date: Date = Date()): SentryEvent =
         SentryEvent(date)
 
-    private fun createSessionMockData(): Session =
+    private fun createSessionMockData(sessionId: String = "c81d4e2e-bcf2-11e6-869b-7df92533d2db"): Session =
         Session(
             Session.State.Ok,
             DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
             DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            sessionId,
             true,
             123456.toLong(),
             6000.toDouble(),

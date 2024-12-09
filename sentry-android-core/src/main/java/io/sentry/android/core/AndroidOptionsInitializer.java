@@ -8,6 +8,7 @@ import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.ScopeType;
@@ -19,10 +20,12 @@ import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
-import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
+import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
+import io.sentry.android.replay.DefaultReplayBreadcrumbConverter;
+import io.sentry.android.replay.ReplayIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
@@ -30,6 +33,7 @@ import io.sentry.compose.gestures.ComposeGestureTargetLocator;
 import io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
+import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
@@ -88,10 +92,7 @@ final class AndroidOptionsInitializer {
       final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The context is required.");
 
-    // it returns null if ContextImpl, so let's check for nullability
-    if (context.getApplicationContext() != null) {
-      context = context.getApplicationContext();
-    }
+    context = ContextUtils.getApplicationContext(context);
 
     Objects.requireNonNull(options, "The options object is required.");
     Objects.requireNonNull(logger, "The ILogger object is required.");
@@ -158,7 +159,7 @@ final class AndroidOptionsInitializer {
     // Check if the profiler was already instantiated in the app start.
     // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
     // state of the profiler, and it's only possible retaining the instance.
-    synchronized (AppStartMetrics.getInstance()) {
+    try (final @NotNull ISentryLifecycleToken ignored = AppStartMetrics.staticLock.acquire()) {
       final @Nullable ITransactionProfiler appStartProfiler =
           AppStartMetrics.getInstance().getAppStartProfiler();
       if (appStartProfiler != null) {
@@ -208,11 +209,10 @@ final class AndroidOptionsInitializer {
       options.setViewHierarchyExporters(viewHierarchyExporters);
     }
 
-    options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
+    options.setThreadChecker(AndroidThreadChecker.getInstance());
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
-      options.addPerformanceCollector(
-          new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
+      options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
 
       if (options.isEnablePerformanceV2()) {
         options.addPerformanceCollector(
@@ -240,7 +240,8 @@ final class AndroidOptionsInitializer {
       final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
+      final boolean isTimberAvailable,
+      final boolean isReplayAvailable) {
 
     // Integration MUST NOT cache option values in ctor, as they will be configured later by the
     // user
@@ -305,6 +306,13 @@ final class AndroidOptionsInitializer {
         new NetworkBreadcrumbsIntegration(context, buildInfoProvider, options.getLogger()));
     options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
     options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
+    if (isReplayAvailable) {
+      final ReplayIntegration replay =
+          new ReplayIntegration(context, CurrentDateProvider.getInstance());
+      replay.setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter());
+      options.addIntegration(replay);
+      options.setReplayController(replay);
+    }
   }
 
   /**

@@ -1,8 +1,10 @@
 package io.sentry.spring.boot.jakarta.it
 
+import io.sentry.DefaultSpanFactory
 import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
+import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.checkTransaction
 import io.sentry.spring.jakarta.tracing.SentrySpan
@@ -223,6 +225,12 @@ open class App {
 
     @Bean
     open fun mockTransport() = transport
+
+    @Bean
+    open fun optionsCallback() = Sentry.OptionsConfiguration<SentryOptions> { options ->
+        // due to OTel being on the classpath we need to set the default again
+        options.spanFactory = DefaultSpanFactory()
+    }
 }
 
 @RestController

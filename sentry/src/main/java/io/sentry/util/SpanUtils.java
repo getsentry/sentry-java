@@ -13,13 +13,14 @@ public final class SpanUtils {
    *
    * @return a list of span origins to be ignored
    */
-  public static @NotNull List<String> ignoredSpanOriginsForOpenTelemetry() {
+  public static @NotNull List<String> ignoredSpanOriginsForOpenTelemetry(final boolean isAgent) {
     final @NotNull List<String> origins = new ArrayList<>();
 
     origins.add("auto.http.spring_jakarta.webmvc");
     origins.add("auto.http.spring.webmvc");
     origins.add("auto.spring_jakarta.webflux");
     origins.add("auto.spring.webflux");
+    origins.add("auto.db.jdbc");
     origins.add("auto.http.spring_jakarta.webclient");
     origins.add("auto.http.spring.webclient");
     origins.add("auto.http.spring_jakarta.restclient");
@@ -27,8 +28,11 @@ public final class SpanUtils {
     origins.add("auto.http.spring_jakarta.resttemplate");
     origins.add("auto.http.spring.resttemplate");
     origins.add("auto.http.openfeign");
-    origins.add("auto.graphql.graphql");
-    origins.add("auto.db.jdbc");
+
+    if (isAgent) {
+      origins.add("auto.graphql.graphql");
+      origins.add("auto.graphql.graphql22");
+    }
 
     return origins;
   }

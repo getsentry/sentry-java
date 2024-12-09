@@ -154,6 +154,10 @@ public interface ISentryClient {
     return captureException(throwable, scope, null);
   }
 
+  @NotNull
+  SentryId captureReplayEvent(
+      @NotNull SentryReplayEvent event, @Nullable IScope scope, @Nullable Hint hint);
+
   /**
    * Captures a manually created user feedback and sends it to Sentry.
    *
@@ -285,8 +289,4 @@ public interface ISentryClient {
   default boolean isHealthy() {
     return true;
   }
-
-  @ApiStatus.Internal
-  @NotNull
-  IMetricsAggregator getMetricsAggregator();
 }

@@ -8,6 +8,7 @@ import ch.qos.logback.core.encoder.Encoder
 import ch.qos.logback.core.encoder.EncoderBase
 import ch.qos.logback.core.status.Status
 import io.sentry.ITransportFactory
+import io.sentry.InitPriority
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -88,7 +89,7 @@ class SentryAppenderTest {
     }
 
     @Test
-    fun `does not initialize Sentry if Sentry is already enabled`() {
+    fun `does not initialize Sentry if Sentry is already enabled with higher prio`() {
         fixture = Fixture(
             startLater = true,
             options = SentryOptions().also {
@@ -101,6 +102,7 @@ class SentryAppenderTest {
             it.setTransportFactory(fixture.transportFactory)
             it.setTag("tag-from-first-init", "some-value")
             it.isEnableBackpressureHandling = false
+            it.initPriority = InitPriority.LOW
         }
         fixture.start()
 

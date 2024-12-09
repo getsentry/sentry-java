@@ -14,7 +14,6 @@ import io.sentry.protocol.Gpu;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
-import io.sentry.protocol.MetricSummary;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkInfo;
@@ -30,6 +29,13 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
+import io.sentry.rrweb.RRWebBreadcrumbEvent;
+import io.sentry.rrweb.RRWebEventType;
+import io.sentry.rrweb.RRWebInteractionEvent;
+import io.sentry.rrweb.RRWebInteractionMoveEvent;
+import io.sentry.rrweb.RRWebMetaEvent;
+import io.sentry.rrweb.RRWebSpanEvent;
+import io.sentry.rrweb.RRWebVideoEvent;
 import io.sentry.util.Objects;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
@@ -82,7 +88,6 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(MeasurementValue.class, new MeasurementValue.Deserializer());
     deserializersByClass.put(Mechanism.class, new Mechanism.Deserializer());
     deserializersByClass.put(Message.class, new Message.Deserializer());
-    deserializersByClass.put(MetricSummary.class, new MetricSummary.Deserializer());
     deserializersByClass.put(OperatingSystem.class, new OperatingSystem.Deserializer());
     deserializersByClass.put(ProfilingTraceData.class, new ProfilingTraceData.Deserializer());
     deserializersByClass.put(
@@ -91,6 +96,15 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(
         ProfileMeasurementValue.class, new ProfileMeasurementValue.Deserializer());
     deserializersByClass.put(Request.class, new Request.Deserializer());
+    deserializersByClass.put(ReplayRecording.class, new ReplayRecording.Deserializer());
+    deserializersByClass.put(RRWebBreadcrumbEvent.class, new RRWebBreadcrumbEvent.Deserializer());
+    deserializersByClass.put(RRWebEventType.class, new RRWebEventType.Deserializer());
+    deserializersByClass.put(RRWebInteractionEvent.class, new RRWebInteractionEvent.Deserializer());
+    deserializersByClass.put(
+        RRWebInteractionMoveEvent.class, new RRWebInteractionMoveEvent.Deserializer());
+    deserializersByClass.put(RRWebMetaEvent.class, new RRWebMetaEvent.Deserializer());
+    deserializersByClass.put(RRWebSpanEvent.class, new RRWebSpanEvent.Deserializer());
+    deserializersByClass.put(RRWebVideoEvent.class, new RRWebVideoEvent.Deserializer());
     deserializersByClass.put(SdkInfo.class, new SdkInfo.Deserializer());
     deserializersByClass.put(SdkVersion.class, new SdkVersion.Deserializer());
     deserializersByClass.put(SentryEnvelopeHeader.class, new SentryEnvelopeHeader.Deserializer());
@@ -103,6 +117,7 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(SentryLockReason.class, new SentryLockReason.Deserializer());
     deserializersByClass.put(SentryPackage.class, new SentryPackage.Deserializer());
     deserializersByClass.put(SentryRuntime.class, new SentryRuntime.Deserializer());
+    deserializersByClass.put(SentryReplayEvent.class, new SentryReplayEvent.Deserializer());
     deserializersByClass.put(SentrySpan.class, new SentrySpan.Deserializer());
     deserializersByClass.put(SentryStackFrame.class, new SentryStackFrame.Deserializer());
     deserializersByClass.put(SentryStackTrace.class, new SentryStackTrace.Deserializer());

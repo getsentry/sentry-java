@@ -11,18 +11,18 @@ import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.ManifestModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
-import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.DebugMetaPropertiesApplier;
 import io.sentry.util.FileUtils;
 import io.sentry.util.InitUtil;
 import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
-import io.sentry.util.thread.IMainThreadChecker;
-import io.sentry.util.thread.MainThreadChecker;
-import io.sentry.util.thread.NoOpMainThreadChecker;
+import io.sentry.util.thread.IThreadChecker;
+import io.sentry.util.thread.NoOpThreadChecker;
+import io.sentry.util.thread.ThreadChecker;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -75,6 +75,8 @@ public final class Sentry {
 
   /** Timestamp used to check old profiles to delete. */
   private static final long classCreationTimestamp = System.currentTimeMillis();
+
+  private static final AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   /**
    * Returns the current (threads) hub, if none, clones the rootScopes and returns it.
@@ -262,72 +264,95 @@ public final class Sentry {
    * @param options options the SentryOptions
    * @param globalHubMode the globalHubMode
    */
-  @SuppressWarnings("deprecation")
-  private static synchronized void init(
-      final @NotNull SentryOptions options, final boolean globalHubMode) {
+  @SuppressWarnings({
+    "deprecation",
+    "Convert2MethodRef",
+    "FutureReturnValueIgnored"
+  }) // older AGP versions do not support method references
+  private static void init(final @NotNull SentryOptions options, final boolean globalHubMode) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (!options.getClass().getName().equals("io.sentry.android.core.SentryAndroidOptions")
+          && Platform.isAndroid()) {
+        throw new IllegalArgumentException(
+            "You are running Android. Please, use SentryAndroid.init. "
+                + options.getClass().getName());
+      }
 
-    if (!options.getClass().getName().equals("io.sentry.android.core.SentryAndroidOptions")
-        && Platform.isAndroid()) {
-      throw new IllegalArgumentException(
-          "You are running Android. Please, use SentryAndroid.init. "
-              + options.getClass().getName());
-    }
+      if (!preInitConfigurations(options)) {
+        return;
+      }
 
-    if (!preInitConfigurations(options)) {
-      return;
-    }
+      final @Nullable Boolean globalHubModeFromOptions = options.isGlobalHubMode();
+      final boolean globalHubModeToUse =
+          globalHubModeFromOptions != null ? globalHubModeFromOptions : globalHubMode;
+      options
+          .getLogger()
+          .log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubModeToUse));
+      Sentry.globalHubMode = globalHubModeToUse;
+      final boolean shouldInit =
+          InitUtil.shouldInit(globalScope.getOptions(), options, isEnabled());
+      if (shouldInit) {
+        if (isEnabled()) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Sentry has been already initialized. Previous configuration will be overwritten.");
+        }
 
-    options.getLogger().log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubMode));
-    Sentry.globalHubMode = globalHubMode;
-    final boolean shouldInit = InitUtil.shouldInit(globalScope.getOptions(), options, isEnabled());
-    if (shouldInit) {
-      if (isEnabled()) {
+        // load lazy fields of the options in a separate thread
+        try {
+          options.getExecutorService().submit(() -> options.loadLazyFields());
+        } catch (RejectedExecutionException e) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Failed to call the executor. Lazy fields will not be loaded. Did you call Sentry.close()?",
+                  e);
+        }
+
+        final IScopes scopes = getCurrentScopes();
+        scopes.close(true);
+
+        globalScope.replaceOptions(options);
+
+        final IScope rootScope = new Scope(options);
+        final IScope rootIsolationScope = new Scope(options);
+        rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
+
+        getScopesStorage().set(rootScopes);
+
+        initConfigurations(options);
+
+        globalScope.bindClient(new SentryClient(options));
+
+        // If the executorService passed in the init is the same that was previously closed, we have
+        // to
+        // set a new one
+        if (options.getExecutorService().isClosed()) {
+          options.setExecutorService(new SentryExecutorService());
+        }
+        // when integrations are registered on Scopes ctor and async integrations are fired,
+        // it might and actually happened that integrations called captureSomething
+        // and Scopes was still NoOp.
+        // Registering integrations here make sure that Scopes is already created.
+        for (final Integration integration : options.getIntegrations()) {
+          integration.register(ScopesAdapter.getInstance(), options);
+        }
+
+        notifyOptionsObservers(options);
+
+        finalizePreviousSession(options, ScopesAdapter.getInstance());
+
+        handleAppStartProfilingConfig(options, options.getExecutorService());
+      } else {
         options
             .getLogger()
             .log(
                 SentryLevel.WARNING,
-                "Sentry has been already initialized. Previous configuration will be overwritten.");
+                "This init call has been ignored due to priority being too low.");
       }
-      globalScope.replaceOptions(options);
-
-      final IScopes scopes = getCurrentScopes();
-      final IScope rootScope = new Scope(options);
-      final IScope rootIsolationScope = new Scope(options);
-      rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
-
-      getScopesStorage().set(rootScopes);
-
-      scopes.close(true);
-
-      initConfigurations(options);
-
-      globalScope.bindClient(new SentryClient(options));
-
-      // If the executorService passed in the init is the same that was previously closed, we have
-      // to
-      // set a new one
-      if (options.getExecutorService().isClosed()) {
-        options.setExecutorService(new SentryExecutorService());
-      }
-      // when integrations are registered on Scopes ctor and async integrations are fired,
-      // it might and actually happened that integrations called captureSomething
-      // and Scopes was still NoOp.
-      // Registering integrations here make sure that Scopes is already created.
-      for (final Integration integration : options.getIntegrations()) {
-        integration.register(ScopesAdapter.getInstance(), options);
-      }
-
-      notifyOptionsObservers(options);
-
-      finalizePreviousSession(options, ScopesAdapter.getInstance());
-
-      handleAppStartProfilingConfig(options, options.getExecutorService());
-    } else {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "This init call has been ignored due to priority being too low.");
     }
   }
 
@@ -425,6 +450,8 @@ public final class Sentry {
                   observer.setDist(options.getDist());
                   observer.setEnvironment(options.getEnvironment());
                   observer.setTags(options.getTags());
+                  observer.setReplayErrorSampleRate(
+                      options.getExperimental().getSessionReplay().getOnErrorSampleRate());
                 }
               });
     } catch (Throwable e) {
@@ -447,8 +474,8 @@ public final class Sentry {
           "DSN is required. Use empty string or set enabled to false in SentryOptions to disable SDK.");
     }
 
-    @SuppressWarnings("unused")
-    final Dsn parsedDsn = new Dsn(dsn);
+    // This creates the DSN object and performs some checks
+    options.retrieveParsedDsn();
 
     return true;
   }
@@ -537,10 +564,10 @@ public final class Sentry {
     final @Nullable List<Properties> propertiesList = options.getDebugMetaLoader().loadDebugMeta();
     DebugMetaPropertiesApplier.applyToOptions(options, propertiesList);
 
-    final IMainThreadChecker mainThreadChecker = options.getMainThreadChecker();
-    // only override the MainThreadChecker if it's not already set by Android
-    if (mainThreadChecker instanceof NoOpMainThreadChecker) {
-      options.setMainThreadChecker(MainThreadChecker.getInstance());
+    final IThreadChecker threadChecker = options.getThreadChecker();
+    // only override the ThreadChecker if it's not already set by Android
+    if (threadChecker instanceof NoOpThreadChecker) {
+      options.setThreadChecker(ThreadChecker.getInstance());
     }
 
     if (options.getPerformanceCollectors().isEmpty()) {
@@ -554,12 +581,14 @@ public final class Sentry {
   }
 
   /** Close the SDK */
-  public static synchronized void close() {
-    final IScopes scopes = getCurrentScopes();
-    rootScopes = NoOpScopes.getInstance();
-    // remove thread local to avoid memory leak
-    getScopesStorage().close();
-    scopes.close(false);
+  public static void close() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      final IScopes scopes = getCurrentScopes();
+      rootScopes = NoOpScopes.getInstance();
+      // remove thread local to avoid memory leak
+      getScopesStorage().close();
+      scopes.close(false);
+    }
   }
 
   /**
@@ -1021,19 +1050,6 @@ public final class Sentry {
   }
 
   /**
-   * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
-   * &lt;meta&gt; HTML tags. Also see {@link Sentry#getBaggage()}.
-   *
-   * @deprecated please use {@link Sentry#getTraceparent()} instead.
-   * @return sentry trace header or null
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static @Nullable SentryTraceHeader traceHeaders() {
-    return getCurrentScopes().traceHeaders();
-  }
-
-  /**
    * Gets the current active transaction or span.
    *
    * @return the active span or null when no active transaction is running. In case of
@@ -1044,10 +1060,7 @@ public final class Sentry {
     if (globalHubMode && Platform.isAndroid()) {
       return getCurrentScopes().getTransaction();
     } else {
-      return getCurrentScopes()
-          .getOptions()
-          .getSpanFactory()
-          .retrieveCurrentSpan(getCurrentScopes());
+      return getCurrentScopes().getSpan();
     }
   }
 
@@ -1075,22 +1088,6 @@ public final class Sentry {
    */
   public static void reportFullyDisplayed() {
     getCurrentScopes().reportFullyDisplayed();
-  }
-
-  /**
-   * @deprecated See {@link Sentry#reportFullyDisplayed()}.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static void reportFullDisplayed() {
-    reportFullyDisplayed();
-  }
-
-  /** the metrics API for the current Scopes */
-  @NotNull
-  @ApiStatus.Experimental
-  public static MetricsApi metrics() {
-    return getCurrentScopes().metrics();
   }
 
   /**

@@ -37,7 +37,7 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 }
 
 public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/IPerformanceSnapshotCollector {
-	public fun <init> (Lio/sentry/ILogger;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun <init> (Lio/sentry/ILogger;)V
 	public fun collect (Lio/sentry/PerformanceCollectionData;)V
 	public fun setup ()V
 }
@@ -63,7 +63,8 @@ public class io/sentry/android/core/AndroidMemoryCollector : io/sentry/IPerforma
 }
 
 public class io/sentry/android/core/AndroidProfiler {
-	public fun <init> (Ljava/lang/String;ILio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ISentryExecutorService;Lio/sentry/ILogger;Lio/sentry/android/core/BuildInfoProvider;)V
+	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
+	public fun <init> (Ljava/lang/String;ILio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ISentryExecutorService;Lio/sentry/ILogger;)V
 	public fun close ()V
 	public fun endAndCollect (ZLjava/util/List;)Lio/sentry/android/core/AndroidProfiler$ProfileEndData;
 	public fun start ()Lio/sentry/android/core/AndroidProfiler$ProfileStartData;
@@ -159,6 +160,7 @@ public final class io/sentry/android/core/BuildInfoProvider {
 }
 
 public final class io/sentry/android/core/ContextUtils {
+	public static fun getApplicationContext (Landroid/content/Context;)Landroid/content/Context;
 	public static fun isForegroundImportance ()Z
 }
 
@@ -185,13 +187,16 @@ public final class io/sentry/android/core/CurrentActivityIntegration : android/a
 public final class io/sentry/android/core/DeviceInfoUtil {
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun collectDeviceInformation (ZZ)Lio/sentry/protocol/Device;
+	public static fun getBatteryLevel (Landroid/content/Intent;Lio/sentry/SentryOptions;)Ljava/lang/Float;
 	public static fun getInstance (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/DeviceInfoUtil;
 	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
 	public fun getSideLoadedInfo ()Lio/sentry/android/core/ContextUtils$SideLoadedInfo;
+	public static fun isCharging (Landroid/content/Intent;Lio/sentry/SentryOptions;)Ljava/lang/Boolean;
 	public static fun resetInstance ()V
 }
 
 public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : io/sentry/Integration, java/io/Closeable {
+	protected final field startLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> ()V
 	public fun close ()V
 	public static fun getOutboxFileObserver ()Lio/sentry/android/core/EnvelopeFileObserverIntegration;
@@ -265,7 +270,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
 	public fun getNativeSdkName ()Ljava/lang/String;
-	public fun getProfilingTracesIntervalMillis ()I
 	public fun getStartupCrashDurationThresholdMillis ()J
 	public fun isAnrEnabled ()Z
 	public fun isAnrReportInDebug ()Z
@@ -310,7 +314,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
-	public fun setProfilingTracesIntervalMillis (I)V
 	public fun setReportHistoricalAnrs (Z)V
 }
 
@@ -353,6 +356,7 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 }
 
 public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerformanceContinuousCollector, io/sentry/android/core/internal/util/SentryFrameMetricsCollector$FrameMetricsCollectorListener {
+	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
 	public fun clear ()V
 	public fun onFrameMetricCollected (JJJJZZF)V
@@ -394,10 +398,10 @@ public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentr
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 	public static fun snapshotViewHierarchy (Landroid/app/Activity;Lio/sentry/ILogger;)Lio/sentry/protocol/ViewHierarchy;
-	public static fun snapshotViewHierarchy (Landroid/app/Activity;Ljava/util/List;Lio/sentry/util/thread/IMainThreadChecker;Lio/sentry/ILogger;)Lio/sentry/protocol/ViewHierarchy;
+	public static fun snapshotViewHierarchy (Landroid/app/Activity;Ljava/util/List;Lio/sentry/util/thread/IThreadChecker;Lio/sentry/ILogger;)Lio/sentry/protocol/ViewHierarchy;
 	public static fun snapshotViewHierarchy (Landroid/view/View;)Lio/sentry/protocol/ViewHierarchy;
 	public static fun snapshotViewHierarchy (Landroid/view/View;Ljava/util/List;)Lio/sentry/protocol/ViewHierarchy;
-	public static fun snapshotViewHierarchyAsData (Landroid/app/Activity;Lio/sentry/util/thread/IMainThreadChecker;Lio/sentry/ISerializer;Lio/sentry/ILogger;)[B
+	public static fun snapshotViewHierarchyAsData (Landroid/app/Activity;Lio/sentry/util/thread/IThreadChecker;Lio/sentry/ISerializer;Lio/sentry/ILogger;)[B
 }
 
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {
@@ -428,7 +432,8 @@ public class io/sentry/android/core/performance/ActivityLifecycleTimeSpan : java
 	public final fun getOnStart ()Lio/sentry/android/core/performance/TimeSpan;
 }
 
-public class io/sentry/android/core/performance/AppStartMetrics {
+public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapter {
+	public static final field staticLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> ()V
 	public fun addActivityLifecycleTimeSpans (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)V
 	public fun clear ()V
@@ -444,10 +449,13 @@ public class io/sentry/android/core/performance/AppStartMetrics {
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
 	public fun getSdkInitTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun isAppLaunchedInForeground ()Z
+	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public static fun onApplicationCreate (Landroid/app/Application;)V
 	public static fun onApplicationPostCreate (Landroid/app/Application;)V
 	public static fun onContentProviderCreate (Landroid/content/ContentProvider;)V
 	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
+	public fun registerApplicationForegroundCheck (Landroid/app/Application;)V
+	public fun setAppLaunchedInForeground (Z)V
 	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V

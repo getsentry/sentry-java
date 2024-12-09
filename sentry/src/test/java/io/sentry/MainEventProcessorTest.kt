@@ -603,6 +603,22 @@ class MainEventProcessorTest {
         }
     }
 
+    @Test
+    fun `enriches ReplayEvent`() {
+        val sut = fixture.getSut(tags = mapOf("tag1" to "value1"))
+
+        var replayEvent = SentryReplayEvent()
+        replayEvent = sut.process(replayEvent, Hint())
+
+        assertEquals("release", replayEvent.release)
+        assertEquals("environment", replayEvent.environment)
+        assertEquals("dist", replayEvent.dist)
+        assertEquals("1.2.3", replayEvent.sdk!!.version)
+        assertEquals("test", replayEvent.sdk!!.name)
+        assertEquals("java", replayEvent.platform)
+        assertEquals("value1", replayEvent.tags!!["tag1"])
+    }
+
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) =
         SentryEvent().apply {
             val mockThrowable = mock<Throwable>()

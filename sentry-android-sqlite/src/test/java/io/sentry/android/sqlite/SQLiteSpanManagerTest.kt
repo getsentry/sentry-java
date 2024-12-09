@@ -1,5 +1,6 @@
 package io.sentry.android.sqlite
 
+import android.database.CrossProcessCursor
 import android.database.SQLException
 import io.sentry.IScopes
 import io.sentry.SentryIntegrationPackageStorage
@@ -8,13 +9,14 @@ import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
-import io.sentry.util.thread.IMainThreadChecker
+import io.sentry.util.thread.IThreadChecker
 import org.junit.Before
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -96,8 +98,8 @@ class SQLiteSpanManagerTest {
     fun `when performSql runs in background blocked_main_thread is false and no stack trace is attached`() {
         val sut = fixture.getSut()
 
-        fixture.options.mainThreadChecker = mock<IMainThreadChecker>()
-        whenever(fixture.options.mainThreadChecker.isMainThread).thenReturn(false)
+        fixture.options.threadChecker = mock<IThreadChecker>()
+        whenever(fixture.options.threadChecker.isMainThread).thenReturn(false)
 
         sut.performSql("sql") {}
         val span = fixture.sentryTracer.children.first()
@@ -110,8 +112,8 @@ class SQLiteSpanManagerTest {
     fun `when performSql runs in foreground blocked_main_thread is true and a stack trace is attached`() {
         val sut = fixture.getSut()
 
-        fixture.options.mainThreadChecker = mock<IMainThreadChecker>()
-        whenever(fixture.options.mainThreadChecker.isMainThread).thenReturn(true)
+        fixture.options.threadChecker = mock<IThreadChecker>()
+        whenever(fixture.options.threadChecker.isMainThread).thenReturn(true)
 
         sut.performSql("sql") {}
         val span = fixture.sentryTracer.children.first()
@@ -139,5 +141,18 @@ class SQLiteSpanManagerTest {
         val span = fixture.sentryTracer.children.first()
 
         assertEquals(span.data[SpanDataConvention.DB_SYSTEM_KEY], "in-memory")
+    }
+
+    @Test
+    fun `when performSql returns a CrossProcessCursor, does not start a span and returns a SentryCrossProcessCursor`() {
+        val sut = fixture.getSut()
+
+        // When performSql returns a CrossProcessCursor
+        val result = sut.performSql("sql") { mock<CrossProcessCursor>() }
+
+        // Returns a SentryCrossProcessCursor
+        assertIs<SentryCrossProcessCursor>(result)
+        // And no span is started
+        assertNull(fixture.sentryTracer.children.firstOrNull())
     }
 }

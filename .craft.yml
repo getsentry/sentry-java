@@ -47,6 +47,8 @@ targets:
       maven:io.sentry:sentry-apollo:
       maven:io.sentry:sentry-jdbc:
       maven:io.sentry:sentry-graphql:
+#      maven:io.sentry:sentry-graphql-core:
+#      maven:io.sentry:sentry-graphql-22:
       maven:io.sentry:sentry-quartz:
       maven:io.sentry:sentry-okhttp:
       maven:io.sentry:sentry-android-navigation:
@@ -55,3 +57,4 @@ targets:
       maven:io.sentry:sentry-compose-desktop:
       maven:io.sentry:sentry-apollo-3:
       maven:io.sentry:sentry-android-sqlite:
+      maven:io.sentry:sentry-android-replay:

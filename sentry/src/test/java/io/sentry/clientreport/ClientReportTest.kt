@@ -10,12 +10,14 @@ import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.NoOpLogger
 import io.sentry.ProfilingTraceData
+import io.sentry.ReplayRecording
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent
 import io.sentry.SentryTracer
 import io.sentry.Session
 import io.sentry.TracesSamplingDecision
@@ -24,7 +26,6 @@ import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.UserFeedback
 import io.sentry.dsnString
 import io.sentry.hints.Retryable
-import io.sentry.metrics.EncodedMetrics
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
@@ -71,7 +72,7 @@ class ClientReportTest {
             SentryEnvelopeItem.fromAttachment(opts.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000),
             SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, opts.serializer),
             SentryEnvelopeItem.fromCheckIn(opts.serializer, CheckIn("monitor-slug-1", CheckInStatus.ERROR)),
-            SentryEnvelopeItem.fromMetrics(EncodedMetrics(emptyMap()))
+            SentryEnvelopeItem.fromReplay(opts.serializer, opts.logger, SentryReplayEvent(), ReplayRecording(), false)
         )
 
         clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
@@ -89,7 +90,7 @@ class ClientReportTest {
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Attachment, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Profile, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Monitor, 1, clientReportAtEnd)
-        testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.MetricBucket, 1, clientReportAtEnd)
+        testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Replay, 1, clientReportAtEnd)
     }
 
     @Test

@@ -7,7 +7,7 @@ import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
+import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -58,7 +58,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
       try {
         Class.forName("androidx.lifecycle.DefaultLifecycleObserver");
         Class.forName("androidx.lifecycle.ProcessLifecycleOwner");
-        if (AndroidMainThreadChecker.getInstance().isMainThread()) {
+        if (AndroidThreadChecker.getInstance().isMainThread()) {
           addObserver(scopes);
         } else {
           // some versions of the androidx lifecycle-process require this to be executed on the main
@@ -96,7 +96,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     try {
       ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
       options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("AppLifecycle");
     } catch (Throwable e) {
       // This is to handle a potential 'AbstractMethodError' gracefully. The error is triggered in
       // connection with conflicting dependencies of the androidx.lifecycle.
@@ -127,7 +127,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     if (watcher == null) {
       return;
     }
-    if (AndroidMainThreadChecker.getInstance().isMainThread()) {
+    if (AndroidThreadChecker.getInstance().isMainThread()) {
       removeObserver();
     } else {
       // some versions of the androidx lifecycle-process require this to be executed on the main

@@ -1,6 +1,7 @@
 package io.sentry.log4j2
 
 import io.sentry.ITransportFactory
+import io.sentry.InitPriority
 import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.SentryLevel
@@ -82,12 +83,13 @@ class SentryAppenderTest {
     }
 
     @Test
-    fun `does not initialize Sentry if Sentry is already enabled`() {
+    fun `does not initialize Sentry if Sentry is already enabled with higher prio`() {
         Sentry.init {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
             it.setTransportFactory(fixture.transportFactory)
             it.isEnableBackpressureHandling = false
+            it.initPriority = InitPriority.LOW
         }
         val logger = fixture.getSut()
         logger.error("testing environment field")

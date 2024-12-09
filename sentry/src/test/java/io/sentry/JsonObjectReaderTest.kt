@@ -205,48 +205,6 @@ class JsonObjectReaderTest {
         verify(fixture.logger, never()).log(any(), any(), any<Throwable>())
     }
 
-    // nextMapOfListOrNull
-
-    @Test
-    fun `returns null for null map list`() {
-        val jsonString = "{\"metrics_summary\": null}"
-        val reader = fixture.getSut(jsonString)
-        reader.beginObject()
-        reader.nextName()
-
-        assertNull(reader.nextMapOfListOrNull(fixture.logger, Deserializable.Deserializer()))
-    }
-
-    @Test
-    fun `returns empty list for map with empty list`() {
-        val jsonString = "{\"metrics_summary\": { \"metric_a\": [] }}"
-        val reader = fixture.getSut(jsonString)
-        reader.beginObject()
-        reader.nextName()
-
-        val expected = mapOf(
-            "metric_a" to emptyList<Deserializable>()
-        )
-        val actual = reader.nextMapOfListOrNull(fixture.logger, Deserializable.Deserializer())
-        assertEquals(expected, actual)
-        verify(fixture.logger, never()).log(any(), any(), any<Throwable>())
-    }
-
-    @Test
-    fun `returns list for map with one item`() {
-        val jsonString = "{\"metrics_summary\": { \"metric_a\": [{\"foo\": \"foo\", \"bar\": \"bar\"" + "}]}}"
-        val reader = fixture.getSut(jsonString)
-        reader.beginObject()
-        reader.nextName()
-
-        val expected = mapOf(
-            "metric_a" to listOf(Deserializable("foo", "bar"))
-        )
-        val actual = reader.nextMapOfListOrNull(fixture.logger, Deserializable.Deserializer())
-        assertEquals(expected, actual)
-        verify(fixture.logger, never()).log(any(), any(), any<Throwable>())
-    }
-
     // nextDateOrNull
 
     @Test
@@ -327,7 +285,7 @@ class JsonObjectReaderTest {
         var bar: String? = null
     ) {
         class Deserializer : JsonDeserializer<Deserializable> {
-            override fun deserialize(reader: JsonObjectReader, logger: ILogger): Deserializable {
+            override fun deserialize(reader: ObjectReader, logger: ILogger): Deserializable {
                 return Deserializable().apply {
                     reader.beginObject()
                     reader.nextName()

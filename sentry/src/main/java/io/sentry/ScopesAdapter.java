@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -276,13 +275,6 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.startTransaction(transactionContext, transactionOptions);
   }
 
-  @Deprecated
-  @Override
-  @SuppressWarnings("deprecation")
-  public @Nullable SentryTraceHeader traceHeaders() {
-    return Sentry.traceHeaders();
-  }
-
   @ApiStatus.Internal
   @Override
   public void setSpanContext(
@@ -351,9 +343,8 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.getCurrentScopes().getRateLimiter();
   }
 
-  @ApiStatus.Experimental
   @Override
-  public @NotNull MetricsApi metrics() {
-    return Sentry.getCurrentScopes().metrics();
+  public @NotNull SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint) {
+    return Sentry.getCurrentScopes().captureReplay(replay, hint);
   }
 }

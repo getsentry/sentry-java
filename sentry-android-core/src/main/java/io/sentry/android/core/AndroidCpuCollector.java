@@ -1,7 +1,5 @@
 package io.sentry.android.core;
 
-import android.annotation.SuppressLint;
-import android.os.Build;
 import android.os.SystemClock;
 import android.system.Os;
 import android.system.OsConstants;
@@ -41,24 +39,15 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
   private final @NotNull File selfStat = new File("/proc/self/stat");
 
   private final @NotNull ILogger logger;
-  private final @NotNull BuildInfoProvider buildInfoProvider;
   private boolean isEnabled = false;
   private final @NotNull Pattern newLinePattern = Pattern.compile("[\n\t\r ]");
 
-  public AndroidCpuCollector(
-      final @NotNull ILogger logger, final @NotNull BuildInfoProvider buildInfoProvider) {
+  public AndroidCpuCollector(final @NotNull ILogger logger) {
     this.logger = Objects.requireNonNull(logger, "Logger is required.");
-    this.buildInfoProvider =
-        Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required.");
   }
 
-  @SuppressLint("NewApi")
   @Override
   public void setup() {
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
-      isEnabled = false;
-      return;
-    }
     isEnabled = true;
     clockSpeedHz = Os.sysconf(OsConstants._SC_CLK_TCK);
     numCores = Os.sysconf(OsConstants._SC_NPROCESSORS_CONF);
@@ -66,10 +55,9 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
     lastCpuNanos = readTotalCpuNanos();
   }
 
-  @SuppressLint("NewApi")
   @Override
   public void collect(final @NotNull PerformanceCollectionData performanceCollectionData) {
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP || !isEnabled) {
+    if (!isEnabled) {
       return;
     }
     final long nowNanos = SystemClock.elapsedRealtimeNanos();
@@ -115,7 +103,7 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
         // Amount of clock ticks this process' waited-for children has been scheduled in kernel mode
         long csTime = Long.parseLong(stats[16]);
         return (long) ((uTime + sTime + cuTime + csTime) * nanosecondsPerClockTick);
-      } catch (NumberFormatException e) {
+      } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
         logger.log(SentryLevel.ERROR, "Error parsing /proc/self/stat file.", e);
         return 0;
       }
