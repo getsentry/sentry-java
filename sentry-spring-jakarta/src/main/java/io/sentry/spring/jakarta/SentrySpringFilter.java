@@ -28,7 +28,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 @Open
 public class SentrySpringFilter extends OncePerRequestFilter {
@@ -94,7 +93,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
             // only if request caches body, add an event processor that sets body on the event
             // body is not on the scope, to avoid using memory when no event is triggered during
             // request processing
-            if (request instanceof ContentCachingRequestWrapper) {
+            if (request instanceof SentryContentCachingRequestWrapper) {
               scope.addEventProcessor(
                   new RequestBodyExtractingEventProcessor(request, scopes.getOptions()));
             }
@@ -111,7 +110,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       final @NotNull IScopes scopes, final @NotNull HttpServletRequest request) {
     if (scopes.getOptions().isSendDefaultPii()
         && qualifiesForCaching(request, scopes.getOptions().getMaxRequestBodySize())) {
-      return new ContentCachingRequestWrapper(request);
+      return new SentryContentCachingRequestWrapper(request);
     }
     return request;
   }
