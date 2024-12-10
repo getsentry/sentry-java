@@ -6,7 +6,6 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
-import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdkBuilder;
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
@@ -26,15 +25,18 @@ import java.util.Map;
 public class Main {
 
   public static void main(String[] args) throws InterruptedException {
-    final OpenTelemetrySdk sdk = AutoConfiguredOpenTelemetrySdk.builder()
-      .addPropertiesSupplier(() -> {
-        final Map<String, String> properties = new HashMap<>();
-        properties.put("otel.logs.exporter", "none");
-        properties.put("otel.metrics.exporter", "none");
-        properties.put("otel.traces.exporter", "none");
-        return properties;
-      })
-      .build().getOpenTelemetrySdk();
+    final OpenTelemetrySdk sdk =
+        AutoConfiguredOpenTelemetrySdk.builder()
+            .addPropertiesSupplier(
+                () -> {
+                  final Map<String, String> properties = new HashMap<>();
+                  properties.put("otel.logs.exporter", "none");
+                  properties.put("otel.metrics.exporter", "none");
+                  properties.put("otel.traces.exporter", "none");
+                  return properties;
+                })
+            .build()
+            .getOpenTelemetrySdk();
     GlobalOpenTelemetry.set(sdk);
 
     Sentry.init(
@@ -180,40 +182,47 @@ public class Main {
     // Transactions collect execution time of the piece of code that's executed between the start
     // and finish of transaction.
     ITransaction transaction = Sentry.startTransaction("transaction name", "op");
-    // Transactions can contain one or more Spans
-    ISpan outerSpan = transaction.startChild("child");
-    Thread.sleep(100);
-    // Spans create a tree structure. Each span can have one ore more spans inside.
-    ISpan innerSpan = outerSpan.startChild("jdbc", "select * from product where id = :id");
-    innerSpan.setStatus(SpanStatus.OK);
-    Thread.sleep(300);
-    // Finish the span and mark the end time of the span execution.
-    // Note: finishing spans does not send them to Sentry
-    innerSpan.finish();
-    try (ISentryLifecycleToken outerScope = outerSpan.makeCurrent()) {
-      Span otelSpan =
-          GlobalOpenTelemetry.get()
-              .getTracer("demoTracer", "1.0.0")
-              .spanBuilder("otelSpan")
-              .startSpan();
-      try (Scope innerScope = otelSpan.makeCurrent()) {
-        otelSpan.setAttribute("otel-attribute", "attribute-value");
-        Thread.sleep(150);
-        otelSpan.setStatus(StatusCode.OK);
+    try (ISentryLifecycleToken transactionScope = transaction.makeCurrent()) {
+      // Transactions can contain one or more Spans
+      ISpan outerSpan = transaction.startChild("child");
+      Thread.sleep(100);
+      // Spans create a tree structure. Each span can have one ore more spans inside.
+      ISpan innerSpan = outerSpan.startChild("jdbc", "select * from product where id = :id");
+      innerSpan.setStatus(SpanStatus.OK);
+      Thread.sleep(300);
+      // Finish the span and mark the end time of the span execution.
+      // Note: finishing spans does not send them to Sentry
+      innerSpan.finish();
+      try (ISentryLifecycleToken outerScope = outerSpan.makeCurrent()) {
+        Span otelSpan =
+            GlobalOpenTelemetry.get()
+                .getTracer("demoTracer", "1.0.0")
+                .spanBuilder("otelSpan")
+                .startSpan();
+        try (Scope innerScope = otelSpan.makeCurrent()) {
+          otelSpan.setAttribute("otel-attribute", "attribute-value");
+          Thread.sleep(150);
+          otelSpan.setStatus(StatusCode.OK);
+        } finally {
+          otelSpan.end();
+        }
+        // Every SentryEvent reported during the execution of the transaction or a span, will have
+        // trace
+        // context attached
+        Sentry.captureException(
+            new RuntimeException("this exception is connected to the outerSpan"));
+
       } finally {
-        otelSpan.end();
+        outerSpan.finish(SpanStatus.OK);
       }
+    } finally {
+      // marks transaction as finished and sends it together with all child spans to Sentry
+      transaction.finish();
     }
-    // Every SentryEvent reported during the execution of the transaction or a span, will have trace
-    // context attached
-    Sentry.captureMessage("this message is connected to the outerSpan");
-    outerSpan.finish();
-    // marks transaction as finished and sends it together with all child spans to Sentry
-    transaction.finish();
 
     // All events that have not been sent yet are being flushed on JVM exit. Events can be also
     // flushed manually:
-    // Sentry.close();
+    //     Sentry.close();
   }
 
   private static class SomeEventProcessor implements EventProcessor {
