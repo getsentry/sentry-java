@@ -3,7 +3,7 @@ public final class io/sentry/graphql22/BuildConfig {
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 
-public final class io/sentry/graphql22/SentryInstrumentation : graphql/execution/instrumentation/SimpleInstrumentation {
+public final class io/sentry/graphql22/SentryInstrumentation : graphql/execution/instrumentation/SimplePerformantInstrumentation {
 	public static final field SENTRY_EXCEPTIONS_CONTEXT_KEY Ljava/lang/String;
 	public static final field SENTRY_SCOPES_CONTEXT_KEY Ljava/lang/String;
 	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Lio/sentry/graphql/ExceptionReporter;Ljava/util/List;)V
