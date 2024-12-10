@@ -4,6 +4,9 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
+import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdkBuilder;
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
@@ -17,10 +20,23 @@ import io.sentry.SpanStatus;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main {
 
   public static void main(String[] args) throws InterruptedException {
+    final OpenTelemetrySdk sdk = AutoConfiguredOpenTelemetrySdk.builder()
+      .addPropertiesSupplier(() -> {
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("otel.logs.exporter", "none");
+        properties.put("otel.metrics.exporter", "none");
+        properties.put("otel.traces.exporter", "none");
+        return properties;
+      })
+      .build().getOpenTelemetrySdk();
+    GlobalOpenTelemetry.set(sdk);
+
     Sentry.init(
         options -> {
           // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
