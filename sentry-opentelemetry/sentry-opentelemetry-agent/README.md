@@ -22,21 +22,16 @@ For more details on configuring Sentry via `sentry.properties` please see the
 
 As an alternative to the `SENTRY_PROPERTIES_FILE` environment variable you can provide individual
 settings as environment variables (e.g. `SENTRY_DSN=...`) or you may initialize `Sentry` inside
-your target application. If you do so, please make sure to set the `instrumenter` to `otel`, e.g.
-like this:
+your target application:
 
 ```
 Sentry.init(
         options -> {
           options.setDsn("...");
           ...
-          options.setInstrumenter(Instrumenter.OTEL);
         }
 )
 ```
-
-Using the `otel` instrumenter will ensure `Sentry` instrumentation will be done via OpenTelemetry
-and integrations as well as direct interactions with transactions and spans have no effect.
 
 ## Controlling auto initialization of Sentry
 

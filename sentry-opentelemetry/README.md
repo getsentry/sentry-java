@@ -21,8 +21,7 @@ application. Please see the module [README](sentry-opentelemetry-agent/README.md
 
 This contains customizations to the OpenTelemetry Java Agent such as registering the
 `SentrySpanProcessor` and `SentryPropagator` as well as providing default properties that
-enable the `sentry` propagator and disable exporters so our agent doesn't trigger lots of log 
-warnings due to OTLP server not being there. This can also be used without the agent.
+enable the `sentry` propagator. This can also be used without the agent.
 
 ### `sentry-opentelemetry-bootstrap`
 
@@ -40,3 +39,35 @@ Contains `SentrySpanProcessor` and `SentryPropagator` which are used by our Java
 be used when manually instrumenting using OpenTelemetry. If you want to use OpenTelemetry without
 the agent but still want some configuration convenience, you should rather use the
 `sentry-opentelemetry-agentcustomization` module.
+
+## Running without an Agent
+If you want to use Sentry with OpenTelemetry without an agent, you can do so by adding the `sentry-opentelemetry-agentcustomization` 
+and `sentryopentelemetry-bootstrap` modules as dependencies to your project. 
+
+You can then initialize Sentry with OpenTelemetry like this:
+
+```java
+// Initialize OpenTelemetry by using the AutoConfiguredOpenTelemetrySdk which automatically
+// registers the `SentrySpanProcessor` and `SentryPropagator` and others.
+// Additionally, you can disable the OTEL exporters to avoid seeing error messages in the logs.
+final OpenTelemetrySdk sdk = AutoConfiguredOpenTelemetrySdk.builder()
+  .addPropertiesSupplier(() -> {
+    final Map<String, String> properties = new HashMap<>();
+    properties.put("otel.logs.exporter", "none");
+    properties.put("otel.metrics.exporter", "none");
+    properties.put("otel.traces.exporter", "none");
+    return properties;
+  })
+  .build().getOpenTelemetrySdk();
+
+// Set the global OpenTelemetry instance
+GlobalOpenTelemetry.set(sdk);
+
+// Initialize Sentry
+Sentry.init(
+    options -> {
+    options.setDsn("...");
+      ...
+  }
+)
+```
