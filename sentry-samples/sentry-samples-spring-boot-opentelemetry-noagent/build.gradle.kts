@@ -52,9 +52,10 @@ dependencies {
     implementation(projects.sentryLogback)
     implementation(projects.sentryGraphql)
     implementation(projects.sentryQuartz)
-    implementation(Config.Libs.springBoot3StarterOpenTelemetry)
+    implementation(Config.Libs.springBoot3StarterOpenTelemetryNoversion)
     implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
     implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    implementation(platform(projects.sentryBom))
 
     // database query tracing
     implementation(projects.sentryJdbc)
@@ -68,12 +69,6 @@ dependencies {
     testImplementation(Config.Libs.slf4jApi2)
     testImplementation(Config.Libs.apolloKotlin)
     testImplementation("org.apache.httpcomponents:httpclient")
-}
-
-dependencyManagement {
-    imports {
-        mavenBom(Config.Libs.OpenTelemetry.otelInstrumentationBom)
-    }
 }
 
 configure<SourceSetContainer> {

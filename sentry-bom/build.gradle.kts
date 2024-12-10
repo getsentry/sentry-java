@@ -3,6 +3,8 @@ plugins {
     `maven-publish`
 }
 
+javaPlatform.allowDependencies()
+
 dependencies {
     constraints {
         project.rootProject.subprojects
@@ -26,6 +28,7 @@ dependencies {
                     }
             }
     }
+    api(platform(Config.Libs.OpenTelemetry.otelInstrumentationBom))
 }
 
 publishing {
