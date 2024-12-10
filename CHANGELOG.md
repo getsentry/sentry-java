@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixes
+
+- Session Replay: fix various crashes and issues ([#3970](https://github.com/getsentry/sentry-java/pull/3970))
+  - Fix `IndexOutOfBoundsException` when tracking window changes
+  - Fix `IllegalStateException` when adding/removing draw listener for a dead view
+  - Fix `ConcurrentModificationException` when registering window listeners and stopping `WindowRecorder`/`GestureRecorder`
 - Add support for setting sentry-native handler_strategy ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
 
 ### Dependencies
