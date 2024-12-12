@@ -1,5 +1,11 @@
 # Changelog
 
+### Unreleased
+
+### Fixes
+
+- Change TTFD timeout to 25 seconds ([#3984](https://github.com/getsentry/sentry-java/pull/3984))
+
 ## 7.19.0
 
 ### Fixes
