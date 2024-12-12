@@ -33,6 +33,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   private static final String TRANSACTION_OP = "http.server";
 
   private static final String TRACE_ORIGIN = "auto.http.spring.webmvc";
+  private static final String TRANSACTION_ATTR = SentryTracingFilter.class.getName() + ".transaction";
 
   private final @NotNull TransactionNameProvider transactionNameProvider;
   private final @NotNull IHub hub;
@@ -68,6 +69,11 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   }
 
   @Override
+  protected boolean shouldNotFilterAsyncDispatch() {
+    return false;
+  }
+
+  @Override
   protected void doFilterInternal(
       final @NotNull HttpServletRequest httpRequest,
       final @NotNull HttpServletResponse httpResponse,
@@ -75,15 +81,8 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
 
     if (hub.isEnabled()) {
-      final @Nullable String sentryTraceHeader =
-          httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
-      final @Nullable List<String> baggageHeader =
-          Collections.list(httpRequest.getHeaders(BaggageHeader.BAGGAGE_HEADER));
-      final @Nullable TransactionContext transactionContext =
-          hub.continueTrace(sentryTraceHeader, baggageHeader);
-
       if (hub.getOptions().isTracingEnabled() && shouldTraceRequest(httpRequest)) {
-        doFilterWithTransaction(httpRequest, httpResponse, filterChain, transactionContext);
+        doFilterWithTransaction(httpRequest, httpResponse, filterChain);
       } else {
         filterChain.doFilter(httpRequest, httpResponse);
       }
@@ -95,12 +94,24 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   private void doFilterWithTransaction(
       HttpServletRequest httpRequest,
       HttpServletResponse httpResponse,
-      FilterChain filterChain,
-      final @Nullable TransactionContext transactionContext)
+      FilterChain filterChain)
       throws IOException, ServletException {
-    // at this stage we are not able to get real transaction name
-    final ITransaction transaction = startTransaction(httpRequest, transactionContext);
-    transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
+    final ITransaction transaction;
+    if (isAsyncDispatch(httpRequest)) {
+      transaction = (ITransaction) httpRequest.getAttribute(TRANSACTION_ATTR);
+    } else {
+      final @Nullable String sentryTraceHeader =
+          httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
+      final @Nullable List<String> baggageHeader =
+          Collections.list(httpRequest.getHeaders(BaggageHeader.BAGGAGE_HEADER));
+      final @Nullable TransactionContext transactionContext =
+          hub.continueTrace(sentryTraceHeader, baggageHeader);
+
+      // at this stage we are not able to get real transaction name
+      transaction = startTransaction(httpRequest, transactionContext);
+      transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
+      httpRequest.setAttribute(TRANSACTION_ATTR, transaction);
+    }
 
     try {
       filterChain.doFilter(httpRequest, httpResponse);
@@ -109,21 +120,23 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       transaction.setStatus(SpanStatus.INTERNAL_ERROR);
       throw e;
     } finally {
-      // after all filters run, templated path pattern is available in request attribute
-      final String transactionName = transactionNameProvider.provideTransactionName(httpRequest);
-      final TransactionNameSource transactionNameSource =
-          transactionNameProvider.provideTransactionSource();
-      // if transaction name is not resolved, the request has not been processed by a controller
-      // and we should not report it to Sentry
-      if (transactionName != null) {
-        transaction.setName(transactionName, transactionNameSource);
-        transaction.setOperation(TRANSACTION_OP);
-        // if exception has been thrown, transaction status is already set to INTERNAL_ERROR, and
-        // httpResponse.getStatus() returns 200.
-        if (transaction.getStatus() == null) {
-          transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
+      if (!isAsyncStarted(httpRequest)) {
+        // after all filters run, templated path pattern is available in request attribute
+        final String transactionName = transactionNameProvider.provideTransactionName(httpRequest);
+        final TransactionNameSource transactionNameSource =
+            transactionNameProvider.provideTransactionSource();
+        // if transaction name is not resolved, the request has not been processed by a controller
+        // and we should not report it to Sentry
+        if (transactionName != null) {
+          transaction.setName(transactionName, transactionNameSource);
+          transaction.setOperation(TRANSACTION_OP);
+          // if exception has been thrown, transaction status is already set to INTERNAL_ERROR, and
+          // httpResponse.getStatus() returns 200.
+          if (transaction.getStatus() == null) {
+            transaction.setStatus(SpanStatus.fromHttpStatusCode(httpResponse.getStatus()));
+          }
+          transaction.finish();
         }
-        transaction.finish();
       }
     }
   }
