@@ -1,5 +1,21 @@
 # Changelog
 
+## 7.19.0
+
+### Fixes
+
+- Session Replay: fix various crashes and issues ([#3970](https://github.com/getsentry/sentry-java/pull/3970))
+  - Fix `IndexOutOfBoundsException` when tracking window changes
+  - Fix `IllegalStateException` when adding/removing draw listener for a dead view
+  - Fix `ConcurrentModificationException` when registering window listeners and stopping `WindowRecorder`/`GestureRecorder`
+- Add support for setting sentry-native handler_strategy ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.8 to v0.7.16 ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0716)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.8...0.7.16)
+
 ## 7.18.1
 
 ### Fixes
