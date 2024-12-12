@@ -125,6 +125,7 @@ dependencies {
     androidTestImplementation(Config.TestLibs.mockWebserver)
     androidTestImplementation(Config.TestLibs.androidxJunit)
     androidTestImplementation(Config.TestLibs.leakCanaryInstrumentation)
+    androidTestImplementation(Config.TestLibs.awaitility3)
     androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
 }
 
