@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 7.19.0
 
 ### Fixes
 
