@@ -1,15 +1,10 @@
 package io.sentry.uitest.android
 
-import android.app.Application
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import io.sentry.SentryOptions
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import leakcanary.AppWatcher
 import leakcanary.LeakAssertions
 import leakcanary.LeakCanary
-import org.awaitility.Duration
 import org.awaitility.kotlin.await
 import shark.AndroidReferenceMatchers
 import shark.IgnoredReferenceMatcher
