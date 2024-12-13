@@ -6,6 +6,9 @@ import io.sentry.SentryOptions
 import leakcanary.LeakAssertions
 import leakcanary.LeakCanary
 import org.awaitility.kotlin.await
+import org.hamcrest.CoreMatchers.`is`
+import org.junit.Assume.assumeThat
+import org.junit.Before
 import shark.AndroidReferenceMatchers
 import shark.IgnoredReferenceMatcher
 import shark.ReferencePattern
@@ -13,6 +16,16 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 
 class ReplayTest : BaseUiTest() {
+
+    @Before
+    fun setup() {
+        // we can't run on GH actions emulator, because they don't allow capturing screenshots properly
+        assumeThat(
+            System.getProperty("environment") != "github",
+            `is`(true)
+        )
+    }
+
     @Test
     fun composeReplayDoesNotLeak() {
         val sent = AtomicBoolean(false)
