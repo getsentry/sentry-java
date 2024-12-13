@@ -20,8 +20,9 @@ class ReplayTest : BaseUiTest() {
     @Before
     fun setup() {
         // we can't run on GH actions emulator, because they don't allow capturing screenshots properly
+        @Suppress("KotlinConstantConditions")
         assumeThat(
-            System.getProperty("environment") != "github",
+            BuildConfig.ENVIRONMENT != "github",
             `is`(true)
         )
     }
