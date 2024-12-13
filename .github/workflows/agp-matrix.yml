@@ -63,7 +63,7 @@ jobs:
         with:
           api-level: 30
           force-avd-creation: false
-          emulator-options: -no-snapshot-save -gpu host -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-snapshot-save -no-window -gpu host -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           disable-spellchecker: true
           target: 'aosp_atd'
