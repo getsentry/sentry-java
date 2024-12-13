@@ -1,9 +1,10 @@
 # Changelog
 
-## Unreleased
+### Unreleased
 
 ### Fixes
 
+- Change TTFD timeout to 25 seconds ([#3984](https://github.com/getsentry/sentry-java/pull/3984))
 - Session Replay: Fix memory leak when masking Compose screens ([#3985](https://github.com/getsentry/sentry-java/pull/3985))
 
 ## 7.19.0
