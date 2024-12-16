@@ -8,6 +8,7 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.sentry.InitPriority;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.SentryOpenTelemetryMode;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryPackage;
@@ -38,7 +39,7 @@ public final class SentryAutoConfigurationCustomizerProvider
           options -> {
             options.setEnableExternalConfiguration(true);
             options.setInitPriority(InitPriority.HIGH);
-            OpenTelemetryUtil.applyOpenTelemetryOptions(options, true);
+            OpenTelemetryUtil.applyOpenTelemetryOptions(options, SentryOpenTelemetryMode.AGENT);
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
             if (sdkVersion != null) {
               options.setSdkVersion(sdkVersion);
