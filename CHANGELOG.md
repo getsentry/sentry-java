@@ -7,6 +7,12 @@
 - Change TTFD timeout to 25 seconds ([#3984](https://github.com/getsentry/sentry-java/pull/3984))
 - Session Replay: Fix memory leak when masking Compose screens ([#3985](https://github.com/getsentry/sentry-java/pull/3985))
 
+### Dependencies
+
+- Bump Gradle from v8.5.0 to v8.11.1 ([#3917](https://github.com/getsentry/sentry-java/pull/3917))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8111)
+  - [diff](https://github.com/gradle/gradle/compare/v8.5.0...v8.11.1)
+
 ## 7.19.0
 
 ### Fixes
