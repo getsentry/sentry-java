@@ -24,6 +24,7 @@ import io.sentry.util.LazyEvaluator;
 import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
+import io.sentry.util.SpanUtils;
 import io.sentry.util.StringUtils;
 import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
@@ -469,7 +470,7 @@ public class SentryOptions {
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
   /** Contains a list of span origins for which spans / transactions should not be created. */
-  @ApiStatus.Experimental private @Nullable List<String> ignoredSpanOrigins = null;
+  @ApiStatus.Experimental private @Nullable List<SpanUtils.FilterString> ignoredSpanOrigins = null;
 
   private @Nullable List<String> ignoredTransactions = null;
 
@@ -2189,8 +2190,16 @@ public class SentryOptions {
   }
 
   @ApiStatus.Experimental
-  public @Nullable List<String> getIgnoredSpanOrigins() {
+  public @Nullable List<SpanUtils.FilterString> getIgnoredSpanOrigins() {
     return ignoredSpanOrigins;
+  }
+
+  @ApiStatus.Experimental
+  public void addIgnoredSpanOrigin(String ignoredSpanOrigin) {
+    if (ignoredSpanOrigins == null) {
+      ignoredSpanOrigins = new ArrayList<>();
+    }
+    ignoredSpanOrigins.add(new SpanUtils.FilterString(ignoredSpanOrigin));
   }
 
   @ApiStatus.Experimental
@@ -2198,10 +2207,10 @@ public class SentryOptions {
     if (ignoredSpanOrigins == null) {
       this.ignoredSpanOrigins = null;
     } else {
-      @NotNull final List<String> filtered = new ArrayList<>();
+      @NotNull final List<SpanUtils.FilterString> filtered = new ArrayList<>();
       for (String origin : ignoredSpanOrigins) {
         if (origin != null && !origin.isEmpty()) {
-          filtered.add(origin);
+          filtered.add(new SpanUtils.FilterString(origin));
         }
       }
 
