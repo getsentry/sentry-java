@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 
 @Open
 public class SentrySpringFilter extends OncePerRequestFilter {
@@ -93,7 +94,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
             // only if request caches body, add an event processor that sets body on the event
             // body is not on the scope, to avoid using memory when no event is triggered during
             // request processing
-            if (request instanceof SentryContentCachingRequestWrapper) {
+            if (request instanceof ContentCachingRequestWrapper) {
               scope.addEventProcessor(
                   new RequestBodyExtractingEventProcessor(request, scopes.getOptions()));
             }
@@ -110,12 +111,12 @@ public class SentrySpringFilter extends OncePerRequestFilter {
       final @NotNull IScopes scopes, final @NotNull HttpServletRequest request) {
     if (scopes.getOptions().isSendDefaultPii()
         && qualifiesForCaching(request, scopes.getOptions().getMaxRequestBodySize())) {
-      return new SentryContentCachingRequestWrapper(request);
+      return new ContentCachingRequestWrapper(request);
     }
     return request;
   }
 
-  private boolean qualifiesForCaching(
+  private static boolean qualifiesForCaching(
       final @NotNull HttpServletRequest request, final @NotNull RequestSize maxRequestBodySize) {
     final int contentLength = request.getContentLength();
     final String contentType = request.getContentType();
@@ -148,7 +149,9 @@ public class SentrySpringFilter extends OncePerRequestFilter {
 
     @Override
     public @NotNull SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
-      if (event.getRequest() != null) {
+      if (event.getRequest() != null
+          && options.isSendDefaultPii()
+          && qualifiesForCaching(request, options.getMaxRequestBodySize())) {
         event.getRequest().setData(requestPayloadExtractor.extract(request, options));
       }
       return event;

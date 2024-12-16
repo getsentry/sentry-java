@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.util.StreamUtils;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 
 final class RequestPayloadExtractor {
 
@@ -15,9 +16,12 @@ final class RequestPayloadExtractor {
   String extract(final @NotNull HttpServletRequest request, final @NotNull SentryOptions options) {
     // request body can be read only once from the stream
     // original request can be replaced with ContentCachingRequestWrapper in SentrySpringFilter
-    if (request instanceof SentryContentCachingRequestWrapper cachedRequest) {
+    if (request instanceof ContentCachingRequestWrapper cachedRequest) {
       try {
-        final byte[] body = StreamUtils.copyToByteArray(cachedRequest.getInputStream());
+        final byte[] body =
+            cachedRequest.getInputStream().isFinished()
+                ? cachedRequest.getContentAsByteArray()
+                : StreamUtils.copyToByteArray(cachedRequest.getInputStream());
         return new String(body, StandardCharsets.UTF_8);
       } catch (IOException e) {
         options.getLogger().log(SentryLevel.ERROR, "Failed to set request body", e);

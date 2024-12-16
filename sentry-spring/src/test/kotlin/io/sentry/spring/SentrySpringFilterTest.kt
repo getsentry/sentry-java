@@ -24,6 +24,7 @@ import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.mock.web.MockServletContext
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.web.util.ContentCachingRequestWrapper
 import java.net.URI
 import javax.servlet.FilterChain
 import javax.servlet.ServletContext
@@ -273,7 +274,7 @@ class SentrySpringFilterTest {
 
                 verify(fixture.chain).doFilter(
                     check {
-                        assertEquals(param.expectedToBeCached, it is SentryContentCachingRequestWrapper)
+                        assertEquals(param.expectedToBeCached, it is ContentCachingRequestWrapper)
                     },
                     any()
                 )
