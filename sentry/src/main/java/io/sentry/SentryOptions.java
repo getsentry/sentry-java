@@ -470,7 +470,7 @@ public class SentryOptions {
   @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
 
   /** Contains a list of span origins for which spans / transactions should not be created. */
-  @ApiStatus.Experimental private @Nullable List<SpanUtils.FilterString> ignoredSpanOrigins = null;
+  @ApiStatus.Experimental private @Nullable List<FilterString> ignoredSpanOrigins = null;
 
   private @Nullable List<String> ignoredTransactions = null;
 
@@ -2190,7 +2190,7 @@ public class SentryOptions {
   }
 
   @ApiStatus.Experimental
-  public @Nullable List<SpanUtils.FilterString> getIgnoredSpanOrigins() {
+  public @Nullable List<FilterString> getIgnoredSpanOrigins() {
     return ignoredSpanOrigins;
   }
 
@@ -2199,7 +2199,7 @@ public class SentryOptions {
     if (ignoredSpanOrigins == null) {
       ignoredSpanOrigins = new ArrayList<>();
     }
-    ignoredSpanOrigins.add(new SpanUtils.FilterString(ignoredSpanOrigin));
+    ignoredSpanOrigins.add(new FilterString(ignoredSpanOrigin));
   }
 
   @ApiStatus.Experimental
@@ -2207,10 +2207,10 @@ public class SentryOptions {
     if (ignoredSpanOrigins == null) {
       this.ignoredSpanOrigins = null;
     } else {
-      @NotNull final List<SpanUtils.FilterString> filtered = new ArrayList<>();
+      @NotNull final List<FilterString> filtered = new ArrayList<>();
       for (String origin : ignoredSpanOrigins) {
         if (origin != null && !origin.isEmpty()) {
-          filtered.add(new SpanUtils.FilterString(origin));
+          filtered.add(new FilterString(origin));
         }
       }
 
