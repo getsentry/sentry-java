@@ -1,9 +1,10 @@
 package io.sentry.util;
 
+import io.sentry.FilterString;
 import java.util.ArrayList;
 import java.util.List;
-
-import io.sentry.FilterString;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +40,8 @@ public final class SpanUtils {
     return origins;
   }
 
+  private static final Map<String, Boolean> ignoredSpanDecisionsCache = new ConcurrentHashMap<>();
+
   /** Checks if a span origin has been ignored. */
   @ApiStatus.Internal
   public static boolean isIgnored(
@@ -47,8 +50,13 @@ public final class SpanUtils {
       return false;
     }
 
+    if (ignoredSpanDecisionsCache.containsKey(origin)) {
+      return ignoredSpanDecisionsCache.get(origin);
+    }
+
     for (final FilterString ignoredOrigin : ignoredOrigins) {
       if (ignoredOrigin.getFilterString().equalsIgnoreCase(origin)) {
+        ignoredSpanDecisionsCache.put(origin, true);
         return true;
       }
     }
@@ -56,6 +64,7 @@ public final class SpanUtils {
     for (final FilterString ignoredOrigin : ignoredOrigins) {
       try {
         if (ignoredOrigin.matches(origin)) {
+          ignoredSpanDecisionsCache.put(origin, true);
           return true;
         }
       } catch (Throwable t) {
@@ -63,6 +72,7 @@ public final class SpanUtils {
       }
     }
 
+    ignoredSpanDecisionsCache.put(origin, false);
     return false;
   }
 }

@@ -26,6 +26,12 @@ class SpanUtilsTest {
     }
 
     @Test
+    fun `isIgnored returns false for no regex match`() {
+        val ignoredOrigins = listOf(FilterString("auto.http.spring.*"))
+        assertFalse(SpanUtils.isIgnored(ignoredOrigins, "auto.http.servlet"))
+    }
+
+    @Test
     fun `isIgnored returns false for null origin`() {
         val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
         assertFalse(SpanUtils.isIgnored(ignoredOrigins, null))
