@@ -36,12 +36,12 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@4ba34e96c5f6493e99d0696180a9a8d431577ba9 # pin@v3
+        uses: gradle/actions/setup-gradle@3839b20885c2c3507be5f0521853826f4b37038a # pin@v3
         with:
           gradle-home-cache-cleanup: true
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # pin@v2
+        uses: github/codeql-action/init@df409f7d9260372bd5f19e5b04e83cb3c43714ae # pin@v2
         with:
           languages: ${{ matrix.language }}
 
@@ -55,4 +55,4 @@ jobs:
           ./gradlew buildForCodeQL
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@f09c1c0a94de965c15400f5634aa42fac8fb8f88 # pin@v2
+        uses: github/codeql-action/analyze@df409f7d9260372bd5f19e5b04e83cb3c43714ae # pin@v2
