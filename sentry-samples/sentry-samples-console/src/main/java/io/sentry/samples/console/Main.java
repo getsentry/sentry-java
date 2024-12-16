@@ -9,6 +9,7 @@ import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SpanStatus;
+import io.sentry.TransactionOptions;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
 import java.util.Collections;
