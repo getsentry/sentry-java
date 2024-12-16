@@ -27,6 +27,7 @@ import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
+import java.lang.ref.WeakReference
 
 @TargetApi(26)
 internal object ComposeViewHierarchyNode {
@@ -62,7 +63,7 @@ internal object ComposeViewHierarchyNode {
         return options.experimental.sessionReplay.maskViewClasses.contains(className)
     }
 
-    private var _rootCoordinates: LayoutCoordinates? = null
+    private var _rootCoordinates: WeakReference<LayoutCoordinates>? = null
 
     private fun fromComposeNode(
         node: LayoutNode,
@@ -77,11 +78,11 @@ internal object ComposeViewHierarchyNode {
         }
 
         if (isComposeRoot) {
-            _rootCoordinates = node.coordinates.findRootCoordinates()
+            _rootCoordinates = WeakReference(node.coordinates.findRootCoordinates())
         }
 
         val semantics = node.collapsedSemantics
-        val visibleRect = node.coordinates.boundsInWindow(_rootCoordinates)
+        val visibleRect = node.coordinates.boundsInWindow(_rootCoordinates?.get())
         val isVisible = !node.outerCoordinator.isTransparent() &&
             (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
             visibleRect.height() > 0 && visibleRect.width() > 0
