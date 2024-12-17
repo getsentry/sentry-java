@@ -3,6 +3,7 @@ package io.sentry.spring.opentelemetry;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.SentryOpenTelemetryMode;
 import io.sentry.SentryOptions;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +22,7 @@ public class SentryOpenTelemetryAgentWithoutAutoInitConfiguration {
     return options -> {
       SentryIntegrationPackageStorage.getInstance()
           .addIntegration("SpringBootOpenTelemetryAgentWithoutAutoInit");
-      OpenTelemetryUtil.applyOpenTelemetryOptions(options, true);
+      OpenTelemetryUtil.applyOpenTelemetryOptions(options, SentryOpenTelemetryMode.AGENT);
     };
   }
 }
