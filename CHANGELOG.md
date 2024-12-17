@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+## Fixes
+
+- Cache requests for Spring using Springs `ContentCachingRequestWrapper` instead of our own Wrapper to also cache parameters ([#3641](https://github.com/getsentry/sentry-java/pull/3641))
+  - Previously only the body was cached which could lead to problems in the FilterChain as Request parameters were not available
+
 ## 8.0.0-rc.2
 
 ### Fixes
