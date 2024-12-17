@@ -1,6 +1,9 @@
 // ktlint-disable filename
 package io.sentry.android.replay.util
 
+import android.annotation.TargetApi
+import android.os.Build.VERSION_CODES
+import androidx.annotation.RequiresApi
 import io.sentry.ReplayRecording
 import io.sentry.SentryOptions
 import io.sentry.android.replay.ReplayCache
@@ -8,14 +11,18 @@ import io.sentry.rrweb.RRWebEvent
 import java.io.BufferedWriter
 import java.io.StringWriter
 import java.util.LinkedList
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.ScheduledExecutorService
 
+// TODO: enable this back after we are able to serialize individual touches to disk to not overload cpu
+@Suppress("unused")
+@TargetApi(26)
 internal class PersistableLinkedList(
     private val propertyName: String,
     private val options: SentryOptions,
     private val persistingExecutor: ScheduledExecutorService,
     private val cacheProvider: () -> ReplayCache?
-) : LinkedList<RRWebEvent>() {
+) : ConcurrentLinkedDeque<RRWebEvent>() {
     // only overriding methods that we use, to observe the collection
     override fun addAll(elements: Collection<RRWebEvent>): Boolean {
         val result = super.addAll(elements)

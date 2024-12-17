@@ -1,5 +1,6 @@
 package io.sentry.android.replay.capture
 
+import android.annotation.TargetApi
 import android.graphics.Bitmap
 import android.view.MotionEvent
 import io.sentry.DateUtils
@@ -23,6 +24,7 @@ import java.io.File
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
 
+@TargetApi(26)
 internal class BufferCaptureStrategy(
     private val options: SentryOptions,
     private val hub: IHub?,
