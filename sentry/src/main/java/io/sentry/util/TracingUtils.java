@@ -65,7 +65,9 @@ public final class TracingUtils {
 
         return new TracingHeaders(
             new SentryTraceHeader(
-                propagationContext.getTraceId(), propagationContext.getSpanId(), null),
+                propagationContext.getTraceId(),
+                propagationContext.getSpanId(),
+                propagationContext.isSampled()),
             baggageHeader);
       }
 

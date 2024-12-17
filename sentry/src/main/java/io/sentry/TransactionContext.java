@@ -30,11 +30,12 @@ public final class TransactionContext extends SpanContext {
       baggage.freeze();
 
       Double sampleRate = baggage.getSampleRateDouble();
-      Boolean sampled = parentSampled != null ? parentSampled.booleanValue() : false;
-      if (sampleRate != null) {
-        samplingDecision = new TracesSamplingDecision(sampled, sampleRate);
-      } else {
-        samplingDecision = new TracesSamplingDecision(sampled);
+      if (parentSampled != null) {
+        if (sampleRate != null) {
+          samplingDecision = new TracesSamplingDecision(parentSampled.booleanValue(), sampleRate);
+        } else {
+          samplingDecision = new TracesSamplingDecision(parentSampled.booleanValue());
+        }
       }
     }
 

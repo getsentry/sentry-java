@@ -12,7 +12,6 @@ public final class io/sentry/opentelemetry/OtelInternalSpanDetectionUtil {
 public final class io/sentry/opentelemetry/OtelSamplingUtil {
 	public fun <init> ()V
 	public static fun extractSamplingDecision (Lio/opentelemetry/api/common/Attributes;)Lio/sentry/TracesSamplingDecision;
-	public static fun extractSamplingDecisionOrDefault (Lio/opentelemetry/api/common/Attributes;)Lio/sentry/TracesSamplingDecision;
 }
 
 public final class io/sentry/opentelemetry/OtelSentryPropagator : io/opentelemetry/context/propagation/TextMapPropagator {

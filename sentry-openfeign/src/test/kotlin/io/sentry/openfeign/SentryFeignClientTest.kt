@@ -16,6 +16,7 @@ import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.mockServerRequestTimeoutMillis
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.mockito.kotlin.any
@@ -25,6 +26,7 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -93,7 +95,7 @@ class SentryFeignClientTest {
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
         val sut = fixture.getSut()
         sut.getOk()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -106,7 +108,7 @@ class SentryFeignClientTest {
 
         sut.getOkWithBaggageHeader(mapOf("baggage" to listOf("thirdPartyBaggage=someValue", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")))
 
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
 
@@ -123,9 +125,20 @@ class SentryFeignClientTest {
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
         val sut = fixture.getSut(isSpanActive = false)
         sut.getOk()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
+    fun `does not add sentry trace header when span origin is ignored`() {
+        fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
+        fixture.sentryOptions.ignoredSpanOrigins = listOf("auto.http.openfeign")
+        val sut = fixture.getSut(isSpanActive = false)
+        sut.getOk()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+        assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test
@@ -134,7 +147,7 @@ class SentryFeignClientTest {
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
         val sut = fixture.getSut(isSpanActive = false)
         sut.getOk()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -146,7 +159,7 @@ class SentryFeignClientTest {
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
         val sut = fixture.getSut()
         sut.getOk()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }

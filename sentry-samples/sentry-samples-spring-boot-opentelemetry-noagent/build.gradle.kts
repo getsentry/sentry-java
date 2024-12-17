@@ -69,6 +69,12 @@ dependencies {
     testImplementation("org.apache.httpcomponents:httpclient")
 }
 
+dependencyManagement {
+    imports {
+        mavenBom(Config.Libs.OpenTelemetry.otelInstrumentationBom)
+    }
+}
+
 configure<SourceSetContainer> {
     test {
         java.srcDir("src/test/java")

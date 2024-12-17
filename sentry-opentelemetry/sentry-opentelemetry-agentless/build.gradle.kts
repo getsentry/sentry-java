@@ -14,5 +14,5 @@ dependencies {
     api(Config.Libs.OpenTelemetry.otelSdk)
     api(Config.Libs.OpenTelemetry.otelSemconv)
     api(Config.Libs.OpenTelemetry.otelSemconvIncubating)
-    implementation(Config.Libs.OpenTelemetry.otelExtensionAutoconfigure)
+    api(Config.Libs.OpenTelemetry.otelExtensionAutoconfigure)
 }

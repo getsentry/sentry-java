@@ -218,7 +218,7 @@ class SentryTracingFilterTest {
 
         verify(fixture.scopes).isEnabled
         verify(fixture.scopes).continueTrace(anyOrNull(), anyOrNull())
-        verify(fixture.scopes, times(2)).options
+        verify(fixture.scopes, times(3)).options
         verifyNoMoreInteractions(fixture.scopes)
         verify(fixture.transactionNameProvider, never()).provideTransactionName(any())
     }
@@ -276,6 +276,29 @@ class SentryTracingFilterTest {
         verify(fixture.chain).doFilter(fixture.request, fixture.response)
 
         verify(fixture.scopes).continueTrace(eq(sentryTraceHeaderString), eq(baggageHeaderStrings))
+
+        verify(fixture.scopes, never()).captureTransaction(
+            anyOrNull<SentryTransaction>(),
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `does not continue incoming trace if span origin is ignored`() {
+        val parentSpanId = SpanId()
+        val sentryTraceHeaderString = "2722d9f6ec019ade60c776169d9a8904-$parentSpanId-1"
+        val baggageHeaderStrings = listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET")
+        fixture.options.tracesSampleRate = null
+        fixture.options.ignoredSpanOrigins = listOf("auto.http.spring_jakarta.webmvc")
+        val filter = fixture.getSut(sentryTraceHeader = sentryTraceHeaderString, baggageHeaders = baggageHeaderStrings)
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.chain).doFilter(fixture.request, fixture.response)
+
+        verify(fixture.scopes, never()).continueTrace(any(), any())
 
         verify(fixture.scopes, never()).captureTransaction(
             anyOrNull<SentryTransaction>(),

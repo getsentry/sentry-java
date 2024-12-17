@@ -96,7 +96,14 @@ public final class SpanDescriptionExtractor {
   private OtelSpanInfo descriptionForDbSystem(final @NotNull SpanData otelSpan) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
     @Nullable String dbStatement = attributes.get(DbIncubatingAttributes.DB_STATEMENT);
-    @NotNull String description = dbStatement != null ? dbStatement : otelSpan.getName();
-    return new OtelSpanInfo("db", description, TransactionNameSource.TASK);
+    if (dbStatement != null) {
+      return new OtelSpanInfo("db", dbStatement, TransactionNameSource.TASK);
+    }
+    @Nullable String dbQueryText = attributes.get(DbIncubatingAttributes.DB_QUERY_TEXT);
+    if (dbQueryText != null) {
+      return new OtelSpanInfo("db", dbQueryText, TransactionNameSource.TASK);
+    }
+
+    return new OtelSpanInfo("db", otelSpan.getName(), TransactionNameSource.TASK);
   }
 }
