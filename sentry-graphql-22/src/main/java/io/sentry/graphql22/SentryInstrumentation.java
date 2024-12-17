@@ -19,9 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-@SuppressWarnings("deprecation")
 public final class SentryInstrumentation
-    extends graphql.execution.instrumentation.SimpleInstrumentation {
+    extends graphql.execution.instrumentation.SimplePerformantInstrumentation {
 
   /**
    * @deprecated please use {@link SentryGraphqlInstrumentation#SENTRY_SCOPES_CONTEXT_KEY}
@@ -144,7 +143,7 @@ public final class SentryInstrumentation
   }
 
   @Override
-  @SuppressWarnings({"FutureReturnValueIgnored", "deprecation"})
+  @SuppressWarnings({"FutureReturnValueIgnored"})
   public @NotNull DataFetcher<?> instrumentDataFetcher(
       final @NotNull DataFetcher<?> dataFetcher,
       final @NotNull InstrumentationFieldFetchParameters parameters,
