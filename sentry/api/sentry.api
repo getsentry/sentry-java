@@ -511,7 +511,9 @@ public final class io/sentry/ExternalOptions {
 
 public final class io/sentry/FilterString {
 	public fun <init> (Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
 	public fun getFilterString ()Ljava/lang/String;
+	public fun hashCode ()I
 	public fun matches (Ljava/lang/String;)Z
 }
 

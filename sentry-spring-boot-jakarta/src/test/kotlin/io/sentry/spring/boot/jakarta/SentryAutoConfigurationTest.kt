@@ -5,6 +5,7 @@ import io.opentelemetry.api.OpenTelemetry
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
+import io.sentry.FilterString
 import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.ITransportFactory
@@ -213,8 +214,8 @@ class SentryAutoConfigurationTest {
             assertThat(options.tracePropagationTargets).containsOnly("localhost", "^(http|https)://api\\..*\$")
             assertThat(options.isEnabled).isEqualTo(false)
             assertThat(options.isSendModules).isEqualTo(false)
-            assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
-            assertThat(options.ignoredTransactions).containsOnly("transactionName1", "transactionNameB")
+            assertThat(options.ignoredCheckIns).containsOnly(FilterString("slug1"), FilterString("slugB"))
+            assertThat(options.ignoredTransactions).containsOnly(FilterString("transactionName1"), FilterString("transactionNameB"))
             assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
             assertThat(options.isForceInit).isEqualTo(true)
             assertThat(options.isGlobalHubMode).isEqualTo(true)
