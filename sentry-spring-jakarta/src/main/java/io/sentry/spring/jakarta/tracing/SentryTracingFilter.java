@@ -12,6 +12,7 @@ import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
+import io.sentry.util.SpanUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -77,7 +78,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final @NotNull HttpServletResponse httpResponse,
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
-    if (scopes.isEnabled()) {
+    if (scopes.isEnabled() && !isIgnored()) {
       final @Nullable String sentryTraceHeader =
           httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
       final @Nullable List<String> baggageHeader =
@@ -92,6 +93,10 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     } else {
       filterChain.doFilter(httpRequest, httpResponse);
     }
+  }
+
+  private boolean isIgnored() {
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
   }
 
   private void doFilterWithTransaction(
