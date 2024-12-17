@@ -53,8 +53,7 @@ dependencies {
     implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
     implementation(Config.Libs.springBoot3StarterOpenTelemetry)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentless)
 
     // database query tracing
     implementation(projects.sentryJdbc)
