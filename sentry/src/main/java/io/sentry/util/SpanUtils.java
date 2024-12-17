@@ -1,7 +1,7 @@
 package io.sentry.util;
 
-import io.sentry.SentryOpenTelemetryMode;
 import io.sentry.FilterString;
+import io.sentry.SentryOpenTelemetryMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
