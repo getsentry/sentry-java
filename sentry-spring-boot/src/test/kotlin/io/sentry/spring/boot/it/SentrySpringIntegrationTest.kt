@@ -251,7 +251,7 @@ open class App {
         // due to OTel being on the classpath we need to set the default again
         options.spanFactory = DefaultSpanFactory()
         // to test the actual spring implementation
-        options.openTelemetryMode = SentryOpenTelemetryMode.ALL_ORIGINS
+        options.openTelemetryMode = SentryOpenTelemetryMode.OFF
     }
 }
 

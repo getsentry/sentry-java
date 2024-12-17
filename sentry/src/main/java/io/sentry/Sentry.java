@@ -47,8 +47,7 @@ public final class Sentry {
   private Sentry() {}
 
   // TODO logger?
-  private static volatile @NotNull IScopesStorage scopesStorage =
-      ScopesStorageFactory.create(new LoadClass(), NoOpLogger.getInstance());
+  private static volatile @NotNull IScopesStorage scopesStorage = NoOpScopesStorage.getInstance();
 
   /** The root Scopes or NoOp if Sentry is disabled. */
   private static volatile @NotNull IScopes rootScopes = NoOpScopes.getInstance();
@@ -322,6 +321,7 @@ public final class Sentry {
         final IScope rootIsolationScope = new Scope(options);
         rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
+        initScopesStorage(options);
         getScopesStorage().set(rootScopes);
 
         initConfigurations(options);
@@ -354,6 +354,15 @@ public final class Sentry {
                 SentryLevel.WARNING,
                 "This init call has been ignored due to priority being too low.");
       }
+    }
+  }
+
+  private static void initScopesStorage(SentryOptions options) {
+    getScopesStorage().close();
+    if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
+      scopesStorage = new DefaultScopesStorage();
+    } else {
+      scopesStorage = ScopesStorageFactory.create(new LoadClass(), options.getLogger());
     }
   }
 
@@ -492,6 +501,11 @@ public final class Sentry {
     logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
 
     OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
+    if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
+      options.setSpanFactory(new DefaultSpanFactory());
+    } else {
+      options.setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
+    }
 
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
