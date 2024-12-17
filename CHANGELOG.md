@@ -14,6 +14,8 @@
 - Replace deprecated `SimpleInstrumentation` with `SimplePerformantInstrumentation` for graphql 22 ([#3974](https://github.com/getsentry/sentry-java/pull/3974))
 - Cache requests for Spring using Springs `ContentCachingRequestWrapper` instead of our own Wrapper to also cache parameters ([#3641](https://github.com/getsentry/sentry-java/pull/3641))
   - Previously only the body was cached which could lead to problems in the FilterChain as Request parameters were not available
+- Improve ignored check performance ([#3992](https://github.com/getsentry/sentry-java/pull/3992))
+  - Checking if a span origin, a transaction or a checkIn should be ignored is now faster 
 
 ## 8.0.0-rc.2
 
