@@ -9,6 +9,7 @@ import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SpanStatus;
+import io.sentry.TransactionOptions;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
 import java.util.Collections;
@@ -86,10 +87,10 @@ public class Main {
           options.setTracesSampler(
               context -> {
                 // only 10% of transactions with "/product" prefix will be collected
-                if (!context.getTransactionContext().getName().startsWith("/products")) {
+                if (context.getTransactionContext().getName().startsWith("/products")) {
                   return 0.1;
                 } else {
-                  return 0.5;
+                  return 1.0;
                 }
               });
         });
@@ -155,7 +156,9 @@ public class Main {
     //
     // Transactions collect execution time of the piece of code that's executed between the start
     // and finish of transaction.
-    ITransaction transaction = Sentry.startTransaction("transaction name", "op");
+    final TransactionOptions options = new TransactionOptions();
+    options.setBindToScope(true);
+    ITransaction transaction = Sentry.startTransaction("transaction name", "op", options);
     // Transactions can contain one or more Spans
     ISpan outerSpan = transaction.startChild("child");
     Thread.sleep(100);
