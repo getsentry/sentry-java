@@ -70,7 +70,7 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:${Config.Libs.OpenTelemetry.otelInstrumentationVersion}")
+        mavenBom(Config.Libs.OpenTelemetry.otelInstrumentationBom)
     }
 }
 

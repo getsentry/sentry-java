@@ -18,6 +18,7 @@ import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
+import io.sentry.util.SpanUtils;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -55,7 +56,7 @@ public final class SentryWebFilter implements WebFilter {
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
     @NotNull IScopes requestScopes = Sentry.forkedRootScopes("request.webflux");
-    if (!requestScopes.isEnabled()) {
+    if (!requestScopes.isEnabled() || isIgnored(requestScopes)) {
       return webFilterChain.filter(serverWebExchange);
     }
 
@@ -105,6 +106,10 @@ public final class SentryWebFilter implements WebFilter {
               requestScopes.configureScope(
                   scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
             });
+  }
+
+  private boolean isIgnored(final @NotNull IScopes scopes) {
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
   }
 
   private boolean shouldTraceRequest(
