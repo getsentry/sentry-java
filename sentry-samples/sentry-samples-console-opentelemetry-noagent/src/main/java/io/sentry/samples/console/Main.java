@@ -13,7 +13,9 @@ import io.sentry.ITransaction;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOpenTelemetryMode;
 import io.sentry.SpanStatus;
+import io.sentry.opentelemetry.OpenTelemetryUtil;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
 import java.util.Collections;
@@ -27,6 +29,8 @@ public class Main {
           // your Sentry project/dashboard
           options.setDsn(
               "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563");
+
+          OpenTelemetryUtil.applyOpenTelemetryOptions(options, SentryOpenTelemetryMode.AGENTLESS);
 
           // All events get assigned to the release. See more at
           // https://docs.sentry.io/workflow/releases/

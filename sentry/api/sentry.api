@@ -2781,6 +2781,14 @@ public final class io/sentry/SentryNanotimeDateProvider : io/sentry/SentryDatePr
 	public fun now ()Lio/sentry/SentryDate;
 }
 
+public final class io/sentry/SentryOpenTelemetryMode : java/lang/Enum {
+	public static final field AGENT Lio/sentry/SentryOpenTelemetryMode;
+	public static final field AGENTLESS Lio/sentry/SentryOpenTelemetryMode;
+	public static final field AGENTLESS_SPRING Lio/sentry/SentryOpenTelemetryMode;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryOpenTelemetryMode;
+	public static fun values ()[Lio/sentry/SentryOpenTelemetryMode;
+}
+
 public class io/sentry/SentryOptions {
 	public static final field DEFAULT_PROPAGATION_TARGETS Ljava/lang/String;
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
@@ -4201,6 +4209,11 @@ public final class io/sentry/internal/modules/ResourcesModulesLoader : io/sentry
 
 public abstract interface class io/sentry/internal/viewhierarchy/ViewHierarchyExporter {
 	public abstract fun export (Lio/sentry/protocol/ViewHierarchyNode;Ljava/lang/Object;)Z
+}
+
+public final class io/sentry/opentelemetry/OpenTelemetryUtil {
+	public fun <init> ()V
+	public static fun applyOpenTelemetryOptions (Lio/sentry/SentryOptions;Lio/sentry/SentryOpenTelemetryMode;)V
 }
 
 public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -6194,7 +6207,7 @@ public final class io/sentry/util/SentryRandom {
 
 public final class io/sentry/util/SpanUtils {
 	public fun <init> ()V
-	public static fun ignoredSpanOriginsForOpenTelemetry (Z)Ljava/util/List;
+	public static fun ignoredSpanOriginsForOpenTelemetry (Lio/sentry/SentryOpenTelemetryMode;)Ljava/util/List;
 	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
 }
 

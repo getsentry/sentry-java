@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import io.sentry.SentryOpenTelemetryMode;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -13,23 +14,26 @@ public final class SpanUtils {
    *
    * @return a list of span origins to be ignored
    */
-  public static @NotNull List<String> ignoredSpanOriginsForOpenTelemetry(final boolean isAgent) {
+  public static @NotNull List<String> ignoredSpanOriginsForOpenTelemetry(
+      final @NotNull SentryOpenTelemetryMode mode) {
     final @NotNull List<String> origins = new ArrayList<>();
 
-    origins.add("auto.http.spring_jakarta.webmvc");
-    origins.add("auto.http.spring.webmvc");
-    origins.add("auto.spring_jakarta.webflux");
-    origins.add("auto.spring.webflux");
-    origins.add("auto.db.jdbc");
-    origins.add("auto.http.spring_jakarta.webclient");
-    origins.add("auto.http.spring.webclient");
-    origins.add("auto.http.spring_jakarta.restclient");
-    origins.add("auto.http.spring.restclient");
-    origins.add("auto.http.spring_jakarta.resttemplate");
-    origins.add("auto.http.spring.resttemplate");
-    origins.add("auto.http.openfeign");
+    if (SentryOpenTelemetryMode.AGENT == mode || SentryOpenTelemetryMode.AGENTLESS_SPRING == mode) {
+      origins.add("auto.http.spring_jakarta.webmvc");
+      origins.add("auto.http.spring.webmvc");
+      origins.add("auto.spring_jakarta.webflux");
+      origins.add("auto.spring.webflux");
+      origins.add("auto.db.jdbc");
+      origins.add("auto.http.spring_jakarta.webclient");
+      origins.add("auto.http.spring.webclient");
+      origins.add("auto.http.spring_jakarta.restclient");
+      origins.add("auto.http.spring.restclient");
+      origins.add("auto.http.spring_jakarta.resttemplate");
+      origins.add("auto.http.spring.resttemplate");
+      origins.add("auto.http.openfeign");
+    }
 
-    if (isAgent) {
+    if (SentryOpenTelemetryMode.AGENT == mode) {
       origins.add("auto.graphql.graphql");
       origins.add("auto.graphql.graphql22");
     }

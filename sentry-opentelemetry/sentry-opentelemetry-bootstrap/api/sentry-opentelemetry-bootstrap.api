@@ -24,11 +24,6 @@ public final class io/sentry/opentelemetry/InternalSemanticAttributes {
 	public fun <init> ()V
 }
 
-public final class io/sentry/opentelemetry/OpenTelemetryUtil {
-	public fun <init> ()V
-	public static fun applyOpenTelemetryOptions (Lio/sentry/SentryOptions;Z)V
-}
-
 public final class io/sentry/opentelemetry/OtelContextScopesStorage : io/sentry/IScopesStorage {
 	public fun <init> ()V
 	public fun close ()V

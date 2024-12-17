@@ -5,6 +5,7 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.sentry.ISpanFactory;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.SentryOpenTelemetryMode;
 import io.sentry.SentryOptions;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
 import io.sentry.opentelemetry.OtelSpanFactory;
@@ -32,7 +33,8 @@ public class SentryOpenTelemetryNoAgentConfiguration {
       SentryIntegrationPackageStorage.getInstance()
           .addIntegration("SpringBootOpenTelemetryNoAgent");
       SentryAutoConfigurationCustomizerProvider.skipInit = true;
-      OpenTelemetryUtil.applyOpenTelemetryOptions(options, false);
+      OpenTelemetryUtil.applyOpenTelemetryOptions(
+          options, SentryOpenTelemetryMode.AGENTLESS_SPRING);
     };
   }
 }
