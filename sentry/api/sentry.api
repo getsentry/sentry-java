@@ -4211,6 +4211,11 @@ public abstract interface class io/sentry/internal/viewhierarchy/ViewHierarchyEx
 	public abstract fun export (Lio/sentry/protocol/ViewHierarchyNode;Ljava/lang/Object;)Z
 }
 
+public final class io/sentry/opentelemetry/OpenTelemetryUtil {
+	public fun <init> ()V
+	public static fun applyOpenTelemetryOptions (Lio/sentry/SentryOptions;Lio/sentry/SentryOpenTelemetryMode;)V
+}
+
 public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field ID_CPU_USAGE Ljava/lang/String;
 	public static final field ID_FROZEN_FRAME_RENDERS Ljava/lang/String;
