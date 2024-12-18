@@ -56,7 +56,7 @@ class ReplayGestureConverter(
 
                 val totalOffset = now - touchMoveBaseline
                 return if (totalOffset > CAPTURE_MOVE_EVENT_THRESHOLD) {
-                    val moveEvents = mutableListOf<RRWebInteractionMoveEvent>()
+                    val moveEvents = ArrayList<RRWebInteractionMoveEvent>(currentPositions.size)
                     for ((pointerId, positions) in currentPositions) {
                         if (positions.isNotEmpty()) {
                             moveEvents += RRWebInteractionMoveEvent().apply {
@@ -88,7 +88,7 @@ class ReplayGestureConverter(
                 }
 
                 // new finger down - add a new pointer for tracking movement
-                currentPositions[pId] = ArrayList()
+                currentPositions[pId] = ArrayList(10)
                 listOf(
                     RRWebInteractionEvent().apply {
                         timestamp = dateProvider.currentTimeMillis

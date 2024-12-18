@@ -1,5 +1,6 @@
 package io.sentry.android.replay.capture
 
+import android.annotation.TargetApi
 import android.graphics.Bitmap
 import android.view.MotionEvent
 import io.sentry.DateUtils
@@ -23,14 +24,15 @@ import java.io.File
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
 
+@TargetApi(26)
 internal class BufferCaptureStrategy(
     private val options: SentryOptions,
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
     private val random: Random,
-    executor: ScheduledExecutorService? = null,
+    executor: ScheduledExecutorService,
     replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
-) : BaseCaptureStrategy(options, hub, dateProvider, executor = executor, replayCacheProvider = replayCacheProvider) {
+) : BaseCaptureStrategy(options, hub, dateProvider, executor, replayCacheProvider = replayCacheProvider) {
 
     // TODO: capture envelopes for buffered segments instead, but don't send them until buffer is triggered
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()

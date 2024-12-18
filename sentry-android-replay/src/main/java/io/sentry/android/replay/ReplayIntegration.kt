@@ -29,6 +29,7 @@ import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.android.replay.gestures.TouchRecorderCallback
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.appContext
+import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.cache.PersistingScopeObserver
@@ -46,8 +47,9 @@ import io.sentry.util.Random
 import java.io.Closeable
 import java.io.File
 import java.util.LinkedList
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.LazyThreadSafetyMode.NONE
 
 public class ReplayIntegration(
     private val context: Context,
@@ -93,7 +95,10 @@ public class ReplayIntegration(
     private var recorder: Recorder? = null
     private var gestureRecorder: GestureRecorder? = null
     private val random by lazy { Random() }
-    internal val rootViewsSpy by lazy(NONE) { RootViewsSpy.install() }
+    internal val rootViewsSpy by lazy { RootViewsSpy.install() }
+    private val replayExecutor by lazy {
+        Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
+    }
 
     // TODO: probably not everything has to be thread-safe here
     internal val isEnabled = AtomicBoolean(false)
@@ -123,7 +128,7 @@ public class ReplayIntegration(
         }
 
         this.hub = hub
-        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, mainLooperHandler)
+        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, mainLooperHandler, replayExecutor)
         gestureRecorder = gestureRecorderProvider?.invoke() ?: GestureRecorder(options, this)
         isEnabled.set(true)
 
@@ -166,9 +171,9 @@ public class ReplayIntegration(
 
         recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
         captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
-            SessionCaptureStrategy(options, hub, dateProvider, replayCacheProvider = replayCacheProvider)
+            SessionCaptureStrategy(options, hub, dateProvider, replayExecutor, replayCacheProvider)
         } else {
-            BufferCaptureStrategy(options, hub, dateProvider, random, replayCacheProvider = replayCacheProvider)
+            BufferCaptureStrategy(options, hub, dateProvider, random, replayExecutor, replayCacheProvider)
         }
 
         captureStrategy?.start(recorderConfig)
@@ -229,7 +234,6 @@ public class ReplayIntegration(
         gestureRecorder?.stop()
         captureStrategy?.stop()
         isRecording.set(false)
-        captureStrategy?.close()
         captureStrategy = null
     }
 
@@ -264,6 +268,7 @@ public class ReplayIntegration(
         recorder?.close()
         recorder = null
         rootViewsSpy.close()
+        replayExecutor.gracefullyShutdown(options)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -404,5 +409,14 @@ public class ReplayIntegration(
 
     private class PreviousReplayHint : Backfillable {
         override fun shouldEnrich(): Boolean = false
+    }
+
+    private class ReplayExecutorServiceThreadFactory : ThreadFactory {
+        private var cnt = 0
+        override fun newThread(r: Runnable): Thread {
+            val ret = Thread(r, "SentryReplayIntegration-" + cnt++)
+            ret.setDaemon(true)
+            return ret
+        }
     }
 }
