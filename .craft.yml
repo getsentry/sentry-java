@@ -45,6 +45,7 @@ targets:
       maven:io.sentry:sentry-opentelemetry-agentcustomization:
       maven:io.sentry:sentry-opentelemetry-core:
 #      maven:io.sentry:sentry-opentelemetry-agentless:
+#      maven:io.sentry:sentry-opentelemetry-agentless-spring:
       maven:io.sentry:sentry-apollo:
       maven:io.sentry:sentry-jdbc:
       maven:io.sentry:sentry-graphql:

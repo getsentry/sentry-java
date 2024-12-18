@@ -4,6 +4,10 @@
 
 ### Features
 
+- Add `sentry-opentelemetry-agentless-spring` module (TODO)
+  - This module can be added as a dependency when using Sentry with OpenTelemetry and Spring Boot but don't want to use our Agent. It takes care of configuring OpenTelemetry for use with Sentry.
+  - You may want to set `OTEL_LOGS_EXPORTER=none;OTEL_METRICS_EXPORTER=none;OTEL_TRACES_EXPORTER=none` env vars to not have the log flooded with error messages regarding OpenTelemetry features we don't use.
+
 - Add `sentry-opentelemetry-agentless` module ([#3961](https://github.com/getsentry/sentry-java/pull/3961))
   - This module can be added as a dependency when using Sentry with OpenTelemetry but don't want to use our Agent. It takes care of configuring OpenTelemetry for use with Sentry.
   - To enable the auto configuration of it, please set `-Dotel.java.global-autoconfigure.enabled=true` on the `java` command, when starting your application.
