@@ -27,6 +27,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -78,7 +79,13 @@ class ScopesTest {
 
     @Test
     fun `when no dsn available, ctor throws illegal arg`() {
-        val ex = assertFailsWith<IllegalArgumentException> { createScopes(SentryOptions()) }
+        val ex = assertFailsWith<IllegalArgumentException> {
+            val options = SentryOptions()
+            val scopeToUse = Scope(options)
+            val isolationScopeToUse = Scope(options)
+            val globalScopeToUse = Scope(options)
+            Scopes(scopeToUse, isolationScopeToUse, globalScopeToUse, "test")
+        }
         assertEquals("Scopes requires a DSN to be instantiated. Considering using the NoOpScopes if no DSN is available.", ex.message)
     }
 
@@ -91,6 +98,7 @@ class ScopesTest {
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
         val scopes = createScopes(options)
+        reset(integrationMock)
         scopes.forkedScopes("test")
         verifyNoMoreInteractions(integrationMock)
     }
@@ -104,6 +112,7 @@ class ScopesTest {
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
         val scopes = createScopes(options)
+        reset(integrationMock)
         scopes.forkedCurrentScope("test")
         verifyNoMoreInteractions(integrationMock)
     }
