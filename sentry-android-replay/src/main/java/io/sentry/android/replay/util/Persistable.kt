@@ -2,15 +2,12 @@
 package io.sentry.android.replay.util
 
 import android.annotation.TargetApi
-import android.os.Build.VERSION_CODES
-import androidx.annotation.RequiresApi
 import io.sentry.ReplayRecording
 import io.sentry.SentryOptions
 import io.sentry.android.replay.ReplayCache
 import io.sentry.rrweb.RRWebEvent
 import java.io.BufferedWriter
 import java.io.StringWriter
-import java.util.LinkedList
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.ScheduledExecutorService
 

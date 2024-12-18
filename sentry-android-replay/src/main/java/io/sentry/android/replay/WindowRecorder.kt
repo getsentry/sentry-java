@@ -8,6 +8,7 @@ import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.scheduleAtFixedRateSafely
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -17,7 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 internal class WindowRecorder(
     private val options: SentryOptions,
     private val screenshotRecorderCallback: ScreenshotRecorderCallback? = null,
-    private val mainLooperHandler: MainLooperHandler
+    private val mainLooperHandler: MainLooperHandler,
+    private val replayExecutor: ScheduledExecutorService
 ) : Recorder, OnRootViewsChangedListener {
 
     internal companion object {
@@ -57,7 +59,7 @@ internal class WindowRecorder(
             return
         }
 
-        recorder = ScreenshotRecorder(recorderConfig, options, mainLooperHandler, screenshotRecorderCallback)
+        recorder = ScreenshotRecorder(recorderConfig, options, mainLooperHandler, replayExecutor, screenshotRecorderCallback)
         capturingTask = capturer.scheduleAtFixedRateSafely(
             options,
             "$TAG.capture",

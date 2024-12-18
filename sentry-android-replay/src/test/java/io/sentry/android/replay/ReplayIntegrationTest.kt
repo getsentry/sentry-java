@@ -411,7 +411,6 @@ class ReplayIntegrationTest {
         verify(recorder).stop()
         verify(recorder).close()
         verify(captureStrategy).stop()
-        verify(captureStrategy).close()
         assertFalse(replay.isRecording())
     }
 

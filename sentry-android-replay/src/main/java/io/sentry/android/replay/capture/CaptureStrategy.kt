@@ -54,8 +54,6 @@ internal interface CaptureStrategy {
 
     fun convert(): CaptureStrategy
 
-    fun close()
-
     companion object {
         private const val BREADCRUMB_START_OFFSET = 100L
 

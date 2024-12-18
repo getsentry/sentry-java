@@ -136,9 +136,6 @@ class ReplayIntegrationWithRecorderTest {
         replay.stop()
         assertEquals(STOPPED, recorder.state)
 
-        replay.close()
-        assertEquals(CLOSED, recorder.state)
-
         // start again and capture some frames
         replay.start()
 
@@ -176,6 +173,9 @@ class ReplayIntegrationWithRecorderTest {
                 assertEquals(0, videoEvents?.first()?.segmentId)
             }
         )
+
+        replay.close()
+        assertEquals(CLOSED, recorder.state)
     }
 
     enum class LifecycleState {

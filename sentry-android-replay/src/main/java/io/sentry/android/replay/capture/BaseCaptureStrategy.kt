@@ -15,7 +15,6 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_ID
-import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_RECORDING
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_SCREEN_AT_START
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
@@ -24,8 +23,6 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.Companion.createSegment
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.gestures.ReplayGestureConverter
-import io.sentry.android.replay.util.PersistableLinkedList
-import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
@@ -48,7 +45,7 @@ internal abstract class BaseCaptureStrategy(
     private val options: SentryOptions,
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
-    executor: ScheduledExecutorService? = null,
+    protected val replayExecutor: ScheduledExecutorService,
     private val replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
 ) : CaptureStrategy {
 
@@ -85,10 +82,6 @@ internal abstract class BaseCaptureStrategy(
     override var replayType by persistableAtomic<ReplayType>(propertyName = SEGMENT_KEY_REPLAY_TYPE)
 
     protected val currentEvents: Deque<RRWebEvent> = ConcurrentLinkedDeque()
-
-    protected val replayExecutor: ScheduledExecutorService by lazy {
-        executor ?: Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
-    }
 
     override fun start(
         recorderConfig: ScreenshotRecorderConfig,
@@ -160,19 +153,6 @@ internal abstract class BaseCaptureStrategy(
         val rrwebEvents = gestureConverter.convert(event, recorderConfig)
         if (rrwebEvents != null) {
             currentEvents += rrwebEvents
-        }
-    }
-
-    override fun close() {
-        replayExecutor.gracefullyShutdown(options)
-    }
-
-    private class ReplayExecutorServiceThreadFactory : ThreadFactory {
-        private var cnt = 0
-        override fun newThread(r: Runnable): Thread {
-            val ret = Thread(r, "SentryReplayIntegration-" + cnt++)
-            ret.setDaemon(true)
-            return ret
         }
     }
 
