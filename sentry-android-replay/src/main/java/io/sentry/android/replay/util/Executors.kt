@@ -78,7 +78,7 @@ internal fun ScheduledExecutorService.scheduleAtFixedRateSafely(
     task: Runnable
 ): ScheduledFuture<*>? {
     return try {
-        scheduleWithFixedDelay({
+        scheduleAtFixedRate({
             try {
                 task.run()
             } catch (e: Throwable) {

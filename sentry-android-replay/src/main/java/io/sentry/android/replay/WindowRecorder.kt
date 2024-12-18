@@ -60,6 +60,8 @@ internal class WindowRecorder(
         }
 
         recorder = ScreenshotRecorder(recorderConfig, options, mainLooperHandler, replayExecutor, screenshotRecorderCallback)
+        // TODO: change this to use MainThreadHandler and just post on the main thread with delay
+        // to avoid thread context switch every time
         capturingTask = capturer.scheduleAtFixedRateSafely(
             options,
             "$TAG.capture",
