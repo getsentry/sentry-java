@@ -8,6 +8,7 @@ import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryOptions
 import io.sentry.dsnString
 import io.sentry.protocol.SentryId
+import io.sentry.test.initForTest
 import java.util.UUID
 import java.util.concurrent.ExecutorCompletionService
 import java.util.concurrent.Executors
@@ -182,7 +183,7 @@ class ClientReportMultiThreadingTest {
     }
 
     private fun setupSentry(callback: Sentry.OptionsConfiguration<SentryOptions>? = null) {
-        Sentry.init { options ->
+        initForTest { options ->
             options.dsn = dsnString
             callback?.configure(options)
             opts = options
