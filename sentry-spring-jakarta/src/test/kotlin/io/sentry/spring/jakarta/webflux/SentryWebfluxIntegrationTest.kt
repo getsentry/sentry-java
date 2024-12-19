@@ -6,6 +6,7 @@ import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.checkEvent
 import io.sentry.checkTransaction
+import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
@@ -175,7 +176,7 @@ open class App {
 
     @Bean
     open fun sentryInitializer(transportFactory: ITransportFactory) = ApplicationRunner {
-        Sentry.init {
+        initForTest {
             it.dsn = "http://key@localhost/proj"
             it.setDebug(true)
             it.setTransportFactory(transportFactory)
