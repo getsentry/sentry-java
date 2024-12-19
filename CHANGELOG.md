@@ -24,6 +24,8 @@
   - Previously only the body was cached which could lead to problems in the FilterChain as Request parameters were not available
 - We now hold a strong reference to the underlying OpenTelemetry span when it is created through Sentry API ([#3997](https://github.com/getsentry/sentry-java/pull/3997))
   - This keeps it from being garbage collected too early
+- Close backpressure monitor on SDK shutdown ([#3998](https://github.com/getsentry/sentry-java/pull/3998))
+  - Due to the backpressure monitor rescheduling a task to run every 10s, it very likely caused shutdown to wait the full `shutdownTimeoutMillis` (defaulting to 2s) instead of being able to terminate immediately
 
 ## 8.0.0-rc.2
 
