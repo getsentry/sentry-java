@@ -134,10 +134,16 @@ public class ReplayIntegration(
 
         options.connectionStatusProvider.addConnectionStatusObserver(this)
         hub.rateLimiter?.addRateLimitObserver(this)
-        try {
-            context.registerComponentCallbacks(this)
-        } catch (e: Throwable) {
-            options.logger.log(INFO, "ComponentCallbacks is not available, orientation changes won't be handled by Session replay", e)
+        if (options.experimental.sessionReplay.isTrackOrientationChange) {
+            try {
+                context.registerComponentCallbacks(this)
+            } catch (e: Throwable) {
+                options.logger.log(
+                    INFO,
+                    "ComponentCallbacks is not available, orientation changes won't be handled by Session replay",
+                    e
+                )
+            }
         }
 
         addIntegrationToSdkVersion("Replay")
@@ -260,9 +266,11 @@ public class ReplayIntegration(
 
         options.connectionStatusProvider.removeConnectionStatusObserver(this)
         hub?.rateLimiter?.removeRateLimitObserver(this)
-        try {
-            context.unregisterComponentCallbacks(this)
-        } catch (ignored: Throwable) {
+        if (options.experimental.sessionReplay.isTrackOrientationChange) {
+            try {
+                context.unregisterComponentCallbacks(this)
+            } catch (ignored: Throwable) {
+            }
         }
         stop()
         recorder?.close()
