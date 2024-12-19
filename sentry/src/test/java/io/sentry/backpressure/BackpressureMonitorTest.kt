@@ -4,8 +4,10 @@ import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
 import io.sentry.SentryOptions
 import io.sentry.backpressure.BackpressureMonitor.MAX_DOWNSAMPLE_FACTOR
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.util.concurrent.Future
@@ -19,10 +21,12 @@ class BackpressureMonitorTest {
         val options = SentryOptions()
         val scopes = mock<IScopes>()
         val executor = mock<ISentryExecutorService>()
+        val returnedFuture = mock<Future<Any>>()
         fun getSut(): BackpressureMonitor {
             options.executorService = executor
             whenever(executor.isClosed).thenReturn(false)
-            whenever(executor.schedule(any(), any())).thenReturn(mock<Future<Any>>())
+            whenever(executor.schedule(any(), any())).thenReturn(returnedFuture)
+            whenever(returnedFuture.cancel(any())).thenReturn(true)
             return BackpressureMonitor(options, scopes)
         }
     }
@@ -79,5 +83,18 @@ class BackpressureMonitorTest {
         sut.run()
 
         verify(fixture.executor).schedule(any(), any())
+    }
+
+    @Test
+    fun `close cancels latest job`() {
+        val sut = fixture.getSut()
+        sut.run()
+
+        verify(fixture.executor).schedule(any(), any())
+        verify(fixture.returnedFuture, never()).cancel(any())
+
+        sut.close()
+
+        verify(fixture.returnedFuture).cancel(eq(true))
     }
 }

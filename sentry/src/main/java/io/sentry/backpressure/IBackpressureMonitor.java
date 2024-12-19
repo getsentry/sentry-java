@@ -7,4 +7,6 @@ public interface IBackpressureMonitor {
   void start();
 
   int getDownsampleFactor();
+
+  void close();
 }
