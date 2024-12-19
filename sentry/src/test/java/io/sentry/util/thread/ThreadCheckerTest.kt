@@ -2,6 +2,7 @@ package io.sentry.util.thread
 
 import io.sentry.protocol.SentryThread
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -42,5 +43,12 @@ class ThreadCheckerTest {
             id = thread.id
         }
         assertFalse(threadChecker.isMainThread(sentryThread))
+    }
+
+    @Test
+    fun `currentThreadName returns the name of the current thread`() {
+        val thread = Thread.currentThread()
+        thread.name = "test"
+        assertEquals("test", threadChecker.currentThreadName)
     }
 }

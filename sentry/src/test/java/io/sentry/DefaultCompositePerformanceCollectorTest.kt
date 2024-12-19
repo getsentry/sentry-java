@@ -23,9 +23,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class DefaultTransactionPerformanceCollectorTest {
+class DefaultCompositePerformanceCollectorTest {
 
-    private val className = "io.sentry.DefaultTransactionPerformanceCollector"
+    private val className = "io.sentry.DefaultCompositePerformanceCollector"
     private val ctorTypes: Array<Class<*>> = arrayOf(SentryOptions::class.java)
     private val fixture = Fixture()
     private val threadChecker = ThreadChecker.getInstance()
@@ -33,6 +33,7 @@ class DefaultTransactionPerformanceCollectorTest {
     private class Fixture {
         lateinit var transaction1: ITransaction
         lateinit var transaction2: ITransaction
+        val id1 = "id1"
         val scopes: IScopes = mock()
         val options = SentryOptions()
         var mockTimer: Timer? = null
@@ -50,7 +51,7 @@ class DefaultTransactionPerformanceCollectorTest {
             whenever(scopes.options).thenReturn(options)
         }
 
-        fun getSut(memoryCollector: IPerformanceSnapshotCollector? = JavaMemoryCollector(), cpuCollector: IPerformanceSnapshotCollector? = mockCpuCollector, executorService: ISentryExecutorService = deferredExecutorService): TransactionPerformanceCollector {
+        fun getSut(memoryCollector: IPerformanceSnapshotCollector? = JavaMemoryCollector(), cpuCollector: IPerformanceSnapshotCollector? = mockCpuCollector, executorService: ISentryExecutorService = deferredExecutorService): CompositePerformanceCollector {
             options.dsn = "https://key@sentry.io/proj"
             options.executorService = executorService
             if (cpuCollector != null) {
@@ -61,7 +62,7 @@ class DefaultTransactionPerformanceCollectorTest {
             }
             transaction1 = SentryTracer(TransactionContext("", ""), scopes)
             transaction2 = SentryTracer(TransactionContext("", ""), scopes)
-            val collector = DefaultTransactionPerformanceCollector(options)
+            val collector = DefaultCompositePerformanceCollector(options)
             val timer: Timer = collector.getProperty("timer") ?: Timer(true)
             mockTimer = spy(timer)
             collector.injectForField("timer", mockTimer)
@@ -105,10 +106,26 @@ class DefaultTransactionPerformanceCollectorTest {
     }
 
     @Test
+    fun `when start with a string, timer is scheduled every 100 milliseconds`() {
+        val collector = fixture.getSut()
+        collector.start(fixture.id1)
+        verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+    }
+
+    @Test
     fun `when stop, timer is stopped`() {
         val collector = fixture.getSut()
         collector.start(fixture.transaction1)
         collector.stop(fixture.transaction1)
+        verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+        verify(fixture.mockTimer)!!.cancel()
+    }
+
+    @Test
+    fun `when stop with a string, timer is stopped`() {
+        val collector = fixture.getSut()
+        collector.start(fixture.id1)
+        collector.stop(fixture.id1)
         verify(fixture.mockTimer)!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
         verify(fixture.mockTimer)!!.cancel()
     }
@@ -123,33 +140,52 @@ class DefaultTransactionPerformanceCollectorTest {
     }
 
     @Test
+    fun `stopping a not collected id return null`() {
+        val collector = fixture.getSut()
+        val data = collector.stop(fixture.id1)
+        verify(fixture.mockTimer, never())!!.scheduleAtFixedRate(any(), any<Long>(), eq(100))
+        verify(fixture.mockTimer, never())!!.cancel()
+        assertNull(data)
+    }
+
+    @Test
     fun `collector collect memory for multiple transactions`() {
         val collector = fixture.getSut()
         collector.start(fixture.transaction1)
         collector.start(fixture.transaction2)
+        collector.start(fixture.id1)
         // Let's sleep to make the collector get values
         Thread.sleep(300)
 
         val data1 = collector.stop(fixture.transaction1)
-        // There is still a transaction running: the timer shouldn't stop now
+        // There is still a transaction and an id running: the timer shouldn't stop now
         verify(fixture.mockTimer, never())!!.cancel()
 
         val data2 = collector.stop(fixture.transaction2)
-        // There are no more transactions running: the time should stop now
+        // There is still an id running: the timer shouldn't stop now
+        verify(fixture.mockTimer, never())!!.cancel()
+
+        val data3 = collector.stop(fixture.id1)
+        // There are no more transactions or ids running: the time should stop now
         verify(fixture.mockTimer)!!.cancel()
 
         assertNotNull(data1)
         assertNotNull(data2)
+        assertNotNull(data3)
         val memoryData1 = data1.map { it.memoryData }
         val cpuData1 = data1.map { it.cpuData }
         val memoryData2 = data2.map { it.memoryData }
         val cpuData2 = data2.map { it.cpuData }
+        val memoryData3 = data3.map { it.memoryData }
+        val cpuData3 = data3.map { it.cpuData }
 
         // The data returned by the collector is not empty
         assertFalse(memoryData1.isEmpty())
         assertFalse(cpuData1.isEmpty())
         assertFalse(memoryData2.isEmpty())
         assertFalse(cpuData2.isEmpty())
+        assertFalse(memoryData3.isEmpty())
+        assertFalse(cpuData3.isEmpty())
     }
 
     @Test
@@ -263,6 +299,27 @@ class DefaultTransactionPerformanceCollectorTest {
         // collector should be notified
         verify(collector).onSpanFinished(fixture.transaction1)
         // and clear should be called, as there's no more running txn
+        verify(collector).clear()
+    }
+
+    @Test
+    fun `Continuous collectors are not called when collecting using a string id`() {
+        val collector = mock<IPerformanceContinuousCollector>()
+        fixture.options.performanceCollectors.add(collector)
+        val sut = fixture.getSut(memoryCollector = null, cpuCollector = null)
+
+        // when a collection is started with an id
+        sut.start(fixture.id1)
+
+        // collector should not be notified
+        verify(collector, never()).onSpanStarted(fixture.transaction1)
+
+        // when the id collection is stopped
+        sut.stop(fixture.id1)
+
+        // collector should not be notified
+        verify(collector, never()).onSpanFinished(fixture.transaction1)
+
         verify(collector).clear()
     }
 

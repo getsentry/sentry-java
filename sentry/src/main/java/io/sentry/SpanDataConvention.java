@@ -25,4 +25,5 @@ public interface SpanDataConvention {
   String CONTRIBUTES_TTFD = "ui.contributes_to_ttfd";
   String HTTP_START_TIMESTAMP = "http.start_timestamp";
   String HTTP_END_TIMESTAMP = "http.end_timestamp";
+  String PROFILER_ID = "profiler_id";
 }

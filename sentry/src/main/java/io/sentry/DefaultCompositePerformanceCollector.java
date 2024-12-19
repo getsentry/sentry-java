@@ -15,8 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class DefaultTransactionPerformanceCollector
-    implements TransactionPerformanceCollector {
+public final class DefaultCompositePerformanceCollector implements CompositePerformanceCollector {
   private static final long TRANSACTION_COLLECTION_INTERVAL_MILLIS = 100;
   private static final long TRANSACTION_COLLECTION_TIMEOUT_MILLIS = 30000;
   private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
@@ -31,7 +30,7 @@ public final class DefaultTransactionPerformanceCollector
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
   private long lastCollectionTimestamp = 0;
 
-  public DefaultTransactionPerformanceCollector(final @NotNull SentryOptions options) {
+  public DefaultCompositePerformanceCollector(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
     this.snapshotCollectors = new ArrayList<>();
     this.continuousCollectors = new ArrayList<>();
@@ -82,6 +81,23 @@ public final class DefaultTransactionPerformanceCollector
                 e);
       }
     }
+    start(transaction.getEventId().toString());
+  }
+
+  @Override
+  public void start(final @NotNull String id) {
+    if (hasNoCollectors) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.INFO,
+              "No collector found. Performance stats will not be captured during transactions.");
+      return;
+    }
+
+    if (!performanceDataMap.containsKey(id)) {
+      performanceDataMap.put(id, new ArrayList<>());
+    }
     if (!isStarted.getAndSet(true)) {
       try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
         if (timer == null) {
@@ -110,7 +126,7 @@ public final class DefaultTransactionPerformanceCollector
                 // The timer is scheduled to run every 100ms on average. In case it takes longer,
                 // subsequent tasks are executed more quickly. If two tasks are scheduled to run in
                 // less than 10ms, the measurement that we collect is not meaningful, so we skip it
-                if (now - lastCollectionTimestamp < 10) {
+                if (now - lastCollectionTimestamp <= 10) {
                   return;
                 }
                 lastCollectionTimestamp = now;
@@ -157,14 +173,18 @@ public final class DefaultTransactionPerformanceCollector
             transaction.getName(),
             transaction.getSpanContext().getTraceId().toString());
 
-    final @Nullable List<PerformanceCollectionData> data =
-        performanceDataMap.remove(transaction.getEventId().toString());
-
     for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {
       collector.onSpanFinished(transaction);
     }
 
-    // close if they are no more remaining transactions
+    return stop(transaction.getEventId().toString());
+  }
+
+  @Override
+  public @Nullable List<PerformanceCollectionData> stop(final @NotNull String id) {
+    final @Nullable List<PerformanceCollectionData> data = performanceDataMap.remove(id);
+
+    // close if they are no more running requests
     if (performanceDataMap.isEmpty()) {
       close();
     }

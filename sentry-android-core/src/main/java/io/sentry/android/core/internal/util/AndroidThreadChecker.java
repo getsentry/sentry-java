@@ -40,6 +40,11 @@ public final class AndroidThreadChecker implements IThreadChecker {
   }
 
   @Override
+  public @NotNull String getCurrentThreadName() {
+    return isMainThread() ? "main" : Thread.currentThread().getName();
+  }
+
+  @Override
   public boolean isMainThread(final @NotNull SentryThread sentryThread) {
     final Long threadId = sentryThread.getId();
     return threadId != null && isMainThread(threadId);

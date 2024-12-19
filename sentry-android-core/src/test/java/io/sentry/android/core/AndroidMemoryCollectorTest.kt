@@ -27,6 +27,6 @@ class AndroidMemoryCollectorTest {
         assertNotEquals(-1, memoryData.usedNativeMemory)
         assertEquals(usedNativeMemory, memoryData.usedNativeMemory)
         assertEquals(usedMemory, memoryData.usedHeapMemory)
-        assertNotEquals(0, memoryData.timestampMillis)
+        assertNotEquals(0, memoryData.timestamp.nanoTimestamp())
     }
 }

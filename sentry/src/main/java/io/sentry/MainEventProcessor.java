@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Cached;
-import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryTransaction;
@@ -68,34 +67,8 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   }
 
   private void setDebugMeta(final @NotNull SentryBaseEvent event) {
-    final @NotNull List<DebugImage> debugImages = new ArrayList<>();
-
-    if (options.getProguardUuid() != null) {
-      final DebugImage proguardMappingImage = new DebugImage();
-      proguardMappingImage.setType(DebugImage.PROGUARD);
-      proguardMappingImage.setUuid(options.getProguardUuid());
-      debugImages.add(proguardMappingImage);
-    }
-
-    for (final @NotNull String bundleId : options.getBundleIds()) {
-      final DebugImage sourceBundleImage = new DebugImage();
-      sourceBundleImage.setType(DebugImage.JVM);
-      sourceBundleImage.setDebugId(bundleId);
-      debugImages.add(sourceBundleImage);
-    }
-
-    if (!debugImages.isEmpty()) {
-      DebugMeta debugMeta = event.getDebugMeta();
-
-      if (debugMeta == null) {
-        debugMeta = new DebugMeta();
-      }
-      if (debugMeta.getImages() == null) {
-        debugMeta.setImages(debugImages);
-      } else {
-        debugMeta.getImages().addAll(debugImages);
-      }
-
+    final DebugMeta debugMeta = DebugMeta.buildDebugMeta(event.getDebugMeta(), options);
+    if (debugMeta != null) {
       event.setDebugMeta(debugMeta);
     }
   }

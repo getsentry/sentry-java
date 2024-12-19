@@ -110,7 +110,7 @@
         <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
 
         <!--    how to enable profiling when starting transactions -->
-        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1" />
+<!--        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />-->
 
         <!--    how to enable app start profiling -->
         <meta-data android:name="io.sentry.traces.profiling.enable-app-start" android:value="true" />
