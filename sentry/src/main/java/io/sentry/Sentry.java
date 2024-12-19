@@ -300,8 +300,6 @@ public final class Sentry {
                   "Sentry has been already initialized. Previous configuration will be overwritten.");
         }
 
-        initForOpenTelemetryMaybe(options);
-
         // load lazy fields of the options in a separate thread
         try {
           options.getExecutorService().submit(() -> options.loadLazyFields());
@@ -323,6 +321,7 @@ public final class Sentry {
         final IScope rootIsolationScope = new Scope(options);
         rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
+        initForOpenTelemetryMaybe(options);
         getScopesStorage().set(rootScopes);
 
         initConfigurations(options);
