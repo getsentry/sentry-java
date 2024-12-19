@@ -321,7 +321,7 @@ public final class Sentry {
         final IScope rootIsolationScope = new Scope(options);
         rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
-        initScopesStorage(options);
+        initForOpenTelemetryMaybe(options);
         getScopesStorage().set(rootScopes);
 
         initConfigurations(options);
@@ -357,6 +357,19 @@ public final class Sentry {
     }
   }
 
+  private static void initForOpenTelemetryMaybe(SentryOptions options) {
+    if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
+      options.setSpanFactory(new DefaultSpanFactory());
+      //    } else {
+      // enabling this causes issues with agentless where OTel spans seem to be randomly ended
+      //      options.setSpanFactory(SpanFactoryFactory.create(new LoadClass(),
+      // NoOpLogger.getInstance()));
+    }
+    initScopesStorage(options);
+    OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
+  }
+
+  @SuppressWarnings("UnusedMethod")
   private static void initScopesStorage(SentryOptions options) {
     getScopesStorage().close();
     if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
@@ -499,13 +512,6 @@ public final class Sentry {
       logger = options.getLogger();
     }
     logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
-
-    OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
-    if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
-      options.setSpanFactory(new DefaultSpanFactory());
-    } else {
-      options.setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
-    }
 
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
