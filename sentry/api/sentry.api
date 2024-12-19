@@ -2785,8 +2785,8 @@ public final class io/sentry/SentryOpenTelemetryMode : java/lang/Enum {
 	public static final field AGENT Lio/sentry/SentryOpenTelemetryMode;
 	public static final field AGENTLESS Lio/sentry/SentryOpenTelemetryMode;
 	public static final field AGENTLESS_SPRING Lio/sentry/SentryOpenTelemetryMode;
-	public static final field ALL_ORIGINS Lio/sentry/SentryOpenTelemetryMode;
 	public static final field AUTO Lio/sentry/SentryOpenTelemetryMode;
+	public static final field OFF Lio/sentry/SentryOpenTelemetryMode;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryOpenTelemetryMode;
 	public static fun values ()[Lio/sentry/SentryOpenTelemetryMode;
 }

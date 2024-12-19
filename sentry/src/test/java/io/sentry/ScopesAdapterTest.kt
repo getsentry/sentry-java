@@ -19,6 +19,11 @@ class ScopesAdapterTest {
 
     @BeforeTest
     fun `set up`() {
+        Sentry.init(
+            SentryOptions().apply {
+                dsn = "https://key@localhost/proj"
+            }
+        )
         Sentry.setCurrentScopes(scopes)
     }
 
