@@ -11,6 +11,7 @@ import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.ManifestModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
+import io.sentry.opentelemetry.OpenTelemetryUtil;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -489,6 +490,8 @@ public final class Sentry {
       logger = options.getLogger();
     }
     logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
+
+    OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
 
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName

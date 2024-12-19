@@ -4,6 +4,7 @@ import io.sentry.DefaultSpanFactory
 import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
+import io.sentry.SentryOpenTelemetryMode
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.checkTransaction
@@ -249,6 +250,8 @@ open class App {
     open fun optionsCallback() = Sentry.OptionsConfiguration<SentryOptions> { options ->
         // due to OTel being on the classpath we need to set the default again
         options.spanFactory = DefaultSpanFactory()
+        // to test the actual spring implementation
+        options.openTelemetryMode = SentryOpenTelemetryMode.ALL_ORIGINS
     }
 }
 

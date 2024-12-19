@@ -39,7 +39,7 @@ public final class SentryAutoConfigurationCustomizerProvider
           options -> {
             options.setEnableExternalConfiguration(true);
             options.setInitPriority(InitPriority.HIGH);
-            OpenTelemetryUtil.applyOpenTelemetryOptions(options, SentryOpenTelemetryMode.AGENT);
+            options.setOpenTelemetryMode(SentryOpenTelemetryMode.AGENT);
             final @Nullable SdkVersion sdkVersion = createSdkVersion(options, versionInfoHolder);
             if (sdkVersion != null) {
               options.setSdkVersion(sdkVersion);

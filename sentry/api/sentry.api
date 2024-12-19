@@ -2785,6 +2785,8 @@ public final class io/sentry/SentryOpenTelemetryMode : java/lang/Enum {
 	public static final field AGENT Lio/sentry/SentryOpenTelemetryMode;
 	public static final field AGENTLESS Lio/sentry/SentryOpenTelemetryMode;
 	public static final field AGENTLESS_SPRING Lio/sentry/SentryOpenTelemetryMode;
+	public static final field ALL_ORIGINS Lio/sentry/SentryOpenTelemetryMode;
+	public static final field AUTO Lio/sentry/SentryOpenTelemetryMode;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryOpenTelemetryMode;
 	public static fun values ()[Lio/sentry/SentryOpenTelemetryMode;
 }
@@ -2797,6 +2799,7 @@ public class io/sentry/SentryOptions {
 	public fun addContextTag (Ljava/lang/String;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
 	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
+	public fun addIgnoredSpanOrigin (Ljava/lang/String;)V
 	public fun addInAppExclude (Ljava/lang/String;)V
 	public fun addInAppInclude (Ljava/lang/String;)V
 	public fun addIntegration (Lio/sentry/Integration;)V
@@ -2854,6 +2857,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
 	public fun getModulesLoader ()Lio/sentry/internal/modules/IModulesLoader;
+	public fun getOpenTelemetryMode ()Lio/sentry/SentryOpenTelemetryMode;
 	public fun getOptionsObservers ()Ljava/util/List;
 	public fun getOutboxPath ()Ljava/lang/String;
 	public fun getPerformanceCollectors ()Ljava/util/List;
@@ -2979,6 +2983,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxSpans (I)V
 	public fun setMaxTraceFileSize (J)V
 	public fun setModulesLoader (Lio/sentry/internal/modules/IModulesLoader;)V
+	public fun setOpenTelemetryMode (Lio/sentry/SentryOpenTelemetryMode;)V
 	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
@@ -4213,7 +4218,7 @@ public abstract interface class io/sentry/internal/viewhierarchy/ViewHierarchyEx
 
 public final class io/sentry/opentelemetry/OpenTelemetryUtil {
 	public fun <init> ()V
-	public static fun applyOpenTelemetryOptions (Lio/sentry/SentryOptions;Lio/sentry/SentryOpenTelemetryMode;)V
+	public static fun applyIgnoredSpanOrigins (Lio/sentry/SentryOptions;Lio/sentry/util/LoadClass;)V
 }
 
 public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
