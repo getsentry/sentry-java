@@ -331,7 +331,7 @@ class SentryWebFluxTracingFilterTest {
         val sentryTraceHeaderString = "2722d9f6ec019ade60c776169d9a8904-$parentSpanId-1"
         val baggageHeaderStrings = listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET")
         fixture.options.tracesSampleRate = null
-        fixture.options.ignoredSpanOrigins = listOf("auto.spring.webflux")
+        fixture.options.setIgnoredSpanOrigins(listOf("auto.spring.webflux"))
         val filter = fixture.getSut(sentryTraceHeader = sentryTraceHeaderString, baggageHeaders = baggageHeaderStrings)
 
         withMockScopes {

@@ -1,6 +1,7 @@
 package io.sentry.util
 
 import io.sentry.CheckInStatus
+import io.sentry.FilterString
 import io.sentry.IScopes
 import io.sentry.ISentryLifecycleToken
 import io.sentry.MonitorConfig
@@ -26,12 +27,12 @@ class CheckInUtilsTest {
 
     @Test
     fun `ignores exact match`() {
-        assertTrue(CheckInUtils.isIgnored(listOf("slugA"), "slugA"))
+        assertTrue(CheckInUtils.isIgnored(listOf(FilterString("slugA")), "slugA"))
     }
 
     @Test
     fun `ignores regex match`() {
-        assertTrue(CheckInUtils.isIgnored(listOf("slug-.*"), "slug-A"))
+        assertTrue(CheckInUtils.isIgnored(listOf(FilterString("slug-.*")), "slug-A"))
     }
 
     @Test
@@ -46,12 +47,12 @@ class CheckInUtilsTest {
 
     @Test
     fun `does not ignore if slug is not in ignored list`() {
-        assertFalse(CheckInUtils.isIgnored(listOf("slugB"), "slugA"))
+        assertFalse(CheckInUtils.isIgnored(listOf(FilterString("slugB")), "slugA"))
     }
 
     @Test
     fun `does not ignore if slug is does not match ignored list`() {
-        assertFalse(CheckInUtils.isIgnored(listOf("slug-.*"), "slugA"))
+        assertFalse(CheckInUtils.isIgnored(listOf(FilterString("slug-.*")), "slugA"))
     }
 
     @Test

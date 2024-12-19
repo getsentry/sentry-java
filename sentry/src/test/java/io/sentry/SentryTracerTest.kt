@@ -87,7 +87,7 @@ class SentryTracerTest {
         val tracer = fixture.getSut({
             it.setDebug(true)
             it.setLogger(SystemOutLogger())
-            it.ignoredSpanOrigins = listOf("ignored")
+            it.setIgnoredSpanOrigins(listOf("ignored"))
         })
         tracer.startChild("child1", null, SpanOptions().also { it.origin = "ignored" })
         tracer.startChild("child2")

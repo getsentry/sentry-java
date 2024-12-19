@@ -2085,7 +2085,7 @@ class ScopesTest {
     @Test
     fun `creating a transaction with an ignored origin noops`() {
         val scopes = generateScopes {
-            it.ignoredSpanOrigins = listOf("ignored.span.origin")
+            it.setIgnoredSpanOrigins(listOf("ignored.span.origin"))
         }
 
         val transactionContext = TransactionContext("transaction-name", "transaction-op")
@@ -2102,7 +2102,7 @@ class ScopesTest {
     @Test
     fun `creating a transaction with a non ignored origin creates the transaction`() {
         val scopes = generateScopes {
-            it.ignoredSpanOrigins = listOf("ignored.span.origin")
+            it.setIgnoredSpanOrigins(listOf("ignored.span.origin"))
         }
 
         val transactionContext = TransactionContext("transaction-name", "transaction-op")

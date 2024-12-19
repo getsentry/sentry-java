@@ -587,7 +587,7 @@ class SentryClientTest {
     @Test
     fun `when captureCheckIn, envelope is sent if ignored slug does not match`() {
         val sut = fixture.getSut { options ->
-            options.ignoredCheckIns = listOf("non_matching_slug")
+            options.setIgnoredCheckIns(listOf("non_matching_slug"))
         }
 
         sut.captureCheckIn(checkIn, null, null)
@@ -611,7 +611,7 @@ class SentryClientTest {
     @Test
     fun `when captureCheckIn, envelope is not sent if slug is ignored`() {
         val sut = fixture.getSut { options ->
-            options.ignoredCheckIns = listOf("some_slug")
+            options.setIgnoredCheckIns(listOf("some_slug"))
         }
 
         sut.captureCheckIn(checkIn, null, null)
@@ -821,7 +821,7 @@ class SentryClientTest {
 
     @Test
     fun `transaction dropped by ignoredTransactions is recorded`() {
-        fixture.sentryOptions.ignoredTransactions = listOf("a-transaction")
+        fixture.sentryOptions.setIgnoredTransactions(listOf("a-transaction"))
 
         val transaction = SentryTransaction(fixture.sentryTracer)
 
@@ -843,7 +843,7 @@ class SentryClientTest {
 
     @Test
     fun `transaction dropped by ignoredTransactions with regex is recorded`() {
-        fixture.sentryOptions.ignoredTransactions = listOf("a.*action")
+        fixture.sentryOptions.setIgnoredTransactions(listOf("a.*action"))
 
         val transaction = SentryTransaction(fixture.sentryTracer)
 
