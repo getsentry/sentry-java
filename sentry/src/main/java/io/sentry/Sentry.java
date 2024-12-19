@@ -361,9 +361,10 @@ public final class Sentry {
   private static void initForOpenTelemetryMaybe(SentryOptions options) {
     if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
       options.setSpanFactory(new DefaultSpanFactory());
-//    } else {
+      //    } else {
       // enabling this causes issues with agentless where OTel spans seem to be randomly ended
-//      options.setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
+      //      options.setSpanFactory(SpanFactoryFactory.create(new LoadClass(),
+      // NoOpLogger.getInstance()));
     }
     initScopesStorage(options);
     OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
