@@ -19,11 +19,10 @@ class HubAdapterTest {
 
     @BeforeTest
     fun `set up`() {
-        Sentry.init(
-            SentryOptions().apply {
-                dsn = "https://key@localhost/proj"
-            }
-        )
+        Sentry.init { options ->
+            options.dsn = "https://key@host/proj"
+            options.shutdownTimeoutMillis = 20
+        }
         Sentry.setCurrentScopes(scopes)
     }
 

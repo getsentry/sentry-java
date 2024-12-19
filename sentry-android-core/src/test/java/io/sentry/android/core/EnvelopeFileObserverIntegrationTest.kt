@@ -52,7 +52,12 @@ class EnvelopeFileObserverIntegrationTest {
 
     @AfterTest
     fun shutdown() {
-        Files.delete(file.toPath())
+        delete(file)
+    }
+
+    private fun delete(f: File) {
+        f.listFiles()?.forEach { delete(it) }
+        Files.delete(f.toPath())
     }
 
     @Test

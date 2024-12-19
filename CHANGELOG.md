@@ -22,6 +22,8 @@
 - Replace deprecated `SimpleInstrumentation` with `SimplePerformantInstrumentation` for graphql 22 ([#3974](https://github.com/getsentry/sentry-java/pull/3974))
 - Cache requests for Spring using Springs `ContentCachingRequestWrapper` instead of our own Wrapper to also cache parameters ([#3641](https://github.com/getsentry/sentry-java/pull/3641))
   - Previously only the body was cached which could lead to problems in the FilterChain as Request parameters were not available
+- We now hold a strong reference to the underlying OpenTelemetry span when it is created through Sentry API ([#3997](https://github.com/getsentry/sentry-java/pull/3997))
+  - This keeps it from being garbage collected too early
 
 ## 8.0.0-rc.2
 
