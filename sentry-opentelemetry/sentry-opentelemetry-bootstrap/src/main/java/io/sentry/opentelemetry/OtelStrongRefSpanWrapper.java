@@ -47,7 +47,7 @@ public final class OtelStrongRefSpanWrapper implements IOtelSpanWrapper {
 
   private final @NotNull IOtelSpanWrapper delegate;
 
-  public OtelStrongRefSpanWrapper(@NotNull Span otelSpan, IOtelSpanWrapper delegate) {
+  public OtelStrongRefSpanWrapper(@NotNull Span otelSpan, @NotNull IOtelSpanWrapper delegate) {
     this.otelSpan = otelSpan;
     this.delegate = delegate;
   }
