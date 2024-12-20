@@ -57,7 +57,6 @@ class SpanUtilsTest {
         assertFalse(SpanUtils.isIgnored(ignoredOrigins, null))
     }
 
-
     @Test
     fun `isIgnored returns false for null ignoredOrigins`() {
         assertFalse(SpanUtils.isIgnored(null, "auto.http.spring_jakarta.webmvc"))
