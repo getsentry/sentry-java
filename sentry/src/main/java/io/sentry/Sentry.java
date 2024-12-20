@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.backpressure.BackpressureMonitor;
+import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
@@ -599,7 +600,10 @@ public final class Sentry {
     }
 
     if (options.isEnableBackpressureHandling() && Platform.isJvm()) {
-      options.setBackpressureMonitor(new BackpressureMonitor(options, ScopesAdapter.getInstance()));
+      if (options.getBackpressureMonitor() instanceof NoOpBackpressureMonitor) {
+        options.setBackpressureMonitor(
+            new BackpressureMonitor(options, ScopesAdapter.getInstance()));
+      }
       options.getBackpressureMonitor().start();
     }
   }

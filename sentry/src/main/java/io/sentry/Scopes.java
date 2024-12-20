@@ -403,6 +403,7 @@ public final class Scopes implements IScopes {
 
         configureScope(scope -> scope.clear());
         configureScope(ScopeType.ISOLATION, scope -> scope.clear());
+        getOptions().getBackpressureMonitor().close();
         getOptions().getTransactionProfiler().close();
         getOptions().getTransactionPerformanceCollector().close();
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();

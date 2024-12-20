@@ -1760,15 +1760,18 @@ class ScopesTest {
         val executor = mock<ISentryExecutorService>()
         val profiler = mock<ITransactionProfiler>()
         val performanceCollector = mock<TransactionPerformanceCollector>()
+        val backpressureMonitorMock = mock<IBackpressureMonitor>()
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
             cacheDirPath = file.absolutePath
             executorService = executor
             setTransactionProfiler(profiler)
             transactionPerformanceCollector = performanceCollector
+            backpressureMonitor = backpressureMonitorMock
         }
         val sut = createScopes(options)
         sut.close()
+        verify(backpressureMonitorMock).close()
         verify(executor).close(any())
         verify(profiler).close()
         verify(performanceCollector).close()
