@@ -466,12 +466,12 @@ public class SentryOptions {
   private boolean enableScopePersistence = true;
 
   /** Contains a list of monitor slugs for which check-ins should not be sent. */
-  @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
+  @ApiStatus.Experimental private @Nullable List<FilterString> ignoredCheckIns = null;
 
   /** Contains a list of span origins for which spans / transactions should not be created. */
-  @ApiStatus.Experimental private @Nullable List<String> ignoredSpanOrigins = null;
+  @ApiStatus.Experimental private @Nullable List<FilterString> ignoredSpanOrigins = null;
 
-  private @Nullable List<String> ignoredTransactions = null;
+  private @Nullable List<FilterString> ignoredTransactions = null;
 
   @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
@@ -2175,31 +2175,16 @@ public class SentryOptions {
   }
 
   @ApiStatus.Experimental
-  public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
-    if (ignoredCheckIns == null) {
-      this.ignoredCheckIns = null;
-    } else {
-      @NotNull final List<String> filteredIgnoredCheckIns = new ArrayList<>();
-      for (String slug : ignoredCheckIns) {
-        if (!slug.isEmpty()) {
-          filteredIgnoredCheckIns.add(slug);
-        }
-      }
-
-      this.ignoredCheckIns = filteredIgnoredCheckIns;
-    }
-  }
-
-  @ApiStatus.Experimental
-  public @Nullable List<String> getIgnoredSpanOrigins() {
+  public @Nullable List<FilterString> getIgnoredSpanOrigins() {
     return ignoredSpanOrigins;
   }
 
-  public void addIgnoredSpanOrigin(final @NotNull String origin) {
-    if (this.ignoredSpanOrigins == null) {
-      this.ignoredSpanOrigins = new ArrayList<>();
+  @ApiStatus.Experimental
+  public void addIgnoredSpanOrigin(String ignoredSpanOrigin) {
+    if (ignoredSpanOrigins == null) {
+      ignoredSpanOrigins = new ArrayList<>();
     }
-    this.ignoredSpanOrigins.add(origin);
+    ignoredSpanOrigins.add(new FilterString(ignoredSpanOrigin));
   }
 
   @ApiStatus.Experimental
@@ -2207,10 +2192,10 @@ public class SentryOptions {
     if (ignoredSpanOrigins == null) {
       this.ignoredSpanOrigins = null;
     } else {
-      @NotNull final List<String> filtered = new ArrayList<>();
+      @NotNull final List<FilterString> filtered = new ArrayList<>();
       for (String origin : ignoredSpanOrigins) {
         if (origin != null && !origin.isEmpty()) {
-          filtered.add(origin);
+          filtered.add(new FilterString(origin));
         }
       }
 
@@ -2219,12 +2204,44 @@ public class SentryOptions {
   }
 
   @ApiStatus.Experimental
-  public @Nullable List<String> getIgnoredCheckIns() {
+  public @Nullable List<FilterString> getIgnoredCheckIns() {
     return ignoredCheckIns;
   }
 
-  public @Nullable List<String> getIgnoredTransactions() {
+  @ApiStatus.Experimental
+  public void addIgnoredCheckIn(String ignoredCheckIn) {
+    if (ignoredCheckIns == null) {
+      ignoredCheckIns = new ArrayList<>();
+    }
+    ignoredCheckIns.add(new FilterString(ignoredCheckIn));
+  }
+
+  @ApiStatus.Experimental
+  public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
+    if (ignoredCheckIns == null) {
+      this.ignoredCheckIns = null;
+    } else {
+      @NotNull final List<FilterString> filteredIgnoredCheckIns = new ArrayList<>();
+      for (String slug : ignoredCheckIns) {
+        if (!slug.isEmpty()) {
+          filteredIgnoredCheckIns.add(new FilterString(slug));
+        }
+      }
+
+      this.ignoredCheckIns = filteredIgnoredCheckIns;
+    }
+  }
+
+  public @Nullable List<FilterString> getIgnoredTransactions() {
     return ignoredTransactions;
+  }
+
+  @ApiStatus.Experimental
+  public void addIgnoredTransaction(String ignoredTransaction) {
+    if (ignoredTransactions == null) {
+      ignoredTransactions = new ArrayList<>();
+    }
+    ignoredTransactions.add(new FilterString(ignoredTransaction));
   }
 
   @ApiStatus.Experimental
@@ -2232,10 +2249,10 @@ public class SentryOptions {
     if (ignoredTransactions == null) {
       this.ignoredTransactions = null;
     } else {
-      @NotNull final List<String> filtered = new ArrayList<>();
+      @NotNull final List<FilterString> filtered = new ArrayList<>();
       for (String transactionName : ignoredTransactions) {
         if (transactionName != null && !transactionName.isEmpty()) {
-          filtered.add(transactionName);
+          filtered.add(new FilterString(transactionName));
         }
       }
 

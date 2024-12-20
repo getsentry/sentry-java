@@ -2,6 +2,7 @@ package io.sentry.util;
 
 import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
+import io.sentry.FilterString;
 import io.sentry.IScope;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
@@ -123,7 +124,8 @@ public final class TracingUtils {
   /** Checks if a transaction is to be ignored. */
   @ApiStatus.Internal
   public static boolean isIgnored(
-      final @Nullable List<String> ignoredTransactions, final @Nullable String transactionName) {
+      final @Nullable List<FilterString> ignoredTransactions,
+      final @Nullable String transactionName) {
     if (transactionName == null) {
       return false;
     }
@@ -131,13 +133,16 @@ public final class TracingUtils {
       return false;
     }
 
-    for (final String ignoredSlug : ignoredTransactions) {
-      if (ignoredSlug.equalsIgnoreCase(transactionName)) {
+    for (final FilterString ignoredTransaction : ignoredTransactions) {
+      if (ignoredTransaction.getFilterString().equalsIgnoreCase(transactionName)) {
         return true;
       }
+    }
+
+    for (final FilterString ignoredTransaction : ignoredTransactions) {
 
       try {
-        if (transactionName.matches(ignoredSlug)) {
+        if (ignoredTransaction.matches(transactionName)) {
           return true;
         }
       } catch (Throwable t) {

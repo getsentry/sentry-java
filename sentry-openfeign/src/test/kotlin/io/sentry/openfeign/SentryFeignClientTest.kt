@@ -133,7 +133,7 @@ class SentryFeignClientTest {
     @Test
     fun `does not add sentry trace header when span origin is ignored`() {
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
-        fixture.sentryOptions.ignoredSpanOrigins = listOf("auto.http.openfeign")
+        fixture.sentryOptions.setIgnoredSpanOrigins(listOf("auto.http.openfeign"))
         val sut = fixture.getSut(isSpanActive = false)
         sut.getOk()
         val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
