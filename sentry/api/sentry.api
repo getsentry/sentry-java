@@ -3800,17 +3800,20 @@ public final class io/sentry/UserFeedback$JsonKeys {
 
 public final class io/sentry/backpressure/BackpressureMonitor : io/sentry/backpressure/IBackpressureMonitor, java/lang/Runnable {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/IScopes;)V
+	public fun close ()V
 	public fun getDownsampleFactor ()I
 	public fun run ()V
 	public fun start ()V
 }
 
 public abstract interface class io/sentry/backpressure/IBackpressureMonitor {
+	public abstract fun close ()V
 	public abstract fun getDownsampleFactor ()I
 	public abstract fun start ()V
 }
 
 public final class io/sentry/backpressure/NoOpBackpressureMonitor : io/sentry/backpressure/IBackpressureMonitor {
+	public fun close ()V
 	public fun getDownsampleFactor ()I
 	public static fun getInstance ()Lio/sentry/backpressure/NoOpBackpressureMonitor;
 	public fun start ()V

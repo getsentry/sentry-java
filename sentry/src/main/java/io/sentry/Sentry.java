@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.backpressure.BackpressureMonitor;
+import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
@@ -369,7 +370,6 @@ public final class Sentry {
     OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
   }
 
-  @SuppressWarnings("UnusedMethod")
   private static void initScopesStorage(SentryOptions options) {
     getScopesStorage().close();
     if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
@@ -513,6 +513,8 @@ public final class Sentry {
     }
     logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
 
+    OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
+
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
 
@@ -598,7 +600,10 @@ public final class Sentry {
     }
 
     if (options.isEnableBackpressureHandling() && Platform.isJvm()) {
-      options.setBackpressureMonitor(new BackpressureMonitor(options, ScopesAdapter.getInstance()));
+      if (options.getBackpressureMonitor() instanceof NoOpBackpressureMonitor) {
+        options.setBackpressureMonitor(
+            new BackpressureMonitor(options, ScopesAdapter.getInstance()));
+      }
       options.getBackpressureMonitor().start();
     }
   }
