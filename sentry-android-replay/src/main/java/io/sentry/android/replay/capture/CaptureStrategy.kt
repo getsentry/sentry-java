@@ -19,6 +19,7 @@ import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import java.io.File
 import java.util.Date
+import java.util.Deque
 import java.util.LinkedList
 
 internal interface CaptureStrategy {
@@ -53,11 +54,8 @@ internal interface CaptureStrategy {
 
     fun convert(): CaptureStrategy
 
-    fun close()
-
     companion object {
         private const val BREADCRUMB_START_OFFSET = 100L
-        internal val currentEventsLock = Any()
 
         fun createSegment(
             hub: IHub?,
@@ -73,7 +71,7 @@ internal interface CaptureStrategy {
             frameRate: Int,
             screenAtStart: String?,
             breadcrumbs: List<Breadcrumb>?,
-            events: LinkedList<RRWebEvent>
+            events: Deque<RRWebEvent>
         ): ReplaySegment {
             val generatedVideo = cache?.createVideoOf(
                 duration,
@@ -127,7 +125,7 @@ internal interface CaptureStrategy {
             replayType: ReplayType,
             screenAtStart: String?,
             breadcrumbs: List<Breadcrumb>,
-            events: LinkedList<RRWebEvent>
+            events: Deque<RRWebEvent>
         ): ReplaySegment {
             val endTimestamp = DateUtils.getDateTime(segmentTimestamp.time + videoDuration)
             val replay = SentryReplayEvent().apply {
@@ -207,16 +205,16 @@ internal interface CaptureStrategy {
         }
 
         internal fun rotateEvents(
-            events: LinkedList<RRWebEvent>,
+            events: Deque<RRWebEvent>,
             until: Long,
             callback: ((RRWebEvent) -> Unit)? = null
         ) {
-            synchronized(currentEventsLock) {
-                var event = events.peek()
-                while (event != null && event.timestamp < until) {
+            val iter = events.iterator()
+            while (iter.hasNext()) {
+                val event = iter.next()
+                if (event.timestamp < until) {
                     callback?.invoke(event)
-                    events.remove()
-                    event = events.peek()
+                    iter.remove()
                 }
             }
         }

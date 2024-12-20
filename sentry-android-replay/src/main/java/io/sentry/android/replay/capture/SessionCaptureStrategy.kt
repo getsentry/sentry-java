@@ -20,7 +20,7 @@ internal class SessionCaptureStrategy(
     private val options: SentryOptions,
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
-    executor: ScheduledExecutorService? = null,
+    executor: ScheduledExecutorService,
     replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
 ) : BaseCaptureStrategy(options, hub, dateProvider, executor, replayCacheProvider) {
 

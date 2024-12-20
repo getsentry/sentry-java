@@ -25,7 +25,6 @@ import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.addOnDrawListenerSafe
 import io.sentry.android.replay.util.getVisibleRects
-import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.removeOnDrawListenerSafe
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.android.replay.util.traverse
@@ -34,7 +33,7 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarc
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import java.io.File
 import java.lang.ref.WeakReference
-import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
@@ -44,13 +43,11 @@ import kotlin.math.roundToInt
 internal class ScreenshotRecorder(
     val config: ScreenshotRecorderConfig,
     val options: SentryOptions,
-    val mainLooperHandler: MainLooperHandler,
+    private val mainLooperHandler: MainLooperHandler,
+    private val recorder: ScheduledExecutorService,
     private val screenshotRecorderCallback: ScreenshotRecorderCallback?
 ) : ViewTreeObserver.OnDrawListener {
 
-    private val recorder by lazy {
-        Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
-    }
     private var rootView: WeakReference<View>? = null
     private val maskingPaint by lazy(NONE) { Paint() }
     private val singlePixelBitmap: Bitmap by lazy(NONE) {
@@ -231,7 +228,6 @@ internal class ScreenshotRecorder(
         rootView?.clear()
         lastScreenshot?.recycle()
         isCapturing.set(false)
-        recorder.gracefullyShutdown(options)
     }
 
     private fun Bitmap.dominantColorForRect(rect: Rect): Int {
