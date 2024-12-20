@@ -31,7 +31,7 @@ internal class BufferCaptureStrategy(
     private val dateProvider: ICurrentDateProvider,
     private val random: Random,
     executor: ScheduledExecutorService,
-    replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
+    replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
 ) : BaseCaptureStrategy(options, hub, dateProvider, executor, replayCacheProvider = replayCacheProvider) {
 
     // TODO: capture envelopes for buffered segments instead, but don't send them until buffer is triggered

@@ -21,7 +21,7 @@ internal class SessionCaptureStrategy(
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
     executor: ScheduledExecutorService,
-    replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
+    replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
 ) : BaseCaptureStrategy(options, hub, dateProvider, executor, replayCacheProvider) {
 
     internal companion object {
