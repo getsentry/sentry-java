@@ -8,6 +8,10 @@
 - Session Replay: Fix memory leak when masking Compose screens ([#3985](https://github.com/getsentry/sentry-java/pull/3985))
 - Session Replay: Fix potential ANRs in `GestureRecorder` ([#4001](https://github.com/getsentry/sentry-java/pull/4001))
 
+### Internal
+
+- Session Replay: Flutter improvements ([#4007](https://github.com/getsentry/sentry-java/pull/4007))
+
 ## 7.19.0
 
 ### Fixes
