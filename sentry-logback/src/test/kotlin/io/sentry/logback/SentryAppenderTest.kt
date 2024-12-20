@@ -13,6 +13,7 @@ import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -96,7 +97,7 @@ class SentryAppenderTest {
                 it.setTag("only-present-if-logger-init-was-run", "another-value")
             }
         )
-        Sentry.init {
+        initForTest {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
             it.setTransportFactory(fixture.transportFactory)
