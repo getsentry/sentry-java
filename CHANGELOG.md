@@ -19,6 +19,11 @@
     - Use `AGENT` when using `sentry-opentelemetry-agent`
     - Use `AGENTLESS` when using `sentry-opentelemetry-agentless`
     - Use `AGENTLESS_SPRING` when using `sentry-opentelemetry-agentless-spring`
+- Add `scopeBindingMode` to `SpanOptions` ([#4004](https://github.com/getsentry/sentry-java/pull/4004))
+  - This setting only affects the SDK when used with OpenTelemetry.
+  - Defaults to `AUTO` meaning the SDK will decide whether the span should be bound to the current scope. It will not bind transactions to scope using `AUTO`, it will only bind spans where the parent span is on the current scope.
+  - `ON` sets the new span on the current scope.
+  - `OFF` does not set the new span on the scope.
 
 ### Fixes
 
