@@ -30,6 +30,6 @@ public final class FilterString {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(filterString);
+    return Objects.hash(filterString);
   }
 }
