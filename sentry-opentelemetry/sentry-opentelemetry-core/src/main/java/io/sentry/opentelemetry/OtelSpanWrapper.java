@@ -13,6 +13,7 @@ import io.sentry.Instrumenter;
 import io.sentry.MeasurementUnit;
 import io.sentry.NoOpScopesLifecycleToken;
 import io.sentry.NoOpSpan;
+import io.sentry.ScopeBindingMode;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
@@ -125,8 +126,23 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
 
     final @NotNull ISpan childSpan =
         scopes.getOptions().getSpanFactory().createSpan(scopes, spanOptions, spanContext, this);
-    // TODO [POTEL] spanOptions.isBindToScope with default true?
-    childSpan.makeCurrent();
+
+    if (ScopeBindingMode.ON == spanOptions.getScopeBindingMode()) {
+      childSpan.makeCurrent();
+    } else if (ScopeBindingMode.AUTO == spanOptions.getScopeBindingMode()) {
+      final @Nullable SpanId parentSpanId = spanContext.getParentSpanId();
+      if (parentSpanId != null) {
+        final @Nullable Span currentOtelSpan = Span.fromContextOrNull(Context.current());
+        if (currentOtelSpan != null) {
+          if (currentOtelSpan
+              .getSpanContext()
+              .getSpanId()
+              .equalsIgnoreCase(parentSpanId.toString())) {
+            childSpan.makeCurrent();
+          }
+        }
+      }
+    }
     return childSpan;
   }
 

@@ -2079,6 +2079,14 @@ public abstract interface class io/sentry/Scope$IWithTransaction {
 	public abstract fun accept (Lio/sentry/ITransaction;)V
 }
 
+public final class io/sentry/ScopeBindingMode : java/lang/Enum {
+	public static final field AUTO Lio/sentry/ScopeBindingMode;
+	public static final field OFF Lio/sentry/ScopeBindingMode;
+	public static final field ON Lio/sentry/ScopeBindingMode;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/ScopeBindingMode;
+	public static fun values ()[Lio/sentry/ScopeBindingMode;
+}
+
 public abstract interface class io/sentry/ScopeCallback {
 	public abstract fun run (Lio/sentry/IScope;)V
 }
@@ -3536,12 +3544,14 @@ public class io/sentry/SpanOptions {
 	protected field origin Ljava/lang/String;
 	public fun <init> ()V
 	public fun getOrigin ()Ljava/lang/String;
+	public fun getScopeBindingMode ()Lio/sentry/ScopeBindingMode;
 	public fun getStartTimestamp ()Lio/sentry/SentryDate;
 	public fun isIdle ()Z
 	public fun isTrimEnd ()Z
 	public fun isTrimStart ()Z
 	public fun setIdle (Z)V
 	public fun setOrigin (Ljava/lang/String;)V
+	public fun setScopeBindingMode (Lio/sentry/ScopeBindingMode;)V
 	public fun setStartTimestamp (Lio/sentry/SentryDate;)V
 	public fun setTrimEnd (Z)V
 	public fun setTrimStart (Z)V
