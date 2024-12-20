@@ -369,7 +369,6 @@ public final class Sentry {
     OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
   }
 
-  @SuppressWarnings("UnusedMethod")
   private static void initScopesStorage(SentryOptions options) {
     getScopesStorage().close();
     if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
