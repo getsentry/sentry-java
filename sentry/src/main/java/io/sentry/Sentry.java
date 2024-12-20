@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.backpressure.BackpressureMonitor;
+import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.config.PropertiesProviderFactory;
@@ -11,6 +12,7 @@ import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.ManifestModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
+import io.sentry.opentelemetry.OpenTelemetryUtil;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -46,8 +48,7 @@ public final class Sentry {
   private Sentry() {}
 
   // TODO logger?
-  private static volatile @NotNull IScopesStorage scopesStorage =
-      ScopesStorageFactory.create(new LoadClass(), NoOpLogger.getInstance());
+  private static volatile @NotNull IScopesStorage scopesStorage = NoOpScopesStorage.getInstance();
 
   /** The root Scopes or NoOp if Sentry is disabled. */
   private static volatile @NotNull IScopes rootScopes = NoOpScopes.getInstance();
@@ -321,6 +322,7 @@ public final class Sentry {
         final IScope rootIsolationScope = new Scope(options);
         rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
+        initForOpenTelemetryMaybe(options);
         getScopesStorage().set(rootScopes);
 
         initConfigurations(options);
@@ -353,6 +355,27 @@ public final class Sentry {
                 SentryLevel.WARNING,
                 "This init call has been ignored due to priority being too low.");
       }
+    }
+  }
+
+  private static void initForOpenTelemetryMaybe(SentryOptions options) {
+    if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
+      options.setSpanFactory(new DefaultSpanFactory());
+      //    } else {
+      // enabling this causes issues with agentless where OTel spans seem to be randomly ended
+      //      options.setSpanFactory(SpanFactoryFactory.create(new LoadClass(),
+      // NoOpLogger.getInstance()));
+    }
+    initScopesStorage(options);
+    OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
+  }
+
+  private static void initScopesStorage(SentryOptions options) {
+    getScopesStorage().close();
+    if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
+      scopesStorage = new DefaultScopesStorage();
+    } else {
+      scopesStorage = ScopesStorageFactory.create(new LoadClass(), options.getLogger());
     }
   }
 
@@ -490,6 +513,8 @@ public final class Sentry {
     }
     logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
 
+    OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
+
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
 
@@ -575,7 +600,10 @@ public final class Sentry {
     }
 
     if (options.isEnableBackpressureHandling() && Platform.isJvm()) {
-      options.setBackpressureMonitor(new BackpressureMonitor(options, ScopesAdapter.getInstance()));
+      if (options.getBackpressureMonitor() instanceof NoOpBackpressureMonitor) {
+        options.setBackpressureMonitor(
+            new BackpressureMonitor(options, ScopesAdapter.getInstance()));
+      }
       options.getBackpressureMonitor().start();
     }
   }

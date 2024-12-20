@@ -251,7 +251,7 @@ class SentrySpanRestClientCustomizerTest {
 
     @Test
     fun `does not add sentry-trace header if span origin is ignored`() {
-        fixture.sentryOptions.ignoredSpanOrigins = listOf("auto.http.spring_jakarta.restclient")
+        fixture.sentryOptions.setIgnoredSpanOrigins(listOf("auto.http.spring_jakarta.restclient"))
         val sut = fixture.getSut(isTransactionActive = false)
         val headers = HttpHeaders()
 

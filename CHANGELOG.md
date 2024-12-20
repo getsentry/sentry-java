@@ -4,20 +4,38 @@
 
 ### Features
 
+- Add `sentry-opentelemetry-agentless-spring` module ([#4000](https://github.com/getsentry/sentry-java/pull/4000))
+  - This module can be added as a dependency when using Sentry with OpenTelemetry and Spring Boot but don't want to use our Agent. It takes care of configuring OpenTelemetry for use with Sentry.
+  - You may want to set `OTEL_LOGS_EXPORTER=none;OTEL_METRICS_EXPORTER=none;OTEL_TRACES_EXPORTER=none` env vars to not have the log flooded with error messages regarding OpenTelemetry features we don't use.
 - Add `sentry-opentelemetry-agentless` module ([#3961](https://github.com/getsentry/sentry-java/pull/3961))
   - This module can be added as a dependency when using Sentry with OpenTelemetry but don't want to use our Agent. It takes care of configuring OpenTelemetry for use with Sentry.
   - To enable the auto configuration of it, please set `-Dotel.java.global-autoconfigure.enabled=true` on the `java` command, when starting your application.
   - You may also want to set `OTEL_LOGS_EXPORTER=none;OTEL_METRICS_EXPORTER=none;OTEL_TRACES_EXPORTER=none` env vars to not have the log flooded with error messages regarding OpenTelemetry features we don't use.
 - `OpenTelemetryUtil.applyOpenTelemetryOptions` now takes an enum instead of a boolean for its mode
-  - Use `AGENT` when using `sentry-opentelemetry-agent`
-  - Use `AGENTLESS` when using `sentry-opentelemetry-agentless`
-  - Use `AGENTLESS_SPRING` when using `sentry-opentelemetry-agentless-spring`
+- Add `openTelemetryMode` option ([#3994](https://github.com/getsentry/sentry-java/pull/3994))
+    - It defaults to `AUTO` meaning the SDK will figure out how to best configure itself for use with OpenTelemetry
+    - Use of OpenTelemetry can also be disabled completely by setting it to `OFF` ([#3995](https://github.com/getsentry/sentry-java/pull/3995))
+      - In this case even if OpenTelemetry is present, the Sentry SDK will not use it
+    - Use `AGENT` when using `sentry-opentelemetry-agent`
+    - Use `AGENTLESS` when using `sentry-opentelemetry-agentless`
+    - Use `AGENTLESS_SPRING` when using `sentry-opentelemetry-agentless-spring`
+- Add `scopeBindingMode` to `SpanOptions` ([#4004](https://github.com/getsentry/sentry-java/pull/4004))
+  - This setting only affects the SDK when used with OpenTelemetry.
+  - Defaults to `AUTO` meaning the SDK will decide whether the span should be bound to the current scope. It will not bind transactions to scope using `AUTO`, it will only bind spans where the parent span is on the current scope.
+  - `ON` sets the new span on the current scope.
+  - `OFF` does not set the new span on the scope.
 
 ### Fixes
 
 - Replace deprecated `SimpleInstrumentation` with `SimplePerformantInstrumentation` for graphql 22 ([#3974](https://github.com/getsentry/sentry-java/pull/3974))
 - Cache requests for Spring using Springs `ContentCachingRequestWrapper` instead of our own Wrapper to also cache parameters ([#3641](https://github.com/getsentry/sentry-java/pull/3641))
   - Previously only the body was cached which could lead to problems in the FilterChain as Request parameters were not available
+- We now hold a strong reference to the underlying OpenTelemetry span when it is created through Sentry API ([#3997](https://github.com/getsentry/sentry-java/pull/3997))
+  - This keeps it from being garbage collected too early
+- Close backpressure monitor on SDK shutdown ([#3998](https://github.com/getsentry/sentry-java/pull/3998))
+  - Due to the backpressure monitor rescheduling a task to run every 10s, it very likely caused shutdown to wait the full `shutdownTimeoutMillis` (defaulting to 2s) instead of being able to terminate immediately
+- Improve ignored check performance ([#3992](https://github.com/getsentry/sentry-java/pull/3992))
+  - Checking if a span origin, a transaction or a checkIn should be ignored is now faster 
 
 ## 8.0.0-rc.2
 

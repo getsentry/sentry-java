@@ -213,7 +213,7 @@ class SentryOkHttpInterceptorTest {
     @Test
     fun `does not add sentry-trace header when span origin is ignored`() {
         val sut = fixture.getSut(isSpanActive = false) { options ->
-            options.ignoredSpanOrigins = listOf("auto.http.okhttp")
+            options.setIgnoredSpanOrigins(listOf("auto.http.okhttp"))
         }
         sut.newCall(getRequest()).execute()
         val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
