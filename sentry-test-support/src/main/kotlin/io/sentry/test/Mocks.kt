@@ -83,6 +83,7 @@ fun createSentryClientMock(enabled: Boolean = true) = mock<ISentryClient>().also
 
 fun createTestScopes(options: SentryOptions? = null, enabled: Boolean = true, scope: IScope? = null, isolationScope: IScope? = null, globalScope: IScope? = null): Scopes {
     val optionsToUse = options ?: SentryOptions().also { it.dsn = "https://key@sentry.io/proj" }
+    initForTest(optionsToUse)
     val scopeToUse = scope ?: Scope(optionsToUse)
     val isolationScopeToUse = isolationScope ?: Scope(optionsToUse)
     val globalScopeToUse = globalScope ?: Scope(optionsToUse)

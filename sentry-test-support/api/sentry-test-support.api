@@ -32,6 +32,15 @@ public final class io/sentry/test/ImmediateExecutorService : io/sentry/ISentryEx
 	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
 }
 
+public final class io/sentry/test/InitKt {
+	public static final fun applyTestOptions (Lio/sentry/SentryOptions;)V
+	public static final fun initForTest ()V
+	public static final fun initForTest (Lio/sentry/Sentry$OptionsConfiguration;)V
+	public static final fun initForTest (Lio/sentry/Sentry$OptionsConfiguration;Z)V
+	public static final fun initForTest (Lio/sentry/SentryOptions;)V
+	public static final fun initForTest (Ljava/lang/String;)V
+}
+
 public final class io/sentry/test/MocksKt {
 	public static final fun createSentryClientMock (Z)Lio/sentry/ISentryClient;
 	public static synthetic fun createSentryClientMock$default (ZILjava/lang/Object;)Lio/sentry/ISentryClient;
