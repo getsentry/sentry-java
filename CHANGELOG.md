@@ -12,6 +12,12 @@
 
 - Session Replay: Flutter improvements ([#4007](https://github.com/getsentry/sentry-java/pull/4007))
 
+### Dependencies
+
+- Bump Native SDK from v0.7.16 to v0.7.17 ([#4003](https://github.com/getsentry/sentry-java/pull/4003))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0717)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.16...0.7.17)
+
 ## 7.19.0
 
 ### Fixes
