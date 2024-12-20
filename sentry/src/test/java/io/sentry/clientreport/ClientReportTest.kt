@@ -29,6 +29,7 @@ import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.test.initForTest
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -192,7 +193,7 @@ class ClientReportTest {
     }
 
     private fun setupSentry(callback: Sentry.OptionsConfiguration<SentryOptions>? = null) {
-        Sentry.init { options ->
+        initForTest { options ->
             options.dsn = dsnString
             callback?.configure(options)
             opts = options

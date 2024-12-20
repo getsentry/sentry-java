@@ -3,6 +3,7 @@ package io.sentry
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.createSentryClientMock
+import io.sentry.test.initForTest
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
@@ -19,9 +20,8 @@ class HubAdapterTest {
 
     @BeforeTest
     fun `set up`() {
-        Sentry.init { options ->
-            options.dsn = "https://key@host/proj"
-            options.shutdownTimeoutMillis = 20
+        initForTest {
+            it.dsn = "https://key@localhost/proj"
         }
         Sentry.setCurrentScopes(scopes)
     }
