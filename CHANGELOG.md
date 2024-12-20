@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.0.0-rc.3
 
 ### Features
 
@@ -35,7 +35,7 @@
 - Close backpressure monitor on SDK shutdown ([#3998](https://github.com/getsentry/sentry-java/pull/3998))
   - Due to the backpressure monitor rescheduling a task to run every 10s, it very likely caused shutdown to wait the full `shutdownTimeoutMillis` (defaulting to 2s) instead of being able to terminate immediately
 - Improve ignored check performance ([#3992](https://github.com/getsentry/sentry-java/pull/3992))
-  - Checking if a span origin, a transaction or a checkIn should be ignored is now faster 
+  - Checking if a span origin, a transaction or a checkIn should be ignored is now faster
 
 ## 8.0.0-rc.2
 
