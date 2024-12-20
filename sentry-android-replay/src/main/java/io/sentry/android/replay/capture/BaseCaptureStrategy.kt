@@ -46,7 +46,7 @@ internal abstract class BaseCaptureStrategy(
     private val hub: IHub?,
     private val dateProvider: ICurrentDateProvider,
     protected val replayExecutor: ScheduledExecutorService,
-    private val replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
+    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
 ) : CaptureStrategy {
 
     internal companion object {
@@ -89,7 +89,7 @@ internal abstract class BaseCaptureStrategy(
         replayId: SentryId,
         replayType: ReplayType?
     ) {
-        cache = replayCacheProvider?.invoke(replayId, recorderConfig) ?: ReplayCache(options, replayId, recorderConfig)
+        cache = replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId)
 
         this.currentReplayId = replayId
         this.currentSegment = segmentId
@@ -124,6 +124,7 @@ internal abstract class BaseCaptureStrategy(
         replayType: ReplayType = this.replayType,
         cache: ReplayCache? = this.cache,
         frameRate: Int = recorderConfig.frameRate,
+        bitRate: Int = recorderConfig.bitRate,
         screenAtStart: String? = this.screenAtStart,
         breadcrumbs: List<Breadcrumb>? = null,
         events: Deque<RRWebEvent> = this.currentEvents
@@ -140,6 +141,7 @@ internal abstract class BaseCaptureStrategy(
             replayType,
             cache,
             frameRate,
+            bitRate,
             screenAtStart,
             breadcrumbs,
             events

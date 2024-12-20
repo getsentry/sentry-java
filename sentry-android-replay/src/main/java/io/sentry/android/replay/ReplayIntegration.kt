@@ -56,7 +56,7 @@ public class ReplayIntegration(
     private val dateProvider: ICurrentDateProvider,
     private val recorderProvider: (() -> Recorder)? = null,
     private val recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)? = null,
-    private val replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
+    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
 ) : Integration,
     Closeable,
     ScreenshotRecorderCallback,
@@ -80,7 +80,7 @@ public class ReplayIntegration(
         dateProvider: ICurrentDateProvider,
         recorderProvider: (() -> Recorder)?,
         recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)?,
-        replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)?,
+        replayCacheProvider: ((replayId: SentryId) -> ReplayCache)?,
         replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
         mainLooperHandler: MainLooperHandler? = null,
         gestureRecorderProvider: (() -> GestureRecorder)? = null
@@ -110,8 +110,6 @@ public class ReplayIntegration(
     private var mainLooperHandler: MainLooperHandler = MainLooperHandler()
     private var gestureRecorderProvider: (() -> GestureRecorder)? = null
 
-    private lateinit var recorderConfig: ScreenshotRecorderConfig
-
     override fun register(hub: IHub, options: SentryOptions) {
         this.options = options
 
@@ -134,10 +132,16 @@ public class ReplayIntegration(
 
         options.connectionStatusProvider.addConnectionStatusObserver(this)
         hub.rateLimiter?.addRateLimitObserver(this)
-        try {
-            context.registerComponentCallbacks(this)
-        } catch (e: Throwable) {
-            options.logger.log(INFO, "ComponentCallbacks is not available, orientation changes won't be handled by Session replay", e)
+        if (options.experimental.sessionReplay.isTrackOrientationChange) {
+            try {
+                context.registerComponentCallbacks(this)
+            } catch (e: Throwable) {
+                options.logger.log(
+                    INFO,
+                    "ComponentCallbacks is not available, orientation changes won't be handled by Session replay",
+                    e
+                )
+            }
         }
 
         addIntegrationToSdkVersion("Replay")
@@ -169,7 +173,7 @@ public class ReplayIntegration(
             return
         }
 
-        recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
+        val recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
         captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
             SessionCaptureStrategy(options, hub, dateProvider, replayExecutor, replayCacheProvider)
         } else {
@@ -260,9 +264,11 @@ public class ReplayIntegration(
 
         options.connectionStatusProvider.removeConnectionStatusObserver(this)
         hub?.rateLimiter?.removeRateLimitObserver(this)
-        try {
-            context.unregisterComponentCallbacks(this)
-        } catch (ignored: Throwable) {
+        if (options.experimental.sessionReplay.isTrackOrientationChange) {
+            try {
+                context.unregisterComponentCallbacks(this)
+            } catch (ignored: Throwable) {
+            }
         }
         stop()
         recorder?.close()
@@ -279,7 +285,7 @@ public class ReplayIntegration(
         recorder?.stop()
 
         // refresh config based on new device configuration
-        recorderConfig = recorderConfigProvider?.invoke(true) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
+        val recorderConfig = recorderConfigProvider?.invoke(true) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
         captureStrategy?.onConfigurationChanged(recorderConfig)
 
         recorder?.start(recorderConfig)
@@ -392,6 +398,7 @@ public class ReplayIntegration(
                 height = lastSegment.recorderConfig.recordingHeight,
                 width = lastSegment.recorderConfig.recordingWidth,
                 frameRate = lastSegment.recorderConfig.frameRate,
+                bitRate = lastSegment.recorderConfig.bitRate,
                 cache = lastSegment.cache,
                 replayType = lastSegment.replayType,
                 screenAtStart = lastSegment.screenAtStart,

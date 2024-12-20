@@ -96,7 +96,7 @@ class ReplayIntegrationTest {
 
         val replayCache = mock<ReplayCache> {
             on { frames }.thenReturn(mutableListOf(ReplayFrame(File("1720693523997.jpg"), 1720693523997)))
-            on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), any()) }
+            on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), any()) }
                 .thenReturn(GeneratedVideo(File("0.mp4"), 5, VIDEO_DURATION))
         }
 
@@ -127,7 +127,7 @@ class ReplayIntegrationTest {
                 dateProvider,
                 recorderProvider,
                 recorderConfigProvider = recorderConfigProvider,
-                replayCacheProvider = { _, _ -> replayCache },
+                replayCacheProvider = { _ -> replayCache },
                 replayCaptureStrategyProvider = replayCaptureStrategyProvider,
                 gestureRecorderProvider = gestureRecorderProvider
             )

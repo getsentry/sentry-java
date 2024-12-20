@@ -108,6 +108,12 @@ public final class SentryReplayOptions {
   /** The maximum duration of a full session replay, defaults to 1h. */
   private long sessionDuration = 60 * 60 * 1000L;
 
+  /**
+   * Whether to track orientation changes in session replay. Used in Flutter as it has its own
+   * callbacks to determine the orientation change.
+   */
+  private boolean trackOrientationChange = true;
+
   public SentryReplayOptions(final boolean empty) {
     if (!empty) {
       setMaskAllText(true);
@@ -265,5 +271,15 @@ public final class SentryReplayOptions {
   @ApiStatus.Internal
   public @Nullable String getUnmaskViewContainerClass() {
     return unmaskViewContainerClass;
+  }
+
+  @ApiStatus.Internal
+  public boolean isTrackOrientationChange() {
+    return trackOrientationChange;
+  }
+
+  @ApiStatus.Internal
+  public void setTrackOrientationChange(final boolean trackOrientationChange) {
+    this.trackOrientationChange = trackOrientationChange;
   }
 }

@@ -47,14 +47,12 @@ class ReplayCacheTest {
         val options = SentryOptions()
         fun getSut(
             dir: TemporaryFolder?,
-            replayId: SentryId = SentryId(),
-            frameRate: Int
+            replayId: SentryId = SentryId()
         ): ReplayCache {
-            val recorderConfig = ScreenshotRecorderConfig(100, 200, 1f, 1f, frameRate = frameRate, bitRate = 20_000)
             options.run {
                 cacheDirPath = dir?.newFolder()?.absolutePath
             }
-            return ReplayCache(options, replayId, recorderConfig)
+            return ReplayCache(options, replayId)
         }
     }
 
@@ -70,8 +68,7 @@ class ReplayCacheTest {
         val replayId = SentryId()
         val replayCache = fixture.getSut(
             null,
-            replayId,
-            frameRate = 1
+            replayId
         )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
@@ -85,8 +82,7 @@ class ReplayCacheTest {
         val replayId = SentryId()
         val replayCache = fixture.getSut(
             tmpDir,
-            replayId,
-            frameRate = 1
+            replayId
         )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
@@ -101,11 +97,10 @@ class ReplayCacheTest {
     @Test
     fun `when no frames are provided, returns nothing`() {
         val replayCache = fixture.getSut(
-            tmpDir,
-            frameRate = 1
+            tmpDir
         )
 
-        val video = replayCache.createVideoOf(5000L, 0, 0, 100, 200)
+        val video = replayCache.createVideoOf(5000L, 0, 0, 100, 200, 1, 20_000)
 
         assertNull(video)
     }
@@ -114,8 +109,7 @@ class ReplayCacheTest {
     fun `deletes frames after creating a video`() {
         ReplayShadowMediaCodec.framesToEncode = 3
         val replayCache = fixture.getSut(
-            tmpDir,
-            frameRate = 1
+            tmpDir
         )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
@@ -123,7 +117,7 @@ class ReplayCacheTest {
         replayCache.addFrame(bitmap, 1001)
         replayCache.addFrame(bitmap, 2001)
 
-        val segment0 = replayCache.createVideoOf(3000L, 0, 0, 100, 200)
+        val segment0 = replayCache.createVideoOf(3000L, 0, 0, 100, 200, 1, 20_000)
         assertEquals(3, segment0!!.frameCount)
         assertEquals(3000, segment0.duration)
         assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
@@ -136,14 +130,13 @@ class ReplayCacheTest {
     @Test
     fun `repeats last known frame for the segment duration`() {
         val replayCache = fixture.getSut(
-            tmpDir,
-            frameRate = 1
+            tmpDir
         )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
 
-        val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200)
+        val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200, 1, 20_000)
         assertEquals(5, segment0!!.frameCount)
         assertEquals(5000, segment0.duration)
         assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
@@ -153,15 +146,14 @@ class ReplayCacheTest {
     @Test
     fun `repeats last known frame for the segment duration for each timespan`() {
         val replayCache = fixture.getSut(
-            tmpDir,
-            frameRate = 1
+            tmpDir
         )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
         replayCache.addFrame(bitmap, 3001)
 
-        val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200)
+        val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200, 1, 20_000)
         assertEquals(5, segment0!!.frameCount)
         assertEquals(5000, segment0.duration)
         assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
@@ -171,20 +163,19 @@ class ReplayCacheTest {
     @Test
     fun `repeats last known frame for each segment`() {
         val replayCache = fixture.getSut(
-            tmpDir,
-            frameRate = 1
+            tmpDir
         )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
         replayCache.addFrame(bitmap, 5001)
 
-        val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200)
+        val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200, 1, 20_000)
         assertEquals(5, segment0!!.frameCount)
         assertEquals(5000, segment0.duration)
         assertEquals(File(replayCache.replayCacheDir, "0.mp4"), segment0.video)
 
-        val segment1 = replayCache.createVideoOf(5000L, 5000L, 1, 100, 200)
+        val segment1 = replayCache.createVideoOf(5000L, 5000L, 1, 100, 200, 1, 20_000)
         assertEquals(5, segment1!!.frameCount)
         assertEquals(5000, segment1.duration)
         assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
@@ -196,8 +187,7 @@ class ReplayCacheTest {
         ReplayShadowMediaCodec.framesToEncode = 6
 
         val replayCache = fixture.getSut(
-            tmpDir,
-            frameRate = 2
+            tmpDir
         )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
@@ -205,7 +195,7 @@ class ReplayCacheTest {
         replayCache.addFrame(bitmap, 1001)
         replayCache.addFrame(bitmap, 1501)
 
-        val segment0 = replayCache.createVideoOf(3000L, 0, 0, 100, 200)
+        val segment0 = replayCache.createVideoOf(3000L, 0, 0, 100, 200, 2, 20_000)
         assertEquals(6, segment0!!.frameCount)
         assertEquals(3000, segment0.duration)
         assertTrue { segment0.video.exists() && segment0.video.length() > 0 }
@@ -215,8 +205,7 @@ class ReplayCacheTest {
     @Test
     fun `does not add frame when bitmap is recycled`() {
         val replayCache = fixture.getSut(
-            tmpDir,
-            frameRate = 1
+            tmpDir
         )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888).also { it.recycle() }
@@ -228,8 +217,7 @@ class ReplayCacheTest {
     @Test
     fun `addFrame with File path works`() {
         val replayCache = fixture.getSut(
-            tmpDir,
-            frameRate = 1
+            tmpDir
         )
 
         val flutterCacheDir =
@@ -240,7 +228,7 @@ class ReplayCacheTest {
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888).also { it.recycle() }
         replayCache.addFrame(screenshot, frameTimestamp = 1)
 
-        val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200, videoFile = video)
+        val segment0 = replayCache.createVideoOf(5000L, 0, 0, 100, 200, 1, 20_000, videoFile = video)
         assertEquals(5, segment0!!.frameCount)
         assertEquals(5000, segment0.duration)
 
@@ -251,8 +239,7 @@ class ReplayCacheTest {
     @Test
     fun `rotates frames`() {
         val replayCache = fixture.getSut(
-            tmpDir,
-            frameRate = 1
+            tmpDir
         )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
@@ -269,8 +256,7 @@ class ReplayCacheTest {
     @Test
     fun `rotate returns first screen in buffer`() {
         val replayCache = fixture.getSut(
-            tmpDir,
-            frameRate = 1
+            tmpDir
         )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
@@ -288,8 +274,7 @@ class ReplayCacheTest {
         val replayId = SentryId()
         val replayCache = fixture.getSut(
             tmpDir,
-            replayId,
-            frameRate = 1
+            replayId
         )
 
         replayCache.close()
@@ -303,8 +288,7 @@ class ReplayCacheTest {
         val replayId = SentryId()
         val replayCache = fixture.getSut(
             tmpDir,
-            replayId,
-            frameRate = 1
+            replayId
         )
 
         replayCache.persistSegmentValues("key1", "value1")
@@ -320,8 +304,7 @@ class ReplayCacheTest {
         val replayId = SentryId()
         val replayCache = fixture.getSut(
             tmpDir,
-            replayId,
-            frameRate = 1
+            replayId
         )
 
         replayCache.persistSegmentValues("key1", "value1")
@@ -467,8 +450,7 @@ class ReplayCacheTest {
         ReplayShadowMediaCodec.framesToEncode = 3
 
         val replayCache = fixture.getSut(
-            tmpDir,
-            frameRate = 1
+            tmpDir
         )
 
         val oldVideoFile = File(replayCache.replayCacheDir, "0.mp4").also {
@@ -480,7 +462,7 @@ class ReplayCacheTest {
         replayCache.addFrame(bitmap, 1001)
         replayCache.addFrame(bitmap, 2001)
 
-        val segment0 = replayCache.createVideoOf(3000L, 0, 0, 100, 200, oldVideoFile)
+        val segment0 = replayCache.createVideoOf(3000L, 0, 0, 100, 200, 1, 20_000, oldVideoFile)
         assertEquals(3, segment0!!.frameCount)
         assertEquals(3000, segment0.duration)
         assertTrue { segment0.video.exists() && segment0.video.length() > 0 }

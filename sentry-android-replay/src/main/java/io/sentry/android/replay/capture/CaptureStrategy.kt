@@ -69,6 +69,7 @@ internal interface CaptureStrategy {
             replayType: ReplayType,
             cache: ReplayCache?,
             frameRate: Int,
+            bitRate: Int,
             screenAtStart: String?,
             breadcrumbs: List<Breadcrumb>?,
             events: Deque<RRWebEvent>
@@ -78,7 +79,9 @@ internal interface CaptureStrategy {
                 currentSegmentTimestamp.time,
                 segmentId,
                 height,
-                width
+                width,
+                frameRate,
+                bitRate
             ) ?: return ReplaySegment.Failed
 
             val (video, frameCount, videoDuration) = generatedVideo
