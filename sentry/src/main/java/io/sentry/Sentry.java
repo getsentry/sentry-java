@@ -47,8 +47,7 @@ public final class Sentry {
   private Sentry() {}
 
   // TODO logger?
-  private static volatile @NotNull IScopesStorage scopesStorage =
-      ScopesStorageFactory.create(new LoadClass(), NoOpLogger.getInstance());
+  private static volatile @NotNull IScopesStorage scopesStorage = NoOpScopesStorage.getInstance();
 
   /** The root Scopes or NoOp if Sentry is disabled. */
   private static volatile @NotNull IScopes rootScopes = NoOpScopes.getInstance();
@@ -322,6 +321,7 @@ public final class Sentry {
         final IScope rootIsolationScope = new Scope(options);
         rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
+        initForOpenTelemetryMaybe(options);
         getScopesStorage().set(rootScopes);
 
         initConfigurations(options);
@@ -354,6 +354,27 @@ public final class Sentry {
                 SentryLevel.WARNING,
                 "This init call has been ignored due to priority being too low.");
       }
+    }
+  }
+
+  private static void initForOpenTelemetryMaybe(SentryOptions options) {
+    if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
+      options.setSpanFactory(new DefaultSpanFactory());
+      //    } else {
+      // enabling this causes issues with agentless where OTel spans seem to be randomly ended
+      //      options.setSpanFactory(SpanFactoryFactory.create(new LoadClass(),
+      // NoOpLogger.getInstance()));
+    }
+    initScopesStorage(options);
+    OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
+  }
+
+  private static void initScopesStorage(SentryOptions options) {
+    getScopesStorage().close();
+    if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
+      scopesStorage = new DefaultScopesStorage();
+    } else {
+      scopesStorage = ScopesStorageFactory.create(new LoadClass(), options.getLogger());
     }
   }
 

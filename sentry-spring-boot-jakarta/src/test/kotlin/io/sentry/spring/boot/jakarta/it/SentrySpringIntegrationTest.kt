@@ -250,7 +250,7 @@ open class App {
     open fun optionsCallback() = Sentry.OptionsConfiguration<SentryOptions> { options ->
         // due to OTel being on the classpath we need to set the default again
         options.spanFactory = DefaultSpanFactory()
-        options.openTelemetryMode = SentryOpenTelemetryMode.ALL_ORIGINS
+        options.openTelemetryMode = SentryOpenTelemetryMode.OFF
     }
 }
 

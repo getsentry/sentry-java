@@ -5,16 +5,13 @@ package io.sentry;
  * use it and what way to use it in.
  */
 public enum SentryOpenTelemetryMode {
-  /** Let the SDK figure out what mode OpenTelemetry is in and whether to even use OpenTelemetry */
-  AUTO,
   /**
-   * For now this only means no span origins will be ignored. This does however not mean, the SDK
-   * won't try tro use OpenTelemetry if available.
-   *
-   * <p>Due to some parts of the SDK being initialized before any config mechanism is available, we
-   * cannot completely disable the OpenTelemetry parts with this setting.
+   * Let the SDK figure out what mode OpenTelemetry is in and whether to even use OpenTelemetry This
+   * is the default for non Android.
    */
-  ALL_ORIGINS,
+  AUTO,
+  /** Do not try to use OpenTelemetry, even if it is available. This is the default for Android. */
+  OFF,
   /** The `sentry-opentelemetry-agent` is used */
   AGENT,
   /**
