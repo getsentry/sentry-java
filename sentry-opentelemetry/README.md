@@ -21,7 +21,7 @@ application. Please see the module [README](sentry-opentelemetry-agent/README.md
 
 This contains customizations to the OpenTelemetry Java Agent such as registering the
 `SentrySpanProcessor` and `SentryPropagator` as well as providing default properties that
-enable the `sentry` propagator. This can also be used without the agent.
+enable the `sentry` propagator.
 
 ### `sentry-opentelemetry-bootstrap`
 
@@ -38,31 +38,42 @@ you also need this module as a dependency.
 Contains `SentrySpanProcessor` and `SentryPropagator` which are used by our Java Agent but can also
 be used when manually instrumenting using OpenTelemetry. If you want to use OpenTelemetry without
 the agent but still want some configuration convenience, you should rather use the
-`sentry-opentelemetry-agentcustomization` module.
+`sentry-opentelemetry-agentless` module.
+
+### `sentry-opentelemetry-agentless`
+Combines all modules and dependencies needed to use Sentry with OpenTelemetry without the agent.
 
 ## Running without an Agent
-If you want to use Sentry with OpenTelemetry without an agent, you can do so by adding the `sentry-opentelemetry-agentcustomization` 
-and `sentryopentelemetry-bootstrap` modules as dependencies to your project. 
+If you want to use Sentry with OpenTelemetry without an agent, you can do so by adding the `sentry-opentelemetry-agentless` module as dependencies to your project. 
 
-You can then initialize Sentry with OpenTelemetry like this:
+And run your application with the following JVM arguments:
+```
+-Dotel.java.global-autoconfigure.enabled=true
+```
+You may also want to set the following environment variables to if you do not use OTEL exporters:
+`OTEL_LOGS_EXPORTER=none;OTEL_METRICS_EXPORTER=none;OTEL_TRACES_EXPORTER=none`
+
+Alternatively you can initialize OpenTelemetry programmatically like this:
 
 ```java
 // Initialize OpenTelemetry by using the AutoConfiguredOpenTelemetrySdk which automatically
 // registers the `SentrySpanProcessor` and `SentryPropagator` and others.
-// Additionally, you can disable the OTEL exporters to avoid seeing error messages in the logs.
-final OpenTelemetrySdk sdk = AutoConfiguredOpenTelemetrySdk.builder()
+// Also, you need to disable the OTEL exporters if you do not use them.
+AutoConfiguredOpenTelemetrySdk.builder()
+  .setResultAsGlobal()
   .addPropertiesSupplier(() -> {
-    final Map<String, String> properties = new HashMap<>();
+final Map<String, String> properties = new HashMap<>();
     properties.put("otel.logs.exporter", "none");
     properties.put("otel.metrics.exporter", "none");
     properties.put("otel.traces.exporter", "none");
     return properties;
   })
-  .build().getOpenTelemetrySdk();
+  .build();
+```
 
-// Set the global OpenTelemetry instance
-GlobalOpenTelemetry.set(sdk);
+And then initialize Sentry as usual:
 
+```java
 // Initialize Sentry
 Sentry.init(
     options -> {
