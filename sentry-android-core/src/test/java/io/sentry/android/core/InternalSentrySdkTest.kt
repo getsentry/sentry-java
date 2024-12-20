@@ -55,7 +55,7 @@ class InternalSentrySdkTest {
         lateinit var options: SentryOptions
 
         fun init(context: Context) {
-            SentryAndroid.init(context) { options ->
+            initForTest(context) { options ->
                 this@Fixture.options = options
                 options.dsn = "https://key@host/proj"
                 options.setTransportFactory { _, _ ->

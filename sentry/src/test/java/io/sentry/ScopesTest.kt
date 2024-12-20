@@ -14,6 +14,7 @@ import io.sentry.test.DeferredExecutorService
 import io.sentry.test.callMethod
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.createTestScopes
+import io.sentry.test.initForTest
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
 import junit.framework.TestCase.assertSame
@@ -973,7 +974,7 @@ class ScopesTest {
 
         var options: SentryOptions? = null
         // init main scopes and make it enabled
-        Sentry.init {
+        initForTest {
             it.addIntegration(mock)
             it.dsn = "https://key@sentry.io/proj"
             it.cacheDirPath = file.absolutePath
