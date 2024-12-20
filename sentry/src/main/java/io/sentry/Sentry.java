@@ -369,7 +369,6 @@ public final class Sentry {
     OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
   }
 
-  @SuppressWarnings("UnusedMethod")
   private static void initScopesStorage(SentryOptions options) {
     getScopesStorage().close();
     if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
@@ -512,6 +511,8 @@ public final class Sentry {
       logger = options.getLogger();
     }
     logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
+
+    OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
 
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
