@@ -76,7 +76,7 @@ class SessionCaptureStrategyTest {
             on { persistSegmentValues(any(), anyOrNull()) }.then {
                 persistedSegment.put(it.arguments[0].toString(), it.arguments[1]?.toString())
             }
-            on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), any()) }
+            on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), any()) }
                 .thenReturn(GeneratedVideo(File("0.mp4"), 5, VIDEO_DURATION))
         }
         val recorderConfig = ScreenshotRecorderConfig(
@@ -105,7 +105,7 @@ class SessionCaptureStrategyTest {
                         null
                     }.whenever(it).submit(any<Runnable>())
                 }
-            ) { _, _ -> replayCache }
+            ) { _ -> replayCache }
         }
     }
 
