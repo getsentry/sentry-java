@@ -2087,6 +2087,14 @@ public abstract interface class io/sentry/Scope$IWithTransaction {
 	public abstract fun accept (Lio/sentry/ITransaction;)V
 }
 
+public final class io/sentry/ScopeBindingMode : java/lang/Enum {
+	public static final field AUTO Lio/sentry/ScopeBindingMode;
+	public static final field OFF Lio/sentry/ScopeBindingMode;
+	public static final field ON Lio/sentry/ScopeBindingMode;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/ScopeBindingMode;
+	public static fun values ()[Lio/sentry/ScopeBindingMode;
+}
+
 public abstract interface class io/sentry/ScopeCallback {
 	public abstract fun run (Lio/sentry/IScope;)V
 }
@@ -2793,6 +2801,8 @@ public final class io/sentry/SentryOpenTelemetryMode : java/lang/Enum {
 	public static final field AGENT Lio/sentry/SentryOpenTelemetryMode;
 	public static final field AGENTLESS Lio/sentry/SentryOpenTelemetryMode;
 	public static final field AGENTLESS_SPRING Lio/sentry/SentryOpenTelemetryMode;
+	public static final field AUTO Lio/sentry/SentryOpenTelemetryMode;
+	public static final field OFF Lio/sentry/SentryOpenTelemetryMode;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryOpenTelemetryMode;
 	public static fun values ()[Lio/sentry/SentryOpenTelemetryMode;
 }
@@ -2865,6 +2875,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
 	public fun getModulesLoader ()Lio/sentry/internal/modules/IModulesLoader;
+	public fun getOpenTelemetryMode ()Lio/sentry/SentryOpenTelemetryMode;
 	public fun getOptionsObservers ()Ljava/util/List;
 	public fun getOutboxPath ()Ljava/lang/String;
 	public fun getPerformanceCollectors ()Ljava/util/List;
@@ -2990,6 +3001,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxSpans (I)V
 	public fun setMaxTraceFileSize (J)V
 	public fun setModulesLoader (Lio/sentry/internal/modules/IModulesLoader;)V
+	public fun setOpenTelemetryMode (Lio/sentry/SentryOpenTelemetryMode;)V
 	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
@@ -3542,12 +3554,14 @@ public class io/sentry/SpanOptions {
 	protected field origin Ljava/lang/String;
 	public fun <init> ()V
 	public fun getOrigin ()Ljava/lang/String;
+	public fun getScopeBindingMode ()Lio/sentry/ScopeBindingMode;
 	public fun getStartTimestamp ()Lio/sentry/SentryDate;
 	public fun isIdle ()Z
 	public fun isTrimEnd ()Z
 	public fun isTrimStart ()Z
 	public fun setIdle (Z)V
 	public fun setOrigin (Ljava/lang/String;)V
+	public fun setScopeBindingMode (Lio/sentry/ScopeBindingMode;)V
 	public fun setStartTimestamp (Lio/sentry/SentryDate;)V
 	public fun setTrimEnd (Z)V
 	public fun setTrimStart (Z)V
@@ -3796,17 +3810,20 @@ public final class io/sentry/UserFeedback$JsonKeys {
 
 public final class io/sentry/backpressure/BackpressureMonitor : io/sentry/backpressure/IBackpressureMonitor, java/lang/Runnable {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/IScopes;)V
+	public fun close ()V
 	public fun getDownsampleFactor ()I
 	public fun run ()V
 	public fun start ()V
 }
 
 public abstract interface class io/sentry/backpressure/IBackpressureMonitor {
+	public abstract fun close ()V
 	public abstract fun getDownsampleFactor ()I
 	public abstract fun start ()V
 }
 
 public final class io/sentry/backpressure/NoOpBackpressureMonitor : io/sentry/backpressure/IBackpressureMonitor {
+	public fun close ()V
 	public fun getDownsampleFactor ()I
 	public static fun getInstance ()Lio/sentry/backpressure/NoOpBackpressureMonitor;
 	public fun start ()V
@@ -4224,7 +4241,7 @@ public abstract interface class io/sentry/internal/viewhierarchy/ViewHierarchyEx
 
 public final class io/sentry/opentelemetry/OpenTelemetryUtil {
 	public fun <init> ()V
-	public static fun applyOpenTelemetryOptions (Lio/sentry/SentryOptions;Lio/sentry/SentryOpenTelemetryMode;)V
+	public static fun applyIgnoredSpanOrigins (Lio/sentry/SentryOptions;Lio/sentry/util/LoadClass;)V
 }
 
 public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/JsonSerializable, io/sentry/JsonUnknown {

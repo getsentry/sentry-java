@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.test.initForTest
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -28,7 +29,7 @@ class SentryWrapperTest {
 
     @Test
     fun `scopes is reset to state within the thread after isolated supply is done`() {
-        Sentry.init {
+        initForTest {
             it.dsn = dsn
             it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
                 event
@@ -66,7 +67,7 @@ class SentryWrapperTest {
     fun `wrapped supply async isolates Scopes`() {
         val capturedEvents = mutableListOf<SentryEvent>()
 
-        Sentry.init {
+        initForTest {
             it.dsn = dsn
             it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
                 capturedEvents.add(event)
@@ -118,7 +119,7 @@ class SentryWrapperTest {
     fun `wrapped callable isolates Scopes`() {
         val capturedEvents = mutableListOf<SentryEvent>()
 
-        Sentry.init {
+        initForTest {
             it.dsn = dsn
             it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
                 capturedEvents.add(event)
@@ -165,7 +166,7 @@ class SentryWrapperTest {
 
     @Test
     fun `scopes is reset to state within the thread after isolated callable is done`() {
-        Sentry.init {
+        initForTest {
             it.dsn = dsn
         }
 

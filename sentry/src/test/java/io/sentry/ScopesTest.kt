@@ -14,6 +14,7 @@ import io.sentry.test.DeferredExecutorService
 import io.sentry.test.callMethod
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.createTestScopes
+import io.sentry.test.initForTest
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
 import junit.framework.TestCase.assertSame
@@ -27,6 +28,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -78,7 +80,13 @@ class ScopesTest {
 
     @Test
     fun `when no dsn available, ctor throws illegal arg`() {
-        val ex = assertFailsWith<IllegalArgumentException> { createScopes(SentryOptions()) }
+        val ex = assertFailsWith<IllegalArgumentException> {
+            val options = SentryOptions()
+            val scopeToUse = Scope(options)
+            val isolationScopeToUse = Scope(options)
+            val globalScopeToUse = Scope(options)
+            Scopes(scopeToUse, isolationScopeToUse, globalScopeToUse, "test")
+        }
         assertEquals("Scopes requires a DSN to be instantiated. Considering using the NoOpScopes if no DSN is available.", ex.message)
     }
 
@@ -91,6 +99,7 @@ class ScopesTest {
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
         val scopes = createScopes(options)
+        reset(integrationMock)
         scopes.forkedScopes("test")
         verifyNoMoreInteractions(integrationMock)
     }
@@ -104,6 +113,7 @@ class ScopesTest {
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
         val scopes = createScopes(options)
+        reset(integrationMock)
         scopes.forkedCurrentScope("test")
         verifyNoMoreInteractions(integrationMock)
     }
@@ -964,7 +974,7 @@ class ScopesTest {
 
         var options: SentryOptions? = null
         // init main scopes and make it enabled
-        Sentry.init {
+        initForTest {
             it.addIntegration(mock)
             it.dsn = "https://key@sentry.io/proj"
             it.cacheDirPath = file.absolutePath
@@ -1750,15 +1760,18 @@ class ScopesTest {
         val executor = mock<ISentryExecutorService>()
         val profiler = mock<ITransactionProfiler>()
         val performanceCollector = mock<TransactionPerformanceCollector>()
+        val backpressureMonitorMock = mock<IBackpressureMonitor>()
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
             cacheDirPath = file.absolutePath
             executorService = executor
             setTransactionProfiler(profiler)
             transactionPerformanceCollector = performanceCollector
+            backpressureMonitor = backpressureMonitorMock
         }
         val sut = createScopes(options)
         sut.close()
+        verify(backpressureMonitorMock).close()
         verify(executor).close(any())
         verify(profiler).close()
         verify(performanceCollector).close()

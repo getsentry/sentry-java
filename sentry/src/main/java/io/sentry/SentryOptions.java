@@ -513,6 +513,8 @@ public class SentryOptions {
 
   protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
+  private @NotNull SentryOpenTelemetryMode openTelemetryMode = SentryOpenTelemetryMode.AUTO;
+
   /**
    * Adds an event processor
    *
@@ -2480,6 +2482,25 @@ public class SentryOptions {
 
   public @Nullable Boolean isGlobalHubMode() {
     return globalHubMode;
+  }
+
+  /**
+   * Configures the SDK to either automatically determine if OpenTelemetry is available, whether to
+   * use it and what way to use it in.
+   *
+   * <p>See {@link SentryOpenTelemetryMode}
+   *
+   * <p>By default the SDK will use OpenTelemetry if available, preferring the agent. On Android
+   * OpenTelemetry is not used.
+   *
+   * @param openTelemetryMode the mode
+   */
+  public void setOpenTelemetryMode(final @NotNull SentryOpenTelemetryMode openTelemetryMode) {
+    this.openTelemetryMode = openTelemetryMode;
+  }
+
+  public @NotNull SentryOpenTelemetryMode getOpenTelemetryMode() {
+    return openTelemetryMode;
   }
 
   /**

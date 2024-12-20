@@ -16,6 +16,7 @@ body:
         - sentry-kotlin-extensions
         - sentry-opentelemetry-agent
         - sentry-opentelemetry-agentless
+        - sentry-opentelemetry-agentless-spring
         - sentry-opentelemetry-core
         - sentry-servlet
         - sentry-servlet-jakarta

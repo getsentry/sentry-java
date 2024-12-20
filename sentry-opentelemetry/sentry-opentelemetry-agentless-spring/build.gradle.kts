@@ -15,4 +15,5 @@ dependencies {
     api(Config.Libs.OpenTelemetry.otelSemconv)
     api(Config.Libs.OpenTelemetry.otelSemconvIncubating)
     api(Config.Libs.OpenTelemetry.otelExtensionAutoconfigure)
+    api(Config.Libs.springBoot3StarterOpenTelemetry)
 }
