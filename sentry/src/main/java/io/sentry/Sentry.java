@@ -514,7 +514,8 @@ public final class Sentry {
     }
 
     final String profilingTracesDirPath = options.getProfilingTracesDirPath();
-    if (options.isProfilingEnabled() && profilingTracesDirPath != null) {
+    if ((options.isProfilingEnabled() || options.isContinuousProfilingEnabled())
+        && profilingTracesDirPath != null) {
 
       final File profilingTracesDir = new File(profilingTracesDirPath);
       profilingTracesDir.mkdirs();

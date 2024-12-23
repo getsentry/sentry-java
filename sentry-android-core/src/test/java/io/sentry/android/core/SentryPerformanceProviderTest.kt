@@ -259,6 +259,19 @@ class SentryPerformanceProviderTest {
         )
     }
 
+    @Test
+    fun `when continuous profile is not sampled, continuous profiler is not started`() {
+        fixture.getSut { config ->
+            writeConfig(config, continuousProfileSampled = false)
+        }
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+        verify(fixture.logger).log(
+            eq(SentryLevel.DEBUG),
+            eq("App start profiling was not sampled. It will not start.")
+        )
+    }
+
     // This case should never happen in reality, but it's technically possible to have such configuration
     @Test
     fun `when both transaction and continuous profilers are enabled, only continuous profiler is created`() {
@@ -331,6 +344,7 @@ class SentryPerformanceProviderTest {
         traceSampleRate: Double = 1.0,
         profileSampled: Boolean = true,
         profileSampleRate: Double = 1.0,
+        continuousProfileSampled: Boolean = true,
         profilingTracesDirPath: String = traceDir.absolutePath
     ) {
         val appStartProfilingOptions = SentryAppStartProfilingOptions()
@@ -340,6 +354,7 @@ class SentryPerformanceProviderTest {
         appStartProfilingOptions.traceSampleRate = traceSampleRate
         appStartProfilingOptions.isProfileSampled = profileSampled
         appStartProfilingOptions.profileSampleRate = profileSampleRate
+        appStartProfilingOptions.isContinuousProfileSampled = continuousProfileSampled
         appStartProfilingOptions.profilingTracesDirPath = profilingTracesDirPath
         appStartProfilingOptions.profilingTracesHz = 101
         JsonSerializer(SentryOptions.empty()).serialize(appStartProfilingOptions, FileWriter(configFile))

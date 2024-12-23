@@ -1229,9 +1229,9 @@ class JsonSerializerTest {
     fun `serializing SentryAppStartProfilingOptions`() {
         val actual = serializeToString(appStartProfilingOptions)
 
-        val expected = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"trace_sampled\":false," +
-            "\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false," +
-            "\"is_continuous_profiling_enabled\":false,\"profiling_traces_hz\":65}"
+        val expected = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"continuous_profile_sampled\":true," +
+            "\"trace_sampled\":false,\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null," +
+            "\"is_profiling_enabled\":false,\"is_continuous_profiling_enabled\":false,\"profiling_traces_hz\":65}"
 
         assertEquals(expected, actual)
     }
@@ -1239,7 +1239,8 @@ class JsonSerializerTest {
     @Test
     fun `deserializing SentryAppStartProfilingOptions`() {
         val jsonAppStartProfilingOptions = "{\"profile_sampled\":true,\"profile_sample_rate\":0.8,\"trace_sampled\"" +
-            ":false,\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false,\"profiling_traces_hz\":65}"
+            ":false,\"trace_sample_rate\":0.1,\"profiling_traces_dir_path\":null,\"is_profiling_enabled\":false," +
+            "\"profiling_traces_hz\":65,\"continuous_profile_sampled\":true}"
 
         val actual = fixture.serializer.deserialize(StringReader(jsonAppStartProfilingOptions), SentryAppStartProfilingOptions::class.java)
         assertNotNull(actual)
@@ -1247,6 +1248,7 @@ class JsonSerializerTest {
         assertEquals(appStartProfilingOptions.traceSampleRate, actual.traceSampleRate)
         assertEquals(appStartProfilingOptions.profileSampled, actual.profileSampled)
         assertEquals(appStartProfilingOptions.profileSampleRate, actual.profileSampleRate)
+        assertEquals(appStartProfilingOptions.continuousProfileSampled, actual.isContinuousProfileSampled)
         assertEquals(appStartProfilingOptions.isProfilingEnabled, actual.isProfilingEnabled)
         assertEquals(appStartProfilingOptions.isContinuousProfilingEnabled, actual.isContinuousProfilingEnabled)
         assertEquals(appStartProfilingOptions.profilingTracesHz, actual.profilingTracesHz)
@@ -1549,6 +1551,7 @@ class JsonSerializerTest {
     private val appStartProfilingOptions = SentryAppStartProfilingOptions().apply {
         traceSampled = false
         traceSampleRate = 0.1
+        continuousProfileSampled = true
         profileSampled = true
         profileSampleRate = 0.8
         isProfilingEnabled = false

@@ -18,6 +18,7 @@ class TracesSamplerTest {
             randomResult: Double? = null,
             tracesSampleRate: Double? = null,
             profilesSampleRate: Double? = null,
+            continuousProfilesSampleRate: Double? = null,
             tracesSamplerCallback: SentryOptions.TracesSamplerCallback? = null,
             profilesSamplerCallback: SentryOptions.ProfilesSamplerCallback? = null,
             logger: ILogger? = null
@@ -32,6 +33,9 @@ class TracesSamplerTest {
             }
             if (profilesSampleRate != null) {
                 options.profilesSampleRate = profilesSampleRate
+            }
+            if (continuousProfilesSampleRate != null) {
+                options.continuousProfilesSampleRate = continuousProfilesSampleRate
             }
             if (tracesSamplerCallback != null) {
                 options.tracesSampler = tracesSamplerCallback
@@ -148,6 +152,27 @@ class TracesSamplerTest {
         assertTrue(samplingDecision.sampled)
         assertFalse(samplingDecision.profileSampled)
         assertEquals(0.2, samplingDecision.profileSampleRate)
+    }
+
+    @Test
+    fun `when continuousProfilesSampleRate is not set returns true`() {
+        val sampler = fixture.getSut(randomResult = 1.0)
+        val sampled = sampler.sampleContinuousProfile()
+        assertTrue(sampled)
+    }
+
+    @Test
+    fun `when continuousProfilesSampleRate is set and random returns lower number returns true`() {
+        val sampler = fixture.getSut(randomResult = 0.1, continuousProfilesSampleRate = 0.2)
+        val sampled = sampler.sampleContinuousProfile()
+        assertTrue(sampled)
+    }
+
+    @Test
+    fun `when continuousProfilesSampleRate is set and random returns greater number returns false`() {
+        val sampler = fixture.getSut(randomResult = 0.9, continuousProfilesSampleRate = 0.2)
+        val sampled = sampler.sampleContinuousProfile()
+        assertFalse(sampled)
     }
 
     @Test
