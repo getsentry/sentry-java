@@ -1807,7 +1807,7 @@ public class SentryOptions {
     return continuousProfilesSampleRate;
   }
 
-  public void setContinuousProfilesSampleRate(double continuousProfilesSampleRate) {
+  public void setContinuousProfilesSampleRate(final double continuousProfilesSampleRate) {
     if (!SampleRateUtils.isValidContinuousProfilesSampleRate(continuousProfilesSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
