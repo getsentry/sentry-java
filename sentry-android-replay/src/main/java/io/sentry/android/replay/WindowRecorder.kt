@@ -8,6 +8,7 @@ import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.scheduleAtFixedRateSafely
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -17,7 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 internal class WindowRecorder(
     private val options: SentryOptions,
     private val screenshotRecorderCallback: ScreenshotRecorderCallback? = null,
-    private val mainLooperHandler: MainLooperHandler
+    private val mainLooperHandler: MainLooperHandler,
+    private val replayExecutor: ScheduledExecutorService
 ) : Recorder, OnRootViewsChangedListener {
 
     internal companion object {
@@ -26,6 +28,7 @@ internal class WindowRecorder(
 
     private val isRecording = AtomicBoolean(false)
     private val rootViews = ArrayList<WeakReference<View>>()
+    private val rootViewsLock = Any()
     private var recorder: ScreenshotRecorder? = null
     private var capturingTask: ScheduledFuture<*>? = null
     private val capturer by lazy {
@@ -33,16 +36,20 @@ internal class WindowRecorder(
     }
 
     override fun onRootViewsChanged(root: View, added: Boolean) {
-        if (added) {
-            rootViews.add(WeakReference(root))
-            recorder?.bind(root)
-        } else {
-            recorder?.unbind(root)
-            rootViews.removeAll { it.get() == root }
+        synchronized(rootViewsLock) {
+            if (added) {
+                rootViews.add(WeakReference(root))
+                recorder?.bind(root)
+            } else {
+                recorder?.unbind(root)
+                rootViews.removeAll { it.get() == root }
 
-            val newRoot = rootViews.lastOrNull()?.get()
-            if (newRoot != null && root != newRoot) {
-                recorder?.bind(newRoot)
+                val newRoot = rootViews.lastOrNull()?.get()
+                if (newRoot != null && root != newRoot) {
+                    recorder?.bind(newRoot)
+                } else {
+                    Unit // synchronized block wants us to return something lol
+                }
             }
         }
     }
@@ -52,7 +59,9 @@ internal class WindowRecorder(
             return
         }
 
-        recorder = ScreenshotRecorder(recorderConfig, options, mainLooperHandler, screenshotRecorderCallback)
+        recorder = ScreenshotRecorder(recorderConfig, options, mainLooperHandler, replayExecutor, screenshotRecorderCallback)
+        // TODO: change this to use MainThreadHandler and just post on the main thread with delay
+        // to avoid thread context switch every time
         capturingTask = capturer.scheduleAtFixedRateSafely(
             options,
             "$TAG.capture",
@@ -72,9 +81,11 @@ internal class WindowRecorder(
     }
 
     override fun stop() {
-        rootViews.forEach { recorder?.unbind(it.get()) }
+        synchronized(rootViewsLock) {
+            rootViews.forEach { recorder?.unbind(it.get()) }
+            rootViews.clear()
+        }
         recorder?.close()
-        rootViews.clear()
         recorder = null
         capturingTask?.cancel(false)
         capturingTask = null

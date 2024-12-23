@@ -6,6 +6,34 @@
 
 - Fix warm start detection ([#3937](https://github.com/getsentry/sentry-java/pull/3937))
 
+## 7.19.1
+
+### Fixes
+
+- Change TTFD timeout to 25 seconds ([#3984](https://github.com/getsentry/sentry-java/pull/3984))
+- Session Replay: Fix memory leak when masking Compose screens ([#3985](https://github.com/getsentry/sentry-java/pull/3985))
+- Session Replay: Fix potential ANRs in `GestureRecorder` ([#4001](https://github.com/getsentry/sentry-java/pull/4001))
+
+### Internal
+
+- Session Replay: Flutter improvements ([#4007](https://github.com/getsentry/sentry-java/pull/4007))
+
+## 7.19.0
+
+### Fixes
+
+- Session Replay: fix various crashes and issues ([#3970](https://github.com/getsentry/sentry-java/pull/3970))
+  - Fix `IndexOutOfBoundsException` when tracking window changes
+  - Fix `IllegalStateException` when adding/removing draw listener for a dead view
+  - Fix `ConcurrentModificationException` when registering window listeners and stopping `WindowRecorder`/`GestureRecorder`
+- Add support for setting sentry-native handler_strategy ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.8 to v0.7.16 ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0716)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.8...0.7.16)
+
 ## 7.18.1
 
 ### Fixes
