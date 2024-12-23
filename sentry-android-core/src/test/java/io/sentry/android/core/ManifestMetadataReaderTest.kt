@@ -801,6 +801,47 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata reads continuousProfilesSampleRate from metadata`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+        val bundle = bundleOf(ManifestMetadataReader.CONTINUOUS_PROFILES_SAMPLE_RATE to expectedSampleRate)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.continuousProfilesSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata does not override continuousProfilesSampleRate from options`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+        fixture.options.continuousProfilesSampleRate = expectedSampleRate.toDouble()
+        val bundle = bundleOf(ManifestMetadataReader.CONTINUOUS_PROFILES_SAMPLE_RATE to 0.1f)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.continuousProfilesSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata without specifying continuousProfilesSampleRate, stays 1`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(1.0, fixture.options.continuousProfilesSampleRate)
+    }
+
+    @Test
     fun `applyMetadata reads tracePropagationTargets to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to """localhost,^(http|https)://api\..*$""")

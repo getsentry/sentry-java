@@ -458,6 +458,7 @@ public final class io/sentry/ExternalOptions {
 	public static fun from (Lio/sentry/config/PropertiesProvider;Lio/sentry/ILogger;)Lio/sentry/ExternalOptions;
 	public fun getBundleIds ()Ljava/util/Set;
 	public fun getContextTags ()Ljava/util/List;
+	public fun getContinuousProfilesSampleRate ()Ljava/lang/Double;
 	public fun getCron ()Lio/sentry/SentryOptions$Cron;
 	public fun getDebug ()Ljava/lang/Boolean;
 	public fun getDist ()Ljava/lang/String;
@@ -491,6 +492,7 @@ public final class io/sentry/ExternalOptions {
 	public fun isGlobalHubMode ()Ljava/lang/Boolean;
 	public fun isSendDefaultPii ()Ljava/lang/Boolean;
 	public fun isSendModules ()Ljava/lang/Boolean;
+	public fun setContinuousProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
 	public fun setDebug (Ljava/lang/Boolean;)V
 	public fun setDist (Ljava/lang/String;)V
@@ -2488,11 +2490,13 @@ public final class io/sentry/SentryAppStartProfilingOptions : io/sentry/JsonSeri
 	public fun getProfilingTracesHz ()I
 	public fun getTraceSampleRate ()Ljava/lang/Double;
 	public fun getUnknown ()Ljava/util/Map;
+	public fun isContinuousProfileSampled ()Z
 	public fun isContinuousProfilingEnabled ()Z
 	public fun isProfileSampled ()Z
 	public fun isProfilingEnabled ()Z
 	public fun isTraceSampled ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setContinuousProfileSampled (Z)V
 	public fun setContinuousProfilingEnabled (Z)V
 	public fun setProfileSampleRate (Ljava/lang/Double;)V
 	public fun setProfileSampled (Z)V
@@ -2511,6 +2515,7 @@ public final class io/sentry/SentryAppStartProfilingOptions$Deserializer : io/se
 }
 
 public final class io/sentry/SentryAppStartProfilingOptions$JsonKeys {
+	public static final field CONTINUOUS_PROFILE_SAMPLED Ljava/lang/String;
 	public static final field IS_CONTINUOUS_PROFILING_ENABLED Ljava/lang/String;
 	public static final field IS_PROFILING_ENABLED Ljava/lang/String;
 	public static final field PROFILE_SAMPLED Ljava/lang/String;
@@ -2944,6 +2949,7 @@ public class io/sentry/SentryOptions {
 	public fun getConnectionTimeoutMillis ()I
 	public fun getContextTags ()Ljava/util/List;
 	public fun getContinuousProfiler ()Lio/sentry/IContinuousProfiler;
+	public fun getContinuousProfilesSampleRate ()D
 	public fun getCron ()Lio/sentry/SentryOptions$Cron;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
 	public fun getDebugMetaLoader ()Lio/sentry/internal/debugmeta/IDebugMetaLoader;
@@ -3060,6 +3066,7 @@ public class io/sentry/SentryOptions {
 	public fun setConnectionStatusProvider (Lio/sentry/IConnectionStatusProvider;)V
 	public fun setConnectionTimeoutMillis (I)V
 	public fun setContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
+	public fun setContinuousProfilesSampleRate (D)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDebug (Z)V
@@ -3759,6 +3766,7 @@ public final class io/sentry/TraceContext$JsonKeys {
 public final class io/sentry/TracesSampler {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun sample (Lio/sentry/SamplingContext;)Lio/sentry/TracesSamplingDecision;
+	public fun sampleContinuousProfile ()Z
 }
 
 public final class io/sentry/TracesSamplingDecision {
@@ -6316,6 +6324,7 @@ public final class io/sentry/util/Random : java/io/Serializable {
 
 public final class io/sentry/util/SampleRateUtils {
 	public fun <init> ()V
+	public static fun isValidContinuousProfilesSampleRate (D)Z
 	public static fun isValidProfilesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;)Z

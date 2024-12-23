@@ -162,6 +162,12 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       final @NotNull Context context,
       final @NotNull SentryAppStartProfilingOptions profilingOptions,
       final @NotNull AppStartMetrics appStartMetrics) {
+
+    if (!profilingOptions.isContinuousProfileSampled()) {
+      logger.log(SentryLevel.DEBUG, "App start profiling was not sampled. It will not start.");
+      return;
+    }
+
     final @NotNull IContinuousProfiler appStartContinuousProfiler =
         new AndroidContinuousProfiler(
             buildInfoProvider,

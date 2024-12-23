@@ -23,6 +23,10 @@ public final class SampleRateUtils {
     return isValidRate(profilesSampleRate, true);
   }
 
+  public static boolean isValidContinuousProfilesSampleRate(double profilesSampleRate) {
+    return isValidRate(profilesSampleRate, false);
+  }
+
   private static boolean isValidRate(final @Nullable Double rate, final boolean allowNull) {
     if (rate == null) {
       return allowNull;

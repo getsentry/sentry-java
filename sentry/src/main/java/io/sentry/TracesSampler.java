@@ -85,6 +85,11 @@ public final class TracesSampler {
     return new TracesSamplingDecision(false, null, false, null);
   }
 
+  public boolean sampleContinuousProfile() {
+    final double sampling = options.getContinuousProfilesSampleRate();
+    return sample(sampling);
+  }
+
   private boolean sample(final @NotNull Double aDouble) {
     return !(aDouble < getRandom().nextDouble());
   }

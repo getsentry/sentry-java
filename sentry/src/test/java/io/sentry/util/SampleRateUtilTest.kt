@@ -130,4 +130,39 @@ class SampleRateUtilTest {
     fun `accepts null profiles sample rate`() {
         assertTrue(SampleRateUtils.isValidProfilesSampleRate(null))
     }
+
+    @Test
+    fun `accepts 0 for continuous profiles sample rate`() {
+        assertTrue(SampleRateUtils.isValidContinuousProfilesSampleRate(0.0))
+    }
+
+    @Test
+    fun `accepts 1 for continuous profiles sample rate`() {
+        assertTrue(SampleRateUtils.isValidContinuousProfilesSampleRate(1.0))
+    }
+
+    @Test
+    fun `rejects negative continuous profiles sample rate`() {
+        assertFalse(SampleRateUtils.isValidContinuousProfilesSampleRate(-0.5))
+    }
+
+    @Test
+    fun `rejects 1 dot 01 for continuous profiles sample rate`() {
+        assertFalse(SampleRateUtils.isValidContinuousProfilesSampleRate(1.01))
+    }
+
+    @Test
+    fun `rejects NaN continuous profiles sample rate`() {
+        assertFalse(SampleRateUtils.isValidContinuousProfilesSampleRate(Double.NaN))
+    }
+
+    @Test
+    fun `rejects positive infinite continuous profiles sample rate`() {
+        assertFalse(SampleRateUtils.isValidContinuousProfilesSampleRate(Double.POSITIVE_INFINITY))
+    }
+
+    @Test
+    fun `rejects negative infinite continuous profiles sample rate`() {
+        assertFalse(SampleRateUtils.isValidContinuousProfilesSampleRate(Double.NEGATIVE_INFINITY))
+    }
 }

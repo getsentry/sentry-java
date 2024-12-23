@@ -15,6 +15,7 @@ import io.sentry.test.callMethod
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.createTestScopes
 import io.sentry.util.HintUtils
+import io.sentry.util.SentryRandom
 import io.sentry.util.StringUtils
 import junit.framework.TestCase.assertSame
 import org.mockito.kotlin.any
@@ -2168,6 +2169,24 @@ class ScopesTest {
         }
         scopes.startProfiler()
         verify(profiler).start()
+    }
+
+    @Test
+    fun `startProfiler logs a message if not sampled`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.continuousProfilesSampleRate = 0.1
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        // We cannot set sample rate to 0, as it would not start the profiler. So we set the seed to have consistent results
+        SentryRandom.current().setSeed(0)
+        scopes.startProfiler()
+
+        verify(profiler, never()).start()
+        verify(logger).log(eq(SentryLevel.DEBUG), eq("Profiler was not started due to sampling decision."))
     }
 
     @Test

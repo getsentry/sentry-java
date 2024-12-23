@@ -357,6 +357,15 @@ public class SentryOptions {
    */
   private @Nullable ProfilesSamplerCallback profilesSampler;
 
+  /**
+   * Configures the continuous profiling sample rate as a percentage of profiles to be sent in the
+   * range of 0.0 to 1.0. if 1.0 is set it means that 100% of profiles will be sent. If set to 0.1
+   * only 10% of profiles will be sent. Profiles are picked randomly. Default is 1 (100%).
+   * ProfilesSampleRate takes precedence over this. To enable continuous profiling, don't set
+   * profilesSampleRate or profilesSampler, or set them to null.
+   */
+  private double continuousProfilesSampleRate = 1.0;
+
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
 
@@ -481,7 +490,10 @@ public class SentryOptions {
 
   private boolean enableBackpressureHandling = true;
 
-  /** Whether to profile app launches, depending on profilesSampler or profilesSampleRate. */
+  /**
+   * Whether to profile app launches, depending on profilesSampler, profilesSampleRate or
+   * continuousProfilesSampleRate.
+   */
   private boolean enableAppStartProfiling = false;
 
   private @NotNull ISpanFactory spanFactory = NoOpSpanFactory.getInstance();
@@ -1724,8 +1736,7 @@ public class SentryOptions {
    * @return if profiling is enabled for transactions.
    */
   public boolean isProfilingEnabled() {
-    return (getProfilesSampleRate() != null && getProfilesSampleRate() > 0)
-        || getProfilesSampler() != null;
+    return (profilesSampleRate != null && profilesSampleRate > 0) || profilesSampler != null;
   }
 
   /**
@@ -1736,7 +1747,9 @@ public class SentryOptions {
    */
   @ApiStatus.Internal
   public boolean isContinuousProfilingEnabled() {
-    return getProfilesSampleRate() == null && getProfilesSampler() == null;
+    return profilesSampleRate == null
+        && profilesSampler == null
+        && continuousProfilesSampleRate > 0;
   }
 
   /**
@@ -1781,6 +1794,27 @@ public class SentryOptions {
               + " is not valid. Use null to disable or values between 0.0 and 1.0.");
     }
     this.profilesSampleRate = profilesSampleRate;
+  }
+
+  /**
+   * Returns the continuous profiling sample rate. Default is 1 (100%). ProfilesSampleRate takes
+   * precedence over this. To enable continuous profiling, don't set profilesSampleRate or
+   * profilesSampler, or set them to null.
+   *
+   * @return the sample rate
+   */
+  public double getContinuousProfilesSampleRate() {
+    return continuousProfilesSampleRate;
+  }
+
+  public void setContinuousProfilesSampleRate(double continuousProfilesSampleRate) {
+    if (!SampleRateUtils.isValidContinuousProfilesSampleRate(continuousProfilesSampleRate)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + continuousProfilesSampleRate
+              + " is not valid. Use values between 0.0 and 1.0.");
+    }
+    this.continuousProfilesSampleRate = continuousProfilesSampleRate;
   }
 
   /**
@@ -2181,17 +2215,19 @@ public class SentryOptions {
   }
 
   /**
-   * Whether to profile app launches, depending on profilesSampler or profilesSampleRate. Depends on
-   * {@link SentryOptions#isProfilingEnabled()}
+   * Whether to profile app launches, depending on profilesSampler, profilesSampleRate or
+   * continuousProfilesSampleRate. Depends on {@link SentryOptions#isProfilingEnabled()} and {@link
+   * SentryOptions#isContinuousProfilingEnabled()}
    *
    * @return true if app launches should be profiled.
    */
   public boolean isEnableAppStartProfiling() {
-    return isProfilingEnabled() && enableAppStartProfiling;
+    return (isProfilingEnabled() || isContinuousProfilingEnabled()) && enableAppStartProfiling;
   }
 
   /**
-   * Whether to profile app launches, depending on profilesSampler or profilesSampleRate.
+   * Whether to profile app launches, depending on profilesSampler, profilesSampleRate or
+   * continuousProfilesSampleRate.
    *
    * @param enableAppStartProfiling true if app launches should be profiled.
    */
@@ -2706,6 +2742,9 @@ public class SentryOptions {
     }
     if (options.getProfilesSampleRate() != null) {
       setProfilesSampleRate(options.getProfilesSampleRate());
+    }
+    if (options.getContinuousProfilesSampleRate() != null) {
+      setContinuousProfilesSampleRate(options.getContinuousProfilesSampleRate());
     }
     if (options.getDebug() != null) {
       setDebug(options.getDebug());
