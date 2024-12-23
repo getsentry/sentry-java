@@ -429,13 +429,12 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public void onActivityPreStarted(final @NotNull Activity activity) {
-    final long now = SystemClock.uptimeMillis();
     if (appStartSpan == null) {
       return;
     }
     final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
     if (timeSpan != null) {
-      timeSpan.getOnStart().setStartedAt(now);
+      timeSpan.getOnStart().setStartedAt(SystemClock.uptimeMillis());
     }
   }
 
