@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix warm start detection ([#3937](https://github.com/getsentry/sentry-java/pull/3937))
+
 ## 7.19.1
 
 ### Fixes
