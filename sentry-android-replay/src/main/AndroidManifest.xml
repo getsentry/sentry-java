@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:tools="http://schemas.android.com/tools">
+
+  <!-- Compose requires min SDK 21, but our min SDK is set to 19 -->
+  <uses-sdk
+    tools:overrideLibrary="androidx.compose.foundation,androidx.compose.runtime,androidx.compose.animation,androidx.compose.ui" />
+
+</manifest>

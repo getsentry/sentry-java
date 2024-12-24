@@ -14,9 +14,9 @@ import java.io.Closeable
 /**
  * Sentry integration for Timber.
  */
-class SentryTimberIntegration(
-    val minEventLevel: SentryLevel = SentryLevel.ERROR,
-    val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO
+public class SentryTimberIntegration(
+    public val minEventLevel: SentryLevel = SentryLevel.ERROR,
+    public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO
 ) : Integration, Closeable {
     private lateinit var tree: SentryTimberTree
     private lateinit var logger: ILogger

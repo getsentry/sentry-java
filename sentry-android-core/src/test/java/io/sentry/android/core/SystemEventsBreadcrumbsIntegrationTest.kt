@@ -3,6 +3,7 @@ package io.sentry.android.core
 import android.content.Context
 import android.content.Intent
 import android.os.BatteryManager
+import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.IScopes
@@ -19,6 +20,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import org.robolectric.annotation.Config
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -26,6 +28,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
+@Config(sdk = [Build.VERSION_CODES.TIRAMISU])
 class SystemEventsBreadcrumbsIntegrationTest {
 
     private class Fixture {
@@ -50,7 +53,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
         sut.register(fixture.scopes, fixture.options)
 
-        verify(fixture.context).registerReceiver(any(), any())
+        verify(fixture.context).registerReceiver(any(), any(), any())
         assertNotNull(sut.receiver)
     }
 
@@ -69,7 +72,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
         sut.register(fixture.scopes, fixture.options)
 
-        verify(fixture.context, never()).registerReceiver(any(), any())
+        verify(fixture.context, never()).registerReceiver(any(), any(), any())
         assertNull(sut.receiver)
     }
 
@@ -174,7 +177,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     @Test
     fun `Do not crash if registerReceiver throws exception`() {
         val sut = fixture.getSut()
-        whenever(fixture.context.registerReceiver(any(), any())).thenThrow(SecurityException())
+        whenever(fixture.context.registerReceiver(any(), any(), any())).thenThrow(SecurityException())
 
         sut.register(fixture.scopes, fixture.options)
 

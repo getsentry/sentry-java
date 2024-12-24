@@ -65,7 +65,7 @@ public class ReplayIntegration(
     IRateLimitObserver {
 
     // needed for the Java's call site
-    constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
+    public constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
         context.appContext(),
         dateProvider,
         null,
@@ -142,7 +142,7 @@ public class ReplayIntegration(
         finalizePreviousReplay()
     }
 
-    override fun isRecording() = isRecording.get()
+    override fun isRecording(): Boolean = isRecording.get()
 
     override fun start() {
         // TODO: add lifecycle state instead and manage it in start/pause/resume/stop
@@ -306,7 +306,7 @@ public class ReplayIntegration(
         }
     }
 
-    override fun onLowMemory() = Unit
+    override fun onLowMemory(): Unit = Unit
 
     override fun onTouchEvent(event: MotionEvent) {
         captureStrategy?.onTouchEvent(event)

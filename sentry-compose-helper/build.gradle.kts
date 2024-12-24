@@ -20,6 +20,8 @@ kotlin {
 
                 compileOnly(compose.runtime)
                 compileOnly(compose.ui)
+
+                compileOnly(Config.Libs.androidxAnnotation)
             }
         }
         val jvmTest by getting {
@@ -27,6 +29,7 @@ kotlin {
                 implementation(compose.runtime)
                 implementation(compose.ui)
 
+                compileOnly(Config.Libs.androidxAnnotation)
                 implementation(Config.TestLibs.kotlinTestJunit)
                 implementation(Config.TestLibs.mockitoKotlin)
                 implementation(Config.TestLibs.mockitoInline)
@@ -50,7 +53,7 @@ val embeddedJar by configurations.creating {
 }
 
 artifacts {
-    add("embeddedJar", File("$buildDir/libs/sentry-compose-helper-jvm-$version.jar"))
+    add("embeddedJar", project.layout.buildDirectory.file("libs/sentry-compose-helper-jvm-$version.jar").get().asFile)
 }
 
 buildConfig {

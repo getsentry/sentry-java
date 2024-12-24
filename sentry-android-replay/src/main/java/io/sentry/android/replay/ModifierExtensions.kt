@@ -6,7 +6,7 @@ import androidx.compose.ui.semantics.semantics
 import io.sentry.android.replay.SentryReplayModifiers.SentryPrivacy
 
 public object SentryReplayModifiers {
-    val SentryPrivacy = SemanticsPropertyKey<String>(
+    public val SentryPrivacy: SemanticsPropertyKey<String> = SemanticsPropertyKey<String>(
         name = "SentryPrivacy",
         mergePolicy = { parentValue, _ -> parentValue }
     )

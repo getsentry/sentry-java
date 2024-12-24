@@ -14,9 +14,10 @@ import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.isVisibleToUser
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.totalPaddingTopSafe
+import java.util.Locale
 
 @TargetApi(26)
-sealed class ViewHierarchyNode(
+internal sealed class ViewHierarchyNode(
     val x: Float,
     val y: Float,
     val width: Int,
@@ -250,13 +251,13 @@ sealed class ViewHierarchyNode(
         }
 
         private fun View.shouldMask(options: SentryOptions): Boolean {
-            if ((tag as? String)?.lowercase()?.contains(SENTRY_UNMASK_TAG) == true ||
+            if ((tag as? String)?.toLowerCase(Locale.ROOT)?.contains(SENTRY_UNMASK_TAG) == true ||
                 getTag(R.id.sentry_privacy) == "unmask"
             ) {
                 return false
             }
 
-            if ((tag as? String)?.lowercase()?.contains(SENTRY_MASK_TAG) == true ||
+            if ((tag as? String)?.toLowerCase(Locale.ROOT)?.contains(SENTRY_MASK_TAG) == true ||
                 getTag(R.id.sentry_privacy) == "mask"
             ) {
                 return true

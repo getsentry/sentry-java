@@ -28,11 +28,26 @@ android {
         }
     }
 
+    lint {
+        disable.addAll(
+            listOf(
+                "Typos",
+                "PluralsCandidate",
+                "MonochromeLauncherIcon",
+                "TextFields",
+                "ContentDescription",
+                "LabelFor",
+                "HardcodedText"
+            )
+        )
+    }
+
     buildFeatures {
         // Determines whether to support View Binding.
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
         compose = true
+        buildConfig = true
         prefab = true
     }
 
@@ -90,10 +105,8 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 
     @Suppress("UnstableApiUsage")

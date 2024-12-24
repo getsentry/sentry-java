@@ -146,7 +146,7 @@ internal val TextView.totalPaddingTopSafe: Int
  */
 internal fun Int.toOpaque() = this or 0xFF000000.toInt()
 
-class AndroidTextLayout(private val layout: Layout) : TextLayout {
+internal class AndroidTextLayout(private val layout: Layout) : TextLayout {
     override val lineCount: Int get() = layout.lineCount
     override val dominantTextColor: Int? get() {
         if (layout.text !is Spanned) return null

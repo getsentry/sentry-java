@@ -123,7 +123,7 @@ tasks {
         dependsOn(findByName("relocateJavaagentLibs"))
         with(isolateClasses(findByName("relocateJavaagentLibs")!!.outputs.files))
 
-        into("$buildDir/isolated/javaagentLibs")
+        into(project.layout.buildDirectory.file("isolated/javaagentLibs").get().asFile)
     }
 
     // 3. the relocated and isolated javaagent libs are merged together with the bootstrap libs (which undergo relocation

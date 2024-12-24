@@ -24,8 +24,6 @@
 #Shrinking removes annotations and "unused classes" from test apk, so we don't shrink
 -dontshrink
 
--ignorewarnings
-
 -keepattributes *Annotation*
 
 -dontnote junit.framework.**
@@ -33,3 +31,8 @@
 
 -dontwarn androidx.test.**
 -dontwarn org.junit.**
+
+-dontwarn androidx.annotation.**
+-dontwarn com.google.errorprone.**
+
+-ignorewarnings

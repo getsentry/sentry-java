@@ -238,7 +238,7 @@ public class ReplayCache(
      * @param until value until whose the frames should be removed, represented as unix timestamp
      * @return the first screen in the rotated buffer, if any
      */
-    fun rotate(until: Long): String? {
+    internal fun rotate(until: Long): String? {
         var screen: String? = null
         frames.removeAll {
             if (it.timestamp < until) {
@@ -261,7 +261,7 @@ public class ReplayCache(
     }
 
     // TODO: it's awful, choose a better serialization format
-    fun persistSegmentValues(key: String, value: String?) {
+    internal fun persistSegmentValues(key: String, value: String?) {
         lock.acquire().use {
             if (isClosed.get()) {
                 return
@@ -283,7 +283,7 @@ public class ReplayCache(
         }
     }
 
-    companion object {
+    internal companion object {
         internal const val ONGOING_SEGMENT = ".ongoing_segment"
 
         internal const val SEGMENT_KEY_HEIGHT = "config.height"

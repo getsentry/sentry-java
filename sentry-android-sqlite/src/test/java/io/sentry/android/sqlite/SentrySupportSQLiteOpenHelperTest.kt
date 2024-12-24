@@ -53,7 +53,7 @@ class SentrySupportSQLiteOpenHelperTest {
     @Test
     fun `create returns a SentrySupportSQLiteOpenHelper wrapper`() {
         val openHelper: SupportSQLiteOpenHelper = SentrySupportSQLiteOpenHelper.Companion.create(fixture.mockOpenHelper)
-        assertIs<SentrySupportSQLiteOpenHelper>(openHelper)
+        assertIs<SentrySupportSQLiteDatabase>(openHelper.writableDatabase)
         assertNotEquals(fixture.mockOpenHelper, openHelper)
     }
 

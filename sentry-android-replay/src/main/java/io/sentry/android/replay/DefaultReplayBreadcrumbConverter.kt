@@ -126,7 +126,9 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
     }
 
     private fun String.snakeToCamelCase(): String {
-        return replace(snakecasePattern) { it.value.last().uppercase() }
+        return replace(snakecasePattern) {
+            it.value.last().toString().uppercase()
+        }
     }
 
     private fun Breadcrumb.toRRWebSpanEvent(): RRWebSpanEvent {

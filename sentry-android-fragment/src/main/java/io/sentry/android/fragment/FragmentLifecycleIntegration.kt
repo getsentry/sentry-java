@@ -13,7 +13,7 @@ import io.sentry.SentryOptions
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.io.Closeable
 
-class FragmentLifecycleIntegration(
+public class FragmentLifecycleIntegration(
     private val application: Application,
     private val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
     private val enableAutoFragmentLifecycleTracing: Boolean
@@ -22,13 +22,13 @@ class FragmentLifecycleIntegration(
     Integration,
     Closeable {
 
-    constructor(application: Application) : this(
+    public constructor(application: Application) : this(
         application = application,
         filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states,
         enableAutoFragmentLifecycleTracing = false
     )
 
-    constructor(
+    public constructor(
         application: Application,
         enableFragmentLifecycleBreadcrumbs: Boolean,
         enableAutoFragmentLifecycleTracing: Boolean
