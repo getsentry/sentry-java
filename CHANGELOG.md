@@ -18,6 +18,12 @@
 
 - Session Replay: Flutter improvements ([#4007](https://github.com/getsentry/sentry-java/pull/4007))
 
+### Dependencies
+
+- Bump Gradle from v8.5.0 to v8.11.1 ([#3917](https://github.com/getsentry/sentry-java/pull/3917))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8111)
+  - [diff](https://github.com/gradle/gradle/compare/v8.5.0...v8.11.1)
+
 ## 7.19.0
 
 ### Fixes
