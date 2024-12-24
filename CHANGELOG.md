@@ -6,6 +6,12 @@
 
 - Fix warm start detection ([#3937](https://github.com/getsentry/sentry-java/pull/3937))
 
+### Dependencies
+
+- Bump Gradle from v8.5.0 to v8.12.0 ([#4008](https://github.com/getsentry/sentry-java/pull/4008))
+  - [changelog](https://github.com/gradle/gradle/blob/master master-test/CHANGELOG.md#v8120)
+  - [diff](https://github.com/gradle/gradle/compare/v8.5.0...v8.12.0)
+
 ## 7.19.1
 
 ### Fixes
