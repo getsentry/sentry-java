@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -160,29 +159,6 @@ public final class CollectionUtils {
       }
     }
     return false;
-  }
-
-  /**
-   * Joins a set of items into a string using the specified separator.
-   *
-   * @param items the items
-   * @param separator the separator
-   * @return a string with the items joined by the separator
-   */
-  public static <T> String joinToString(
-      final @NotNull Set<T> items, final @NotNull String separator) {
-    final StringBuilder result = new StringBuilder();
-
-    int i = 0;
-    for (T item : items) {
-      result.append(item);
-      if (i < items.size() - 1) {
-        result.append(separator);
-      }
-      i++;
-    }
-
-    return result.toString();
   }
 
   /**

@@ -5665,7 +5665,6 @@ public final class io/sentry/util/CollectionUtils {
 	public static fun contains ([Ljava/lang/Object;Ljava/lang/Object;)Z
 	public static fun filterListEntries (Ljava/util/List;Lio/sentry/util/CollectionUtils$Predicate;)Ljava/util/List;
 	public static fun filterMapEntries (Ljava/util/Map;Lio/sentry/util/CollectionUtils$Predicate;)Ljava/util/Map;
-	public static fun joinToString (Ljava/util/Set;Ljava/lang/String;)Ljava/lang/String;
 	public static fun map (Ljava/util/List;Lio/sentry/util/CollectionUtils$Mapper;)Ljava/util/List;
 	public static fun newArrayList (Ljava/util/List;)Ljava/util/List;
 	public static fun newConcurrentHashMap (Ljava/util/Map;)Ljava/util/Map;

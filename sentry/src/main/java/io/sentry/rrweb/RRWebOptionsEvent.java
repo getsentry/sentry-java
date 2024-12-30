@@ -9,7 +9,6 @@ import io.sentry.ObjectWriter;
 import io.sentry.SentryOptions;
 import io.sentry.SentryReplayOptions;
 import io.sentry.protocol.SdkVersion;
-import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
@@ -51,11 +50,8 @@ public final class RRWebOptionsEvent extends RRWebEvent implements JsonSerializa
         "maskAllText",
         replayOptions.getMaskViewClasses().contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME));
     optionsPayload.put("quality", replayOptions.getQuality().serializedName());
-    optionsPayload.put(
-        "maskedViewClasses", CollectionUtils.joinToString(replayOptions.getMaskViewClasses(), ","));
-    optionsPayload.put(
-        "unmaskedViewClasses",
-        CollectionUtils.joinToString(replayOptions.getUnmaskViewClasses(), ","));
+    optionsPayload.put("maskedViewClasses", replayOptions.getMaskViewClasses());
+    optionsPayload.put("unmaskedViewClasses", replayOptions.getUnmaskViewClasses());
   }
 
   @NotNull
