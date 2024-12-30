@@ -315,7 +315,7 @@ public abstract interface class io/sentry/EventProcessor {
 }
 
 public final class io/sentry/ExperimentalOptions {
-	public fun <init> (Z)V
+	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
 	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
 	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 }
@@ -2724,8 +2724,8 @@ public final class io/sentry/SentryReplayOptions {
 	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field VIDEO_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field WEB_VIEW_CLASS_NAME Ljava/lang/String;
-	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
-	public fun <init> (Z)V
+	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SdkVersion;)V
+	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
 	public fun addMaskViewClass (Ljava/lang/String;)V
 	public fun addUnmaskViewClass (Ljava/lang/String;)V
 	public fun getErrorReplayDuration ()J
@@ -2734,6 +2734,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getMaskViewContainerClass ()Ljava/lang/String;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
+	public fun getSdkVersion ()Lio/sentry/protocol/SdkVersion;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
@@ -2747,6 +2748,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setMaskViewContainerClass (Ljava/lang/String;)V
 	public fun setOnErrorSampleRate (Ljava/lang/Double;)V
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
+	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
 	public fun setTrackOrientationChange (Z)V
 	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
