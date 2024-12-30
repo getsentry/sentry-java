@@ -9,14 +9,14 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Process;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import io.sentry.ILogger;
 import io.sentry.ITransactionProfiler;
 import io.sentry.JsonSerializer;
-import io.sentry.NoOpLogger;
 import io.sentry.SentryAppStartProfilingOptions;
 import io.sentry.SentryExecutorService;
 import io.sentry.SentryLevel;
@@ -25,7 +25,6 @@ import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.ActivityLifecycleCallbacksAdapter;
-import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import java.io.BufferedReader;
@@ -34,7 +33,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -206,101 +204,23 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
     activityCallback =
         new ActivityLifecycleCallbacksAdapter() {
-          final WeakHashMap<Activity, ActivityLifecycleTimeSpan> activityLifecycleMap =
-              new WeakHashMap<>();
-
-          @Override
-          public void onActivityPreCreated(
-              @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-            final long now = SystemClock.uptimeMillis();
-            if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
-              return;
-            }
-
-            final ActivityLifecycleTimeSpan timeSpan = new ActivityLifecycleTimeSpan();
-            timeSpan.getOnCreate().setStartedAt(now);
-            activityLifecycleMap.put(activity, timeSpan);
-          }
-
-          @Override
-          public void onActivityCreated(
-              @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-            if (appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.UNKNOWN) {
-              appStartMetrics.setAppStartType(
-                  savedInstanceState == null
-                      ? AppStartMetrics.AppStartType.COLD
-                      : AppStartMetrics.AppStartType.WARM);
-            }
-          }
-
-          @Override
-          public void onActivityPostCreated(
-              @NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-            if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
-              return;
-            }
-
-            final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
-            if (timeSpan != null) {
-              timeSpan.getOnCreate().stop();
-              timeSpan.getOnCreate().setDescription(activity.getClass().getName() + ".onCreate");
-            }
-          }
-
-          @Override
-          public void onActivityPreStarted(@NonNull Activity activity) {
-            final long now = SystemClock.uptimeMillis();
-            if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
-              return;
-            }
-            final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
-            if (timeSpan != null) {
-              timeSpan.getOnStart().setStartedAt(now);
-            }
-          }
-
           @Override
           public void onActivityStarted(@NonNull Activity activity) {
             if (firstDrawDone.get()) {
               return;
             }
-            FirstDrawDoneListener.registerForNextDraw(
-                activity,
-                () -> {
-                  if (firstDrawDone.compareAndSet(false, true)) {
-                    onAppStartDone();
-                  }
-                },
-                // as the SDK isn't initialized yet, we don't have access to SentryOptions
-                new BuildInfoProvider(NoOpLogger.getInstance()));
-          }
-
-          @Override
-          public void onActivityPostStarted(@NonNull Activity activity) {
-            final @Nullable ActivityLifecycleTimeSpan timeSpan =
-                activityLifecycleMap.remove(activity);
-            if (appStartMetrics.getAppStartTimeSpan().hasStopped()) {
-              return;
+            if (activity.getWindow() != null) {
+              FirstDrawDoneListener.registerForNextDraw(
+                  activity, () -> onAppStartDone(), buildInfoProvider);
+            } else {
+              new Handler(Looper.getMainLooper()).post(() -> onAppStartDone());
             }
-            if (timeSpan != null) {
-              timeSpan.getOnStart().stop();
-              timeSpan.getOnStart().setDescription(activity.getClass().getName() + ".onStart");
-
-              appStartMetrics.addActivityLifecycleTimeSpans(timeSpan);
-            }
-          }
-
-          @Override
-          public void onActivityDestroyed(@NonNull Activity activity) {
-            // safety net for activities which were created but never stopped
-            activityLifecycleMap.remove(activity);
           }
         };
 
     app.registerActivityLifecycleCallbacks(activityCallback);
   }
 
-  @TestOnly
   synchronized void onAppStartDone() {
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
     appStartMetrics.getSdkInitTimeSpan().stop();
@@ -311,11 +231,5 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
         app.unregisterActivityLifecycleCallbacks(activityCallback);
       }
     }
-  }
-
-  @TestOnly
-  @Nullable
-  Application.ActivityLifecycleCallbacks getActivityCallback() {
-    return activityCallback;
   }
 }
