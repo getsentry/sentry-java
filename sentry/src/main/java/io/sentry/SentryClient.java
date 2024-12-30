@@ -640,6 +640,8 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
     envelopeItems.add(replayItem);
     final SentryId sentryId = event.getEventId();
 
+    // SdkVersion from ReplayOptions defaults to SdkVersion from SentryOptions and can be
+    // overwritten by the hybrid SDKs
     final SentryEnvelopeHeader envelopeHeader =
         new SentryEnvelopeHeader(
             sentryId, options.getExperimental().getSessionReplay().getSdkVersion(), traceContext);
