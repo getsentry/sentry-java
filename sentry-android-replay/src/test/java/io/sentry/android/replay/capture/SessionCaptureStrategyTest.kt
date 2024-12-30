@@ -49,6 +49,7 @@ import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SessionCaptureStrategyTest {
@@ -403,6 +404,34 @@ class SessionCaptureStrategyTest {
                 assertEquals("high", optionsEvent[0].optionsPayload["quality"])
                 assertEquals("android.widget.TextView,android.webkit.WebView,android.widget.VideoView,androidx.media3.ui.PlayerView,com.google.android.exoplayer2.ui.PlayerView,com.google.android.exoplayer2.ui.StyledPlayerView,my.custom.View", optionsEvent[0].optionsPayload["maskedViewClasses"])
                 assertEquals("android.widget.ImageView", optionsEvent[0].optionsPayload["unmaskedViewClasses"])
+            }
+        )
+    }
+
+    @Test
+    fun `does not record replay options event for segment above 0`() {
+        val now =
+            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionSegmentDuration * 5)
+        val strategy = fixture.getSut(dateProvider = { now })
+        strategy.start(fixture.recorderConfig)
+
+        strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+        verify(fixture.hub).captureReplay(
+            argThat { event ->
+                event is SentryReplayEvent && event.segmentId == 0
+            },
+            any()
+        )
+
+        strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+        verify(fixture.hub).captureReplay(
+            argThat { event ->
+                event is SentryReplayEvent && event.segmentId == 1
+            },
+            check {
+                val optionsEvent =
+                    it.replayRecording?.payload?.find { it is RRWebOptionsEvent }
+                assertNull(optionsEvent)
             }
         )
     }
