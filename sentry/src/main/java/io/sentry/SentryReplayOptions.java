@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.SampleRateUtils;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -114,7 +115,13 @@ public final class SentryReplayOptions {
    */
   private boolean trackOrientationChange = true;
 
-  public SentryReplayOptions(final boolean empty) {
+  /**
+   * SdkVersion object that contains the Sentry Client Name and its version. This object is only
+   * applied to {@link SentryReplayEvent}s.
+   */
+  private @Nullable SdkVersion sdkVersion;
+
+  public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
       setMaskAllText(true);
       setMaskAllImages(true);
@@ -123,14 +130,18 @@ public final class SentryReplayOptions {
       maskViewClasses.add(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
       maskViewClasses.add(EXOPLAYER_CLASS_NAME);
       maskViewClasses.add(EXOPLAYER_STYLED_CLASS_NAME);
+      this.sdkVersion = sdkVersion;
     }
   }
 
   public SentryReplayOptions(
-      final @Nullable Double sessionSampleRate, final @Nullable Double onErrorSampleRate) {
-    this(false);
+      final @Nullable Double sessionSampleRate,
+      final @Nullable Double onErrorSampleRate,
+      final @Nullable SdkVersion sdkVersion) {
+    this(false, sdkVersion);
     this.sessionSampleRate = sessionSampleRate;
     this.onErrorSampleRate = onErrorSampleRate;
+    this.sdkVersion = sdkVersion;
   }
 
   @Nullable
@@ -281,5 +292,15 @@ public final class SentryReplayOptions {
   @ApiStatus.Internal
   public void setTrackOrientationChange(final boolean trackOrientationChange) {
     this.trackOrientationChange = trackOrientationChange;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable SdkVersion getSdkVersion() {
+    return sdkVersion;
+  }
+
+  @ApiStatus.Internal
+  public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
+    this.sdkVersion = sdkVersion;
   }
 }
