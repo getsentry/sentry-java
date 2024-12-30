@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.SampleRateUtils;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.ApiStatus;
@@ -41,6 +42,10 @@ public final class SentryReplayOptions {
     SentryReplayQuality(final float sizeScale, final int bitRate) {
       this.sizeScale = sizeScale;
       this.bitRate = bitRate;
+    }
+
+    public @NotNull String serializedName() {
+      return name().toLowerCase(Locale.ROOT);
     }
   }
 
