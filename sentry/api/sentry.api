@@ -2760,6 +2760,7 @@ public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang
 	public static final field MEDIUM Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public final field bitRate I
 	public final field sizeScale F
+	public fun serializedName ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public static fun values ()[Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 }
@@ -5412,6 +5413,33 @@ public final class io/sentry/rrweb/RRWebMetaEvent$JsonKeys {
 	public static final field HEIGHT Ljava/lang/String;
 	public static final field HREF Ljava/lang/String;
 	public static final field WIDTH Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/rrweb/RRWebOptionsEvent : io/sentry/rrweb/RRWebEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field EVENT_TAG Ljava/lang/String;
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun getDataUnknown ()Ljava/util/Map;
+	public fun getOptionsPayload ()Ljava/util/Map;
+	public fun getTag ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setDataUnknown (Ljava/util/Map;)V
+	public fun setOptionsPayload (Ljava/util/Map;)V
+	public fun setTag (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/rrweb/RRWebOptionsEvent$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/rrweb/RRWebOptionsEvent;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/rrweb/RRWebOptionsEvent$JsonKeys {
+	public static final field DATA Ljava/lang/String;
+	public static final field PAYLOAD Ljava/lang/String;
 	public fun <init> ()V
 }
 

@@ -9,6 +9,7 @@
 ### Internal
 
 - Session Replay: Allow overriding `SdkVersion` for replay events ([#4014](https://github.com/getsentry/sentry-java/pull/4014))
+- Session Replay: Send replay options as tags ([#4015](https://github.com/getsentry/sentry-java/pull/4015))
 
 ## 7.19.1
 

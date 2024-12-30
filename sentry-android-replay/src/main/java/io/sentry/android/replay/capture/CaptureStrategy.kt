@@ -16,6 +16,7 @@ import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebMetaEvent
+import io.sentry.rrweb.RRWebOptionsEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import java.io.File
 import java.util.Date
@@ -193,6 +194,10 @@ internal interface CaptureStrategy {
                 if (event.timestamp >= segmentTimestamp.time) {
                     recordingPayload += event
                 }
+            }
+
+            if (segmentId == 0) {
+                recordingPayload += RRWebOptionsEvent(options)
             }
 
             val recording = ReplayRecording().apply {
