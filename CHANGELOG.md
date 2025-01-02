@@ -15,7 +15,7 @@ To enable Replay use the `sessionReplay.sessionSampleRate` or `sessionReplay.err
   SentryAndroid.init(context) { options ->
    
     options.sessionReplay.sessionSampleRate = 1.0
-    options.sessionReplay.errorSampleRate = 1.0
+    options.sessionReplay.onErrorSampleRate = 1.0
   
     // To change default redaction behavior (defaults to true)
     options.sessionReplay.redactAllImages = true
