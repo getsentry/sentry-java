@@ -164,7 +164,6 @@ internal class ScreenshotRecorder(
                             }
 
                             screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
-                            // TODO: set it to false when failed to capture
                             lastCaptureSuccessful.set(true)
                             contentChanged.set(false)
                         }

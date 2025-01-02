@@ -51,10 +51,6 @@ public final class SentryReplayOptions {
     public @NotNull String serializedName() {
       return name().toLowerCase(Locale.ROOT);
     }
-
-    public @NotNull String serializedName() {
-      return name().toLowerCase(Locale.ROOT);
-    }
   }
 
   /**
