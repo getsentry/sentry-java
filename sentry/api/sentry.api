@@ -2759,6 +2759,7 @@ public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang
 	public static final field LOW Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public static final field MEDIUM Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public final field bitRate I
+	public final field screenshotQuality I
 	public final field sizeScale F
 	public fun serializedName ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryReplayOptions$SentryReplayQuality;

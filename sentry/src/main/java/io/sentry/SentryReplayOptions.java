@@ -39,9 +39,7 @@ public final class SentryReplayOptions {
      */
     public final int bitRate;
 
-    /**
-     * Defines the compression quality with which the screenshots are stored to disk.
-     */
+    /** Defines the compression quality with which the screenshots are stored to disk. */
     public final int screenshotQuality;
 
     SentryReplayQuality(final float sizeScale, final int bitRate, final int screenshotQuality) {

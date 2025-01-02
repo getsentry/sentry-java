@@ -2,7 +2,6 @@ package io.sentry.android.replay
 
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat.JPEG
-import android.graphics.Bitmap.CompressFormat.PNG
 import android.graphics.BitmapFactory
 import io.sentry.DateUtils
 import io.sentry.ReplayRecording
