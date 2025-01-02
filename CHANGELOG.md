@@ -6,7 +6,7 @@
 
 - Session Replay GA ([#4017](https://github.com/getsentry/sentry-java/pull/4017))
 
-To enable Replay use the `sessionReplay.sessionSampleRate` or `sessionReplay.errorSampleRate` options.
+To enable Replay use the `sessionReplay.sessionSampleRate` or `sessionReplay.onErrorSampleRate` options.
 
   ```kotlin
   import io.sentry.SentryReplayOptions
