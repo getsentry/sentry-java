@@ -316,8 +316,6 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
-	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
-	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 }
 
 public final class io/sentry/ExternalOptions {
@@ -2434,6 +2432,7 @@ public class io/sentry/SentryOptions {
 	public fun getSerializer ()Lio/sentry/ISerializer;
 	public fun getServerName ()Ljava/lang/String;
 	public fun getSessionFlushTimeoutMillis ()J
+	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
 	public fun getSessionTrackingIntervalMillis ()J
 	public fun getShutdownTimeout ()J
 	public fun getShutdownTimeoutMillis ()J
@@ -2560,6 +2559,7 @@ public class io/sentry/SentryOptions {
 	public fun setSerializer (Lio/sentry/ISerializer;)V
 	public fun setServerName (Ljava/lang/String;)V
 	public fun setSessionFlushTimeoutMillis (J)V
+	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 	public fun setSessionTrackingIntervalMillis (J)V
 	public fun setShutdownTimeout (J)V
 	public fun setShutdownTimeoutMillis (J)V
