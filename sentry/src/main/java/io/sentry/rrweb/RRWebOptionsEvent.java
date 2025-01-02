@@ -40,7 +40,7 @@ public final class RRWebOptionsEvent extends RRWebEvent implements JsonSerializa
       optionsPayload.put("nativeSdkName", sdkVersion.getName());
       optionsPayload.put("nativeSdkVersion", sdkVersion.getVersion());
     }
-    final @NotNull SentryReplayOptions replayOptions = options.getExperimental().getSessionReplay();
+    final @NotNull SentryReplayOptions replayOptions = options.getSessionReplay();
     optionsPayload.put("errorSampleRate", replayOptions.getOnErrorSampleRate());
     optionsPayload.put("sessionSampleRate", replayOptions.getSessionSampleRate());
     optionsPayload.put(

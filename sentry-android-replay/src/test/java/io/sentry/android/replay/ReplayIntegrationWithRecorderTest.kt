@@ -87,10 +87,10 @@ class ReplayIntegrationWithRecorderTest {
         // fake current time to trigger segment creation, CurrentDateProvider.getInstance() should
         // be used in prod
         val dateProvider = ICurrentDateProvider {
-            System.currentTimeMillis() + fixture.options.experimental.sessionReplay.sessionSegmentDuration
+            System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
         }
 
-        fixture.options.experimental.sessionReplay.sessionSampleRate = 1.0
+        fixture.options.sessionReplay.sessionSampleRate = 1.0
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
         val replay: ReplayIntegration

@@ -118,8 +118,8 @@ public class ReplayIntegration(
             return
         }
 
-        if (!options.experimental.sessionReplay.isSessionReplayEnabled &&
-            !options.experimental.sessionReplay.isSessionReplayForErrorsEnabled
+        if (!options.sessionReplay.isSessionReplayEnabled &&
+            !options.sessionReplay.isSessionReplayForErrorsEnabled
         ) {
             options.logger.log(INFO, "Session replay is disabled, no sample rate specified")
             return
@@ -132,7 +132,7 @@ public class ReplayIntegration(
 
         options.connectionStatusProvider.addConnectionStatusObserver(this)
         hub.rateLimiter?.addRateLimitObserver(this)
-        if (options.experimental.sessionReplay.isTrackOrientationChange) {
+        if (options.sessionReplay.isTrackOrientationChange) {
             try {
                 context.registerComponentCallbacks(this)
             } catch (e: Throwable) {
@@ -167,13 +167,13 @@ public class ReplayIntegration(
             return
         }
 
-        val isFullSession = random.sample(options.experimental.sessionReplay.sessionSampleRate)
-        if (!isFullSession && !options.experimental.sessionReplay.isSessionReplayForErrorsEnabled) {
+        val isFullSession = random.sample(options.sessionReplay.sessionSampleRate)
+        if (!isFullSession && !options.sessionReplay.isSessionReplayForErrorsEnabled) {
             options.logger.log(INFO, "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified")
             return
         }
 
-        val recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
+        val recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.sessionReplay)
         captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
             SessionCaptureStrategy(options, hub, dateProvider, replayExecutor, replayCacheProvider)
         } else {
@@ -264,7 +264,7 @@ public class ReplayIntegration(
 
         options.connectionStatusProvider.removeConnectionStatusObserver(this)
         hub?.rateLimiter?.removeRateLimitObserver(this)
-        if (options.experimental.sessionReplay.isTrackOrientationChange) {
+        if (options.sessionReplay.isTrackOrientationChange) {
             try {
                 context.unregisterComponentCallbacks(this)
             } catch (ignored: Throwable) {
@@ -285,7 +285,7 @@ public class ReplayIntegration(
         recorder?.stop()
 
         // refresh config based on new device configuration
-        val recorderConfig = recorderConfigProvider?.invoke(true) ?: ScreenshotRecorderConfig.from(context, options.experimental.sessionReplay)
+        val recorderConfig = recorderConfigProvider?.invoke(true) ?: ScreenshotRecorderConfig.from(context, options.sessionReplay)
         captureStrategy?.onConfigurationChanged(recorderConfig)
 
         recorder?.start(recorderConfig)

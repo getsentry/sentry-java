@@ -65,7 +65,7 @@ internal class BufferCaptureStrategy(
         isTerminating: Boolean,
         onSegmentSent: (Date) -> Unit
     ) {
-        val sampled = random.sample(options.experimental.sessionReplay.onErrorSampleRate)
+        val sampled = random.sample(options.sessionReplay.onErrorSampleRate)
 
         if (!sampled) {
             options.logger.log(INFO, "Replay wasn't sampled by onErrorSampleRate, not capturing for event")
@@ -107,7 +107,7 @@ internal class BufferCaptureStrategy(
             cache?.store(frameTimestamp)
 
             val now = dateProvider.currentTimeMillis
-            val bufferLimit = now - options.experimental.sessionReplay.errorReplayDuration
+            val bufferLimit = now - options.sessionReplay.errorReplayDuration
             screenAtStart = cache?.rotate(bufferLimit)
             bufferedSegments.rotate(bufferLimit)
         }
@@ -137,7 +137,7 @@ internal class BufferCaptureStrategy(
 
     override fun onTouchEvent(event: MotionEvent) {
         super.onTouchEvent(event)
-        val bufferLimit = dateProvider.currentTimeMillis - options.experimental.sessionReplay.errorReplayDuration
+        val bufferLimit = dateProvider.currentTimeMillis - options.sessionReplay.errorReplayDuration
         rotateEvents(currentEvents, bufferLimit)
     }
 
@@ -189,7 +189,7 @@ internal class BufferCaptureStrategy(
     }
 
     private fun createCurrentSegment(taskName: String, onSegmentCreated: (ReplaySegment) -> Unit) {
-        val errorReplayDuration = options.experimental.sessionReplay.errorReplayDuration
+        val errorReplayDuration = options.sessionReplay.errorReplayDuration
         val now = dateProvider.currentTimeMillis
         val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
             // in buffer mode we have to set the timestamp of the first frame as the actual start

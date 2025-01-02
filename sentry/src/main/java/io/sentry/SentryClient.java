@@ -644,7 +644,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
     // overwritten by the hybrid SDKs
     final SentryEnvelopeHeader envelopeHeader =
         new SentryEnvelopeHeader(
-            sentryId, options.getExperimental().getSessionReplay().getSdkVersion(), traceContext);
+            sentryId, options.getSessionReplay().getSdkVersion(), traceContext);
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }

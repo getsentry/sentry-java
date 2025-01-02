@@ -65,7 +65,7 @@ class ReplayTest : BaseUiTest() {
         activityScenario.moveToState(Lifecycle.State.RESUMED)
 
         initSentry {
-            it.experimental.sessionReplay.sessionSampleRate = 1.0
+            it.sessionReplay.sessionSampleRate = 1.0
 
             it.beforeSendReplay =
                 SentryOptions.BeforeSendReplayCallback { event, _ ->
