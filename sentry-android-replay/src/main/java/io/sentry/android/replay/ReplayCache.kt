@@ -85,7 +85,7 @@ public class ReplayCache(
             it.createNewFile()
         }
         screenshot.outputStream().use {
-            bitmap.compress(JPEG, 80, it)
+            bitmap.compress(JPEG, options.experimental.sessionReplay.quality.screenshotQuality, it)
             it.flush()
         }
 
@@ -162,7 +162,7 @@ public class ReplayCache(
 
         val step = 1000 / frameRate.toLong()
         var frameCount = 0
-        var lastFrame: ReplayFrame = frames.first()
+        var lastFrame: ReplayFrame? = frames.first()
         for (timestamp in from until (from + (duration)) step step) {
             val iter = frames.iterator()
             while (iter.hasNext()) {
@@ -182,6 +182,12 @@ public class ReplayCache(
             // to respect the video duration
             if (encode(lastFrame)) {
                 frameCount++
+            } else if (lastFrame != null) {
+                // if we failed to encode the frame, we delete the screenshot right away as the
+                // likelihood of it being able to be encoded later is low
+                deleteFile(lastFrame.screenshot)
+                frames.remove(lastFrame)
+                lastFrame = null
             }
         }
 
@@ -206,7 +212,10 @@ public class ReplayCache(
         return GeneratedVideo(videoFile, frameCount, videoDuration)
     }
 
-    private fun encode(frame: ReplayFrame): Boolean {
+    private fun encode(frame: ReplayFrame?): Boolean {
+        if (frame == null) {
+            return false
+        }
         return try {
             val bitmap = BitmapFactory.decodeFile(frame.screenshot.absolutePath)
             synchronized(encoderLock) {

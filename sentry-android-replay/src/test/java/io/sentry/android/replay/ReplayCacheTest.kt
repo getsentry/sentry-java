@@ -25,6 +25,7 @@ import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowBitmapFactory
 import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -61,6 +62,7 @@ class ReplayCacheTest {
     @BeforeTest
     fun `set up`() {
         ReplayShadowMediaCodec.framesToEncode = 5
+        ShadowBitmapFactory.setAllowInvalidImageData(true)
     }
 
     @Test
@@ -499,5 +501,29 @@ class ReplayCacheTest {
         val lastSegment = ReplayCache.fromDisk(fixture.options, replayId)!!
 
         assertEquals(0, lastSegment.id)
+    }
+
+    @Test
+    fun `when screenshot is corrupted, deletes it immediately`() {
+        ShadowBitmapFactory.setAllowInvalidImageData(false)
+        ReplayShadowMediaCodec.framesToEncode = 1
+        val replayCache = fixture.getSut(
+            tmpDir
+        )
+
+        val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+        replayCache.addFrame(bitmap, 1)
+
+        // corrupt the image
+        File(replayCache.replayCacheDir, "1.jpg").outputStream().use {
+            it.write(Int.MIN_VALUE)
+            it.flush()
+        }
+
+        val segment0 = replayCache.createVideoOf(3000L, 0, 0, 100, 200, 1, 20_000)
+        assertNull(segment0)
+
+        assertTrue(replayCache.frames.isEmpty())
+        assertTrue(replayCache.replayCacheDir!!.listFiles()!!.none { it.extension == "jpg" })
     }
 }
