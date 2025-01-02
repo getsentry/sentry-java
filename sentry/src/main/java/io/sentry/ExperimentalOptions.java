@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.protocol.SdkVersion;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -12,6 +11,5 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class ExperimentalOptions {
 
-  public ExperimentalOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
-  }
+  public ExperimentalOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {}
 }
