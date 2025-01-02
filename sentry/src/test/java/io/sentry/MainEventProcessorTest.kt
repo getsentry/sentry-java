@@ -27,7 +27,7 @@ import kotlin.test.assertTrue
 
 class MainEventProcessorTest {
     class Fixture {
-        private val sentryOptions: SentryOptions = SentryOptions().apply {
+        val sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
             release = "release"
             dist = "dist"
@@ -617,6 +617,18 @@ class MainEventProcessorTest {
         assertEquals("test", replayEvent.sdk!!.name)
         assertEquals("java", replayEvent.platform)
         assertEquals("value1", replayEvent.tags!!["tag1"])
+    }
+
+    @Test
+    fun `uses SdkVersion from replay options for replay events`() {
+        val sut = fixture.getSut(tags = mapOf("tag1" to "value1"))
+
+        fixture.sentryOptions.experimental.sessionReplay.sdkVersion = SdkVersion("dart", "3.2.1")
+        var replayEvent = SentryReplayEvent()
+        replayEvent = sut.process(replayEvent, Hint())
+
+        assertEquals("3.2.1", replayEvent.sdk!!.version)
+        assertEquals("dart", replayEvent.sdk!!.name)
     }
 
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) =

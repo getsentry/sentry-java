@@ -224,6 +224,14 @@ public final class io/sentry/android/core/LoadClass {
 	public fun loadClass (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/Class;
 }
 
+public final class io/sentry/android/core/NdkHandlerStrategy : java/lang/Enum {
+	public static final field SENTRY_HANDLER_STRATEGY_CHAIN_AT_START Lio/sentry/android/core/NdkHandlerStrategy;
+	public static final field SENTRY_HANDLER_STRATEGY_DEFAULT Lio/sentry/android/core/NdkHandlerStrategy;
+	public fun getValue ()I
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/core/NdkHandlerStrategy;
+	public static fun values ()[Lio/sentry/android/core/NdkHandlerStrategy;
+}
+
 public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration, java/io/Closeable {
 	public static final field SENTRY_NDK_CLASS_NAME Ljava/lang/String;
 	public fun <init> (Ljava/lang/Class;)V
@@ -270,6 +278,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
 	public fun getNativeSdkName ()Ljava/lang/String;
+	public fun getNdkHandlerStrategy ()I
 	public fun getProfilingTracesIntervalMillis ()I
 	public fun getStartupCrashDurationThresholdMillis ()J
 	public fun isAnrEnabled ()Z
@@ -314,6 +323,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableScopeSync (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
+	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setProfilingTracesIntervalMillis (I)V
 	public fun setReportHistoricalAnrs (Z)V

@@ -1,6 +1,8 @@
 package io.sentry;
 
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.SampleRateUtils;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.ApiStatus;
@@ -40,6 +42,10 @@ public final class SentryReplayOptions {
     SentryReplayQuality(final float sizeScale, final int bitRate) {
       this.sizeScale = sizeScale;
       this.bitRate = bitRate;
+    }
+
+    public @NotNull String serializedName() {
+      return name().toLowerCase(Locale.ROOT);
     }
   }
 
@@ -108,7 +114,19 @@ public final class SentryReplayOptions {
   /** The maximum duration of a full session replay, defaults to 1h. */
   private long sessionDuration = 60 * 60 * 1000L;
 
-  public SentryReplayOptions(final boolean empty) {
+  /**
+   * Whether to track orientation changes in session replay. Used in Flutter as it has its own
+   * callbacks to determine the orientation change.
+   */
+  private boolean trackOrientationChange = true;
+
+  /**
+   * SdkVersion object that contains the Sentry Client Name and its version. This object is only
+   * applied to {@link SentryReplayEvent}s.
+   */
+  private @Nullable SdkVersion sdkVersion;
+
+  public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
       setMaskAllText(true);
       setMaskAllImages(true);
@@ -117,14 +135,18 @@ public final class SentryReplayOptions {
       maskViewClasses.add(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
       maskViewClasses.add(EXOPLAYER_CLASS_NAME);
       maskViewClasses.add(EXOPLAYER_STYLED_CLASS_NAME);
+      this.sdkVersion = sdkVersion;
     }
   }
 
   public SentryReplayOptions(
-      final @Nullable Double sessionSampleRate, final @Nullable Double onErrorSampleRate) {
-    this(false);
+      final @Nullable Double sessionSampleRate,
+      final @Nullable Double onErrorSampleRate,
+      final @Nullable SdkVersion sdkVersion) {
+    this(false, sdkVersion);
     this.sessionSampleRate = sessionSampleRate;
     this.onErrorSampleRate = onErrorSampleRate;
+    this.sdkVersion = sdkVersion;
   }
 
   @Nullable
@@ -265,5 +287,25 @@ public final class SentryReplayOptions {
   @ApiStatus.Internal
   public @Nullable String getUnmaskViewContainerClass() {
     return unmaskViewContainerClass;
+  }
+
+  @ApiStatus.Internal
+  public boolean isTrackOrientationChange() {
+    return trackOrientationChange;
+  }
+
+  @ApiStatus.Internal
+  public void setTrackOrientationChange(final boolean trackOrientationChange) {
+    this.trackOrientationChange = trackOrientationChange;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable SdkVersion getSdkVersion() {
+    return sdkVersion;
+  }
+
+  @ApiStatus.Internal
+  public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
+    this.sdkVersion = sdkVersion;
   }
 }

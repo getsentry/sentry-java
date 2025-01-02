@@ -43,12 +43,12 @@ public abstract interface class io/sentry/android/replay/Recorder : java/io/Clos
 public final class io/sentry/android/replay/ReplayCache : java/io/Closeable {
 	public static final field $stable I
 	public static final field Companion Lio/sentry/android/replay/ReplayCache$Companion;
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/protocol/SentryId;Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/protocol/SentryId;)V
 	public final fun addFrame (Ljava/io/File;JLjava/lang/String;)V
 	public static synthetic fun addFrame$default (Lio/sentry/android/replay/ReplayCache;Ljava/io/File;JLjava/lang/String;ILjava/lang/Object;)V
 	public fun close ()V
-	public final fun createVideoOf (JJIIILjava/io/File;)Lio/sentry/android/replay/GeneratedVideo;
-	public static synthetic fun createVideoOf$default (Lio/sentry/android/replay/ReplayCache;JJIIILjava/io/File;ILjava/lang/Object;)Lio/sentry/android/replay/GeneratedVideo;
+	public final fun createVideoOf (JJIIIIILjava/io/File;)Lio/sentry/android/replay/GeneratedVideo;
+	public static synthetic fun createVideoOf$default (Lio/sentry/android/replay/ReplayCache;JJIIIIILjava/io/File;ILjava/lang/Object;)Lio/sentry/android/replay/GeneratedVideo;
 	public final fun persistSegmentValues (Ljava/lang/String;Ljava/lang/String;)V
 	public final fun rotate (J)Ljava/lang/String;
 }
@@ -60,8 +60,8 @@ public final class io/sentry/android/replay/ReplayCache$Companion {
 public final class io/sentry/android/replay/ReplayIntegration : android/content/ComponentCallbacks, io/sentry/IConnectionStatusProvider$IConnectionStatusObserver, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, io/sentry/android/replay/gestures/TouchRecorderCallback, io/sentry/transport/RateLimiter$IRateLimitObserver, java/io/Closeable {
 	public static final field $stable I
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
-	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
-	public synthetic fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun captureReplay (Ljava/lang/Boolean;)V
 	public fun close ()V
 	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;

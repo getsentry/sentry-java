@@ -329,6 +329,56 @@ class PerformanceAndroidEventProcessorTest {
     }
 
     @Test
+    fun `adds app start metrics to app warm start txn`() {
+        // given some app start metrics
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.appStartType = AppStartType.WARM
+        appStartMetrics.appStartTimeSpan.setStartedAt(123)
+        appStartMetrics.appStartTimeSpan.setStoppedAt(456)
+
+        val contentProvider = mock<ContentProvider>()
+        AppStartMetrics.onContentProviderCreate(contentProvider)
+        AppStartMetrics.onContentProviderPostCreate(contentProvider)
+
+        appStartMetrics.applicationOnCreateTimeSpan.apply {
+            setStartedAt(10)
+            setStoppedAt(42)
+        }
+
+        val activityTimeSpan = ActivityLifecycleTimeSpan()
+        activityTimeSpan.onCreate.description = "MainActivity.onCreate"
+        activityTimeSpan.onStart.description = "MainActivity.onStart"
+
+        activityTimeSpan.onCreate.setStartedAt(200)
+        activityTimeSpan.onStart.setStartedAt(220)
+        activityTimeSpan.onStart.setStoppedAt(240)
+        activityTimeSpan.onCreate.setStoppedAt(260)
+        appStartMetrics.addActivityLifecycleTimeSpans(activityTimeSpan)
+
+        // when an activity transaction is created
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.hub)
+        var tr = SentryTransaction(tracer)
+
+        // and it contains an app.start.warm span
+        val appStartSpan = createAppStartSpan(tr.contexts.trace!!.traceId, false)
+        tr.spans.add(appStartSpan)
+
+        // then the app start metrics should be attached
+        tr = sut.process(tr, Hint())
+
+        // process init, content provider and application span should not be attached
+        assertFalse(tr.spans.any { "process.load" == it.op })
+        assertFalse(tr.spans.any { "contentprovider.load" == it.op })
+        assertFalse(tr.spans.any { "application.load" == it.op })
+
+        // activity spans should be attached
+        assertTrue(tr.spans.any { "activity.load" == it.op && "MainActivity.onCreate" == it.description })
+        assertTrue(tr.spans.any { "activity.load" == it.op && "MainActivity.onStart" == it.description })
+    }
+
+    @Test
     fun `when app launched from background, app start spans are dropped`() {
         // given some app start metrics
         val appStartMetrics = AppStartMetrics.getInstance()
