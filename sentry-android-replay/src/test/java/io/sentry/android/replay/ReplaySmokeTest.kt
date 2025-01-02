@@ -108,7 +108,7 @@ class ReplaySmokeTest {
             captured.set(true)
         }
 
-        fixture.options.experimental.sessionReplay.sessionSampleRate = 1.0
+        fixture.options.sessionReplay.sessionSampleRate = 1.0
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
         val replay: ReplayIntegration = fixture.getSut(context)
@@ -155,7 +155,7 @@ class ReplaySmokeTest {
             captured.set(true)
         }
 
-        fixture.options.experimental.sessionReplay.onErrorSampleRate = 1.0
+        fixture.options.sessionReplay.onErrorSampleRate = 1.0
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
         val replay: ReplayIntegration = fixture.getSut(context)
@@ -204,7 +204,7 @@ class ReplaySmokeTest {
 
     @Test
     fun `works when double inited`() {
-        fixture.options.experimental.sessionReplay.sessionSampleRate = 1.0
+        fixture.options.sessionReplay.sessionSampleRate = 1.0
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
         // first init + close

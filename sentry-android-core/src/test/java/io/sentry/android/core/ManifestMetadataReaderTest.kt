@@ -1459,14 +1459,14 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sessionReplay.onErrorSampleRate)
     }
 
     @Test
     fun `applyMetadata does not override replays onErrorSampleRate from options`() {
         // Arrange
         val expectedSampleRate = 0.99f
-        fixture.options.experimental.sessionReplay.onErrorSampleRate = expectedSampleRate.toDouble()
+        fixture.options.sessionReplay.onErrorSampleRate = expectedSampleRate.toDouble()
         val bundle = bundleOf(ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to 0.1f)
         val context = fixture.getContext(metaData = bundle)
 
@@ -1474,7 +1474,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sessionReplay.onErrorSampleRate)
     }
 
     @Test
@@ -1486,7 +1486,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertNull(fixture.options.experimental.sessionReplay.onErrorSampleRate)
+        assertNull(fixture.options.sessionReplay.onErrorSampleRate)
     }
 
     @Test
@@ -1499,8 +1499,8 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.experimental.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
-        assertTrue(fixture.options.experimental.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
     }
 
     @Test
@@ -1512,8 +1512,8 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.experimental.sessionReplay.maskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
-        assertTrue(fixture.options.experimental.sessionReplay.maskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.sessionReplay.maskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.sessionReplay.maskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
     }
 
     @Test
@@ -1562,7 +1562,7 @@ class ManifestMetadataReaderTest {
         assertEquals(expectedSampleRate.toDouble(), fixture.options.sampleRate)
         assertEquals(expectedSampleRate.toDouble(), fixture.options.tracesSampleRate)
         assertEquals(expectedSampleRate.toDouble(), fixture.options.profilesSampleRate)
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.sessionSampleRate)
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sessionReplay.sessionSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sessionReplay.onErrorSampleRate)
     }
 }

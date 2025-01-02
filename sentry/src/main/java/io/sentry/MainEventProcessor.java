@@ -161,7 +161,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     if (shouldApplyScopeData(event, hint)) {
       processNonCachedEvent(event);
       final @Nullable SdkVersion replaySdkVersion =
-          options.getExperimental().getSessionReplay().getSdkVersion();
+          options.getSessionReplay().getSdkVersion();
       if (replaySdkVersion != null) {
         // we override the SdkVersion only for replay events as those may come from Hybrid SDKs
         event.setSdk(replaySdkVersion);

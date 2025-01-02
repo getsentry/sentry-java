@@ -214,7 +214,7 @@ class SessionCaptureStrategyTest {
     @Test
     fun `when process is crashing, onScreenshotRecorded does not create new segment`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionSegmentDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(
             dateProvider = { now }
         )
@@ -229,7 +229,7 @@ class SessionCaptureStrategyTest {
     @Test
     fun `onScreenshotRecorded creates new segment when segment duration exceeded`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionSegmentDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(
             dateProvider = { now }
         )
@@ -260,7 +260,7 @@ class SessionCaptureStrategyTest {
     @Test
     fun `onScreenshotRecorded stops replay when replay duration exceeded`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionDuration * 2)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionDuration * 2)
         var count = 0
         val strategy = fixture.getSut(
             dateProvider = {
@@ -315,7 +315,7 @@ class SessionCaptureStrategyTest {
     @Test
     fun `fills replay urls from navigation breadcrumbs`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionSegmentDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(dateProvider = { now })
         strategy.start(fixture.recorderConfig)
 
@@ -341,7 +341,7 @@ class SessionCaptureStrategyTest {
         fixture.scope.screen = "MainActivity"
 
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionSegmentDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(dateProvider = { now })
         strategy.start(fixture.recorderConfig)
 
@@ -376,13 +376,13 @@ class SessionCaptureStrategyTest {
 
     @Test
     fun `records replay options event for segment 0`() {
-        fixture.options.experimental.sessionReplay.sessionSampleRate = 1.0
-        fixture.options.experimental.sessionReplay.maskAllImages = false
-        fixture.options.experimental.sessionReplay.quality = HIGH
-        fixture.options.experimental.sessionReplay.addMaskViewClass("my.custom.View")
+        fixture.options.sessionReplay.sessionSampleRate = 1.0
+        fixture.options.sessionReplay.maskAllImages = false
+        fixture.options.sessionReplay.quality = HIGH
+        fixture.options.sessionReplay.addMaskViewClass("my.custom.View")
 
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionSegmentDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(dateProvider = { now })
         strategy.start(fixture.recorderConfig)
 
@@ -426,7 +426,7 @@ class SessionCaptureStrategyTest {
     @Test
     fun `does not record replay options event for segment above 0`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionSegmentDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(dateProvider = { now })
         strategy.start(fixture.recorderConfig)
 

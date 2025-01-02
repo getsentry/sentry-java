@@ -85,7 +85,7 @@ public class ReplayCache(
             it.createNewFile()
         }
         screenshot.outputStream().use {
-            bitmap.compress(JPEG, options.experimental.sessionReplay.quality.screenshotQuality, it)
+            bitmap.compress(JPEG, options.sessionReplay.quality.screenshotQuality, it)
             it.flush()
         }
 

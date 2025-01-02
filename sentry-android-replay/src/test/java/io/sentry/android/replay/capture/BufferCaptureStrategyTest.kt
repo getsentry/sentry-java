@@ -91,7 +91,7 @@ class BufferCaptureStrategyTest {
                 whenever(replayCache.replayCacheDir).thenReturn(it)
             }
             options.run {
-                experimental.sessionReplay.onErrorSampleRate = onErrorSampleRate
+                sessionReplay.onErrorSampleRate = onErrorSampleRate
             }
             return BufferCaptureStrategy(
                 options,
@@ -181,7 +181,7 @@ class BufferCaptureStrategyTest {
     @Test
     fun `onScreenshotRecorded adds screenshot to cache`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.errorReplayDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.errorReplayDuration * 5)
         val strategy = fixture.getSut(
             dateProvider = { now }
         )
@@ -195,7 +195,7 @@ class BufferCaptureStrategyTest {
     @Test
     fun `onScreenshotRecorded rotates screenshots when out of buffer bounds`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.errorReplayDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.errorReplayDuration * 5)
         val strategy = fixture.getSut(
             dateProvider = { now }
         )
@@ -204,7 +204,7 @@ class BufferCaptureStrategyTest {
         strategy.onScreenshotRecorded(mock<Bitmap>()) { frameTimestamp ->
             assertEquals(now, frameTimestamp)
         }
-        verify(fixture.replayCache).rotate(eq(now - fixture.options.experimental.sessionReplay.errorReplayDuration))
+        verify(fixture.replayCache).rotate(eq(now - fixture.options.sessionReplay.errorReplayDuration))
     }
 
     @Test

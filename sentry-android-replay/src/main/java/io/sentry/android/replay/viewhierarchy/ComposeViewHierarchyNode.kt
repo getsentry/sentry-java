@@ -56,11 +56,11 @@ internal object ComposeViewHierarchyNode {
         }
 
         val className = getProxyClassName(isImage)
-        if (options.experimental.sessionReplay.unmaskViewClasses.contains(className)) {
+        if (options.sessionReplay.unmaskViewClasses.contains(className)) {
             return false
         }
 
-        return options.experimental.sessionReplay.maskViewClasses.contains(className)
+        return options.sessionReplay.maskViewClasses.contains(className)
     }
 
     private var _rootCoordinates: WeakReference<LayoutCoordinates>? = null
