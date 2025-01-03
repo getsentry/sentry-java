@@ -113,8 +113,8 @@ class ReplayIntegrationTest {
             dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance()
         ): ReplayIntegration {
             options.run {
-                experimental.sessionReplay.onErrorSampleRate = onErrorSampleRate
-                experimental.sessionReplay.sessionSampleRate = sessionSampleRate
+                sessionReplay.onErrorSampleRate = onErrorSampleRate
+                sessionReplay.sessionSampleRate = sessionSampleRate
                 connectionStatusProvider = mock {
                     on { connectionStatus }.thenReturn(if (isOffline) DISCONNECTED else CONNECTED)
                 }

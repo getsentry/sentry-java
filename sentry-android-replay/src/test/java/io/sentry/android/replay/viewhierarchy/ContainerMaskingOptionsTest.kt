@@ -38,8 +38,8 @@ class ContainerMaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = true
-            experimental.sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
+            sessionReplay.maskAllText = true
+            sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
         }
 
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textViewInUnmask!!, null, 0, options)
@@ -51,8 +51,8 @@ class ContainerMaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllImages = true
-            experimental.sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
+            sessionReplay.maskAllImages = true
+            sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
         }
 
         val imageNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.imageViewInUnmask!!, null, 0, options)
@@ -64,7 +64,7 @@ class ContainerMaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.setMaskViewContainerClass(CustomMask::class.java.name)
+            sessionReplay.setMaskViewContainerClass(CustomMask::class.java.name)
         }
 
         val maskContainer = ViewHierarchyNode.fromView(MaskingOptionsActivity.maskWithChildren!!, null, 0, options)
@@ -77,8 +77,8 @@ class ContainerMaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.addMaskViewClass(CustomView::class.java.name)
-            experimental.sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
+            sessionReplay.addMaskViewClass(CustomView::class.java.name)
+            sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
         }
 
         val maskContainer = ViewHierarchyNode.fromView(MaskingOptionsActivity.unmaskWithChildren!!, null, 0, options)
@@ -95,8 +95,8 @@ class ContainerMaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.setMaskViewContainerClass(CustomMask::class.java.name)
-            experimental.sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
+            sessionReplay.setMaskViewContainerClass(CustomMask::class.java.name)
+            sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
         }
 
         val unmaskNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.unmaskWithMaskChild!!, null, 0, options)

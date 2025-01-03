@@ -373,7 +373,7 @@ public final class Sentry {
                   observer.setEnvironment(options.getEnvironment());
                   observer.setTags(options.getTags());
                   observer.setReplayErrorSampleRate(
-                      options.getExperimental().getSessionReplay().getOnErrorSampleRate());
+                      options.getSessionReplay().getOnErrorSampleRate());
                 }
               });
     } catch (Throwable e) {

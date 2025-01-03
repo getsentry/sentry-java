@@ -623,7 +623,7 @@ class MainEventProcessorTest {
     fun `uses SdkVersion from replay options for replay events`() {
         val sut = fixture.getSut(tags = mapOf("tag1" to "value1"))
 
-        fixture.sentryOptions.experimental.sessionReplay.sdkVersion = SdkVersion("dart", "3.2.1")
+        fixture.sentryOptions.sessionReplay.sdkVersion = SdkVersion("dart", "3.2.1")
         var replayEvent = SentryReplayEvent()
         replayEvent = sut.process(replayEvent, Hint())
 

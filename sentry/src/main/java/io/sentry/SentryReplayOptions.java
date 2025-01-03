@@ -21,14 +21,14 @@ public final class SentryReplayOptions {
       "com.google.android.exoplayer2.ui.StyledPlayerView";
 
   public enum SentryReplayQuality {
-    /** Video Scale: 80% Bit Rate: 50.000 */
-    LOW(0.8f, 50_000),
+    /** Video Scale: 80% Bit Rate: 50.000 JPEG Compression: 10 */
+    LOW(0.8f, 50_000, 10),
 
-    /** Video Scale: 100% Bit Rate: 75.000 */
-    MEDIUM(1.0f, 75_000),
+    /** Video Scale: 100% Bit Rate: 75.000 JPEG Compression: 30 */
+    MEDIUM(1.0f, 75_000, 30),
 
-    /** Video Scale: 100% Bit Rate: 100.000 */
-    HIGH(1.0f, 100_000);
+    /** Video Scale: 100% Bit Rate: 100.000 JPEG Compression: 50 */
+    HIGH(1.0f, 100_000, 50);
 
     /** The scale related to the window size (in dp) at which the replay will be created. */
     public final float sizeScale;
@@ -39,9 +39,13 @@ public final class SentryReplayOptions {
      */
     public final int bitRate;
 
-    SentryReplayQuality(final float sizeScale, final int bitRate) {
+    /** Defines the compression quality with which the screenshots are stored to disk. */
+    public final int screenshotQuality;
+
+    SentryReplayQuality(final float sizeScale, final int bitRate, final int screenshotQuality) {
       this.sizeScale = sizeScale;
       this.bitRate = bitRate;
+      this.screenshotQuality = screenshotQuality;
     }
 
     public @NotNull String serializedName() {
