@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Warm starts cleanup ([#3954](https://github.com/getsentry/sentry-java/pull/3954))
+
 ## 7.20.0
 
 ### Features
@@ -36,7 +42,6 @@ To enable Replay use the `sessionReplay.sessionSampleRate` or `sessionReplay.onE
 
 - Session Replay: Allow overriding `SdkVersion` for replay events ([#4014](https://github.com/getsentry/sentry-java/pull/4014))
 - Session Replay: Send replay options as tags ([#4015](https://github.com/getsentry/sentry-java/pull/4015))
-- Warm starts cleanup ([#3954](https://github.com/getsentry/sentry-java/pull/3954))
 
 ### Breaking changes
 

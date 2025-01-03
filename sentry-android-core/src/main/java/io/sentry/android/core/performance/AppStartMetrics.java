@@ -94,6 +94,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    *     requires API level 24+
    */
   public @NotNull TimeSpan createProcessInitSpan() {
+    // AppStartSpan and CLASS_LOADED_UPTIME_MS can be modified at any time.
+    // So, we cannot cache the processInitSpan, but we need to create it when needed.
     final @NotNull TimeSpan processInitSpan = new TimeSpan();
     processInitSpan.setup(
         "Process Initialization",
