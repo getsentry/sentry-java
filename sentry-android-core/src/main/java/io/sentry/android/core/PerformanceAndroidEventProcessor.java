@@ -242,7 +242,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     // Process init
     final @NotNull TimeSpan processInitTimeSpan = appStartMetrics.createProcessInitSpan();
     if (processInitTimeSpan.hasStarted()
-        && processInitTimeSpan.getDurationMs() <= MAX_PROCESS_INIT_APP_START_DIFF_MS) {
+        && Math.abs(processInitTimeSpan.getDurationMs()) <= MAX_PROCESS_INIT_APP_START_DIFF_MS) {
       txn.getSpans()
           .add(
               timeSpanToSentrySpan(
