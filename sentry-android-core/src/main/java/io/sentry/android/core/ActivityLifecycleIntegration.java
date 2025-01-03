@@ -28,7 +28,7 @@ import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.android.core.internal.util.ClassUtil;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
-import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
+import io.sentry.android.core.performance.ActivityLifecycleSpanHelper;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.MeasurementValue;
@@ -77,7 +77,7 @@ public final class ActivityLifecycleIntegration
   private @Nullable ISpan appStartSpan;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
   private final @NotNull WeakHashMap<Activity, ISpan> ttfdSpanMap = new WeakHashMap<>();
-  private final @NotNull WeakHashMap<Activity, ActivityLifecycleTimeSpan> activityLifecycleMap =
+  private final @NotNull WeakHashMap<Activity, ActivityLifecycleSpanHelper> activitySpanHelpers =
       new WeakHashMap<>();
   private @NotNull SentryDate lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
   private long lastPausedUptimeMillis = 0;
@@ -374,6 +374,9 @@ public final class ActivityLifecycleIntegration
   @Override
   public void onActivityPreCreated(
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
+    final ActivityLifecycleSpanHelper helper =
+        new ActivityLifecycleSpanHelper(activity.getClass().getName());
+    activitySpanHelpers.put(activity, helper);
     // The very first activity start timestamp cannot be set to the class instantiation time, as it
     // may happen before an activity is started (service, broadcast receiver, etc). So we set it
     // here.
@@ -385,10 +388,7 @@ public final class ActivityLifecycleIntegration
             ? hub.getOptions().getDateProvider().now()
             : AndroidDateUtils.getCurrentSentryDateTime();
     lastPausedUptimeMillis = SystemClock.uptimeMillis();
-
-    final @NotNull ActivityLifecycleTimeSpan timeSpan = new ActivityLifecycleTimeSpan();
-    timeSpan.getOnCreate().setStartedAt(lastPausedUptimeMillis);
-    activityLifecycleMap.put(activity, timeSpan);
+    helper.setOnCreateStartTimestamp(lastPausedTime);
   }
 
   @Override
@@ -415,26 +415,20 @@ public final class ActivityLifecycleIntegration
   @Override
   public void onActivityPostCreated(
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    if (appStartSpan == null) {
-      activityLifecycleMap.remove(activity);
-      return;
-    }
-
-    final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
-    if (timeSpan != null) {
-      timeSpan.getOnCreate().stop();
-      timeSpan.getOnCreate().setDescription(activity.getClass().getName() + ".onCreate");
+    final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
+    if (helper != null) {
+      helper.createAndStopOnCreateSpan(appStartSpan);
     }
   }
 
   @Override
   public void onActivityPreStarted(final @NotNull Activity activity) {
-    if (appStartSpan == null) {
-      return;
-    }
-    final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
-    if (timeSpan != null) {
-      timeSpan.getOnStart().setStartedAt(SystemClock.uptimeMillis());
+    final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
+    if (helper != null) {
+      helper.setOnStartStartTimestamp(
+          options != null
+              ? options.getDateProvider().now()
+              : AndroidDateUtils.getCurrentSentryDateTime());
     }
   }
 
@@ -457,14 +451,11 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public void onActivityPostStarted(final @NotNull Activity activity) {
-    final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.remove(activity);
-    if (appStartSpan == null) {
-      return;
-    }
-    if (timeSpan != null) {
-      timeSpan.getOnStart().stop();
-      timeSpan.getOnStart().setDescription(activity.getClass().getName() + ".onStart");
-      AppStartMetrics.getInstance().addActivityLifecycleTimeSpans(timeSpan);
+    final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
+    if (helper != null) {
+      helper.createAndStopOnStartSpan(appStartSpan);
+      // Needed to handle hybrid SDKs
+      helper.saveSpanToAppStartMetrics();
     }
   }
 
@@ -523,7 +514,10 @@ public final class ActivityLifecycleIntegration
 
   @Override
   public synchronized void onActivityDestroyed(final @NotNull Activity activity) {
-    activityLifecycleMap.remove(activity);
+    final ActivityLifecycleSpanHelper helper = activitySpanHelpers.remove(activity);
+    if (helper != null) {
+      helper.clear();
+    }
     if (performanceEnabled) {
 
       // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
@@ -563,7 +557,7 @@ public final class ActivityLifecycleIntegration
     firstActivityCreated = false;
     lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
     lastPausedUptimeMillis = 0;
-    activityLifecycleMap.clear();
+    activitySpanHelpers.clear();
   }
 
   private void finishSpan(final @Nullable ISpan span) {
@@ -608,8 +602,7 @@ public final class ActivityLifecycleIntegration
     final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
     final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
 
-    // in case the SentryPerformanceProvider is disabled it does not set the app start end times,
-    // and we need to set the end time manually here
+    // and we need to set the end time of the app start here, after the first frame is drawn.
     if (appStartTimeSpan.hasStarted() && appStartTimeSpan.hasNotStopped()) {
       appStartTimeSpan.stop();
     }
@@ -672,8 +665,8 @@ public final class ActivityLifecycleIntegration
 
   @TestOnly
   @NotNull
-  WeakHashMap<Activity, ActivityLifecycleTimeSpan> getActivityLifecycleMap() {
-    return activityLifecycleMap;
+  WeakHashMap<Activity, ActivityLifecycleSpanHelper> getActivitySpanHelpers() {
+    return activitySpanHelpers;
   }
 
   @TestOnly

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Warm starts cleanup ([#3954](https://github.com/getsentry/sentry-java/pull/3954))
+
 ## 7.20.0
 
 ### Features
