@@ -70,7 +70,7 @@ jobs:
           arch: x86
           channel: canary # Necessary for ATDs
           disk-size: 4096M
-          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release --daemon
+          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release -Denvironment=github --daemon
 
       - name: Upload test results
         if: always()

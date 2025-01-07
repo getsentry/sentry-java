@@ -315,9 +315,7 @@ public abstract interface class io/sentry/EventProcessor {
 }
 
 public final class io/sentry/ExperimentalOptions {
-	public fun <init> (Z)V
-	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
-	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
+	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
 }
 
 public final class io/sentry/ExternalOptions {
@@ -2434,6 +2432,7 @@ public class io/sentry/SentryOptions {
 	public fun getSerializer ()Lio/sentry/ISerializer;
 	public fun getServerName ()Ljava/lang/String;
 	public fun getSessionFlushTimeoutMillis ()J
+	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
 	public fun getSessionTrackingIntervalMillis ()J
 	public fun getShutdownTimeout ()J
 	public fun getShutdownTimeoutMillis ()J
@@ -2560,6 +2559,7 @@ public class io/sentry/SentryOptions {
 	public fun setSerializer (Lio/sentry/ISerializer;)V
 	public fun setServerName (Ljava/lang/String;)V
 	public fun setSessionFlushTimeoutMillis (J)V
+	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 	public fun setSessionTrackingIntervalMillis (J)V
 	public fun setShutdownTimeout (J)V
 	public fun setShutdownTimeoutMillis (J)V
@@ -2724,8 +2724,8 @@ public final class io/sentry/SentryReplayOptions {
 	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field VIDEO_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field WEB_VIEW_CLASS_NAME Ljava/lang/String;
-	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
-	public fun <init> (Z)V
+	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SdkVersion;)V
+	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
 	public fun addMaskViewClass (Ljava/lang/String;)V
 	public fun addUnmaskViewClass (Ljava/lang/String;)V
 	public fun getErrorReplayDuration ()J
@@ -2734,6 +2734,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getMaskViewContainerClass ()Ljava/lang/String;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
+	public fun getSdkVersion ()Lio/sentry/protocol/SdkVersion;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
@@ -2741,12 +2742,15 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getUnmaskViewContainerClass ()Ljava/lang/String;
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
+	public fun isTrackOrientationChange ()Z
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
 	public fun setMaskViewContainerClass (Ljava/lang/String;)V
 	public fun setOnErrorSampleRate (Ljava/lang/Double;)V
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
+	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
+	public fun setTrackOrientationChange (Z)V
 	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
 }
 
@@ -2755,7 +2759,9 @@ public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang
 	public static final field LOW Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public static final field MEDIUM Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public final field bitRate I
+	public final field screenshotQuality I
 	public final field sizeScale F
+	public fun serializedName ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public static fun values ()[Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 }
@@ -5408,6 +5414,33 @@ public final class io/sentry/rrweb/RRWebMetaEvent$JsonKeys {
 	public static final field HEIGHT Ljava/lang/String;
 	public static final field HREF Ljava/lang/String;
 	public static final field WIDTH Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/rrweb/RRWebOptionsEvent : io/sentry/rrweb/RRWebEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field EVENT_TAG Ljava/lang/String;
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun getDataUnknown ()Ljava/util/Map;
+	public fun getOptionsPayload ()Ljava/util/Map;
+	public fun getTag ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setDataUnknown (Ljava/util/Map;)V
+	public fun setOptionsPayload (Ljava/util/Map;)V
+	public fun setTag (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/rrweb/RRWebOptionsEvent$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/rrweb/RRWebOptionsEvent;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/rrweb/RRWebOptionsEvent$JsonKeys {
+	public static final field DATA Ljava/lang/String;
+	public static final field PAYLOAD Ljava/lang/String;
 	public fun <init> ()V
 }
 

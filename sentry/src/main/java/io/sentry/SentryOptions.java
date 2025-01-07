@@ -501,6 +501,8 @@ public class SentryOptions {
    */
   @ApiStatus.Experimental private boolean enableScreenTracking = true;
 
+  private @NotNull SentryReplayOptions sessionReplay;
+
   /**
    * Adds an event processor
    *
@@ -1421,6 +1423,13 @@ public class SentryOptions {
    */
   @ApiStatus.Internal
   public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
+    final @Nullable SdkVersion replaySdkVersion = getSessionReplay().getSdkVersion();
+    if (this.sdkVersion != null
+        && replaySdkVersion != null
+        && this.sdkVersion.equals(replaySdkVersion)) {
+      // if sdkVersion = sessionReplay.sdkVersion we override it, as it means no one else set it
+      getSessionReplay().setSdkVersion(sdkVersion);
+    }
     this.sdkVersion = sdkVersion;
   }
 
@@ -2477,6 +2486,15 @@ public class SentryOptions {
     this.enableScreenTracking = enableScreenTracking;
   }
 
+  @NotNull
+  public SentryReplayOptions getSessionReplay() {
+    return sessionReplay;
+  }
+
+  public void setSessionReplay(final @NotNull SentryReplayOptions sessionReplayOptions) {
+    this.sessionReplay = sessionReplayOptions;
+  }
+
   /**
    * Load the lazy fields. Useful to load in the background, so that results are already cached. DO
    * NOT CALL THIS METHOD ON THE MAIN THREAD.
@@ -2626,7 +2644,9 @@ public class SentryOptions {
    * @param empty if options should be empty.
    */
   private SentryOptions(final boolean empty) {
-    experimental = new ExperimentalOptions(empty);
+    final @NotNull SdkVersion sdkVersion = createSdkVersion();
+    experimental = new ExperimentalOptions(empty, sdkVersion);
+    sessionReplay = new SentryReplayOptions(empty, sdkVersion);
     if (!empty) {
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
@@ -2647,7 +2667,7 @@ public class SentryOptions {
       }
 
       setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
-      setSdkVersion(createSdkVersion());
+      setSdkVersion(sdkVersion);
       addPackageInfo();
     }
   }

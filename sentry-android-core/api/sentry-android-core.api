@@ -27,8 +27,12 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
 	public fun onActivityPaused (Landroid/app/Activity;)V
+	public fun onActivityPostCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityPostResumed (Landroid/app/Activity;)V
+	public fun onActivityPostStarted (Landroid/app/Activity;)V
+	public fun onActivityPreCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityPrePaused (Landroid/app/Activity;)V
+	public fun onActivityPreStarted (Landroid/app/Activity;)V
 	public fun onActivityResumed (Landroid/app/Activity;)V
 	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityStarted (Landroid/app/Activity;)V
@@ -430,6 +434,20 @@ public class io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapte
 	public fun onActivityStopped (Landroid/app/Activity;)V
 }
 
+public class io/sentry/android/core/performance/ActivityLifecycleSpanHelper {
+	public fun <init> (Ljava/lang/String;)V
+	public fun clear ()V
+	public fun createAndStopOnCreateSpan (Lio/sentry/ISpan;)V
+	public fun createAndStopOnStartSpan (Lio/sentry/ISpan;)V
+	public fun getOnCreateSpan ()Lio/sentry/ISpan;
+	public fun getOnCreateStartTimestamp ()Lio/sentry/SentryDate;
+	public fun getOnStartSpan ()Lio/sentry/ISpan;
+	public fun getOnStartStartTimestamp ()Lio/sentry/SentryDate;
+	public fun saveSpanToAppStartMetrics ()V
+	public fun setOnCreateStartTimestamp (Lio/sentry/SentryDate;)V
+	public fun setOnStartStartTimestamp (Lio/sentry/SentryDate;)V
+}
+
 public class io/sentry/android/core/performance/ActivityLifecycleTimeSpan : java/lang/Comparable {
 	public fun <init> ()V
 	public fun compareTo (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)I
@@ -442,6 +460,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun <init> ()V
 	public fun addActivityLifecycleTimeSpans (Lio/sentry/android/core/performance/ActivityLifecycleTimeSpan;)V
 	public fun clear ()V
+	public fun createProcessInitSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
@@ -454,17 +473,21 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
 	public fun getSdkInitTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun isAppLaunchedInForeground ()Z
+	public fun isColdStartValid ()Z
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onAppStartSpansSent ()V
 	public static fun onApplicationCreate (Landroid/app/Application;)V
 	public static fun onApplicationPostCreate (Landroid/app/Application;)V
 	public static fun onContentProviderCreate (Landroid/content/ContentProvider;)V
 	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
 	public fun registerApplicationForegroundCheck (Landroid/app/Application;)V
+	public fun restartAppStart (J)V
 	public fun setAppLaunchedInForeground (Z)V
 	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V
 	public fun setClassLoadedUptimeMs (J)V
+	public fun shouldSendStartMeasurements ()Z
 }
 
 public final class io/sentry/android/core/performance/AppStartMetrics$AppStartType : java/lang/Enum {
@@ -497,6 +520,7 @@ public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable 
 	public fun setStartUnixTimeMs (J)V
 	public fun setStartedAt (J)V
 	public fun setStoppedAt (J)V
+	public fun setup (Ljava/lang/String;JJJ)V
 	public fun start ()V
 	public fun stop ()V
 }

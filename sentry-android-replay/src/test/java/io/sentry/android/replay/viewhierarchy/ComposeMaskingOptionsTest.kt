@@ -57,7 +57,7 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = true
+            sessionReplay.maskAllText = true
         }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
@@ -72,7 +72,7 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = false
+            sessionReplay.maskAllText = false
         }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
@@ -85,7 +85,7 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllImages = true
+            sessionReplay.maskAllImages = true
         }
 
         val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
@@ -98,7 +98,7 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllImages = false
+            sessionReplay.maskAllImages = false
         }
 
         val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
@@ -112,7 +112,7 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = false
+            sessionReplay.maskAllText = false
         }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
@@ -132,7 +132,7 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = true
+            sessionReplay.maskAllText = true
         }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
@@ -152,7 +152,7 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = true
+            sessionReplay.maskAllText = true
         }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)

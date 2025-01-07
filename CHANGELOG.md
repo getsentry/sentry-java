@@ -1,10 +1,63 @@
 # Changelog
 
-### Unreleased
+## Unreleased
+
+### Internal
+
+- Warm starts cleanup ([#3954](https://github.com/getsentry/sentry-java/pull/3954))
+
+## 7.20.0
+
+### Features
+
+- Session Replay GA ([#4017](https://github.com/getsentry/sentry-java/pull/4017))
+
+To enable Replay use the `sessionReplay.sessionSampleRate` or `sessionReplay.onErrorSampleRate` options.
+
+  ```kotlin
+  import io.sentry.SentryReplayOptions
+  import io.sentry.android.core.SentryAndroid
+
+  SentryAndroid.init(context) { options ->
+   
+    options.sessionReplay.sessionSampleRate = 1.0
+    options.sessionReplay.onErrorSampleRate = 1.0
+  
+    // To change default redaction behavior (defaults to true)
+    options.sessionReplay.redactAllImages = true
+    options.sessionReplay.redactAllText = true
+  
+    // To change quality of the recording (defaults to MEDIUM)
+    options.sessionReplay.quality = SentryReplayOptions.SentryReplayQuality.MEDIUM // (LOW|MEDIUM|HIGH)
+  }
+  ```
+
+### Fixes
+
+- Fix warm start detection ([#3937](https://github.com/getsentry/sentry-java/pull/3937))
+- Session Replay: Reduce memory allocations, disk space consumption, and payload size ([#4016](https://github.com/getsentry/sentry-java/pull/4016))
+- Session Replay: Do not try to encode corrupted frames multiple times ([#4016](https://github.com/getsentry/sentry-java/pull/4016))
+
+### Internal
+
+- Session Replay: Allow overriding `SdkVersion` for replay events ([#4014](https://github.com/getsentry/sentry-java/pull/4014))
+- Session Replay: Send replay options as tags ([#4015](https://github.com/getsentry/sentry-java/pull/4015))
+
+### Breaking changes
+
+- Session Replay options were moved from under `experimental` to the main `options` object ([#4017](https://github.com/getsentry/sentry-java/pull/4017))
+
+## 7.19.1
 
 ### Fixes
 
 - Change TTFD timeout to 25 seconds ([#3984](https://github.com/getsentry/sentry-java/pull/3984))
+- Session Replay: Fix memory leak when masking Compose screens ([#3985](https://github.com/getsentry/sentry-java/pull/3985))
+- Session Replay: Fix potential ANRs in `GestureRecorder` ([#4001](https://github.com/getsentry/sentry-java/pull/4001))
+
+### Internal
+
+- Session Replay: Flutter improvements ([#4007](https://github.com/getsentry/sentry-java/pull/4007))
 
 ## 7.19.0
 
