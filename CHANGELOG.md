@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Enable `ThreadLocalAccessor` for Spring Boot 3 WebFlux by default ([#4023](https://github.com/getsentry/sentry-java/pull/4023))
+
 ## 8.0.0-rc.3
 
 ### Features
