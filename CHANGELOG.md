@@ -4,6 +4,12 @@
 
 ### Features
 
+- Enable `ThreadLocalAccessor` for Spring Boot 3 WebFlux by default ([#4023](https://github.com/getsentry/sentry-java/pull/4023))
+
+## 8.0.0-rc.3
+
+### Features
+
 - Add `sentry-opentelemetry-agentless-spring` module ([#4000](https://github.com/getsentry/sentry-java/pull/4000))
   - This module can be added as a dependency when using Sentry with OpenTelemetry and Spring Boot but don't want to use our Agent. It takes care of configuring OpenTelemetry for use with Sentry.
   - You may want to set `OTEL_LOGS_EXPORTER=none;OTEL_METRICS_EXPORTER=none;OTEL_TRACES_EXPORTER=none` env vars to not have the log flooded with error messages regarding OpenTelemetry features we don't use.
@@ -35,7 +41,7 @@
 - Close backpressure monitor on SDK shutdown ([#3998](https://github.com/getsentry/sentry-java/pull/3998))
   - Due to the backpressure monitor rescheduling a task to run every 10s, it very likely caused shutdown to wait the full `shutdownTimeoutMillis` (defaulting to 2s) instead of being able to terminate immediately
 - Improve ignored check performance ([#3992](https://github.com/getsentry/sentry-java/pull/3992))
-  - Checking if a span origin, a transaction or a checkIn should be ignored is now faster 
+  - Checking if a span origin, a transaction or a checkIn should be ignored is now faster
 
 ## 8.0.0-rc.2
 

@@ -38,10 +38,13 @@ you also need this module as a dependency.
 Contains `SentrySpanProcessor` and `SentryPropagator` which are used by our Java Agent but can also
 be used when manually instrumenting using OpenTelemetry. If you want to use OpenTelemetry without
 the agent but still want some configuration convenience, you should rather use the
-`sentry-opentelemetry-agentless` module.
+`sentry-opentelemetry-agentless` module or the `sentry-opentelemetry-agentless-spring` module if you are using Spring Boot.
 
 ### `sentry-opentelemetry-agentless`
 Combines all modules and dependencies needed to use Sentry with OpenTelemetry without the agent.
+
+### `sentry-opentelemetry-agentless-spring`
+Combines all modules and dependencies needed to use Sentry with OpenTelemetry in SpringBoot without an agent.
 
 ## Running without an Agent
 If you want to use Sentry with OpenTelemetry without an agent, you can do so by adding the `sentry-opentelemetry-agentless` module as dependencies to your project. 
