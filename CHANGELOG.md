@@ -6,6 +6,10 @@
 
 - Warm starts cleanup ([#3954](https://github.com/getsentry/sentry-java/pull/3954))
 
+## Behavioural Changes
+
+- Create onCreate and onStart spans for all Activities ([#4025](https://github.com/getsentry/sentry-java/pull/4025))
+
 ### Dependencies
 
 - Bump Native SDK from v0.7.16 to v0.7.17 ([#4003](https://github.com/getsentry/sentry-java/pull/4003))
