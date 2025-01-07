@@ -21,8 +21,14 @@ For more details on configuring Sentry via `sentry.properties` please see the
 [docs page](https://docs.sentry.io/platforms/java/configuration/).
 
 As an alternative to the `SENTRY_PROPERTIES_FILE` environment variable you can provide individual
-settings as environment variables (e.g. `SENTRY_DSN=...`) or you may initialize `Sentry` inside
-your target application:
+settings as environment variables (e.g. `SENTRY_DSN=...`).
+
+## Controlling auto initialization of Sentry
+
+By default, if you pass either `SENTRY_DSN` or `SENTRY_PROPERTIES_FILE` as environment variable,
+Sentry will automatically be initialized by this agent. To disable this behaviour, you can set
+`SENTRY_AUTO_INIT=false` as environment variable. You will then have to initialize Sentry inside
+the target application:
 
 ```
 Sentry.init(
@@ -32,13 +38,6 @@ Sentry.init(
         }
 )
 ```
-
-## Controlling auto initialization of Sentry
-
-By default if you pass either `SENTRY_DSN` or `SENTRY_PROPERTIES_FILE` as environment variable,
-Sentry will automatically be initialized by this agent. To disable this behaviour, you can set
-`SENTRY_AUTO_INIT=false` as environment variable. You will then have to initialize Sentry inside
-the target application.
 
 ## Debugging
 
@@ -57,6 +56,7 @@ Example log message:
 ```
 ERROR io.opentelemetry.exporter.internal.grpc.OkHttpGrpcExporter - Failed to export spans. The request could not be executed. Full error message: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4317
 ERROR io.opentelemetry.exporter.internal.grpc.OkHttpGrpcExporter - Failed to export metrics. The request could not be executed. Full error message: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4317
+ERROR io.opentelemetry.exporter.internal.http.HttpExporter - Failed to export logs. The request could not be executed. Full error message: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4318
 ```
 
 ### Traces
@@ -68,3 +68,8 @@ see [OpenTelemetry GitHub](https://github.com/open-telemetry/opentelemetry-java/
 
 To turn off exporting of metrics you can set `OTEL_METRICS_EXPORTER=none`
 see [OpenTelemetry GitHub](https://github.com/open-telemetry/opentelemetry-java/tree/main/sdk-extensions/autoconfigure#otlp-exporter-span-metric-and-log-exporters)
+
+### Logs
+
+To turn off log exporting, set `OTEL_LOGS_EXPORTER=none` 
+see [OpenTelemetry GitHub](https://github.com/open-telemetry/opentelemetry-java/tree/main/sdk-extensions/autoconfigure#otlp-exporter-span-metric-and-log-exporters).

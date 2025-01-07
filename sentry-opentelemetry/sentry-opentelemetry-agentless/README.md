@@ -17,38 +17,42 @@ For more details on configuring Sentry via `sentry.properties` please see the
 [docs page](https://docs.sentry.io/platforms/java/configuration/).
 
 As an alternative to the `SENTRY_PROPERTIES_FILE` environment variable you can provide individual
-settings as environment variables (e.g. `SENTRY_DSN=...`) or you may initialize `Sentry` inside
-your target application. If you do so, please make sure to apply OpenTelemetry specific options, e.g.
-like this:
+settings as environment variables (e.g. `SENTRY_DSN=...`).
 
+Run your application with the following JVM arguments:
 ```
+-Dotel.java.global-autoconfigure.enabled=true
+```
+
+You may also want to set the following environment variables to if you do not use OTEL exporters:
+`OTEL_LOGS_EXPORTER=none;OTEL_METRICS_EXPORTER=none;OTEL_TRACES_EXPORTER=none`
+
+Alternatively you can initialize OpenTelemetry programmatically like this:
+
+```java
+// Initialize OpenTelemetry by using the AutoConfiguredOpenTelemetrySdk which automatically
+// registers the `SentrySpanProcessor` and `SentryPropagator` and others.
+// Also, you need to disable the OTEL exporters if you do not use them.
+AutoConfiguredOpenTelemetrySdk.builder()
+  .setResultAsGlobal()
+  .addPropertiesSupplier(() -> {
+final Map<String, String> properties = new HashMap<>();
+    properties.put("otel.logs.exporter", "none");
+    properties.put("otel.metrics.exporter", "none");
+    properties.put("otel.traces.exporter", "none");
+    return properties;
+  })
+  .build();
+```
+
+If you're not using `sentry.properties` or environment variables you can then initialize Sentry programmatically as usual:
+
+```java
+// Initialize Sentry
 Sentry.init(
-        options -> {
-          options.setDsn("...");
-          ...
-          OpenTelemetryUtil.applyOpenTelemetryOptions(options, false);
-        }
+    options -> {
+    options.setDsn("...");
+      ...
+  }
 )
 ```
-
-## Getting rid of exporter error messages
-
-In case you are using this module without needing to use any OpenTelemetry exporters you can add
-the following environment variables to turn off exporters and stop seeing error messages about 
-servers not being reachable in the logs.
-
-Example log message:
-```
-ERROR io.opentelemetry.exporter.internal.grpc.OkHttpGrpcExporter - Failed to export spans. The request could not be executed. Full error message: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4317
-ERROR io.opentelemetry.exporter.internal.grpc.OkHttpGrpcExporter - Failed to export metrics. The request could not be executed. Full error message: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4317
-```
-
-### Traces
-
-To turn off exporting of traces you can set `OTEL_TRACES_EXPORTER=none`
-see [OpenTelemetry GitHub](https://github.com/open-telemetry/opentelemetry-java/tree/main/sdk-extensions/autoconfigure#otlp-exporter-span-metric-and-log-exporters)
-
-### Metrics
-
-To turn off exporting of metrics you can set `OTEL_METRICS_EXPORTER=none`
-see [OpenTelemetry GitHub](https://github.com/open-telemetry/opentelemetry-java/tree/main/sdk-extensions/autoconfigure#otlp-exporter-span-metric-and-log-exporters)
