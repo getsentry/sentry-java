@@ -91,8 +91,7 @@ public class SentryWebfluxAutoConfiguration {
 
     @ConditionalOnProperty(
         name = "sentry.reactive.thread-local-accessor-enabled",
-        havingValue = "false",
-        matchIfMissing = true)
+        havingValue = "false")
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryDisableThreadLocalAccessorCondition {}
 
@@ -109,7 +108,8 @@ public class SentryWebfluxAutoConfiguration {
 
     @ConditionalOnProperty(
         name = "sentry.reactive.thread-local-accessor-enabled",
-        havingValue = "true")
+        havingValue = "true",
+        matchIfMissing = true)
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryEnableThreadLocalAccessorCondition {}
 
