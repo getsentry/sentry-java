@@ -27,7 +27,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@bb0c460cbf5354b0cddd15bacdf0d6aaa3e5a32b # pin@v3
+        uses: gradle/actions/setup-gradle@3839b20885c2c3507be5f0521853826f4b37038a # pin@v3
         with:
           gradle-home-cache-cleanup: true
 
@@ -35,7 +35,7 @@ jobs:
         run: make preMerge
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # pin@v4
+        uses: codecov/codecov-action@7f8b4b4bde536c465e797be725718b88c5d95e0e # pin@v4
         with:
           name: sentry-java
           fail_ci_if_error: false

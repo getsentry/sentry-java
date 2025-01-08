@@ -9,8 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.View;
-import androidx.annotation.NonNull;
+import android.os.SystemClock;
 import io.sentry.FullyDisplayedReporter;
 import io.sentry.IHub;
 import io.sentry.IScope;
@@ -29,6 +28,7 @@ import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.android.core.internal.util.ClassUtil;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
+import io.sentry.android.core.performance.ActivityLifecycleSpanHelper;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.MeasurementValue;
@@ -57,7 +57,7 @@ public final class ActivityLifecycleIntegration
   static final String APP_START_COLD = "app.start.cold";
   static final String TTID_OP = "ui.load.initial_display";
   static final String TTFD_OP = "ui.load.full_display";
-  static final long TTFD_TIMEOUT_MILLIS = 30000;
+  static final long TTFD_TIMEOUT_MILLIS = 25000;
   private static final String TRACE_ORIGIN = "auto.ui.activity";
 
   private final @NotNull Application application;
@@ -77,8 +77,10 @@ public final class ActivityLifecycleIntegration
   private @Nullable ISpan appStartSpan;
   private final @NotNull WeakHashMap<Activity, ISpan> ttidSpanMap = new WeakHashMap<>();
   private final @NotNull WeakHashMap<Activity, ISpan> ttfdSpanMap = new WeakHashMap<>();
+  private final @NotNull WeakHashMap<Activity, ActivityLifecycleSpanHelper> activitySpanHelpers =
+      new WeakHashMap<>();
   private @NotNull SentryDate lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
-  private final @NotNull Handler mainHandler = new Handler(Looper.getMainLooper());
+  private long lastPausedUptimeMillis = 0;
   private @Nullable Future<?> ttfdAutoCloseFuture = null;
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
@@ -370,8 +372,31 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
+  public void onActivityPreCreated(
+      final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
+    final ActivityLifecycleSpanHelper helper =
+        new ActivityLifecycleSpanHelper(activity.getClass().getName());
+    activitySpanHelpers.put(activity, helper);
+    // The very first activity start timestamp cannot be set to the class instantiation time, as it
+    // may happen before an activity is started (service, broadcast receiver, etc). So we set it
+    // here.
+    if (firstActivityCreated) {
+      return;
+    }
+    lastPausedTime =
+        hub != null
+            ? hub.getOptions().getDateProvider().now()
+            : AndroidDateUtils.getCurrentSentryDateTime();
+    lastPausedUptimeMillis = SystemClock.uptimeMillis();
+    helper.setOnCreateStartTimestamp(lastPausedTime);
+  }
+
+  @Override
   public synchronized void onActivityCreated(
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
+    if (!isAllActivityCallbacksAvailable) {
+      onActivityPreCreated(activity, savedInstanceState);
+    }
     setColdStart(savedInstanceState);
     if (hub != null && options != null && options.isEnableScreenTracking()) {
       final @Nullable String activityClassName = ClassUtil.getClassName(activity);
@@ -388,7 +413,31 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
+  public void onActivityPostCreated(
+      final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
+    final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
+    if (helper != null) {
+      helper.createAndStopOnCreateSpan(appStartSpan);
+    }
+  }
+
+  @Override
+  public void onActivityPreStarted(final @NotNull Activity activity) {
+    final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
+    if (helper != null) {
+      helper.setOnStartStartTimestamp(
+          options != null
+              ? options.getDateProvider().now()
+              : AndroidDateUtils.getCurrentSentryDateTime());
+    }
+  }
+
+  @Override
   public synchronized void onActivityStarted(final @NotNull Activity activity) {
+    if (!isAllActivityCallbacksAvailable) {
+      onActivityPostCreated(activity, null);
+      onActivityPreStarted(activity);
+    }
     if (performanceEnabled) {
       // The docs on the screen rendering performance tracing
       // (https://firebase.google.com/docs/perf-mon/screen-traces?platform=android#definition),
@@ -401,73 +450,74 @@ public final class ActivityLifecycleIntegration
   }
 
   @Override
-  public synchronized void onActivityResumed(final @NotNull Activity activity) {
-    if (performanceEnabled) {
+  public void onActivityPostStarted(final @NotNull Activity activity) {
+    final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
+    if (helper != null) {
+      helper.createAndStopOnStartSpan(appStartSpan);
+      // Needed to handle hybrid SDKs
+      helper.saveSpanToAppStartMetrics();
+    }
+  }
 
+  @Override
+  public synchronized void onActivityResumed(final @NotNull Activity activity) {
+    if (!isAllActivityCallbacksAvailable) {
+      onActivityPostStarted(activity);
+    }
+    if (performanceEnabled) {
       final @Nullable ISpan ttidSpan = ttidSpanMap.get(activity);
       final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
-      final View rootView = activity.findViewById(android.R.id.content);
-      if (rootView != null) {
+      if (activity.getWindow() != null) {
         FirstDrawDoneListener.registerForNextDraw(
-            rootView, () -> onFirstFrameDrawn(ttfdSpan, ttidSpan), buildInfoProvider);
+            activity, () -> onFirstFrameDrawn(ttfdSpan, ttidSpan), buildInfoProvider);
       } else {
         // Posting a task to the main thread's handler will make it executed after it finished
         // its current job. That is, right after the activity draws the layout.
-        mainHandler.post(() -> onFirstFrameDrawn(ttfdSpan, ttidSpan));
+        new Handler(Looper.getMainLooper()).post(() -> onFirstFrameDrawn(ttfdSpan, ttidSpan));
       }
     }
   }
 
   @Override
-  public void onActivityPostResumed(@NonNull Activity activity) {
+  public void onActivityPostResumed(@NotNull Activity activity) {
     // empty override, required to avoid a api-level breaking super.onActivityPostResumed() calls
   }
 
   @Override
-  public void onActivityPrePaused(@NonNull Activity activity) {
+  public void onActivityPrePaused(@NotNull Activity activity) {
     // only executed if API >= 29 otherwise it happens on onActivityPaused
-    if (isAllActivityCallbacksAvailable) {
-      // as the SDK may gets (re-)initialized mid activity lifecycle, ensure we set the flag here as
-      // well
-      // this ensures any newly launched activity will not use the app start timestamp as txn start
-      firstActivityCreated = true;
-      if (hub == null) {
-        lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
-      } else {
-        lastPausedTime = hub.getOptions().getDateProvider().now();
-      }
-    }
+    // as the SDK may gets (re-)initialized mid activity lifecycle, ensure we set the flag here as
+    // well
+    // this ensures any newly launched activity will not use the app start timestamp as txn start
+    firstActivityCreated = true;
+    lastPausedTime =
+        hub != null
+            ? hub.getOptions().getDateProvider().now()
+            : AndroidDateUtils.getCurrentSentryDateTime();
+    lastPausedUptimeMillis = SystemClock.uptimeMillis();
   }
 
   @Override
   public synchronized void onActivityPaused(final @NotNull Activity activity) {
     // only executed if API < 29 otherwise it happens on onActivityPrePaused
     if (!isAllActivityCallbacksAvailable) {
-      // as the SDK may gets (re-)initialized mid activity lifecycle, ensure we set the flag here as
-      // well
-      // this ensures any newly launched activity will not use the app start timestamp as txn start
-      firstActivityCreated = true;
-      if (hub == null) {
-        lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
-      } else {
-        lastPausedTime = hub.getOptions().getDateProvider().now();
-      }
+      onActivityPrePaused(activity);
     }
   }
 
   @Override
-  public synchronized void onActivityStopped(final @NotNull Activity activity) {
-    // no-op
-  }
+  public void onActivityStopped(final @NotNull Activity activity) {}
 
   @Override
-  public synchronized void onActivitySaveInstanceState(
-      final @NotNull Activity activity, final @NotNull Bundle outState) {
-    // no-op
-  }
+  public void onActivitySaveInstanceState(
+      final @NotNull Activity activity, final @NotNull Bundle outState) {}
 
   @Override
   public synchronized void onActivityDestroyed(final @NotNull Activity activity) {
+    final ActivityLifecycleSpanHelper helper = activitySpanHelpers.remove(activity);
+    if (helper != null) {
+      helper.clear();
+    }
     if (performanceEnabled) {
 
       // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
@@ -494,10 +544,20 @@ public final class ActivityLifecycleIntegration
     }
 
     // clear it up, so we don't start again for the same activity if the activity is in the
-    // activity
-    // stack still.
+    // activity stack still.
     // if the activity is opened again and not in memory, transactions will be created normally.
     activitiesWithOngoingTransactions.remove(activity);
+
+    if (activitiesWithOngoingTransactions.isEmpty()) {
+      clear();
+    }
+  }
+
+  private void clear() {
+    firstActivityCreated = false;
+    lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
+    lastPausedUptimeMillis = 0;
+    activitySpanHelpers.clear();
   }
 
   private void finishSpan(final @Nullable ISpan span) {
@@ -542,8 +602,7 @@ public final class ActivityLifecycleIntegration
     final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
     final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
 
-    // in case the SentryPerformanceProvider is disabled it does not set the app start end times,
-    // and we need to set the end time manually here
+    // and we need to set the end time of the app start here, after the first frame is drawn.
     if (appStartTimeSpan.hasStarted() && appStartTimeSpan.hasNotStopped()) {
       appStartTimeSpan.stop();
     }
@@ -606,6 +665,17 @@ public final class ActivityLifecycleIntegration
 
   @TestOnly
   @NotNull
+  WeakHashMap<Activity, ActivityLifecycleSpanHelper> getActivitySpanHelpers() {
+    return activitySpanHelpers;
+  }
+
+  @TestOnly
+  void setFirstActivityCreated(boolean firstActivityCreated) {
+    this.firstActivityCreated = firstActivityCreated;
+  }
+
+  @TestOnly
+  @NotNull
   ActivityFramesTracker getActivityFramesTracker() {
     return activityFramesTracker;
   }
@@ -629,20 +699,17 @@ public final class ActivityLifecycleIntegration
   }
 
   private void setColdStart(final @Nullable Bundle savedInstanceState) {
-    // The very first activity start timestamp cannot be set to the class instantiation time, as it
-    // may happen before an activity is started (service, broadcast receiver, etc). So we set it
-    // here.
-    if (hub != null && lastPausedTime.nanoTimestamp() == 0) {
-      lastPausedTime = hub.getOptions().getDateProvider().now();
-    } else if (lastPausedTime.nanoTimestamp() == 0) {
-      lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
-    }
     if (!firstActivityCreated) {
-      // if Activity has savedInstanceState then its a warm start
-      // https://developer.android.com/topic/performance/vitals/launch-time#warm
-      // SentryPerformanceProvider sets this already
-      // pre-performance-v2: back-fill with best guess
-      if (options != null && !options.isEnablePerformanceV2()) {
+      final @NotNull TimeSpan appStartSpan = AppStartMetrics.getInstance().getAppStartTimeSpan();
+      // If the app start span already started and stopped, it means the app restarted without
+      //  killing the process, so we are in a warm start
+      // If the app has an invalid cold start, it means it was started in the background, like
+      //  via BroadcastReceiver, so we consider it a warm start
+      if ((appStartSpan.hasStarted() && appStartSpan.hasStopped())
+          || (!AppStartMetrics.getInstance().isColdStartValid())) {
+        AppStartMetrics.getInstance().restartAppStart(lastPausedUptimeMillis);
+        AppStartMetrics.getInstance().setAppStartType(AppStartMetrics.AppStartType.WARM);
+      } else {
         AppStartMetrics.getInstance()
             .setAppStartType(
                 savedInstanceState == null

@@ -177,24 +177,24 @@ object Config {
     }
 
     object TestLibs {
-        private val androidxTestVersion = "1.5.0"
         private val espressoVersion = "3.5.0"
 
         val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
         val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
-        val androidxCore = "androidx.test:core:$androidxTestVersion"
-        val androidxRunner = "androidx.test:runner:$androidxTestVersion"
-        val androidxTestCoreKtx = "androidx.test:core-ktx:$androidxTestVersion"
-        val androidxTestRules = "androidx.test:rules:$androidxTestVersion"
+        val androidxCore = "androidx.test:core:1.6.1"
+        val androidxRunner = "androidx.test:runner:1.6.2"
+        val androidxTestCoreKtx = "androidx.test:core-ktx:1.6.1"
+        val androidxTestRules = "androidx.test:rules:1.6.1"
         val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
         val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
-        val androidxTestOrchestrator = "androidx.test:orchestrator:1.4.2"
+        val androidxTestOrchestrator = "androidx.test:orchestrator:1.5.0"
         val androidxJunit = "androidx.test.ext:junit:1.1.5"
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
         val robolectric = "org.robolectric:robolectric:4.10.3"
         val mockitoKotlin = "org.mockito.kotlin:mockito-kotlin:4.1.0"
         val mockitoInline = "org.mockito:mockito-inline:4.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
+        val awaitility3 = "org.awaitility:awaitility-kotlin:3.1.6" // need this due to a conflict of awaitility4+ and espresso on hamcrest
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.32.0"
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"

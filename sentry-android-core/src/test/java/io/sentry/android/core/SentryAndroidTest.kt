@@ -371,7 +371,7 @@ class SentryAndroidTest {
                 options.release = "prod"
                 options.dsn = "https://key@sentry.io/123"
                 options.isEnableAutoSessionTracking = true
-                options.experimental.sessionReplay.onErrorSampleRate = 1.0
+                options.sessionReplay.onErrorSampleRate = 1.0
                 optionsConfig(options)
             }
 
@@ -515,6 +515,19 @@ class SentryAndroidTest {
 
         assertEquals(99, AppStartMetrics.getInstance().sdkInitTimeSpan.startUptimeMs)
         assertEquals(99, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
+    }
+
+    @Test
+    fun `if the config options block throws still intializes android event processors`() {
+        lateinit var optionsRef: SentryOptions
+        fixture.initSut(context = mock<Application>()) { options ->
+            optionsRef = options
+            options.dsn = "https://key@sentry.io/123"
+            throw RuntimeException("Boom!")
+        }
+
+        assertTrue(optionsRef.eventProcessors.any { it is DefaultAndroidEventProcessor })
+        assertTrue(optionsRef.eventProcessors.any { it is AnrV2EventProcessor })
     }
 
     private fun prefillScopeCache(cacheDir: String) {

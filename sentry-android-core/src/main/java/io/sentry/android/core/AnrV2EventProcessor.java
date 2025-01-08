@@ -54,7 +54,7 @@ import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
-import io.sentry.util.Random;
+import io.sentry.util.SentryRandom;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -83,24 +83,13 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
 
-  private final @Nullable Random random;
-
   public AnrV2EventProcessor(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    this(context, options, buildInfoProvider, null);
-  }
-
-  AnrV2EventProcessor(
-      final @NotNull Context context,
-      final @NotNull SentryAndroidOptions options,
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final @Nullable Random random) {
     this.context = ContextUtils.getApplicationContext(context);
     this.options = options;
     this.buildInfoProvider = buildInfoProvider;
-    this.random = random;
 
     final SentryStackTraceFactory sentryStackTraceFactory =
         new SentryStackTraceFactory(this.options);
@@ -180,9 +169,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
     try {
       // we have to sample here with the old sample rate, because it may change between app launches
-      final @NotNull Random random = this.random != null ? this.random : new Random();
       final double replayErrorSampleRateDouble = Double.parseDouble(replayErrorSampleRate);
-      if (replayErrorSampleRateDouble < random.nextDouble()) {
+      if (replayErrorSampleRateDouble < SentryRandom.current().nextDouble()) {
         options
             .getLogger()
             .log(

@@ -151,6 +151,12 @@ public class SentryOptions {
   private @Nullable BeforeSendTransactionCallback beforeSendTransaction;
 
   /**
+   * This function is called with an SDK specific replay object and can return a modified replay
+   * object or nothing to skip reporting the replay
+   */
+  private @Nullable BeforeSendReplayCallback beforeSendReplay;
+
+  /**
    * This function is called with an SDK specific breadcrumb object before the breadcrumb is added
    * to the scope. When nothing is returned from the function, the breadcrumb is dropped
    */
@@ -495,6 +501,8 @@ public class SentryOptions {
    */
   @ApiStatus.Experimental private boolean enableScreenTracking = true;
 
+  private @NotNull SentryReplayOptions sessionReplay;
+
   /**
    * Adds an event processor
    *
@@ -541,13 +549,15 @@ public class SentryOptions {
   }
 
   /**
-   * Evaluates and parses the DSN. May throw an exception if the DSN is invalid.
+   * Evaluates and parses the DSN. May throw an exception if the DSN is invalid. Renamed from
+   * `getParsedDsn` as this would cause an error when deploying as WAR to Tomcat due to `JNDI`
+   * property binding.
    *
    * @return the parsed DSN or throws if dsn is invalid
    */
   @ApiStatus.Internal
   @NotNull
-  Dsn getParsedDsn() throws IllegalArgumentException {
+  Dsn retrieveParsedDsn() throws IllegalArgumentException {
     return parsedDsn.getValue();
   }
 
@@ -757,6 +767,24 @@ public class SentryOptions {
   public void setBeforeSendTransaction(
       @Nullable BeforeSendTransactionCallback beforeSendTransaction) {
     this.beforeSendTransaction = beforeSendTransaction;
+  }
+
+  /**
+   * Returns the BeforeSendReplay callback
+   *
+   * @return the beforeSend callback or null if not set
+   */
+  public @Nullable BeforeSendReplayCallback getBeforeSendReplay() {
+    return beforeSendReplay;
+  }
+
+  /**
+   * Sets the beforeSendReplay callback
+   *
+   * @param beforeSendReplay the beforeSend callback
+   */
+  public void setBeforeSendReplay(@Nullable BeforeSendReplayCallback beforeSendReplay) {
+    this.beforeSendReplay = beforeSendReplay;
   }
 
   /**
@@ -1395,6 +1423,13 @@ public class SentryOptions {
    */
   @ApiStatus.Internal
   public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
+    final @Nullable SdkVersion replaySdkVersion = getSessionReplay().getSdkVersion();
+    if (this.sdkVersion != null
+        && replaySdkVersion != null
+        && this.sdkVersion.equals(replaySdkVersion)) {
+      // if sdkVersion = sessionReplay.sdkVersion we override it, as it means no one else set it
+      getSessionReplay().setSdkVersion(sdkVersion);
+    }
     this.sdkVersion = sdkVersion;
   }
 
@@ -2451,13 +2486,22 @@ public class SentryOptions {
     this.enableScreenTracking = enableScreenTracking;
   }
 
+  @NotNull
+  public SentryReplayOptions getSessionReplay() {
+    return sessionReplay;
+  }
+
+  public void setSessionReplay(final @NotNull SentryReplayOptions sessionReplayOptions) {
+    this.sessionReplay = sessionReplayOptions;
+  }
+
   /**
    * Load the lazy fields. Useful to load in the background, so that results are already cached. DO
    * NOT CALL THIS METHOD ON THE MAIN THREAD.
    */
   void loadLazyFields() {
     getSerializer();
-    getParsedDsn();
+    retrieveParsedDsn();
     getEnvelopeReader();
     getDateProvider();
   }
@@ -2489,6 +2533,23 @@ public class SentryOptions {
      */
     @Nullable
     SentryTransaction execute(@NotNull SentryTransaction transaction, @NotNull Hint hint);
+  }
+
+  /** The BeforeSendReplay callback */
+  public interface BeforeSendReplayCallback {
+
+    /**
+     * Mutate or drop a replay event before being sent. Note that there might be many replay events
+     * for a single replay (i.e. segments), you can check {@link SentryReplayEvent#getReplayId()} to
+     * identify that the segments belong to the same replay.
+     *
+     * @param event the event
+     * @param hint the hint, contains {@link ReplayRecording}, can be accessed via {@link
+     *     Hint#getReplayRecording()}
+     * @return the original event or the mutated event or null if event was dropped
+     */
+    @Nullable
+    SentryReplayEvent execute(@NotNull SentryReplayEvent event, @NotNull Hint hint);
   }
 
   /** The BeforeBreadcrumb callback */
@@ -2583,7 +2644,9 @@ public class SentryOptions {
    * @param empty if options should be empty.
    */
   private SentryOptions(final boolean empty) {
-    experimental = new ExperimentalOptions(empty);
+    final @NotNull SdkVersion sdkVersion = createSdkVersion();
+    experimental = new ExperimentalOptions(empty, sdkVersion);
+    sessionReplay = new SentryReplayOptions(empty, sdkVersion);
     if (!empty) {
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
@@ -2604,7 +2667,7 @@ public class SentryOptions {
       }
 
       setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
-      setSdkVersion(createSdkVersion());
+      setSdkVersion(sdkVersion);
       addPackageInfo();
     }
   }

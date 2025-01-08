@@ -330,6 +330,14 @@ class AsyncHttpTransportTest {
     }
 
     @Test
+    fun `close closes the rate limiter`() {
+        val sut = fixture.getSUT()
+        sut.close()
+
+        verify(fixture.rateLimiter).close()
+    }
+
+    @Test
     fun `close uses flushTimeoutMillis option to schedule termination`() {
         fixture.sentryOptions.flushTimeoutMillis = 123
         val sut = fixture.getSUT()

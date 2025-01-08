@@ -1,5 +1,130 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Warm starts cleanup ([#3954](https://github.com/getsentry/sentry-java/pull/3954))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.16 to v0.7.17 ([#4003](https://github.com/getsentry/sentry-java/pull/4003))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0717)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.16...0.7.17)
+
+## 7.20.0
+
+### Features
+
+- Session Replay GA ([#4017](https://github.com/getsentry/sentry-java/pull/4017))
+
+To enable Replay use the `sessionReplay.sessionSampleRate` or `sessionReplay.onErrorSampleRate` options.
+
+  ```kotlin
+  import io.sentry.SentryReplayOptions
+  import io.sentry.android.core.SentryAndroid
+
+  SentryAndroid.init(context) { options ->
+   
+    options.sessionReplay.sessionSampleRate = 1.0
+    options.sessionReplay.onErrorSampleRate = 1.0
+  
+    // To change default redaction behavior (defaults to true)
+    options.sessionReplay.redactAllImages = true
+    options.sessionReplay.redactAllText = true
+  
+    // To change quality of the recording (defaults to MEDIUM)
+    options.sessionReplay.quality = SentryReplayOptions.SentryReplayQuality.MEDIUM // (LOW|MEDIUM|HIGH)
+  }
+  ```
+
+### Fixes
+
+- Fix warm start detection ([#3937](https://github.com/getsentry/sentry-java/pull/3937))
+- Session Replay: Reduce memory allocations, disk space consumption, and payload size ([#4016](https://github.com/getsentry/sentry-java/pull/4016))
+- Session Replay: Do not try to encode corrupted frames multiple times ([#4016](https://github.com/getsentry/sentry-java/pull/4016))
+
+### Internal
+
+- Session Replay: Allow overriding `SdkVersion` for replay events ([#4014](https://github.com/getsentry/sentry-java/pull/4014))
+- Session Replay: Send replay options as tags ([#4015](https://github.com/getsentry/sentry-java/pull/4015))
+
+### Breaking changes
+
+- Session Replay options were moved from under `experimental` to the main `options` object ([#4017](https://github.com/getsentry/sentry-java/pull/4017))
+
+## 7.19.1
+
+### Fixes
+
+- Change TTFD timeout to 25 seconds ([#3984](https://github.com/getsentry/sentry-java/pull/3984))
+- Session Replay: Fix memory leak when masking Compose screens ([#3985](https://github.com/getsentry/sentry-java/pull/3985))
+- Session Replay: Fix potential ANRs in `GestureRecorder` ([#4001](https://github.com/getsentry/sentry-java/pull/4001))
+
+### Internal
+
+- Session Replay: Flutter improvements ([#4007](https://github.com/getsentry/sentry-java/pull/4007))
+
+## 7.19.0
+
+### Fixes
+
+- Session Replay: fix various crashes and issues ([#3970](https://github.com/getsentry/sentry-java/pull/3970))
+  - Fix `IndexOutOfBoundsException` when tracking window changes
+  - Fix `IllegalStateException` when adding/removing draw listener for a dead view
+  - Fix `ConcurrentModificationException` when registering window listeners and stopping `WindowRecorder`/`GestureRecorder`
+- Add support for setting sentry-native handler_strategy ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.8 to v0.7.16 ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0716)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.8...0.7.16)
+
+## 7.18.1
+
+### Fixes
+
+- Fix testTag not working for Jetpack Compose user interaction tracking ([#3878](https://github.com/getsentry/sentry-java/pull/3878))
+
+## 7.18.0
+
+### Features
+
+- Android 15: Add support for 16KB page sizes ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
+  - See https://developer.android.com/guide/practices/page-sizes for more details
+- Session Replay: Add `beforeSendReplay` callback ([#3855](https://github.com/getsentry/sentry-java/pull/3855))
+- Session Replay: Add support for masking/unmasking view containers ([#3881](https://github.com/getsentry/sentry-java/pull/3881))
+
+### Fixes
+
+- Avoid collecting normal frames ([#3782](https://github.com/getsentry/sentry-java/pull/3782))
+- Ensure android initialization process continues even if options configuration block throws an exception ([#3887](https://github.com/getsentry/sentry-java/pull/3887))
+- Do not report parsing ANR error when there are no threads ([#3888](https://github.com/getsentry/sentry-java/pull/3888))
+  - This should significantly reduce the number of events with message "Sentry Android SDK failed to parse system thread dump..." reported
+- Session Replay: Disable replay in session mode when rate limit is active ([#3854](https://github.com/getsentry/sentry-java/pull/3854))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.2 to v0.7.8 ([#3620](https://github.com/getsentry/sentry-java/pull/3620))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#078)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.2...0.7.8)
+
+## 7.17.0
+
+### Features
+
+- Add meta option to set the maximum amount of breadcrumbs to be logged. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
+- Use a separate `Random` instance per thread to improve SDK performance ([#3835](https://github.com/getsentry/sentry-java/pull/3835))
+
+### Fixes
+
+- Using MaxBreadcrumb with value 0 no longer crashes. ([#3836](https://github.com/getsentry/sentry-java/pull/3836))
+- Accept manifest integer values when requiring floating values ([#3823](https://github.com/getsentry/sentry-java/pull/3823))
+- Fix standalone tomcat jndi issue ([#3873](https://github.com/getsentry/sentry-java/pull/3873))
+  - Using Sentry Spring Boot on a standalone tomcat caused the following error:
+    - Failed to bind properties under 'sentry.parsed-dsn' to io.sentry.Dsn
+
 ## 7.16.0
 
 ### Features
@@ -19,6 +144,10 @@
 - Session Replay: Reduce startup and capture overhead ([#3799](https://github.com/getsentry/sentry-java/pull/3799))
 - Load lazy fields on init in the background ([#3803](https://github.com/getsentry/sentry-java/pull/3803))
 - Replace setOf with HashSet.add ([#3801](https://github.com/getsentry/sentry-java/pull/3801))
+
+### Breaking changes
+
+- The method `addIntegrationToSdkVersion(Ljava/lang/Class;)V` has been removed from the core (`io.sentry:sentry`) package. Please make sure all of the packages (e.g. `io.sentry:sentry-android-core`, `io.sentry:sentry-android-fragment`, `io.sentry:sentry-okhttp`  and others) are all aligned and using the same version to prevent the `NoSuchMethodError` exception.
 
 ## 7.16.0-alpha.1
 

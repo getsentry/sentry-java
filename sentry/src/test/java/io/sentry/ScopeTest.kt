@@ -1029,6 +1029,17 @@ class ScopeTest {
         )
     }
 
+    @Test
+    fun `creating a new scope won't crash if max breadcrumbs is set to zero`() {
+        val options = SentryOptions().apply {
+            maxBreadcrumbs = 0
+        }
+        val scope = Scope(options)
+
+        // expect no exception to be thrown
+        // previously was crashing, see https://github.com/getsentry/sentry-java/issues/3313
+    }
+
     private fun eventProcessor(): EventProcessor {
         return object : EventProcessor {
             override fun process(event: SentryEvent, hint: Hint): SentryEvent? {

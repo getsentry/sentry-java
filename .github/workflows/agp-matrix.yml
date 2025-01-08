@@ -38,7 +38,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@bb0c460cbf5354b0cddd15bacdf0d6aaa3e5a32b # pin@v3
+        uses: gradle/actions/setup-gradle@3839b20885c2c3507be5f0521853826f4b37038a # pin@v3
         with:
           gradle-home-cache-cleanup: true
 
@@ -69,7 +69,8 @@ jobs:
           target: 'aosp_atd'
           arch: x86
           channel: canary # Necessary for ATDs
-          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release --daemon
+          disk-size: 4096M
+          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release -Denvironment=github --daemon
 
       - name: Upload test results
         if: always()

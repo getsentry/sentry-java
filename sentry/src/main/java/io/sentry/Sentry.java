@@ -373,7 +373,7 @@ public final class Sentry {
                   observer.setEnvironment(options.getEnvironment());
                   observer.setTags(options.getTags());
                   observer.setReplayErrorSampleRate(
-                      options.getExperimental().getSessionReplay().getOnErrorSampleRate());
+                      options.getSessionReplay().getOnErrorSampleRate());
                 }
               });
     } catch (Throwable e) {
@@ -398,7 +398,7 @@ public final class Sentry {
     }
 
     // This creates the DSN object and performs some checks
-    options.getParsedDsn();
+    options.retrieveParsedDsn();
 
     ILogger logger = options.getLogger();
 

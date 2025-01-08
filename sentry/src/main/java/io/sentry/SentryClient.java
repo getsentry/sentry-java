@@ -18,6 +18,7 @@ import io.sentry.util.CheckInUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Random;
+import io.sentry.util.SentryRandom;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
@@ -40,7 +41,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
 
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
-  private final @Nullable Random random;
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
   private final @NotNull IMetricsAggregator metricsAggregator;
 
@@ -66,8 +66,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
         options.isEnableMetrics()
             ? new MetricsAggregator(options, this)
             : NoopMetricsAggregator.getInstance();
-
-    this.random = options.getSampleRate() == null ? null : new Random();
   }
 
   private boolean shouldApplyScopeData(
@@ -287,8 +285,18 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
 
     event = processReplayEvent(event, hint, options.getEventProcessors());
 
+    if (event != null) {
+      event = executeBeforeSendReplay(event, hint);
+
+      if (event == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSendReplay");
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Replay);
+      }
+    }
+
     if (event == null) {
-      options.getLogger().log(SentryLevel.DEBUG, "Replay was dropped by Event processors.");
       return SentryId.EMPTY_ID;
     }
 
@@ -632,8 +640,11 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
     envelopeItems.add(replayItem);
     final SentryId sentryId = event.getEventId();
 
+    // SdkVersion from ReplayOptions defaults to SdkVersion from SentryOptions and can be
+    // overwritten by the hybrid SDKs
     final SentryEnvelopeHeader envelopeHeader =
-        new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceContext);
+        new SentryEnvelopeHeader(
+            sentryId, options.getSessionReplay().getSdkVersion(), traceContext);
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
@@ -1128,6 +1139,27 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
     return transaction;
   }
 
+  private @Nullable SentryReplayEvent executeBeforeSendReplay(
+      @NotNull SentryReplayEvent event, final @NotNull Hint hint) {
+    final SentryOptions.BeforeSendReplayCallback beforeSendReplay = options.getBeforeSendReplay();
+    if (beforeSendReplay != null) {
+      try {
+        event = beforeSendReplay.execute(event, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The BeforeSendReplay callback threw an exception. It will be added as breadcrumb and continue.",
+                e);
+
+        // drop event in case of an error in beforeSend due to PII concerns
+        event = null;
+      }
+    }
+    return event;
+  }
+
   @Override
   public void close() {
     close(false);
@@ -1183,6 +1215,7 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
   }
 
   private boolean sample() {
+    final @Nullable Random random = options.getSampleRate() == null ? null : SentryRandom.current();
     // https://docs.sentry.io/development/sdk-dev/features/#event-sampling
     if (options.getSampleRate() != null && random != null) {
       final double sampling = options.getSampleRate();
