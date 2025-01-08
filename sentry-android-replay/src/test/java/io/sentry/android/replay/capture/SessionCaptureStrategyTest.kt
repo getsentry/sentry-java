@@ -9,6 +9,8 @@ import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
+import io.sentry.SentryReplayOptions.SentryReplayQuality.HIGH
+import io.sentry.android.replay.BuildConfig
 import io.sentry.android.replay.DefaultReplayBreadcrumbConverter
 import io.sentry.android.replay.GeneratedVideo
 import io.sentry.android.replay.ReplayCache
@@ -22,9 +24,11 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.ReplayFrame
 import io.sentry.android.replay.ScreenshotRecorderConfig
+import io.sentry.android.replay.maskAllImages
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebMetaEvent
+import io.sentry.rrweb.RRWebOptionsEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import org.junit.Rule
@@ -43,8 +47,10 @@ import org.mockito.kotlin.whenever
 import java.io.File
 import java.util.Date
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SessionCaptureStrategyTest {
@@ -76,7 +82,7 @@ class SessionCaptureStrategyTest {
             on { persistSegmentValues(any(), anyOrNull()) }.then {
                 persistedSegment.put(it.arguments[0].toString(), it.arguments[1]?.toString())
             }
-            on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), any()) }
+            on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), any()) }
                 .thenReturn(GeneratedVideo(File("0.mp4"), 5, VIDEO_DURATION))
         }
         val recorderConfig = ScreenshotRecorderConfig(
@@ -105,7 +111,7 @@ class SessionCaptureStrategyTest {
                         null
                     }.whenever(it).submit(any<Runnable>())
                 }
-            ) { _, _ -> replayCache }
+            ) { _ -> replayCache }
         }
     }
 
@@ -208,7 +214,7 @@ class SessionCaptureStrategyTest {
     @Test
     fun `when process is crashing, onScreenshotRecorded does not create new segment`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionSegmentDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(
             dateProvider = { now }
         )
@@ -223,7 +229,7 @@ class SessionCaptureStrategyTest {
     @Test
     fun `onScreenshotRecorded creates new segment when segment duration exceeded`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionSegmentDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(
             dateProvider = { now }
         )
@@ -254,7 +260,7 @@ class SessionCaptureStrategyTest {
     @Test
     fun `onScreenshotRecorded stops replay when replay duration exceeded`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionDuration * 2)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionDuration * 2)
         var count = 0
         val strategy = fixture.getSut(
             dateProvider = {
@@ -309,7 +315,7 @@ class SessionCaptureStrategyTest {
     @Test
     fun `fills replay urls from navigation breadcrumbs`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionSegmentDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(dateProvider = { now })
         strategy.start(fixture.recorderConfig)
 
@@ -335,7 +341,7 @@ class SessionCaptureStrategyTest {
         fixture.scope.screen = "MainActivity"
 
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.sessionSegmentDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(dateProvider = { now })
         strategy.start(fixture.recorderConfig)
 
@@ -365,6 +371,83 @@ class SessionCaptureStrategyTest {
             fixture.persistedSegment.values.first(),
             "The replayId must be set first, so when we clean up stale replays" +
                 "the current replay cache folder is not being deleted."
+        )
+    }
+
+    @Test
+    fun `records replay options event for segment 0`() {
+        fixture.options.sessionReplay.sessionSampleRate = 1.0
+        fixture.options.sessionReplay.maskAllImages = false
+        fixture.options.sessionReplay.quality = HIGH
+        fixture.options.sessionReplay.addMaskViewClass("my.custom.View")
+
+        val now =
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
+        val strategy = fixture.getSut(dateProvider = { now })
+        strategy.start(fixture.recorderConfig)
+
+        strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+        verify(fixture.hub).captureReplay(
+            argThat { event ->
+                event is SentryReplayEvent && event.segmentId == 0
+            },
+            check {
+                val optionsEvent =
+                    it.replayRecording?.payload?.filterIsInstance<RRWebOptionsEvent>()!!
+                assertEquals("sentry.java", optionsEvent[0].optionsPayload["nativeSdkName"])
+                assertEquals(BuildConfig.VERSION_NAME, optionsEvent[0].optionsPayload["nativeSdkVersion"])
+
+                assertEquals(null, optionsEvent[0].optionsPayload["errorSampleRate"])
+                assertEquals(1.0, optionsEvent[0].optionsPayload["sessionSampleRate"])
+                assertEquals(true, optionsEvent[0].optionsPayload["maskAllText"])
+                assertEquals(false, optionsEvent[0].optionsPayload["maskAllImages"])
+                assertEquals("high", optionsEvent[0].optionsPayload["quality"])
+                assertContentEquals(
+                    listOf(
+                        "android.widget.TextView",
+                        "android.webkit.WebView",
+                        "android.widget.VideoView",
+                        "androidx.media3.ui.PlayerView",
+                        "com.google.android.exoplayer2.ui.PlayerView",
+                        "com.google.android.exoplayer2.ui.StyledPlayerView",
+                        "my.custom.View"
+                    ),
+                    optionsEvent[0].optionsPayload["maskedViewClasses"] as Collection<*>
+                )
+                assertContentEquals(
+                    listOf("android.widget.ImageView"),
+                    optionsEvent[0].optionsPayload["unmaskedViewClasses"] as Collection<*>
+                )
+            }
+        )
+    }
+
+    @Test
+    fun `does not record replay options event for segment above 0`() {
+        val now =
+            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
+        val strategy = fixture.getSut(dateProvider = { now })
+        strategy.start(fixture.recorderConfig)
+
+        strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+        verify(fixture.hub).captureReplay(
+            argThat { event ->
+                event is SentryReplayEvent && event.segmentId == 0
+            },
+            any()
+        )
+
+        strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+        verify(fixture.hub).captureReplay(
+            argThat { event ->
+                event is SentryReplayEvent && event.segmentId == 1
+            },
+            check {
+                val optionsEvent =
+                    it.replayRecording?.payload?.find { it is RRWebOptionsEvent }
+                assertNull(optionsEvent)
+            }
         )
     }
 }

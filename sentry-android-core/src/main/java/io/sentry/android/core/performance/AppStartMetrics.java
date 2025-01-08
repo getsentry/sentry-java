@@ -61,6 +61,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private @Nullable SentryDate onCreateTime = null;
   private boolean appLaunchTooLong = false;
   private boolean isCallbackRegistered = false;
+  private boolean shouldSendStartMeasurements = true;
 
   public static @NotNull AppStartMetrics getInstance() {
     if (instance == null) {
@@ -92,6 +93,22 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
+   * @return the app start span Uses Process.getStartUptimeMillis() as start timestamp, which
+   *     requires API level 24+
+   */
+  public @NotNull TimeSpan createProcessInitSpan() {
+    // AppStartSpan and CLASS_LOADED_UPTIME_MS can be modified at any time.
+    // So, we cannot cache the processInitSpan, but we need to create it when needed.
+    final @NotNull TimeSpan processInitSpan = new TimeSpan();
+    processInitSpan.setup(
+        "Process Initialization",
+        appStartSpan.getStartTimestampMs(),
+        appStartSpan.getStartUptimeMs(),
+        CLASS_LOADED_UPTIME_MS);
+    return processInitSpan;
+  }
+
+  /**
    * @return the SDK init time span, as measured pre-performance-v2 Uses ContentProvider/Sdk init
    *     time as start timestamp
    *     <p>Data is filled by either {@link io.sentry.android.core.SentryPerformanceProvider} with a
@@ -118,6 +135,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     return appLaunchedInForeground;
   }
 
+  public boolean isColdStartValid() {
+    return appLaunchedInForeground && !appLaunchTooLong;
+  }
+
   @VisibleForTesting
   public void setAppLaunchedInForeground(final boolean appLaunchedInForeground) {
     this.appLaunchedInForeground = appLaunchedInForeground;
@@ -129,19 +150,39 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    * @return A sorted list of all onCreate calls
    */
   public @NotNull List<TimeSpan> getContentProviderOnCreateTimeSpans() {
-    final List<TimeSpan> measurements = new ArrayList<>(contentProviderOnCreates.values());
-    Collections.sort(measurements);
-    return measurements;
+    final List<TimeSpan> spans = new ArrayList<>(contentProviderOnCreates.values());
+    Collections.sort(spans);
+    return spans;
   }
 
   public @NotNull List<ActivityLifecycleTimeSpan> getActivityLifecycleTimeSpans() {
-    final List<ActivityLifecycleTimeSpan> measurements = new ArrayList<>(activityLifecycles);
-    Collections.sort(measurements);
-    return measurements;
+    final List<ActivityLifecycleTimeSpan> spans = new ArrayList<>(activityLifecycles);
+    Collections.sort(spans);
+    return spans;
   }
 
   public void addActivityLifecycleTimeSpans(final @NotNull ActivityLifecycleTimeSpan timeSpan) {
     activityLifecycles.add(timeSpan);
+  }
+
+  public void onAppStartSpansSent() {
+    shouldSendStartMeasurements = false;
+    contentProviderOnCreates.clear();
+    activityLifecycles.clear();
+  }
+
+  public boolean shouldSendStartMeasurements() {
+    return shouldSendStartMeasurements;
+  }
+
+  public void restartAppStart(final long uptimeMillis) {
+    shouldSendStartMeasurements = true;
+    appLaunchTooLong = false;
+    appLaunchedInForeground = true;
+    appStartSpan.reset();
+    appStartSpan.start();
+    appStartSpan.setStartedAt(uptimeMillis);
+    CLASS_LOADED_UPTIME_MS = appStartSpan.getStartUptimeMs();
   }
 
   public long getClassLoadedUptimeMs() {
@@ -154,6 +195,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    */
   public @NotNull TimeSpan getAppStartTimeSpanWithFallback(
       final @NotNull SentryAndroidOptions options) {
+    // If the app launch took too long or it was launched in the background we return an empty span
+    if (!isColdStartValid()) {
+      return new TimeSpan();
+    }
     if (options.isEnablePerformanceV2()) {
       // Only started when sdk version is >= N
       final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
@@ -191,6 +236,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     appLaunchedInForeground = false;
     onCreateTime = null;
     isCallbackRegistered = false;
+    shouldSendStartMeasurements = true;
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
