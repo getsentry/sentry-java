@@ -112,6 +112,9 @@ dependencies {
     implementation(Config.TestLibs.espressoIdlingResource)
     implementation(Config.Libs.leakCanary)
 
+    androidTestImplementation(Config.TestLibs.composeUiTestJunit4)
+    debugImplementation(Config.TestLibs.composeUiTestManifest)
+
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
     errorprone(Config.CompileOnly.errorprone)
