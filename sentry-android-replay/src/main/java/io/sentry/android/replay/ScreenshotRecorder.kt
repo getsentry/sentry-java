@@ -33,7 +33,6 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarch
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
 import kotlin.math.roundToInt
@@ -242,15 +241,6 @@ internal class ScreenshotRecorder(
         )
         // get the pixel color (= dominant color)
         return singlePixelBitmap.getPixel(0, 0)
-    }
-
-    private class RecorderExecutorServiceThreadFactory : ThreadFactory {
-        private var cnt = 0
-        override fun newThread(r: Runnable): Thread {
-            val ret = Thread(r, "SentryReplayRecorder-" + cnt++)
-            ret.setDaemon(true)
-            return ret
-        }
     }
 }
 
