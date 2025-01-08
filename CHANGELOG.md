@@ -6,6 +6,10 @@
 
 - Enable `ThreadLocalAccessor` for Spring Boot 3 WebFlux by default ([#4023](https://github.com/getsentry/sentry-java/pull/4023))
 
+### Fixes
+
+- Avoid logging an error when a float is passed in the manifest ([#4031](https://github.com/getsentry/sentry-java/pull/4031))
+
 ## 8.0.0-rc.3
 
 ### Features
