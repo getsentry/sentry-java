@@ -7,7 +7,6 @@ import android.view.ViewGroup;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.gestures.UiElement;
-import io.sentry.util.Objects;
 import java.util.LinkedList;
 import java.util.Queue;
 import org.jetbrains.annotations.ApiStatus;
@@ -40,7 +39,7 @@ public final class ViewUtils {
 
     @Nullable UiElement target = null;
     while (queue.size() > 0) {
-      final View view = Objects.requireNonNull(queue.poll(), "view is required");
+      final View view = queue.poll();
 
       if (view instanceof ViewGroup) {
         final ViewGroup viewGroup = (ViewGroup) view;

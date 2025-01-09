@@ -39,7 +39,7 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
 
   @Override
   public @Nullable UiElement locate(
-      @NotNull Object root, float x, float y, UiElement.Type targetType) {
+      @Nullable Object root, float x, float y, UiElement.Type targetType) {
 
     // lazy init composeHelper as it's using some reflection under the hood
     if (composeHelper == null) {
