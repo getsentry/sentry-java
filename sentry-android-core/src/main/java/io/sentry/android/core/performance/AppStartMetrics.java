@@ -203,20 +203,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       // Only started when sdk version is >= N
       final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
       if (appStartSpan.hasStarted()) {
-        return validateAppStartSpan(appStartSpan);
+        return appStartSpan;
       }
     }
 
     // fallback: use sdk init time span, as it will always have a start time set
-    return validateAppStartSpan(getSdkInitTimeSpan());
-  }
-
-  private @NotNull TimeSpan validateAppStartSpan(final @NotNull TimeSpan appStartSpan) {
-    // If the app launch took too long or it was launched in the background we return an empty span
-    if (appLaunchTooLong || !appLaunchedInForeground) {
-      return new TimeSpan();
-    }
-    return appStartSpan;
+    return getSdkInitTimeSpan();
   }
 
   @TestOnly

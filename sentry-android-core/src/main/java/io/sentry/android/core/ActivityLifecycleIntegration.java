@@ -725,14 +725,6 @@ public final class ActivityLifecycleIntegration
   }
 
   private void setColdStart(final @Nullable Bundle savedInstanceState) {
-    // The very first activity start timestamp cannot be set to the class instantiation time, as it
-    // may happen before an activity is started (service, broadcast receiver, etc). So we set it
-    // here.
-    if (scopes != null && lastPausedTime.nanoTimestamp() == 0) {
-      lastPausedTime = scopes.getOptions().getDateProvider().now();
-    } else if (lastPausedTime.nanoTimestamp() == 0) {
-      lastPausedTime = AndroidDateUtils.getCurrentSentryDateTime();
-    }
     if (!firstActivityCreated) {
       final @NotNull TimeSpan appStartSpan = AppStartMetrics.getInstance().getAppStartTimeSpan();
       // If the app start span already started and stopped, it means the app restarted without
