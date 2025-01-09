@@ -26,7 +26,7 @@ public final class AndroidViewGestureTargetLocator implements GestureTargetLocat
 
   @Override
   public @Nullable UiElement locate(
-      @NotNull Object root, float x, float y, UiElement.Type targetType) {
+      @Nullable Object root, float x, float y, UiElement.Type targetType) {
     if (!(root instanceof View)) {
       return null;
     }
