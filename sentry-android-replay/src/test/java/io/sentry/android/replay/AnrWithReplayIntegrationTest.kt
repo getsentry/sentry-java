@@ -153,7 +153,7 @@ class AnrWithReplayIntegrationTest {
             it.cacheDirPath = cacheDir
             it.isDebug = true
             it.setLogger(SystemOutLogger())
-            it.experimental.sessionReplay.onErrorSampleRate = 1.0
+            it.sessionReplay.onErrorSampleRate = 1.0
             // beforeSend is called after event processors are applied, so we can assert here
             // against the enriched ANR event
             it.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
