@@ -8,9 +8,9 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.HubAdapter
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ISpan
+import io.sentry.ScopesAdapter
 import io.sentry.SentryLevel.INFO
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.ANDROID_FRAGMENT
@@ -20,17 +20,17 @@ private const val TRACE_ORIGIN = "auto.ui.fragment"
 
 @Suppress("TooManyFunctions")
 class SentryFragmentLifecycleCallbacks(
-    private val hub: IHub = HubAdapter.getInstance(),
+    private val scopes: IScopes = ScopesAdapter.getInstance(),
     val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
     val enableAutoFragmentLifecycleTracing: Boolean
 ) : FragmentLifecycleCallbacks() {
 
     constructor(
-        hub: IHub,
+        scopes: IScopes,
         enableFragmentLifecycleBreadcrumbs: Boolean,
         enableAutoFragmentLifecycleTracing: Boolean
     ) : this(
-        hub = hub,
+        scopes = scopes,
         filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states
             .takeIf { enableFragmentLifecycleBreadcrumbs }
             .orEmpty(),
@@ -41,14 +41,14 @@ class SentryFragmentLifecycleCallbacks(
         enableFragmentLifecycleBreadcrumbs: Boolean = true,
         enableAutoFragmentLifecycleTracing: Boolean = false
     ) : this(
-        hub = HubAdapter.getInstance(),
+        scopes = ScopesAdapter.getInstance(),
         filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states
             .takeIf { enableFragmentLifecycleBreadcrumbs }
             .orEmpty(),
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
     )
 
-    private val isPerformanceEnabled get() = hub.options.isTracingEnabled && enableAutoFragmentLifecycleTracing
+    private val isPerformanceEnabled get() = scopes.options.isTracingEnabled && enableAutoFragmentLifecycleTracing
 
     private val fragmentsWithOngoingTransactions = WeakHashMap<Fragment, ISpan>()
 
@@ -81,8 +81,8 @@ class SentryFragmentLifecycleCallbacks(
         // we only start the tracing for the fragment if the fragment has been added to its activity
         // and not only to the backstack
         if (fragment.isAdded) {
-            if (hub.options.isEnableScreenTracking) {
-                hub.configureScope { it.screen = getFragmentName(fragment) }
+            if (scopes.options.isEnableScreenTracking) {
+                scopes.configureScope { it.screen = getFragmentName(fragment) }
             }
             startTracing(fragment)
         }
@@ -145,7 +145,7 @@ class SentryFragmentLifecycleCallbacks(
         val hint = Hint()
             .also { it.set(ANDROID_FRAGMENT, fragment) }
 
-        hub.addBreadcrumb(breadcrumb, hint)
+        scopes.addBreadcrumb(breadcrumb, hint)
     }
 
     private fun getFragmentName(fragment: Fragment): String {
@@ -161,7 +161,7 @@ class SentryFragmentLifecycleCallbacks(
         }
 
         var transaction: ISpan? = null
-        hub.configureScope {
+        scopes.configureScope {
             transaction = it.transaction
         }
 

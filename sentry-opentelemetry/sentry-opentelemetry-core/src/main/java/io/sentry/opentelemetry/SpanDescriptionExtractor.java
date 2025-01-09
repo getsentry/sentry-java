@@ -1,8 +1,12 @@
 package io.sentry.opentelemetry;
 
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.sdk.trace.ReadableSpan;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.sdk.trace.data.SpanData;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
+import io.opentelemetry.semconv.incubating.DbIncubatingAttributes;
+import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes;
 import io.sentry.protocol.TransactionNameSource;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -12,38 +16,70 @@ import org.jetbrains.annotations.Nullable;
 public final class SpanDescriptionExtractor {
 
   @SuppressWarnings("deprecation")
-  public @NotNull OtelSpanInfo extractSpanDescription(final @NotNull ReadableSpan otelSpan) {
+  public @NotNull OtelSpanInfo extractSpanInfo(
+      final @NotNull SpanData otelSpan, final @Nullable IOtelSpanWrapper sentrySpan) {
+    if (!isInternalSpanKind(otelSpan)) {
+      final @NotNull Attributes attributes = otelSpan.getAttributes();
+
+      final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
+      if (httpMethod != null) {
+        return descriptionForHttpMethod(otelSpan, httpMethod);
+      }
+
+      final @Nullable String httpRequestMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
+      if (httpRequestMethod != null) {
+        return descriptionForHttpMethod(otelSpan, httpRequestMethod);
+      }
+
+      final @Nullable String dbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
+      if (dbSystem != null) {
+        return descriptionForDbSystem(otelSpan);
+      }
+    }
+
     final @NotNull String name = otelSpan.getName();
+    final @Nullable String maybeDescription =
+        sentrySpan != null ? sentrySpan.getDescription() : name;
+    final @NotNull String description = maybeDescription != null ? maybeDescription : name;
+    return new OtelSpanInfo(name, description, TransactionNameSource.CUSTOM);
+  }
 
-    final @Nullable String httpMethod = otelSpan.getAttribute(SemanticAttributes.HTTP_METHOD);
-    if (httpMethod != null) {
-      return descriptionForHttpMethod(otelSpan, httpMethod);
-    }
-
-    final @Nullable String dbSystem = otelSpan.getAttribute(SemanticAttributes.DB_SYSTEM);
-    if (dbSystem != null) {
-      return descriptionForDbSystem(otelSpan);
-    }
-
-    return new OtelSpanInfo(name, name, TransactionNameSource.CUSTOM);
+  private boolean isInternalSpanKind(final @NotNull SpanData otelSpan) {
+    return SpanKind.INTERNAL.equals(otelSpan.getKind());
   }
 
   @SuppressWarnings("deprecation")
   private OtelSpanInfo descriptionForHttpMethod(
-      final @NotNull ReadableSpan otelSpan, final @NotNull String httpMethod) {
+      final @NotNull SpanData otelSpan, final @NotNull String httpMethod) {
     final @NotNull String name = otelSpan.getName();
     final @NotNull SpanKind kind = otelSpan.getKind();
     final @NotNull StringBuilder opBuilder = new StringBuilder("http");
+    final @NotNull Attributes attributes = otelSpan.getAttributes();
 
     if (SpanKind.CLIENT.equals(kind)) {
       opBuilder.append(".client");
     } else if (SpanKind.SERVER.equals(kind)) {
       opBuilder.append(".server");
     }
-    final @Nullable String httpTarget = otelSpan.getAttribute(SemanticAttributes.HTTP_TARGET);
-    final @Nullable String httpRoute = otelSpan.getAttribute(SemanticAttributes.HTTP_ROUTE);
-    final @Nullable String httpPath = httpRoute != null ? httpRoute : httpTarget;
+    final @Nullable String httpTarget = attributes.get(HttpIncubatingAttributes.HTTP_TARGET);
+    final @Nullable String httpRoute = attributes.get(HttpAttributes.HTTP_ROUTE);
+    @Nullable String httpPath = httpRoute;
+    if (httpPath == null) {
+      httpPath = httpTarget;
+    }
     final @NotNull String op = opBuilder.toString();
+
+    final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
+    if (urlFull != null) {
+      if (httpPath == null) {
+        httpPath = urlFull;
+      }
+    }
+
+    final @Nullable String urlPath = attributes.get(UrlAttributes.URL_PATH);
+    if (httpPath == null && urlPath != null) {
+      httpPath = urlPath;
+    }
 
     if (httpPath == null) {
       return new OtelSpanInfo(op, name, TransactionNameSource.CUSTOM);
@@ -56,9 +92,18 @@ public final class SpanDescriptionExtractor {
     return new OtelSpanInfo(op, description, transactionNameSource);
   }
 
-  private OtelSpanInfo descriptionForDbSystem(final @NotNull ReadableSpan otelSpan) {
-    @Nullable String dbStatement = otelSpan.getAttribute(SemanticAttributes.DB_STATEMENT);
-    @NotNull String description = dbStatement != null ? dbStatement : otelSpan.getName();
-    return new OtelSpanInfo("db", description, TransactionNameSource.TASK);
+  @SuppressWarnings("deprecation")
+  private OtelSpanInfo descriptionForDbSystem(final @NotNull SpanData otelSpan) {
+    final @NotNull Attributes attributes = otelSpan.getAttributes();
+    @Nullable String dbStatement = attributes.get(DbIncubatingAttributes.DB_STATEMENT);
+    if (dbStatement != null) {
+      return new OtelSpanInfo("db", dbStatement, TransactionNameSource.TASK);
+    }
+    @Nullable String dbQueryText = attributes.get(DbIncubatingAttributes.DB_QUERY_TEXT);
+    if (dbQueryText != null) {
+      return new OtelSpanInfo("db", dbQueryText, TransactionNameSource.TASK);
+    }
+
+    return new OtelSpanInfo("db", otelSpan.getName(), TransactionNameSource.TASK);
   }
 }

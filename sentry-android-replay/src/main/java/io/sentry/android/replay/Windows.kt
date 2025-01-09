@@ -25,6 +25,7 @@ import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.view.Window
+import io.sentry.util.AutoClosableReentrantLock
 import java.io.Closeable
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
@@ -123,11 +124,11 @@ internal fun interface OnRootViewsChangedListener {
 internal class RootViewsSpy private constructor() : Closeable {
 
     private val isClosed = AtomicBoolean(false)
-    private val viewListLock = Any()
+    private val viewListLock = AutoClosableReentrantLock()
 
     val listeners: CopyOnWriteArrayList<OnRootViewsChangedListener> = object : CopyOnWriteArrayList<OnRootViewsChangedListener>() {
         override fun add(element: OnRootViewsChangedListener?): Boolean {
-            synchronized(viewListLock) {
+            viewListLock.acquire().use {
                 // notify listener about existing root views immediately
                 delegatingViewList.forEach {
                     element?.onRootViewsChanged(it, true)
@@ -174,7 +175,7 @@ internal class RootViewsSpy private constructor() : Closeable {
                         return@postAtFrontOfQueue
                     }
                     WindowManagerSpy.swapWindowManagerGlobalMViews { mViews ->
-                        synchronized(viewListLock) {
+                        viewListLock.acquire().use {
                             delegatingViewList.apply { addAll(mViews) }
                         }
                     }

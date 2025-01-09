@@ -32,10 +32,6 @@ buildscript {
         classpath(Config.QualityPlugins.errorpronePlugin)
         classpath(Config.QualityPlugins.gradleVersionsPlugin)
 
-        // add classpath of androidNativeBundle
-        // com.ydq.android.gradle.build.tool:nativeBundle:{version}}
-        classpath(Config.NativePlugins.nativeBundlePlugin)
-
         // add classpath of sentry android gradle plugin
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
@@ -55,6 +51,7 @@ apiValidation {
         listOf(
             "sentry-samples-android",
             "sentry-samples-console",
+            "sentry-samples-console-opentelemetry-noagent",
             "sentry-samples-jul",
             "sentry-samples-log4j2",
             "sentry-samples-logback",
@@ -63,7 +60,11 @@ apiValidation {
             "sentry-samples-spring",
             "sentry-samples-spring-jakarta",
             "sentry-samples-spring-boot",
+            "sentry-samples-spring-boot-opentelemetry",
+            "sentry-samples-spring-boot-opentelemetry-noagent",
             "sentry-samples-spring-boot-jakarta",
+            "sentry-samples-spring-boot-jakarta-opentelemetry",
+            "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-spring-boot-webflux-jakarta",
             "sentry-uitest-android",
@@ -80,6 +81,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
     }
     group = Config.Sentry.group
     version = properties[Config.Sentry.versionNameProp].toString()
@@ -101,7 +103,7 @@ allprojects {
             dependsOn("cleanTest")
         }
         withType<JavaCompile> {
-            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing"))
+            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try"))
         }
     }
 }
@@ -112,7 +114,6 @@ subprojects {
         "sentry-android-fragment",
         "sentry-android-navigation",
         "sentry-android-ndk",
-        "sentry-android-okhttp",
         "sentry-android-sqlite",
         "sentry-android-replay",
         "sentry-android-timber"
@@ -297,7 +298,6 @@ private val androidLibs = setOf(
     "sentry-android-ndk",
     "sentry-android-fragment",
     "sentry-android-navigation",
-    "sentry-android-okhttp",
     "sentry-android-timber",
     "sentry-compose-android",
     "sentry-android-sqlite",

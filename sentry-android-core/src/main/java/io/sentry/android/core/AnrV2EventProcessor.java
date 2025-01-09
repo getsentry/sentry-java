@@ -499,6 +499,11 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
   // endregion
 
+  @Override
+  public @Nullable Long getOrder() {
+    return 12000L;
+  }
+
   // region static values
   private void setStaticValues(final @NotNull SentryEvent event) {
     mergeUser(event);
@@ -624,7 +629,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     device.setFamily(ContextUtils.getFamily(options.getLogger()));
     device.setModel(Build.MODEL);
     device.setModelId(Build.ID);
-    device.setArchs(ContextUtils.getArchitectures(buildInfoProvider));
+    device.setArchs(ContextUtils.getArchitectures());
 
     final ActivityManager.MemoryInfo memInfo =
         ContextUtils.getMemInfo(context, options.getLogger());

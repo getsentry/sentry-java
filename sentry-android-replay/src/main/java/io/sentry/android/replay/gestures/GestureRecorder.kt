@@ -9,6 +9,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.replay.OnRootViewsChangedListener
 import io.sentry.android.replay.phoneWindow
 import io.sentry.android.replay.util.FixedWindowCallback
+import io.sentry.util.AutoClosableReentrantLock
 import java.lang.ref.WeakReference
 
 class GestureRecorder(
@@ -17,10 +18,10 @@ class GestureRecorder(
 ) : OnRootViewsChangedListener {
 
     private val rootViews = ArrayList<WeakReference<View>>()
-    private val rootViewsLock = Any()
+    private val rootViewsLock = AutoClosableReentrantLock()
 
     override fun onRootViewsChanged(root: View, added: Boolean) {
-        synchronized(rootViewsLock) {
+        rootViewsLock.acquire().use {
             if (added) {
                 rootViews.add(WeakReference(root))
                 root.startGestureTracking()
@@ -32,7 +33,7 @@ class GestureRecorder(
     }
 
     fun stop() {
-        synchronized(rootViewsLock) {
+        rootViewsLock.acquire().use {
             rootViews.forEach { it.get()?.stopGestureTracking() }
             rootViews.clear()
         }

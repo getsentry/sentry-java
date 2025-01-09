@@ -19,17 +19,17 @@ import org.jetbrains.annotations.Nullable;
 abstract class DirectoryProcessor {
 
   private static final long ENVELOPE_PROCESSING_DELAY = 100L;
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
   private final @NotNull ILogger logger;
   private final long flushTimeoutMillis;
   private final Queue<String> processedEnvelopes;
 
   DirectoryProcessor(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @NotNull ILogger logger,
       final long flushTimeoutMillis,
       final int maxQueueSize) {
-    this.hub = hub;
+    this.scopes = scopes;
     this.logger = logger;
     this.flushTimeoutMillis = flushTimeoutMillis;
     this.processedEnvelopes =
@@ -86,7 +86,7 @@ abstract class DirectoryProcessor {
         }
 
         // in case there's rate limiting active, skip processing
-        final @Nullable RateLimiter rateLimiter = hub.getRateLimiter();
+        final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
         if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
           logger.log(SentryLevel.INFO, "DirectoryProcessor, rate limiting active.");
           return;

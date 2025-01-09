@@ -12,7 +12,7 @@ import io.sentry.DataCategory.Replay
 import io.sentry.IConnectionStatusProvider.ConnectionStatus
 import io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED
 import io.sentry.IConnectionStatusProvider.IConnectionStatusObserver
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Integration
 import io.sentry.NoOpReplayBreadcrumbConverter
 import io.sentry.ReplayBreadcrumbConverter
@@ -91,7 +91,7 @@ public class ReplayIntegration(
     }
 
     private lateinit var options: SentryOptions
-    private var hub: IHub? = null
+    private var scopes: IScopes? = null
     private var recorder: Recorder? = null
     private var gestureRecorder: GestureRecorder? = null
     private val random by lazy { Random() }
@@ -110,7 +110,7 @@ public class ReplayIntegration(
     private var mainLooperHandler: MainLooperHandler = MainLooperHandler()
     private var gestureRecorderProvider: (() -> GestureRecorder)? = null
 
-    override fun register(hub: IHub, options: SentryOptions) {
+    override fun register(scopes: IScopes, options: SentryOptions) {
         this.options = options
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -125,13 +125,13 @@ public class ReplayIntegration(
             return
         }
 
-        this.hub = hub
+        this.scopes = scopes
         recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, mainLooperHandler, replayExecutor)
         gestureRecorder = gestureRecorderProvider?.invoke() ?: GestureRecorder(options, this)
         isEnabled.set(true)
 
         options.connectionStatusProvider.addConnectionStatusObserver(this)
-        hub.rateLimiter?.addRateLimitObserver(this)
+        scopes.rateLimiter?.addRateLimitObserver(this)
         if (options.sessionReplay.isTrackOrientationChange) {
             try {
                 context.registerComponentCallbacks(this)
@@ -175,9 +175,9 @@ public class ReplayIntegration(
 
         val recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.sessionReplay)
         captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
-            SessionCaptureStrategy(options, hub, dateProvider, replayExecutor, replayCacheProvider)
+            SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor, replayCacheProvider)
         } else {
-            BufferCaptureStrategy(options, hub, dateProvider, random, replayExecutor, replayCacheProvider)
+            BufferCaptureStrategy(options, scopes, dateProvider, random, replayExecutor, replayCacheProvider)
         }
 
         captureStrategy?.start(recorderConfig)
@@ -243,7 +243,7 @@ public class ReplayIntegration(
 
     override fun onScreenshotRecorded(bitmap: Bitmap) {
         var screen: String? = null
-        hub?.configureScope { screen = it.screen?.substringAfterLast('.') }
+        scopes?.configureScope { screen = it.screen?.substringAfterLast('.') }
         captureStrategy?.onScreenshotRecorded(bitmap) { frameTimeStamp ->
             addFrame(bitmap, frameTimeStamp, screen)
             checkCanRecord()
@@ -263,7 +263,7 @@ public class ReplayIntegration(
         }
 
         options.connectionStatusProvider.removeConnectionStatusObserver(this)
-        hub?.rateLimiter?.removeRateLimitObserver(this)
+        scopes?.rateLimiter?.removeRateLimitObserver(this)
         if (options.sessionReplay.isTrackOrientationChange) {
             try {
                 context.unregisterComponentCallbacks(this)
@@ -332,8 +332,8 @@ public class ReplayIntegration(
         if (captureStrategy is SessionCaptureStrategy &&
             (
                 options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
-                    hub?.rateLimiter?.isActiveForCategory(All) == true ||
-                    hub?.rateLimiter?.isActiveForCategory(Replay) == true
+                    scopes?.rateLimiter?.isActiveForCategory(All) == true ||
+                    scopes?.rateLimiter?.isActiveForCategory(Replay) == true
                 )
         ) {
             pause()
@@ -389,7 +389,7 @@ public class ReplayIntegration(
             }
             val breadcrumbs = PersistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List::class.java, Breadcrumb.Deserializer()) as? List<Breadcrumb>
             val segment = CaptureStrategy.createSegment(
-                hub = hub,
+                scopes = scopes,
                 options = options,
                 duration = lastSegment.duration,
                 currentSegmentTimestamp = lastSegment.timestamp,
@@ -408,7 +408,7 @@ public class ReplayIntegration(
 
             if (segment is ReplaySegment.Created) {
                 val hint = HintUtils.createWithTypeCheckHint(PreviousReplayHint())
-                segment.capture(hub, hint)
+                segment.capture(scopes, hint)
             }
             cleanupReplays(unfinishedReplayId = previousReplayIdString) // will be cleaned up after the envelope is assembled
         }

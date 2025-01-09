@@ -2,7 +2,7 @@ package io.sentry.spring.boot.jakarta
 
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -11,11 +11,13 @@ import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
+import io.sentry.mockServerRequestTimeoutMillis
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.apache.hc.client5.http.impl.classic.HttpClients
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Assert.assertNull
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
@@ -27,27 +29,30 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 import org.springframework.web.client.RestClient
+import org.springframework.web.client.toEntity
 import java.time.Duration
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentrySpanRestClientCustomizerTest {
+
     class Fixture {
         val sentryOptions = SentryOptions()
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val restClientBuilder = RestClient.builder()
         var mockServer = MockWebServer()
         val transaction: SentryTracer
-        internal val customizer = SentrySpanRestClientCustomizer(hub)
+        internal val customizer = SentrySpanRestClientCustomizer(scopes)
         val url = mockServer.url("/test/123").toString()
         val scope = Scope(sentryOptions)
 
         init {
-            whenever(hub.options).thenReturn(sentryOptions)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
-            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
+            whenever(scopes.options).thenReturn(sentryOptions)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
+            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), scopes)
         }
 
         fun getSut(
@@ -75,7 +80,7 @@ class SentrySpanRestClientCustomizerTest {
             )
 
             if (isTransactionActive) {
-                whenever(hub.span).thenReturn(transaction)
+                whenever(scopes.span).thenReturn(transaction)
             }
 
             return restClientBuilder.apply {
@@ -104,7 +109,7 @@ class SentrySpanRestClientCustomizerTest {
         assertThat(span.description).isEqualTo("GET ${fixture.url}")
         assertThat(span.status).isEqualTo(SpanStatus.OK)
 
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(recordedRequest.headers["sentry-trace"]!!).startsWith(fixture.transaction.spanContext.traceId.toString())
             .endsWith("-1")
             .doesNotContain(fixture.transaction.spanContext.spanId.toString())
@@ -128,7 +133,7 @@ class SentrySpanRestClientCustomizerTest {
             .retrieve()
             .toEntity(String::class.java)
 
-        val recorderRequest = fixture.mockServer.takeRequest()
+        val recorderRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
 
@@ -147,7 +152,7 @@ class SentrySpanRestClientCustomizerTest {
             .uri(fixture.url)
             .retrieve()
             .toEntity(String::class.java)
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER]).isNull()
     }
 
@@ -159,7 +164,7 @@ class SentrySpanRestClientCustomizerTest {
             .uri(fixture.url)
             .retrieve()
             .toEntity(String::class.java)
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER]).isNotNull()
     }
 
@@ -184,13 +189,19 @@ class SentrySpanRestClientCustomizerTest {
     @Test
     fun `when transaction is active and throws IO exception, creates span with error status around RestClient HTTP call`() {
         try {
-            fixture.getSut(isTransactionActive = true, socketPolicy = SocketPolicy.DISCONNECT_AT_START).build()
+            val sut = fixture.getSut(
+                isTransactionActive = true,
+                socketPolicy = SocketPolicy.DISCONNECT_AT_START
+            ).build()
+            sut
                 .get()
                 .uri(fixture.url)
                 .retrieve()
-        } catch (_: Throwable) {
+                .toEntity(String::class.java)
+        } catch (t: Throwable) {
+            println(t)
         }
-        fixture.mockServer.takeRequest()
+        fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(fixture.transaction.spans).hasSize(1)
         val span = fixture.transaction.spans.first()
         assertThat(span.operation).isEqualTo("http.client")
@@ -227,7 +238,7 @@ class SentrySpanRestClientCustomizerTest {
             .retrieve()
             .toEntity(String::class.java)
 
-        val recorderRequest = fixture.mockServer.takeRequest()
+        val recorderRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
 
@@ -239,6 +250,24 @@ class SentrySpanRestClientCustomizerTest {
     }
 
     @Test
+    fun `does not add sentry-trace header if span origin is ignored`() {
+        fixture.sentryOptions.setIgnoredSpanOrigins(listOf("auto.http.spring_jakarta.restclient"))
+        val sut = fixture.getSut(isTransactionActive = false)
+        val headers = HttpHeaders()
+
+        sut.build()
+            .get()
+            .uri(fixture.url)
+            .httpRequest { it.headers.addAll(headers) }
+            .retrieve()
+            .toEntity(String::class.java)
+
+        val recorderRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+        assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
     fun `when transaction is active adds breadcrumb when http calls succeeds`() {
         fixture.getSut(isTransactionActive = true)
             .build()
@@ -247,7 +276,7 @@ class SentrySpanRestClientCustomizerTest {
             .body("content")
             .retrieve()
             .toEntity(String::class.java)
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])
@@ -269,7 +298,7 @@ class SentrySpanRestClientCustomizerTest {
                 .toEntity(String::class.java)
         } catch (e: Throwable) {
         }
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])
@@ -287,7 +316,7 @@ class SentrySpanRestClientCustomizerTest {
             .body("content")
             .retrieve()
             .toEntity(String::class.java)
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])
@@ -309,7 +338,7 @@ class SentrySpanRestClientCustomizerTest {
                 .toEntity(String::class.java)
         } catch (e: Throwable) {
         }
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(fixture.url, it.data["url"])

@@ -3,15 +3,16 @@ package io.sentry.spring.jakarta.tracing;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.BaggageHeader;
 import io.sentry.CustomSamplingContext;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ITransaction;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
+import io.sentry.util.SpanUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,7 +39,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   private static final String TRACE_ORIGIN = "auto.http.spring_jakarta.webmvc";
 
   private final @NotNull TransactionNameProvider transactionNameProvider;
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
 
   /**
    * Creates filter that resolves transaction name using {@link SpringMvcTransactionNameProvider}.
@@ -49,25 +50,26 @@ public class SentryTracingFilter extends OncePerRequestFilter {
    * jakarta.servlet.Filter}.
    */
   public SentryTracingFilter() {
-    this(HubAdapter.getInstance());
+    this(ScopesAdapter.getInstance());
   }
 
   /**
    * Creates filter that resolves transaction name using transaction name provider given by
    * parameter.
    *
-   * @param hub - the hub
+   * @param scopes - the scopes
    * @param transactionNameProvider - transaction name provider.
    */
   public SentryTracingFilter(
-      final @NotNull IHub hub, final @NotNull TransactionNameProvider transactionNameProvider) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+      final @NotNull IScopes scopes,
+      final @NotNull TransactionNameProvider transactionNameProvider) {
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.transactionNameProvider =
         Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
   }
 
-  public SentryTracingFilter(final @NotNull IHub hub) {
-    this(hub, new SpringMvcTransactionNameProvider());
+  public SentryTracingFilter(final @NotNull IScopes scopes) {
+    this(scopes, new SpringMvcTransactionNameProvider());
   }
 
   @Override
@@ -76,14 +78,14 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final @NotNull HttpServletResponse httpResponse,
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
-    if (hub.isEnabled()) {
+    if (scopes.isEnabled() && !isIgnored()) {
       final @Nullable String sentryTraceHeader =
           httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
       final @Nullable List<String> baggageHeader =
           Collections.list(httpRequest.getHeaders(BaggageHeader.BAGGAGE_HEADER));
       final @Nullable TransactionContext transactionContext =
-          hub.continueTrace(sentryTraceHeader, baggageHeader);
-      if (hub.getOptions().isTracingEnabled() && shouldTraceRequest(httpRequest)) {
+          scopes.continueTrace(sentryTraceHeader, baggageHeader);
+      if (scopes.getOptions().isTracingEnabled() && shouldTraceRequest(httpRequest)) {
         doFilterWithTransaction(httpRequest, httpResponse, filterChain, transactionContext);
       } else {
         filterChain.doFilter(httpRequest, httpResponse);
@@ -91,6 +93,10 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     } else {
       filterChain.doFilter(httpRequest, httpResponse);
     }
+  }
+
+  private boolean isIgnored() {
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
   }
 
   private void doFilterWithTransaction(
@@ -101,7 +107,6 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       throws IOException, ServletException {
     // at this stage we are not able to get real transaction name
     final ITransaction transaction = startTransaction(httpRequest, transactionContext);
-    transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
 
     try {
       filterChain.doFilter(httpRequest, httpResponse);
@@ -130,7 +135,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   }
 
   private boolean shouldTraceRequest(final @NotNull HttpServletRequest request) {
-    return hub.getOptions().isTraceOptionsRequests()
+    return scopes.getOptions().isTraceOptionsRequests()
         || !HttpMethod.OPTIONS.name().equals(request.getMethod());
   }
 
@@ -143,23 +148,20 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     final CustomSamplingContext customSamplingContext = new CustomSamplingContext();
     customSamplingContext.set("request", request);
 
+    final TransactionOptions transactionOptions = new TransactionOptions();
+    transactionOptions.setCustomSamplingContext(customSamplingContext);
+    transactionOptions.setBindToScope(true);
+    transactionOptions.setOrigin(TRACE_ORIGIN);
+
     if (transactionContext != null) {
       transactionContext.setName(name);
       transactionContext.setTransactionNameSource(TransactionNameSource.URL);
       transactionContext.setOperation("http.server");
 
-      final TransactionOptions transactionOptions = new TransactionOptions();
-      transactionOptions.setCustomSamplingContext(customSamplingContext);
-      transactionOptions.setBindToScope(true);
-
-      return hub.startTransaction(transactionContext, transactionOptions);
+      return scopes.startTransaction(transactionContext, transactionOptions);
     }
 
-    final TransactionOptions transactionOptions = new TransactionOptions();
-    transactionOptions.setCustomSamplingContext(customSamplingContext);
-    transactionOptions.setBindToScope(true);
-
-    return hub.startTransaction(
+    return scopes.startTransaction(
         new TransactionContext(name, TransactionNameSource.URL, "http.server"), transactionOptions);
   }
 }

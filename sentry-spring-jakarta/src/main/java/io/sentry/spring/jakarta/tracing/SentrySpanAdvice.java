@@ -1,9 +1,10 @@
 package io.sentry.spring.jakarta.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
+import io.sentry.ScopesAdapter;
+import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
 import java.lang.reflect.Method;
@@ -22,20 +23,20 @@ import org.springframework.util.StringUtils;
 @Open
 public class SentrySpanAdvice implements MethodInterceptor {
   private static final String TRACE_ORIGIN = "auto.function.spring_jakarta.advice";
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
 
   public SentrySpanAdvice() {
-    this(HubAdapter.getInstance());
+    this(ScopesAdapter.getInstance());
   }
 
-  public SentrySpanAdvice(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentrySpanAdvice(final @NotNull IScopes scopes) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
   }
 
   @SuppressWarnings("deprecation")
   @Override
   public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
-    final ISpan activeSpan = hub.getSpan();
+    final ISpan activeSpan = scopes.getSpan();
 
     if (activeSpan == null || activeSpan.isNoOp()) {
       // there is no active transaction, we do not start new span
@@ -51,8 +52,9 @@ public class SentrySpanAdvice implements MethodInterceptor {
                 mostSpecificMethod.getDeclaringClass(), SentrySpan.class);
       }
       final String operation = resolveSpanOperation(targetClass, mostSpecificMethod, sentrySpan);
-      final ISpan span = activeSpan.startChild(operation);
-      span.getSpanContext().setOrigin(TRACE_ORIGIN);
+      SpanOptions spanOptions = new SpanOptions();
+      spanOptions.setOrigin(TRACE_ORIGIN);
+      final ISpan span = activeSpan.startChild(operation, null, spanOptions);
       if (sentrySpan != null && !StringUtils.isEmpty(sentrySpan.description())) {
         span.setDescription(sentrySpan.description());
       }

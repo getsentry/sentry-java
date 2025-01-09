@@ -5,6 +5,7 @@ import io.sentry.DateUtils
 import io.sentry.JsonSerializer
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.ndk.INativeScope
 import io.sentry.protocol.User
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService

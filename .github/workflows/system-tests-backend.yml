@@ -20,10 +20,26 @@ jobs:
       fail-fast: false
       matrix:
         sample: [ "sentry-samples-spring-boot-jakarta" ]
+        agent: [ "0" ]
+        agent-auto-init: [ "true" ]
         include:
           - sample: "sentry-samples-spring-boot"
+          - sample: "sentry-samples-spring-boot-opentelemetry-noagent"
+          - sample: "sentry-samples-spring-boot-opentelemetry"
+            agent: "1"
+            agent-auto-init: "true"
+          - sample: "sentry-samples-spring-boot-opentelemetry"
+            agent: "1"
+            agent-auto-init: "false"
           - sample: "sentry-samples-spring-boot-webflux-jakarta"
           - sample: "sentry-samples-spring-boot-webflux"
+          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry-noagent"
+          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
+            agent: "1"
+            agent-auto-init: "true"
+          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
+            agent: "1"
+            agent-auto-init: "false"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,7 +69,6 @@ jobs:
             -e '/.*"sentry-android-core",/d' \
             -e '/.*"sentry-android-fragment",/d' \
             -e '/.*"sentry-android-navigation",/d' \
-            -e '/.*"sentry-android-okhttp",/d' \
             -e '/.*"sentry-android-sqlite",/d' \
             -e '/.*"sentry-android-timber",/d' \
             -e '/.*"sentry-android-integration-tests:sentry-uitest-android-benchmark",/d' \
@@ -78,20 +93,19 @@ jobs:
         run: |
           ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar
 
+      - name: Build agent jar
+        run: |
+          ./gradlew :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
+
       - name: Start server and run integration test for sentry-cli commands
         run: |
-          test/system-test-sentry-server-start.sh \
-            > sentry-mock-server.txt 2>&1 & \
-          test/system-test-spring-server-start.sh "${{ matrix.sample }}" \
-            > spring-server.txt 2>&1 & \
-          test/wait-for-spring.sh && \
-          ./gradlew :sentry-samples:${{ matrix.sample }}:systemTest
+          test/system-test-run.sh "${{ matrix.sample }}" "${{ matrix.agent }}" "${{ matrix.agent-auto-init }}"
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.sample }}-system-test
+          name: test-results-${{ matrix.sample }}-${{ matrix.agent }}-${{ matrix.agent-auto-init }}-system-test
           path: |
             **/build/reports/*
             sentry-mock-server.txt
