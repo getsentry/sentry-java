@@ -208,7 +208,7 @@ class ReplaySmokeTest {
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
         // first init + close
-        val falseHub = mock<IHub> {
+        val falseHub = mock<IScopes> {
             doAnswer {
                 (it.arguments[0] as ScopeCallback).run(fixture.scope)
             }.whenever(it).configureScope(any())
@@ -220,11 +220,11 @@ class ReplaySmokeTest {
 
         // second init
         val captured = AtomicBoolean(false)
-        whenever(fixture.hub.captureReplay(any(), anyOrNull())).then {
+        whenever(fixture.scopes.captureReplay(any(), anyOrNull())).then {
             captured.set(true)
         }
         val replay: ReplayIntegration = fixture.getSut(context)
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
         replay.start()
 
         val controller = buildActivity(ExampleActivity::class.java, null).setup()

@@ -388,7 +388,7 @@ class SessionCaptureStrategyTest {
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) {}
 
-        verify(fixture.hub).captureReplay(
+        verify(fixture.scopes).captureReplay(
             argThat { event ->
                 event is SentryReplayEvent && event.segmentId == 0
             },
@@ -431,7 +431,7 @@ class SessionCaptureStrategyTest {
         strategy.start(fixture.recorderConfig)
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) {}
-        verify(fixture.hub).captureReplay(
+        verify(fixture.scopes).captureReplay(
             argThat { event ->
                 event is SentryReplayEvent && event.segmentId == 0
             },
@@ -439,7 +439,7 @@ class SessionCaptureStrategyTest {
         )
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) {}
-        verify(fixture.hub).captureReplay(
+        verify(fixture.scopes).captureReplay(
             argThat { event ->
                 event is SentryReplayEvent && event.segmentId == 1
             },
