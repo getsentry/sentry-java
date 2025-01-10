@@ -3,6 +3,7 @@ package io.sentry.instrumentation.file;
 import io.sentry.HubAdapter;
 import io.sentry.IHub;
 import io.sentry.ISpan;
+import io.sentry.SentryOptions;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
@@ -131,32 +132,52 @@ public final class SentryFileOutputStream extends FileOutputStream {
     public static FileOutputStream create(
         final @NotNull FileOutputStream delegate, final @Nullable String name)
         throws FileNotFoundException {
-      return new SentryFileOutputStream(
-          init(name != null ? new File(name) : null, false, delegate, HubAdapter.getInstance()));
+      final @NotNull IHub hub = HubAdapter.getInstance();
+      return isTracingEnabled(hub)
+          ? new SentryFileOutputStream(
+              init(name != null ? new File(name) : null, false, delegate, hub))
+          : delegate;
     }
 
     public static FileOutputStream create(
         final @NotNull FileOutputStream delegate, final @Nullable String name, final boolean append)
         throws FileNotFoundException {
-      return new SentryFileOutputStream(
-          init(name != null ? new File(name) : null, append, delegate, HubAdapter.getInstance()));
+      final @NotNull IHub hub = HubAdapter.getInstance();
+      return isTracingEnabled(hub)
+          ? new SentryFileOutputStream(
+              init(name != null ? new File(name) : null, append, delegate, hub))
+          : delegate;
     }
 
     public static FileOutputStream create(
         final @NotNull FileOutputStream delegate, final @Nullable File file)
         throws FileNotFoundException {
-      return new SentryFileOutputStream(init(file, false, delegate, HubAdapter.getInstance()));
+      final @NotNull IHub hub = HubAdapter.getInstance();
+      return isTracingEnabled(hub)
+          ? new SentryFileOutputStream(init(file, false, delegate, hub))
+          : delegate;
     }
 
     public static FileOutputStream create(
         final @NotNull FileOutputStream delegate, final @Nullable File file, final boolean append)
         throws FileNotFoundException {
-      return new SentryFileOutputStream(init(file, append, delegate, HubAdapter.getInstance()));
+      final @NotNull IHub hub = HubAdapter.getInstance();
+      return isTracingEnabled(hub)
+          ? new SentryFileOutputStream(init(file, append, delegate, hub))
+          : delegate;
     }
 
     public static FileOutputStream create(
         final @NotNull FileOutputStream delegate, final @NotNull FileDescriptor fdObj) {
-      return new SentryFileOutputStream(init(fdObj, delegate, HubAdapter.getInstance()), fdObj);
+      final @NotNull IHub hub = HubAdapter.getInstance();
+      return isTracingEnabled(hub)
+          ? new SentryFileOutputStream(init(fdObj, delegate, hub), fdObj)
+          : delegate;
+    }
+
+    private static boolean isTracingEnabled(final @NotNull IHub hub) {
+      final @NotNull SentryOptions options = hub.getOptions();
+      return options.isTracingEnabled();
     }
   }
 }
