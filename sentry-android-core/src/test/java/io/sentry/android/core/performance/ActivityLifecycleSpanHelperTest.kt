@@ -17,6 +17,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.util.Date
 import java.util.concurrent.TimeUnit
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -47,6 +48,11 @@ class ActivityLifecycleSpanHelperTest {
         }
     }
     private val fixture = Fixture()
+
+    @BeforeTest
+    fun setup() {
+        AppStartMetrics.getInstance().clear()
+    }
 
     @Test
     fun `createAndStopOnCreateSpan creates and finishes onCreate span`() {
