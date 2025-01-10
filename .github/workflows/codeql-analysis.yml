@@ -41,7 +41,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@df409f7d9260372bd5f19e5b04e83cb3c43714ae # pin@v2
         with:
-          languages: ${{ matrix.language }}
+          languages: 'java'
 
       - name: Build Java
         run: |
