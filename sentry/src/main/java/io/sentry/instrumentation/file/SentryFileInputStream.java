@@ -1,6 +1,5 @@
 package io.sentry.instrumentation.file;
 
-import io.sentry.IScope;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ScopesAdapter;
