@@ -1,7 +1,7 @@
 package io.sentry.android.core
 
-import io.sentry.IHub
 import io.sentry.ILogger
+import io.sentry.IScopes
 import io.sentry.SentryLevel
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 class NdkIntegrationTest {
 
     private class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val logger = mock<ILogger>()
 
         fun getSut(clazz: Class<*>? = SentryNdk::class.java): NdkIntegration {
@@ -31,7 +31,7 @@ class NdkIntegrationTest {
 
         val options = getOptions()
 
-        integration.register(fixture.hub, options)
+        integration.register(fixture.scopes, options)
 
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
         assertTrue(options.isEnableNdk)
@@ -44,7 +44,7 @@ class NdkIntegrationTest {
 
         val options = getOptions()
 
-        integration.register(fixture.hub, options)
+        integration.register(fixture.scopes, options)
 
         assertTrue(options.isEnableNdk)
         assertTrue(options.isEnableScopeSync)
@@ -62,7 +62,7 @@ class NdkIntegrationTest {
 
         val options = getOptions(enableNdk = false)
 
-        integration.register(fixture.hub, options)
+        integration.register(fixture.scopes, options)
 
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
 
@@ -76,7 +76,7 @@ class NdkIntegrationTest {
 
         val options = getOptions()
 
-        integration.register(fixture.hub, options)
+        integration.register(fixture.scopes, options)
 
         verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
 
@@ -90,7 +90,7 @@ class NdkIntegrationTest {
 
         val options = getOptions()
 
-        integration.register(fixture.hub, options)
+        integration.register(fixture.scopes, options)
 
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), any())
 
@@ -104,7 +104,7 @@ class NdkIntegrationTest {
 
         val options = getOptions()
 
-        integration.register(fixture.hub, options)
+        integration.register(fixture.scopes, options)
 
         assertTrue(options.isEnableNdk)
         assertTrue(options.isEnableScopeSync)
@@ -122,7 +122,7 @@ class NdkIntegrationTest {
 
         val options = getOptions()
 
-        integration.register(fixture.hub, options)
+        integration.register(fixture.scopes, options)
 
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any<String>(), any())
 
@@ -136,7 +136,7 @@ class NdkIntegrationTest {
 
         val options = getOptions(cacheDir = null)
 
-        integration.register(fixture.hub, options)
+        integration.register(fixture.scopes, options)
 
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any())
 
@@ -150,7 +150,7 @@ class NdkIntegrationTest {
 
         val options = getOptions(cacheDir = "")
 
-        integration.register(fixture.hub, options)
+        integration.register(fixture.scopes, options)
 
         verify(fixture.logger).log(eq(SentryLevel.ERROR), any())
 

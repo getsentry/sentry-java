@@ -22,9 +22,21 @@ application. Please see the module [README](sentry-opentelemetry-agent/README.md
 This contains customizations to the OpenTelemetry Java Agent such as registering the
 `SentrySpanProcessor` and `SentryPropagator` as well as providing default properties that
 enable the `sentry` propagator and disable exporters so our agent doesn't trigger lots of log 
-warnings due to OTLP server not being there.
+warnings due to OTLP server not being there. This can also be used without the agent.
+
+### `sentry-opentelemetry-bootstrap`
+
+Classes that are loaded into the bootstrap classloader
+(represented as `null` when invoking X.class.classLoader)
+These are shared between the agent and the application and include things like storage,
+utils, factory, tokens etc.
+
+If you want to use Sentry with OpenTelemetry without the agent,
+you also need this module as a dependency.
 
 ### `sentry-opentelemetry-core`
 
 Contains `SentrySpanProcessor` and `SentryPropagator` which are used by our Java Agent but can also
-be used when manually instrumenting using OpenTelemetry.
+be used when manually instrumenting using OpenTelemetry. If you want to use OpenTelemetry without
+the agent but still want some configuration convenience, you should rather use the
+`sentry-opentelemetry-agentcustomization` module.

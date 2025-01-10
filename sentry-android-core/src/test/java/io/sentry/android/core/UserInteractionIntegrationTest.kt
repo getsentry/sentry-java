@@ -7,7 +7,7 @@ import android.content.res.Resources
 import android.util.DisplayMetrics
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.Hub
+import io.sentry.Scopes
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback
 import io.sentry.android.core.internal.gestures.SentryWindowCallback
 import org.junit.runner.RunWith
@@ -26,7 +26,7 @@ class UserInteractionIntegrationTest {
 
     private class Fixture {
         val application = mock<Application>()
-        val hub = mock<Hub>()
+        val scopes = mock<Scopes>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
@@ -39,7 +39,7 @@ class UserInteractionIntegrationTest {
             isAndroidXAvailable: Boolean = true
         ): UserInteractionIntegration {
             whenever(loadClass.isClassAvailable(any(), anyOrNull<SentryAndroidOptions>())).thenReturn(isAndroidXAvailable)
-            whenever(hub.options).thenReturn(options)
+            whenever(scopes.options).thenReturn(options)
             whenever(window.callback).thenReturn(callback)
             whenever(activity.window).thenReturn(window)
 
@@ -65,7 +65,7 @@ class UserInteractionIntegrationTest {
     @Test
     fun `when user interaction breadcrumb is enabled registers a callback`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         verify(fixture.application).registerActivityLifecycleCallbacks(any())
     }
@@ -75,7 +75,7 @@ class UserInteractionIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.isEnableUserInteractionBreadcrumbs = false
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
     }
@@ -83,7 +83,7 @@ class UserInteractionIntegrationTest {
     @Test
     fun `when UserInteractionIntegration is closed unregisters the callback`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         sut.close()
 
@@ -94,7 +94,7 @@ class UserInteractionIntegrationTest {
     fun `when androidx is unavailable doesn't register a callback`() {
         val sut = fixture.getSut(isAndroidXAvailable = false)
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
     }
@@ -102,7 +102,7 @@ class UserInteractionIntegrationTest {
     @Test
     fun `registers window callback on activity resumed`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         sut.onActivityResumed(fixture.activity)
 
@@ -114,7 +114,7 @@ class UserInteractionIntegrationTest {
     @Test
     fun `when no original callback delegates to NoOpWindowCallback`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         sut.onActivityResumed(fixture.activity)
 

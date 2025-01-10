@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryLevel
 import io.sentry.test.ImmediateExecutorService
 import org.junit.runner.RunWith
@@ -40,8 +40,8 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val options = SentryAndroidOptions().apply {
             executorService = ImmediateExecutorService()
         }
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         verify(fixture.context).registerComponentCallbacks(any())
     }
 
@@ -51,10 +51,10 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val options = SentryAndroidOptions().apply {
             executorService = ImmediateExecutorService()
         }
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         whenever(fixture.context.registerComponentCallbacks(any())).thenThrow(NullPointerException())
-        sut.register(hub, options)
+        sut.register(scopes, options)
         assertFalse(options.isEnableAppComponentBreadcrumbs)
     }
 
@@ -65,8 +65,8 @@ class AppComponentsBreadcrumbsIntegrationTest {
             isEnableAppComponentBreadcrumbs = false
             executorService = ImmediateExecutorService()
         }
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         verify(fixture.context, never()).registerComponentCallbacks(any())
     }
 
@@ -76,8 +76,8 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val options = SentryAndroidOptions().apply {
             executorService = ImmediateExecutorService()
         }
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         sut.close()
         verify(fixture.context).unregisterComponentCallbacks(any())
     }
@@ -88,10 +88,10 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val options = SentryAndroidOptions().apply {
             executorService = ImmediateExecutorService()
         }
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         whenever(fixture.context.registerComponentCallbacks(any())).thenThrow(NullPointerException())
         whenever(fixture.context.unregisterComponentCallbacks(any())).thenThrow(NullPointerException())
-        sut.register(hub, options)
+        sut.register(scopes, options)
         sut.close()
     }
 
@@ -101,10 +101,10 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val options = SentryAndroidOptions().apply {
             executorService = ImmediateExecutorService()
         }
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         sut.onLowMemory()
-        verify(hub).addBreadcrumb(
+        verify(scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("device.event", it.category)
                 assertEquals("system", it.type)
@@ -119,10 +119,10 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val options = SentryAndroidOptions().apply {
             executorService = ImmediateExecutorService()
         }
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_BACKGROUND)
-        verify(hub).addBreadcrumb(
+        verify(scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("device.event", it.category)
                 assertEquals("system", it.type)
@@ -137,10 +137,10 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val options = SentryAndroidOptions().apply {
             executorService = ImmediateExecutorService()
         }
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
-        verify(hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(scopes, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
@@ -149,10 +149,10 @@ class AppComponentsBreadcrumbsIntegrationTest {
         val options = SentryAndroidOptions().apply {
             executorService = ImmediateExecutorService()
         }
-        val hub = mock<IHub>()
-        sut.register(hub, options)
+        val scopes = mock<IScopes>()
+        sut.register(scopes, options)
         sut.onConfigurationChanged(mock())
-        verify(hub).addBreadcrumb(
+        verify(scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("device.orientation", it.category)
                 assertEquals("navigation", it.type)

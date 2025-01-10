@@ -1,7 +1,8 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.HubAdapter;
+import io.sentry.InitPriority;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
@@ -46,6 +47,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     builder.addPropertyValue("enableExternalConfiguration", true);
     builder.addPropertyValue("sentryClientName", BuildConfig.SENTRY_SPRING_SDK_NAME);
     builder.addPropertyValue("sdkVersion", createSdkVersion());
+    builder.addPropertyValue("initPriority", InitPriority.LOW);
     addPackageAndIntegrationInfo();
     if (annotationAttributes.containsKey("sendDefaultPii")) {
       builder.addPropertyValue("sendDefaultPii", annotationAttributes.getBoolean("sendDefaultPii"));
@@ -60,7 +62,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
 
   private void registerSentryHubBean(final @NotNull BeanDefinitionRegistry registry) {
     final BeanDefinitionBuilder builder =
-        BeanDefinitionBuilder.genericBeanDefinition(HubAdapter.class);
+        BeanDefinitionBuilder.genericBeanDefinition(ScopesAdapter.class);
     builder.setInitMethodName("getInstance");
 
     registry.registerBeanDefinition("sentryHub", builder.getBeanDefinition());

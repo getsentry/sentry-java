@@ -5,7 +5,6 @@ import org.mockito.kotlin.mock
 import java.io.StringReader
 import java.io.StringWriter
 import java.lang.Exception
-import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -23,7 +22,7 @@ class SessionAdapterTest {
             null,
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
@@ -47,7 +46,7 @@ class SessionAdapterTest {
             null,
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
@@ -71,7 +70,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             null,
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
@@ -95,7 +94,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             null,
             123456.toLong(),
             6000.toDouble(),
@@ -119,7 +118,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             null,
             6000.toDouble(),
@@ -143,7 +142,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             null,
@@ -167,7 +166,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
@@ -191,7 +190,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
@@ -215,7 +214,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
@@ -239,7 +238,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
@@ -263,7 +262,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
@@ -287,7 +286,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
@@ -330,7 +329,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
@@ -373,7 +372,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
@@ -512,7 +511,7 @@ class SessionAdapterTest {
             null,
             2,
             "123",
-            UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"),
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),
@@ -571,7 +570,7 @@ class SessionAdapterTest {
     @Test
     fun `missing abnormal_mechanism does not serialize `() {
         val json = "{\n" +
-            "  \"sid\": \"not a uuid\",\n" +
+            "  \"sid\": \"c81d4e2e-bcf2-11e6-869b-7df92533d2db\",\n" +
             "  \"did\": \"123\",\n" +
             "  \"init\": true,\n" +
             "  \"status\": \"ok\",\n" +
@@ -595,7 +594,7 @@ class SessionAdapterTest {
             DateUtils.getDateTime("2020-02-07T14:16:00.001Z"),
             2,
             "123",
-            null,
+            "c81d4e2e-bcf2-11e6-869b-7df92533d2db",
             true,
             123456.toLong(),
             6000.toDouble(),

@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.uitest.android.benchmark"
-        minSdk = Config.Android.minSdkVersionNdk
+        minSdk = Config.Android.minSdkVersion
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 1
         versionName = "1.0.0"
@@ -99,6 +99,7 @@ dependencies {
     errorprone(Config.CompileOnly.errorprone)
     errorprone(Config.CompileOnly.errorProneNullAway)
 
+    androidTestImplementation(projects.sentryTestSupport)
     androidTestImplementation(Config.TestLibs.kotlinTestJunit)
     androidTestImplementation(Config.TestLibs.espressoCore)
     androidTestImplementation(Config.TestLibs.androidxTestCoreKtx)

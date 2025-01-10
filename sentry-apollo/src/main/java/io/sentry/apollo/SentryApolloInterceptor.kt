@@ -15,9 +15,9 @@ import com.apollographql.apollo.request.RequestHeaders
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.HubAdapter
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ISpan
+import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SpanDataConvention
@@ -25,6 +25,7 @@ import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
+import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import java.util.Locale
 import java.util.concurrent.Executor
@@ -32,12 +33,12 @@ import java.util.concurrent.Executor
 private const val TRACE_ORIGIN = "auto.graphql.apollo"
 
 class SentryApolloInterceptor(
-    private val hub: IHub = HubAdapter.getInstance(),
+    private val scopes: IScopes = ScopesAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null
 ) : ApolloInterceptor {
 
-    constructor(hub: IHub) : this(hub, null)
-    constructor(beforeSpan: BeforeSpanCallback) : this(HubAdapter.getInstance(), beforeSpan)
+    constructor(scopes: IScopes) : this(scopes, null)
+    constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
 
     init {
         addIntegrationToSdkVersion("Apollo")
@@ -45,7 +46,7 @@ class SentryApolloInterceptor(
     }
 
     override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {
-        val activeSpan = if (io.sentry.util.Platform.isAndroid()) hub.transaction else hub.span
+        val activeSpan = if (io.sentry.util.Platform.isAndroid()) scopes.transaction else scopes.span
         if (activeSpan == null) {
             val headers = addTracingHeaders(request, null)
             val modifiedRequest = request.toBuilder().requestHeaders(headers).build()
@@ -115,10 +116,10 @@ class SentryApolloInterceptor(
     private fun addTracingHeaders(request: InterceptorRequest, span: ISpan?): RequestHeaders {
         val requestHeaderBuilder = request.requestHeaders.toBuilder()
 
-        if (hub.options.isTraceSampling) {
+        if (scopes.options.isTraceSampling && !isIgnored()) {
             // we have no access to URI, no way to verify tracing origins
             TracingUtils.trace(
-                hub,
+                scopes,
                 listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)),
                 span
             )?.let { tracingHeaders ->
@@ -133,6 +134,10 @@ class SentryApolloInterceptor(
         }
 
         return requestHeaderBuilder.build()
+    }
+
+    private fun isIgnored(): Boolean {
+        return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
     }
 
     private fun startChild(request: InterceptorRequest, activeSpan: ISpan): ISpan {
@@ -154,7 +159,7 @@ class SentryApolloInterceptor(
             try {
                 newSpan = beforeSpan.execute(span, request, response)
             } catch (e: Exception) {
-                hub.options.logger.log(SentryLevel.ERROR, "An error occurred while executing beforeSpan on ApolloInterceptor", e)
+                scopes.options.logger.log(SentryLevel.ERROR, "An error occurred while executing beforeSpan on ApolloInterceptor", e)
             }
         }
         if (newSpan == null) {
@@ -182,7 +187,7 @@ class SentryApolloInterceptor(
                     set(APOLLO_REQUEST, httpRequest)
                     set(APOLLO_RESPONSE, httpResponse)
                 }
-                hub.addBreadcrumb(breadcrumb, hint)
+                scopes.addBreadcrumb(breadcrumb, hint)
             }
         }
     }

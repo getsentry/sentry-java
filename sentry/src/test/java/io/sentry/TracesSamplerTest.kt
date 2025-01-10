@@ -16,7 +16,6 @@ class TracesSamplerTest {
     class Fixture {
         internal fun getSut(
             randomResult: Double? = null,
-            enableTracing: Boolean? = null,
             tracesSampleRate: Double? = null,
             profilesSampleRate: Double? = null,
             tracesSamplerCallback: SentryOptions.TracesSamplerCallback? = null,
@@ -28,9 +27,6 @@ class TracesSamplerTest {
                 whenever(random.nextDouble()).thenReturn(randomResult)
             }
             val options = SentryOptions()
-            if (enableTracing != null) {
-                options.enableTracing = enableTracing
-            }
             if (tracesSampleRate != null) {
                 options.tracesSampleRate = tracesSampleRate
             }
@@ -52,14 +48,6 @@ class TracesSamplerTest {
     }
 
     private val fixture = Fixture()
-
-    @Test
-    fun `when no tracesSampleRate is set, uses default rate`() {
-        val sampler = fixture.getSut(randomResult = 0.9, enableTracing = true)
-        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null))
-        assertTrue(samplingDecision.sampled)
-        assertEquals(1.0, samplingDecision.sampleRate)
-    }
 
     @Test
     fun `when tracesSampleRate is set and random returns greater number returns false`() {

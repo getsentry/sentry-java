@@ -6,11 +6,13 @@ import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 import android.content.Context;
 import android.telephony.TelephonyManager;
 import io.sentry.Breadcrumb;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.Permissions;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -25,7 +27,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   @TestOnly @Nullable PhoneStateChangeListener listener;
   private @Nullable TelephonyManager telephonyManager;
   private boolean isClosed = false;
-  private final @NotNull Object startLock = new Object();
+  private final @NotNull AutoClosableReentrantLock startLock = new AutoClosableReentrantLock();
 
   public PhoneStateBreadcrumbsIntegration(final @NotNull Context context) {
     this.context =
@@ -33,8 +35,8 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(hub, "Hub is required");
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(scopes, "Scopes are required");
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -54,9 +56,9 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
             .getExecutorService()
             .submit(
                 () -> {
-                  synchronized (startLock) {
+                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
                     if (!isClosed) {
-                      startTelephonyListener(hub, options);
+                      startTelephonyListener(scopes, options);
                     }
                   }
                 });
@@ -73,11 +75,11 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
 
   @SuppressWarnings("deprecation")
   private void startTelephonyListener(
-      final @NotNull IHub hub, final @NotNull SentryOptions options) {
+      final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
     if (telephonyManager != null) {
       try {
-        listener = new PhoneStateChangeListener(hub);
+        listener = new PhoneStateChangeListener(scopes);
         telephonyManager.listen(listener, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
 
         options.getLogger().log(SentryLevel.DEBUG, "PhoneStateBreadcrumbsIntegration installed.");
@@ -95,7 +97,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   @SuppressWarnings("deprecation")
   @Override
   public void close() throws IOException {
-    synchronized (startLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
       isClosed = true;
     }
     if (telephonyManager != null && listener != null) {
@@ -111,10 +113,10 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
   @SuppressWarnings("deprecation")
   static final class PhoneStateChangeListener extends android.telephony.PhoneStateListener {
 
-    private final @NotNull IHub hub;
+    private final @NotNull IScopes scopes;
 
-    PhoneStateChangeListener(final @NotNull IHub hub) {
-      this.hub = hub;
+    PhoneStateChangeListener(final @NotNull IScopes scopes) {
+      this.scopes = scopes;
     }
 
     @SuppressWarnings("deprecation")
@@ -129,7 +131,7 @@ public final class PhoneStateBreadcrumbsIntegration implements Integration, Clos
         breadcrumb.setData("action", "CALL_STATE_RINGING");
         breadcrumb.setMessage("Device ringing");
         breadcrumb.setLevel(SentryLevel.INFO);
-        hub.addBreadcrumb(breadcrumb);
+        scopes.addBreadcrumb(breadcrumb);
       }
     }
   }

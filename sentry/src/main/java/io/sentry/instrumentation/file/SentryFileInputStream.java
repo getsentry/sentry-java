@@ -1,8 +1,9 @@
 package io.sentry.instrumentation.file;
 
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScope;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryOptions;
 import java.io.File;
 import java.io.FileDescriptor;
@@ -26,24 +27,24 @@ public final class SentryFileInputStream extends FileInputStream {
   private final @NotNull FileIOSpanManager spanManager;
 
   public SentryFileInputStream(final @Nullable String name) throws FileNotFoundException {
-    this(name != null ? new File(name) : null, HubAdapter.getInstance());
+    this(name != null ? new File(name) : null, ScopesAdapter.getInstance());
   }
 
   public SentryFileInputStream(final @Nullable File file) throws FileNotFoundException {
-    this(file, HubAdapter.getInstance());
+    this(file, ScopesAdapter.getInstance());
   }
 
   public SentryFileInputStream(final @NotNull FileDescriptor fdObj) {
-    this(fdObj, HubAdapter.getInstance());
+    this(fdObj, ScopesAdapter.getInstance());
   }
 
-  SentryFileInputStream(final @Nullable File file, final @NotNull IHub hub)
+  SentryFileInputStream(final @Nullable File file, final @NotNull IScopes scopes)
       throws FileNotFoundException {
-    this(init(file, null, hub));
+    this(init(file, null, scopes));
   }
 
-  SentryFileInputStream(final @NotNull FileDescriptor fdObj, final @NotNull IHub hub) {
-    this(init(fdObj, null, hub), fdObj);
+  SentryFileInputStream(final @NotNull FileDescriptor fdObj, final @NotNull IScopes scopes) {
+    this(init(fdObj, null, scopes), fdObj);
   }
 
   private SentryFileInputStream(
@@ -61,24 +62,24 @@ public final class SentryFileInputStream extends FileInputStream {
   }
 
   private static FileInputStreamInitData init(
-      final @Nullable File file, @Nullable FileInputStream delegate, final @NotNull IHub hub)
+      final @Nullable File file, @Nullable FileInputStream delegate, final @NotNull IScopes scopes)
       throws FileNotFoundException {
-    final ISpan span = FileIOSpanManager.startSpan(hub, "file.read");
+    final ISpan span = FileIOSpanManager.startSpan(scopes, "file.read");
     if (delegate == null) {
       delegate = new FileInputStream(file);
     }
-    return new FileInputStreamInitData(file, span, delegate, hub.getOptions());
+    return new FileInputStreamInitData(file, span, delegate, scopes.getOptions());
   }
 
   private static FileInputStreamInitData init(
       final @NotNull FileDescriptor fd,
       @Nullable FileInputStream delegate,
-      final @NotNull IHub hub) {
-    final ISpan span = FileIOSpanManager.startSpan(hub, "file.read");
+      final @NotNull IScopes scopes) {
+    final ISpan span = FileIOSpanManager.startSpan(scopes, "file.read");
     if (delegate == null) {
       delegate = new FileInputStream(fd);
     }
-    return new FileInputStreamInitData(null, span, delegate, hub.getOptions());
+    return new FileInputStreamInitData(null, span, delegate, scopes.getOptions());
   }
 
   @Override
@@ -128,39 +129,41 @@ public final class SentryFileInputStream extends FileInputStream {
     public static FileInputStream create(
         final @NotNull FileInputStream delegate, final @Nullable String name)
         throws FileNotFoundException {
-      final @NotNull IHub hub = HubAdapter.getInstance();
-      return isTracingEnabled(hub)
-          ? new SentryFileInputStream(init(name != null ? new File(name) : null, delegate, hub))
+      final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+      return isTracingEnabled(scopes)
+          ? new SentryFileInputStream(init(name != null ? new File(name) : null, delegate, scopes))
           : delegate;
     }
 
     public static FileInputStream create(
         final @NotNull FileInputStream delegate, final @Nullable File file)
         throws FileNotFoundException {
-      final @NotNull IHub hub = HubAdapter.getInstance();
-      return isTracingEnabled(hub)
-          ? new SentryFileInputStream(init(file, delegate, hub))
+      final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+      return isTracingEnabled(scopes)
+          ? new SentryFileInputStream(init(file, delegate, scopes))
           : delegate;
     }
 
     public static FileInputStream create(
         final @NotNull FileInputStream delegate, final @NotNull FileDescriptor descriptor) {
-      final @NotNull IHub hub = HubAdapter.getInstance();
-      return isTracingEnabled(hub)
-          ? new SentryFileInputStream(init(descriptor, delegate, hub), descriptor)
+      final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+      return isTracingEnabled(scopes)
+          ? new SentryFileInputStream(init(descriptor, delegate, scopes), descriptor)
           : delegate;
     }
 
     static FileInputStream create(
-        final @NotNull FileInputStream delegate, final @Nullable File file, final @NotNull IHub hub)
+        final @NotNull FileInputStream delegate,
+        final @Nullable File file,
+        final @NotNull IScopes scopes)
         throws FileNotFoundException {
-      return isTracingEnabled(hub)
-          ? new SentryFileInputStream(init(file, delegate, hub))
+      return isTracingEnabled(scopes)
+          ? new SentryFileInputStream(init(file, delegate, scopes))
           : delegate;
     }
 
-    private static boolean isTracingEnabled(final @NotNull IHub hub) {
-      final @NotNull SentryOptions options = hub.getOptions();
+    private static boolean isTracingEnabled(final @NotNull IScopes scopes) {
+      final @NotNull SentryOptions options = scopes.getOptions();
       return options.isTracingEnabled();
     }
   }

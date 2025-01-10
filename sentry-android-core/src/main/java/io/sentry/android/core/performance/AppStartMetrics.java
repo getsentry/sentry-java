@@ -10,12 +10,14 @@ import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
 import io.sentry.SentryDate;
 import io.sentry.SentryNanotimeDate;
 import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +45,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private static long CLASS_LOADED_UPTIME_MS = SystemClock.uptimeMillis();
 
   private static volatile @Nullable AppStartMetrics instance;
+  public static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
 
   private @NotNull AppStartType appStartType = AppStartType.UNKNOWN;
   private boolean appLaunchedInForeground = false;
@@ -60,9 +64,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private boolean shouldSendStartMeasurements = true;
 
   public static @NotNull AppStartMetrics getInstance() {
-
     if (instance == null) {
-      synchronized (AppStartMetrics.class) {
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (instance == null) {
           instance = new AppStartMetrics();
         }

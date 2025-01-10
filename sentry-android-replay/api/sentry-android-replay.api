@@ -76,7 +76,7 @@ public final class io/sentry/android/replay/ReplayIntegration : android/content/
 	public fun onScreenshotRecorded (Ljava/io/File;J)V
 	public fun onTouchEvent (Landroid/view/MotionEvent;)V
 	public fun pause ()V
-	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 	public fun resume ()V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public fun start ()V

@@ -9,11 +9,13 @@ import androidx.compose.ui.semantics.SemanticsConfiguration;
 import androidx.compose.ui.semantics.SemanticsModifier;
 import androidx.compose.ui.semantics.SemanticsPropertyKey;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.compose.SentryComposeHelper;
 import io.sentry.compose.helper.BuildConfig;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.gestures.UiElement;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,6 +31,7 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
 
   private final @NotNull ILogger logger;
   private volatile @Nullable SentryComposeHelper composeHelper;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   public ComposeGestureTargetLocator(final @NotNull ILogger logger) {
     this.logger = logger;
@@ -43,7 +46,7 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
 
     // lazy init composeHelper as it's using some reflection under the hood
     if (composeHelper == null) {
-      synchronized (this) {
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
         if (composeHelper == null) {
           composeHelper = new SentryComposeHelper(logger);
         }

@@ -1,11 +1,11 @@
 package io.sentry.spring.jakarta.graphql;
 
-import static io.sentry.graphql.SentryInstrumentation.SENTRY_HUB_CONTEXT_KEY;
+import static io.sentry.graphql.SentryGraphqlInstrumentation.SENTRY_SCOPES_CONTEXT_KEY;
 
 import graphql.GraphQLContext;
 import io.sentry.Breadcrumb;
-import io.sentry.IHub;
-import io.sentry.NoOpHub;
+import io.sentry.IScopes;
+import io.sentry.NoOpScopes;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -89,7 +89,7 @@ public final class SentryBatchLoaderRegistry implements BatchLoaderRegistry {
     public void registerBatchLoader(BiFunction<List<K>, BatchLoaderEnvironment, Flux<V>> loader) {
       delegate.registerBatchLoader(
           (keys, batchLoaderEnvironment) -> {
-            hubFromContext(batchLoaderEnvironment)
+            scopesFromContext(batchLoaderEnvironment)
                 .addBreadcrumb(Breadcrumb.graphqlDataLoader(keys, keyType, valueType, name));
             return loader.apply(keys, batchLoaderEnvironment);
           });
@@ -100,20 +100,20 @@ public final class SentryBatchLoaderRegistry implements BatchLoaderRegistry {
         BiFunction<Set<K>, BatchLoaderEnvironment, Mono<Map<K, V>>> loader) {
       delegate.registerMappedBatchLoader(
           (keys, batchLoaderEnvironment) -> {
-            hubFromContext(batchLoaderEnvironment)
+            scopesFromContext(batchLoaderEnvironment)
                 .addBreadcrumb(Breadcrumb.graphqlDataLoader(keys, keyType, valueType, name));
             return loader.apply(keys, batchLoaderEnvironment);
           });
     }
 
-    private @NotNull IHub hubFromContext(final @NotNull BatchLoaderEnvironment environment) {
+    private @NotNull IScopes scopesFromContext(final @NotNull BatchLoaderEnvironment environment) {
       Object context = environment.getContext();
       if (context instanceof GraphQLContext) {
         GraphQLContext graphqlContext = (GraphQLContext) context;
-        return graphqlContext.getOrDefault(SENTRY_HUB_CONTEXT_KEY, NoOpHub.getInstance());
+        return graphqlContext.getOrDefault(SENTRY_SCOPES_CONTEXT_KEY, NoOpScopes.getInstance());
       }
 
-      return NoOpHub.getInstance();
+      return NoOpScopes.getInstance();
     }
   }
 }

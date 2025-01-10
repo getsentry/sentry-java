@@ -17,18 +17,18 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class EnvelopeSender extends DirectoryProcessor implements IEnvelopeSender {
 
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
   private final @NotNull ISerializer serializer;
   private final @NotNull ILogger logger;
 
   public EnvelopeSender(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @NotNull ISerializer serializer,
       final @NotNull ILogger logger,
       final long flushTimeoutMillis,
       final int maxQueueSize) {
-    super(hub, logger, flushTimeoutMillis, maxQueueSize);
-    this.hub = Objects.requireNonNull(hub, "Hub is required.");
+    super(scopes, logger, flushTimeoutMillis, maxQueueSize);
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required.");
     this.serializer = Objects.requireNonNull(serializer, "Serializer is required.");
     this.logger = Objects.requireNonNull(logger, "Logger is required.");
   }
@@ -60,7 +60,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
         logger.log(
             SentryLevel.ERROR, "Failed to deserialize cached envelope %s", file.getAbsolutePath());
       } else {
-        hub.captureEnvelope(envelope, hint);
+        scopes.captureEnvelope(envelope, hint);
       }
 
       HintUtils.runIfHasTypeLogIfNot(

@@ -21,18 +21,5 @@
       "value": 1,
       "unit": "test"
     }
-  },
-  "_metrics_summary": {
-    "d:custom/background_operation@second": [
-      {
-        "min": 1.0,
-        "max": 2.0,
-        "sum": 3.0,
-        "count": 2,
-        "tags": {
-          "environment": "production"
-        }
-      }
-    ]
   }
 }
