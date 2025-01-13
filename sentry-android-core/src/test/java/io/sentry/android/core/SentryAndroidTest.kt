@@ -328,10 +328,10 @@ class SentryAndroidTest {
         whenever(client.isEnabled).thenReturn(true)
 
         initSentryWithForegroundImportance(true, { options ->
-            options.addIntegration { hub, _ ->
-                hub.bindClient(client)
+            options.addIntegration { scopes, _ ->
+                scopes.bindClient(client)
                 // usually done by LifecycleWatcher
-                hub.startSession()
+                scopes.startSession()
             }
         }) {}
 
@@ -375,7 +375,7 @@ class SentryAndroidTest {
                 options.release = "prod"
                 options.dsn = "https://key@sentry.io/123"
                 options.isEnableAutoSessionTracking = true
-                options.experimental.sessionReplay.onErrorSampleRate = 1.0
+                options.sessionReplay.onErrorSampleRate = 1.0
                 optionsConfig(options)
             }
 

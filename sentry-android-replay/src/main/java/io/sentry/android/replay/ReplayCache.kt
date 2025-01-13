@@ -39,8 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 public class ReplayCache(
     private val options: SentryOptions,
-    private val replayId: SentryId,
-    private val recorderConfig: ScreenshotRecorderConfig
+    private val replayId: SentryId
 ) : Closeable {
 
     private val isClosed = AtomicBoolean(false)
@@ -88,7 +87,7 @@ public class ReplayCache(
             it.createNewFile()
         }
         screenshot.outputStream().use {
-            bitmap.compress(JPEG, 80, it)
+            bitmap.compress(JPEG, options.sessionReplay.quality.screenshotQuality, it)
             it.flush()
         }
 
@@ -135,6 +134,8 @@ public class ReplayCache(
         segmentId: Int,
         height: Int,
         width: Int,
+        frameRate: Int,
+        bitRate: Int,
         videoFile: File = File(replayCacheDir, "$segmentId.mp4")
     ): GeneratedVideo? {
         if (videoFile.exists() && videoFile.length() > 0) {
@@ -148,7 +149,6 @@ public class ReplayCache(
             return null
         }
 
-        // TODO: reuse instance of encoder and just change file path to create a different muxer
         encoder = encoderLock.acquire().use {
             SimpleVideoEncoder(
                 options,
@@ -156,15 +156,15 @@ public class ReplayCache(
                     file = videoFile,
                     recordingHeight = height,
                     recordingWidth = width,
-                    frameRate = recorderConfig.frameRate,
-                    bitRate = recorderConfig.bitRate
+                    frameRate = frameRate,
+                    bitRate = bitRate
                 )
             ).also { it.start() }
         }
 
-        val step = 1000 / recorderConfig.frameRate.toLong()
+        val step = 1000 / frameRate.toLong()
         var frameCount = 0
-        var lastFrame: ReplayFrame = frames.first()
+        var lastFrame: ReplayFrame? = frames.first()
         for (timestamp in from until (from + (duration)) step step) {
             val iter = frames.iterator()
             while (iter.hasNext()) {
@@ -184,6 +184,12 @@ public class ReplayCache(
             // to respect the video duration
             if (encode(lastFrame)) {
                 frameCount++
+            } else if (lastFrame != null) {
+                // if we failed to encode the frame, we delete the screenshot right away as the
+                // likelihood of it being able to be encoded later is low
+                deleteFile(lastFrame.screenshot)
+                frames.remove(lastFrame)
+                lastFrame = null
             }
         }
 
@@ -208,7 +214,10 @@ public class ReplayCache(
         return GeneratedVideo(videoFile, frameCount, videoDuration)
     }
 
-    private fun encode(frame: ReplayFrame): Boolean {
+    private fun encode(frame: ReplayFrame?): Boolean {
+        if (frame == null) {
+            return false
+        }
         return try {
             val bitmap = BitmapFactory.decodeFile(frame.screenshot.absolutePath)
             encoderLock.acquire().use {
@@ -309,7 +318,7 @@ public class ReplayCache(
             }
         }
 
-        internal fun fromDisk(options: SentryOptions, replayId: SentryId, replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null): LastSegmentData? {
+        internal fun fromDisk(options: SentryOptions, replayId: SentryId, replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null): LastSegmentData? {
             val replayCacheDir = makeReplayCacheDir(options, replayId)
             val lastSegmentFile = File(replayCacheDir, ONGOING_SEGMENT)
             if (!lastSegmentFile.exists()) {
@@ -363,7 +372,7 @@ public class ReplayCache(
                 scaleFactorY = 1.0f
             )
 
-            val cache = replayCacheProvider?.invoke(replayId, recorderConfig) ?: ReplayCache(options, replayId, recorderConfig)
+            val cache = replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId)
             cache.replayCacheDir?.listFiles { dir, name ->
                 if (name.endsWith(".jpg")) {
                     val file = File(dir, name)

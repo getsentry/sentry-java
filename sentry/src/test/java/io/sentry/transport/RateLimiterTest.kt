@@ -5,7 +5,6 @@ import io.sentry.CheckIn
 import io.sentry.CheckInStatus
 import io.sentry.DataCategory.Replay
 import io.sentry.Hint
-import io.sentry.IHub
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISerializer
@@ -314,8 +313,8 @@ class RateLimiterTest {
     @Test
     fun `drop replay items as lost`() {
         val rateLimiter = fixture.getSUT()
-        val hub = mock<IHub>()
-        whenever(hub.options).thenReturn(SentryOptions())
+        val scopes = mock<IScopes>()
+        whenever(scopes.options).thenReturn(SentryOptions())
 
         val replayItem = SentryEnvelopeItem.fromReplay(fixture.serializer, mock<ILogger>(), SentryReplayEvent(), ReplayRecording(), false)
         val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
@@ -372,8 +371,10 @@ class RateLimiterTest {
         rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
         rateLimiter.close()
 
-        // wait for 1.5s to ensure the timer has run after 1s
-        await.untilTrue(applied)
+        // If rate limit didn't already change, wait for 1.5s to ensure the timer has run after 1s
+        if (!applied.get()) {
+            await.untilTrue(applied)
+        }
         assertTrue(applied.get())
     }
 }
