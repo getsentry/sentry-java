@@ -3,7 +3,6 @@ package io.sentry.android.core
 import android.app.Application
 import android.content.pm.ProviderInfo
 import android.os.Build
-import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.JsonSerializer
@@ -12,7 +11,6 @@ import io.sentry.SentryAppStartProfilingOptions
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.performance.AppStartMetrics
-import io.sentry.android.core.performance.AppStartMetrics.AppStartType
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -28,7 +26,6 @@ import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -102,73 +99,6 @@ class SentryPerformanceProviderTest {
         fixture.getSut()
         assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasStarted())
         assertTrue(AppStartMetrics.getInstance().appStartTimeSpan.hasStarted())
-    }
-
-    @Test
-    fun `provider sets cold start based on first activity`() {
-        val provider = fixture.getSut()
-
-        // up until this point app start is not known
-        assertEquals(AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
-
-        // when there's no saved state
-        provider.activityCallback!!.onActivityCreated(mock(), null)
-        // then app start should be cold
-        assertEquals(AppStartType.COLD, AppStartMetrics.getInstance().appStartType)
-    }
-
-    @Test
-    fun `provider sets warm start based on first activity`() {
-        val provider = fixture.getSut()
-
-        // up until this point app start is not known
-        assertEquals(AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
-
-        // when there's a saved state
-        provider.activityCallback!!.onActivityCreated(mock(), Bundle())
-
-        // then app start should be warm
-        assertEquals(AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
-    }
-
-    @Test
-    fun `provider keeps startup state even if multiple activities are launched`() {
-        val provider = fixture.getSut()
-
-        // when there's a saved state
-        provider.activityCallback!!.onActivityCreated(mock(), Bundle())
-
-        // then app start should be warm
-        assertEquals(AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
-
-        // when another activity is launched cold
-        provider.activityCallback!!.onActivityCreated(mock(), null)
-
-        // then app start should remain warm
-        assertEquals(AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
-    }
-
-    @Test
-    fun `provider sets both appstart and sdk init start + end times`() {
-        val provider = fixture.getSut()
-        provider.onAppStartDone()
-
-        val metrics = AppStartMetrics.getInstance()
-        assertTrue(metrics.appStartTimeSpan.hasStarted())
-        assertTrue(metrics.appStartTimeSpan.hasStopped())
-
-        assertTrue(metrics.sdkInitTimeSpan.hasStarted())
-        assertTrue(metrics.sdkInitTimeSpan.hasStopped())
-    }
-
-    @Test
-    fun `provider properly registers and unregisters ActivityLifecycleCallbacks`() {
-        val provider = fixture.getSut()
-
-        // It register once for the provider itself and once for the appStartMetrics
-        verify(fixture.mockContext, times(2)).registerActivityLifecycleCallbacks(any())
-        provider.onAppStartDone()
-        verify(fixture.mockContext).unregisterActivityLifecycleCallbacks(any())
     }
 
     //region app start profiling

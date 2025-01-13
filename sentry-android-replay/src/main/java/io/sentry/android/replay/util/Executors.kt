@@ -50,6 +50,11 @@ internal fun ExecutorService.submitSafely(
     taskName: String,
     task: Runnable
 ): Future<*>? {
+    if (Thread.currentThread().name.startsWith("SentryReplayIntegration")) {
+        // we're already on the worker thread, no need to submit
+        task.run()
+        return null
+    }
     return try {
         submit {
             try {

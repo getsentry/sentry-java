@@ -1,10 +1,20 @@
 # Changelog
 
-## Unreleased
+## 8.0.0-rc.4
 
 ### Features
 
 - Enable `ThreadLocalAccessor` for Spring Boot 3 WebFlux by default ([#4023](https://github.com/getsentry/sentry-java/pull/4023))
+
+### Internal
+
+- Warm starts cleanup ([#3954](https://github.com/getsentry/sentry-java/pull/3954))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.16 to v0.7.17 ([#4003](https://github.com/getsentry/sentry-java/pull/4003))
+    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0717)
+    - [diff](https://github.com/getsentry/sentry-native/compare/0.7.16...0.7.17)
 
 ## 8.0.0-rc.3
 
@@ -399,6 +409,81 @@ You may also use `LifecycleHelper.close(token)`, e.g. in case you need to pass t
 ### Features
 
 - Report exceptions returned by Throwable.getSuppressed() to Sentry as exception groups ([#3396] https://github.com/getsentry/sentry-java/pull/3396)
+
+## 7.20.0
+
+### Features
+
+- Session Replay GA ([#4017](https://github.com/getsentry/sentry-java/pull/4017))
+
+To enable Replay use the `sessionReplay.sessionSampleRate` or `sessionReplay.onErrorSampleRate` options.
+
+  ```kotlin
+  import io.sentry.SentryReplayOptions
+  import io.sentry.android.core.SentryAndroid
+
+  SentryAndroid.init(context) { options ->
+   
+    options.sessionReplay.sessionSampleRate = 1.0
+    options.sessionReplay.onErrorSampleRate = 1.0
+  
+    // To change default redaction behavior (defaults to true)
+    options.sessionReplay.redactAllImages = true
+    options.sessionReplay.redactAllText = true
+  
+    // To change quality of the recording (defaults to MEDIUM)
+    options.sessionReplay.quality = SentryReplayOptions.SentryReplayQuality.MEDIUM // (LOW|MEDIUM|HIGH)
+  }
+  ```
+
+### Fixes
+
+- Fix warm start detection ([#3937](https://github.com/getsentry/sentry-java/pull/3937))
+- Session Replay: Reduce memory allocations, disk space consumption, and payload size ([#4016](https://github.com/getsentry/sentry-java/pull/4016))
+- Session Replay: Do not try to encode corrupted frames multiple times ([#4016](https://github.com/getsentry/sentry-java/pull/4016))
+
+### Internal
+
+- Session Replay: Allow overriding `SdkVersion` for replay events ([#4014](https://github.com/getsentry/sentry-java/pull/4014))
+- Session Replay: Send replay options as tags ([#4015](https://github.com/getsentry/sentry-java/pull/4015))
+
+### Breaking changes
+
+- Session Replay options were moved from under `experimental` to the main `options` object ([#4017](https://github.com/getsentry/sentry-java/pull/4017))
+
+## 7.19.1
+
+### Fixes
+
+- Change TTFD timeout to 25 seconds ([#3984](https://github.com/getsentry/sentry-java/pull/3984))
+- Session Replay: Fix memory leak when masking Compose screens ([#3985](https://github.com/getsentry/sentry-java/pull/3985))
+- Session Replay: Fix potential ANRs in `GestureRecorder` ([#4001](https://github.com/getsentry/sentry-java/pull/4001))
+
+### Internal
+
+- Session Replay: Flutter improvements ([#4007](https://github.com/getsentry/sentry-java/pull/4007))
+
+## 7.19.0
+
+### Fixes
+
+- Session Replay: fix various crashes and issues ([#3970](https://github.com/getsentry/sentry-java/pull/3970))
+    - Fix `IndexOutOfBoundsException` when tracking window changes
+    - Fix `IllegalStateException` when adding/removing draw listener for a dead view
+    - Fix `ConcurrentModificationException` when registering window listeners and stopping `WindowRecorder`/`GestureRecorder`
+- Add support for setting sentry-native handler_strategy ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.8 to v0.7.16 ([#3671](https://github.com/getsentry/sentry-java/pull/3671))
+    - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0716)
+    - [diff](https://github.com/getsentry/sentry-native/compare/0.7.8...0.7.16)
+
+## 7.18.1
+
+### Fixes
+
+- Fix testTag not working for Jetpack Compose user interaction tracking ([#3878](https://github.com/getsentry/sentry-java/pull/3878))
 
 ## 7.18.0
 

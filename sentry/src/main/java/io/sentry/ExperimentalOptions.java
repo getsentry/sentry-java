@@ -1,6 +1,7 @@
 package io.sentry;
 
-import org.jetbrains.annotations.NotNull;
+import io.sentry.protocol.SdkVersion;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Experimental options for new features, these options are going to be promoted to SentryOptions
@@ -9,18 +10,6 @@ import org.jetbrains.annotations.NotNull;
  * <p>Beware that experimental options can change at any time.
  */
 public final class ExperimentalOptions {
-  private @NotNull SentryReplayOptions sessionReplay;
 
-  public ExperimentalOptions(final boolean empty) {
-    this.sessionReplay = new SentryReplayOptions(empty);
-  }
-
-  @NotNull
-  public SentryReplayOptions getSessionReplay() {
-    return sessionReplay;
-  }
-
-  public void setSessionReplay(final @NotNull SentryReplayOptions sessionReplayOptions) {
-    this.sessionReplay = sessionReplayOptions;
-  }
+  public ExperimentalOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {}
 }

@@ -157,6 +157,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Turns NDK on or off. Default is enabled. */
   private boolean enableNdk = true;
 
+  @NotNull
+  private NdkHandlerStrategy ndkHandlerStrategy =
+      NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_DEFAULT;
   /**
    * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
    * for sentry-android.
@@ -449,6 +452,16 @@ public final class SentryAndroidOptions extends SentryOptions {
   @ApiStatus.Internal
   public void setNativeSdkName(final @Nullable String nativeSdkName) {
     this.nativeSdkName = nativeSdkName;
+  }
+
+  @ApiStatus.Internal
+  public void setNativeHandlerStrategy(final @NotNull NdkHandlerStrategy ndkHandlerStrategy) {
+    this.ndkHandlerStrategy = ndkHandlerStrategy;
+  }
+
+  @ApiStatus.Internal
+  public int getNdkHandlerStrategy() {
+    return ndkHandlerStrategy.getValue();
   }
 
   /**

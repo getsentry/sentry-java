@@ -288,7 +288,6 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (event == null) {
-      options.getLogger().log(SentryLevel.DEBUG, "Replay was dropped by Event processors.");
       return SentryId.EMPTY_ID;
     }
 
@@ -632,8 +631,11 @@ public final class SentryClient implements ISentryClient {
     envelopeItems.add(replayItem);
     final SentryId sentryId = event.getEventId();
 
+    // SdkVersion from ReplayOptions defaults to SdkVersion from SentryOptions and can be
+    // overwritten by the hybrid SDKs
     final SentryEnvelopeHeader envelopeHeader =
-        new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceContext);
+        new SentryEnvelopeHeader(
+            sentryId, options.getSessionReplay().getSdkVersion(), traceContext);
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
