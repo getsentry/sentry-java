@@ -1713,6 +1713,7 @@ public class SentryOptions {
    *
    * @return the continuous profiler.
    */
+  @ApiStatus.Experimental
   public @NotNull IContinuousProfiler getContinuousProfiler() {
     return continuousProfiler;
   }
@@ -1722,6 +1723,7 @@ public class SentryOptions {
    *
    * @param continuousProfiler - the continuous profiler
    */
+  @ApiStatus.Experimental
   public void setContinuousProfiler(final @Nullable IContinuousProfiler continuousProfiler) {
     // We allow to set the profiler only if it was not set before, and we don't allow to unset it.
     if (this.continuousProfiler == NoOpContinuousProfiler.getInstance()
@@ -1803,10 +1805,12 @@ public class SentryOptions {
    *
    * @return the sample rate
    */
+  @ApiStatus.Experimental
   public double getContinuousProfilesSampleRate() {
     return continuousProfilesSampleRate;
   }
 
+  @ApiStatus.Experimental
   public void setContinuousProfilesSampleRate(final double continuousProfilesSampleRate) {
     if (!SampleRateUtils.isValidContinuousProfilesSampleRate(continuousProfilesSampleRate)) {
       throw new IllegalArgumentException(

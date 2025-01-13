@@ -1051,11 +1051,13 @@ public final class Sentry {
   }
 
   /** Starts the continuous profiler, if enabled. */
+  @ApiStatus.Experimental
   public static void startProfiler() {
     getCurrentScopes().startProfiler();
   }
 
-  /** Starts the continuous profiler, if enabled. */
+  /** Stops the continuous profiler, if enabled. */
+  @ApiStatus.Experimental
   public static void stopProfiler() {
     getCurrentScopes().stopProfiler();
   }
