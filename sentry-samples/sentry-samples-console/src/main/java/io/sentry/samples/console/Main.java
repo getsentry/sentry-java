@@ -156,7 +156,8 @@ public class Main {
     //
     // Transactions collect execution time of the piece of code that's executed between the start
     // and finish of transaction.
-    // Transactions need to be bound to scope in order to have `Messages` or `Exceptions` linked to them
+    // Transactions need to be bound to scope in order to have `Messages` or `Exceptions` linked to
+    // them
     final TransactionOptions options = new TransactionOptions();
     options.setBindToScope(true);
     ITransaction transaction = Sentry.startTransaction("transaction name", "op", options);

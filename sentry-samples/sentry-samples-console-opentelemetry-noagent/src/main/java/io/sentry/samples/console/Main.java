@@ -4,7 +4,6 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
-import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
@@ -27,15 +26,16 @@ public class Main {
   public static void main(String[] args) throws InterruptedException {
 
     AutoConfiguredOpenTelemetrySdk.builder()
-      .setResultAsGlobal()
-      .addPropertiesSupplier( () -> {
-        final Map<String, String> properties = new HashMap<>();
-        properties.put("otel.logs.exporter", "none");
-        properties.put("otel.metrics.exporter", "none");
-        properties.put("otel.traces.exporter", "none");
-        return properties;
-      })
-      .build();
+        .setResultAsGlobal()
+        .addPropertiesSupplier(
+            () -> {
+              final Map<String, String> properties = new HashMap<>();
+              properties.put("otel.logs.exporter", "none");
+              properties.put("otel.metrics.exporter", "none");
+              properties.put("otel.traces.exporter", "none");
+              return properties;
+            })
+        .build();
 
     Sentry.init(
         options -> {
@@ -179,7 +179,8 @@ public class Main {
     //
     // Transactions collect execution time of the piece of code that's executed between the start
     // and finish of transaction.
-    // Transactions need to be bound to scope in order to have `Messages` or `Exceptions` linked to them
+    // Transactions need to be bound to scope in order to have `Messages` or `Exceptions` linked to
+    // them
     ITransaction transaction = Sentry.startTransaction("transaction name", "op");
     try (ISentryLifecycleToken transactionScope = transaction.makeCurrent()) {
       // Transactions can contain one or more Spans
