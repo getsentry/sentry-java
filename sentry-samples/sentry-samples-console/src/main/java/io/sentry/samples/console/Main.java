@@ -156,13 +156,14 @@ public class Main {
     //
     // Transactions collect execution time of the piece of code that's executed between the start
     // and finish of transaction.
+    // Transactions need to be bound to scope in order to have `Messages` or `Exceptions` linked to them
     final TransactionOptions options = new TransactionOptions();
     options.setBindToScope(true);
     ITransaction transaction = Sentry.startTransaction("transaction name", "op", options);
     // Transactions can contain one or more Spans
     ISpan outerSpan = transaction.startChild("child");
     Thread.sleep(100);
-    // Spans create a tree structure. Each span can have one ore more spans inside.
+    // Spans create a tree structure. Each span can have one or more spans inside.
     ISpan innerSpan = outerSpan.startChild("jdbc", "select * from product where id = :id");
     innerSpan.setStatus(SpanStatus.OK);
     Thread.sleep(300);
