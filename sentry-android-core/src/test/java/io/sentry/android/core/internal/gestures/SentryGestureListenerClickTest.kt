@@ -185,7 +185,7 @@ class SentryGestureListenerClickTest {
 
         sut.onSingleTapUp(event)
 
-        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -214,7 +214,7 @@ class SentryGestureListenerClickTest {
 
         sut.onSingleTapUp(event)
 
-        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -257,7 +257,7 @@ class SentryGestureListenerClickTest {
     @Test
     fun `if touch is not within view group bounds does not traverse its children`() {
         val event = mock<MotionEvent>()
-        val sut = fixture.getSut<View>(event, attachViewsToRoot = true)
+        val sut = fixture.getSut<View>(event, attachViewsToRoot = false)
         fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = false) {
             whenever(it.childCount).thenReturn(1)
             whenever(it.getChildAt(0)).thenReturn(fixture.target)
@@ -265,6 +265,6 @@ class SentryGestureListenerClickTest {
 
         sut.onSingleTapUp(event)
 
-        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 }
