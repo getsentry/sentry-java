@@ -8,6 +8,10 @@
 - Do not instrument User Interaction multiple times ([#4039](https://github.com/getsentry/sentry-java/pull/4039))
 - Speed up view traversal to find touched target in `UserInteractionIntegration` ([#4039](https://github.com/getsentry/sentry-java/pull/4039))
 
+### Internal
+
+- Make `SentryClient` constructor public ([#4045](https://github.com/getsentry/sentry-java/pull/4045))
+
 ## 8.0.0-rc.4
 
 ### Features
