@@ -175,6 +175,16 @@ public final class SentryFileOutputStream extends FileOutputStream {
           : delegate;
     }
 
+    public static FileOutputStream create(
+        final @NotNull FileOutputStream delegate,
+        final @Nullable File file,
+        final @NotNull IHub hub)
+        throws FileNotFoundException {
+      return isTracingEnabled(hub)
+          ? new SentryFileOutputStream(init(file, false, delegate, hub))
+          : delegate;
+    }
+
     private static boolean isTracingEnabled(final @NotNull IHub hub) {
       final @NotNull SentryOptions options = hub.getOptions();
       return options.isTracingEnabled();
