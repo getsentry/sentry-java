@@ -301,7 +301,6 @@ final class AndroidOptionsInitializer {
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
     options.addIntegration(
         new NetworkBreadcrumbsIntegration(context, buildInfoProvider, options.getLogger()));
-    options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());

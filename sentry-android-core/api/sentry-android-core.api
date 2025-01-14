@@ -245,12 +245,6 @@ public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sen
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/content/Context;)V
-	public fun close ()V
-	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
-}
-
 public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
