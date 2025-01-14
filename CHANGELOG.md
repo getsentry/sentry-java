@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Do not instrument File I/O operations if tracing is disabled ([#4039](https://github.com/getsentry/sentry-java/pull/4039))
+- Do not instrument User Interaction multiple times ([#4039](https://github.com/getsentry/sentry-java/pull/4039))
+- Speed up view traversal to find touched target in `UserInteractionIntegration` ([#4039](https://github.com/getsentry/sentry-java/pull/4039))
+
 ## 7.20.0
 
 ### Features
