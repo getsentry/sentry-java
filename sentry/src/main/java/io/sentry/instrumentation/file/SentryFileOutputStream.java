@@ -178,6 +178,16 @@ public final class SentryFileOutputStream extends FileOutputStream {
           : delegate;
     }
 
+    public static FileOutputStream create(
+        final @NotNull FileOutputStream delegate,
+        final @Nullable File file,
+        final @NotNull IScopes scopes)
+        throws FileNotFoundException {
+      return isTracingEnabled(scopes)
+          ? new SentryFileOutputStream(init(file, false, delegate, scopes))
+          : delegate;
+    }
+
     private static boolean isTracingEnabled(final @NotNull IScopes scopes) {
       final @NotNull SentryOptions options = scopes.getOptions();
       return options.isTracingEnabled();

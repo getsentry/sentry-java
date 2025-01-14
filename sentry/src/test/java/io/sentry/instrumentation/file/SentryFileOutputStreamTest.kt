@@ -14,6 +14,8 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import kotlin.test.Test
@@ -26,6 +28,7 @@ import kotlin.test.assertTrue
 class SentryFileOutputStreamTest {
     class Fixture {
         val scopes = mock<IScopes>()
+        val options = SentryOptions()
         lateinit var sentryTracer: SentryTracer
 
         internal fun getSut(
@@ -34,7 +37,7 @@ class SentryFileOutputStreamTest {
             append: Boolean = false,
             optionsConfiguration: (SentryOptions) -> Unit = {}
         ): SentryFileOutputStream {
-            val options = SentryOptions().apply {
+            options.run {
                 threadChecker = ThreadChecker.getInstance()
                 addInAppInclude("org.junit")
                 optionsConfiguration(this)
@@ -45,6 +48,22 @@ class SentryFileOutputStreamTest {
                 whenever(scopes.span).thenReturn(sentryTracer)
             }
             return SentryFileOutputStream(tmpFile, append, scopes)
+        }
+
+        internal fun getSut(
+            tmpFile: File? = null,
+            delegate: FileOutputStream,
+            tracesSampleRate: Double? = 1.0
+        ): FileOutputStream {
+            options.tracesSampleRate = tracesSampleRate
+            whenever(scopes.options).thenReturn(options)
+            sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
+            whenever(scopes.span).thenReturn(sentryTracer)
+            return SentryFileOutputStream.Factory.create(
+                delegate,
+                tmpFile,
+                scopes
+            )
         }
     }
 
@@ -196,5 +215,26 @@ class SentryFileOutputStreamTest {
         val fileIOSpan = fixture.sentryTracer.children.first()
         assertEquals(false, fileIOSpan.data[SpanDataConvention.BLOCKED_MAIN_THREAD_KEY])
         assertNull(fileIOSpan.data[SpanDataConvention.CALL_STACK_KEY])
+    }
+
+    @Test
+    fun `when tracing is disabled does not instrument the stream`() {
+        val file = tmpFile
+        val delegate = ThrowingFileOutputStream(file)
+        val stream = fixture.getSut(file, delegate = delegate, tracesSampleRate = null)
+
+        assertTrue { stream is ThrowingFileOutputStream }
+    }
+}
+
+class ThrowingFileOutputStream(file: File) : FileOutputStream(file) {
+    val throwable = IOException("Oops!")
+
+    override fun write(b: Int) {
+        throw throwable
+    }
+
+    override fun close() {
+        throw throwable
     }
 }
