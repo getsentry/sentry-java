@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Make `SentryClient` constructor public ([#4045](https://github.com/getsentry/sentry-java/pull/4045))
+
 ## 8.0.0-rc.4
 
 ### Features
