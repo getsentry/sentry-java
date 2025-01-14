@@ -382,14 +382,6 @@ public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : i
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/TempSensorBreadcrumbsIntegration : android/hardware/SensorEventListener, io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/content/Context;)V
-	public fun close ()V
-	public fun onAccuracyChanged (Landroid/hardware/Sensor;I)V
-	public fun onSensorChanged (Landroid/hardware/SensorEvent;)V
-	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
-}
-
 public final class io/sentry/android/core/UserInteractionIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/app/Application;Lio/sentry/android/core/LoadClass;)V
 	public fun close ()V
