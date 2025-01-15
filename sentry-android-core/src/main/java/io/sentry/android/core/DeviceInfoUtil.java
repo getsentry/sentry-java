@@ -155,6 +155,11 @@ public final class DeviceInfoUtil {
     return os;
   }
 
+  @Nullable
+  public Long getTotalMemory() {
+    return totalMem;
+  }
+
   @NotNull
   protected OperatingSystem retrieveOperatingSystemInformation() {
 

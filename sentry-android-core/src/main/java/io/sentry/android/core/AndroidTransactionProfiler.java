@@ -1,10 +1,8 @@
 package io.sentry.android.core;
 
-import static android.content.Context.ACTIVITY_SERVICE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.annotation.SuppressLint;
-import android.app.ActivityManager;
 import android.content.Context;
 import android.os.Build;
 import android.os.Process;
@@ -265,9 +263,12 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     transactionsCounter = 0;
 
     String totalMem = "0";
-    ActivityManager.MemoryInfo memInfo = getMemInfo();
-    if (memInfo != null) {
-      totalMem = Long.toString(memInfo.totalMem);
+    final @Nullable Long memory =
+        (options instanceof SentryAndroidOptions)
+            ? DeviceInfoUtil.getInstance(context, (SentryAndroidOptions) options).getTotalMemory()
+            : null;
+    if (memory != null) {
+      totalMem = Long.toString(memory);
     }
     String[] abis = Build.SUPPORTED_ABIS;
 
@@ -330,27 +331,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     // we have to first stop profiling otherwise we would lost the last profile
     if (profiler != null) {
       profiler.close();
-    }
-  }
-
-  /**
-   * Get MemoryInfo object representing the memory state of the application.
-   *
-   * @return MemoryInfo object representing the memory state of the application
-   */
-  private @Nullable ActivityManager.MemoryInfo getMemInfo() {
-    try {
-      ActivityManager actManager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
-      ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
-      if (actManager != null) {
-        actManager.getMemoryInfo(memInfo);
-        return memInfo;
-      }
-      logger.log(SentryLevel.INFO, "Error getting MemoryInfo.");
-      return null;
-    } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
-      return null;
     }
   }
 
