@@ -373,6 +373,7 @@ public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : i
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;Ljava/util/List;)V
 	public fun close ()V
+	public static fun getDefaultActions ()Ljava/util/List;
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 }
 

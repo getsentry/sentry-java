@@ -128,7 +128,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   }
 
   @SuppressWarnings("deprecation")
-  private static @NotNull List<String> getDefaultActions() {
+  public static @NotNull List<String> getDefaultActions() {
     final List<String> actions = new ArrayList<>();
     actions.add(ACTION_SHUTDOWN);
     actions.add(ACTION_AIRPLANE_MODE_CHANGED);
