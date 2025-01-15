@@ -140,7 +140,7 @@ class UserInteractionIntegrationTest {
             )
         )
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityPaused(fixture.activity)
 
         verify(fixture.window).callback = null
@@ -161,7 +161,7 @@ class UserInteractionIntegrationTest {
             )
         )
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityPaused(fixture.activity)
 
         verify(fixture.window).callback = delegate
@@ -172,7 +172,7 @@ class UserInteractionIntegrationTest {
         val callback = mock<SentryWindowCallback>()
         val sut = fixture.getSut(callback)
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityPaused(fixture.activity)
 
         verify(callback).stopTracking()
@@ -192,7 +192,7 @@ class UserInteractionIntegrationTest {
         )
         val sut = fixture.getSut(existingCallback)
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityResumed(fixture.activity)
 
         val argumentCaptor = argumentCaptor<Window.Callback>()
