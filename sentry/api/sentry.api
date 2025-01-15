@@ -3645,7 +3645,7 @@ public final class io/sentry/instrumentation/file/SentryFileOutputStream : java/
 public final class io/sentry/instrumentation/file/SentryFileOutputStream$Factory {
 	public fun <init> ()V
 	public static fun create (Ljava/io/FileOutputStream;Ljava/io/File;)Ljava/io/FileOutputStream;
-	public static fun create (Ljava/io/FileOutputStream;Ljava/io/File;Lio/sentry/IScopes;)Ljava/io/FileOutputStream;
+	public static fun create (Ljava/io/FileOutputStream;Ljava/io/File;Lio/sentry/IHub;)Ljava/io/FileOutputStream;
 	public static fun create (Ljava/io/FileOutputStream;Ljava/io/File;Z)Ljava/io/FileOutputStream;
 	public static fun create (Ljava/io/FileOutputStream;Ljava/io/FileDescriptor;)Ljava/io/FileOutputStream;
 	public static fun create (Ljava/io/FileOutputStream;Ljava/lang/String;)Ljava/io/FileOutputStream;
