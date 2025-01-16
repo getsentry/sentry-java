@@ -261,6 +261,8 @@ public class ThreadDumpParser {
             debugImage.setCodeId(buildId);
             debugImages.put(debugId, debugImage);
           }
+          // The addresses in the thread dump are relative to the image
+          frame.setAddrMode("rel:" + debugId);
         }
 
         frames.add(frame);

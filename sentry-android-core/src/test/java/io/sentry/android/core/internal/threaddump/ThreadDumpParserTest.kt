@@ -116,43 +116,47 @@ class ThreadDumpParserTest {
         assertEquals("syscall", lastFrame.function)
         assertEquals(28, lastFrame.lineno)
         assertNull(lastFrame.isInApp)
-	assertEquals("0x000000000004c35c", lastFrame.instructionAddr)
-	assertEquals("native", lastFrame.platform)
+        assertEquals("0x000000000004c35c", lastFrame.instructionAddr)
+        assertEquals("rel:499d48ba-c085-17cf-3209-da67405662f9", lastFrame.addrMode)
+        assertEquals("native", lastFrame.platform)
 
-	val nosymFrame = frames.get(21)
-	assertEquals("/apex/com.android.art/javalib/core-oj.jar", nosymFrame.`package`)
-	assertNull(nosymFrame.function)
-	assertNull(nosymFrame.lineno)
-	assertEquals("0x00000000000ec474", nosymFrame.instructionAddr)
+        val nosymFrame = frames.get(21)
+        assertEquals("/apex/com.android.art/javalib/core-oj.jar", nosymFrame.`package`)
+        assertNull(nosymFrame.function)
+        assertNull(nosymFrame.lineno)
+        assertEquals("0x00000000000ec474", nosymFrame.instructionAddr)
+        assertNull(nosymFrame.addrMode)
 
-	val spaceFrame = frames.get(14)
-	assertEquals(
-	    "[anon:dalvik-classes16.dex extracted in memory from /data/app/~~izn1xSZpFlzfVmWi_I0xlQ=="
-	    + "/io.sentry.samples.android-tQSGMNiGA-qdjZm6lPOcNw==/base.apk!classes16.dex]",
-	    spaceFrame.`package`)
-	assertNull(spaceFrame.function)
-	assertNull(spaceFrame.lineno)
-	assertEquals("0x00000000000306f0", spaceFrame.instructionAddr)
+        val spaceFrame = frames.get(14)
+        assertEquals(
+            "[anon:dalvik-classes16.dex extracted in memory from /data/app/~~izn1xSZpFlzfVmWi_I0xlQ=="
+            + "/io.sentry.samples.android-tQSGMNiGA-qdjZm6lPOcNw==/base.apk!classes16.dex]",
+            spaceFrame.`package`)
+        assertNull(spaceFrame.function)
+        assertNull(spaceFrame.lineno)
+        assertEquals("0x00000000000306f0", spaceFrame.instructionAddr)
+        assertNull(spaceFrame.addrMode)
 
-	val offsetFrame = frames.get(145)
-	assertEquals("/system/framework/framework.jar (offset 0x12c2000)", offsetFrame.`package`)
-	assertNull(offsetFrame.function)
-	assertNull(offsetFrame.lineno)
-	assertEquals("0x00000000002c8e18", offsetFrame.instructionAddr)
-	assertNull(offsetFrame.addrMode)
+        val offsetFrame = frames.get(145)
+        assertEquals("/system/framework/framework.jar (offset 0x12c2000)", offsetFrame.`package`)
+        assertNull(offsetFrame.function)
+        assertNull(offsetFrame.lineno)
+        assertEquals("0x00000000002c8e18", offsetFrame.instructionAddr)
+        assertNull(offsetFrame.addrMode)
 
-	val deletedFrame = frames.get(117)
-	assertEquals("/memfd:jit-cache (deleted) (offset 0x2000000)", deletedFrame.`package`)
-	assertEquals("kotlinx.coroutines.DispatchedTask.run", deletedFrame.function)
-	assertEquals(1816, deletedFrame.lineno)
-	assertEquals("0x00000000020b89d8", deletedFrame.instructionAddr)
+        val deletedFrame = frames.get(117)
+        assertEquals("/memfd:jit-cache (deleted) (offset 0x2000000)", deletedFrame.`package`)
+        assertEquals("kotlinx.coroutines.DispatchedTask.run", deletedFrame.function)
+        assertEquals(1816, deletedFrame.lineno)
+        assertEquals("0x00000000020b89d8", deletedFrame.instructionAddr)
+        assertNull(deletedFrame.addrMode)
 
-	val debugImages = parser.debugImages
-	val image = debugImages["499d48ba-c085-17cf-3209-da67405662f9"]
-	assertNotNull(image)
-	assertEquals("499d48ba-c085-17cf-3209-da67405662f9", image.debugId)
-	assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", image.codeFile)
-	assertEquals("ba489d4985c0cf173209da67405662f9", image.codeId)
+        val debugImages = parser.debugImages
+        val image = debugImages["499d48ba-c085-17cf-3209-da67405662f9"]
+        assertNotNull(image)
+        assertEquals("499d48ba-c085-17cf-3209-da67405662f9", image.debugId)
+        assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", image.codeFile)
+        assertEquals("ba489d4985c0cf173209da67405662f9", image.codeId)
     }
 
     @Test

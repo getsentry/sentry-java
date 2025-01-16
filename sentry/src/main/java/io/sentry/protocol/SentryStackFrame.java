@@ -93,6 +93,20 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
    * take place.
    */
   private @Nullable String instructionAddr;
+  /**
+   * Defines the addressing mode for addresses.
+   *
+   * <p>This can be:
+   *
+   * <ul>
+   *   <li><code>"abs"</code> (the default): <code>instruction_addr</code> is absolute.
+   *   <li><code>"rel:$idx"</code>: <code>instruction_addr</code> is relative to the
+   *       <code>debug_meta.image</code> identified by its index in the list.
+   *   <li><code>"rel:$uuid"</code>: <code>instruction_addr</code> is relative to the
+   *       <code>debug_meta.image</code> identified by its <code>debug_id</code>.
+   * </ul>
+   */
+  private @Nullable String addrMode;
 
   /**
    * Potentially mangled name of the symbol as it appears in an executable.
@@ -263,6 +277,14 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     this.instructionAddr = instructionAddr;
   }
 
+  public @Nullable String getAddrMode() {
+    return addrMode;
+  }
+
+  public void setAddrMode(final @Nullable String addrMode) {
+      this.addrMode = addrMode;
+  }
+
   public @Nullable Boolean isNative() {
     return _native;
   }
@@ -325,6 +347,7 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     public static final String IMAGE_ADDR = "image_addr";
     public static final String SYMBOL_ADDR = "symbol_addr";
     public static final String INSTRUCTION_ADDR = "instruction_addr";
+    public static final String ADDR_MODE = "addr_mode";
     public static final String RAW_FUNCTION = "raw_function";
     public static final String SYMBOL = "symbol";
     public static final String LOCK = "lock";
@@ -375,6 +398,9 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
     }
     if (instructionAddr != null) {
       writer.name(JsonKeys.INSTRUCTION_ADDR).value(instructionAddr);
+    }
+    if (addrMode != null) {
+      writer.name(JsonKeys.ADDR_MODE).value(addrMode);
     }
     if (rawFunction != null) {
       writer.name(JsonKeys.RAW_FUNCTION).value(rawFunction);
@@ -446,6 +472,9 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.INSTRUCTION_ADDR:
             sentryStackFrame.instructionAddr = reader.nextStringOrNull();
+            break;
+          case JsonKeys.ADDR_MODE:
+            sentryStackFrame.addrMode = reader.nextStringOrNull();
             break;
           case JsonKeys.RAW_FUNCTION:
             sentryStackFrame.rawFunction = reader.nextStringOrNull();
