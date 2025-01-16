@@ -50,6 +50,11 @@ public final class UserInteractionIntegration
         delegate = new NoOpWindowCallback();
       }
 
+      if (delegate instanceof SentryWindowCallback) {
+        // already instrumented
+        return;
+      }
+
       final SentryGestureListener gestureListener =
           new SentryGestureListener(activity, hub, options);
       window.setCallback(new SentryWindowCallback(delegate, activity, gestureListener, options));

@@ -60,8 +60,10 @@ class SentryFileInputStreamTest {
 
         internal fun getSut(
             tmpFile: File? = null,
-            delegate: FileInputStream
-        ): SentryFileInputStream {
+            delegate: FileInputStream,
+            tracesSampleRate: Double? = 1.0
+        ): FileInputStream {
+            options.tracesSampleRate = tracesSampleRate
             whenever(hub.options).thenReturn(options)
             sentryTracer = SentryTracer(TransactionContext("name", "op"), hub)
             whenever(hub.span).thenReturn(sentryTracer)
@@ -69,7 +71,7 @@ class SentryFileInputStreamTest {
                 delegate,
                 tmpFile,
                 hub
-            ) as SentryFileInputStream
+            )
         }
     }
 
@@ -241,6 +243,15 @@ class SentryFileInputStreamTest {
         val fileIOSpan = fixture.sentryTracer.children.first()
         assertEquals(false, fileIOSpan.data[SpanDataConvention.BLOCKED_MAIN_THREAD_KEY])
         assertNull(fileIOSpan.data[SpanDataConvention.CALL_STACK_KEY])
+    }
+
+    @Test
+    fun `when tracing is disabled does not instrument the stream`() {
+        val file = tmpFile
+        val delegate = ThrowingFileInputStream(file)
+        val stream = fixture.getSut(file, delegate = delegate, tracesSampleRate = null)
+
+        assertTrue { stream is ThrowingFileInputStream }
     }
 }
 
