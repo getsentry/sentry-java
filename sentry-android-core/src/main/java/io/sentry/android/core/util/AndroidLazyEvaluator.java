@@ -1,13 +1,15 @@
 package io.sentry.android.core.util;
 
 import android.content.Context;
+import io.sentry.util.LazyEvaluator;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Class that evaluates a function lazily. It means the evaluator function is called only when
- * getValue is called, and it's cached.
+ * getValue is called, and it's cached. Same as {@link LazyEvaluator} but accepts Context
+ * as an argument for {@link AndroidLazyEvaluator#getValue}.
  */
 @ApiStatus.Internal
 public final class AndroidLazyEvaluator<T> {
