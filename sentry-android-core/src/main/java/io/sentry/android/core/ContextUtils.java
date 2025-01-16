@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.content.Context.ACTIVITY_SERVICE;
-import static android.content.Context.RECEIVER_EXPORTED;
 import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
 
 import android.annotation.SuppressLint;
@@ -422,7 +421,7 @@ public final class ContextUtils {
       // If this receiver is listening for broadcasts sent from the system or from other apps, even
       // other apps that you own—use the RECEIVER_EXPORTED flag. If instead this receiver is
       // listening only for broadcasts sent by your app, use the RECEIVER_NOT_EXPORTED flag.
-      return context.registerReceiver(receiver, filter, RECEIVER_EXPORTED);
+      return context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
     } else {
       return context.registerReceiver(receiver, filter);
     }

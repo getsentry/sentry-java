@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Do not instrument File I/O operations if tracing is disabled ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
+- Do not instrument User Interaction multiple times ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
+- Speed up view traversal to find touched target in `UserInteractionIntegration` ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
+
+### Behavioural Changes
+
+- Reduce the number of broadcasts the SDK is subscribed for ([#4052](https://github.com/getsentry/sentry-java/pull/4052))
+  - Drop `TempSensorBreadcrumbsIntegration`
+  - Drop `PhoneStateBreadcrumbsIntegration`
+  - Reduce number of broadcasts in `SystemEventsBreadcrumbsIntegration`
+
+Current list of the broadcast events can be found [here](https://github.com/getsentry/sentry-java/blob/9b8dc0a844d10b55ddeddf55d278c0ab0f86421c/sentry-android-core/src/main/java/io/sentry/android/core/SystemEventsBreadcrumbsIntegration.java#L131-L153). If you'd like to subscribe for more events, consider overriding the `SystemEventsBreadcrumbsIntegration` as follows:
+
+```kotlin
+SentryAndroid.init(context) { options ->
+    options.integrations.removeAll { it is SystemEventsBreadcrumbsIntegration }
+    options.integrations.add(SystemEventsBreadcrumbsIntegration(context, SystemEventsBreadcrumbsIntegration.getDefaultActions() + listOf(/* your custom actions */)))
+}
+```
+
+If you would like to keep some of the default broadcast events as breadcrumbs, consider opening a [GitHub issue](https://github.com/getsentry/sentry-java/issues/new).
+
 ## 7.20.0
 
 ### Features
