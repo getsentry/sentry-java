@@ -515,3 +515,14 @@ public class io/sentry/android/core/performance/WindowContentChangedCallback : i
 	public fun onContentChanged ()V
 }
 
+public final class io/sentry/android/core/util/AndroidLazyEvaluator {
+	public fun <init> (Lio/sentry/android/core/util/AndroidLazyEvaluator$AndroidEvaluator;)V
+	public fun getValue (Landroid/content/Context;)Ljava/lang/Object;
+	public fun resetValue ()V
+	public fun setValue (Ljava/lang/Object;)V
+}
+
+public abstract interface class io/sentry/android/core/util/AndroidLazyEvaluator$AndroidEvaluator {
+	public abstract fun evaluate (Landroid/content/Context;)Ljava/lang/Object;
+}
+

@@ -322,8 +322,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    final PackageInfo packageInfo =
-        ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
+    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
     if (packageInfo != null) {
       // Sets App's release if not set by Manifest
       if (options.getRelease() == null) {

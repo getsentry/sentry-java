@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.SentryIntegrationPackageStorage;
@@ -538,18 +537,14 @@ final class ManifestMetadataReader {
    *
    * @param context the application context
    * @return the Bundle attached to the PackageManager
-   * @throws PackageManager.NameNotFoundException if the package name is non-existent
    */
   private static @Nullable Bundle getMetadata(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @Nullable BuildInfoProvider buildInfoProvider)
-      throws PackageManager.NameNotFoundException {
+      final @Nullable BuildInfoProvider buildInfoProvider) {
     final ApplicationInfo app =
         ContextUtils.getApplicationInfo(
-            context,
-            PackageManager.GET_META_DATA,
-            buildInfoProvider != null ? buildInfoProvider : new BuildInfoProvider(logger));
-    return app.metaData;
+            context, buildInfoProvider != null ? buildInfoProvider : new BuildInfoProvider(logger));
+    return app != null ? app.metaData : null;
   }
 }
