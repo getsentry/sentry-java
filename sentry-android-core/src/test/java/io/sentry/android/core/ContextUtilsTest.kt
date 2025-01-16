@@ -42,6 +42,7 @@ class ContextUtilsTest {
 
     @BeforeTest
     fun `set up`() {
+        ContextUtils.resetInstance()
         context = ApplicationProvider.getApplicationContext()
         logger = NoOpLogger.getInstance()
         ShadowBuild.reset()

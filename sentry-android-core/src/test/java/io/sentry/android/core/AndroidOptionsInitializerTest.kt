@@ -164,6 +164,7 @@ class AndroidOptionsInitializerTest {
 
     @BeforeTest
     fun `set up`() {
+        ContextUtils.resetInstance()
         val appContext = ApplicationProvider.getApplicationContext<Context>()
         fixture = Fixture(appContext, appContext.cacheDir)
     }

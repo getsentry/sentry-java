@@ -31,6 +31,7 @@ import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class ContextUtils {
@@ -469,5 +470,16 @@ public final class ContextUtils {
       return appContext;
     }
     return context;
+  }
+
+  @TestOnly
+  static void resetInstance() {
+    deviceName.resetValue();
+    isForegroundImportance.resetValue();
+    staticPackageInfo.resetValue();
+    staticAppInfo33.resetValue();
+    staticAppInfo.resetValue();
+    staticAppInfo33.resetValue();
+    applicationName.resetValue();
   }
 }
