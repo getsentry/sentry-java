@@ -8,8 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Class that evaluates a function lazily. It means the evaluator function is called only when
- * getValue is called, and it's cached. Same as {@link LazyEvaluator} but accepts Context
- * as an argument for {@link AndroidLazyEvaluator#getValue}.
+ * getValue is called, and it's cached. Same as {@link LazyEvaluator} but accepts Context as an
+ * argument for {@link AndroidLazyEvaluator#getValue}.
  */
 @ApiStatus.Internal
 public final class AndroidLazyEvaluator<T> {
