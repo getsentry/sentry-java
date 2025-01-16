@@ -140,6 +140,7 @@ class UserInteractionIntegrationTest {
             )
         )
 
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityPaused(fixture.activity)
 
         verify(fixture.window).callback = null
@@ -160,6 +161,7 @@ class UserInteractionIntegrationTest {
             )
         )
 
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityPaused(fixture.activity)
 
         verify(fixture.window).callback = delegate
@@ -170,8 +172,30 @@ class UserInteractionIntegrationTest {
         val callback = mock<SentryWindowCallback>()
         val sut = fixture.getSut(callback)
 
+        sut.register(fixture.hub, fixture.options)
         sut.onActivityPaused(fixture.activity)
 
         verify(callback).stopTracking()
+    }
+
+    @Test
+    fun `does not instrument if the callback is already ours`() {
+        val delegate = mock<Window.Callback>()
+        val context = mock<Context>()
+        val resources = Fixture.mockResources()
+        whenever(context.resources).thenReturn(resources)
+        val existingCallback = SentryWindowCallback(
+            delegate,
+            context,
+            mock(),
+            mock()
+        )
+        val sut = fixture.getSut(existingCallback)
+
+        sut.register(fixture.hub, fixture.options)
+        sut.onActivityResumed(fixture.activity)
+
+        val argumentCaptor = argumentCaptor<Window.Callback>()
+        verify(fixture.window, never()).callback = argumentCaptor.capture()
     }
 }
