@@ -137,19 +137,20 @@ public final class SentryExceptionFactory {
   @NotNull
   Deque<SentryException> extractExceptionQueue(final @NotNull Throwable throwable) {
     return extractExceptionQueueInternal(
-        throwable, new AtomicInteger(-1), new HashSet<>(), new ArrayDeque<>());
+        throwable, new AtomicInteger(-1), new HashSet<>(), new ArrayDeque<>(), null);
   }
 
   Deque<SentryException> extractExceptionQueueInternal(
       final @NotNull Throwable throwable,
       final @NotNull AtomicInteger exceptionId,
       final @NotNull HashSet<Throwable> circularityDetector,
-      final @NotNull Deque<SentryException> exceptions) {
+      final @NotNull Deque<SentryException> exceptions,
+      final @Nullable Integer parentIdOverride) {
     Mechanism exceptionMechanism;
     Thread thread;
 
     Throwable currentThrowable = throwable;
-    int parentId = exceptionId.get();
+    int parentId = parentIdOverride == null ? exceptionId.get() : parentIdOverride;
 
     // Stack the exceptions to send them in the reverse order
     while (currentThrowable != null && circularityDetector.add(currentThrowable)) {
@@ -165,6 +166,21 @@ public final class SentryExceptionFactory {
       } else {
         exceptionMechanism = new Mechanism();
         thread = Thread.currentThread();
+      }
+
+      if (currentThrowable instanceof SentryExceptionGroupException) {
+        exceptionMechanism.setExceptionGroup(true);
+      }
+
+      Throwable[] suppressed = currentThrowable.getSuppressed();
+      if (suppressed != null && suppressed.length > 0) {
+        extractExceptionQueueInternal(
+            new SentryExceptionGroupException(),
+            exceptionId,
+            circularityDetector,
+            exceptions,
+            null);
+        parentId = exceptionId.get();
       }
 
       final boolean includeSentryFrames = Boolean.FALSE.equals(exceptionMechanism.isHandled());
@@ -187,12 +203,10 @@ public final class SentryExceptionFactory {
       final int currentExceptionId = exceptionId.incrementAndGet();
       exceptionMechanism.setExceptionId(currentExceptionId);
 
-      Throwable[] suppressed = currentThrowable.getSuppressed();
       if (suppressed != null && suppressed.length > 0) {
-        exceptionMechanism.setExceptionGroup(true);
         for (Throwable suppressedThrowable : suppressed) {
           extractExceptionQueueInternal(
-              suppressedThrowable, exceptionId, circularityDetector, exceptions);
+              suppressedThrowable, exceptionId, circularityDetector, exceptions, parentId);
         }
       }
       currentThrowable = currentThrowable.getCause();
@@ -200,5 +214,9 @@ public final class SentryExceptionFactory {
     }
 
     return exceptions;
+  }
+
+  private static final class SentryExceptionGroupException extends RuntimeException {
+    private static final long serialVersionUID = 6909700354645201267L;
   }
 }
