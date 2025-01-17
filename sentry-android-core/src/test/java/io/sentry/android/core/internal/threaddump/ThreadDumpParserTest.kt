@@ -73,6 +73,23 @@ class ThreadDumpParserTest {
         assertEquals("HandlerThread.java", firstFrame.filename)
         assertEquals(67, firstFrame.lineno)
         assertEquals(null, firstFrame.isInApp)
+        assertNull(firstFrame.isNative)
+        assertNull(firstFrame.platform)
+
+        val jniFrame = randomThread.stacktrace!!.frames!!.get(4)
+        assertEquals("android.os.MessageQueue", jniFrame.module)
+        assertEquals("nativePollOnce", jniFrame.function)
+        assertNull(jniFrame.lineno)
+        assertEquals(true, jniFrame.isNative)
+        assertNull(firstFrame.platform)
+
+        val nativeFrame = randomThread.stacktrace!!.frames!!.get(5)
+        assertEquals("/system/lib64/libandroid_runtime.so", nativeFrame.`package`)
+        assertEquals("android::android_os_MessageQueue_nativePollOnce(_JNIEnv*, _jobject*, long, int)",
+                     nativeFrame.function)
+        assertEquals(44, nativeFrame.lineno)
+        assertNull(nativeFrame.isNative) // Confusing, but "isNative" means JVM frame for a JNI method
+        assertEquals("native", nativeFrame.platform)
     }
 
     @Test
