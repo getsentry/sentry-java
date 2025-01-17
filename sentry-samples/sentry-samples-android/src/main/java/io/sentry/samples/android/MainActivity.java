@@ -210,6 +210,31 @@ public class MainActivity extends AppCompatActivity {
                   1000);
         });
 
+    binding.nativeAnr.setOnClickListener(
+        view -> {
+          new Thread(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      NativeSample.freezeMysteriously(mutex);
+                    }
+                  })
+              .start();
+
+          new Handler()
+              .postDelayed(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      synchronized (mutex) {
+                        // Shouldn't happen
+                        throw new IllegalStateException();
+                      }
+                    }
+                  },
+                  1000);
+        });
+
     binding.openSecondActivity.setOnClickListener(
         view -> {
           // finishing so its completely destroyed

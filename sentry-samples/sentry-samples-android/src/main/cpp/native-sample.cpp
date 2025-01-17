@@ -22,4 +22,29 @@ JNIEXPORT void JNICALL Java_io_sentry_samples_android_NativeSample_message(JNIEn
     sentry_capture_event(event);
 }
 
+[[gnu::noinline]]
+static void idle_pointlessly() {
+    static const volatile int x = 42;
+    (void)x;
+}
+
+[[gnu::noinline]]
+static void loop_eternally() {
+    while (true) {
+        idle_pointlessly();
+    }
+}
+
+[[gnu::noinline]]
+static void keep_object_locked(JNIEnv* env, jobject obj) {
+    env->MonitorEnter(obj);
+    loop_eternally();
+    env->MonitorExit(obj);
+}
+
+JNIEXPORT void JNICALL Java_io_sentry_samples_android_NativeSample_freezeMysteriously(JNIEnv *env, jclass cls, jobject obj) {
+    __android_log_print(ANDROID_LOG_WARN, TAG, "About to lock object eternally.");
+    keep_object_locked(env, obj);
+}
+
 }
