@@ -42,12 +42,28 @@ public class ThreadDumpParser {
   private static final Pattern BEGIN_UNMANAGED_NATIVE_THREAD_RE =
       Pattern.compile("\"(.*)\" (.*) ?sysTid=(\\d+)");
 
+  // For reference, see native_stack_dump.cc and tombstone_proto_to_text.cpp in Android sources
   private static final Pattern NATIVE_RE =
       Pattern.compile(
-          " *(?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*?)\\s+\\((.*)\\+(\\d+)\\)(?: \\(.*\\))?");
-  private static final Pattern NATIVE_NO_LOC_RE =
-      Pattern.compile(
-          " *(?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*)\\s*\\(?(.*)\\)?(?: \\(.*\\))?");
+          // "  native: #12 pc 0xabcd1234"
+          " *(?:native: )?#(?<index>\\d+) \\S+ (?<pc>[0-9a-fA-F]+)"
+          // The map info includes a filename and an optional offset into the file
+          + ("\\s+(?<mapinfo>"
+             // "/path/to/file.ext",
+             + "(?<filename>.*?)"
+             // optional " (deleted)" suffix (deleted files) needed here to bias regex correctly
+             + "(?:\\s+\\(deleted\\))?"
+             // " (offset 0xabcd1234)", if the mapping is not into the beginning of the file
+             + "(?:\\s+\\(offset (?<mapoffset>.*?)\\))?"
+             + ")")
+          // Optional function
+          + ("(?:\\s+\\((?:"
+             + "\\?\\?\\?" // " (???) marks a missing function, so don't capture it in a group
+             + "|(?<function>.*?)(?:\\+(?<fnoffset>\\d+))?" // " (func+1234)", offset is optional
+             + ")\\))?")
+          // Optional " (BuildId: abcd1234abcd1234abcd1234abcd1234abcd1234)"
+          + "(?:\\s+\\(BuildId: (?<buildid>.*?)\\))?");
+
   private static final Pattern JAVA_RE =
       Pattern.compile(" *at (?:(.+)\\.)?([^.]+)\\.([^.]+)\\((.*):([\\d-]+)\\)");
   private static final Pattern JNI_RE =
@@ -176,7 +192,6 @@ public class ThreadDumpParser {
     SentryStackFrame lastJavaFrame = null;
 
     final Matcher nativeRe = NATIVE_RE.matcher("");
-    final Matcher nativeNoLocRe = NATIVE_NO_LOC_RE.matcher("");
     final Matcher javaRe = JAVA_RE.matcher("");
     final Matcher jniRe = JNI_RE.matcher("");
     final Matcher lockedRe = LOCKED_RE.matcher("");
@@ -196,15 +211,9 @@ public class ThreadDumpParser {
       final String text = line.text;
       if (matches(nativeRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
-        frame.setPackage(nativeRe.group(1));
-        frame.setFunction(nativeRe.group(2));
-        frame.setLineno(getInteger(nativeRe, 3, null));
-        frames.add(frame);
-        lastJavaFrame = null;
-      } else if (matches(nativeNoLocRe, text)) {
-        final SentryStackFrame frame = new SentryStackFrame();
-        frame.setPackage(nativeNoLocRe.group(1));
-        frame.setFunction(nativeNoLocRe.group(2));
+        frame.setPackage(nativeRe.group("mapinfo"));
+        frame.setFunction(nativeRe.group("function"));
+        frame.setLineno(getInteger(nativeRe, "fnoffset", null));
         frames.add(frame);
         lastJavaFrame = null;
       } else if (matches(javaRe, text)) {
@@ -334,7 +343,7 @@ public class ThreadDumpParser {
 
   @Nullable
   private Integer getInteger(
-      final @NotNull Matcher matcher, final int group, final @Nullable Integer defaultValue) {
+      final @NotNull Matcher matcher, final String group, final @Nullable Integer defaultValue) {
     final String str = matcher.group(group);
     if (str == null || str.length() == 0) {
       return defaultValue;

@@ -90,11 +90,38 @@ class ThreadDumpParserTest {
         assertEquals(false, thread.isCrashed)
         assertEquals(false, thread.isMain)
         assertEquals(false, thread.isCurrent)
-        val lastFrame = thread.stacktrace!!.frames!!.last()
+
+        // Reverse frames so we can index them with the active frame at index 0
+        val frames = thread.stacktrace!!.frames!!.reversed()
+
+        val lastFrame = frames.get(0)
         assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", lastFrame.`package`)
         assertEquals("syscall", lastFrame.function)
         assertEquals(28, lastFrame.lineno)
         assertNull(lastFrame.isInApp)
+
+	val nosymFrame = frames.get(21)
+	assertEquals("/apex/com.android.art/javalib/core-oj.jar", nosymFrame.`package`)
+	assertNull(nosymFrame.function)
+	assertNull(nosymFrame.lineno)
+
+	val spaceFrame = frames.get(14)
+	assertEquals(
+	    "[anon:dalvik-classes16.dex extracted in memory from /data/app/~~izn1xSZpFlzfVmWi_I0xlQ=="
+	    + "/io.sentry.samples.android-tQSGMNiGA-qdjZm6lPOcNw==/base.apk!classes16.dex]",
+	    spaceFrame.`package`)
+	assertNull(spaceFrame.function)
+	assertNull(spaceFrame.lineno)
+
+	val offsetFrame = frames.get(145)
+	assertEquals("/system/framework/framework.jar (offset 0x12c2000)", offsetFrame.`package`)
+	assertNull(offsetFrame.function)
+	assertNull(offsetFrame.lineno)
+
+	val deletedFrame = frames.get(117)
+	assertEquals("/memfd:jit-cache (deleted) (offset 0x2000000)", deletedFrame.`package`)
+	assertEquals("kotlinx.coroutines.DispatchedTask.run", deletedFrame.function)
+	assertEquals(1816, deletedFrame.lineno)
     }
 
     @Test
