@@ -99,11 +99,14 @@ class ThreadDumpParserTest {
         assertEquals("syscall", lastFrame.function)
         assertEquals(28, lastFrame.lineno)
         assertNull(lastFrame.isInApp)
+	assertEquals("0x000000000004c35c", lastFrame.instructionAddr)
+	assertEquals("native", lastFrame.platform)
 
 	val nosymFrame = frames.get(21)
 	assertEquals("/apex/com.android.art/javalib/core-oj.jar", nosymFrame.`package`)
 	assertNull(nosymFrame.function)
 	assertNull(nosymFrame.lineno)
+	assertEquals("0x00000000000ec474", nosymFrame.instructionAddr)
 
 	val spaceFrame = frames.get(14)
 	assertEquals(
@@ -112,16 +115,20 @@ class ThreadDumpParserTest {
 	    spaceFrame.`package`)
 	assertNull(spaceFrame.function)
 	assertNull(spaceFrame.lineno)
+	assertEquals("0x00000000000306f0", spaceFrame.instructionAddr)
 
 	val offsetFrame = frames.get(145)
 	assertEquals("/system/framework/framework.jar (offset 0x12c2000)", offsetFrame.`package`)
 	assertNull(offsetFrame.function)
 	assertNull(offsetFrame.lineno)
+	assertEquals("0x00000000002c8e18", offsetFrame.instructionAddr)
+	assertNull(offsetFrame.addrMode)
 
 	val deletedFrame = frames.get(117)
 	assertEquals("/memfd:jit-cache (deleted) (offset 0x2000000)", deletedFrame.`package`)
 	assertEquals("kotlinx.coroutines.DispatchedTask.run", deletedFrame.function)
 	assertEquals(1816, deletedFrame.lineno)
+	assertEquals("0x00000000020b89d8", deletedFrame.instructionAddr)
     }
 
     @Test
