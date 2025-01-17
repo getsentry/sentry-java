@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixes
+
+- Do not set the exception group marker when there is a suppressed exception ([#4056](https://github.com/getsentry/sentry-java/pull/4056))
+  - Due to how grouping works in Sentry currently sometimes the suppressed exception is treated as the main exception. This change ensures we keep using the main exception and not change how grouping works.
+  - As a consequence the list of exceptions in the group on top of an issue is no longer shown in Sentry UI.
+  - We are planning to improve this in the future but opted for this fix first.
+
 ### Internal
 
 - Make `SentryClient` constructor public ([#4045](https://github.com/getsentry/sentry-java/pull/4045))
