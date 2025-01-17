@@ -13,6 +13,12 @@
 
 - Make `SentryClient` constructor public ([#4045](https://github.com/getsentry/sentry-java/pull/4045))
 
+### Dependencies
+
+- Bump Native SDK from v0.7.14 to v0.7.18 ([#4050](https://github.com/getsentry/sentry-java/pull/4050))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0718)
+  - [diff](https://github.com/getsentry/sentry-native/compare/v0.7.14...0.7.18)
+
 ## 8.0.0-rc.4
 
 ### Features
