@@ -239,6 +239,7 @@ public class ThreadDumpParser {
         frame.setModule(module);
         frame.setFunction(jniRe.group(3));
         frame.setInApp(stackTraceFactory.isInApp(module));
+        frame.setNative(true);
         frames.add(frame);
         lastJavaFrame = frame;
       } else if (matches(lockedRe, text)) {
