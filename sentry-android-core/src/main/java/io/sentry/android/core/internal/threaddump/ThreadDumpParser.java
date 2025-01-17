@@ -22,12 +22,19 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryLockReason;
 import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
+import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.BufferUnderflowException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -91,10 +98,36 @@ public class ThreadDumpParser {
 
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
 
+  private final @NotNull Map<String, DebugImage> debugImages;
+
   public ThreadDumpParser(final @NotNull SentryOptions options, final boolean isBackground) {
     this.options = options;
     this.isBackground = isBackground;
     this.stackTraceFactory = new SentryStackTraceFactory(options);
+    this.debugImages = new HashMap<String, DebugImage>();
+  }
+
+  @NotNull
+  public Map<String, DebugImage> getDebugImages() {
+    return debugImages;
+  }
+
+  @Nullable
+  private static String buildIdToDebugId(String buildId) {
+    try {
+      // Abuse BigInteger as a hex string parser. Extra byte needed to handle leading zeros.
+      final ByteBuffer buf = ByteBuffer.wrap(new BigInteger("10" + buildId, 16).toByteArray());
+      buf.get();
+      return String.format("%08x-%04x-%04x-%04x-%04x%08x",
+                           buf.order(ByteOrder.LITTLE_ENDIAN).getInt(),
+                           buf.getShort(),
+                           buf.getShort(),
+                           buf.order(ByteOrder.BIG_ENDIAN).getShort(),
+                           buf.getShort(),
+                           buf.getInt());
+    } catch (NumberFormatException | BufferUnderflowException e) {
+      return null;
+    }
   }
 
   @NotNull
@@ -216,6 +249,19 @@ public class ThreadDumpParser {
         frame.setLineno(getInteger(nativeRe, "fnoffset", null));
         frame.setInstructionAddr("0x" + nativeRe.group("pc"));
         frame.setPlatform("native");
+
+        final String buildId = nativeRe.group("buildid");
+        final String debugId = buildId == null ? null : buildIdToDebugId(buildId);
+        if (debugId != null) {
+          if (!debugImages.containsKey(debugId)) {
+            final DebugImage debugImage = new DebugImage();
+            debugImage.setDebugId(debugId);
+            debugImage.setType("elf");
+            debugImage.setCodeFile(nativeRe.group("filename"));
+            debugImage.setCodeId(buildId);
+            debugImages.put(debugId, debugImage);
+          }
+        }
 
         frames.add(frame);
         lastJavaFrame = null;

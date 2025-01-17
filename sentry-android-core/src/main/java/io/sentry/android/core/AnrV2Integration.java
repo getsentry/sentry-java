@@ -23,6 +23,8 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
+import io.sentry.protocol.DebugImage;
+import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
@@ -40,6 +42,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -267,6 +270,11 @@ public class AnrV2Integration implements Integration, Closeable {
         event.setMessage(sentryMessage);
       } else if (result.type == ParseResult.Type.DUMP) {
         event.setThreads(result.threads);
+        if (!result.debugImages.isEmpty()) {
+          final DebugMeta debugMeta = new DebugMeta();
+          debugMeta.setImages(new ArrayList<>(result.debugImages.values()));
+          event.setDebugMeta(debugMeta);
+        }
       }
       event.setLevel(SentryLevel.FATAL);
       event.setTimestamp(DateUtils.getDateTime(anrTimestamp));
@@ -319,7 +327,7 @@ public class AnrV2Integration implements Integration, Closeable {
           // fall back to not reporting them
           return new ParseResult(ParseResult.Type.NO_DUMP);
         }
-        return new ParseResult(ParseResult.Type.DUMP, dump, threads);
+        return new ParseResult(ParseResult.Type.DUMP, dump, threads, threadDumpParser.getDebugImages());
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
         return new ParseResult(ParseResult.Type.ERROR, dump);
@@ -403,24 +411,28 @@ public class AnrV2Integration implements Integration, Closeable {
     final Type type;
     final byte[] dump;
     final @Nullable List<SentryThread> threads;
+    final @Nullable Map<String, DebugImage> debugImages;
 
     ParseResult(final @NotNull Type type) {
       this.type = type;
       this.dump = null;
       this.threads = null;
+      this.debugImages = null;
     }
 
     ParseResult(final @NotNull Type type, final byte[] dump) {
       this.type = type;
       this.dump = dump;
       this.threads = null;
+      this.debugImages = null;
     }
 
     ParseResult(
-        final @NotNull Type type, final byte[] dump, final @Nullable List<SentryThread> threads) {
+        final @NotNull Type type, final byte[] dump, final @Nullable List<SentryThread> threads, final @Nullable Map<String, DebugImage> debugImages) {
       this.type = type;
       this.dump = dump;
       this.threads = threads;
+      this.debugImages = debugImages;
     }
   }
 }

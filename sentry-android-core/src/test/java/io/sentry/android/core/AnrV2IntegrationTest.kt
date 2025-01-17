@@ -307,6 +307,12 @@ class AnrV2IntegrationTest {
                 assertEquals(64, firstFrame.lineno)
 		assertEquals("0x00000000000530b8", firstFrame.instructionAddr)
 		assertEquals("native", firstFrame.platform)
+
+		val image = it.debugMeta?.images?.find {
+		    it.debugId == "741f3301-bbb0-b92c-58bd-c15282b8ec7b"
+		}
+		assertNotNull(image)
+		assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", image.codeFile)
             },
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
