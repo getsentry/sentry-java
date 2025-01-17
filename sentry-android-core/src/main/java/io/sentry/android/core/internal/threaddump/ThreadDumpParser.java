@@ -214,6 +214,9 @@ public class ThreadDumpParser {
         frame.setPackage(nativeRe.group("mapinfo"));
         frame.setFunction(nativeRe.group("function"));
         frame.setLineno(getInteger(nativeRe, "fnoffset", null));
+        frame.setInstructionAddr("0x" + nativeRe.group("pc"));
+        frame.setPlatform("native");
+
         frames.add(frame);
         lastJavaFrame = null;
       } else if (matches(javaRe, text)) {

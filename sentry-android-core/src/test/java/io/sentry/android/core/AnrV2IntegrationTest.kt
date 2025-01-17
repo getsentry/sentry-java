@@ -305,6 +305,8 @@ class AnrV2IntegrationTest {
                 )
                 assertEquals("__start_thread", firstFrame.function)
                 assertEquals(64, firstFrame.lineno)
+		assertEquals("0x00000000000530b8", firstFrame.instructionAddr)
+		assertEquals("native", firstFrame.platform)
             },
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
