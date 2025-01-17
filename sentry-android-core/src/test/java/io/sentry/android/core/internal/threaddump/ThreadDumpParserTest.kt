@@ -146,6 +146,13 @@ class ThreadDumpParserTest {
 	assertEquals("kotlinx.coroutines.DispatchedTask.run", deletedFrame.function)
 	assertEquals(1816, deletedFrame.lineno)
 	assertEquals("0x00000000020b89d8", deletedFrame.instructionAddr)
+
+	val debugImages = parser.debugImages
+	val image = debugImages["499d48ba-c085-17cf-3209-da67405662f9"]
+	assertNotNull(image)
+	assertEquals("499d48ba-c085-17cf-3209-da67405662f9", image.debugId)
+	assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", image.codeFile)
+	assertEquals("ba489d4985c0cf173209da67405662f9", image.codeId)
     }
 
     @Test
