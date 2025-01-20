@@ -67,6 +67,7 @@ class DefaultAndroidEventProcessorTest {
         lateinit var sentryTracer: SentryTracer
 
         fun getSut(context: Context): DefaultAndroidEventProcessor {
+            options.isSendDefaultPii = isSendDefaultPii
             whenever(scopes.options).thenReturn(options)
             sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
             return DefaultAndroidEventProcessor(context, buildInfo, options)
@@ -284,8 +285,20 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `when event user data does not have ip address set, sets {{auto}} as the ip address`() {
-        val sut = fixture.getSut(context)
+    fun `when event user data does not have ip address set, sets no ip address if sendDefaultPii is false`() {
+        val sut = fixture.getSut(context, isSendDefaultPii = false)
+        val event = SentryEvent().apply {
+            user = User()
+        }
+        sut.process(event, Hint())
+        assertNotNull(event.user) {
+            assertNull(it.ipAddress)
+        }
+    }
+
+    @Test
+    fun `when event user data does not have ip address set, sets {{auto}} if sendDefaultPii is true`() {
+        val sut = fixture.getSut(context, isSendDefaultPii = true)
         val event = SentryEvent().apply {
             user = User()
         }
