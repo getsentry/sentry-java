@@ -66,7 +66,10 @@ class DefaultAndroidEventProcessorTest {
 
         lateinit var sentryTracer: SentryTracer
 
-        fun getSut(context: Context): DefaultAndroidEventProcessor {
+        fun getSut(
+            context: Context,
+            isSendDefaultPii: Boolean = false
+        ): DefaultAndroidEventProcessor {
             options.isSendDefaultPii = isSendDefaultPii
             whenever(scopes.options).thenReturn(options)
             sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
