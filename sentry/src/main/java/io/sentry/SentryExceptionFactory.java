@@ -189,7 +189,9 @@ public final class SentryExceptionFactory {
 
       Throwable[] suppressed = currentThrowable.getSuppressed();
       if (suppressed != null && suppressed.length > 0) {
-        exceptionMechanism.setExceptionGroup(true);
+        // Disabled for now as it causes grouping in Sentry to sometimes use
+        // the suppressed exception as main exception.
+        // exceptionMechanism.setExceptionGroup(true);
         for (Throwable suppressedThrowable : suppressed) {
           extractExceptionQueueInternal(
               suppressedThrowable, exceptionId, circularityDetector, exceptions);
