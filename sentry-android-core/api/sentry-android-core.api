@@ -248,15 +248,6 @@ public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sen
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-<<<<<<< HEAD
-public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/content/Context;)V
-	public fun close ()V
-	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
-}
-
-=======
->>>>>>> e5095039e (Fix BroadcastReceivers (#4052))
 public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun getOrder ()Ljava/lang/Long;
@@ -385,20 +376,8 @@ public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : i
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;Ljava/util/List;)V
 	public fun close ()V
-<<<<<<< HEAD
-	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
-}
-
-public final class io/sentry/android/core/TempSensorBreadcrumbsIntegration : android/hardware/SensorEventListener, io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/content/Context;)V
-	public fun close ()V
-	public fun onAccuracyChanged (Landroid/hardware/Sensor;I)V
-	public fun onSensorChanged (Landroid/hardware/SensorEvent;)V
-	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
-=======
 	public static fun getDefaultActions ()Ljava/util/List;
-	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
->>>>>>> e5095039e (Fix BroadcastReceivers (#4052))
+	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
 public final class io/sentry/android/core/UserInteractionIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
