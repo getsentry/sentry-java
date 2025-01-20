@@ -15,7 +15,7 @@ Version 8 of the Sentry Android/Java SDK brings a variety of features and fixes.
 
 ### Sentry Self-hosted Compatibility
 
-This SDK version is compatible with a self-hosted version of Sentry `23.5.1` or higher. If you are using an older version of [self-hosted Sentry](https://develop.sentry.dev/self-hosted/) (aka onpremise), you will need to [upgrade](https://develop.sentry.dev/self-hosted/releases/). If you're using `sentry.io` no action is required.
+This SDK version is compatible with a self-hosted version of Sentry `22.12.0` or higher. If you are using an older version of [self-hosted Sentry](https://develop.sentry.dev/self-hosted/) (aka onpremise), you will need to [upgrade](https://develop.sentry.dev/self-hosted/releases/). If you're using `sentry.io` no action is required.
 
 ### Breaking Changes
 
