@@ -161,7 +161,7 @@ public final class DeviceInfoUtil {
   }
 
   @NotNull
-  protected OperatingSystem retrieveOperatingSystemInformation() {
+  private OperatingSystem retrieveOperatingSystemInformation() {
 
     final OperatingSystem os = new OperatingSystem();
     os.setName("Android");
