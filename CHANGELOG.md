@@ -73,6 +73,8 @@ This SDK version is compatible with a self-hosted version of Sentry `23.5.1` or 
 - (Android) The JNI layer for sentry-native has now been moved from sentry-java to sentry-native ([#3189](https://github.com/getsentry/sentry-java/pull/3189))
     - This now includes prefab support for sentry-native, allowing you to link and access the sentry-native API within your native app code
     - Checkout the `sentry-samples/sentry-samples-android` example on how to configure CMake and consume `sentry.h`
+- The user ip-address is now only set to `"{{auto}}"` if `sendDefaultPii` is enabled ([#4072](https://github.com/getsentry/sentry-java/pull/4072))
+  - This change gives you control over IP address collection directly on the client
 
 ### Features
 
