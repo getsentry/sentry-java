@@ -82,7 +82,7 @@ This SDK version is compatible with a self-hosted version of Sentry `22.12.0` or
 - Our `sentry-opentelemetry-agent` has been completely reworked and now plays nicely with the rest of the Java SDK
     - You may also want to give this new agent a try even if you haven't used OpenTelemetry (with Sentry) before. It offers support for [many more libraries and frameworks](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md), improving on our trace propagation, `Scopes` (used to be `Hub`) propagation as well as performance instrumentation (i.e. more spans).
     - If you are using a framework we did not support before and currently resort to manual instrumentation, please give the agent a try. See [here for a list of supported libraries, frameworks and application servers](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md).
-    - Please see [Java SDK docs](`SentrySpanProcessor`, `SentryPropagator`, `OpenTelemetryLinkErrorEventProcessor`) for more details on how to set up the agent. Please make sure to select the correct SDK from the dropdown on the left side of the docs.
+    - Please see [Java SDK docs](https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/) for more details on how to set up the agent. Please make sure to select the correct SDK from the dropdown on the left side of the docs.
     - What's new about the Agent
         - When the OpenTelemetry Agent is used, Sentry API creates OpenTelemetry spans under the hood, handing back a wrapper object which bridges the gap between traditional Sentry API and OpenTelemetry. We might be replacing some of the Sentry performance API in the future.
             - This is achieved by configuring the SDK to use `OtelSpanFactory` instead of `DefaultSpanFactory` which is done automatically by the auto init of the Java Agent.
@@ -286,7 +286,15 @@ You may also use `LifecycleHelper.close(token)`, e.g. in case you need to pass t
 
 ### Changes from `rc.4`
 
+If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that have been included in the `8.0.0` release:
+
 - Make `SentryClient` constructor public ([#4045](https://github.com/getsentry/sentry-java/pull/4045))
+- The user ip-address is now only set to `"{{auto}}"` if sendDefaultPii is enabled ([#4072](https://github.com/getsentry/sentry-java/pull/4072))
+    - This change gives you control over IP address collection directly on the client
+- Do not set the exception group marker when there is a suppressed exception ([#4056](https://github.com/getsentry/sentry-java/pull/4056))
+    - Due to how grouping works in Sentry currently sometimes the suppressed exception is treated as the main exception. This change ensures we keep using the main exception and not change how grouping works.
+    - As a consequence the list of exceptions in the group on top of an issue is no longer shown in Sentry UI.
+    - We are planning to improve this in the future but opted for this fix first.
 
 ## 7.20.0
 
