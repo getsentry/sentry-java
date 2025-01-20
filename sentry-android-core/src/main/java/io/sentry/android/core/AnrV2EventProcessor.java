@@ -580,7 +580,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     if (user.getId() == null) {
       user.setId(getDeviceId());
     }
-    if (user.getIpAddress() == null) {
+    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
