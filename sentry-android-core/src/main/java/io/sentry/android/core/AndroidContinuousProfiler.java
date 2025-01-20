@@ -16,7 +16,9 @@ import io.sentry.NoOpScopes;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.ProfileChunk;
 import io.sentry.Sentry;
+import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
+import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.SentryId;
@@ -52,6 +54,7 @@ public class AndroidContinuousProfiler
   private @NotNull SentryId profilerId = SentryId.EMPTY_ID;
   private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
   private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
+  private @NotNull SentryDate startProfileChunkTimestamp = new SentryNanotimeDate();
 
   public AndroidContinuousProfiler(
       final @NotNull BuildInfoProvider buildInfoProvider,
@@ -138,8 +141,10 @@ public class AndroidContinuousProfiler
         stop();
         return;
       }
+      startProfileChunkTimestamp = scopes.getOptions().getDateProvider().now();
+    } else {
+      startProfileChunkTimestamp = new SentryNanotimeDate();
     }
-
     final AndroidProfiler.ProfileStartData startData = profiler.start();
     // check if profiling started
     if (startData == null) {
@@ -213,7 +218,11 @@ public class AndroidContinuousProfiler
       synchronized (payloadBuilders) {
         payloadBuilders.add(
             new ProfileChunk.Builder(
-                profilerId, chunkId, endData.measurementsMap, endData.traceFile));
+                profilerId,
+                chunkId,
+                endData.measurementsMap,
+                endData.traceFile,
+                startProfileChunkTimestamp));
       }
     }
 
