@@ -7,6 +7,7 @@
 - Do not instrument File I/O operations if tracing is disabled ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
 - Do not instrument User Interaction multiple times ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
 - Speed up view traversal to find touched target in `UserInteractionIntegration` ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
+- Reduce IPC/Binder calls performed by the SDK ([#4058](https://github.com/getsentry/sentry-java/pull/4058))
 
 ### Behavioural Changes
 

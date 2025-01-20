@@ -20,6 +20,7 @@ class SentryInitProviderTest {
     @BeforeTest
     fun `set up`() {
         Sentry.close()
+        ContextUtils.resetInstance()
     }
 
     @Test
