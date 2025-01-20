@@ -374,14 +374,13 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     if (app == null) {
       app = new App();
     }
-    app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+    app.setAppName(ContextUtils.getApplicationName(context));
     // TODO: not entirely correct, because we define background ANRs as not the ones of
     //  IMPORTANCE_FOREGROUND, but this doesn't mean the app was in foreground when an ANR happened
     //  but it's our best effort for now. We could serialize AppState in theory.
     app.setInForeground(!isBackgroundAnr(hint));
 
-    final PackageInfo packageInfo =
-        ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
+    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
     if (packageInfo != null) {
       app.setAppIdentifier(packageInfo.packageName);
     }
@@ -597,8 +596,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setSideLoadedInfo(final @NotNull SentryBaseEvent event) {
     try {
       final ContextUtils.SideLoadedInfo sideLoadedInfo =
-          ContextUtils.retrieveSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
-
+          DeviceInfoUtil.getInstance(context, options).getSideLoadedInfo();
       if (sideLoadedInfo != null) {
         final @NotNull Map<String, String> tags = sideLoadedInfo.asTags();
         for (Map.Entry<String, String> entry : tags.entrySet()) {
@@ -667,7 +665,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private void mergeOS(final @NotNull SentryBaseEvent event) {
     final OperatingSystem currentOS = event.getContexts().getOperatingSystem();
-    final OperatingSystem androidOS = getOperatingSystem();
+    final OperatingSystem androidOS =
+        DeviceInfoUtil.getInstance(context, options).getOperatingSystem();
 
     // make Android OS the main OS using the 'os' key
     event.getContexts().setOperatingSystem(androidOS);
@@ -682,21 +681,6 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       }
       event.getContexts().put(osNameKey, currentOS);
     }
-  }
-
-  private @NotNull OperatingSystem getOperatingSystem() {
-    OperatingSystem os = new OperatingSystem();
-    os.setName("Android");
-    os.setVersion(Build.VERSION.RELEASE);
-    os.setBuild(Build.DISPLAY);
-
-    try {
-      os.setKernelVersion(ContextUtils.getKernelVersion(options.getLogger()));
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting OperatingSystem.", e);
-    }
-
-    return os;
   }
   // endregion
 }

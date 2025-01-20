@@ -19,7 +19,9 @@ import android.util.DisplayMetrics;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.util.AndroidLazyEvaluator;
 import io.sentry.protocol.App;
+import io.sentry.util.LazyEvaluator;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -29,6 +31,7 @@ import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class ContextUtils {
@@ -62,6 +65,106 @@ public final class ContextUtils {
 
   private ContextUtils() {}
 
+  // to avoid doing a bunch of Binder calls we use LazyEvaluator to cache the values that are static
+  // during the app process running
+
+  private static final @NotNull AndroidLazyEvaluator<String> deviceName =
+      new AndroidLazyEvaluator<>(
+          (context) -> Settings.Global.getString(context.getContentResolver(), "device_name"));
+
+  private static final @NotNull LazyEvaluator<Boolean> isForegroundImportance =
+      new LazyEvaluator<>(
+          () -> {
+            try {
+              final ActivityManager.RunningAppProcessInfo appProcessInfo =
+                  new ActivityManager.RunningAppProcessInfo();
+              ActivityManager.getMyMemoryState(appProcessInfo);
+              return appProcessInfo.importance == IMPORTANCE_FOREGROUND;
+            } catch (Throwable ignored) {
+              // should never happen
+            }
+            return false;
+          });
+
+  /**
+   * Since this packageInfo uses flags 0 we can assume it's static and cache it as the package name
+   * or version code cannot change during runtime, only after app update (which will spin up a new
+   * process).
+   */
+  @SuppressLint("NewApi")
+  private static final @NotNull AndroidLazyEvaluator<PackageInfo> staticPackageInfo33 =
+      new AndroidLazyEvaluator<>(
+          context -> {
+            try {
+              return context
+                  .getPackageManager()
+                  .getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(0));
+            } catch (Throwable e) {
+              return null;
+            }
+          });
+
+  private static final @NotNull AndroidLazyEvaluator<PackageInfo> staticPackageInfo =
+      new AndroidLazyEvaluator<>(
+          context -> {
+            try {
+              return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            } catch (Throwable e) {
+              return null;
+            }
+          });
+
+  private static final @NotNull AndroidLazyEvaluator<String> applicationName =
+      new AndroidLazyEvaluator<>(
+          context -> {
+            try {
+              final ApplicationInfo applicationInfo = context.getApplicationInfo();
+              final int stringId = applicationInfo.labelRes;
+              if (stringId == 0) {
+                if (applicationInfo.nonLocalizedLabel != null) {
+                  return applicationInfo.nonLocalizedLabel.toString();
+                }
+                return context.getPackageManager().getApplicationLabel(applicationInfo).toString();
+              } else {
+                return context.getString(stringId);
+              }
+            } catch (Throwable e) {
+              return null;
+            }
+          });
+
+  /**
+   * Since this applicationInfo uses the same flag (METADATA) we can assume it's static and cache it
+   * as the manifest metadata cannot change during runtime, only after app update (which will spin
+   * up a new process).
+   */
+  @SuppressLint("NewApi")
+  private static final @NotNull AndroidLazyEvaluator<ApplicationInfo> staticAppInfo33 =
+      new AndroidLazyEvaluator<>(
+          context -> {
+            try {
+              return context
+                  .getPackageManager()
+                  .getApplicationInfo(
+                      context.getPackageName(),
+                      PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA));
+            } catch (Throwable e) {
+              return null;
+            }
+          });
+
+  private static final @NotNull AndroidLazyEvaluator<ApplicationInfo> staticAppInfo =
+      new AndroidLazyEvaluator<>(
+          context -> {
+            try {
+              return context
+                  .getPackageManager()
+                  .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+            } catch (Throwable e) {
+              return null;
+            }
+          });
+
   /**
    * Return the Application's PackageInfo if possible, or null.
    *
@@ -69,10 +172,12 @@ public final class ContextUtils {
    */
   @Nullable
   static PackageInfo getPackageInfo(
-      final @NotNull Context context,
-      final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider) {
-    return getPackageInfo(context, 0, logger, buildInfoProvider);
+      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
+      return staticPackageInfo33.getValue(context);
+    } else {
+      return staticPackageInfo.getValue(context);
+    }
   }
 
   /**
@@ -109,22 +214,14 @@ public final class ContextUtils {
    * @return the Application's ApplicationInfo if possible, or throws
    */
   @SuppressLint("NewApi")
-  @NotNull
+  @Nullable
   @SuppressWarnings("deprecation")
   static ApplicationInfo getApplicationInfo(
-      final @NotNull Context context,
-      final long flag,
-      final @NotNull BuildInfoProvider buildInfoProvider)
-      throws PackageManager.NameNotFoundException {
+      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
-      return context
-          .getPackageManager()
-          .getApplicationInfo(
-              context.getPackageName(), PackageManager.ApplicationInfoFlags.of(flag));
+      return staticAppInfo33.getValue(context);
     } else {
-      return context
-          .getPackageManager()
-          .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+      return staticAppInfo.getValue(context);
     }
   }
 
@@ -168,15 +265,7 @@ public final class ContextUtils {
    */
   @ApiStatus.Internal
   public static boolean isForegroundImportance() {
-    try {
-      final ActivityManager.RunningAppProcessInfo appProcessInfo =
-          new ActivityManager.RunningAppProcessInfo();
-      ActivityManager.getMyMemoryState(appProcessInfo);
-      return appProcessInfo.importance == IMPORTANCE_FOREGROUND;
-    } catch (Throwable ignored) {
-      // should never happen
-    }
-    return false;
+    return isForegroundImportance.getValue();
   }
 
   /**
@@ -212,7 +301,7 @@ public final class ContextUtils {
       final @NotNull BuildInfoProvider buildInfoProvider) {
     String packageName = null;
     try {
-      final PackageInfo packageInfo = getPackageInfo(context, logger, buildInfoProvider);
+      final PackageInfo packageInfo = getPackageInfo(context, buildInfoProvider);
       final PackageManager packageManager = context.getPackageManager();
 
       if (packageInfo != null && packageManager != null) {
@@ -238,24 +327,8 @@ public final class ContextUtils {
    *
    * @return Application name
    */
-  static @Nullable String getApplicationName(
-      final @NotNull Context context, final @NotNull ILogger logger) {
-    try {
-      final ApplicationInfo applicationInfo = context.getApplicationInfo();
-      final int stringId = applicationInfo.labelRes;
-      if (stringId == 0) {
-        if (applicationInfo.nonLocalizedLabel != null) {
-          return applicationInfo.nonLocalizedLabel.toString();
-        }
-        return context.getPackageManager().getApplicationLabel(applicationInfo).toString();
-      } else {
-        return context.getString(stringId);
-      }
-    } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, "Error getting application name.", e);
-    }
-
-    return null;
+  static @Nullable String getApplicationName(final @NotNull Context context) {
+    return applicationName.getValue(context);
   }
 
   /**
@@ -289,7 +362,7 @@ public final class ContextUtils {
   }
 
   static @Nullable String getDeviceName(final @NotNull Context context) {
-    return Settings.Global.getString(context.getContentResolver(), "device_name");
+    return deviceName.getValue(context);
   }
 
   static @NotNull String[] getArchitectures() {
@@ -388,5 +461,16 @@ public final class ContextUtils {
       return appContext;
     }
     return context;
+  }
+
+  @TestOnly
+  static void resetInstance() {
+    deviceName.resetValue();
+    isForegroundImportance.resetValue();
+    staticPackageInfo33.resetValue();
+    staticPackageInfo.resetValue();
+    applicationName.resetValue();
+    staticAppInfo33.resetValue();
+    staticAppInfo.resetValue();
   }
 }
