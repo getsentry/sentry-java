@@ -59,7 +59,7 @@ This SDK version is compatible with a self-hosted version of Sentry `23.5.1` or 
 - We're introducing some new `Scope` types in the SDK, allowing for better control over what data is attached where. Previously there was a stack of scopes that was pushed and popped. Instead we now fork scopes for a given lifecycle and then restore the previous scopes. Since `Hub` is gone, it is also never cloned anymore. Separation of data now happens through the different scope types while making it easier to manipulate exactly what you need without having to attach data at the right time to have it apply where wanted.
     - Global scope is attached to all events created by the SDK. It can also be modified before `Sentry.init` has been called. It can be manipulated using `Sentry.configureScope(ScopeType.GLOBAL, (scope) -> { ... })`.
     - Isolation scope can be used e.g. to attach data to all events that come up while handling an incoming request. It can also be used for other isolation purposes. It can be manipulated using `Sentry.configureScope(ScopeType.ISOLATION, (scope) -> { ... })`. The SDK automatically forks isolation scope in certain cases like incoming requests, CRON jobs, Spring `@Async` and more.
-    - Current scope is forked often and data added to it is only added to events that are created while this scope is active. Data is also passed on to newly forked child scopes but not to parents.
+    - Current scope is forked often and data added to it is only added to events that are created while this scope is active. Data is also passed on to newly forked child scopes but not to parents. It can be manipulated using `Sentry.configureScope(ScopeType.CURRENT, (scope) -> { ... })`.
 - `Sentry.popScope` has been deprecated, please call `.close()` on the token returned by `Sentry.pushScope` instead or use it in a way described in more detail in "Migration Guide".
 - We have chosen a default scope that is used for `Sentry.configureScope()` as well as API like `Sentry.setTag()`
     - For Android the type defaults to `CURRENT` scope
@@ -80,7 +80,7 @@ This SDK version is compatible with a self-hosted version of Sentry `23.5.1` or 
 - Our `sentry-opentelemetry-agent` has been completely reworked and now plays nicely with the rest of the Java SDK
     - You may also want to give this new agent a try even if you haven't used OpenTelemetry (with Sentry) before. It offers support for [many more libraries and frameworks](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md), improving on our trace propagation, `Scopes` (used to be `Hub`) propagation as well as performance instrumentation (i.e. more spans).
     - If you are using a framework we did not support before and currently resort to manual instrumentation, please give the agent a try. See [here for a list of supported libraries, frameworks and application servers](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md).
-    - Please see "Installing `sentry-opentelemetry-agent`" for more details on how to set up the agent.
+    - Please see [Java SDK docs](`SentrySpanProcessor`, `SentryPropagator`, `OpenTelemetryLinkErrorEventProcessor`) for more details on how to set up the agent. Please make sure to select the correct SDK from the dropdown on the left side of the docs.
     - What's new about the Agent
         - When the OpenTelemetry Agent is used, Sentry API creates OpenTelemetry spans under the hood, handing back a wrapper object which bridges the gap between traditional Sentry API and OpenTelemetry. We might be replacing some of the Sentry performance API in the future.
             - This is achieved by configuring the SDK to use `OtelSpanFactory` instead of `DefaultSpanFactory` which is done automatically by the auto init of the Java Agent.
@@ -248,6 +248,8 @@ These changes have been made during development of `8.0.0`. You may skip this se
 
 ### Migration Guide / Deprecations
 
+Please take a look at [our migration guide in docs](https://docs.sentry.io/platforms/java/migration/7.x-to-8.0).
+
 - `Hub` has been deprecated, we're replacing the following:
     - `IHub` has been replaced by `IScopes`, however you should be able to simply pass `IHub` instances to code expecting `IScopes`, allowing for an easier migration.
     - `HubAdapter.getInstance()` has been replaced by `ScopesAdapter.getInstance()`
@@ -269,13 +271,9 @@ try (final @NotNull ISentryLifecycleToken ignored = Sentry.pushIsolationScope())
   // this block has its separate isolation scope
 }
 ```
+- Classes used by our previous OpenTelemetry integration have been deprecated (`SentrySpanProcessor`, `SentryPropagator`, `OpenTelemetryLinkErrorEventProcessor`). Please take a look at [docs](https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/) on how to setup OpenTelemetry in v8.
 
 You may also use `LifecycleHelper.close(token)`, e.g. in case you need to pass the token around for closing later.
-
-
-### Migration Guide
-
-Please take a look at [our migration guide in docs](https://docs.sentry.io/platforms/java/migration/7.x-to-8.0).
 
 
 ### Changes from `rc.4`
