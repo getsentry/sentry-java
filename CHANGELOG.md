@@ -123,6 +123,8 @@ This SDK version is compatible with a self-hosted version of Sentry `23.5.1` or 
     - It is now also possible to provide a bean of type `SentryGraphqlInstrumentation.BeforeSpanCallback` which is then used by `SentryInstrumenter`
 - Add data fetching environment hint to breadcrumb for GraphQL (#3413) ([#3431](https://github.com/getsentry/sentry-java/pull/3431))
 - Report exceptions returned by Throwable.getSuppressed() to Sentry as exception groups ([#3396] https://github.com/getsentry/sentry-java/pull/3396)
+  - Any suppressed exceptions are added to the issue details page in Sentry, the same way any cause is.
+  - We are planning to improve how we visualize suppressed exceptions. See https://github.com/getsentry/sentry-java/issues/4059
 - Enable `ThreadLocalAccessor` for Spring Boot 3 WebFlux by default ([#4023](https://github.com/getsentry/sentry-java/pull/4023))
 - Allow passing `environment` to `CheckinUtils.withCheckIn` ([3889](https://github.com/getsentry/sentry-java/pull/3889))
 - Add `globalHubMode` to options ([#3805](https://github.com/getsentry/sentry-java/pull/3805))
@@ -238,6 +240,10 @@ These changes have been made during development of `8.0.0`. You may skip this se
 - Do not ignore certain span origins for OpenTelemetry without agent ([#3856](https://github.com/getsentry/sentry-java/pull/3856))
 - `span.startChild` now uses `.makeCurrent()` by default ([#3544](https://github.com/getsentry/sentry-java/pull/3544))
     - This caused an issue where the span tree wasn't correct because some spans were not added to their direct parent
+- Do not set the exception group marker when there is a suppressed exception ([#4056](https://github.com/getsentry/sentry-java/pull/4056))
+    - Due to how grouping works in Sentry currently sometimes the suppressed exception is treated as the main exception. This change ensures we keep using the main exception and not change how grouping works.
+    - As a consequence the list of exceptions in the group on top of an issue is no longer shown in Sentry UI.
+    - We are planning to improve this in the future but opted for this fix first.
 
 ### Dependencies
 
