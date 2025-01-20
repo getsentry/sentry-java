@@ -129,9 +129,8 @@ public final class ContextUtils {
                 return context.getString(stringId);
               }
             } catch (Throwable e) {
+              return null;
             }
-
-            return null;
           });
 
   /**
@@ -476,10 +475,10 @@ public final class ContextUtils {
   static void resetInstance() {
     deviceName.resetValue();
     isForegroundImportance.resetValue();
+    staticPackageInfo33.resetValue();
     staticPackageInfo.resetValue();
+    applicationName.resetValue();
     staticAppInfo33.resetValue();
     staticAppInfo.resetValue();
-    staticAppInfo33.resetValue();
-    applicationName.resetValue();
   }
 }
