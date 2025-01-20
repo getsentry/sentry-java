@@ -26,6 +26,9 @@ SentryAndroid.init(context) { options ->
 
 If you would like to keep some of the default broadcast events as breadcrumbs, consider opening a [GitHub issue](https://github.com/getsentry/sentry-java/issues/new).
 
+- The user ip-address is now only set to `"{{auto}}"` if sendDefaultPii is enabled ([#4071](https://github.com/getsentry/sentry-java/pull/4071))
+    - This change gives you control over IP address collection directly on the client
+
 ## 7.20.0
 
 ### Features
