@@ -11,7 +11,7 @@ import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -92,7 +92,7 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
         return null;
       }
 
-      Set<DebugImage> relevantImages = new LinkedHashSet<>();
+      Set<DebugImage> relevantImages = new HashSet<>();
       for (Long addr : addresses) {
         DebugImage image = findImageByAddress(addr, allDebugImages);
         if (image != null) {
