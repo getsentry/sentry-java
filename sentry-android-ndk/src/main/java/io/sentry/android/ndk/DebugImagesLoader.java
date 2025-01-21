@@ -9,8 +9,12 @@ import io.sentry.ndk.NativeModuleListLoader;
 import io.sentry.protocol.DebugImage;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
+
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -27,7 +31,9 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
 
   private static @Nullable List<DebugImage> debugImages;
 
-  /** we need to lock it because it could be called from different threads */
+  /**
+   * we need to lock it because it could be called from different threads
+   */
   protected static final @NotNull AutoClosableReentrantLock debugImagesLock =
       new AutoClosableReentrantLock();
 
@@ -75,7 +81,71 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
     return debugImages;
   }
 
-  /** Clears the caching of debug images on sentry-native and here. */
+  /**
+   * Finds a debug image containing the given address using binary search.
+   * Requires the images to be sorted.
+   *
+   * @return The matching debug image or null if not found
+   */
+  private @Nullable DebugImage findImageByAddress(long address, List<DebugImage> images) {
+    int left = 0;
+    int right = images.size() - 1;
+
+    while (left <= right) {
+      int mid = left + (right - left) / 2;
+      DebugImage image = images.get(mid);
+
+      if (image.getImageAddr() == null || image.getImageSize() == null) {
+        return null;
+      }
+
+      long imageStart = Long.parseLong(image.getImageAddr().replace("0x", ""), 16);
+      long imageEnd = imageStart + image.getImageSize();
+
+      if (address >= imageStart && address < imageEnd) {
+        return image;
+      } else if (address < imageStart) {
+        right = mid - 1;
+      } else {
+        left = mid + 1;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Loads debug images for the given set of addresses.
+   * @param addresses Set of memory addresses to find debug images for
+   * @return Set of debug images, or null if debug images couldn't be loaded
+   */
+  public @Nullable Set<DebugImage> loadDebugImagesForAddresses(@NotNull Set<Long> addresses) {
+    List<DebugImage> allDebugImages = loadDebugImages();
+    if (allDebugImages == null) {
+      return null;
+    }
+
+    Set<DebugImage> relevantImages = new LinkedHashSet<>();
+    for (Long addr : addresses) {
+      relevantImages.add(findImageByAddress(addr, allDebugImages));
+    }
+
+    // Return null if no images were found
+    if (relevantImages.isEmpty()) {
+      options.getLogger().log(
+        SentryLevel.WARNING,
+        "No debug images found for any of the %d addresses.",
+        addresses.size()
+      );
+      return null;
+    }
+
+    return relevantImages;
+  }
+
+  /**
+   * Clears the caching of debug images on sentry-native and here.
+   */
   @Override
   public void clearDebugImages() {
     try (final @NotNull ISentryLifecycleToken ignored = debugImagesLock.acquire()) {
