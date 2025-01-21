@@ -27,7 +27,7 @@ settings as environment variables (e.g. `SENTRY_DSN=...`).
 
 By default, if you pass either `SENTRY_DSN` or `SENTRY_PROPERTIES_FILE` as environment variable,
 Sentry will automatically be initialized by this agent. To disable this behaviour, you can set
-`SENTRY_AUTO_INIT=false` as environment variable. You will then have to initialize Sentry inside
+`SENTRY_AUTO_INIT=false` as environment variable. You will then have to use a Sentry SDK that takes care of initialization or initialize Sentry manually inside
 the target application:
 
 ```
