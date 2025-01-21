@@ -31,9 +31,7 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
 
   private static @Nullable List<DebugImage> debugImages;
 
-  /**
-   * we need to lock it because it could be called from different threads
-   */
+  /** we need to lock it because it could be called from different threads */
   protected static final @NotNull AutoClosableReentrantLock debugImagesLock =
       new AutoClosableReentrantLock();
 
@@ -88,29 +86,31 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
    * @return Set of debug images, or null if debug images couldn't be loaded
    */
   public @Nullable Set<DebugImage> loadDebugImagesForAddresses(@NotNull Set<Long> addresses) {
-    List<DebugImage> allDebugImages = loadDebugImages();
-    if (allDebugImages == null) {
-      return null;
-    }
-
-    Set<DebugImage> relevantImages = new LinkedHashSet<>();
-    for (Long addr : addresses) {
-      DebugImage image = findImageByAddress(addr, allDebugImages);
-      if (image != null) {
-        relevantImages.add(image);
+    try (final @NotNull ISentryLifecycleToken ignored = debugImagesLock.acquire()) {
+      List<DebugImage> allDebugImages = loadDebugImages();
+      if (allDebugImages == null) {
+        return null;
       }
-    }
 
-    if (relevantImages.isEmpty()) {
-      options.getLogger().log(
-        SentryLevel.WARNING,
-        "No debug images found for any of the %d addresses.",
-        addresses.size()
-      );
-      return null;
-    }
+      Set<DebugImage> relevantImages = new LinkedHashSet<>();
+      for (Long addr : addresses) {
+        DebugImage image = findImageByAddress(addr, allDebugImages);
+        if (image != null) {
+          relevantImages.add(image);
+        }
+      }
 
-    return relevantImages;
+      if (relevantImages.isEmpty()) {
+        options.getLogger().log(
+          SentryLevel.WARNING,
+          "No debug images found for any of the %d addresses.",
+          addresses.size()
+        );
+        return null;
+      }
+
+      return relevantImages;
+    }
   }
 
   /**
