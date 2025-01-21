@@ -22,6 +22,9 @@ public final class SentryNdk {
               try {
                 //noinspection UnstableApiUsage
                 io.sentry.ndk.SentryNdk.loadNativeLibraries();
+              } catch (Throwable t) {
+                // ignored
+                // if loadLibrary() fails, the later init() will throw an exception anyway
               } finally {
                 loadLibraryLatch.countDown();
               }
