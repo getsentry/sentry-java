@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Dependencies
+
+- Bump Spring Boot to `3.4.1` ([#4081](https://github.com/getsentry/sentry-java/pull/4081))
+
 ## 8.0.0
 
 Version 8 of the Sentry Android/Java SDK brings a variety of features and fixes. The most notable changes are:
