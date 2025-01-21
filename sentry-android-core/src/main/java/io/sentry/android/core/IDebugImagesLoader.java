@@ -13,7 +13,7 @@ public interface IDebugImagesLoader {
   List<DebugImage> loadDebugImages();
 
   @Nullable
-  Set<DebugImage> loadDebugImagesForAddresses(Set<Long> addresses);
+  Set<DebugImage> loadDebugImagesForAddresses(Set<String> addresses);
 
   void clearDebugImages();
 }

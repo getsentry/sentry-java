@@ -21,7 +21,7 @@ final class NoOpDebugImagesLoader implements IDebugImagesLoader {
   }
 
   @Override
-  public @Nullable Set<DebugImage> loadDebugImagesForAddresses(Set<Long> addresses) {
+  public @Nullable Set<DebugImage> loadDebugImagesForAddresses(Set<String> addresses) {
     return null;
   }
 

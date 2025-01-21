@@ -103,7 +103,7 @@ class DebugImagesLoaderTest {
         whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2, image3))
 
         val result = sut.loadDebugImagesForAddresses(
-            setOf(0x1500L, 0x2500L)
+            setOf("0x1500", "0x2500")
         )
 
         assertNotNull(result)
@@ -128,7 +128,7 @@ class DebugImagesLoaderTest {
 
         whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2))
 
-        val hexAddresses = setOf(-100, 0x1500L)
+        val hexAddresses = setOf("0xINVALID", "0x1500")
         val result = sut.loadDebugImagesForAddresses(hexAddresses)
 
         assertEquals(1, result!!.size)
@@ -150,7 +150,7 @@ class DebugImagesLoaderTest {
 
         whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2))
 
-        val hexAddresses = setOf(-100, 0x10500L)
+        val hexAddresses = setOf("0x100", "0x10500")
         val result = sut.loadDebugImagesForAddresses(hexAddresses)
 
         assertNull(result)
@@ -177,7 +177,7 @@ class DebugImagesLoaderTest {
 
         whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2, image3))
 
-        val hexAddresses = setOf(100L, 0x2000L, 0x2000L, 0x5000L)
+        val hexAddresses = setOf("0x100", "0x2000", "0x2000", "0x5000")
         val result = sut.loadDebugImagesForAddresses(hexAddresses)
 
         assertNotNull(result)
