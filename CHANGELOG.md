@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+### Summary
+
 Version 8 of the Sentry Android/Java SDK brings a variety of features and fixes. The most notable changes are:
 
 - `Hub` has been replaced by `Scopes`
