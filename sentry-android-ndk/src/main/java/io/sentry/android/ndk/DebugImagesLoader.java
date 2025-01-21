@@ -9,12 +9,10 @@ import io.sentry.ndk.NativeModuleListLoader;
 import io.sentry.protocol.DebugImage;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -101,11 +99,12 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
       }
 
       if (relevantImages.isEmpty()) {
-        options.getLogger().log(
-          SentryLevel.WARNING,
-          "No debug images found for any of the %d addresses.",
-          addresses.size()
-        );
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "No debug images found for any of the %d addresses.",
+                addresses.size());
         return null;
       }
 
@@ -114,8 +113,8 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
   }
 
   /**
-   * Finds a debug image containing the given address using binary search.
-   * Requires the images to be sorted.
+   * Finds a debug image containing the given address using binary search. Requires the images to be
+   * sorted.
    *
    * @return The matching debug image or null if not found
    */

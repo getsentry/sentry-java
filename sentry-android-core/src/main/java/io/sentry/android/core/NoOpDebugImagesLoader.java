@@ -1,11 +1,8 @@
 package io.sentry.android.core;
 
 import io.sentry.protocol.DebugImage;
-
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-
 import org.jetbrains.annotations.Nullable;
 
 final class NoOpDebugImagesLoader implements IDebugImagesLoader {
