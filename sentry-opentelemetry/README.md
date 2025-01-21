@@ -47,7 +47,7 @@ Combines all modules and dependencies needed to use Sentry with OpenTelemetry wi
 Combines all modules and dependencies needed to use Sentry with OpenTelemetry in SpringBoot without an agent.
 
 ## Running without an Agent
-If you want to use Sentry with OpenTelemetry without an agent, you can do so by adding the `sentry-opentelemetry-agentless` module as dependencies to your project. 
+If you want to use Sentry with OpenTelemetry without an agent, you can do so by adding the `sentry-opentelemetry-agentless` (or `sentry-opentelemetry-agentless-spring`) module as dependency to your project. 
 
 And run your application with the following JVM arguments:
 ```
