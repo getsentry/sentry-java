@@ -1,7 +1,5 @@
 # sentry-opentelemetry
 
-*NOTE: Our OpenTelemetry modules are still experimental. Any feedback is welcome.*
-
 ## OpenTelemetry
 
 More information on OpenTelemetry can be found on their [website](https://opentelemetry.io/) as well

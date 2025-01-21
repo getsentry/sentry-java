@@ -1,7 +1,5 @@
 # sentry-opentelemetry-agentless
 
-*NOTE: Our OpenTelemetry modules are still experimental. Any feedback is welcome.*
-
 ## How to use it
 
 Add the latest `sentry-opentelemetry-agentless` module as a dependency and add a `sentry.properties` 
