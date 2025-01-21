@@ -2,16 +2,14 @@ package io.sentry.android.ndk
 
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.ndk.NativeModuleListLoader
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-
 
 class DebugImagesLoaderTest {
     private class Fixture {
