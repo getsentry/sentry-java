@@ -2484,6 +2484,7 @@ public final class io/sentry/SentryBaseEvent$Serializer {
 }
 
 public final class io/sentry/SentryClient : io/sentry/ISentryClient {
+	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
