@@ -379,28 +379,26 @@ final class ManifestMetadataReader {
             readBool(
                 metadata, logger, ENABLE_SCOPE_PERSISTENCE, options.isEnableScopePersistence()));
 
-        if (options.getExperimental().getSessionReplay().getSessionSampleRate() == null) {
+        if (options.getSessionReplay().getSessionSampleRate() == null) {
           final Double sessionSampleRate =
               readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
           if (sessionSampleRate != -1) {
-            options.getExperimental().getSessionReplay().setSessionSampleRate(sessionSampleRate);
+            options.getSessionReplay().setSessionSampleRate(sessionSampleRate);
           }
         }
 
-        if (options.getExperimental().getSessionReplay().getOnErrorSampleRate() == null) {
+        if (options.getSessionReplay().getOnErrorSampleRate() == null) {
           final Double onErrorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
           if (onErrorSampleRate != -1) {
-            options.getExperimental().getSessionReplay().setOnErrorSampleRate(onErrorSampleRate);
+            options.getSessionReplay().setOnErrorSampleRate(onErrorSampleRate);
           }
         }
 
         options
-            .getExperimental()
             .getSessionReplay()
             .setMaskAllText(readBool(metadata, logger, REPLAYS_MASK_ALL_TEXT, true));
 
         options
-            .getExperimental()
             .getSessionReplay()
             .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
       }

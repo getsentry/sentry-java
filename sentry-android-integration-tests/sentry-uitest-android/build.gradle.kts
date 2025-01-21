@@ -26,6 +26,7 @@ android {
         // This doesn't work on some devices with Android 11+. Clearing package data resets permissions.
         // Check the readme for more info.
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
+        buildConfigField("String", "ENVIRONMENT", "\"${System.getProperty("environment", "")}\"")
     }
 
     testOptions {
@@ -125,6 +126,7 @@ dependencies {
     androidTestImplementation(Config.TestLibs.mockWebserver)
     androidTestImplementation(Config.TestLibs.androidxJunit)
     androidTestImplementation(Config.TestLibs.leakCanaryInstrumentation)
+    androidTestImplementation(Config.TestLibs.awaitility3)
     androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
 }
 

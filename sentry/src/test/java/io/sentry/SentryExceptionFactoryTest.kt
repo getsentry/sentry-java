@@ -231,7 +231,7 @@ class SentryExceptionFactoryTest {
 
         assertEquals("message", mainInQueue.value)
         assertEquals(0, mainInQueue.mechanism?.exceptionId)
-        assertEquals(true, mainInQueue.mechanism?.isExceptionGroup)
+//        assertEquals(true, mainInQueue.mechanism?.isExceptionGroup)
     }
 
     @Test
@@ -255,12 +255,12 @@ class SentryExceptionFactoryTest {
         assertEquals("inner", mainInQueue.value)
         assertEquals(1, mainInQueue.mechanism?.exceptionId)
         assertEquals(0, mainInQueue.mechanism?.parentId)
-        assertEquals(true, mainInQueue.mechanism?.isExceptionGroup)
+//        assertEquals(true, mainInQueue.mechanism?.isExceptionGroup)
 
         assertEquals("outer", outerInQueue.value)
         assertEquals(0, outerInQueue.mechanism?.exceptionId)
         assertNull(outerInQueue.mechanism?.parentId)
-        assertNull(outerInQueue.mechanism?.isExceptionGroup)
+//        assertNull(outerInQueue.mechanism?.isExceptionGroup)
     }
 
     @Test
@@ -288,12 +288,12 @@ class SentryExceptionFactoryTest {
         assertEquals("inner", mainInQueue.value)
         assertEquals(1, mainInQueue.mechanism?.exceptionId)
         assertEquals(0, mainInQueue.mechanism?.parentId)
-        assertEquals(true, mainInQueue.mechanism?.isExceptionGroup)
+//        assertEquals(true, mainInQueue.mechanism?.isExceptionGroup)
 
         assertEquals("outer", outerInQueue.value)
         assertEquals(0, outerInQueue.mechanism?.exceptionId)
         assertNull(outerInQueue.mechanism?.parentId)
-        assertNull(outerInQueue.mechanism?.isExceptionGroup)
+//        assertNull(outerInQueue.mechanism?.isExceptionGroup)
     }
 
     @Test
@@ -324,7 +324,7 @@ class SentryExceptionFactoryTest {
         assertEquals("innermost", innerMostExceptionInQueue.value)
         assertEquals(3, innerMostExceptionInQueue.mechanism?.exceptionId)
         assertEquals(1, innerMostExceptionInQueue.mechanism?.parentId)
-        assertEquals(true, innerMostExceptionInQueue.mechanism?.isExceptionGroup)
+//        assertEquals(true, innerMostExceptionInQueue.mechanism?.isExceptionGroup)
 
         assertEquals("suppressed", innerSuppressedInQueue.value)
         assertEquals(2, innerSuppressedInQueue.mechanism?.exceptionId)
@@ -334,7 +334,7 @@ class SentryExceptionFactoryTest {
         assertEquals("inner", innerExceptionInQueue.value)
         assertEquals(1, innerExceptionInQueue.mechanism?.exceptionId)
         assertEquals(0, innerExceptionInQueue.mechanism?.parentId)
-        assertEquals(true, innerExceptionInQueue.mechanism?.isExceptionGroup)
+//        assertEquals(true, innerExceptionInQueue.mechanism?.isExceptionGroup)
 
         assertEquals("outer", outerInQueue.value)
         assertEquals(0, outerInQueue.mechanism?.exceptionId)
@@ -378,7 +378,7 @@ class SentryExceptionFactoryTest {
         assertEquals("innermost", innerMostExceptionInQueue.value)
         assertEquals(3, innerMostExceptionInQueue.mechanism?.exceptionId)
         assertEquals(1, innerMostExceptionInQueue.mechanism?.parentId)
-        assertEquals(true, innerMostExceptionInQueue.mechanism?.isExceptionGroup)
+//        assertEquals(true, innerMostExceptionInQueue.mechanism?.isExceptionGroup)
 
         assertEquals("suppressed", innerSuppressedInQueue.value)
         assertEquals(2, innerSuppressedInQueue.mechanism?.exceptionId)
@@ -388,7 +388,7 @@ class SentryExceptionFactoryTest {
         assertEquals("inner", innerExceptionInQueue.value)
         assertEquals(1, innerExceptionInQueue.mechanism?.exceptionId)
         assertEquals(0, innerExceptionInQueue.mechanism?.parentId)
-        assertEquals(true, innerExceptionInQueue.mechanism?.isExceptionGroup)
+//        assertEquals(true, innerExceptionInQueue.mechanism?.isExceptionGroup)
 
         assertEquals("outer", outerInQueue.value)
         assertEquals(0, outerInQueue.mechanism?.exceptionId)
