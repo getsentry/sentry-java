@@ -1,14 +1,12 @@
 package io.sentry.android.ndk
 
 import io.sentry.android.core.SentryAndroidOptions
-import io.sentry.ndk.DebugImage
 import io.sentry.ndk.NativeModuleListLoader
 import org.junit.Assert.assertEquals
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
-import kotlin.test.assertContains
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -86,19 +84,22 @@ class DebugImagesLoaderTest {
     fun testFindImageByAddress() {
         val sut = fixture.getSut()
 
-        val image1 = DebugImage()
-        image1.imageAddr = "0x1000"
-        image1.imageSize = 0x1000L
+        val image1 = io.sentry.ndk.DebugImage().apply {
+            imageAddr = "0x1000"
+            imageSize = 0x1000L
+        }
 
-        val image2 = DebugImage()
-        image2.imageAddr = "0x2000"
-        image2.imageSize = 0x1000L
+        val image2 = io.sentry.ndk.DebugImage().apply {
+            imageAddr = "0x2000"
+            imageSize = 0x1000L
+        }
 
-        val image3 = DebugImage()
-        image3.imageAddr = "0x3000"
-        image3.imageSize = 0x1000L
+        val image3 = io.sentry.ndk.DebugImage().apply {
+            imageAddr = "0x3000"
+            imageSize = 0x1000L
+        }
 
-        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2))
+        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2, image3))
 
         val result = sut.loadDebugImagesForAddresses(
             setOf(0x1500L, 0x2500L)
@@ -107,5 +108,26 @@ class DebugImagesLoaderTest {
         assertEquals(2, result.size)
         assertEquals(image1.imageAddr, result[0].imageAddr)
         assertEquals(image2.imageAddr, result[1].imageAddr)
+    }
+
+    @Test
+    fun testInvalidHexAddress() {
+        val sut = fixture.getSut()
+        val image1 = io.sentry.ndk.DebugImage().apply {
+            imageAddr = "0x1000"
+            imageSize = 0x1000L
+        }
+
+        val image2 = io.sentry.ndk.DebugImage().apply {
+            imageAddr = "0x2000"
+            imageSize = 0x1000L
+        }
+
+        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2))
+
+        val hexAddresses = setOf(-100, 0x1500L)
+        val result = sut.loadDebugImagesForAddresses(hexAddresses)
+
+        assertEquals(1, result!!.size)
     }
 }

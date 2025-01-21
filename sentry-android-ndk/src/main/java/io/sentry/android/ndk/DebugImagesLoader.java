@@ -127,7 +127,10 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
 
     Set<DebugImage> relevantImages = new LinkedHashSet<>();
     for (Long addr : addresses) {
-      relevantImages.add(findImageByAddress(addr, allDebugImages));
+      DebugImage image = findImageByAddress(addr, allDebugImages);
+      if (image != null) {
+        relevantImages.add(image);
+      }
     }
 
     // Return null if no images were found
