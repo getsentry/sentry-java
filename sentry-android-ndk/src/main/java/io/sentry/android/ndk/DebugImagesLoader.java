@@ -83,6 +83,7 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
 
   /**
    * Loads debug images for the given set of addresses.
+   *
    * @param addresses Set of memory addresses to find debug images for
    * @return Set of debug images, or null if debug images couldn't be loaded
    */
