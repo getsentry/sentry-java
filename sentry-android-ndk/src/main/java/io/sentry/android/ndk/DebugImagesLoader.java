@@ -90,15 +90,15 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
         return null;
       }
 
-      Set<DebugImage> relevantImages = new HashSet<>();
+      Set<DebugImage> referencedImages = new HashSet<>();
       for (Long addr : addresses) {
         DebugImage image = findImageByAddress(addr, allDebugImages);
         if (image != null) {
-          relevantImages.add(image);
+          referencedImages.add(image);
         }
       }
 
-      if (relevantImages.isEmpty()) {
+      if (referencedImages.isEmpty()) {
         options
             .getLogger()
             .log(
@@ -108,7 +108,7 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
         return null;
       }
 
-      return relevantImages;
+      return referencedImages;
     }
   }
 
