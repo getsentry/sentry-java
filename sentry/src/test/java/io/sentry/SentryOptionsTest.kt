@@ -326,6 +326,7 @@ class SentryOptionsTest {
         externalOptions.isSendModules = false
         externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
         externalOptions.ignoredTransactions = listOf("transactionName1", "transaction-name-B")
+        externalOptions.ignoredExceptions = listOf("com.some.Exception1", "com.some.Exception2")
         externalOptions.isEnableBackpressureHandling = false
         externalOptions.maxRequestBodySize = SentryOptions.RequestSize.MEDIUM
         externalOptions.isSendDefaultPii = true
@@ -370,6 +371,7 @@ class SentryOptionsTest {
         assertFalse(options.isSendModules)
         assertEquals(listOf(FilterString("slug1"), FilterString("slug-B")), options.ignoredCheckIns)
         assertEquals(listOf(FilterString("transactionName1"), FilterString("transaction-name-B")), options.ignoredTransactions)
+        assertEquals(listOf(FilterString("com.some.Exception1"), FilterString("com.some.Exception2")), options.ignoredExceptions)
         assertFalse(options.isEnableBackpressureHandling)
         assertTrue(options.isForceInit)
         assertNotNull(options.cron)

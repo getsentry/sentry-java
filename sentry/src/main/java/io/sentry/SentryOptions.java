@@ -70,6 +70,12 @@ public class SentryOptions {
       new CopyOnWriteArraySet<>();
 
   /**
+   * Exception names or regex patterns that the captured exception will be tested against. If there
+   * is a match, the captured exception will not be sent to Sentry as {@link SentryEvent}.
+   */
+  private @Nullable List<FilterString> ignoredExceptions = null;
+
+  /**
    * Code that provides middlewares, bindings or hooks into certain frameworks or environments,
    * along with code that inserts those bindings and activates them.
    */
@@ -1572,6 +1578,32 @@ public class SentryOptions {
     return this.ignoredExceptionsForType.contains(throwable.getClass());
   }
 
+  public @Nullable List<FilterString> getIgnoredExceptions() {
+    return ignoredExceptions;
+  }
+
+  public void setIgnoredExceptions(final @Nullable List<String> ignoredExceptions) {
+    if (ignoredExceptions == null) {
+      this.ignoredExceptions = null;
+    } else {
+      @NotNull final List<FilterString> patterns = new ArrayList<>();
+      for (String pattern : ignoredExceptions) {
+        if (pattern != null && !pattern.isEmpty()) {
+          patterns.add(new FilterString(pattern));
+        }
+      }
+
+      this.ignoredExceptions = patterns;
+    }
+  }
+
+  public void addIgnoredException(final @NotNull String pattern) {
+    if (ignoredExceptions == null) {
+      ignoredExceptions = new ArrayList<>();
+    }
+    ignoredExceptions.add(new FilterString(pattern));
+  }
+
   /**
    * Returns the maximum number of spans that can be attached to single transaction.
    *
@@ -2800,6 +2832,10 @@ public class SentryOptions {
     if (options.getIgnoredTransactions() != null) {
       final List<String> ignoredTransactions = new ArrayList<>(options.getIgnoredTransactions());
       setIgnoredTransactions(ignoredTransactions);
+    }
+    if (options.getIgnoredExceptions() != null) {
+      final List<String> ignoredExceptions = new ArrayList<>(options.getIgnoredExceptions());
+      setIgnoredExceptions(ignoredExceptions);
     }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());

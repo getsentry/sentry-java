@@ -210,6 +210,16 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with ignored exception patterns using external properties`() {
+        val logger = mock<ILogger>()
+        withPropertiesFile("ignored-exceptions=java.lang.RuntimeException,io.sentry..*", logger) { options ->
+            System.out.println(options.ignoredExceptions)
+            assertTrue(options.ignoredExceptions!!.contains("java.lang.RuntimeException"))
+            assertTrue(options.ignoredExceptions!!.contains("io.sentry..*"))
+        }
+    }
+
+    @Test
     fun `creates options with single bundle ID using external properties`() {
         withPropertiesFile("bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411") { options ->
             assertTrue(options.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411")))

@@ -436,6 +436,7 @@ public final class io/sentry/ExternalOptions {
 	public fun <init> ()V
 	public fun addBundleId (Ljava/lang/String;)V
 	public fun addContextTag (Ljava/lang/String;)V
+	public fun addIgnoredException (Ljava/lang/String;)V
 	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
 	public fun addInAppExclude (Ljava/lang/String;)V
 	public fun addInAppInclude (Ljava/lang/String;)V
@@ -452,6 +453,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
+	public fun getIgnoredExceptions ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
@@ -491,6 +493,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setGlobalHubMode (Ljava/lang/Boolean;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
+	public fun setIgnoredExceptions (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
@@ -2814,6 +2817,7 @@ public class io/sentry/SentryOptions {
 	public fun addContextTag (Ljava/lang/String;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
 	public fun addIgnoredCheckIn (Ljava/lang/String;)V
+	public fun addIgnoredException (Ljava/lang/String;)V
 	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
 	public fun addIgnoredSpanOrigin (Ljava/lang/String;)V
 	public fun addIgnoredTransaction (Ljava/lang/String;)V
@@ -2855,6 +2859,7 @@ public class io/sentry/SentryOptions {
 	public fun getGestureTargetLocators ()Ljava/util/List;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
+	public fun getIgnoredExceptions ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getIgnoredSpanOrigins ()Ljava/util/List;
 	public fun getIgnoredTransactions ()Ljava/util/List;
@@ -2987,6 +2992,7 @@ public class io/sentry/SentryOptions {
 	public fun setGlobalHubMode (Ljava/lang/Boolean;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
+	public fun setIgnoredExceptions (Ljava/util/List;)V
 	public fun setIgnoredSpanOrigins (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setInitPriority (Lio/sentry/InitPriority;)V

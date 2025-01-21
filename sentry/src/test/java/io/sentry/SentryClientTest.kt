@@ -1759,6 +1759,40 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when exception matches pattern in ignoredExceptions, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredException(IllegalStateException::class.java.canonicalName)
+        val sut = fixture.getSut()
+        sut.captureException(IllegalStateException())
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when exception does not match pattern in ignoredExceptions, capturing event sends it`() {
+        fixture.sentryOptions.addIgnoredException(IllegalStateException::class.java.canonicalName)
+        val sut = fixture.getSut()
+        class MyException(message: String) : Exception(message)
+        sut.captureException(MyException("hello"))
+        verify(fixture.transport).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when exception matches regex pattern in ignoredExceptions, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredException("java.lang..*")
+        val sut = fixture.getSut()
+        sut.captureException(IllegalStateException())
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when exception does not match regex pattern in ignoredExceptions, capturing event sends it`() {
+        fixture.sentryOptions.addIgnoredException("java.lang..*")
+        val sut = fixture.getSut()
+        class MyException(message: String) : Exception(message)
+        sut.captureException(MyException("hello"))
+        verify(fixture.transport).send(any(), anyOrNull())
+    }
+
+    @Test
     fun `screenshot is added to the envelope from the hint`() {
         val sut = fixture.getSut()
         val attachment = Attachment.fromScreenshot(byteArrayOf())

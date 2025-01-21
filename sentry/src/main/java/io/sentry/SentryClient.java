@@ -103,17 +103,42 @@ public final class SentryClient implements ISentryClient {
 
     if (event != null) {
       final Throwable eventThrowable = event.getThrowable();
-      if (eventThrowable != null && options.containsIgnoredExceptionForType(eventThrowable)) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Event was dropped as the exception %s is ignored",
-                eventThrowable.getClass());
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
-        return SentryId.EMPTY_ID;
+      if (eventThrowable != null) {
+        if (options.containsIgnoredExceptionForType(eventThrowable)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Event was dropped as the exception %s is ignored",
+                  eventThrowable.getClass());
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+          return SentryId.EMPTY_ID;
+        }
+
+        final List<FilterString> ignoredExceptions = options.getIgnoredExceptions();
+        if (ignoredExceptions != null) {
+          final String throwableClassName = eventThrowable.getClass().getCanonicalName();
+          if (throwableClassName != null) {
+            for (final FilterString filter : ignoredExceptions) {
+              if (filter.getFilterString().equals(throwableClassName)
+                  || filter.matches(throwableClassName)) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.DEBUG,
+                        "Event was dropped as the exception %s matches the ignoreExceptions filter pattern %s",
+                        throwableClassName,
+                        filter.getFilterString());
+                options
+                    .getClientReportRecorder()
+                    .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+                return SentryId.EMPTY_ID;
+              }
+            }
+          }
+        }
       }
     }
 
