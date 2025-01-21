@@ -3,6 +3,7 @@ package io.sentry.android.ndk
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.ndk.NativeModuleListLoader
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -81,7 +82,7 @@ class DebugImagesLoaderTest {
     }
 
     @Test
-    fun testFindImageByAddress() {
+    fun `find images by address`() {
         val sut = fixture.getSut()
 
         val image1 = io.sentry.ndk.DebugImage().apply {
@@ -111,8 +112,9 @@ class DebugImagesLoaderTest {
     }
 
     @Test
-    fun testInvalidHexAddress() {
+    fun `find images with invalid addresses are not added to the result`() {
         val sut = fixture.getSut()
+
         val image1 = io.sentry.ndk.DebugImage().apply {
             imageAddr = "0x1000"
             imageSize = 0x1000L
@@ -129,5 +131,27 @@ class DebugImagesLoaderTest {
         val result = sut.loadDebugImagesForAddresses(hexAddresses)
 
         assertEquals(1, result!!.size)
+    }
+
+    @Test
+    fun `find images by address returns null if result is empty`() {
+        val sut = fixture.getSut()
+
+        val image1 = io.sentry.ndk.DebugImage().apply {
+            imageAddr = "0x1000"
+            imageSize = 0x1000L
+        }
+
+        val image2 = io.sentry.ndk.DebugImage().apply {
+            imageAddr = "0x2000"
+            imageSize = 0x1000L
+        }
+
+        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2))
+
+        val hexAddresses = setOf(-100, 0x10500L)
+        val result = sut.loadDebugImagesForAddresses(hexAddresses)
+
+        assertNull(result)
     }
 }
