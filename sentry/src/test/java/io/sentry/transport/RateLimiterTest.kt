@@ -375,7 +375,6 @@ class RateLimiterTest {
         rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
         rateLimiter.close()
 
-        // If rate limit didn't already change, wait for 1.5s to ensure the timer has run after 1s
         applied.await(2, TimeUnit.SECONDS)
         assertTrue(activeForReplay)
     }
