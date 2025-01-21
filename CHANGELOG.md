@@ -297,6 +297,7 @@ If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that
     - Due to how grouping works in Sentry currently sometimes the suppressed exception is treated as the main exception. This change ensures we keep using the main exception and not change how grouping works.
     - As a consequence the list of exceptions in the group on top of an issue is no longer shown in Sentry UI.
     - We are planning to improve this in the future but opted for this fix first.
+- Fix swallow NDK loadLibrary errors ([#4082](https://github.com/getsentry/sentry-java/pull/4082))
 
 ## 7.20.0
 
