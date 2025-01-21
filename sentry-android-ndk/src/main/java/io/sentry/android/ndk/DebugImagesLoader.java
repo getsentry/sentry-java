@@ -82,6 +82,37 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
   }
 
   /**
+   * Loads debug images for the given set of addresses.
+   * @param addresses Set of memory addresses to find debug images for
+   * @return Set of debug images, or null if debug images couldn't be loaded
+   */
+  public @Nullable Set<DebugImage> loadDebugImagesForAddresses(@NotNull Set<Long> addresses) {
+    List<DebugImage> allDebugImages = loadDebugImages();
+    if (allDebugImages == null) {
+      return null;
+    }
+
+    Set<DebugImage> relevantImages = new LinkedHashSet<>();
+    for (Long address : addresses) {
+      DebugImage image = findImageByAddress(address, allDebugImages);
+      if (image != null) {
+        relevantImages.add(image);
+      }
+    }
+
+    if (relevantImages.isEmpty()) {
+      options.getLogger().log(
+        SentryLevel.WARNING,
+        "No debug images found for any of the %d addresses.",
+        addresses.size()
+      );
+      return null;
+    }
+
+    return relevantImages;
+  }
+
+  /**
    * Finds a debug image containing the given address using binary search.
    * Requires the images to be sorted.
    *
@@ -112,38 +143,6 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
     }
 
     return null;
-  }
-
-  /**
-   * Loads debug images for the given set of addresses.
-   * @param addresses Set of memory addresses to find debug images for
-   * @return Set of debug images, or null if debug images couldn't be loaded
-   */
-  public @Nullable Set<DebugImage> loadDebugImagesForAddresses(@NotNull Set<Long> addresses) {
-    List<DebugImage> allDebugImages = loadDebugImages();
-    if (allDebugImages == null) {
-      return null;
-    }
-
-    Set<DebugImage> relevantImages = new LinkedHashSet<>();
-    for (Long addr : addresses) {
-      DebugImage image = findImageByAddress(addr, allDebugImages);
-      if (image != null) {
-        relevantImages.add(image);
-      }
-    }
-
-    // Return null if no images were found
-    if (relevantImages.isEmpty()) {
-      options.getLogger().log(
-        SentryLevel.WARNING,
-        "No debug images found for any of the %d addresses.",
-        addresses.size()
-      );
-      return null;
-    }
-
-    return relevantImages;
   }
 
   /**
