@@ -145,9 +145,6 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
     return null;
   }
 
-  /**
-   * Clears the caching of debug images on sentry-native and here.
-   */
   @Override
   public void clearDebugImages() {
     try (final @NotNull ISentryLifecycleToken ignored = debugImagesLock.acquire()) {
