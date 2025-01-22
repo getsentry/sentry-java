@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Avoid logging an error when a float is passed in the manifest ([#4031](https://github.com/getsentry/sentry-java/pull/4031))
+
 ## 8.0.0
 
 ### Summary
