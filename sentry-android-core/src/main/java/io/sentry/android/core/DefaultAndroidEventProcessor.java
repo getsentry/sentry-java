@@ -156,7 +156,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (user.getId() == null) {
       user.setId(Installation.id(context));
     }
-    if (user.getIpAddress() == null) {
+    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }

@@ -248,7 +248,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
       user = new User();
       event.setUser(user);
     }
-    if (user.getIpAddress() == null) {
+    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }

@@ -1,6 +1,6 @@
 # Sentry Sample Console
 
-Sample application showing how to use Sentry manually without any framework integration.
+Sample application showing how to use Sentry with OpenTelemetry manually without any framework integration and without java agent.
 
 ## How to run? 
 

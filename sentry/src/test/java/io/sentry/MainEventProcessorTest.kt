@@ -307,6 +307,16 @@ class MainEventProcessorTest {
     }
 
     @Test
+    fun `when event does not have ip address set, do not enrich ip address if sendDefaultPii is false`() {
+        val sut = fixture.getSut(sendDefaultPii = false)
+        val event = SentryEvent()
+        sut.process(event, Hint())
+        assertNotNull(event.user) {
+            assertNull(it.ipAddress)
+        }
+    }
+
+    @Test
     fun `when event has ip address set, keeps original ip address`() {
         val sut = fixture.getSut(sendDefaultPii = true)
         val event = SentryEvent()

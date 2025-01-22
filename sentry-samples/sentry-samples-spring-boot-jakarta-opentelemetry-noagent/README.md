@@ -1,6 +1,6 @@
 # Sentry Sample Spring Boot 3.0+
 
-Sample application showing how to use Sentry with [Spring boot](http://spring.io/projects/spring-boot) from version `3.0` onwards.
+Sample application showing how to use Sentry with [Spring boot](http://spring.io/projects/spring-boot) from version `3.0` onwards integrated with the [OpenTelemetry Spring Boot Starter](https://opentelemetry.io/docs/zero-code/java/spring-boot-starter/) without an agent.
 
 ## How to run? 
 

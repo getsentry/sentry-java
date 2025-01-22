@@ -1,6 +1,6 @@
 # Sentry Sample Spring Boot
 
-Sample application showing how to use Sentry with [Spring boot](http://spring.io/projects/spring-boot).
+Sample application showing how to use Sentry with [Spring boot](http://spring.io/projects/spring-boot)  integrated with the [OpenTelemetry Spring Boot Starter](https://opentelemetry.io/docs/zero-code/java/spring-boot-starter/).
 
 ## How to run? 
 
