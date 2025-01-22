@@ -1,5 +1,6 @@
 package io.sentry.opentelemetry;
 
+import io.sentry.NoOpLogger;
 import io.sentry.SentryOpenTelemetryMode;
 import io.sentry.SentryOptions;
 import io.sentry.util.LoadClass;
@@ -29,15 +30,15 @@ public final class OpenTelemetryUtil {
     final @NotNull SentryOpenTelemetryMode openTelemetryMode = options.getOpenTelemetryMode();
     if (SentryOpenTelemetryMode.AUTO.equals(openTelemetryMode)) {
       if (loadClass.isClassAvailable(
-          "io.sentry.opentelemetry.agent.AgentMarker", options.getLogger())) {
+          "io.sentry.opentelemetry.agent.AgentMarker", NoOpLogger.getInstance())) {
         return SpanUtils.ignoredSpanOriginsForOpenTelemetry(SentryOpenTelemetryMode.AGENT);
       }
       if (loadClass.isClassAvailable(
-          "io.sentry.opentelemetry.agent.AgentlessMarker", options.getLogger())) {
+          "io.sentry.opentelemetry.agent.AgentlessMarker", NoOpLogger.getInstance())) {
         return SpanUtils.ignoredSpanOriginsForOpenTelemetry(SentryOpenTelemetryMode.AGENTLESS);
       }
       if (loadClass.isClassAvailable(
-          "io.sentry.opentelemetry.agent.AgentlessSpringMarker", options.getLogger())) {
+          "io.sentry.opentelemetry.agent.AgentlessSpringMarker", NoOpLogger.getInstance())) {
         return SpanUtils.ignoredSpanOriginsForOpenTelemetry(
             SentryOpenTelemetryMode.AGENTLESS_SPRING);
       }
