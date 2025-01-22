@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 8.0.0
+
+### Summary
 
 ### Features
 
@@ -23,6 +25,8 @@ Version 8 of the Sentry Android/Java SDK brings a variety of features and fixes.
 - The SDK is now compatible with Spring Boot 3.4
 - We now support GraphQL v22 (`sentry-graphql-22`)
 - Metrics have been removed
+
+Please take a look at [our migration guide in docs](https://docs.sentry.io/platforms/java/migration/7.x-to-8.0).
 
 ### Sentry Self-hosted Compatibility
 
@@ -71,12 +75,12 @@ This SDK version is compatible with a self-hosted version of Sentry `22.12.0` or
     - Global scope is attached to all events created by the SDK. It can also be modified before `Sentry.init` has been called. It can be manipulated using `Sentry.configureScope(ScopeType.GLOBAL, (scope) -> { ... })`.
     - Isolation scope can be used e.g. to attach data to all events that come up while handling an incoming request. It can also be used for other isolation purposes. It can be manipulated using `Sentry.configureScope(ScopeType.ISOLATION, (scope) -> { ... })`. The SDK automatically forks isolation scope in certain cases like incoming requests, CRON jobs, Spring `@Async` and more.
     - Current scope is forked often and data added to it is only added to events that are created while this scope is active. Data is also passed on to newly forked child scopes but not to parents. It can be manipulated using `Sentry.configureScope(ScopeType.CURRENT, (scope) -> { ... })`.
-- `Sentry.popScope` has been deprecated, please call `.close()` on the token returned by `Sentry.pushScope` instead or use it in a way described in more detail in "Migration Guide".
+- `Sentry.popScope` has been deprecated, please call `.close()` on the token returned by `Sentry.pushScope` instead or use it in a way described in more detail in [our migration guide](https://docs.sentry.io/platforms/java/migration/7.x-to-8.0).
 - We have chosen a default scope that is used for `Sentry.configureScope()` as well as API like `Sentry.setTag()`
     - For Android the type defaults to `CURRENT` scope
     - For Backend and other JVM applicatons it defaults to `ISOLATION` scope
 - Event processors on `Scope` can now be ordered by overriding the `getOrder` method on implementations of `EventProcessor`. NOTE: This order only applies to event processors on `Scope` but not `SentryOptions` at the moment. Feel free to request this if you need it.
-- `Hub` is deprecated in favor of `Scopes`, alongside some `Hub` relevant APIs. More details can be found in the "Migration Guide" section.
+- `Hub` is deprecated in favor of `Scopes`, alongside some `Hub` relevant APIs. More details can be found in [our migration guide](https://docs.sentry.io/platforms/java/migration/7.x-to-8.0).
 - Send file name and path only if `isSendDefaultPii` is `true` ([#3919](https://github.com/getsentry/sentry-java/pull/3919))
 - (Android) Enable Performance V2 by default ([#3824](https://github.com/getsentry/sentry-java/pull/3824))
     - With this change cold app start spans will include spans for ContentProviders, Application and Activity load.
@@ -157,7 +161,7 @@ This SDK version is compatible with a self-hosted version of Sentry `22.12.0` or
     - Previously request body was only attached for `application/json` requests
 - Set breadcrumb level based on http status ([#3771](https://github.com/getsentry/sentry-java/pull/3771))
 - Emit transaction.data inside contexts.trace.data ([#3735](https://github.com/getsentry/sentry-java/pull/3735))
-    - Also does not emit `transaction.data` in `exras` anymore
+    - Also does not emit `transaction.data` in `extras` anymore
 - Add a sample for showcasing Sentry with OpenTelemetry for Spring Boot 3 with our Java agent (`sentry-samples-spring-boot-jakarta-opentelemetry`) ([#3856](https://github.com/getsentry/sentry-java/pull/3828))
 - Add a sample for showcasing Sentry with OpenTelemetry for Spring Boot 3 without our Java agent (`sentry-samples-spring-boot-jakarta-opentelemetry-noagent`) ([#3856](https://github.com/getsentry/sentry-java/pull/3856))
 - Add a sample for showcasing Sentry with OpenTelemetry (`sentry-samples-console-opentelemetry-noagent`) ([#3856](https://github.com/getsentry/sentry-java/pull/3862))

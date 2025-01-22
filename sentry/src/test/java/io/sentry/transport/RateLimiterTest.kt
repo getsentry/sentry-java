@@ -39,6 +39,8 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -363,18 +365,17 @@ class RateLimiterTest {
         val rateLimiter = fixture.getSUT()
         whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 1, 2001)
 
-        val applied = AtomicBoolean(true)
+        val applied = CountDownLatch(1)
+        var activeForReplay = false
         rateLimiter.addRateLimitObserver {
-            applied.set(rateLimiter.isActiveForCategory(Replay))
+            applied.countDown()
+            activeForReplay = rateLimiter.isActiveForCategory(Replay)
         }
 
         rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
         rateLimiter.close()
 
-        // If rate limit didn't already change, wait for 1.5s to ensure the timer has run after 1s
-        if (!applied.get()) {
-            await.untilTrue(applied)
-        }
-        assertTrue(applied.get())
+        applied.await(2, TimeUnit.SECONDS)
+        assertTrue(activeForReplay)
     }
 }
