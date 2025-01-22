@@ -5164,6 +5164,7 @@ public final class io/sentry/protocol/SentrySpan$JsonKeys {
 public final class io/sentry/protocol/SentryStackFrame : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun getAbsPath ()Ljava/lang/String;
+	public fun getAddrMode ()Ljava/lang/String;
 	public fun getColno ()Ljava/lang/Integer;
 	public fun getContextLine ()Ljava/lang/String;
 	public fun getFilename ()Ljava/lang/String;
@@ -5187,6 +5188,7 @@ public final class io/sentry/protocol/SentryStackFrame : io/sentry/JsonSerializa
 	public fun isNative ()Ljava/lang/Boolean;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAbsPath (Ljava/lang/String;)V
+	public fun setAddrMode (Ljava/lang/String;)V
 	public fun setColno (Ljava/lang/Integer;)V
 	public fun setContextLine (Ljava/lang/String;)V
 	public fun setFilename (Ljava/lang/String;)V
@@ -5218,6 +5220,7 @@ public final class io/sentry/protocol/SentryStackFrame$Deserializer : io/sentry/
 
 public final class io/sentry/protocol/SentryStackFrame$JsonKeys {
 	public static final field ABS_PATH Ljava/lang/String;
+	public static final field ADDR_MODE Ljava/lang/String;
 	public static final field COLNO Ljava/lang/String;
 	public static final field CONTEXT_LINE Ljava/lang/String;
 	public static final field FILENAME Ljava/lang/String;
