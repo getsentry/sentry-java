@@ -18,7 +18,8 @@ class ThreadDumpParserTest {
             SentryOptions().apply { addInAppInclude("io.sentry.samples") },
             false
         )
-        val threads = parser.parse(lines)
+        parser.parse(lines)
+        val threads = parser.threads
         // just verifying a few important threads, as there are many
         val main = threads.find { it.name == "main" }
         assertEquals(1, main!!.id)
@@ -85,8 +86,10 @@ class ThreadDumpParserTest {
 
         val nativeFrame = randomThread.stacktrace!!.frames!!.get(5)
         assertEquals("/system/lib64/libandroid_runtime.so", nativeFrame.`package`)
-        assertEquals("android::android_os_MessageQueue_nativePollOnce(_JNIEnv*, _jobject*, long, int)",
-                     nativeFrame.function)
+        assertEquals(
+            "android::android_os_MessageQueue_nativePollOnce(_JNIEnv*, _jobject*, long, int)",
+            nativeFrame.function
+        )
         assertEquals(44, nativeFrame.lineno)
         assertNull(nativeFrame.isNative) // Confusing, but "isNative" means JVM frame for a JNI method
         assertEquals("native", nativeFrame.platform)
@@ -99,7 +102,8 @@ class ThreadDumpParserTest {
             SentryOptions().apply { addInAppInclude("io.sentry.samples") },
             false
         )
-        val threads = parser.parse(lines)
+        parser.parse(lines)
+        val threads = parser.threads
         // just verifying a few important threads, as there are many
         val thread = threads.find { it.name == "samples.android" }
         assertEquals(9955, thread!!.id)
@@ -129,9 +133,10 @@ class ThreadDumpParserTest {
 
         val spaceFrame = frames.get(14)
         assertEquals(
-            "[anon:dalvik-classes16.dex extracted in memory from /data/app/~~izn1xSZpFlzfVmWi_I0xlQ=="
-            + "/io.sentry.samples.android-tQSGMNiGA-qdjZm6lPOcNw==/base.apk!classes16.dex]",
-            spaceFrame.`package`)
+            "[anon:dalvik-classes16.dex extracted in memory from /data/app/~~izn1xSZpFlzfVmWi_I0xlQ==" +
+                "/io.sentry.samples.android-tQSGMNiGA-qdjZm6lPOcNw==/base.apk!classes16.dex]",
+            spaceFrame.`package`
+        )
         assertNull(spaceFrame.function)
         assertNull(spaceFrame.lineno)
         assertEquals("0x00000000000306f0", spaceFrame.instructionAddr)
@@ -152,7 +157,7 @@ class ThreadDumpParserTest {
         assertNull(deletedFrame.addrMode)
 
         val debugImages = parser.debugImages
-        val image = debugImages["499d48ba-c085-17cf-3209-da67405662f9"]
+        val image = debugImages.first { image -> image.debugId == "499d48ba-c085-17cf-3209-da67405662f9" }
         assertNotNull(image)
         assertEquals("499d48ba-c085-17cf-3209-da67405662f9", image.debugId)
         assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", image.codeFile)
@@ -166,7 +171,7 @@ class ThreadDumpParserTest {
             SentryOptions().apply { addInAppInclude("io.sentry.samples") },
             false
         )
-        val threads = parser.parse(lines)
-        assertTrue(threads.isEmpty())
+        parser.parse(lines)
+        assertTrue(parser.threads.isEmpty())
     }
 }
