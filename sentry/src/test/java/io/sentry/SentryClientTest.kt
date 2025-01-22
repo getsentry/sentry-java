@@ -32,6 +32,7 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
@@ -1790,6 +1791,15 @@ class SentryClientTest {
         class MyException(message: String) : Exception(message)
         sut.captureException(MyException("hello"))
         verify(fixture.transport).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when ignoredExceptionsForType and ignoredExceptions are not explicitly specified, capturing event sends exceptions`() {
+        val sut = fixture.getSut()
+        sut.captureException(IllegalStateException())
+        class MyException(message: String) : Exception(message)
+        sut.captureException(MyException("hello"))
+        verify(fixture.transport, atLeast(2)).send(any(), anyOrNull())
     }
 
     @Test

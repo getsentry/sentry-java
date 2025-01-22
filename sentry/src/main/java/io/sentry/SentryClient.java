@@ -11,12 +11,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
-import io.sentry.util.CheckInUtils;
-import io.sentry.util.HintUtils;
-import io.sentry.util.Objects;
-import io.sentry.util.Random;
-import io.sentry.util.SentryRandom;
-import io.sentry.util.TracingUtils;
+import io.sentry.util.*;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -103,42 +98,21 @@ public final class SentryClient implements ISentryClient {
 
     if (event != null) {
       final Throwable eventThrowable = event.getThrowable();
-      if (eventThrowable != null) {
-        if (options.containsIgnoredExceptionForType(eventThrowable)) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Event was dropped as the exception %s is ignored",
-                  eventThrowable.getClass());
-          options
-              .getClientReportRecorder()
-              .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
-          return SentryId.EMPTY_ID;
-        }
-
-        final List<FilterString> ignoredExceptions = options.getIgnoredExceptions();
-        if (ignoredExceptions != null) {
-          final String throwableClassName = eventThrowable.getClass().getCanonicalName();
-          if (throwableClassName != null) {
-            for (final FilterString filter : ignoredExceptions) {
-              if (filter.getFilterString().equals(throwableClassName)
-                  || filter.matches(throwableClassName)) {
-                options
-                    .getLogger()
-                    .log(
-                        SentryLevel.DEBUG,
-                        "Event was dropped as the exception %s matches the ignoreExceptions filter pattern %s",
-                        throwableClassName,
-                        filter.getFilterString());
-                options
-                    .getClientReportRecorder()
-                    .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
-                return SentryId.EMPTY_ID;
-              }
-            }
-          }
-        }
+      if (eventThrowable != null
+          && ExceptionUtils.isIgnored(
+              options.getIgnoredExceptionsForType(),
+              options.getIgnoredExceptions(),
+              eventThrowable)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was dropped as the exception %s is ignored",
+                eventThrowable.getClass());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+        return SentryId.EMPTY_ID;
       }
     }
 

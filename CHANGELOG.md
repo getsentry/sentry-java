@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Features
+
+- Add `options.ignoreExceptions` to filter out exceptions that match a certain String or Regex ([#4083](https://github.com/getsentry/sentry-java/pull/4083))
+  - Can be set in `sentry.properties`, e.g. `ignored-exceptions=java.lang.RuntimeException,io.sentry..*`
+  - Can be set in environment variables, e.g. `SENTRY_IGNORED_EXCEPTIONS=java.lang.RuntimeException,io.sentry..*`
+  - For Spring Boot, it can be set in `application.properties`, e.g. `sentry.ignored-exceptions=java.lang.RuntimeException,io.sentry..*`
+
+## 8.0.0
+
+### Summary
+
 Version 8 of the Sentry Android/Java SDK brings a variety of features and fixes. The most notable changes are:
 
 - `Hub` has been replaced by `Scopes`

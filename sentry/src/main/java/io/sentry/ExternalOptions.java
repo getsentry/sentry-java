@@ -128,9 +128,7 @@ public final class ExternalOptions {
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
 
-    for (final String pattern : propertiesProvider.getList("ignored-exceptions")) {
-      options.addIgnoredException(pattern);
-    }
+    options.setIgnoredExceptions(propertiesProvider.getList("ignored-exceptions"));
 
     options.setEnabled(propertiesProvider.getBooleanProperty("enabled"));
 
