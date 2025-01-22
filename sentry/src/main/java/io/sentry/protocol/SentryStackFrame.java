@@ -100,10 +100,10 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
    *
    * <ul>
    *   <li><code>"abs"</code> (the default): <code>instruction_addr</code> is absolute.
-   *   <li><code>"rel:$idx"</code>: <code>instruction_addr</code> is relative to the
-   *       <code>debug_meta.image</code> identified by its index in the list.
-   *   <li><code>"rel:$uuid"</code>: <code>instruction_addr</code> is relative to the
-   *       <code>debug_meta.image</code> identified by its <code>debug_id</code>.
+   *   <li><code>"rel:$idx"</code>: <code>instruction_addr</code> is relative to the <code>
+   *       debug_meta.image</code> identified by its index in the list.
+   *   <li><code>"rel:$uuid"</code>: <code>instruction_addr</code> is relative to the <code>
+   *       debug_meta.image</code> identified by its <code>debug_id</code>.
    * </ul>
    */
   private @Nullable String addrMode;
@@ -282,7 +282,7 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
   }
 
   public void setAddrMode(final @Nullable String addrMode) {
-      this.addrMode = addrMode;
+    this.addrMode = addrMode;
   }
 
   public @Nullable Boolean isNative() {
