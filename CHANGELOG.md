@@ -5,6 +5,8 @@
 ### Fixes
 
 - Avoid logging an error when a float is passed in the manifest ([#4031](https://github.com/getsentry/sentry-java/pull/4031))
+- Add `request` details to transactions created through OpenTelemetry ([#4098](https://github.com/getsentry/sentry-java/pull/4098))
+  - We now add HTTP request method and URL where Sentry expects it to display it in Sentry UI
 
 ## 8.0.0
 
