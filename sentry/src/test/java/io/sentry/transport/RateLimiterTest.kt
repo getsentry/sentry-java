@@ -366,8 +366,14 @@ class RateLimiterTest {
         val rateLimiter = fixture.getSUT()
         val timer = mock<Timer>()
         rateLimiter.injectForField("timer", timer)
+
+        // When the rate limiter is closed
         rateLimiter.close()
+
+        // Then the timer is cancelled
         verify(timer).cancel()
+
+        // And is removed by the rateLimiter
         assertNull(rateLimiter.getProperty("timer"))
     }
 }
