@@ -16,7 +16,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class OpenTelemetryAtrtibutesExtractorTest {
+class OpenTelemetryAttributesExtractorTest {
 
     private class Fixture {
         val spanData = mock<SpanData>()
