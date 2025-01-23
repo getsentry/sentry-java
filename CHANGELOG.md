@@ -9,6 +9,13 @@
   - Can be set in environment variables, e.g. `SENTRY_IGNORED_ERRORS=Some error,Another .*`
   - For Spring Boot, it can be set in `application.properties`, e.g. `sentry.ignored-errors=Some error,Another .*`
 
+### Fixes
+
+- Avoid logging an error when a float is passed in the manifest ([#4031](https://github.com/getsentry/sentry-java/pull/4031))
+- Remove `java.lang.ClassNotFoundException` debug logs when searching for OpenTelemetry marker classes ([#4091](https://github.com/getsentry/sentry-java/pull/4091))
+  - There was up to three of these, one for `io.sentry.opentelemetry.agent.AgentMarker`, `io.sentry.opentelemetry.agent.AgentlessMarker` and `io.sentry.opentelemetry.agent.AgentlessSpringMarker`.
+  - These were not indicators of something being wrong but rather the SDK looking at what is available at runtime to configure itself accordingly.
+
 ## 8.0.0
 
 ### Summary
