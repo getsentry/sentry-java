@@ -3,6 +3,7 @@ package io.sentry.opentelemetry
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.sdk.internal.AttributesMap
 import io.opentelemetry.sdk.trace.data.SpanData
+import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.ServerAttributes
 import io.opentelemetry.semconv.UrlAttributes
 import io.sentry.ISpan
@@ -13,10 +14,11 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class OpenTelemetryAtrtibutesExtractorTest {
+class OpenTelemetryAttributesExtractorTest {
 
     private class Fixture {
         val spanData = mock<SpanData>()
@@ -36,6 +38,7 @@ class OpenTelemetryAtrtibutesExtractorTest {
     fun `sets URL based on OTel attributes`() {
         givenAttributes(
             mapOf(
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
                 UrlAttributes.URL_SCHEME to "https",
                 UrlAttributes.URL_PATH to "/path/to/123",
                 UrlAttributes.URL_QUERY to "q=123456&b=X",
@@ -56,6 +59,7 @@ class OpenTelemetryAtrtibutesExtractorTest {
         fixture.scope.request = Request().also { it.bodySize = 123L }
         givenAttributes(
             mapOf(
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
                 UrlAttributes.URL_SCHEME to "https",
                 UrlAttributes.URL_PATH to "/path/to/123",
                 UrlAttributes.URL_QUERY to "q=123456&b=X",
@@ -80,6 +84,7 @@ class OpenTelemetryAtrtibutesExtractorTest {
         }
         givenAttributes(
             mapOf(
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
                 UrlAttributes.URL_SCHEME to "https",
                 UrlAttributes.URL_PATH to "/path/to/123",
                 UrlAttributes.URL_QUERY to "q=123456&b=X",
@@ -99,6 +104,7 @@ class OpenTelemetryAtrtibutesExtractorTest {
     fun `sets URL based on OTel attributes without port`() {
         givenAttributes(
             mapOf(
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
                 UrlAttributes.URL_SCHEME to "https",
                 UrlAttributes.URL_PATH to "/path/to/123",
                 ServerAttributes.SERVER_ADDRESS to "io.sentry"
@@ -115,6 +121,7 @@ class OpenTelemetryAtrtibutesExtractorTest {
     fun `sets URL based on OTel attributes without path`() {
         givenAttributes(
             mapOf(
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
                 UrlAttributes.URL_SCHEME to "https",
                 ServerAttributes.SERVER_ADDRESS to "io.sentry"
             )
@@ -130,6 +137,7 @@ class OpenTelemetryAtrtibutesExtractorTest {
     fun `does not set URL if server address is missing`() {
         givenAttributes(
             mapOf(
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
                 UrlAttributes.URL_SCHEME to "https"
             )
         )
@@ -144,6 +152,7 @@ class OpenTelemetryAtrtibutesExtractorTest {
     fun `does not set URL if scheme is missing`() {
         givenAttributes(
             mapOf(
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
                 ServerAttributes.SERVER_ADDRESS to "io.sentry"
             )
         )
@@ -152,6 +161,49 @@ class OpenTelemetryAtrtibutesExtractorTest {
 
         thenRequestIsSet()
         thenUrlIsNotSet()
+    }
+
+    @Test
+    fun `sets server request headers based on OTel attributes and merges list of values`() {
+        givenAttributes(
+            mapOf(
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
+                AttributeKey.stringArrayKey("http.request.header.baggage") to listOf("sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d", "another-baggage=abc,more=def"),
+                AttributeKey.stringArrayKey("http.request.header.sentry-trace") to listOf("f9118105af4a2d42b4124532cd176588-4542d085bb0b4de5"),
+                AttributeKey.stringArrayKey("http.response.header.some-header") to listOf("some-value")
+            )
+        )
+
+        whenExtractingAttributes()
+
+        thenRequestIsSet()
+        thenHeaderIsPresentOnRequest("baggage", "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d,another-baggage=abc,more=def")
+        thenHeaderIsPresentOnRequest("sentry-trace", "f9118105af4a2d42b4124532cd176588-4542d085bb0b4de5")
+        thenHeaderIsNotPresentOnRequest("some-header")
+    }
+
+    @Test
+    fun `if there are no header attributes does not set headers on request`() {
+        givenAttributes(mapOf(HttpAttributes.HTTP_REQUEST_METHOD to "GET"))
+
+        whenExtractingAttributes()
+
+        thenRequestIsSet()
+        assertNull(fixture.scope.request!!.headers)
+    }
+
+    @Test
+    fun `if there is no request method attribute does not set request on scope`() {
+        givenAttributes(
+            mapOf(
+                UrlAttributes.URL_SCHEME to "https",
+                ServerAttributes.SERVER_ADDRESS to "io.sentry"
+            )
+        )
+
+        whenExtractingAttributes()
+
+        thenRequestIsNotSet()
     }
 
     private fun givenAttributes(map: Map<AttributeKey<out Any>, Any>) {
@@ -168,6 +220,10 @@ class OpenTelemetryAtrtibutesExtractorTest {
         assertNotNull(fixture.scope.request)
     }
 
+    private fun thenRequestIsNotSet() {
+        assertNull(fixture.scope.request)
+    }
+
     private fun thenUrlIsSetTo(expected: String) {
         assertEquals(expected, fixture.scope.request!!.url)
     }
@@ -178,5 +234,13 @@ class OpenTelemetryAtrtibutesExtractorTest {
 
     private fun thenQueryIsSetTo(expected: String) {
         assertEquals(expected, fixture.scope.request!!.queryString)
+    }
+
+    private fun thenHeaderIsPresentOnRequest(headerName: String, expectedValue: String) {
+        assertEquals(expectedValue, fixture.scope.request!!.headers!!.get(headerName))
+    }
+
+    private fun thenHeaderIsNotPresentOnRequest(headerName: String) {
+        assertFalse(fixture.scope.request!!.headers!!.containsKey(headerName))
     }
 }
