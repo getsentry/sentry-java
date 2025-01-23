@@ -36,7 +36,7 @@ public final class ExternalOptions {
   private @Nullable Long idleTimeout;
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
-  private @Nullable List<String> ignoredExceptions;
+  private @Nullable List<String> ignoredErrors;
   private @Nullable Boolean printUncaughtStackTrace;
   private @Nullable Boolean sendClientReports;
   private @NotNull Set<String> bundleIds = new CopyOnWriteArraySet<>();
@@ -128,7 +128,7 @@ public final class ExternalOptions {
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
 
-    options.setIgnoredExceptions(propertiesProvider.getList("ignored-exceptions"));
+    options.setIgnoredErrors(propertiesProvider.getList("ignored-errors"));
 
     options.setEnabled(propertiesProvider.getBooleanProperty("enabled"));
 
@@ -373,19 +373,12 @@ public final class ExternalOptions {
     this.idleTimeout = idleTimeout;
   }
 
-  public @Nullable List<String> getIgnoredExceptions() {
-    return ignoredExceptions;
+  public @Nullable List<String> getIgnoredErrors() {
+    return ignoredErrors;
   }
 
-  public void setIgnoredExceptions(final @Nullable List<String> ignoredExceptions) {
-    this.ignoredExceptions = ignoredExceptions;
-  }
-
-  public void addIgnoredException(final @NotNull String pattern) {
-    if (ignoredExceptions == null) {
-      ignoredExceptions = new ArrayList<>();
-    }
-    ignoredExceptions.add(pattern);
+  public void setIgnoredErrors(final @Nullable List<String> ignoredErrors) {
+    this.ignoredErrors = ignoredErrors;
   }
 
   public @Nullable Boolean getSendClientReports() {

@@ -70,10 +70,10 @@ public class SentryOptions {
       new CopyOnWriteArraySet<>();
 
   /**
-   * Exception names or regex patterns that the captured exception will be tested against. If there
-   * is a match, the captured exception will not be sent to Sentry as {@link SentryEvent}.
+   * Strings or regex patterns that possible error messages for an event will be tested against. If
+   * there is a match, the captured event will not be sent to Sentry.
    */
-  private @Nullable List<FilterString> ignoredExceptions = null;
+  private @Nullable List<FilterString> ignoredErrors = null;
 
   /**
    * Code that provides middlewares, bindings or hooks into certain frameworks or environments,
@@ -1578,30 +1578,30 @@ public class SentryOptions {
     return this.ignoredExceptionsForType.contains(throwable.getClass());
   }
 
-  public @Nullable List<FilterString> getIgnoredExceptions() {
-    return ignoredExceptions;
+  public @Nullable List<FilterString> getIgnoredErrors() {
+    return ignoredErrors;
   }
 
-  public void setIgnoredExceptions(final @Nullable List<String> ignoredExceptions) {
-    if (ignoredExceptions == null) {
-      this.ignoredExceptions = null;
+  public void setIgnoredErrors(final @Nullable List<String> ignoredErrors) {
+    if (ignoredErrors == null) {
+      this.ignoredErrors = null;
     } else {
       @NotNull final List<FilterString> patterns = new ArrayList<>();
-      for (String pattern : ignoredExceptions) {
+      for (String pattern : ignoredErrors) {
         if (pattern != null && !pattern.isEmpty()) {
           patterns.add(new FilterString(pattern));
         }
       }
 
-      this.ignoredExceptions = patterns;
+      this.ignoredErrors = patterns;
     }
   }
 
-  public void addIgnoredException(final @NotNull String pattern) {
-    if (ignoredExceptions == null) {
-      ignoredExceptions = new ArrayList<>();
+  public void addIgnoredError(final @NotNull String pattern) {
+    if (ignoredErrors == null) {
+      ignoredErrors = new ArrayList<>();
     }
-    ignoredExceptions.add(new FilterString(pattern));
+    ignoredErrors.add(new FilterString(pattern));
   }
 
   /**
@@ -2833,9 +2833,9 @@ public class SentryOptions {
       final List<String> ignoredTransactions = new ArrayList<>(options.getIgnoredTransactions());
       setIgnoredTransactions(ignoredTransactions);
     }
-    if (options.getIgnoredExceptions() != null) {
-      final List<String> ignoredExceptions = new ArrayList<>(options.getIgnoredExceptions());
-      setIgnoredExceptions(ignoredExceptions);
+    if (options.getIgnoredErrors() != null) {
+      final List<String> ignoredExceptions = new ArrayList<>(options.getIgnoredErrors());
+      setIgnoredErrors(ignoredExceptions);
     }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
