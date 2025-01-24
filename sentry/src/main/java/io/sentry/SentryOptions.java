@@ -70,6 +70,12 @@ public class SentryOptions {
       new CopyOnWriteArraySet<>();
 
   /**
+   * Strings or regex patterns that possible error messages for an event will be tested against. If
+   * there is a match, the captured event will not be sent to Sentry.
+   */
+  private @Nullable List<FilterString> ignoredErrors = null;
+
+  /**
    * Code that provides middlewares, bindings or hooks into certain frameworks or environments,
    * along with code that inserts those bindings and activates them.
    */
@@ -1573,6 +1579,55 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
+   * an event shall be sent to Sentry or ignored.
+   *
+   * @return the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   *     `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine
+   *     if an event shall be sent to Sentry or ignored
+   */
+  public @Nullable List<FilterString> getIgnoredErrors() {
+    return ignoredErrors;
+  }
+
+  /**
+   * Sets the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
+   * an event shall be sent to Sentry or ignored.
+   *
+   * @param ignoredErrors the list of strings/regex patterns
+   */
+  public void setIgnoredErrors(final @Nullable List<String> ignoredErrors) {
+    if (ignoredErrors == null) {
+      this.ignoredErrors = null;
+    } else {
+      @NotNull final List<FilterString> patterns = new ArrayList<>();
+      for (String pattern : ignoredErrors) {
+        if (pattern != null && !pattern.isEmpty()) {
+          patterns.add(new FilterString(pattern));
+        }
+      }
+
+      this.ignoredErrors = patterns;
+    }
+  }
+
+  /**
+   * Adds an item to the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
+   * an event shall be sent to Sentry or ignored.
+   *
+   * @param pattern the string/regex pattern
+   */
+  public void addIgnoredError(final @NotNull String pattern) {
+    if (ignoredErrors == null) {
+      ignoredErrors = new ArrayList<>();
+    }
+    ignoredErrors.add(new FilterString(pattern));
+  }
+
+  /**
    * Returns the maximum number of spans that can be attached to single transaction.
    *
    * @return the maximum number of spans that can be attached to single transaction.
@@ -2800,6 +2855,10 @@ public class SentryOptions {
     if (options.getIgnoredTransactions() != null) {
       final List<String> ignoredTransactions = new ArrayList<>(options.getIgnoredTransactions());
       setIgnoredTransactions(ignoredTransactions);
+    }
+    if (options.getIgnoredErrors() != null) {
+      final List<String> ignoredExceptions = new ArrayList<>(options.getIgnoredErrors());
+      setIgnoredErrors(ignoredExceptions);
     }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());

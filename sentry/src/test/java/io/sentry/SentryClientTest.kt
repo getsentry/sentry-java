@@ -15,6 +15,7 @@ import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
+import io.sentry.protocol.Message
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryException
@@ -1756,6 +1757,65 @@ class SentryClientTest {
         val sut = fixture.getSut()
         sut.captureException(IllegalStateException())
         verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when event message matches string in ignoredErrors, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredError("hello")
+        val sut = fixture.getSut()
+        val event = SentryEvent()
+        val message = Message()
+        message.message = "hello"
+        event.setMessage(message)
+        sut.captureEvent(event)
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when event message matches regex pattern in ignoredErrors, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredError("hello .*")
+        val sut = fixture.getSut()
+        val event = SentryEvent()
+        val message = Message()
+        message.message = "hello world"
+        event.setMessage(message)
+        sut.captureEvent(event)
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when event message does not match regex pattern in ignoredErrors, capturing event sends it`() {
+        fixture.sentryOptions.addIgnoredError("hello .*")
+        val sut = fixture.getSut()
+        val event = SentryEvent()
+        val message = Message()
+        message.message = "test"
+        event.setMessage(message)
+        sut.captureEvent(event)
+        verify(fixture.transport).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when exception message matches regex pattern in ignoredErrors, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredError(".*hello .*")
+        val sut = fixture.getSut()
+        sut.captureException(RuntimeException("hello world"))
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when class matches regex pattern in ignoredErrors, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredError("java\\.lang\\..*")
+        val sut = fixture.getSut()
+        sut.captureException(RuntimeException("hello world"))
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when ignoredExceptionsForType and ignoredErrors are not explicitly specified, capturing event sends event`() {
+        val sut = fixture.getSut()
+        sut.captureException(RuntimeException("test"))
+        verify(fixture.transport).send(any(), anyOrNull())
     }
 
     @Test
