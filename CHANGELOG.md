@@ -17,6 +17,12 @@
   - There was up to three of these, one for `io.sentry.opentelemetry.agent.AgentMarker`, `io.sentry.opentelemetry.agent.AgentlessMarker` and `io.sentry.opentelemetry.agent.AgentlessSpringMarker`.
   - These were not indicators of something being wrong but rather the SDK looking at what is available at runtime to configure itself accordingly.
 
+### Dependencies
+
+- Bump Gradle from v8.5.0 to v8.12.0 ([#4008](https://github.com/getsentry/sentry-java/pull/4008))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8120)
+  - [diff](https://github.com/gradle/gradle/compare/v8.5.0...v8.12.0)
+
 ## 8.0.0
 
 ### Summary
