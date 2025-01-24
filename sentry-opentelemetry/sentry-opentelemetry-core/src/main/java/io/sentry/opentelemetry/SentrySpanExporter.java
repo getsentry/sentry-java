@@ -337,7 +337,8 @@ public final class SentrySpanExporter implements SpanExporter {
     transferSpanDetails(sentrySpanMaybe, sentryTransaction);
 
     scopesToUse.configureScope(
-        ScopeType.CURRENT, scope -> attributesExtractor.extract(span, sentryTransaction, scope));
+        ScopeType.CURRENT,
+        scope -> attributesExtractor.extract(span, scope, scopesToUse.getOptions()));
 
     return sentryTransaction;
   }
