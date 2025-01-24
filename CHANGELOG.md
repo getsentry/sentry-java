@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Features
+
+- Add `options.ignoredErrors` to filter out errors that match a certain String or Regex ([#4083](https://github.com/getsentry/sentry-java/pull/4083))
+  - The matching is attempted on `event.message`, `event.formatted`, and `{event.throwable.class.name}: {event.throwable.message}`
+  - Can be set in `sentry.properties`, e.g. `ignored-errors=Some error,Another .*`
+  - Can be set in environment variables, e.g. `SENTRY_IGNORED_ERRORS=Some error,Another .*`
+  - For Spring Boot, it can be set in `application.properties`, e.g. `sentry.ignored-errors=Some error,Another .*`
+
+### Fixes
+
+- Avoid logging an error when a float is passed in the manifest ([#4031](https://github.com/getsentry/sentry-java/pull/4031))
+- Add `request` details to transactions created through OpenTelemetry ([#4098](https://github.com/getsentry/sentry-java/pull/4098))
+  - We now add HTTP request method and URL where Sentry expects it to display it in Sentry UI
+- Remove `java.lang.ClassNotFoundException` debug logs when searching for OpenTelemetry marker classes ([#4091](https://github.com/getsentry/sentry-java/pull/4091))
+  - There was up to three of these, one for `io.sentry.opentelemetry.agent.AgentMarker`, `io.sentry.opentelemetry.agent.AgentlessMarker` and `io.sentry.opentelemetry.agent.AgentlessSpringMarker`.
+  - These were not indicators of something being wrong but rather the SDK looking at what is available at runtime to configure itself accordingly.
+
 ### Dependencies
 
 - Bump Spring Boot to `3.4.1` ([#4081](https://github.com/getsentry/sentry-java/pull/4081))
