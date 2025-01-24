@@ -6,7 +6,6 @@ import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.ServerAttributes
 import io.opentelemetry.semconv.UrlAttributes
-import io.sentry.ISpan
 import io.sentry.Scope
 import io.sentry.SentryOptions
 import io.sentry.protocol.Request
@@ -23,7 +22,6 @@ class OpenTelemetryAttributesExtractorTest {
     private class Fixture {
         val spanData = mock<SpanData>()
         val attributes = AttributesMap.create(100, 100)
-        val sentrySpan = mock<ISpan>()
         val options = SentryOptions.empty()
         val scope = Scope(options)
 
@@ -232,7 +230,7 @@ class OpenTelemetryAttributesExtractorTest {
     }
 
     private fun whenExtractingAttributes() {
-        OpenTelemetryAttributesExtractor().extract(fixture.spanData, fixture.sentrySpan, fixture.scope, fixture.options)
+        OpenTelemetryAttributesExtractor().extract(fixture.spanData, fixture.scope, fixture.options)
     }
 
     private fun thenRequestIsSet() {

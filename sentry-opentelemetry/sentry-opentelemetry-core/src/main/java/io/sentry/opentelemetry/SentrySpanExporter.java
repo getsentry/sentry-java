@@ -338,8 +338,7 @@ public final class SentrySpanExporter implements SpanExporter {
 
     scopesToUse.configureScope(
         ScopeType.CURRENT,
-        scope ->
-            attributesExtractor.extract(span, sentryTransaction, scope, scopesToUse.getOptions()));
+        scope -> attributesExtractor.extract(span, scope, scopesToUse.getOptions()));
 
     return sentryTransaction;
   }

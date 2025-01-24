@@ -6,7 +6,6 @@ import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
 import io.sentry.IScope;
-import io.sentry.ISpan;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Request;
@@ -27,7 +26,6 @@ public final class OpenTelemetryAttributesExtractor {
 
   public void extract(
       final @NotNull SpanData otelSpan,
-      final @NotNull ISpan sentrySpan,
       final @NotNull IScope scope,
       final @NotNull SentryOptions options) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
@@ -101,7 +99,6 @@ public final class OpenTelemetryAttributesExtractor {
                       toString(
                           HttpUtils.filterOutSecurityCookiesFromHeader(
                               headerValues, headerName, null)));
-                  throw new RuntimeException("hey");
                 } catch (Throwable t) {
                   options
                       .getLogger()
