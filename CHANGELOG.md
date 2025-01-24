@@ -5,6 +5,7 @@
 ### Features
 
 - Add `options.ignoredErrors` to filter out errors that match a certain String or Regex ([#4083](https://github.com/getsentry/sentry-java/pull/4083))
+  - The matching is attempted on `event.message`, `event.formatted`, and `{event.throwable.class.name}: {event.throwable.message}`
   - Can be set in `sentry.properties`, e.g. `ignored-errors=Some error,Another .*`
   - Can be set in environment variables, e.g. `SENTRY_IGNORED_ERRORS=Some error,Another .*`
   - For Spring Boot, it can be set in `application.properties`, e.g. `sentry.ignored-errors=Some error,Another .*`

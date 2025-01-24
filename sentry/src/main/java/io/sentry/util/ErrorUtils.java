@@ -3,7 +3,6 @@ package io.sentry.util;
 import io.sentry.FilterString;
 import io.sentry.SentryEvent;
 import io.sentry.protocol.Message;
-import io.sentry.protocol.SentryException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,17 +31,6 @@ public final class ErrorUtils {
       final @Nullable String formattedMessage = eventMessage.getFormatted();
       if (formattedMessage != null) {
         possibleMessages.add(formattedMessage);
-      }
-    }
-    final @Nullable List<SentryException> exceptions = event.getExceptions();
-    if (exceptions != null && !exceptions.isEmpty()) {
-      for (final @Nullable SentryException exception : exceptions) {
-        if (exception != null) {
-          final @Nullable String value = exception.getValue();
-          if (value != null) {
-            possibleMessages.add(value);
-          }
-        }
       }
     }
     final @Nullable Throwable throwable = event.getThrowable();

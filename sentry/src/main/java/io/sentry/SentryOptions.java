@@ -1578,10 +1578,26 @@ public class SentryOptions {
     return this.ignoredExceptionsForType.contains(throwable.getClass());
   }
 
+  /**
+   * Returns the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
+   * an event shall be sent to Sentry or ignored.
+   *
+   * @return the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   *     `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine
+   *     if an event shall be sent to Sentry or ignored
+   */
   public @Nullable List<FilterString> getIgnoredErrors() {
     return ignoredErrors;
   }
 
+  /**
+   * Sets the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
+   * an event shall be sent to Sentry or ignored.
+   *
+   * @param ignoredErrors the list of strings/regex patterns
+   */
   public void setIgnoredErrors(final @Nullable List<String> ignoredErrors) {
     if (ignoredErrors == null) {
       this.ignoredErrors = null;
@@ -1597,6 +1613,13 @@ public class SentryOptions {
     }
   }
 
+  /**
+   * Adds an item to the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
+   * an event shall be sent to Sentry or ignored.
+   *
+   * @param pattern the string/regex pattern
+   */
   public void addIgnoredError(final @NotNull String pattern) {
     if (ignoredErrors == null) {
       ignoredErrors = new ArrayList<>();

@@ -117,7 +117,7 @@ public final class SentryClient implements ISentryClient {
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
-                "Event was dropped as the error %s is ignored",
+                "Event was dropped as it matched a string/pattern in ignoredErrors",
                 event.getMessage());
         options
             .getClientReportRecorder()
