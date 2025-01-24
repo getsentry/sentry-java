@@ -7,7 +7,8 @@ import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
 import io.sentry.IScope;
 import io.sentry.ISpan;
-import io.sentry.Sentry;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.protocol.Request;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.StringUtils;
@@ -27,14 +28,18 @@ public final class OpenTelemetryAttributesExtractor {
   public void extract(
       final @NotNull SpanData otelSpan,
       final @NotNull ISpan sentrySpan,
-      final @NotNull IScope scope) {
+      final @NotNull IScope scope,
+      final @NotNull SentryOptions options) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
     if (attributes.get(HttpAttributes.HTTP_REQUEST_METHOD) != null) {
-      addRequestAttributesToScope(attributes, scope);
+      addRequestAttributesToScope(attributes, scope, options);
     }
   }
 
-  private void addRequestAttributesToScope(Attributes attributes, IScope scope) {
+  private void addRequestAttributesToScope(
+      final @NotNull Attributes attributes,
+      final @NotNull IScope scope,
+      final @NotNull SentryOptions options) {
     if (scope.getRequest() == null) {
       scope.setRequest(new Request());
     }
@@ -68,7 +73,7 @@ public final class OpenTelemetryAttributesExtractor {
       }
 
       if (request.getHeaders() == null) {
-        Map<String, String> headers = collectHeaders(attributes);
+        Map<String, String> headers = collectHeaders(attributes, options);
         if (!headers.isEmpty()) {
           request.setHeaders(headers);
         }
@@ -77,7 +82,8 @@ public final class OpenTelemetryAttributesExtractor {
   }
 
   @SuppressWarnings("unchecked")
-  private static Map<String, String> collectHeaders(Attributes attributes) {
+  private static Map<String, String> collectHeaders(
+      final @NotNull Attributes attributes, final @NotNull SentryOptions options) {
     Map<String, String> headers = new HashMap<>();
 
     attributes.forEach(
@@ -86,9 +92,7 @@ public final class OpenTelemetryAttributesExtractor {
           if (attributeKeyAsString.startsWith(HTTP_REQUEST_HEADER_PREFIX)) {
             final @NotNull String headerName =
                 StringUtils.removePrefix(attributeKeyAsString, HTTP_REQUEST_HEADER_PREFIX);
-            // TODO pass in options
-            if (Sentry.getCurrentScopes().getOptions().isSendDefaultPii()
-                || !HttpUtils.containsSensitiveHeader(headerName)) {
+            if (options.isSendDefaultPii() || !HttpUtils.containsSensitiveHeader(headerName)) {
               if (value instanceof List) {
                 try {
                   final @NotNull List<String> headerValues = (List<String>) value;
@@ -97,8 +101,11 @@ public final class OpenTelemetryAttributesExtractor {
                       toString(
                           HttpUtils.filterOutSecurityCookiesFromHeader(
                               headerValues, headerName, null)));
+                  throw new RuntimeException("hey");
                 } catch (Throwable t) {
-                  // TODO log
+                  options
+                      .getLogger()
+                      .log(SentryLevel.WARNING, "Expected a List<String> as header", t);
                 }
               }
             }

@@ -232,7 +232,7 @@ class OpenTelemetryAttributesExtractorTest {
     }
 
     private fun whenExtractingAttributes() {
-        OpenTelemetryAttributesExtractor().extract(fixture.spanData, fixture.sentrySpan, fixture.scope)
+        OpenTelemetryAttributesExtractor().extract(fixture.spanData, fixture.sentrySpan, fixture.scope, fixture.options)
     }
 
     private fun thenRequestIsSet() {
