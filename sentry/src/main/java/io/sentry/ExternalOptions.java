@@ -1,10 +1,7 @@
 package io.sentry;
 
 import io.sentry.config.PropertiesProvider;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -39,6 +36,7 @@ public final class ExternalOptions {
   private @Nullable Long idleTimeout;
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
+  private @Nullable List<String> ignoredErrors;
   private @Nullable Boolean printUncaughtStackTrace;
   private @Nullable Boolean sendClientReports;
   private @NotNull Set<String> bundleIds = new CopyOnWriteArraySet<>();
@@ -129,6 +127,8 @@ public final class ExternalOptions {
       options.addBundleId(bundleId);
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
+
+    options.setIgnoredErrors(propertiesProvider.getList("ignored-errors"));
 
     options.setEnabled(propertiesProvider.getBooleanProperty("enabled"));
 
@@ -371,6 +371,14 @@ public final class ExternalOptions {
 
   public void setIdleTimeout(final @Nullable Long idleTimeout) {
     this.idleTimeout = idleTimeout;
+  }
+
+  public @Nullable List<String> getIgnoredErrors() {
+    return ignoredErrors;
+  }
+
+  public void setIgnoredErrors(final @Nullable List<String> ignoredErrors) {
+    this.ignoredErrors = ignoredErrors;
   }
 
   public @Nullable Boolean getSendClientReports() {
