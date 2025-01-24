@@ -10,6 +10,8 @@
 - Remove `java.lang.ClassNotFoundException` debug logs when searching for OpenTelemetry marker classes ([#4091](https://github.com/getsentry/sentry-java/pull/4091))
   - There was up to three of these, one for `io.sentry.opentelemetry.agent.AgentMarker`, `io.sentry.opentelemetry.agent.AgentlessMarker` and `io.sentry.opentelemetry.agent.AgentlessSpringMarker`.
   - These were not indicators of something being wrong but rather the SDK looking at what is available at runtime to configure itself accordingly.
+- Add HTTP server request headers from OpenTelemetry span attributes to sentry `request` in payload ([#4102](https://github.com/getsentry/sentry-java/pull/4102))
+  - You have to explicitly enable each header by adding it to the [OpenTelemetry config](https://opentelemetry.io/docs/zero-code/java/agent/instrumentation/http/#capturing-http-request-and-response-headers)
 
 ## 8.0.0
 
