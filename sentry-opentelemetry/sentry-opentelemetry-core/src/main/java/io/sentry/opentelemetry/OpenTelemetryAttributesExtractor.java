@@ -35,10 +35,12 @@ public final class OpenTelemetryAttributesExtractor {
         request.setMethod(requestMethod);
       }
 
-      final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
-      if (urlFull != null) {
-        final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(urlFull);
-        urlDetails.applyToRequest(request);
+      if (request.getUrl() == null) {
+        final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
+        if (urlFull != null) {
+          final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(urlFull);
+          urlDetails.applyToRequest(request);
+        }
       }
 
       if (request.getUrl() == null) {

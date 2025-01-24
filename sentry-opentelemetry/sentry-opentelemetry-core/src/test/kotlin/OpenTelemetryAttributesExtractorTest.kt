@@ -96,6 +96,25 @@ class OpenTelemetryAttributesExtractorTest {
     }
 
     @Test
+    fun `when there is an existing request with url on scope it is kept with URL_FULL`() {
+        fixture.scope.request = Request().also {
+            it.url = "http://docs.sentry.io:3000/platform"
+            it.queryString = "s=abc"
+        }
+        givenAttributes(
+            mapOf(
+                UrlAttributes.URL_FULL to "https://io.sentry:8081/path/to/123?q=123456&b=X"
+            )
+        )
+
+        whenExtractingAttributes()
+
+        thenRequestIsSet()
+        thenUrlIsSetTo("http://docs.sentry.io:3000/platform")
+        thenQueryIsSetTo("s=abc")
+    }
+
+    @Test
     fun `sets URL based on OTel attributes without port`() {
         givenAttributes(
             mapOf(
