@@ -2177,7 +2177,7 @@ class ScopesTest {
         val logger = mock<ILogger>()
         val scopes = generateScopes {
             it.setContinuousProfiler(profiler)
-            it.continuousProfilesSampleRate = 0.1
+            it.experimental.continuousProfilesSampleRate = 0.1
             it.setLogger(logger)
             it.isDebug = true
         }

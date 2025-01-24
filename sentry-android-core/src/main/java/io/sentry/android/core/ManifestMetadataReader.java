@@ -322,7 +322,7 @@ final class ManifestMetadataReader {
           final double continuousProfilesSampleRate =
               readDouble(metadata, logger, CONTINUOUS_PROFILES_SAMPLE_RATE);
           if (continuousProfilesSampleRate != -1) {
-            options.setContinuousProfilesSampleRate(continuousProfilesSampleRate);
+            options.getExperimental().setContinuousProfilesSampleRate(continuousProfilesSampleRate);
           }
         }
 

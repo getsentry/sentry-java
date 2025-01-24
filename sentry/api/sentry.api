@@ -443,7 +443,9 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> (Z)V
+	public fun getContinuousProfilesSampleRate ()D
 	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
+	public fun setContinuousProfilesSampleRate (D)V
 	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 }
 
@@ -3068,7 +3070,6 @@ public class io/sentry/SentryOptions {
 	public fun setConnectionStatusProvider (Lio/sentry/IConnectionStatusProvider;)V
 	public fun setConnectionTimeoutMillis (I)V
 	public fun setContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
-	public fun setContinuousProfilesSampleRate (D)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDebug (Z)V
