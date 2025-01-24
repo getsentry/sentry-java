@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import java.util.Set;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,5 +20,13 @@ public final class ExceptionUtils {
       rootCause = rootCause.getCause();
     }
     return rootCause;
+  }
+
+  /** Checks if an exception has been ignored. */
+  @ApiStatus.Internal
+  public static boolean isIgnored(
+      final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType,
+      final @NotNull Throwable throwable) {
+    return ignoredExceptionsForType.contains(throwable.getClass());
   }
 }
