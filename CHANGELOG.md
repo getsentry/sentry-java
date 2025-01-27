@@ -21,7 +21,7 @@
 
 ### Dependencies
 
-- Bump Spring Boot to `3.4.1` ([#4081](https://github.com/getsentry/sentry-java/pull/4081))
+- Bump Spring Boot to `3.4.2` ([#4081](https://github.com/getsentry/sentry-java/pull/4081))
 
 ## 8.0.0
 
