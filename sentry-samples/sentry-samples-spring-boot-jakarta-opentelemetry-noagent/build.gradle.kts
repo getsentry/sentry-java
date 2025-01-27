@@ -46,7 +46,7 @@ dependencies {
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBoot3Starter)
     implementation(Config.Libs.kotlinReflect)
-    implementation(Config.Libs.springBootStarterJdbc)
+    implementation(Config.Libs.springBoot3StarterJdbc)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
