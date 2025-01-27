@@ -22,6 +22,7 @@ plugins {
 buildscript {
     repositories {
         google()
+        maven(url = "https://repo.spring.io/milestone")
     }
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
@@ -82,6 +83,7 @@ allprojects {
         google()
         mavenCentral()
         mavenLocal()
+        maven(url = "https://repo.spring.io/milestone")
     }
     group = Config.Sentry.group
     version = properties[Config.Sentry.versionNameProp].toString()
