@@ -184,12 +184,20 @@ internal fun View?.addOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListen
     if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
         return
     }
-    viewTreeObserver.addOnDrawListener(listener)
+    try {
+        viewTreeObserver.addOnDrawListener(listener)
+    } catch (e: IllegalStateException) {
+        // viewTreeObserver is already dead
+    }
 }
 
 internal fun View?.removeOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListener) {
     if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
         return
     }
-    viewTreeObserver.removeOnDrawListener(listener)
+    try {
+        viewTreeObserver.removeOnDrawListener(listener)
+    } catch (e: IllegalStateException) {
+        // viewTreeObserver is already dead
+    }
 }
