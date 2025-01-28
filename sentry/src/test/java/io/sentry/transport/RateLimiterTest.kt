@@ -28,6 +28,8 @@ import io.sentry.hints.DiskFlushNotification
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.test.getProperty
+import io.sentry.test.injectForField
 import io.sentry.util.HintUtils
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.eq
@@ -38,6 +40,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.io.File
+import java.util.Timer
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
@@ -361,20 +364,16 @@ class RateLimiterTest {
     @Test
     fun `close cancels the timer`() {
         val rateLimiter = fixture.getSUT()
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 1, 2001)
+        val timer = mock<Timer>()
+        rateLimiter.injectForField("timer", timer)
 
-        val applied = AtomicBoolean(true)
-        rateLimiter.addRateLimitObserver {
-            applied.set(rateLimiter.isActiveForCategory(Replay))
-        }
-
-        rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
+        // When the rate limiter is closed
         rateLimiter.close()
 
-        // If rate limit didn't already change, wait for 1.5s to ensure the timer has run after 1s
-        if (!applied.get()) {
-            await.untilTrue(applied)
-        }
-        assertTrue(applied.get())
+        // Then the timer is cancelled
+        verify(timer).cancel()
+
+        // And is removed by the rateLimiter
+        assertNull(rateLimiter.getProperty("timer"))
     }
 }

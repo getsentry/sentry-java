@@ -210,6 +210,15 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with ignored error patterns using external properties`() {
+        val logger = mock<ILogger>()
+        withPropertiesFile("ignored-errors=Some error,Another .*", logger) { options ->
+            assertTrue(options.ignoredErrors!!.contains("Some error"))
+            assertTrue(options.ignoredErrors!!.contains("Another .*"))
+        }
+    }
+
+    @Test
     fun `creates options with single bundle ID using external properties`() {
         withPropertiesFile("bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411") { options ->
             assertTrue(options.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411")))
