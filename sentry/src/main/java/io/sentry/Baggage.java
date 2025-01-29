@@ -336,6 +336,21 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  public @Nullable String getSampleRand() {
+    return get(DSCKeys.SAMPLE_RAND);
+  }
+
+  @ApiStatus.Internal
+  public void setSampleRand(final @Nullable String sampleRand) {
+    set(DSCKeys.SAMPLE_RAND, sampleRand);
+  }
+
+  @ApiStatus.Internal
+  public void setSampleRandDouble(final @Nullable Double sampleRand) {
+    setSampleRand(sampleRateToString(sampleRand));
+  }
+
+  @ApiStatus.Internal
   public void setSampled(final @Nullable String sampled) {
     set(DSCKeys.SAMPLED, sampled);
   }
@@ -460,6 +475,22 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  public @Nullable Double getSampleRandDouble() {
+    final String sampleRandString = getSampleRand();
+    if (sampleRandString != null) {
+      try {
+        double sampleRand = Double.parseDouble(sampleRandString);
+        if (SampleRateUtils.isValidTracesSampleRate(sampleRand, false)) {
+          return sampleRand;
+        }
+      } catch (NumberFormatException e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  @ApiStatus.Internal
   @Nullable
   public TraceContext toTraceContext() {
     final String traceIdString = getTraceId();
@@ -494,6 +525,7 @@ public final class Baggage {
     public static final String ENVIRONMENT = "sentry-environment";
     public static final String TRANSACTION = "sentry-transaction";
     public static final String SAMPLE_RATE = "sentry-sample_rate";
+    public static final String SAMPLE_RAND = "sentry-sample_rand";
     public static final String SAMPLED = "sentry-sampled";
     public static final String REPLAY_ID = "sentry-replay_id";
 
@@ -506,6 +538,7 @@ public final class Baggage {
             ENVIRONMENT,
             TRANSACTION,
             SAMPLE_RATE,
+            SAMPLE_RAND,
             SAMPLED,
             REPLAY_ID);
   }

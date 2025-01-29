@@ -78,6 +78,8 @@ public final class OtelSentryPropagator implements TextMapPropagator {
     final @Nullable BaggageHeader baggageHeader =
         sentrySpan.toBaggageHeader(Collections.emptyList());
     if (baggageHeader != null) {
+      System.out.println("outgoing baggage:");
+      System.out.println(baggageHeader.getValue());
       setter.set(carrier, baggageHeader.getName(), baggageHeader.getValue());
     }
   }
@@ -101,6 +103,8 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       SentryTraceHeader sentryTraceHeader = new SentryTraceHeader(sentryTraceString);
 
       final @Nullable String baggageString = getter.get(carrier, BaggageHeader.BAGGAGE_HEADER);
+      System.out.println("incoming baggage:");
+      System.out.println(baggageString);
       final Baggage baggage = Baggage.fromHeader(baggageString);
       final @NotNull TraceState traceState = TraceState.getDefault();
 

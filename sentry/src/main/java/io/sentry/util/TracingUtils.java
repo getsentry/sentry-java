@@ -85,6 +85,9 @@ public final class TracingUtils {
             baggage = new Baggage(sentryOptions.getLogger());
             propagationContext.setBaggage(baggage);
           }
+          if (baggage.getSampleRand() != null) {
+            baggage.setSampleRandDouble(propagationContext.getSampleRand());
+          }
           if (baggage.isMutable()) {
             baggage.setValuesFromScope(scope, sentryOptions);
             baggage.freeze();

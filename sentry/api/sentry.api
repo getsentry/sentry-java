@@ -46,6 +46,8 @@ public final class io/sentry/Baggage {
 	public fun getPublicKey ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getReplayId ()Ljava/lang/String;
+	public fun getSampleRand ()Ljava/lang/String;
+	public fun getSampleRandDouble ()Ljava/lang/Double;
 	public fun getSampleRate ()Ljava/lang/String;
 	public fun getSampleRateDouble ()Ljava/lang/Double;
 	public fun getSampled ()Ljava/lang/String;
@@ -60,6 +62,8 @@ public final class io/sentry/Baggage {
 	public fun setPublicKey (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setReplayId (Ljava/lang/String;)V
+	public fun setSampleRand (Ljava/lang/String;)V
+	public fun setSampleRandDouble (Ljava/lang/Double;)V
 	public fun setSampleRate (Ljava/lang/String;)V
 	public fun setSampled (Ljava/lang/String;)V
 	public fun setTraceId (Ljava/lang/String;)V
@@ -78,6 +82,7 @@ public final class io/sentry/Baggage$DSCKeys {
 	public static final field RELEASE Ljava/lang/String;
 	public static final field REPLAY_ID Ljava/lang/String;
 	public static final field SAMPLED Ljava/lang/String;
+	public static final field SAMPLE_RAND Ljava/lang/String;
 	public static final field SAMPLE_RATE Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public static final field TRANSACTION Ljava/lang/String;
@@ -1941,12 +1946,13 @@ public final class io/sentry/ProfilingTransactionData$JsonKeys {
 public final class io/sentry/PropagationContext {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/PropagationContext;)V
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Lio/sentry/Baggage;Ljava/lang/Boolean;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Lio/sentry/Baggage;Ljava/lang/Boolean;Ljava/lang/Double;)V
 	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/PropagationContext;
 	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/util/List;)Lio/sentry/PropagationContext;
 	public static fun fromHeaders (Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;Lio/sentry/SpanId;)Lio/sentry/PropagationContext;
 	public fun getBaggage ()Lio/sentry/Baggage;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
+	public fun getSampleRand ()Ljava/lang/Double;
 	public fun getSpanId ()Lio/sentry/SpanId;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun isSampled ()Ljava/lang/Boolean;
@@ -2007,7 +2013,9 @@ public final class io/sentry/RequestDetails {
 
 public final class io/sentry/SamplingContext {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;)V
+	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Ljava/lang/Double;)V
 	public fun getCustomSamplingContext ()Lio/sentry/CustomSamplingContext;
+	public fun getSampleRand ()Ljava/lang/Double;
 	public fun getTransactionContext ()Lio/sentry/TransactionContext;
 }
 

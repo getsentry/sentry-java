@@ -857,8 +857,11 @@ public final class Scopes implements IScopes {
               SentryLevel.INFO, "Tracing is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
     } else {
+      final @NotNull Double sampleRand =
+          getCombinedScopeView().getPropagationContext().getSampleRand();
       final SamplingContext samplingContext =
-          new SamplingContext(transactionContext, transactionOptions.getCustomSamplingContext());
+          new SamplingContext(
+              transactionContext, transactionOptions.getCustomSamplingContext(), sampleRand);
       final @NotNull TracesSampler tracesSampler = getOptions().getInternalTracesSampler();
       @NotNull TracesSamplingDecision samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSamplingDecision(samplingDecision);
