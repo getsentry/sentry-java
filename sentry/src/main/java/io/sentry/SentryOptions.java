@@ -475,7 +475,7 @@ public class SentryOptions {
   @ApiStatus.Experimental private @Nullable List<FilterString> ignoredCheckIns = null;
 
   /**
-   * Strings or regex patterns that the name of a new span/transaction will be tested against. If
+   * Strings or regex patterns that the origin of a new span/transaction will be tested against. If
    * there is a match, the span/transaction will not be created.
    */
   @ApiStatus.Experimental private @Nullable List<FilterString> ignoredSpanOrigins = null;
