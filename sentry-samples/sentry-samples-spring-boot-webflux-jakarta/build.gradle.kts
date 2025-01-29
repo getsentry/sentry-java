@@ -35,7 +35,7 @@ dependencies {
     }
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation("ch.qos.logback:logback-classic:1.3.5")
+    testImplementation("ch.qos.logback:logback-classic:1.5.16")
     testImplementation(Config.Libs.slf4jApi2)
     testImplementation(Config.Libs.apolloKotlin)
 }

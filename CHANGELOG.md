@@ -19,6 +19,10 @@
   - There was up to three of these, one for `io.sentry.opentelemetry.agent.AgentMarker`, `io.sentry.opentelemetry.agent.AgentlessMarker` and `io.sentry.opentelemetry.agent.AgentlessSpringMarker`.
   - These were not indicators of something being wrong but rather the SDK looking at what is available at runtime to configure itself accordingly.
 
+### Dependencies
+
+- Bump Spring Boot to `3.4.2` ([#4081](https://github.com/getsentry/sentry-java/pull/4081))
+
 ## 8.0.0
 
 ### Summary
