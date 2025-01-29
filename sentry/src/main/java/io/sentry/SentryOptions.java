@@ -2246,11 +2246,10 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the list of strings/regex patterns the name of a new span/transaction will be tested
+   * Returns the list of strings/regex patterns the origin of a new span/transaction will be tested
    * against to determine whether the span/transaction shall be created.
    *
-   * @return the list of strings or regex patterns the name of a new span/transaction will be tested
-   *     against. If there is a match, the span/transaction will not be created.
+   * @return the list of strings or regex patterns
    */
   @ApiStatus.Experimental
   public @Nullable List<FilterString> getIgnoredSpanOrigins() {
@@ -2258,7 +2257,7 @@ public class SentryOptions {
   }
 
   /**
-   * Adds an item to the list of strings/regex patterns the name of a new span/transaction will be
+   * Adds an item to the list of strings/regex patterns the origin of a new span/transaction will be
    * tested against to determine whether the span/transaction shall be created.
    *
    * @param ignoredSpanOrigin the string/regex pattern
@@ -2272,7 +2271,7 @@ public class SentryOptions {
   }
 
   /**
-   * Sets the list of strings/regex patterns the name of a new span/transaction will be tested
+   * Sets the list of strings/regex patterns the origin of a new span/transaction will be tested
    * against to determine whether the span/transaction shall be created.
    *
    * @param ignoredSpanOrigins the list of strings/regex patterns
@@ -2296,7 +2295,7 @@ public class SentryOptions {
   /**
    * Returns the list of monitor slugs for which captured check-ins should not be sent to Sentry.
    *
-   * @return the list of monitor slugs for which captured check-ins should not be sent to Sentry
+   * @return the list of monitor slugs
    */
   @ApiStatus.Experimental
   public @Nullable List<FilterString> getIgnoredCheckIns() {
@@ -2342,8 +2341,7 @@ public class SentryOptions {
    * Returns the list of strings/regex patterns that captured transaction names are checked against
    * to determine if a transaction shall be sent to Sentry or ignored.
    *
-   * @return the list of strings/regex patterns that captured transaction names are checked against
-   *     to determine if a transaction shall be sent to Sentry or ignored.
+   * @return the list of strings/regex patterns
    */
   public @Nullable List<FilterString> getIgnoredTransactions() {
     return ignoredTransactions;
