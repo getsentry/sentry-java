@@ -657,6 +657,7 @@ public final class SentryTracer implements ITransaction {
             scope -> {
               replayId.set(scope.getReplayId());
             });
+        // TODO sampleRand?
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
             replayId.get(),
@@ -674,7 +675,15 @@ public final class SentryTracer implements ITransaction {
     if (scopes.getOptions().isTraceSampling()) {
       updateBaggageValues();
 
-      return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
+      BaggageHeader baggageHeader =
+          BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
+      if (baggageHeader != null) {
+        System.out.println(baggageHeader.getName());
+        System.out.println(baggageHeader.getValue());
+      } else {
+        System.out.println("baggage header null in SentryTracer");
+      }
+      return baggageHeader;
     } else {
       return null;
     }

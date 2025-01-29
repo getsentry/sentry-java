@@ -86,7 +86,7 @@ public final class SentrySampler implements Sampler {
     SpanId randomSpanId = new SpanId();
     final @NotNull PropagationContext propagationContext =
         sentryTraceHeader == null
-            ? new PropagationContext(new SentryId(traceId), randomSpanId, null, baggage, null)
+            ? new PropagationContext(new SentryId(traceId), randomSpanId, null, baggage, null, null)
             : PropagationContext.fromHeaders(sentryTraceHeader, baggage, randomSpanId);
 
     final @NotNull TransactionContext transactionContext =
@@ -95,7 +95,8 @@ public final class SentrySampler implements Sampler {
         scopes
             .getOptions()
             .getInternalTracesSampler()
-            .sample(new SamplingContext(transactionContext, null));
+            .sample(
+                new SamplingContext(transactionContext, null, propagationContext.getSampleRand()));
 
     if (!sentryDecision.getSampled()) {
       scopes

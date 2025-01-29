@@ -20,11 +20,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class PersonController {
   private final PersonService personService;
   private final Tracer tracer;
+  private final ApiService apiService;
   private static final Logger LOGGER = LoggerFactory.getLogger(PersonController.class);
 
-  public PersonController(PersonService personService, Tracer tracer) {
+  public PersonController(PersonService personService, Tracer tracer, ApiService apiService) {
     this.personService = personService;
     this.tracer = tracer;
+    this.apiService = apiService;
   }
 
   @GetMapping("{id}")
@@ -34,6 +36,7 @@ public class PersonController {
       ISpan currentSpan = Sentry.getSpan();
       ISpan sentrySpan = currentSpan.startChild("spanCreatedThroughSentryApi");
       try {
+        apiService.apiRequest(id.toString());
         LOGGER.error("Trying person with id={}", id, new RuntimeException("error while loading"));
         throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
       } finally {

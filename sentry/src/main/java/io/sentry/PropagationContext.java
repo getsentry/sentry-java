@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.SentryRandom;
 import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -47,7 +48,8 @@ public final class PropagationContext {
         spanIdToUse,
         sentryTraceHeader.getSpanId(),
         baggage,
-        sentryTraceHeader.isSampled());
+        sentryTraceHeader.isSampled(),
+        null);
   }
 
   private @NotNull SentryId traceId;
@@ -55,11 +57,12 @@ public final class PropagationContext {
   private @Nullable SpanId parentSpanId;
 
   private @Nullable Boolean sampled;
+  private @NotNull Double sampleRand;
 
   private @Nullable Baggage baggage;
 
   public PropagationContext() {
-    this(new SentryId(), new SpanId(), null, null, null);
+    this(new SentryId(), new SpanId(), null, null, null, null);
   }
 
   public PropagationContext(final @NotNull PropagationContext propagationContext) {
@@ -68,7 +71,8 @@ public final class PropagationContext {
         propagationContext.getSpanId(),
         propagationContext.getParentSpanId(),
         cloneBaggage(propagationContext.getBaggage()),
-        propagationContext.isSampled());
+        propagationContext.isSampled(),
+        propagationContext.getSampleRand());
   }
 
   private static @Nullable Baggage cloneBaggage(final @Nullable Baggage baggage) {
@@ -84,12 +88,31 @@ public final class PropagationContext {
       final @NotNull SpanId spanId,
       final @Nullable SpanId parentSpanId,
       final @Nullable Baggage baggage,
-      final @Nullable Boolean sampled) {
+      final @Nullable Boolean sampled,
+      final @Nullable Double sampleRand) {
     this.traceId = traceId;
     this.spanId = spanId;
     this.parentSpanId = parentSpanId;
     this.baggage = baggage;
     this.sampled = sampled;
+    if (sampleRand != null) {
+      this.sampleRand = sampleRand;
+    } else if (baggage != null && baggage.getSampleRandDouble() != null) {
+      this.sampleRand = baggage.getSampleRandDouble();
+    } else {
+      final @Nullable Double sampleRate = baggage == null ? null : baggage.getSampleRateDouble();
+      final @NotNull Double sampleRandToUse = SentryRandom.current().nextDouble();
+
+      if (sampled != null && sampleRate != null) {
+        if (sampled) {
+          this.sampleRand = sampleRandToUse * sampleRate;
+        } else {
+          this.sampleRand = sampleRate + (sampleRandToUse * (1 - sampleRate));
+        }
+      } else {
+        this.sampleRand = sampleRandToUse;
+      }
+    }
   }
 
   public @NotNull SentryId getTraceId() {
@@ -144,5 +167,9 @@ public final class PropagationContext {
     final SpanContext spanContext = new SpanContext(traceId, spanId, "default", null, null);
     spanContext.setOrigin("auto");
     return spanContext;
+  }
+
+  public @NotNull Double getSampleRand() {
+    return sampleRand;
   }
 }

@@ -82,10 +82,18 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
       }
 
       final @Nullable Boolean sampled = isSampled(otelSpan, samplingDecision);
+      // TODO do not access isolation scope directly
+      final @Nullable Double sampleRand =
+          scopes.getIsolationScope().getPropagationContext().getSampleRand();
 
       final @NotNull PropagationContext propagationContext =
           new PropagationContext(
-              new SentryId(traceId), sentrySpanId, sentryParentSpanId, baggage, sampled);
+              new SentryId(traceId),
+              sentrySpanId,
+              sentryParentSpanId,
+              baggage,
+              sampled,
+              sampleRand);
 
       updatePropagationContext(scopes, propagationContext);
     }
