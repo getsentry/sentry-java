@@ -4254,7 +4254,8 @@ public abstract interface class io/sentry/internal/viewhierarchy/ViewHierarchyEx
 
 public final class io/sentry/opentelemetry/OpenTelemetryUtil {
 	public fun <init> ()V
-	public static fun applyIgnoredSpanOrigins (Lio/sentry/SentryOptions;Lio/sentry/util/LoadClass;)V
+	public static fun applyIgnoredSpanOrigins (Lio/sentry/SentryOptions;)V
+	public static fun updateOpenTelemetryModeIfAuto (Lio/sentry/SentryOptions;Lio/sentry/util/LoadClass;)V
 }
 
 public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
