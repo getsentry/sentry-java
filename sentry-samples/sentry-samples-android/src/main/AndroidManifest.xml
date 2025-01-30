@@ -6,8 +6,6 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- add extra permission (optional) -->
-    <!-- extra recommended permission, we'd be able to collect device ringing breadcrumbs (PhoneStateBreadcrumbsIntegration) -->
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <!-- Just some random permissions to showcase the permission context sent to Sentry -->
     <uses-permission android:name="android.permission.CAMERA"/>

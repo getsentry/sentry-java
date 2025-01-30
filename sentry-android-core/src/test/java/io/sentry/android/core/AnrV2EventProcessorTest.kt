@@ -172,6 +172,7 @@ class AnrV2EventProcessorTest {
 
     @BeforeTest
     fun `set up`() {
+        DeviceInfoUtil.resetInstance()
         fixture.context = ApplicationProvider.getApplicationContext()
     }
 
