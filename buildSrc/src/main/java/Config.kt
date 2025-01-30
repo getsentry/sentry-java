@@ -153,7 +153,7 @@ object Config {
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
 
-        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.14"
+        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.19"
 
         object OpenTelemetry {
             val otelVersion = "1.44.1"
