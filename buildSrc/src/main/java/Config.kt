@@ -7,7 +7,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
-    val springBoot3Version = "3.4.0"
+    val springBoot3Version = "3.4.2"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.5.3"
