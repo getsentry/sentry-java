@@ -265,6 +265,6 @@ class SentryGestureListenerClickTest {
 
         sut.onSingleTapUp(event)
 
-        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 }
