@@ -2,8 +2,22 @@
 
 ## Unreleased
 
+### Features
+
+- Add `options.ignoredErrors` to filter out errors that match a certain String or Regex ([#4083](https://github.com/getsentry/sentry-java/pull/4083))
+  - The matching is attempted on `event.message`, `event.formatted`, and `{event.throwable.class.name}: {event.throwable.message}`
+  - Can be set in `sentry.properties`, e.g. `ignored-errors=Some error,Another .*`
+  - Can be set in environment variables, e.g. `SENTRY_IGNORED_ERRORS=Some error,Another .*`
+  - For Spring Boot, it can be set in `application.properties`, e.g. `sentry.ignored-errors=Some error,Another .*`
+
 ### Fixes
 
+- Avoid logging an error when a float is passed in the manifest ([#4031](https://github.com/getsentry/sentry-java/pull/4031))
+- Add `request` details to transactions created through OpenTelemetry ([#4098](https://github.com/getsentry/sentry-java/pull/4098))
+  - We now add HTTP request method and URL where Sentry expects it to display it in Sentry UI
+- Remove `java.lang.ClassNotFoundException` debug logs when searching for OpenTelemetry marker classes ([#4091](https://github.com/getsentry/sentry-java/pull/4091))
+  - There was up to three of these, one for `io.sentry.opentelemetry.agent.AgentMarker`, `io.sentry.opentelemetry.agent.AgentlessMarker` and `io.sentry.opentelemetry.agent.AgentlessSpringMarker`.
+  - These were not indicators of something being wrong but rather the SDK looking at what is available at runtime to configure itself accordingly.
 - Do not instrument File I/O operations if tracing is disabled ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
 - Do not instrument User Interaction multiple times ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
 - Speed up view traversal to find touched target in `UserInteractionIntegration` ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
@@ -26,23 +40,6 @@ SentryAndroid.init(context) { options ->
 ```
 
 If you would like to keep some of the default broadcast events as breadcrumbs, consider opening a [GitHub issue](https://github.com/getsentry/sentry-java/issues/new).
-
-### Features
-
-- Add `options.ignoredErrors` to filter out errors that match a certain String or Regex ([#4083](https://github.com/getsentry/sentry-java/pull/4083))
-  - The matching is attempted on `event.message`, `event.formatted`, and `{event.throwable.class.name}: {event.throwable.message}`
-  - Can be set in `sentry.properties`, e.g. `ignored-errors=Some error,Another .*`
-  - Can be set in environment variables, e.g. `SENTRY_IGNORED_ERRORS=Some error,Another .*`
-  - For Spring Boot, it can be set in `application.properties`, e.g. `sentry.ignored-errors=Some error,Another .*`
-
-### Fixes
-
-- Avoid logging an error when a float is passed in the manifest ([#4031](https://github.com/getsentry/sentry-java/pull/4031))
-- Add `request` details to transactions created through OpenTelemetry ([#4098](https://github.com/getsentry/sentry-java/pull/4098))
-  - We now add HTTP request method and URL where Sentry expects it to display it in Sentry UI
-- Remove `java.lang.ClassNotFoundException` debug logs when searching for OpenTelemetry marker classes ([#4091](https://github.com/getsentry/sentry-java/pull/4091))
-  - There was up to three of these, one for `io.sentry.opentelemetry.agent.AgentMarker`, `io.sentry.opentelemetry.agent.AgentlessMarker` and `io.sentry.opentelemetry.agent.AgentlessSpringMarker`.
-  - These were not indicators of something being wrong but rather the SDK looking at what is available at runtime to configure itself accordingly.
 
 ## 8.0.0
 
@@ -344,6 +341,68 @@ If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that
     - As a consequence the list of exceptions in the group on top of an issue is no longer shown in Sentry UI.
     - We are planning to improve this in the future but opted for this fix first.
 - Fix swallow NDK loadLibrary errors ([#4082](https://github.com/getsentry/sentry-java/pull/4082))
+
+## 7.21.0
+
+### Fixes
+
+- Do not instrument File I/O operations if tracing is disabled ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
+- Do not instrument User Interaction multiple times ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
+- Speed up view traversal to find touched target in `UserInteractionIntegration` ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
+- Reduce IPC/Binder calls performed by the SDK ([#4058](https://github.com/getsentry/sentry-java/pull/4058))
+
+### Behavioural Changes
+
+- Reduce the number of broadcasts the SDK is subscribed for ([#4052](https://github.com/getsentry/sentry-java/pull/4052))
+  - Drop `TempSensorBreadcrumbsIntegration`
+  - Drop `PhoneStateBreadcrumbsIntegration`
+  - Reduce number of broadcasts in `SystemEventsBreadcrumbsIntegration`
+
+Current list of the broadcast events can be found [here](https://github.com/getsentry/sentry-java/blob/9b8dc0a844d10b55ddeddf55d278c0ab0f86421c/sentry-android-core/src/main/java/io/sentry/android/core/SystemEventsBreadcrumbsIntegration.java#L131-L153). If you'd like to subscribe for more events, consider overriding the `SystemEventsBreadcrumbsIntegration` as follows:
+
+```kotlin
+SentryAndroid.init(context) { options ->
+    options.integrations.removeAll { it is SystemEventsBreadcrumbsIntegration }
+    options.integrations.add(SystemEventsBreadcrumbsIntegration(context, SystemEventsBreadcrumbsIntegration.getDefaultActions() + listOf(/* your custom actions */)))
+}
+```
+
+If you would like to keep some of the default broadcast events as breadcrumbs, consider opening a [GitHub issue](https://github.com/getsentry/sentry-java/issues/new).
+
+## 7.21.0-beta.1
+
+### Fixes
+
+- Do not instrument File I/O operations if tracing is disabled ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
+- Do not instrument User Interaction multiple times ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
+- Speed up view traversal to find touched target in `UserInteractionIntegration` ([#4051](https://github.com/getsentry/sentry-java/pull/4051))
+- Reduce IPC/Binder calls performed by the SDK ([#4058](https://github.com/getsentry/sentry-java/pull/4058))
+
+### Behavioural Changes
+
+- Reduce the number of broadcasts the SDK is subscribed for ([#4052](https://github.com/getsentry/sentry-java/pull/4052))
+  - Drop `TempSensorBreadcrumbsIntegration`
+  - Drop `PhoneStateBreadcrumbsIntegration`
+  - Reduce number of broadcasts in `SystemEventsBreadcrumbsIntegration`
+
+Current list of the broadcast events can be found [here](https://github.com/getsentry/sentry-java/blob/9b8dc0a844d10b55ddeddf55d278c0ab0f86421c/sentry-android-core/src/main/java/io/sentry/android/core/SystemEventsBreadcrumbsIntegration.java#L131-L153). If you'd like to subscribe for more events, consider overriding the `SystemEventsBreadcrumbsIntegration` as follows:
+
+```kotlin
+SentryAndroid.init(context) { options ->
+    options.integrations.removeAll { it is SystemEventsBreadcrumbsIntegration }
+    options.integrations.add(SystemEventsBreadcrumbsIntegration(context, SystemEventsBreadcrumbsIntegration.getDefaultActions() + listOf(/* your custom actions */)))
+}
+```
+
+If you would like to keep some of the default broadcast events as breadcrumbs, consider opening a [GitHub issue](https://github.com/getsentry/sentry-java/issues/new).
+
+## 7.20.1
+
+### Behavioural Changes
+
+- The user ip-address is now only set to `"{{auto}}"` if sendDefaultPii is enabled ([#4071](https://github.com/getsentry/sentry-java/pull/4071))
+    - This change gives you control over IP address collection directly on the client
+
 
 ## 7.20.0
 
