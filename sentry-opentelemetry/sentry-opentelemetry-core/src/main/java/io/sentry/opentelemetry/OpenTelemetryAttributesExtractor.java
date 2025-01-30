@@ -12,6 +12,7 @@ import io.sentry.protocol.Request;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.StringUtils;
 import io.sentry.util.UrlUtils;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,7 @@ public final class OpenTelemetryAttributesExtractor {
       }
 
       if (request.getUrl() == null) {
-        final String urlString = buildUrlString(attributes);
+        final String urlString = buildUrlString(attributes, options);
         if (!urlString.isEmpty()) {
           request.setUrl(urlString);
         }
@@ -115,7 +116,8 @@ public final class OpenTelemetryAttributesExtractor {
     return list != null ? String.join(",", list) : null;
   }
 
-  private @NotNull String buildUrlString(final @NotNull Attributes attributes) {
+  private @NotNull String buildUrlString(
+      final @NotNull Attributes attributes, final @NotNull SentryOptions options) {
     final @Nullable String scheme = attributes.get(UrlAttributes.URL_SCHEME);
     final @Nullable String serverAddress = attributes.get(ServerAttributes.SERVER_ADDRESS);
     final @Nullable Long serverPort = attributes.get(ServerAttributes.SERVER_PORT);
@@ -125,22 +127,18 @@ public final class OpenTelemetryAttributesExtractor {
       return "";
     }
 
-    final @NotNull StringBuilder urlBuilder = new StringBuilder();
-    urlBuilder.append(scheme);
-    urlBuilder.append("://");
-
-    if (serverAddress != null) {
-      urlBuilder.append(serverAddress);
-      if (serverPort != null) {
-        urlBuilder.append(":");
-        urlBuilder.append(serverPort);
+    try {
+      final @NotNull String pathToUse = path == null ? "" : path;
+      if (serverPort == null) {
+        return new URL(scheme, serverAddress, pathToUse).toString();
+      } else {
+        return new URL(scheme, serverAddress, serverPort.intValue(), pathToUse).toString();
       }
+    } catch (Throwable t) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Unable to combine URL span attributes into one.", t);
+      return "";
     }
-
-    if (path != null) {
-      urlBuilder.append(path);
-    }
-
-    return urlBuilder.toString();
   }
 }
