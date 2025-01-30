@@ -322,9 +322,9 @@ public final class Sentry {
         final IScope rootIsolationScope = new Scope(options);
         rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
+        initLogger(options);
         initForOpenTelemetryMaybe(options);
         getScopesStorage().set(rootScopes);
-
         initConfigurations(options);
 
         globalScope.bindClient(new SentryClient(options));
@@ -348,6 +348,19 @@ public final class Sentry {
         finalizePreviousSession(options, ScopesAdapter.getInstance());
 
         handleAppStartProfilingConfig(options, options.getExecutorService());
+
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Using openTelemetryMode %s", options.getOpenTelemetryMode());
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Using span factory %s",
+                options.getSpanFactory().getClass().getName());
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Using scopes storage %s", scopesStorage.getClass().getName());
       } else {
         options
             .getLogger()
@@ -359,6 +372,7 @@ public final class Sentry {
   }
 
   private static void initForOpenTelemetryMaybe(SentryOptions options) {
+    OpenTelemetryUtil.updateOpenTelemetryModeIfAuto(options, new LoadClass());
     if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
       options.setSpanFactory(new DefaultSpanFactory());
       //    } else {
@@ -367,7 +381,13 @@ public final class Sentry {
       // NoOpLogger.getInstance()));
     }
     initScopesStorage(options);
-    OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
+    OpenTelemetryUtil.applyIgnoredSpanOrigins(options);
+  }
+
+  private static void initLogger(final @NotNull SentryOptions options) {
+    if (options.isDebug() && options.getLogger() instanceof NoOpLogger) {
+      options.setLogger(new SystemOutLogger());
+    }
   }
 
   private static void initScopesStorage(SentryOptions options) {
@@ -505,15 +525,8 @@ public final class Sentry {
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private static void initConfigurations(final @NotNull SentryOptions options) {
-    ILogger logger = options.getLogger();
-
-    if (options.isDebug() && logger instanceof NoOpLogger) {
-      options.setLogger(new SystemOutLogger());
-      logger = options.getLogger();
-    }
+    final @NotNull ILogger logger = options.getLogger();
     logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
-
-    OpenTelemetryUtil.applyIgnoredSpanOrigins(options, new LoadClass());
 
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
