@@ -40,6 +40,12 @@ SentryAndroid.init(context) { options ->
 ```
 
 If you would like to keep some of the default broadcast events as breadcrumbs, consider opening a [GitHub issue](https://github.com/getsentry/sentry-java/issues/new).
+- Set mechanism `type` to `suppressed` for suppressed exceptions ([#4125](https://github.com/getsentry/sentry-java/pull/4125))
+  - This helps to distinguish an exceptions cause from any suppressed exceptions in the Sentry UI
+
+### Dependencies
+
+- Bump Spring Boot to `3.4.2` ([#4081](https://github.com/getsentry/sentry-java/pull/4081))
 
 ## 8.0.0
 
