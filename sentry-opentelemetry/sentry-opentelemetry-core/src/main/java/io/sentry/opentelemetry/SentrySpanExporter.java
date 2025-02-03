@@ -67,6 +67,9 @@ public final class SentrySpanExporter implements SpanExporter {
           InternalSemanticAttributes.PARENT_SAMPLED.getKey(),
           ProcessIncubatingAttributes.PROCESS_COMMAND_ARGS.getKey() // can be very long
           );
+
+  private final @NotNull List<String> attributeToRemoveByPrefix =
+      Arrays.asList("http.request.header.");
   private static final @NotNull Long SPAN_TIMEOUT = DateUtils.secondsToNanos(5 * 60);
 
   public static final String TRACE_ORIGIN = "auto.opentelemetry";
@@ -488,7 +491,17 @@ public final class SentrySpanExporter implements SpanExporter {
   }
 
   private boolean shouldRemoveAttribute(final @NotNull String key) {
-    return attributeKeysToRemove.contains(key);
+    if (attributeKeysToRemove.contains(key)) {
+      return true;
+    }
+
+    for (String prefix : attributeToRemoveByPrefix) {
+      if (key.startsWith(prefix)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private void setOtelInstrumentationInfo(
