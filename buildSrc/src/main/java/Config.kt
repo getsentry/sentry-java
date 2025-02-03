@@ -7,7 +7,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
-    val springBoot3Version = "3.4.0"
+    val springBoot3Version = "3.4.2"
     val kotlinCompatibleLanguageVersion = "1.4"
 
     val composeVersion = "1.5.3"
@@ -153,7 +153,7 @@ object Config {
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
 
-        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.14"
+        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.19"
 
         object OpenTelemetry {
             val otelVersion = "1.44.1"
