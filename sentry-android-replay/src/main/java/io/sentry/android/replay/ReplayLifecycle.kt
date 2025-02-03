@@ -1,6 +1,6 @@
 package io.sentry.android.replay
 
-enum class ReplayState {
+internal enum class ReplayState {
     /**
      * Initial state of a Replay session. This is the state when ReplayIntegration is constructed
      * but has not been started yet.

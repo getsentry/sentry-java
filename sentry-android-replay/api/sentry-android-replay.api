@@ -83,17 +83,6 @@ public final class io/sentry/android/replay/ReplayIntegration : android/content/
 	public fun stop ()V
 }
 
-public final class io/sentry/android/replay/ReplayState : java/lang/Enum {
-	public static final field CLOSED Lio/sentry/android/replay/ReplayState;
-	public static final field INITIAL Lio/sentry/android/replay/ReplayState;
-	public static final field PAUSED Lio/sentry/android/replay/ReplayState;
-	public static final field RESUMED Lio/sentry/android/replay/ReplayState;
-	public static final field STARTED Lio/sentry/android/replay/ReplayState;
-	public static final field STOPPED Lio/sentry/android/replay/ReplayState;
-	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/replay/ReplayState;
-	public static fun values ()[Lio/sentry/android/replay/ReplayState;
-}
-
 public abstract interface class io/sentry/android/replay/ScreenshotRecorderCallback {
 	public abstract fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
 	public abstract fun onScreenshotRecorded (Ljava/io/File;J)V
