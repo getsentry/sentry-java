@@ -43,6 +43,7 @@ class ContextUtilsTest {
 
     @BeforeTest
     fun `set up`() {
+        ContextUtils.resetInstance()
         context = ApplicationProvider.getApplicationContext()
         logger = NoOpLogger.getInstance()
         ShadowBuild.reset()
@@ -52,20 +53,20 @@ class ContextUtilsTest {
 
     @Test
     fun `Given a valid context, returns a valid PackageInfo`() {
-        val packageInfo = ContextUtils.getPackageInfo(context, mock(), mock())
+        val packageInfo = ContextUtils.getPackageInfo(context, mock())
         assertNotNull(packageInfo)
     }
 
     @Test
     fun `Given an  invalid context, do not throw Error`() {
         // as Context is not fully mocked, it'll throw NPE but catch it and return null
-        val packageInfo = ContextUtils.getPackageInfo(mock(), mock(), mock())
+        val packageInfo = ContextUtils.getPackageInfo(mock(), mock())
         assertNull(packageInfo)
     }
 
     @Test
     fun `Given a valid PackageInfo, returns a valid versionCode`() {
-        val packageInfo = ContextUtils.getPackageInfo(context, mock(), mock())
+        val packageInfo = ContextUtils.getPackageInfo(context, mock())
         val versionCode = ContextUtils.getVersionCode(packageInfo!!, mock())
 
         assertNotNull(versionCode)
@@ -74,7 +75,7 @@ class ContextUtilsTest {
     @Test
     fun `Given a valid PackageInfo, returns a valid versionName`() {
         // VersionName is null during tests, so we mock it the second time
-        val packageInfo = ContextUtils.getPackageInfo(context, mock(), mock())!!
+        val packageInfo = ContextUtils.getPackageInfo(context, mock())!!
         val versionName = ContextUtils.getVersionName(packageInfo)
         assertNull(versionName)
         val mockedPackageInfo = spy(packageInfo) { it.versionName = "" }
@@ -84,13 +85,13 @@ class ContextUtilsTest {
 
     @Test
     fun `when context is valid, getApplicationName returns application name`() {
-        val appName = ContextUtils.getApplicationName(context, logger)
+        val appName = ContextUtils.getApplicationName(context)
         assertEquals("io.sentry.android.core.test", appName)
     }
 
     @Test
     fun `when context is invalid, getApplicationName returns null`() {
-        val appName = ContextUtils.getApplicationName(mock(), logger)
+        val appName = ContextUtils.getApplicationName(mock())
         assertNull(appName)
     }
 
@@ -195,7 +196,7 @@ class ContextUtilsTest {
         val context = mock<Context>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.TIRAMISU)
         ContextUtils.registerReceiver(context, buildInfo, receiver, filter)
-        verify(context).registerReceiver(eq(receiver), eq(filter), eq(Context.RECEIVER_EXPORTED))
+        verify(context).registerReceiver(eq(receiver), eq(filter), eq(Context.RECEIVER_NOT_EXPORTED))
     }
 
     @Test

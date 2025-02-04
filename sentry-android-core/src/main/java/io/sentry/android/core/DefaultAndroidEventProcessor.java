@@ -156,7 +156,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (user.getId() == null) {
       user.setId(Installation.id(context));
     }
-    if (user.getIpAddress() == null) {
+    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
@@ -250,7 +250,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setAppExtras(final @NotNull App app, final @NotNull Hint hint) {
-    app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+    app.setAppName(ContextUtils.getApplicationName(context));
     final @NotNull TimeSpan appStartTimeSpan =
         AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
     if (appStartTimeSpan.hasStarted()) {

@@ -46,15 +46,13 @@ dependencies {
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBoot3Starter)
     implementation(Config.Libs.kotlinReflect)
-    implementation(Config.Libs.springBootStarterJdbc)
+    implementation(Config.Libs.springBoot3StarterJdbc)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
     implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
-    implementation(Config.Libs.springBoot3StarterOpenTelemetry)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
 
     // database query tracing
     implementation(projects.sentryJdbc)
@@ -64,7 +62,7 @@ dependencies {
     }
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation("ch.qos.logback:logback-classic:1.3.5")
+    testImplementation("ch.qos.logback:logback-classic:1.5.16")
     testImplementation(Config.Libs.slf4jApi2)
     testImplementation(Config.Libs.apolloKotlin)
 }

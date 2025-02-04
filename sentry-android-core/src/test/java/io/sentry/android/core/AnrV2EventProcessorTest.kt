@@ -85,7 +85,6 @@ class AnrV2EventProcessorTest {
         lateinit var context: Context
         val options = SentryAndroidOptions().apply {
             setLogger(NoOpLogger.getInstance())
-            isSendDefaultPii = true
         }
 
         fun getSut(
@@ -93,10 +92,13 @@ class AnrV2EventProcessorTest {
             currentSdk: Int = Build.VERSION_CODES.LOLLIPOP,
             populateScopeCache: Boolean = false,
             populateOptionsCache: Boolean = false,
-            replayErrorSampleRate: Double? = null
+            replayErrorSampleRate: Double? = null,
+            isSendDefaultPii: Boolean = true
         ): AnrV2EventProcessor {
             options.cacheDirPath = dir.newFolder().absolutePath
             options.environment = "release"
+            options.isSendDefaultPii = isSendDefaultPii
+
             whenever(buildInfo.sdkInfoVersion).thenReturn(currentSdk)
             whenever(buildInfo.isEmulator).thenReturn(true)
 
@@ -170,6 +172,7 @@ class AnrV2EventProcessorTest {
 
     @BeforeTest
     fun `set up`() {
+        DeviceInfoUtil.resetInstance()
         fixture.context = ApplicationProvider.getApplicationContext()
     }
 
@@ -278,6 +281,7 @@ class AnrV2EventProcessorTest {
         // user
         assertEquals("bot", processed.user!!.username)
         assertEquals("bot@me.com", processed.user!!.id)
+        assertEquals("{{auto}}", processed.user!!.ipAddress)
         // trace
         assertEquals("ui.load", processed.contexts.trace!!.operation)
         // tags
@@ -302,6 +306,13 @@ class AnrV2EventProcessorTest {
         // contexts
         assertEquals(1024, processed.contexts.response!!.bodySize)
         assertEquals("Google Chrome", processed.contexts.browser!!.name)
+    }
+
+    @Test
+    fun `when backfillable event is enrichable, does not backfill user ip`() {
+        val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+        val processed = processEvent(hint, isSendDefaultPii = false, populateScopeCache = true)
+        assertNull(processed.user!!.ipAddress)
     }
 
     @Test
@@ -617,6 +628,7 @@ class AnrV2EventProcessorTest {
         hint: Hint,
         populateScopeCache: Boolean = false,
         populateOptionsCache: Boolean = false,
+        isSendDefaultPii: Boolean = true,
         configureEvent: SentryEvent.() -> Unit = {}
     ): SentryEvent {
         val original = SentryEvent().apply(configureEvent)
@@ -624,7 +636,8 @@ class AnrV2EventProcessorTest {
         val processor = fixture.getSut(
             tmpDir,
             populateScopeCache = populateScopeCache,
-            populateOptionsCache = populateOptionsCache
+            populateOptionsCache = populateOptionsCache,
+            isSendDefaultPii = isSendDefaultPii
         )
         return processor.process(original, hint)!!
     }

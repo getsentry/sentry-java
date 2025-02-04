@@ -5,7 +5,9 @@ import android.content.ContentProvider
 import android.os.Build
 import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.DateUtils
 import io.sentry.ITransactionProfiler
+import io.sentry.SentryNanotimeDate
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
 import org.junit.Before
@@ -18,6 +20,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows
 import org.robolectric.annotation.Config
+import java.util.Date
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -56,7 +59,7 @@ class AppStartMetricsTest {
         metrics.addActivityLifecycleTimeSpans(ActivityLifecycleTimeSpan())
         AppStartMetrics.onApplicationCreate(mock<Application>())
         AppStartMetrics.onContentProviderCreate(mock<ContentProvider>())
-        metrics.setAppStartProfiler(mock())
+        metrics.appStartProfiler = mock()
         metrics.appStartSamplingDecision = mock()
 
         metrics.clear()
@@ -275,5 +278,70 @@ class AppStartMetricsTest {
         // Main thread performs the check and keeps the flag to true
         Shadows.shadowOf(Looper.getMainLooper()).idle()
         assertTrue(AppStartMetrics.getInstance().isAppLaunchedInForeground)
+    }
+
+    @Test
+    fun `isColdStartValid is false if app was launched in background`() {
+        AppStartMetrics.getInstance().isAppLaunchedInForeground = false
+        assertFalse(AppStartMetrics.getInstance().isColdStartValid)
+    }
+
+    @Test
+    fun `isColdStartValid is false if app launched in more than 1 minute`() {
+        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
+        appStartTimeSpan.start()
+        appStartTimeSpan.stop()
+        appStartTimeSpan.setStartedAt(1)
+        appStartTimeSpan.setStoppedAt(TimeUnit.MINUTES.toMillis(1) + 2)
+        AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
+        assertFalse(AppStartMetrics.getInstance().isColdStartValid)
+    }
+
+    @Test
+    fun `onAppStartSpansSent set measurement flag and clear internal lists`() {
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.addActivityLifecycleTimeSpans(mock())
+        appStartMetrics.contentProviderOnCreateTimeSpans.add(mock())
+        assertTrue(appStartMetrics.shouldSendStartMeasurements())
+        appStartMetrics.onAppStartSpansSent()
+        assertTrue(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
+        assertTrue(appStartMetrics.contentProviderOnCreateTimeSpans.isEmpty())
+        assertFalse(appStartMetrics.shouldSendStartMeasurements())
+    }
+
+    @Test
+    fun `restartAppStart set measurement flag and clear internal lists`() {
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.onAppStartSpansSent()
+        appStartMetrics.isAppLaunchedInForeground = false
+        assertFalse(appStartMetrics.shouldSendStartMeasurements())
+        assertFalse(appStartMetrics.isColdStartValid)
+
+        appStartMetrics.restartAppStart(10)
+
+        assertTrue(appStartMetrics.shouldSendStartMeasurements())
+        assertTrue(appStartMetrics.isColdStartValid)
+        assertTrue(appStartMetrics.appStartTimeSpan.hasStarted())
+        assertTrue(appStartMetrics.appStartTimeSpan.hasNotStopped())
+        assertEquals(10, appStartMetrics.appStartTimeSpan.startUptimeMs)
+    }
+
+    @Test
+    fun `createProcessInitSpan creates a span`() {
+        val appStartMetrics = AppStartMetrics.getInstance()
+        val startDate = SentryNanotimeDate(Date(1), 1000000)
+        appStartMetrics.classLoadedUptimeMs = 10
+        val startMillis = DateUtils.nanosToMillis(startDate.nanoTimestamp().toDouble()).toLong()
+        appStartMetrics.appStartTimeSpan.setStartedAt(1)
+        appStartMetrics.appStartTimeSpan.setStartUnixTimeMs(startMillis)
+        val span = appStartMetrics.createProcessInitSpan()
+
+        assertEquals("Process Initialization", span.description)
+        // Start timestampMs is taken by appStartSpan
+        assertEquals(startMillis, span.startTimestampMs)
+        // Start uptime is taken by appStartSpan and stop uptime is class loaded uptime: 10 - 1
+        assertEquals(9, span.durationMs)
+        // Class loaded uptimeMs is 10 ms, and process init span should finish at the same ms
+        assertEquals(10, span.projectedStopTimestampMs)
     }
 }

@@ -17,6 +17,7 @@ import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.TextView
 import io.sentry.SentryOptions
 import io.sentry.android.replay.viewhierarchy.ComposeViewHierarchyNode
@@ -177,4 +178,18 @@ internal class AndroidTextLayout(private val layout: Layout) : TextLayout {
     override fun getLineTop(line: Int): Int = layout.getLineTop(line)
     override fun getLineBottom(line: Int): Int = layout.getLineBottom(line)
     override fun getLineStart(line: Int): Int = layout.getLineStart(line)
+}
+
+internal fun View?.addOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListener) {
+    if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
+        return
+    }
+    viewTreeObserver.addOnDrawListener(listener)
+}
+
+internal fun View?.removeOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListener) {
+    if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
+        return
+    }
+    viewTreeObserver.removeOnDrawListener(listener)
 }

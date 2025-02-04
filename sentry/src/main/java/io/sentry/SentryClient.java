@@ -11,12 +11,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
-import io.sentry.util.CheckInUtils;
-import io.sentry.util.HintUtils;
-import io.sentry.util.Objects;
-import io.sentry.util.Random;
-import io.sentry.util.SentryRandom;
-import io.sentry.util.TracingUtils;
+import io.sentry.util.*;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,7 +40,8 @@ public final class SentryClient implements ISentryClient {
     return enabled;
   }
 
-  SentryClient(final @NotNull SentryOptions options) {
+  @ApiStatus.Internal
+  public SentryClient(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;
 
@@ -102,13 +98,27 @@ public final class SentryClient implements ISentryClient {
 
     if (event != null) {
       final Throwable eventThrowable = event.getThrowable();
-      if (eventThrowable != null && options.containsIgnoredExceptionForType(eventThrowable)) {
+      if (eventThrowable != null
+          && ExceptionUtils.isIgnored(options.getIgnoredExceptionsForType(), eventThrowable)) {
         options
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
                 "Event was dropped as the exception %s is ignored",
                 eventThrowable.getClass());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+        return SentryId.EMPTY_ID;
+      }
+
+      if (ErrorUtils.isIgnored(options.getIgnoredErrors(), event)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was dropped as it matched a string/pattern in ignoredErrors",
+                event.getMessage());
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
@@ -288,7 +298,6 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (event == null) {
-      options.getLogger().log(SentryLevel.DEBUG, "Replay was dropped by Event processors.");
       return SentryId.EMPTY_ID;
     }
 
@@ -632,8 +641,11 @@ public final class SentryClient implements ISentryClient {
     envelopeItems.add(replayItem);
     final SentryId sentryId = event.getEventId();
 
+    // SdkVersion from ReplayOptions defaults to SdkVersion from SentryOptions and can be
+    // overwritten by the hybrid SDKs
     final SentryEnvelopeHeader envelopeHeader =
-        new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceContext);
+        new SentryEnvelopeHeader(
+            sentryId, options.getSessionReplay().getSdkVersion(), traceContext);
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }

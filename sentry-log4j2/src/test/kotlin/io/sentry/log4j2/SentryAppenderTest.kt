@@ -6,6 +6,7 @@ import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.checkEvent
+import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
@@ -84,7 +85,7 @@ class SentryAppenderTest {
 
     @Test
     fun `does not initialize Sentry if Sentry is already enabled with higher prio`() {
-        Sentry.init {
+        initForTest {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
             it.setTransportFactory(fixture.transportFactory)

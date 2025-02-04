@@ -2,6 +2,7 @@ package io.sentry.kotlin
 
 import io.sentry.ScopeType
 import io.sentry.Sentry
+import io.sentry.test.initForTest
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -22,7 +23,7 @@ class SentryContextTest {
 
     @BeforeTest
     fun init() {
-        Sentry.init("https://key@sentry.io/123")
+        initForTest("https://key@sentry.io/123")
     }
 
     @AfterTest

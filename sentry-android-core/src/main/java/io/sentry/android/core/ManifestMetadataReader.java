@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.InitPriority;
@@ -379,28 +378,26 @@ final class ManifestMetadataReader {
             readBool(
                 metadata, logger, ENABLE_SCOPE_PERSISTENCE, options.isEnableScopePersistence()));
 
-        if (options.getExperimental().getSessionReplay().getSessionSampleRate() == null) {
+        if (options.getSessionReplay().getSessionSampleRate() == null) {
           final Double sessionSampleRate =
               readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
           if (sessionSampleRate != -1) {
-            options.getExperimental().getSessionReplay().setSessionSampleRate(sessionSampleRate);
+            options.getSessionReplay().setSessionSampleRate(sessionSampleRate);
           }
         }
 
-        if (options.getExperimental().getSessionReplay().getOnErrorSampleRate() == null) {
+        if (options.getSessionReplay().getOnErrorSampleRate() == null) {
           final Double onErrorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
           if (onErrorSampleRate != -1) {
-            options.getExperimental().getSessionReplay().setOnErrorSampleRate(onErrorSampleRate);
+            options.getSessionReplay().setOnErrorSampleRate(onErrorSampleRate);
           }
         }
 
         options
-            .getExperimental()
             .getSessionReplay()
             .setMaskAllText(readBool(metadata, logger, REPLAYS_MASK_ALL_TEXT, true));
 
         options
-            .getExperimental()
             .getSessionReplay()
             .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
       }
@@ -477,7 +474,10 @@ final class ManifestMetadataReader {
   private static @NotNull Double readDouble(
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     // manifest meta-data only reads float
-    final Double value = ((Number) metadata.getFloat(key, metadata.getInt(key, -1))).doubleValue();
+    double value = ((Float) metadata.getFloat(key, -1)).doubleValue();
+    if (value == -1) {
+      value = ((Integer) metadata.getInt(key, -1)).doubleValue();
+    }
     logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
@@ -520,18 +520,14 @@ final class ManifestMetadataReader {
    *
    * @param context the application context
    * @return the Bundle attached to the PackageManager
-   * @throws PackageManager.NameNotFoundException if the package name is non-existent
    */
   private static @Nullable Bundle getMetadata(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @Nullable BuildInfoProvider buildInfoProvider)
-      throws PackageManager.NameNotFoundException {
+      final @Nullable BuildInfoProvider buildInfoProvider) {
     final ApplicationInfo app =
         ContextUtils.getApplicationInfo(
-            context,
-            PackageManager.GET_META_DATA,
-            buildInfoProvider != null ? buildInfoProvider : new BuildInfoProvider(logger));
-    return app.metaData;
+            context, buildInfoProvider != null ? buildInfoProvider : new BuildInfoProvider(logger));
+    return app != null ? app.metaData : null;
   }
 }

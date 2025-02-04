@@ -19,4 +19,9 @@ public final class NoOpBackpressureMonitor implements IBackpressureMonitor {
   public int getDownsampleFactor() {
     return 0;
   }
+
+  @Override
+  public void close() {
+    // do nothing
+  }
 }

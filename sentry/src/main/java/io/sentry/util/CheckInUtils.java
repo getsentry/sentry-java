@@ -3,6 +3,7 @@ package io.sentry.util;
 import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
 import io.sentry.DateUtils;
+import io.sentry.FilterString;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.MonitorConfig;
@@ -116,18 +117,20 @@ public final class CheckInUtils {
   /** Checks if a check-in for a monitor (CRON) has been ignored. */
   @ApiStatus.Internal
   public static boolean isIgnored(
-      final @Nullable List<String> ignoredSlugs, final @NotNull String slug) {
+      final @Nullable List<FilterString> ignoredSlugs, final @NotNull String slug) {
     if (ignoredSlugs == null || ignoredSlugs.isEmpty()) {
       return false;
     }
 
-    for (final String ignoredSlug : ignoredSlugs) {
-      if (ignoredSlug.equalsIgnoreCase(slug)) {
+    for (final FilterString ignoredSlug : ignoredSlugs) {
+      if (ignoredSlug.getFilterString().equalsIgnoreCase(slug)) {
         return true;
       }
+    }
 
+    for (final FilterString ignoredSlug : ignoredSlugs) {
       try {
-        if (slug.matches(ignoredSlug)) {
+        if (ignoredSlug.matches(slug)) {
           return true;
         }
       } catch (Throwable t) {

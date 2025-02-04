@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import android.app.Activity
 import android.app.Application
+import android.content.Context
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Scopes
@@ -11,6 +12,7 @@ import junit.framework.TestCase.assertNull
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -18,7 +20,9 @@ import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric.buildActivity
 import kotlin.test.Test
 import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class UserInteractionIntegrationTest {
@@ -34,10 +38,14 @@ class UserInteractionIntegrationTest {
         val loadClass = mock<LoadClass>()
 
         fun getSut(
+            callback: Window.Callback? = null,
             isAndroidXAvailable: Boolean = true
         ): UserInteractionIntegration {
             whenever(loadClass.isClassAvailable(any(), anyOrNull<SentryAndroidOptions>())).thenReturn(isAndroidXAvailable)
             whenever(scopes.options).thenReturn(options)
+            if (callback != null) {
+                window.callback = callback
+            }
             return UserInteractionIntegration(application, loadClass)
         }
     }
@@ -134,6 +142,22 @@ class UserInteractionIntegrationTest {
         sut.onActivityPaused(fixture.activity)
 
         verify(callback).stopTracking()
+    }
+
+    @Test
+    fun `does not instrument if the callback is already ours`() {
+        val existingCallback = SentryWindowCallback(
+            NoOpWindowCallback(),
+            fixture.activity,
+            mock(),
+            mock()
+        )
+        val sut = fixture.getSut(existingCallback)
+
+        sut.register(fixture.scopes, fixture.options)
+        sut.onActivityResumed(fixture.activity)
+
+        assertNotEquals(existingCallback, (fixture.window.callback as SentryWindowCallback).delegate)
     }
 }
 

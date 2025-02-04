@@ -7,7 +7,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
-    val springBoot3Version = "3.4.0"
+    val springBoot3Version = "3.4.2"
     val kotlinCompatibleLanguageVersion = "1.6"
 
     // see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
@@ -157,7 +157,7 @@ object Config {
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
 
-        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.14"
+        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.20"
 
         object OpenTelemetry {
             val otelVersion = "1.44.1"
@@ -201,6 +201,7 @@ object Config {
         val mockitoKotlin = "org.mockito.kotlin:mockito-kotlin:4.1.0"
         val mockitoInline = "org.mockito:mockito-inline:4.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
+        val awaitility3 = "org.awaitility:awaitility-kotlin:3.1.6" // need this due to a conflict of awaitility4+ and espresso on hamcrest
         val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
         val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.32.0"
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"

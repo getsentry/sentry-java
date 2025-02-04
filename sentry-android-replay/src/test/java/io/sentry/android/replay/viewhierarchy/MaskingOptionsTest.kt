@@ -46,7 +46,7 @@ class MaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = true
+            sessionReplay.maskAllText = true
         }
 
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
@@ -65,7 +65,7 @@ class MaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = false
+            sessionReplay.maskAllText = false
         }
 
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
@@ -84,7 +84,7 @@ class MaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllImages = true
+            sessionReplay.maskAllImages = true
         }
 
         val imageNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.imageView!!, null, 0, options)
@@ -99,7 +99,7 @@ class MaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllImages = false
+            sessionReplay.maskAllImages = false
         }
 
         val imageNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.imageView!!, null, 0, options)
@@ -114,7 +114,7 @@ class MaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = false
+            sessionReplay.maskAllText = false
         }
 
         MaskingOptionsActivity.textView!!.tag = "sentry-mask"
@@ -129,7 +129,7 @@ class MaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = true
+            sessionReplay.maskAllText = true
         }
 
         MaskingOptionsActivity.textView!!.tag = "sentry-unmask"
@@ -144,7 +144,7 @@ class MaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = false
+            sessionReplay.maskAllText = false
         }
 
         MaskingOptionsActivity.textView!!.sentryReplayMask()
@@ -159,7 +159,7 @@ class MaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = true
+            sessionReplay.maskAllText = true
         }
 
         MaskingOptionsActivity.textView!!.sentryReplayUnmask()
@@ -174,7 +174,7 @@ class MaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = true
+            sessionReplay.maskAllText = true
         }
 
         MaskingOptionsActivity.textView!!.visibility = View.GONE
@@ -189,7 +189,7 @@ class MaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskViewClasses.add(CustomView::class.java.canonicalName)
+            sessionReplay.maskViewClasses.add(CustomView::class.java.canonicalName)
         }
 
         val customViewNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.customView!!, null, 0, options)
@@ -203,8 +203,8 @@ class MaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.maskAllText = true // all TextView subclasses
-            experimental.sessionReplay.unmaskViewClasses.add(RadioButton::class.java.canonicalName)
+            sessionReplay.maskAllText = true // all TextView subclasses
+            sessionReplay.unmaskViewClasses.add(RadioButton::class.java.canonicalName)
         }
 
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
@@ -220,7 +220,7 @@ class MaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
 
         val options = SentryOptions().apply {
-            experimental.sessionReplay.unmaskViewClasses.add(LinearLayout::class.java.canonicalName)
+            sessionReplay.unmaskViewClasses.add(LinearLayout::class.java.canonicalName)
         }
 
         val linearLayoutNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!.parent as LinearLayout, null, 0, options)

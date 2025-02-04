@@ -5,7 +5,6 @@ import io.sentry.CheckIn
 import io.sentry.CheckInStatus
 import io.sentry.DataCategory.Replay
 import io.sentry.Hint
-import io.sentry.IHub
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISerializer
@@ -29,6 +28,8 @@ import io.sentry.hints.DiskFlushNotification
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.test.getProperty
+import io.sentry.test.injectForField
 import io.sentry.util.HintUtils
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.eq
@@ -39,6 +40,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.io.File
+import java.util.Timer
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
@@ -314,8 +316,8 @@ class RateLimiterTest {
     @Test
     fun `drop replay items as lost`() {
         val rateLimiter = fixture.getSUT()
-        val hub = mock<IHub>()
-        whenever(hub.options).thenReturn(SentryOptions())
+        val scopes = mock<IScopes>()
+        whenever(scopes.options).thenReturn(SentryOptions())
 
         val replayItem = SentryEnvelopeItem.fromReplay(fixture.serializer, mock<ILogger>(), SentryReplayEvent(), ReplayRecording(), false)
         val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
@@ -362,18 +364,16 @@ class RateLimiterTest {
     @Test
     fun `close cancels the timer`() {
         val rateLimiter = fixture.getSUT()
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 1, 2001)
+        val timer = mock<Timer>()
+        rateLimiter.injectForField("timer", timer)
 
-        val applied = AtomicBoolean(true)
-        rateLimiter.addRateLimitObserver {
-            applied.set(rateLimiter.isActiveForCategory(Replay))
-        }
-
-        rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
+        // When the rate limiter is closed
         rateLimiter.close()
 
-        // wait for 1.5s to ensure the timer has run after 1s
-        await.untilTrue(applied)
-        assertTrue(applied.get())
+        // Then the timer is cancelled
+        verify(timer).cancel()
+
+        // And is removed by the rateLimiter
+        assertNull(rateLimiter.getProperty("timer"))
     }
 }

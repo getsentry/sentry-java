@@ -158,7 +158,11 @@ public final class OtelSpanFactory implements ISpanFactory {
       sentrySpan.getSpanContext().setOrigin(spanOptions.getOrigin());
     }
 
-    return sentrySpan;
+    if (sentrySpan == null) {
+      return null;
+    } else {
+      return new OtelStrongRefSpanWrapper(otelSpan, sentrySpan);
+    }
   }
 
   private @NotNull Tracer getTracer() {

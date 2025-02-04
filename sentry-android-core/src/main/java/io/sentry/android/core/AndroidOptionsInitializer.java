@@ -15,6 +15,7 @@ import io.sentry.ScopeType;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOpenTelemetryMode;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
@@ -101,7 +102,7 @@ final class AndroidOptionsInitializer {
     options.setLogger(logger);
 
     options.setDefaultScopeType(ScopeType.CURRENT);
-
+    options.setOpenTelemetryMode(SentryOpenTelemetryMode.OFF);
     options.setDateProvider(new SentryAndroidDateProvider());
 
     // set a lower flush timeout on Android to avoid ANRs
@@ -304,8 +305,6 @@ final class AndroidOptionsInitializer {
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
     options.addIntegration(
         new NetworkBreadcrumbsIntegration(context, buildInfoProvider, options.getLogger()));
-    options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
-    options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());
@@ -325,8 +324,8 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    final PackageInfo packageInfo =
-        ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
+    final @Nullable PackageInfo packageInfo =
+        ContextUtils.getPackageInfo(context, buildInfoProvider);
     if (packageInfo != null) {
       // Sets App's release if not set by Manifest
       if (options.getRelease() == null) {

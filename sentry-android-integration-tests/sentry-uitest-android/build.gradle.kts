@@ -26,6 +26,7 @@ android {
         // This doesn't work on some devices with Android 11+. Clearing package data resets permissions.
         // Check the readme for more info.
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
+        buildConfigField("String", "ENVIRONMENT", "\"${System.getProperty("environment", "")}\"")
     }
 
     testOptions {
@@ -37,6 +38,7 @@ android {
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -123,6 +125,7 @@ dependencies {
     androidTestImplementation(Config.TestLibs.mockWebserver)
     androidTestImplementation(Config.TestLibs.androidxJunit)
     androidTestImplementation(Config.TestLibs.leakCanaryInstrumentation)
+    androidTestImplementation(Config.TestLibs.awaitility3)
     androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
 }
 

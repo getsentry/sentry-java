@@ -3,6 +3,7 @@ package io.sentry.instrumentation.file;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ScopesAdapter;
+import io.sentry.SentryOptions;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -127,20 +128,27 @@ public final class SentryFileInputStream extends FileInputStream {
     public static FileInputStream create(
         final @NotNull FileInputStream delegate, final @Nullable String name)
         throws FileNotFoundException {
-      return new SentryFileInputStream(
-          init(name != null ? new File(name) : null, delegate, ScopesAdapter.getInstance()));
+      final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+      return isTracingEnabled(scopes)
+          ? new SentryFileInputStream(init(name != null ? new File(name) : null, delegate, scopes))
+          : delegate;
     }
 
     public static FileInputStream create(
         final @NotNull FileInputStream delegate, final @Nullable File file)
         throws FileNotFoundException {
-      return new SentryFileInputStream(init(file, delegate, ScopesAdapter.getInstance()));
+      final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+      return isTracingEnabled(scopes)
+          ? new SentryFileInputStream(init(file, delegate, scopes))
+          : delegate;
     }
 
     public static FileInputStream create(
         final @NotNull FileInputStream delegate, final @NotNull FileDescriptor descriptor) {
-      return new SentryFileInputStream(
-          init(descriptor, delegate, ScopesAdapter.getInstance()), descriptor);
+      final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+      return isTracingEnabled(scopes)
+          ? new SentryFileInputStream(init(descriptor, delegate, scopes), descriptor)
+          : delegate;
     }
 
     static FileInputStream create(
@@ -148,7 +156,14 @@ public final class SentryFileInputStream extends FileInputStream {
         final @Nullable File file,
         final @NotNull IScopes scopes)
         throws FileNotFoundException {
-      return new SentryFileInputStream(init(file, delegate, scopes));
+      return isTracingEnabled(scopes)
+          ? new SentryFileInputStream(init(file, delegate, scopes))
+          : delegate;
+    }
+
+    private static boolean isTracingEnabled(final @NotNull IScopes scopes) {
+      final @NotNull SentryOptions options = scopes.getOptions();
+      return options.isTracingEnabled();
     }
   }
 }

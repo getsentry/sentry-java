@@ -429,9 +429,7 @@ public abstract interface class io/sentry/EventProcessor {
 }
 
 public final class io/sentry/ExperimentalOptions {
-	public fun <init> (Z)V
-	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
-	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
+	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
 }
 
 public final class io/sentry/ExternalOptions {
@@ -454,6 +452,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
+	public fun getIgnoredErrors ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
@@ -493,6 +492,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setGlobalHubMode (Ljava/lang/Boolean;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
+	public fun setIgnoredErrors (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
@@ -507,6 +507,14 @@ public final class io/sentry/ExternalOptions {
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
+}
+
+public final class io/sentry/FilterString {
+	public fun <init> (Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getFilterString ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun matches (Ljava/lang/String;)Z
 }
 
 public final class io/sentry/FullyDisplayedReporter {
@@ -2079,6 +2087,14 @@ public abstract interface class io/sentry/Scope$IWithTransaction {
 	public abstract fun accept (Lio/sentry/ITransaction;)V
 }
 
+public final class io/sentry/ScopeBindingMode : java/lang/Enum {
+	public static final field AUTO Lio/sentry/ScopeBindingMode;
+	public static final field OFF Lio/sentry/ScopeBindingMode;
+	public static final field ON Lio/sentry/ScopeBindingMode;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/ScopeBindingMode;
+	public static fun values ()[Lio/sentry/ScopeBindingMode;
+}
+
 public abstract interface class io/sentry/ScopeCallback {
 	public abstract fun run (Lio/sentry/IScope;)V
 }
@@ -2470,6 +2486,7 @@ public final class io/sentry/SentryBaseEvent$Serializer {
 }
 
 public final class io/sentry/SentryClient : io/sentry/ISentryClient {
+	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -2781,6 +2798,16 @@ public final class io/sentry/SentryNanotimeDateProvider : io/sentry/SentryDatePr
 	public fun now ()Lio/sentry/SentryDate;
 }
 
+public final class io/sentry/SentryOpenTelemetryMode : java/lang/Enum {
+	public static final field AGENT Lio/sentry/SentryOpenTelemetryMode;
+	public static final field AGENTLESS Lio/sentry/SentryOpenTelemetryMode;
+	public static final field AGENTLESS_SPRING Lio/sentry/SentryOpenTelemetryMode;
+	public static final field AUTO Lio/sentry/SentryOpenTelemetryMode;
+	public static final field OFF Lio/sentry/SentryOpenTelemetryMode;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryOpenTelemetryMode;
+	public static fun values ()[Lio/sentry/SentryOpenTelemetryMode;
+}
+
 public class io/sentry/SentryOptions {
 	public static final field DEFAULT_PROPAGATION_TARGETS Ljava/lang/String;
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
@@ -2788,7 +2815,11 @@ public class io/sentry/SentryOptions {
 	public fun addBundleId (Ljava/lang/String;)V
 	public fun addContextTag (Ljava/lang/String;)V
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
+	public fun addIgnoredCheckIn (Ljava/lang/String;)V
+	public fun addIgnoredError (Ljava/lang/String;)V
 	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
+	public fun addIgnoredSpanOrigin (Ljava/lang/String;)V
+	public fun addIgnoredTransaction (Ljava/lang/String;)V
 	public fun addInAppExclude (Ljava/lang/String;)V
 	public fun addInAppInclude (Ljava/lang/String;)V
 	public fun addIntegration (Lio/sentry/Integration;)V
@@ -2827,6 +2858,7 @@ public class io/sentry/SentryOptions {
 	public fun getGestureTargetLocators ()Ljava/util/List;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
+	public fun getIgnoredErrors ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getIgnoredSpanOrigins ()Ljava/util/List;
 	public fun getIgnoredTransactions ()Ljava/util/List;
@@ -2846,6 +2878,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxSpans ()I
 	public fun getMaxTraceFileSize ()J
 	public fun getModulesLoader ()Lio/sentry/internal/modules/IModulesLoader;
+	public fun getOpenTelemetryMode ()Lio/sentry/SentryOpenTelemetryMode;
 	public fun getOptionsObservers ()Ljava/util/List;
 	public fun getOutboxPath ()Ljava/lang/String;
 	public fun getPerformanceCollectors ()Ljava/util/List;
@@ -2865,6 +2898,7 @@ public class io/sentry/SentryOptions {
 	public fun getSerializer ()Lio/sentry/ISerializer;
 	public fun getServerName ()Ljava/lang/String;
 	public fun getSessionFlushTimeoutMillis ()J
+	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
 	public fun getSessionTrackingIntervalMillis ()J
 	public fun getShutdownTimeoutMillis ()J
 	public fun getSpanFactory ()Lio/sentry/ISpanFactory;
@@ -2957,6 +2991,7 @@ public class io/sentry/SentryOptions {
 	public fun setGlobalHubMode (Ljava/lang/Boolean;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
+	public fun setIgnoredErrors (Ljava/util/List;)V
 	public fun setIgnoredSpanOrigins (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setInitPriority (Lio/sentry/InitPriority;)V
@@ -2971,6 +3006,7 @@ public class io/sentry/SentryOptions {
 	public fun setMaxSpans (I)V
 	public fun setMaxTraceFileSize (J)V
 	public fun setModulesLoader (Lio/sentry/internal/modules/IModulesLoader;)V
+	public fun setOpenTelemetryMode (Lio/sentry/SentryOpenTelemetryMode;)V
 	public fun setPrintUncaughtStackTrace (Z)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
@@ -2989,6 +3025,7 @@ public class io/sentry/SentryOptions {
 	public fun setSerializer (Lio/sentry/ISerializer;)V
 	public fun setServerName (Ljava/lang/String;)V
 	public fun setSessionFlushTimeoutMillis (J)V
+	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 	public fun setSessionTrackingIntervalMillis (J)V
 	public fun setShutdownTimeoutMillis (J)V
 	public fun setSpanFactory (Lio/sentry/ISpanFactory;)V
@@ -3153,8 +3190,8 @@ public final class io/sentry/SentryReplayOptions {
 	public static final field TEXT_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field VIDEO_VIEW_CLASS_NAME Ljava/lang/String;
 	public static final field WEB_VIEW_CLASS_NAME Ljava/lang/String;
-	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;)V
-	public fun <init> (Z)V
+	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SdkVersion;)V
+	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
 	public fun addMaskViewClass (Ljava/lang/String;)V
 	public fun addUnmaskViewClass (Ljava/lang/String;)V
 	public fun getErrorReplayDuration ()J
@@ -3163,6 +3200,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getMaskViewContainerClass ()Ljava/lang/String;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
 	public fun getQuality ()Lio/sentry/SentryReplayOptions$SentryReplayQuality;
+	public fun getSdkVersion ()Lio/sentry/protocol/SdkVersion;
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
@@ -3170,12 +3208,15 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getUnmaskViewContainerClass ()Ljava/lang/String;
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
+	public fun isTrackOrientationChange ()Z
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
 	public fun setMaskViewContainerClass (Ljava/lang/String;)V
 	public fun setOnErrorSampleRate (Ljava/lang/Double;)V
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
+	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
+	public fun setTrackOrientationChange (Z)V
 	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
 }
 
@@ -3184,7 +3225,9 @@ public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang
 	public static final field LOW Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public static final field MEDIUM Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public final field bitRate I
+	public final field screenshotQuality I
 	public final field sizeScale F
+	public fun serializedName ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 	public static fun values ()[Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 }
@@ -3523,12 +3566,14 @@ public class io/sentry/SpanOptions {
 	protected field origin Ljava/lang/String;
 	public fun <init> ()V
 	public fun getOrigin ()Ljava/lang/String;
+	public fun getScopeBindingMode ()Lio/sentry/ScopeBindingMode;
 	public fun getStartTimestamp ()Lio/sentry/SentryDate;
 	public fun isIdle ()Z
 	public fun isTrimEnd ()Z
 	public fun isTrimStart ()Z
 	public fun setIdle (Z)V
 	public fun setOrigin (Ljava/lang/String;)V
+	public fun setScopeBindingMode (Lio/sentry/ScopeBindingMode;)V
 	public fun setStartTimestamp (Lio/sentry/SentryDate;)V
 	public fun setTrimEnd (Z)V
 	public fun setTrimStart (Z)V
@@ -3777,17 +3822,20 @@ public final class io/sentry/UserFeedback$JsonKeys {
 
 public final class io/sentry/backpressure/BackpressureMonitor : io/sentry/backpressure/IBackpressureMonitor, java/lang/Runnable {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/IScopes;)V
+	public fun close ()V
 	public fun getDownsampleFactor ()I
 	public fun run ()V
 	public fun start ()V
 }
 
 public abstract interface class io/sentry/backpressure/IBackpressureMonitor {
+	public abstract fun close ()V
 	public abstract fun getDownsampleFactor ()I
 	public abstract fun start ()V
 }
 
 public final class io/sentry/backpressure/NoOpBackpressureMonitor : io/sentry/backpressure/IBackpressureMonitor {
+	public fun close ()V
 	public fun getDownsampleFactor ()I
 	public static fun getInstance ()Lio/sentry/backpressure/NoOpBackpressureMonitor;
 	public fun start ()V
@@ -4104,6 +4152,7 @@ public final class io/sentry/instrumentation/file/SentryFileOutputStream : java/
 public final class io/sentry/instrumentation/file/SentryFileOutputStream$Factory {
 	public fun <init> ()V
 	public static fun create (Ljava/io/FileOutputStream;Ljava/io/File;)Ljava/io/FileOutputStream;
+	public static fun create (Ljava/io/FileOutputStream;Ljava/io/File;Lio/sentry/IScopes;)Ljava/io/FileOutputStream;
 	public static fun create (Ljava/io/FileOutputStream;Ljava/io/File;Z)Ljava/io/FileOutputStream;
 	public static fun create (Ljava/io/FileOutputStream;Ljava/io/FileDescriptor;)Ljava/io/FileOutputStream;
 	public static fun create (Ljava/io/FileOutputStream;Ljava/lang/String;)Ljava/io/FileOutputStream;
@@ -4201,6 +4250,12 @@ public final class io/sentry/internal/modules/ResourcesModulesLoader : io/sentry
 
 public abstract interface class io/sentry/internal/viewhierarchy/ViewHierarchyExporter {
 	public abstract fun export (Lio/sentry/protocol/ViewHierarchyNode;Ljava/lang/Object;)Z
+}
+
+public final class io/sentry/opentelemetry/OpenTelemetryUtil {
+	public fun <init> ()V
+	public static fun applyIgnoredSpanOrigins (Lio/sentry/SentryOptions;)V
+	public static fun updateOpenTelemetryModeIfAuto (Lio/sentry/SentryOptions;Lio/sentry/util/LoadClass;)V
 }
 
 public final class io/sentry/profilemeasurements/ProfileMeasurement : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -5721,6 +5776,33 @@ public final class io/sentry/rrweb/RRWebMetaEvent$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/rrweb/RRWebOptionsEvent : io/sentry/rrweb/RRWebEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field EVENT_TAG Ljava/lang/String;
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun getDataUnknown ()Ljava/util/Map;
+	public fun getOptionsPayload ()Ljava/util/Map;
+	public fun getTag ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setDataUnknown (Ljava/util/Map;)V
+	public fun setOptionsPayload (Ljava/util/Map;)V
+	public fun setTag (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/rrweb/RRWebOptionsEvent$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/rrweb/RRWebOptionsEvent;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/rrweb/RRWebOptionsEvent$JsonKeys {
+	public static final field DATA Ljava/lang/String;
+	public static final field PAYLOAD Ljava/lang/String;
+	public fun <init> ()V
+}
+
 public final class io/sentry/rrweb/RRWebSpanEvent : io/sentry/rrweb/RRWebEvent, io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field EVENT_TAG Ljava/lang/String;
 	public fun <init> ()V
@@ -5972,6 +6054,11 @@ public final class io/sentry/util/DebugMetaPropertiesApplier {
 	public static fun getProguardUuid (Ljava/util/Properties;)Ljava/lang/String;
 }
 
+public final class io/sentry/util/ErrorUtils {
+	public fun <init> ()V
+	public static fun isIgnored (Ljava/util/List;Lio/sentry/SentryEvent;)Z
+}
+
 public final class io/sentry/util/EventProcessorUtils {
 	public fun <init> ()V
 	public static fun unwrap (Ljava/util/List;)Ljava/util/List;
@@ -5980,6 +6067,7 @@ public final class io/sentry/util/EventProcessorUtils {
 public final class io/sentry/util/ExceptionUtils {
 	public fun <init> ()V
 	public static fun findRootCause (Ljava/lang/Throwable;)Ljava/lang/Throwable;
+	public static fun isIgnored (Ljava/util/Set;Ljava/lang/Throwable;)Z
 }
 
 public final class io/sentry/util/FileUtils {
@@ -6194,7 +6282,7 @@ public final class io/sentry/util/SentryRandom {
 
 public final class io/sentry/util/SpanUtils {
 	public fun <init> ()V
-	public static fun ignoredSpanOriginsForOpenTelemetry (Z)Ljava/util/List;
+	public static fun ignoredSpanOriginsForOpenTelemetry (Lio/sentry/SentryOpenTelemetryMode;)Ljava/util/List;
 	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
 }
 

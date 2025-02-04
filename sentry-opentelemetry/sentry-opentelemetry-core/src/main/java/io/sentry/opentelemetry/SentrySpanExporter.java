@@ -19,6 +19,7 @@ import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
+import io.sentry.ScopeType;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryDate;
 import io.sentry.SentryInstantDate;
@@ -50,6 +51,8 @@ public final class SentrySpanExporter implements SpanExporter {
   private final @NotNull SentryWeakSpanStorage spanStorage = SentryWeakSpanStorage.getInstance();
   private final @NotNull SpanDescriptionExtractor spanDescriptionExtractor =
       new SpanDescriptionExtractor();
+  private final @NotNull OpenTelemetryAttributesExtractor attributesExtractor =
+      new OpenTelemetryAttributesExtractor();
   private final @NotNull IScopes scopes;
 
   private final @NotNull List<String> attributeKeysToRemove =
@@ -267,8 +270,10 @@ public final class SentrySpanExporter implements SpanExporter {
         spanStorage.getSentrySpan(span.getSpanContext());
     final @Nullable IScopes scopesMaybe =
         sentrySpanMaybe != null ? sentrySpanMaybe.getScopes() : null;
-    final @NotNull IScopes scopesToUse =
+    final @NotNull IScopes scopesToUseBeforeForking =
         scopesMaybe == null ? ScopesAdapter.getInstance() : scopesMaybe;
+    final @NotNull IScopes scopesToUse =
+        scopesToUseBeforeForking.forkedCurrentScope("SentrySpanExporter.createTransaction");
     final @NotNull OtelSpanInfo spanInfo =
         spanDescriptionExtractor.extractSpanInfo(span, sentrySpanMaybe);
 
@@ -330,6 +335,9 @@ public final class SentrySpanExporter implements SpanExporter {
     setOtelInstrumentationInfo(span, sentryTransaction);
     setOtelSpanKind(span, sentryTransaction);
     transferSpanDetails(sentrySpanMaybe, sentryTransaction);
+
+    scopesToUse.configureScope(
+        ScopeType.CURRENT, scope -> attributesExtractor.extract(span, sentryTransaction, scope));
 
     return sentryTransaction;
   }
