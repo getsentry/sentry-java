@@ -2,7 +2,6 @@ package io.sentry.android.core
 
 import android.app.Activity
 import android.app.Application
-import android.content.Context
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Scopes
@@ -12,7 +11,6 @@ import junit.framework.TestCase.assertNull
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -22,7 +20,6 @@ import kotlin.test.Test
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertSame
-import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class UserInteractionIntegrationTest {
