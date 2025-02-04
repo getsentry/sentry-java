@@ -26,7 +26,7 @@ object Config {
         val gretty = "org.gretty"
         val grettyVersion = "4.0.0"
         val gradleMavenPublishPlugin = "com.vanniktech.maven.publish"
-        val gradleMavenPublishPluginVersion = "0.28.0"
+        val gradleMavenPublishPluginVersion = "0.30.0"
         val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.9.20"
         val dokkaPluginAlias = "org.jetbrains.dokka"
         val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
