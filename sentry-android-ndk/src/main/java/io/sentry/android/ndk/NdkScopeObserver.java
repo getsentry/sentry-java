@@ -2,11 +2,14 @@ package io.sentry.android.ndk;
 
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
+import io.sentry.IScope;
 import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.SpanContext;
 import io.sentry.ndk.INativeScope;
 import io.sentry.ndk.NativeScope;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.Locale;
@@ -123,6 +126,26 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
       options
           .getLogger()
           .log(SentryLevel.ERROR, e, "Scope sync removeExtra(%s) has an error.", key);
+    }
+  }
+
+  @Override
+  public void setTrace(@Nullable SpanContext spanContext, @NotNull IScope scope) {
+    options.getLogger().log(SentryLevel.INFO, "Attempting to set the trace ID");
+
+    if(spanContext == null) {
+      return;
+    }
+
+    @Nullable SentryId traceId = spanContext.getTraceId();
+    String traceIdString = traceId.toString();
+
+    options.getLogger().log(SentryLevel.INFO, "Fetched trace ID '%s'.", traceIdString);
+
+    try {
+      options.getExecutorService().submit(() -> nativeScope.setTraceId(traceIdString));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTraceId(%s) has an error.", traceIdString);
     }
   }
 }
