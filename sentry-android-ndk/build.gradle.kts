@@ -65,6 +65,8 @@ android {
         it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 
+    // the default AGP version is too high, we keep this low for compatibility reasons
+    // see https://developer.android.com/build/releases/past-releases/ to find the AGP-NDK mapping
     ndkVersion = "23.1.7779620"
 
     @Suppress("UnstableApiUsage")
