@@ -14,10 +14,13 @@
             debug="true"
             contextTags="userId,requestId"
     />
+    <Async name="ASYNC">
+      <AppenderRef ref="Sentry"/>
+    </Async>
   </Appenders>
   <Loggers>
     <Root level="debug">
-      <AppenderRef ref="Sentry"/>
+      <AppenderRef ref="ASYNC"/>
       <AppenderRef ref="Console"/>
     </Root>
   </Loggers>
