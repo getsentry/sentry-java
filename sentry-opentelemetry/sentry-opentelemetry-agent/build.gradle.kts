@@ -5,11 +5,6 @@ plugins {
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 fun relocatePackages(shadowJar: ShadowJar) {
     // rewrite dependencies calling Logger.getLogger
     shadowJar.relocate("java.util.logging.Logger", "io.opentelemetry.javaagent.bootstrap.PatchLogger")

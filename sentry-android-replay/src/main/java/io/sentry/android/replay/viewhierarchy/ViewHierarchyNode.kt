@@ -14,7 +14,6 @@ import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.isVisibleToUser
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.totalPaddingTopSafe
-import java.util.Locale
 
 @TargetApi(26)
 internal sealed class ViewHierarchyNode(

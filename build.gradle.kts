@@ -1,4 +1,6 @@
 import com.diffplug.spotless.LineEnding
+import com.vanniktech.maven.publish.JavaLibrary
+import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import groovy.util.Node
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
@@ -181,6 +183,22 @@ subprojects {
                 val file = this.project.layout.buildDirectory.file("distributions${sep}${this.project.name}-${this.project.version}.zip").get().asFile
                 if (!file.exists()) throw IllegalStateException("Distribution file: ${file.absolutePath} does not exist")
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: ${file.absolutePath} is empty")
+            }
+        }
+
+        plugins.withId("java-library") {
+            configure<MavenPublishBaseExtension> {
+                // we have to disable javadoc publication in maven-publish plugin as it's not
+                // including it in the .module file https://github.com/vanniktech/gradle-maven-publish-plugin/issues/861
+                // and do it ourselves
+                configure(JavaLibrary(JavadocJar.None(), sourcesJar = true))
+            }
+
+            configure<JavaPluginExtension> {
+                withJavadocJar()
+
+                sourceCompatibility = JavaVersion.VERSION_1_8
+                targetCompatibility = JavaVersion.VERSION_1_8
             }
         }
 
