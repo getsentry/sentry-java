@@ -13,6 +13,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -36,6 +37,11 @@ class ManifestMetadataReaderTest {
     }
 
     private val fixture = Fixture()
+
+    @BeforeTest
+    fun `set up`() {
+        ContextUtils.resetInstance()
+    }
 
     @Test
     fun `isAutoInit won't throw exception and is enabled by default`() {

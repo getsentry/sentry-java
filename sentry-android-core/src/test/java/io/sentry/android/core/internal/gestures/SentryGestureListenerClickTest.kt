@@ -185,7 +185,7 @@ class SentryGestureListenerClickTest {
 
         sut.onSingleTapUp(event)
 
-        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -214,7 +214,7 @@ class SentryGestureListenerClickTest {
 
         sut.onSingleTapUp(event)
 
-        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -223,7 +223,7 @@ class SentryGestureListenerClickTest {
 
         val event = mock<MotionEvent>()
         val sut = fixture.getSut<LocalView>(event, attachViewsToRoot = false)
-        fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = false) {
+        fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = true) {
             whenever(it.childCount).thenReturn(1)
             whenever(it.getChildAt(0)).thenReturn(fixture.target)
         }
@@ -244,7 +244,7 @@ class SentryGestureListenerClickTest {
 
         val event = mock<MotionEvent>()
         val sut = fixture.getSut<LocalView>(event, attachViewsToRoot = false)
-        fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = false) {
+        fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = true) {
             whenever(it.childCount).thenReturn(1)
             whenever(it.getChildAt(0)).thenReturn(fixture.target)
         }
@@ -252,5 +252,19 @@ class SentryGestureListenerClickTest {
         sut.onSingleTapUp(event)
 
         verify(fixture.scope).propagationContext = any()
+    }
+
+    @Test
+    fun `if touch is not within view group bounds does not traverse its children`() {
+        val event = mock<MotionEvent>()
+        val sut = fixture.getSut<View>(event, attachViewsToRoot = false)
+        fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = false) {
+            whenever(it.childCount).thenReturn(1)
+            whenever(it.getChildAt(0)).thenReturn(fixture.target)
+        }
+
+        sut.onSingleTapUp(event)
+
+        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 }
