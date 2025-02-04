@@ -39,7 +39,7 @@ class SentryFileInputStreamTest {
             activeTransaction: Boolean = true,
             fileDescriptor: FileDescriptor? = null,
             sendDefaultPii: Boolean = false
-        ): SentryFileInputStream {
+        ): FileInputStream {
             tmpFile?.writeText("Text")
             whenever(scopes.options).thenReturn(
                 options.apply {
@@ -61,8 +61,10 @@ class SentryFileInputStreamTest {
 
         internal fun getSut(
             tmpFile: File? = null,
-            delegate: FileInputStream
-        ): SentryFileInputStream {
+            delegate: FileInputStream,
+            tracesSampleRate: Double? = 1.0
+        ): FileInputStream {
+            options.tracesSampleRate = tracesSampleRate
             whenever(scopes.options).thenReturn(options)
             sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
             whenever(scopes.span).thenReturn(sentryTracer)
@@ -70,7 +72,7 @@ class SentryFileInputStreamTest {
                 delegate,
                 tmpFile,
                 scopes
-            ) as SentryFileInputStream
+            )
         }
     }
 
@@ -273,6 +275,15 @@ class SentryFileInputStreamTest {
         val fileIOSpan = fixture.sentryTracer.children.first()
         assertEquals(false, fileIOSpan.data[SpanDataConvention.BLOCKED_MAIN_THREAD_KEY])
         assertNull(fileIOSpan.data[SpanDataConvention.CALL_STACK_KEY])
+    }
+
+    @Test
+    fun `when tracing is disabled does not instrument the stream`() {
+        val file = tmpFile
+        val delegate = ThrowingFileInputStream(file)
+        val stream = fixture.getSut(file, delegate = delegate, tracesSampleRate = null)
+
+        assertTrue { stream is ThrowingFileInputStream }
     }
 }
 

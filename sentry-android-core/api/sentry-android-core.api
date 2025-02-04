@@ -195,6 +195,7 @@ public final class io/sentry/android/core/DeviceInfoUtil {
 	public static fun getInstance (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/DeviceInfoUtil;
 	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
 	public fun getSideLoadedInfo ()Lio/sentry/android/core/ContextUtils$SideLoadedInfo;
+	public fun getTotalMemory ()Ljava/lang/Long;
 	public static fun isCharging (Landroid/content/Intent;Lio/sentry/SentryOptions;)Ljava/lang/Boolean;
 	public static fun resetInstance ()V
 }
@@ -245,12 +246,6 @@ public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration
 
 public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/ILogger;)V
-	public fun close ()V
-	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
-}
-
-public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
@@ -383,14 +378,7 @@ public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : i
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;Ljava/util/List;)V
 	public fun close ()V
-	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
-}
-
-public final class io/sentry/android/core/TempSensorBreadcrumbsIntegration : android/hardware/SensorEventListener, io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/content/Context;)V
-	public fun close ()V
-	public fun onAccuracyChanged (Landroid/hardware/Sensor;I)V
-	public fun onSensorChanged (Landroid/hardware/SensorEvent;)V
+	public static fun getDefaultActions ()Ljava/util/List;
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
@@ -534,5 +522,16 @@ public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable 
 public class io/sentry/android/core/performance/WindowContentChangedCallback : io/sentry/android/core/internal/gestures/WindowCallbackAdapter {
 	public fun <init> (Landroid/view/Window$Callback;Ljava/lang/Runnable;)V
 	public fun onContentChanged ()V
+}
+
+public final class io/sentry/android/core/util/AndroidLazyEvaluator {
+	public fun <init> (Lio/sentry/android/core/util/AndroidLazyEvaluator$AndroidEvaluator;)V
+	public fun getValue (Landroid/content/Context;)Ljava/lang/Object;
+	public fun resetValue ()V
+	public fun setValue (Ljava/lang/Object;)V
+}
+
+public abstract interface class io/sentry/android/core/util/AndroidLazyEvaluator$AndroidEvaluator {
+	public abstract fun evaluate (Landroid/content/Context;)Ljava/lang/Object;
 }
 

@@ -305,8 +305,6 @@ final class AndroidOptionsInitializer {
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
     options.addIntegration(
         new NetworkBreadcrumbsIntegration(context, buildInfoProvider, options.getLogger()));
-    options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
-    options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());
@@ -326,8 +324,8 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    final PackageInfo packageInfo =
-        ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
+    final @Nullable PackageInfo packageInfo =
+        ContextUtils.getPackageInfo(context, buildInfoProvider);
     if (packageInfo != null) {
       // Sets App's release if not set by Manifest
       if (options.getRelease() == null) {

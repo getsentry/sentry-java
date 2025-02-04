@@ -132,6 +132,7 @@ class ActivityLifecycleIntegrationTest {
     @BeforeTest
     fun `reset instance`() {
         AppStartMetrics.getInstance().clear()
+        ContextUtils.resetInstance()
 
         context = ApplicationProvider.getApplicationContext()
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
