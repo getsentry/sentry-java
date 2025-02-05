@@ -27,7 +27,7 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
 
   private final @NotNull NativeModuleListLoader moduleListLoader;
 
-  private static @Nullable List<DebugImage> debugImages;
+  private static volatile @Nullable List<DebugImage> debugImages;
 
   /** we need to lock it because it could be called from different threads */
   protected static final @NotNull AutoClosableReentrantLock debugImagesLock =
@@ -81,23 +81,19 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
    * Loads debug images for the given set of addresses.
    *
    * @param addresses Set of memory addresses to find debug images for
-   * @return Set of debug images, or null if debug images couldn't be loaded
+   * @return Set of matching debug images, or null if debug images couldn't be loaded
    */
-  public @Nullable Set<DebugImage> loadDebugImagesForAddresses(@NotNull Set<Long> addresses) {
+  public @Nullable Set<DebugImage> loadDebugImagesForAddresses(final @NotNull Set<Long> addresses) {
     try (final @NotNull ISentryLifecycleToken ignored = debugImagesLock.acquire()) {
-      List<DebugImage> allDebugImages = loadDebugImages();
+      final @Nullable List<DebugImage> allDebugImages = loadDebugImages();
       if (allDebugImages == null) {
         return null;
       }
-
-      Set<DebugImage> referencedImages = new HashSet<>();
-      for (Long addr : addresses) {
-        DebugImage image = findImageByAddress(addr, allDebugImages);
-        if (image != null) {
-          referencedImages.add(image);
-        }
+      if (addresses.isEmpty()) {
+        return null;
       }
 
+      final Set<DebugImage> referencedImages = filterImagesByAddresses(allDebugImages, addresses);
       if (referencedImages.isEmpty()) {
         options
             .getLogger()
@@ -118,31 +114,47 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
    *
    * @return The matching debug image or null if not found
    */
-  private @Nullable DebugImage findImageByAddress(long address, List<DebugImage> images) {
-    int left = 0;
-    int right = images.size() - 1;
+  private @NotNull Set<DebugImage> filterImagesByAddresses(
+      final @NotNull List<DebugImage> images, final @NotNull Set<Long> addresses) {
+    final Set<DebugImage> result = new HashSet<>();
 
-    while (left <= right) {
-      int mid = left + (right - left) / 2;
-      DebugImage image = images.get(mid);
+    for (int i = 0; i < images.size(); i++) {
+      final @NotNull DebugImage image = images.get(i);
+      final @Nullable DebugImage nextDebugImage =
+          (i + 1) < images.size() ? images.get(i + 1) : null;
+      final @Nullable String nextDebugImageAddress =
+          nextDebugImage != null ? nextDebugImage.getImageAddr() : null;
 
-      if (image.getImageAddr() == null || image.getImageSize() == null) {
-        return null;
-      }
+      for (final @NotNull Long address : addresses) {
+        final @Nullable String imageAddress = image.getImageAddr();
 
-      long imageStart = Long.parseLong(image.getImageAddr().replace("0x", ""), 16);
-      long imageEnd = imageStart + image.getImageSize();
+        if (imageAddress != null) {
+          try {
+            final long imageStart = Long.parseLong(imageAddress.replace("0x", ""), 16);
+            final long imageEnd;
 
-      if (address >= imageStart && address < imageEnd) {
-        return image;
-      } else if (address < imageStart) {
-        right = mid - 1;
-      } else {
-        left = mid + 1;
+            final @Nullable Long imageSize = image.getImageSize();
+            if (imageSize != null) {
+              imageEnd = imageStart + imageSize;
+            } else if (nextDebugImageAddress != null) {
+              imageEnd = Long.parseLong(nextDebugImageAddress.replace("0x", ""), 16);
+            } else {
+              imageEnd = Long.MAX_VALUE;
+            }
+            if (address >= imageStart && address < imageEnd) {
+              result.add(image);
+              // once image is added we can skip the remaining addresses and go straight to the next
+              // image
+              break;
+            }
+          } catch (NumberFormatException e) {
+            options.getLogger().log(SentryLevel.WARNING, e, "Failed to parse image address.");
+          }
+        }
       }
     }
 
-    return null;
+    return result;
   }
 
   @Override

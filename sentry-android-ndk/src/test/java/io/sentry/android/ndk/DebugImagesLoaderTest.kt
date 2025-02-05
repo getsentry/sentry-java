@@ -17,11 +17,13 @@ class DebugImagesLoaderTest {
         val options = SentryAndroidOptions()
 
         fun getSut(): DebugImagesLoader {
-            return DebugImagesLoader(options, nativeLoader)
+            val loader = DebugImagesLoader(options, nativeLoader)
+            loader.clearDebugImages()
+            return loader
         }
     }
 
-    private val fixture = Fixture()
+    private var fixture = Fixture()
 
     @Test
     fun `get images returns image list`() {
@@ -102,11 +104,12 @@ class DebugImagesLoaderTest {
 
         val result = sut.loadDebugImagesForAddresses(
             setOf(0x1500L, 0x2500L)
-        )!!.toList()
+        )
 
+        assertNotNull(result)
         assertEquals(2, result.size)
-        assertEquals(image1.imageAddr, result[0].imageAddr)
-        assertEquals(image2.imageAddr, result[1].imageAddr)
+        assertTrue(result.any { it.imageAddr == image1.imageAddr })
+        assertTrue(result.any { it.imageAddr == image2.imageAddr })
     }
 
     @Test
@@ -151,5 +154,33 @@ class DebugImagesLoaderTest {
         val result = sut.loadDebugImagesForAddresses(hexAddresses)
 
         assertNull(result)
+    }
+
+    @Test
+    fun `invalid image adresses are ignored for loadDebugImagesForAddresses`() {
+        val sut = fixture.getSut()
+
+        val image1 = io.sentry.ndk.DebugImage().apply {
+            imageAddr = "0xNotANumber"
+            imageSize = 0x1000L
+        }
+
+        val image2 = io.sentry.ndk.DebugImage().apply {
+            imageAddr = "0x2000"
+            imageSize = null
+        }
+
+        val image3 = io.sentry.ndk.DebugImage().apply {
+            imageAddr = "0x5000"
+            imageSize = 0x1000L
+        }
+
+        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2, image3))
+
+        val hexAddresses = setOf(100L, 0x2000L, 0x2000L, 0x5000L)
+        val result = sut.loadDebugImagesForAddresses(hexAddresses)
+
+        assertNotNull(result)
+        assertEquals(2, result.size)
     }
 }
