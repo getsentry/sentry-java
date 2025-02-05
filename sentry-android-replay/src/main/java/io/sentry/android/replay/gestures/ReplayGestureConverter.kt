@@ -9,7 +9,7 @@ import io.sentry.rrweb.RRWebInteractionMoveEvent
 import io.sentry.rrweb.RRWebInteractionMoveEvent.Position
 import io.sentry.transport.ICurrentDateProvider
 
-class ReplayGestureConverter(
+internal class ReplayGestureConverter(
     private val dateProvider: ICurrentDateProvider
 ) {
 

@@ -18,8 +18,8 @@ jobs:
     name: Analyze
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
+    env:
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
       - name: Checkout Repo
@@ -37,6 +37,7 @@ jobs:
         uses: gradle/actions/setup-gradle@8790d96bb8fdd8ae7edfb2eada090c650b257f27 # pin@v3
         with:
           gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@dd746615b3b9d728a6a37ca2045b68ca76d4841a # pin@v2

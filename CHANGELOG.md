@@ -2,11 +2,16 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- The Kotlin Language version is now set to 1.6 ([#3936](https://github.com/getsentry/sentry-java/pull/3936))
+
 ### Fixes
 
 - Do not log if `OtelContextScopesStorage` cannot be found ([#4127](https://github.com/getsentry/sentry-java/pull/4127))
   - Previously `java.lang.ClassNotFoundException: io.sentry.opentelemetry.OtelContextScopesStorage` was shown in the log if the class could not be found.
   - This is just a lookup the SDK performs to configure itself. The SDK also works without OpenTelemetry.
+- Mention javadoc and sources for published artifacts in Gradle `.module` metadata ([#3936](https://github.com/getsentry/sentry-java/pull/3936))
 
 ### Dependencies
 

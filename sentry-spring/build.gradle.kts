@@ -13,11 +13,6 @@ plugins {
     id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
 }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
     kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion

@@ -17,7 +17,6 @@ android {
     namespace = "io.sentry.android.replay"
 
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersion
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
@@ -63,10 +62,12 @@ android {
         checkReleaseBuilds = false
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    buildFeatures {
+        buildConfig = true
+    }
+
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 

@@ -12,7 +12,7 @@ import io.sentry.android.replay.util.FixedWindowCallback
 import io.sentry.util.AutoClosableReentrantLock
 import java.lang.ref.WeakReference
 
-class GestureRecorder(
+internal class GestureRecorder(
     private val options: SentryOptions,
     private val touchRecorderCallback: TouchRecorderCallback
 ) : OnRootViewsChangedListener {
@@ -88,5 +88,5 @@ class GestureRecorder(
 }
 
 public interface TouchRecorderCallback {
-    fun onTouchEvent(event: MotionEvent)
+    public fun onTouchEvent(event: MotionEvent)
 }

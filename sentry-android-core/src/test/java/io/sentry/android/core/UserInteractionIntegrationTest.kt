@@ -2,24 +2,24 @@ package io.sentry.android.core
 
 import android.app.Activity
 import android.app.Application
-import android.content.Context
-import android.content.res.Resources
-import android.util.DisplayMetrics
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Scopes
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback
 import io.sentry.android.core.internal.gestures.SentryWindowCallback
+import junit.framework.TestCase.assertNull
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.Robolectric.buildActivity
 import kotlin.test.Test
-import kotlin.test.assertTrue
+import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
+import kotlin.test.assertSame
 
 @RunWith(AndroidJUnit4::class)
 class UserInteractionIntegrationTest {
@@ -30,8 +30,8 @@ class UserInteractionIntegrationTest {
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
-        val activity = mock<Activity>()
-        val window = mock<Window>()
+        val activity: Activity = buildActivity(EmptyActivity::class.java).setup().get()
+        val window: Window = activity.window
         val loadClass = mock<LoadClass>()
 
         fun getSut(
@@ -40,23 +40,10 @@ class UserInteractionIntegrationTest {
         ): UserInteractionIntegration {
             whenever(loadClass.isClassAvailable(any(), anyOrNull<SentryAndroidOptions>())).thenReturn(isAndroidXAvailable)
             whenever(scopes.options).thenReturn(options)
-            whenever(window.callback).thenReturn(callback)
-            whenever(activity.window).thenReturn(window)
-
-            val resources = mockResources()
-            whenever(activity.resources).thenReturn(resources)
-            return UserInteractionIntegration(application, loadClass)
-        }
-
-        companion object {
-            fun mockResources(): Resources {
-                val displayMetrics = mock<DisplayMetrics>()
-                displayMetrics.density = 1.0f
-
-                val resources = mock<Resources>()
-                whenever(resources.displayMetrics).thenReturn(displayMetrics)
-                return resources
+            if (callback != null) {
+                window.callback = callback
             }
+            return UserInteractionIntegration(application, loadClass)
         }
     }
 
@@ -105,74 +92,50 @@ class UserInteractionIntegrationTest {
         sut.register(fixture.scopes, fixture.options)
 
         sut.onActivityResumed(fixture.activity)
-
-        val argumentCaptor = argumentCaptor<Window.Callback>()
-        verify(fixture.window).callback = argumentCaptor.capture()
-        assertTrue { argumentCaptor.firstValue is SentryWindowCallback }
+        assertIs<SentryWindowCallback>(fixture.activity.window.callback)
     }
 
     @Test
     fun `when no original callback delegates to NoOpWindowCallback`() {
         val sut = fixture.getSut()
         sut.register(fixture.scopes, fixture.options)
+        fixture.window.callback = null
 
         sut.onActivityResumed(fixture.activity)
-
-        val argumentCaptor = argumentCaptor<Window.Callback>()
-        verify(fixture.window).callback = argumentCaptor.capture()
-        assertTrue {
-            argumentCaptor.firstValue is SentryWindowCallback &&
-                (argumentCaptor.firstValue as SentryWindowCallback).delegate is NoOpWindowCallback
-        }
+        assertIs<SentryWindowCallback>(fixture.activity.window.callback)
+        assertIs<NoOpWindowCallback>((fixture.activity.window.callback as SentryWindowCallback).delegate)
     }
 
     @Test
     fun `unregisters window callback on activity paused`() {
-        val context = mock<Context>()
-        val resources = Fixture.mockResources()
-        whenever(context.resources).thenReturn(resources)
-        val sut = fixture.getSut(
-            SentryWindowCallback(
-                NoOpWindowCallback(),
-                context,
-                mock(),
-                mock()
-            )
-        )
+        val sut = fixture.getSut()
+        fixture.activity.window.callback = null
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.onActivityResumed(fixture.activity)
         sut.onActivityPaused(fixture.activity)
 
-        verify(fixture.window).callback = null
+        assertNull(fixture.activity.window.callback)
     }
 
     @Test
     fun `preserves original callback on activity paused`() {
-        val delegate = mock<Window.Callback>()
-        val context = mock<Context>()
-        val resources = Fixture.mockResources()
-        whenever(context.resources).thenReturn(resources)
-        val sut = fixture.getSut(
-            SentryWindowCallback(
-                delegate,
-                context,
-                mock(),
-                mock()
-            )
-        )
+        val sut = fixture.getSut()
+        val mockCallback = mock<Window.Callback>()
 
-        sut.register(fixture.scopes, fixture.options)
+        fixture.window.callback = mockCallback
+
+        sut.onActivityResumed(fixture.activity)
         sut.onActivityPaused(fixture.activity)
 
-        verify(fixture.window).callback = delegate
+        assertSame(mockCallback, fixture.activity.window.callback)
     }
 
     @Test
     fun `stops tracing on activity paused`() {
         val callback = mock<SentryWindowCallback>()
-        val sut = fixture.getSut(callback)
+        val sut = fixture.getSut()
+        fixture.activity.window.callback = callback
 
-        sut.register(fixture.scopes, fixture.options)
         sut.onActivityPaused(fixture.activity)
 
         verify(callback).stopTracking()
@@ -180,13 +143,9 @@ class UserInteractionIntegrationTest {
 
     @Test
     fun `does not instrument if the callback is already ours`() {
-        val delegate = mock<Window.Callback>()
-        val context = mock<Context>()
-        val resources = Fixture.mockResources()
-        whenever(context.resources).thenReturn(resources)
         val existingCallback = SentryWindowCallback(
-            delegate,
-            context,
+            NoOpWindowCallback(),
+            fixture.activity,
             mock(),
             mock()
         )
@@ -195,7 +154,8 @@ class UserInteractionIntegrationTest {
         sut.register(fixture.scopes, fixture.options)
         sut.onActivityResumed(fixture.activity)
 
-        val argumentCaptor = argumentCaptor<Window.Callback>()
-        verify(fixture.window, never()).callback = argumentCaptor.capture()
+        assertNotEquals(existingCallback, (fixture.window.callback as SentryWindowCallback).delegate)
     }
 }
+
+private class EmptyActivity : Activity()
