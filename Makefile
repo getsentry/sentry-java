@@ -8,7 +8,7 @@ publish: clean dryRelease
 
 # deep clean
 clean:
-	./gradlew clean
+	./gradlew clean --no-configuration-cache
 	rm -rf distributions
 
 # build and run tests
@@ -20,7 +20,7 @@ javadocs:
 
 # do a dry release (like a local deploy)
 dryRelease:
-	./gradlew aggregateJavadocs distZip --no-build-cache
+	./gradlew aggregateJavadocs distZip --no-build-cache --no-configuration-cache
 
 # check for dependencies update
 update:

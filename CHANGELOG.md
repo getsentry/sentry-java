@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- The Kotlin Language version is now set to 1.6 ([#3936](https://github.com/getsentry/sentry-java/pull/3936))
+
 ### Fixes
 
 - Do not log if `OtelContextScopesStorage` cannot be found ([#4127](https://github.com/getsentry/sentry-java/pull/4127))
@@ -11,6 +15,13 @@
   - Fix `FileNotFoundException` when trying to read/write `.ongoing_segment` file
   - Fix `IllegalStateException` when registering `onDrawListener`
   - Fix SIGABRT native crashes on Motorola devices when encoding a video
+- Mention javadoc and sources for published artifacts in Gradle `.module` metadata ([#3936](https://github.com/getsentry/sentry-java/pull/3936))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.19 to v0.7.20 ([#4128](https://github.com/getsentry/sentry-java/pull/4128))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0720)
+  - [diff](https://github.com/getsentry/sentry-native/compare/v0.7.19...0.7.20)
 
 ## 8.1.0
 

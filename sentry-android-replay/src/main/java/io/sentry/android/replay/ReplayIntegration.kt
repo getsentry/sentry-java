@@ -73,7 +73,7 @@ public class ReplayIntegration(
     IRateLimitObserver {
 
     // needed for the Java's call site
-    constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
+    public constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
         context.appContext(),
         dateProvider,
         null,
@@ -359,7 +359,7 @@ public class ReplayIntegration(
         }
     }
 
-    override fun onLowMemory() = Unit
+    override fun onLowMemory(): Unit = Unit
 
     override fun onTouchEvent(event: MotionEvent) {
         if (!isEnabled.get() || !lifecycle.isTouchRecordingAllowed()) {

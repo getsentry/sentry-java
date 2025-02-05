@@ -2,16 +2,18 @@
 import java.math.BigDecimal
 
 object Config {
-    val AGP = System.getenv("VERSION_AGP") ?: "7.4.2"
-    val kotlinVersion = "1.8.0"
+    val AGP = System.getenv("VERSION_AGP") ?: "8.6.0"
+    val kotlinVersion = "1.9.24"
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.5"
     val springBoot3Version = "3.4.2"
-    val kotlinCompatibleLanguageVersion = "1.4"
+    val kotlinCompatibleLanguageVersion = "1.6"
 
-    val composeVersion = "1.5.3"
-    val androidComposeCompilerVersion = "1.4.0"
+    // see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
+    // see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
+    val composeVersion = "1.6.11"
+    val androidComposeCompilerVersion = "1.5.14"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
@@ -23,8 +25,9 @@ object Config {
         val springDependencyManagementVersion = "1.0.11.RELEASE"
         val gretty = "org.gretty"
         val grettyVersion = "4.0.0"
-        val gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.18.0"
-        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.7.10"
+        val gradleMavenPublishPlugin = "com.vanniktech.maven.publish"
+        val gradleMavenPublishPluginVersion = "0.30.0"
+        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.9.20"
         val dokkaPluginAlias = "org.jetbrains.dokka"
         val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
         val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"
@@ -39,7 +42,7 @@ object Config {
 
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
 
-        fun shouldSkipDebugVariant(name: String): Boolean {
+        fun shouldSkipDebugVariant(name: String?): Boolean {
             return System.getenv("CI")?.toBoolean() ?: false && name == "debug"
         }
     }
@@ -58,6 +61,7 @@ object Config {
         val androidxCore = "androidx.core:core:1.3.2"
         val androidxSqlite = "androidx.sqlite:sqlite:2.3.1"
         val androidxRecylerView = "androidx.recyclerview:recyclerview:1.2.1"
+        val androidxAnnotation = "androidx.annotation:annotation:1.9.1"
 
         val slf4jApi = "org.slf4j:slf4j-api:1.7.30"
         val slf4jApi2 = "org.slf4j:slf4j-api:2.0.5"
@@ -142,18 +146,18 @@ object Config {
 
         // compose deps
         val composeNavigation = "androidx.navigation:navigation-compose:$navigationVersion"
-        val composeActivity = "androidx.activity:activity-compose:1.4.0"
-        val composeFoundation = "androidx.compose.foundation:foundation:$composeVersion"
-        val composeUi = "androidx.compose.ui:ui:$composeVersion"
+        val composeActivity = "androidx.activity:activity-compose:1.8.2"
+        val composeFoundation = "androidx.compose.foundation:foundation:1.6.3"
+        val composeUi = "androidx.compose.ui:ui:1.6.3"
+        val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:1.6.3"
+        val composeMaterial = "androidx.compose.material3:material3:1.2.1"
 
         val composeUiReplay = "androidx.compose.ui:ui:1.5.0" // Note: don't change without testing forwards compatibility
-        val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:$composeVersion"
-        val composeMaterial = "androidx.compose.material3:material3:1.0.0-alpha13"
-        val composeCoil = "io.coil-kt:coil-compose:2.0.0"
+        val composeCoil = "io.coil-kt:coil-compose:2.6.0"
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
 
-        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.19"
+        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.20"
 
         object OpenTelemetry {
             val otelVersion = "1.44.1"
@@ -193,7 +197,7 @@ object Config {
         val androidxTestOrchestrator = "androidx.test:orchestrator:1.5.0"
         val androidxJunit = "androidx.test.ext:junit:1.1.5"
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
-        val robolectric = "org.robolectric:robolectric:4.10.3"
+        val robolectric = "org.robolectric:robolectric:4.14"
         val mockitoKotlin = "org.mockito.kotlin:mockito-kotlin:4.1.0"
         val mockitoInline = "org.mockito:mockito-inline:4.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
@@ -220,7 +224,7 @@ object Config {
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.42.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.19.0"
+        val detektVersion = "1.23.5"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
         val binaryCompatibilityValidatorVersion = "0.13.0"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
