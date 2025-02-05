@@ -11,7 +11,7 @@ concurrency:
 jobs:
   release:
     name: Build release artifacts
-    runs-on: macos-15
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repo

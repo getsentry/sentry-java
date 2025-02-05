@@ -16,7 +16,7 @@ concurrency:
 jobs:
   analyze:
     name: Analyze
-    runs-on: macos-15
+    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false

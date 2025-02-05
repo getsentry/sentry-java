@@ -20,7 +20,7 @@ env:
 jobs:
   build:
     name: Build
-    runs-on: macos-15
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,7 +49,7 @@ jobs:
   run-maestro-tests:
     name: Run Tests for API Level ${{ matrix.api-level }}
     needs: build
-    runs-on: macos-15
+    runs-on: ubuntu-latest
     strategy:
       # we want that the matrix keeps running, default is to cancel them if it fails.
       fail-fast: false

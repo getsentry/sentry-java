@@ -12,7 +12,7 @@ concurrency:
 jobs:
   test:
     name: Ui tests
-    runs-on: macos-15
+    runs-on: ubuntu-latest
 
     # we copy the secret to the env variable in order to access it in the workflow
     env:

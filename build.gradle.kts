@@ -250,48 +250,46 @@ spotless {
     }
 }
 
-gradle.projectsEvaluated {
-    tasks.create("aggregateJavadocs", Javadoc::class.java) {
-        setDestinationDir(project.layout.buildDirectory.file("docs/javadoc").get().asFile)
-        title = "${project.name} $version API"
-        val opts = options as StandardJavadocDocletOptions
-        opts.quiet()
-        opts.encoding = "UTF-8"
-        opts.memberLevel = JavadocMemberLevel.PROTECTED
-        opts.stylesheetFile(file("$projectDir/docs/stylesheet.css"))
-        opts.links = listOf(
-            "https://docs.oracle.com/javase/8/docs/api/",
-            "https://docs.spring.io/spring-framework/docs/current/javadoc-api/",
-            "https://docs.spring.io/spring-boot/docs/current/api/"
-        )
-        subprojects
-            .filter { !it.name.contains("sample") && !it.name.contains("integration-tests") }
-            .forEach { proj ->
-                proj.tasks.withType<Javadoc>().forEach { javadocTask ->
-                    source += javadocTask.source
-                    classpath += javadocTask.classpath
-                    excludes += javadocTask.excludes
-                    includes += javadocTask.includes
-                }
+tasks.register("aggregateJavadocs", Javadoc::class.java) {
+    setDestinationDir(project.layout.buildDirectory.file("docs/javadoc").get().asFile)
+    title = "${project.name} $version API"
+    val opts = options as StandardJavadocDocletOptions
+    opts.quiet()
+    opts.encoding = "UTF-8"
+    opts.memberLevel = JavadocMemberLevel.PROTECTED
+    opts.stylesheetFile(file("$projectDir/docs/stylesheet.css"))
+    opts.links = listOf(
+        "https://docs.oracle.com/javase/8/docs/api/",
+        "https://docs.spring.io/spring-framework/docs/current/javadoc-api/",
+        "https://docs.spring.io/spring-boot/docs/current/api/"
+    )
+    subprojects
+        .filter { !it.name.contains("sample") && !it.name.contains("integration-tests") }
+        .forEach { proj ->
+            proj.tasks.withType<Javadoc>().forEach { javadocTask ->
+                source += javadocTask.source
+                classpath += javadocTask.classpath
+                excludes += javadocTask.excludes
+                includes += javadocTask.includes
             }
-    }
+        }
+}
 
-    tasks.create("buildForCodeQL") {
-        subprojects
-            .filter {
-                !it.displayName.contains("sample") &&
-                    !it.displayName.contains("integration-tests") &&
-                    !it.displayName.contains("bom") &&
-                    it.name != "sentry-opentelemetry"
+tasks.register("buildForCodeQL") {
+    subprojects
+        .filter {
+            !it.displayName.contains("sample") &&
+                !it.displayName.contains("integration-tests") &&
+                !it.displayName.contains("bom") &&
+                it.name != "sentry-opentelemetry"
+        }
+        .forEach { proj ->
+            if (proj.plugins.hasPlugin("com.android.library")) {
+                this.dependsOn(proj.tasks.findByName("compileReleaseUnitTestSources"))
+            } else {
+                this.dependsOn(proj.tasks.findByName("testClasses"))
             }
-            .forEach { proj ->
-                if (proj.plugins.hasPlugin("com.android.library")) {
-                    this.dependsOn(proj.tasks.findByName("compileReleaseUnitTestSources"))
-                } else {
-                    this.dependsOn(proj.tasks.findByName("testClasses"))
-                }
-            }
-    }
+        }
 }
 
 // Workaround for https://youtrack.jetbrains.com/issue/IDEA-316081/Gradle-8-toolchain-error-Toolchain-from-executable-property-does-not-match-toolchain-from-javaLauncher-property-when-different

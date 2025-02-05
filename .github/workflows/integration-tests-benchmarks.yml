@@ -18,7 +18,7 @@ concurrency:
 jobs:
   test:
     name: Benchmarks
-    runs-on: macos-15
+    runs-on: ubuntu-latest
 
     # we copy the secret to the env variable in order to access it in the workflow
     env:
@@ -67,7 +67,7 @@ jobs:
           config-file: .sauce/sentry-uitest-android-benchmark-lite.yml
 
   app-metrics:
-    runs-on: macos-15
+    runs-on: ubuntu-latest
 
     # we copy the secret to the env variable in order to access it in the workflow
     env:
