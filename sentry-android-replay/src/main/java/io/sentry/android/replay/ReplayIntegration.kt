@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.os.Build
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
+import io.sentry.BuildConfig
 import io.sentry.DataCategory.All
 import io.sentry.DataCategory.Replay
 import io.sentry.IConnectionStatusProvider.ConnectionStatus
@@ -158,7 +159,7 @@ public class ReplayIntegration(
         finalizePreviousReplay()
     }
 
-    override fun isRecording() = lifecycle.currentState >= STARTED && lifecycle.currentState < STOPPED
+    override fun isRecording(): Boolean = lifecycle.currentState >= STARTED && lifecycle.currentState < STOPPED
 
     override fun start() {
         lifecycleLock.acquire().use {
