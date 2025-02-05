@@ -13,7 +13,7 @@ concurrency:
 jobs:
   agp-matrix-compatibility:
     timeout-minutes: 30
-    runs-on: ubuntu-latest
+    runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
