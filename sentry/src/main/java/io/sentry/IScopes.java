@@ -658,6 +658,14 @@ public interface IScopes {
       final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders);
 
   /**
+   * Continue a trace based on the trace ID and span ID provided
+   *
+   * @param traceId the trace ID
+   * @param spanId the span ID this is continuing the trace from
+   */
+  void continueTrace(final @NotNull String traceId, final @NotNull String spanId);
+
+  /**
    * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
    * &lt;meta&gt; HTML tags. Also see {@link IScopes#getBaggage()}.
    *
