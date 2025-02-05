@@ -1,5 +1,6 @@
 package io.sentry.android.core
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.ActivityManager.MemoryInfo
 import android.app.ActivityManager.RunningAppProcessInfo
@@ -175,6 +176,7 @@ class ContextUtilsTest {
         assertNull(memInfo)
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Test
     fun `registerReceiver calls context_registerReceiver without exported flag on API 32-`() {
         val buildInfo = mock<BuildInfoProvider>()
