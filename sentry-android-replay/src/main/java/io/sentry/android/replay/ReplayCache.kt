@@ -55,7 +55,7 @@ public class ReplayCache(
     internal val frames = mutableListOf<ReplayFrame>()
 
     private val ongoingSegment = LinkedHashMap<String, String>()
-    private val ongoingSegmentFile: File? by lazy {
+    internal val ongoingSegmentFile: File? by lazy {
         if (replayCacheDir == null) {
             return@lazy null
         }
@@ -274,6 +274,9 @@ public class ReplayCache(
         lock.acquire().use {
             if (isClosed.get()) {
                 return
+            }
+            if (ongoingSegmentFile?.exists() != true) {
+                ongoingSegmentFile?.createNewFile()
             }
             if (ongoingSegment.isEmpty()) {
                 ongoingSegmentFile?.useLines { lines ->

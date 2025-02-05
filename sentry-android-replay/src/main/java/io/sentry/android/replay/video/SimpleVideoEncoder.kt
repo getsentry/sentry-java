@@ -157,7 +157,10 @@ internal class SimpleVideoEncoder(
     fun encode(image: Bitmap) {
         // it seems that Xiaomi devices have problems with hardware canvas, so we have to use
         // lockCanvas instead https://stackoverflow.com/a/73520742
-        val canvas = if (Build.MANUFACTURER.contains("xiaomi", ignoreCase = true)) {
+        val canvas = if (
+            Build.MANUFACTURER.contains("xiaomi", ignoreCase = true) ||
+            Build.MANUFACTURER.contains("motorola", ignoreCase = true)
+        ) {
             surface?.lockCanvas(null)
         } else {
             surface?.lockHardwareCanvas()
