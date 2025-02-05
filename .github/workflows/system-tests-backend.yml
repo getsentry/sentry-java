@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   system-test:
-    runs-on: macos-15
+    runs-on: ubuntu-latest
     continue-on-error: true
     env:
       SENTRY_URL: http://127.0.0.1:8000
