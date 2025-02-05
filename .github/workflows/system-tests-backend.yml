@@ -91,11 +91,11 @@ jobs:
 
       - name: Build server jar
         run: |
-          ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar
+          ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar --no-configuration-cache
 
       - name: Build agent jar
         run: |
-          ./gradlew :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
+          ./gradlew :sentry-opentelemetry:sentry-opentelemetry-agent:assemble --no-configuration-cache
 
       - name: Start server and run integration test for sentry-cli commands
         run: |
