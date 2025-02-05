@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.os.Build
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
-import io.sentry.BuildConfig
 import io.sentry.DataCategory.All
 import io.sentry.DataCategory.Replay
 import io.sentry.IConnectionStatusProvider.ConnectionStatus
