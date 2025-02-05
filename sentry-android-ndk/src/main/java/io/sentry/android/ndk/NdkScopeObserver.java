@@ -7,6 +7,7 @@ import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanContext;
+import io.sentry.SpanId;
 import io.sentry.ndk.INativeScope;
 import io.sentry.ndk.NativeScope;
 import io.sentry.protocol.SentryId;
@@ -131,21 +132,14 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
 
   @Override
   public void setTrace(@Nullable SpanContext spanContext, @NotNull IScope scope) {
-    options.getLogger().log(SentryLevel.INFO, "Attempting to set the trace ID");
-
     if(spanContext == null) {
       return;
     }
 
-    @Nullable SentryId traceId = spanContext.getTraceId();
-    String traceIdString = traceId.toString();
-
-    options.getLogger().log(SentryLevel.INFO, "Fetched trace ID '%s'.", traceIdString);
-
     try {
-      options.getExecutorService().submit(() -> nativeScope.setTraceId(traceIdString));
+      options.getExecutorService().submit(() -> nativeScope.setTraceId(spanContext.getTraceId().toString(), spanContext.getSpanId().toString()));
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTraceId(%s) has an error.", traceIdString);
+      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTraceId failed.");
     }
   }
 }
