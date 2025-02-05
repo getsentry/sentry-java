@@ -1163,6 +1163,18 @@ public final class Sentry {
   }
 
   /**
+   * Continue a trace based on the trace ID and span ID provided
+   *
+   * @param traceId the trace ID
+   * @param spanId the span ID
+   */
+  // return TransactionContext (if performance enabled) or null (if performance disabled)
+  public static void continueTrace(
+      final @NotNull String traceId, final @NotNull String spanId) {
+    getCurrentScopes().continueTrace(traceId, spanId);
+  }
+
+  /**
    * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
    * &lt;meta&gt; HTML tags. Also see {@link Sentry#getBaggage()}.
    *

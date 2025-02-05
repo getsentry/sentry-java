@@ -323,6 +323,12 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  public void continueTrace(
+     final @NotNull String traceId, final @NotNull String spanId) {
+    Sentry.continueTrace(traceId, spanId);
+  }
+
+  @Override
   public @Nullable SentryTraceHeader getTraceparent() {
     return Sentry.getTraceparent();
   }

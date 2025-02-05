@@ -896,18 +896,6 @@ public final class Scopes implements IScopes {
     return transaction;
   }
 
-  private @NotNull Double getSampleRand(final @NotNull TransactionContext transactionContext) {
-    final @Nullable Baggage baggage = transactionContext.getBaggage();
-    if (baggage != null) {
-      final @Nullable Double sampleRandFromBaggageMaybe = baggage.getSampleRandDouble();
-      if (sampleRandFromBaggageMaybe != null) {
-        return sampleRandFromBaggageMaybe;
-      }
-    }
-
-    return getCombinedScopeView().getPropagationContext().getSampleRand();
-  }
-
   @Override
   @ApiStatus.Internal
   public void setSpanContext(
@@ -977,10 +965,7 @@ public final class Scopes implements IScopes {
         PropagationContext.fromHeaders(getOptions().getLogger(), sentryTrace, baggageHeaders);
     configureScope(
         (scope) -> {
-          scope.withPropagationContext(
-              oldPropagationContext -> {
-                scope.setPropagationContext(propagationContext);
-              });
+          scope.setPropagationContext(propagationContext);
         });
     if (getOptions().isTracingEnabled()) {
       return TransactionContext.fromPropagationContext(propagationContext);
