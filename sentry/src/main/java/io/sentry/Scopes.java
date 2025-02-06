@@ -951,15 +951,22 @@ public final class Scopes implements IScopes {
   }
 
   @Override
+  public void reportFullyDisplayed() {
+    if (getOptions().isEnableTimeToFullDisplayTracing()) {
+      getOptions().getFullyDisplayedReporter().reportFullyDrawn();
+    }
+  }
+
+  @Override
   public @Nullable TransactionContext continueTrace(
-    final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders) {
+      final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders) {
     @NotNull
     PropagationContext propagationContext =
-      PropagationContext.fromHeaders(getOptions().getLogger(), sentryTrace, baggageHeaders);
+        PropagationContext.fromHeaders(getOptions().getLogger(), sentryTrace, baggageHeaders);
     configureScope(
-      (scope) -> {
-        scope.setPropagationContext(propagationContext);
-      });
+        (scope) -> {
+          scope.setPropagationContext(propagationContext);
+        });
     if (getOptions().isTracingEnabled()) {
       return TransactionContext.fromPropagationContext(propagationContext);
     } else {
@@ -976,13 +983,6 @@ public final class Scopes implements IScopes {
       (scope) -> {
         scope.setPropagationContext(propagationContext);
       });
-  }
-
-  @Override
-  public void reportFullyDisplayed() {
-    if (getOptions().isEnableTimeToFullDisplayTracing()) {
-      getOptions().getFullyDisplayedReporter().reportFullyDrawn();
-    }
   }
 
   @Override
