@@ -49,14 +49,13 @@ internal class SentryLifecycleObserver(
  * them to Sentry for every navigation event when being attached to the respective [NavHostController].
  *
  * @param navListener An instance of a [SentryNavigationListener] that is shared with other sentry integrations, like
- * the fragment navigation integration. 
+ * the fragment navigation integration.
  */
 @Composable
 @NonRestartableComposable
-fun NavHostController.withSentryObservableEffect(
+public fun NavHostController.withSentryObservableEffect(
     navListener: SentryNavigationListener
 ): NavHostController {
-
     val navListenerSnapshot by rememberUpdatedState(navListener)
 
     // As described in https://developer.android.com/codelabs/jetpack-compose-advanced-state-side-effects#6
@@ -80,7 +79,7 @@ fun NavHostController.withSentryObservableEffect(
 /**
  * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
  * them to Sentry for every navigation event when being attached to the respective [NavHostController].
- * This version of withSentryObservableEffect should be used if you are working purely with Compose. 
+ * This version of withSentryObservableEffect should be used if you are working purely with Compose.
  *
  * @param enableNavigationBreadcrumbs Whether the integration should capture breadcrumbs for
  * navigation events.
@@ -89,18 +88,20 @@ fun NavHostController.withSentryObservableEffect(
  */
 @Composable
 @NonRestartableComposable
-fun NavHostController.withSentryObservableEffect(
+public fun NavHostController.withSentryObservableEffect(
     enableNavigationBreadcrumbs: Boolean = true,
     enableNavigationTracing: Boolean = true
 ): NavHostController {
     val enableBreadcrumbsSnapshot by rememberUpdatedState(enableNavigationBreadcrumbs)
     val enableTracingSnapshot by rememberUpdatedState(enableNavigationTracing)
 
-    return withSentryObservableEffect(navListener = SentryNavigationListener(
-        enableNavigationBreadcrumbs = enableBreadcrumbsSnapshot,
-        enableNavigationTracing = enableTracingSnapshot,
-        traceOriginAppendix = TRACE_ORIGIN_APPENDIX
-    ))
+    return withSentryObservableEffect(
+        navListener = SentryNavigationListener(
+            enableNavigationBreadcrumbs = enableBreadcrumbsSnapshot,
+            enableNavigationTracing = enableTracingSnapshot,
+            traceOriginAppendix = TRACE_ORIGIN_APPENDIX
+        )
+    )
 }
 
 /**

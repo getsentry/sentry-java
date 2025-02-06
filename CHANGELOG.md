@@ -9,7 +9,9 @@
 ### Features
 
 - Create onCreate and onStart spans for all Activities ([#4025](https://github.com/getsentry/sentry-java/pull/4025))
-- Add split apks info to the `App` context ([#3193](https://github.com/getsentry/sentry-java/pull/3193)))
+- Add split apks info to the `App` context ([#3193](https://github.com/getsentry/sentry-java/pull/3193))
+- Expose new `withSentryObservableEffect` method overload that accepts `SentryNavigationListener` as a parameter ([#3411](https://github.com/getsentry/sentry-java/pull/3411))
+  - This allows sharing the same `SentryNavigationListener` instance across fragments and composables to preserve the trace 
 
 ### Fixes
 
