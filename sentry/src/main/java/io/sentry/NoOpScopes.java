@@ -272,7 +272,7 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
-  public void continueTrace(
+  public void setTrace(
     final @NotNull String traceId, final @NotNull String spanId) { }
 
   @Override

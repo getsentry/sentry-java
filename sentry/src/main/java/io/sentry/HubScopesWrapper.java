@@ -317,9 +317,9 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
-  public void continueTrace(
+  public void setTrace(
       @NotNull String traceId, @NotNull String spanId) {
-    scopes.continueTrace(traceId, spanId);
+    scopes.setTrace(traceId, spanId);
   }
 
   @Override

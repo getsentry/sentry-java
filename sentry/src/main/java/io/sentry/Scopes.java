@@ -966,7 +966,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void continueTrace(
+  public void setTrace(
     final @NotNull String traceId, final @NotNull String spanID) {
     @NotNull
     PropagationContext propagationContext = PropagationContext.fromId(traceId, spanID);
