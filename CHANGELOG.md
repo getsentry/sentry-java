@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- (Jetpack Compose) Modifier.sentryTag now uses Modifier.Node ([#4029](https://github.com/getsentry/sentry-java/pull/4029))
+  - This allows Composables that use this modifier to be skippable
+
 ## 7.21.0
 
 ### Fixes
