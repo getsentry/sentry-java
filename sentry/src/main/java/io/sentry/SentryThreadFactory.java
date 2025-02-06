@@ -105,7 +105,9 @@ public final class SentryThreadFactory {
         final Thread thread = item.getKey();
         final boolean crashed =
             (thread == currentThread && !ignoreCurrentThread)
-                || (mechanismThreadIds != null && mechanismThreadIds.contains(thread.getId()));
+                || (mechanismThreadIds != null
+                    && mechanismThreadIds.contains(thread.getId())
+                    && !ignoreCurrentThread);
 
         result.add(getSentryThread(crashed, item.getValue(), item.getKey()));
       }

@@ -5,6 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class DisabledQueueTest {
 
@@ -22,17 +23,17 @@ class DisabledQueueTest {
     }
 
     @Test
-    fun `isEmpty returns false when created`() {
+    fun `isEmpty returns true when created`() {
         val queue = DisabledQueue<Int>()
-        assertFalse(queue.isEmpty(), "isEmpty should always return false.")
+        assertTrue(queue.isEmpty(), "isEmpty should always return true.")
     }
 
     @Test
-    fun `isEmpty always returns false if add function was called`() {
+    fun `isEmpty always returns true if add function was called`() {
         val queue = DisabledQueue<Int>()
         queue.add(1)
 
-        assertFalse(queue.isEmpty(), "isEmpty should always return false.")
+        assertTrue(queue.isEmpty(), "isEmpty should always return true.")
     }
 
     @Test

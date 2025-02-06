@@ -4,7 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import io.sentry.Breadcrumb
-import io.sentry.Hub
+import io.sentry.Scopes
 import io.sentry.SentryLevel
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -20,7 +20,7 @@ class ActivityBreadcrumbsIntegrationTest {
 
     private class Fixture {
         val application = mock<Application>()
-        val hub = mock<Hub>()
+        val scopes = mock<Scopes>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
@@ -28,7 +28,7 @@ class ActivityBreadcrumbsIntegrationTest {
 
         fun getSut(enabled: Boolean = true): ActivityBreadcrumbsIntegration {
             options.isEnableActivityLifecycleBreadcrumbs = enabled
-            whenever(hub.options).thenReturn(options)
+            whenever(scopes.options).thenReturn(options)
             return ActivityBreadcrumbsIntegration(
                 application
             )
@@ -40,7 +40,7 @@ class ActivityBreadcrumbsIntegrationTest {
     @Test
     fun `When ActivityBreadcrumbsIntegration is disabled, it should not register the activity callback`() {
         val sut = fixture.getSut(false)
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         verify(fixture.application, never()).registerActivityLifecycleCallbacks(any())
     }
@@ -48,7 +48,7 @@ class ActivityBreadcrumbsIntegrationTest {
     @Test
     fun `When ActivityBreadcrumbsIntegration is enabled, it should register the activity callback`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         verify(fixture.application).registerActivityLifecycleCallbacks(any())
 
@@ -59,12 +59,12 @@ class ActivityBreadcrumbsIntegrationTest {
     @Test
     fun `When breadcrumb is added, type and category should be set`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("ui.lifecycle", it.category)
                 assertEquals("navigation", it.type)
@@ -78,77 +78,77 @@ class ActivityBreadcrumbsIntegrationTest {
     @Test
     fun `When activity is created, it should add a breadcrumb`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
     fun `When activity is started, it should add a breadcrumb`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityStarted(activity)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
     fun `When activity is resumed, it should add a breadcrumb`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityResumed(activity)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
     fun `When activity is paused, it should add a breadcrumb`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityPaused(activity)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
     fun `When activity is stopped, it should add a breadcrumb`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityStopped(activity)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
     fun `When activity is save instance, it should add a breadcrumb`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivitySaveInstanceState(activity, fixture.bundle)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
     fun `When activity is destroyed, it should add a breadcrumb`() {
         val sut = fixture.getSut()
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         val activity = mock<Activity>()
         sut.onActivityDestroyed(activity)
 
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 }

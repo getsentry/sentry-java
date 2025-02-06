@@ -6,6 +6,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.scheduleAtFixedRateSafely
+import io.sentry.util.AutoClosableReentrantLock
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -28,7 +29,7 @@ internal class WindowRecorder(
 
     private val isRecording = AtomicBoolean(false)
     private val rootViews = ArrayList<WeakReference<View>>()
-    private val rootViewsLock = Any()
+    private val rootViewsLock = AutoClosableReentrantLock()
     private var recorder: ScreenshotRecorder? = null
     private var capturingTask: ScheduledFuture<*>? = null
     private val capturer by lazy {
@@ -36,7 +37,7 @@ internal class WindowRecorder(
     }
 
     override fun onRootViewsChanged(root: View, added: Boolean) {
-        synchronized(rootViewsLock) {
+        rootViewsLock.acquire().use {
             if (added) {
                 rootViews.add(WeakReference(root))
                 recorder?.bind(root)
@@ -81,7 +82,7 @@ internal class WindowRecorder(
     }
 
     override fun stop() {
-        synchronized(rootViewsLock) {
+        rootViewsLock.acquire().use {
             rootViews.forEach { recorder?.unbind(it.get()) }
             rootViews.clear()
         }

@@ -33,7 +33,6 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarch
 import java.io.File
 import java.lang.ref.WeakReference
 import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
 import kotlin.math.roundToInt
@@ -243,15 +242,6 @@ internal class ScreenshotRecorder(
         // get the pixel color (= dominant color)
         return singlePixelBitmap.getPixel(0, 0)
     }
-
-    private class RecorderExecutorServiceThreadFactory : ThreadFactory {
-        private var cnt = 0
-        override fun newThread(r: Runnable): Thread {
-            val ret = Thread(r, "SentryReplayRecorder-" + cnt++)
-            ret.setDaemon(true)
-            return ret
-        }
-    }
 }
 
 public data class ScreenshotRecorderConfig(
@@ -274,7 +264,7 @@ public data class ScreenshotRecorderConfig(
         bitRate = 0
     )
 
-    companion object {
+    internal companion object {
         /**
          * Since codec block size is 16, so we have to adjust the width and height to it, otherwise
          * the codec might fail to configure on some devices, see https://cs.android.com/android/platform/superproject/+/master:frameworks/base/media/java/android/media/MediaCodecInfo.java;l=1999-2001
@@ -335,7 +325,7 @@ public interface ScreenshotRecorderCallback {
      *
      * @param bitmap a screenshot taken in the form of [android.graphics.Bitmap]
      */
-    fun onScreenshotRecorded(bitmap: Bitmap)
+    public fun onScreenshotRecorded(bitmap: Bitmap)
 
     /**
      * Called whenever a new frame screenshot is available.
@@ -343,5 +333,5 @@ public interface ScreenshotRecorderCallback {
      * @param screenshot file containing the frame screenshot
      * @param frameTimestamp the timestamp when the frame screenshot was taken
      */
-    fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
+    public fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
 }

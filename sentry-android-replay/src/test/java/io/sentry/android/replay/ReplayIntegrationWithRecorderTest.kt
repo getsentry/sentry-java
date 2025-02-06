@@ -6,7 +6,7 @@ import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.Bitmap.Config.ARGB_8888
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.android.replay.ReplayIntegrationWithRecorderTest.LifecycleState.CLOSED
@@ -20,7 +20,7 @@ import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
-import io.sentry.util.thread.NoOpMainThreadChecker
+import io.sentry.util.thread.NoOpThreadChecker
 import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.Test
@@ -50,9 +50,9 @@ class ReplayIntegrationWithRecorderTest {
 
     internal class Fixture {
         val options = SentryOptions().apply {
-            mainThreadChecker = NoOpMainThreadChecker.getInstance()
+            threadChecker = NoOpThreadChecker.getInstance()
         }
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
 
         fun getSut(
             context: Context,
@@ -81,7 +81,7 @@ class ReplayIntegrationWithRecorderTest {
     @Test
     fun `works with different recorder`() {
         val captured = AtomicBoolean(false)
-        whenever(fixture.hub.captureReplay(any(), anyOrNull())).then {
+        whenever(fixture.scopes.captureReplay(any(), anyOrNull())).then {
             captured.set(true)
         }
         // fake current time to trigger segment creation, CurrentDateProvider.getInstance() should
@@ -120,18 +120,18 @@ class ReplayIntegrationWithRecorderTest {
         }
 
         replay = fixture.getSut(context, recorder, recorderConfig, dateProvider)
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
 
         assertEquals(INITALIZED, recorder.state)
 
         replay.start()
         assertEquals(STARTED, recorder.state)
 
-        replay.resume()
-        assertEquals(RESUMED, recorder.state)
-
         replay.pause()
         assertEquals(PAUSED, recorder.state)
+
+        replay.resume()
+        assertEquals(RESUMED, recorder.state)
 
         replay.stop()
         assertEquals(STOPPED, recorder.state)
@@ -152,7 +152,7 @@ class ReplayIntegrationWithRecorderTest {
         // verify
         await.untilTrue(captured)
 
-        verify(fixture.hub).captureReplay(
+        verify(fixture.scopes).captureReplay(
             check {
                 assertEquals(replay.replayId, it.replayId)
                 assertEquals(ReplayType.SESSION, it.replayType)

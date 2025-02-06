@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -136,16 +136,27 @@ public final class SentryExceptionFactory {
   @TestOnly
   @NotNull
   Deque<SentryException> extractExceptionQueue(final @NotNull Throwable throwable) {
-    final Deque<SentryException> exceptions = new ArrayDeque<>();
-    final Set<Throwable> circularityDetector = new HashSet<>();
+    return extractExceptionQueueInternal(
+        throwable, new AtomicInteger(-1), new HashSet<>(), new ArrayDeque<>(), null);
+  }
+
+  Deque<SentryException> extractExceptionQueueInternal(
+      final @NotNull Throwable throwable,
+      final @NotNull AtomicInteger exceptionId,
+      final @NotNull HashSet<Throwable> circularityDetector,
+      final @NotNull Deque<SentryException> exceptions,
+      @Nullable String mechanismTypeOverride) {
     Mechanism exceptionMechanism;
     Thread thread;
 
     Throwable currentThrowable = throwable;
+    int parentId = exceptionId.get();
 
     // Stack the exceptions to send them in the reverse order
     while (currentThrowable != null && circularityDetector.add(currentThrowable)) {
       boolean snapshot = false;
+      final @NotNull String mechanismType =
+          mechanismTypeOverride == null ? "chained" : mechanismTypeOverride;
       if (currentThrowable instanceof ExceptionMechanismException) {
         // this is for ANR I believe
         ExceptionMechanismException exceptionMechanismThrowable =
@@ -155,12 +166,11 @@ public final class SentryExceptionFactory {
         thread = exceptionMechanismThrowable.getThread();
         snapshot = exceptionMechanismThrowable.isSnapshot();
       } else {
-        exceptionMechanism = null;
+        exceptionMechanism = new Mechanism();
         thread = Thread.currentThread();
       }
 
-      final boolean includeSentryFrames =
-          exceptionMechanism != null && Boolean.FALSE.equals(exceptionMechanism.isHandled());
+      final boolean includeSentryFrames = Boolean.FALSE.equals(exceptionMechanism.isHandled());
       final List<SentryStackFrame> frames =
           sentryStackTraceFactory.getStackFrames(
               currentThrowable.getStackTrace(), includeSentryFrames);
@@ -168,7 +178,31 @@ public final class SentryExceptionFactory {
           getSentryException(
               currentThrowable, exceptionMechanism, thread.getId(), frames, snapshot);
       exceptions.addFirst(exception);
+
+      if (exceptionMechanism.getType() == null) {
+        exceptionMechanism.setType(mechanismType);
+      }
+
+      if (exceptionId.get() >= 0) {
+        exceptionMechanism.setParentId(parentId);
+      }
+
+      final int currentExceptionId = exceptionId.incrementAndGet();
+      exceptionMechanism.setExceptionId(currentExceptionId);
+
+      Throwable[] suppressed = currentThrowable.getSuppressed();
+      if (suppressed != null && suppressed.length > 0) {
+        // Disabled for now as it causes grouping in Sentry to sometimes use
+        // the suppressed exception as main exception.
+        // exceptionMechanism.setExceptionGroup(true);
+        for (Throwable suppressedThrowable : suppressed) {
+          extractExceptionQueueInternal(
+              suppressedThrowable, exceptionId, circularityDetector, exceptions, "suppressed");
+        }
+      }
       currentThrowable = currentThrowable.getCause();
+      parentId = currentExceptionId;
+      mechanismTypeOverride = null;
     }
 
     return exceptions;

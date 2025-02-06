@@ -286,6 +286,21 @@ class ReplayCacheTest {
     }
 
     @Test
+    fun `when file does not exist upon persisting creates it`() {
+        val replayId = SentryId()
+        val replayCache = fixture.getSut(
+            tmpDir,
+            replayId
+        )
+
+        replayCache.ongoingSegmentFile?.delete()
+
+        replayCache.persistSegmentValues("key", "value")
+        val segmentValues = File(replayCache.replayCacheDir, ONGOING_SEGMENT).readLines()
+        assertEquals("key=value", segmentValues[0])
+    }
+
+    @Test
     fun `stores segment key value pairs`() {
         val replayId = SentryId()
         val replayCache = fixture.getSut(

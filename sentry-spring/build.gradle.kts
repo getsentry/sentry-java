@@ -13,11 +13,6 @@ plugins {
     id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
 }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
     kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
@@ -38,6 +33,9 @@ dependencies {
     compileOnly(projects.sentryGraphql)
     compileOnly(Config.Libs.springBootStarterQuartz)
     compileOnly(projects.sentryQuartz)
+    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)

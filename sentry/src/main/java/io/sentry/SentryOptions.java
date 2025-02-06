@@ -19,12 +19,14 @@ import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
+import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
-import io.sentry.util.thread.IMainThreadChecker;
-import io.sentry.util.thread.NoOpMainThreadChecker;
+import io.sentry.util.thread.IThreadChecker;
+import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,6 +68,12 @@ public class SentryOptions {
   /** Exceptions that once captured will not be sent to Sentry as {@link SentryEvent}. */
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
+
+  /**
+   * Strings or regex patterns that possible error messages for an event will be tested against. If
+   * there is a match, the captured event will not be sent to Sentry.
+   */
+  private @Nullable List<FilterString> ignoredErrors = null;
 
   /**
    * Code that provides middlewares, bindings or hooks into certain frameworks or environments,
@@ -198,9 +206,6 @@ public class SentryOptions {
    */
   private @Nullable Double sampleRate;
 
-  /** Enables generation of transactions and propagation of trace data. */
-  private @Nullable Boolean enableTracing;
-
   /**
    * Configures the sample rate as a percentage of transactions to be sent in the range of 0.0 to
    * 1.0. if 1.0 is set it means that 100% of transactions are sent. If set to 0.1 only 10% of
@@ -213,6 +218,8 @@ public class SentryOptions {
    * to be sent to Sentry.
    */
   private @Nullable TracesSamplerCallback tracesSampler;
+
+  private volatile @Nullable TracesSampler internalTracesSampler;
 
   /**
    * A list of string prefixes of module names that do not belong to the app, but rather third-party
@@ -327,7 +334,7 @@ public class SentryOptions {
   /** Maximum number of spans that can be atteched to single transaction. */
   private int maxSpans = 1000;
 
-  /** Registers hook that flushes {@link Hub} when main thread shuts down. */
+  /** Registers hook that flushes {@link Scopes} when main thread shuts down. */
   private boolean enableShutdownHook = true;
 
   /**
@@ -419,9 +426,9 @@ public class SentryOptions {
    */
   private final @NotNull List<ViewHierarchyExporter> viewHierarchyExporters = new ArrayList<>();
 
-  private @NotNull IMainThreadChecker mainThreadChecker = NoOpMainThreadChecker.getInstance();
+  private @NotNull IThreadChecker threadChecker = NoOpThreadChecker.getInstance();
 
-  // TODO this should default to false on the next major
+  // TODO [MAJOR] this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = true;
 
@@ -464,9 +471,22 @@ public class SentryOptions {
   /** Whether to enable scope persistence so the scope values are preserved if the process dies */
   private boolean enableScopePersistence = true;
 
-  /** Contains a list of monitor slugs for which check-ins should not be sent. */
-  @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
+  /** The monitor slugs for which captured check-ins should not be sent to Sentry. */
+  @ApiStatus.Experimental private @Nullable List<FilterString> ignoredCheckIns = null;
 
+  /**
+   * Strings or regex patterns that the origin of a new span/transaction will be tested against. If
+   * there is a match, the span/transaction will not be created.
+   */
+  @ApiStatus.Experimental private @Nullable List<FilterString> ignoredSpanOrigins = null;
+
+  /**
+   * Strings or regex patterns that captured transaction names will be tested against. If there is a
+   * match, the transaction will not be sent to Sentry.
+   */
+  private @Nullable List<FilterString> ignoredTransactions = null;
+
+  @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
   private boolean enableBackpressureHandling = true;
@@ -474,13 +494,7 @@ public class SentryOptions {
   /** Whether to profile app launches, depending on profilesSampler or profilesSampleRate. */
   private boolean enableAppStartProfiling = false;
 
-  private boolean enableMetrics = false;
-
-  private boolean enableDefaultTagsForMetrics = true;
-
-  private boolean enableSpanLocalMetricAggregation = true;
-
-  private @Nullable BeforeEmitMetricCallback beforeEmitMetricCallback = null;
+  private @NotNull ISpanFactory spanFactory = NoOpSpanFactory.getInstance();
 
   /**
    * Profiling traces rate. 101 hz means 101 traces in 1 second. Defaults to 101 to avoid possible
@@ -500,6 +514,19 @@ public class SentryOptions {
    * screen transitions as context for events.
    */
   @ApiStatus.Experimental private boolean enableScreenTracking = true;
+
+  private @NotNull ScopeType defaultScopeType = ScopeType.ISOLATION;
+
+  private @NotNull InitPriority initPriority = InitPriority.MEDIUM;
+
+  private boolean forceInit = false;
+
+  // TODO replace hub in name
+  private @Nullable Boolean globalHubMode = null;
+
+  protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+
+  private @NotNull SentryOpenTelemetryMode openTelemetryMode = SentryOpenTelemetryMode.AUTO;
 
   private @NotNull SentryReplayOptions sessionReplay;
 
@@ -675,34 +702,10 @@ public class SentryOptions {
   /**
    * Returns the shutdown timeout in Millis
    *
-   * @deprecated use {{@link SentryOptions#getShutdownTimeoutMillis()} }
-   * @return the timeout in Millis
-   */
-  @ApiStatus.ScheduledForRemoval
-  @Deprecated
-  public long getShutdownTimeout() {
-    return shutdownTimeoutMillis;
-  }
-
-  /**
-   * Returns the shutdown timeout in Millis
-   *
    * @return the timeout in Millis
    */
   public long getShutdownTimeoutMillis() {
     return shutdownTimeoutMillis;
-  }
-
-  /**
-   * Sets the shutdown timeout in Millis Default is 2000 = 2s
-   *
-   * @deprecated use {{@link SentryOptions#setShutdownTimeoutMillis(long)} }
-   * @param shutdownTimeoutMillis the shutdown timeout in millis
-   */
-  @ApiStatus.ScheduledForRemoval
-  @Deprecated
-  public void setShutdownTimeout(long shutdownTimeoutMillis) {
-    this.shutdownTimeoutMillis = shutdownTimeoutMillis;
   }
 
   /**
@@ -951,31 +954,6 @@ public class SentryOptions {
   }
 
   /**
-   * Whether generation of transactions and propagation of trace data is enabled.
-   *
-   * <p>NOTE: There is also {@link SentryOptions#isTracingEnabled()} which checks other options as
-   * well.
-   *
-   * @deprecated We're removing enableTracing in 8.0
-   * @return true if enabled, false if disabled, null can mean enabled if {@link
-   *     SentryOptions#getTracesSampleRate()} or {@link SentryOptions#getTracesSampler()} are set.
-   */
-  @Deprecated
-  public @Nullable Boolean getEnableTracing() {
-    return enableTracing;
-  }
-
-  /**
-   * Enables generation of transactions and propagation of trace data.
-   *
-   * @deprecated We're removing enableTracing in 8.0
-   */
-  @Deprecated
-  public void setEnableTracing(@Nullable Boolean enableTracing) {
-    this.enableTracing = enableTracing;
-  }
-
-  /**
    * Returns the traces sample rate Default is null (disabled)
    *
    * @return the sample rate
@@ -1015,6 +993,18 @@ public class SentryOptions {
    */
   public void setTracesSampler(final @Nullable TracesSamplerCallback tracesSampler) {
     this.tracesSampler = tracesSampler;
+  }
+
+  @ApiStatus.Internal
+  public @NotNull TracesSampler getInternalTracesSampler() {
+    if (internalTracesSampler == null) {
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        if (internalTracesSampler == null) {
+          internalTracesSampler = new TracesSampler(this);
+        }
+      }
+    }
+    return internalTracesSampler;
   }
 
   /**
@@ -1562,10 +1552,6 @@ public class SentryOptions {
    * @return if tracing is enabled.
    */
   public boolean isTracingEnabled() {
-    if (enableTracing != null) {
-      return enableTracing;
-    }
-
     return getTracesSampleRate() != null || getTracesSampler() != null;
   }
 
@@ -1597,6 +1583,55 @@ public class SentryOptions {
    */
   boolean containsIgnoredExceptionForType(final @NotNull Throwable throwable) {
     return this.ignoredExceptionsForType.contains(throwable.getClass());
+  }
+
+  /**
+   * Returns the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
+   * an event shall be sent to Sentry or ignored.
+   *
+   * @return the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   *     `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine
+   *     if an event shall be sent to Sentry or ignored
+   */
+  public @Nullable List<FilterString> getIgnoredErrors() {
+    return ignoredErrors;
+  }
+
+  /**
+   * Sets the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
+   * an event shall be sent to Sentry or ignored.
+   *
+   * @param ignoredErrors the list of strings/regex patterns
+   */
+  public void setIgnoredErrors(final @Nullable List<String> ignoredErrors) {
+    if (ignoredErrors == null) {
+      this.ignoredErrors = null;
+    } else {
+      @NotNull final List<FilterString> patterns = new ArrayList<>();
+      for (String pattern : ignoredErrors) {
+        if (pattern != null && !pattern.isEmpty()) {
+          patterns.add(new FilterString(pattern));
+        }
+      }
+
+      this.ignoredErrors = patterns;
+    }
+  }
+
+  /**
+   * Adds an item to the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
+   * an event shall be sent to Sentry or ignored.
+   *
+   * @param pattern the string/regex pattern
+   */
+  public void addIgnoredError(final @NotNull String pattern) {
+    if (ignoredErrors == null) {
+      ignoredErrors = new ArrayList<>();
+    }
+    ignoredErrors.add(new FilterString(pattern));
   }
 
   /**
@@ -1742,19 +1777,6 @@ public class SentryOptions {
   }
 
   /**
-   * Sets whether profiling is enabled for transactions.
-   *
-   * @deprecated use {{@link SentryOptions#setProfilesSampleRate(Double)} }
-   * @param profilingEnabled - whether profiling is enabled for transactions
-   */
-  @Deprecated
-  public void setProfilingEnabled(boolean profilingEnabled) {
-    if (getProfilesSampleRate() == null) {
-      setProfilesSampleRate(profilingEnabled ? 1.0 : null);
-    }
-  }
-
-  /**
    * Returns the callback used to determine if a profile is sampled.
    *
    * @return the callback
@@ -1809,42 +1831,6 @@ public class SentryOptions {
       return null;
     }
     return new File(cacheDirPath, "profiling_traces").getAbsolutePath();
-  }
-
-  /**
-   * Returns a list of origins to which `sentry-trace` header should be sent in HTTP integrations.
-   *
-   * @deprecated use {{@link SentryOptions#getTracePropagationTargets()} }
-   * @return the list of origins
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public @NotNull List<String> getTracingOrigins() {
-    return getTracePropagationTargets();
-  }
-
-  /**
-   * Adds an origin to which `sentry-trace` header should be sent in HTTP integrations.
-   *
-   * @deprecated use {{@link SentryOptions#setTracePropagationTargets(List)}}
-   * @param tracingOrigin - the tracing origin
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    if (tracePropagationTargets == null) {
-      tracePropagationTargets = new CopyOnWriteArrayList<>();
-    }
-    if (!tracingOrigin.isEmpty()) {
-      tracePropagationTargets.add(tracingOrigin);
-    }
-  }
-
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @ApiStatus.Internal
-  public void setTracingOrigins(final @Nullable List<String> tracingOrigins) {
-    setTracePropagationTargets(tracingOrigins);
   }
 
   /**
@@ -2002,7 +1988,11 @@ public class SentryOptions {
    * startTransaction(...), nor will it create child spans if you call startChild(...)
    *
    * @param instrumenter - the instrumenter to use
+   * @deprecated this should no longer be needed with our current OpenTelmetry integration. Use
+   *     {@link SentryOptions#setIgnoredSpanOrigins(List)} instead if you need fine grained control
+   *     over what integrations can create spans.
    */
+  @Deprecated
   public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
     this.instrumenter = instrumenter;
   }
@@ -2100,12 +2090,12 @@ public class SentryOptions {
     viewHierarchyExporters.addAll(exporters);
   }
 
-  public @NotNull IMainThreadChecker getMainThreadChecker() {
-    return mainThreadChecker;
+  public @NotNull IThreadChecker getThreadChecker() {
+    return threadChecker;
   }
 
-  public void setMainThreadChecker(final @NotNull IMainThreadChecker mainThreadChecker) {
-    this.mainThreadChecker = mainThreadChecker;
+  public void setThreadChecker(final @NotNull IThreadChecker threadChecker) {
+    this.threadChecker = threadChecker;
   }
 
   /**
@@ -2255,15 +2245,91 @@ public class SentryOptions {
     this.sendModules = sendModules;
   }
 
+  /**
+   * Returns the list of strings/regex patterns the origin of a new span/transaction will be tested
+   * against to determine whether the span/transaction shall be created.
+   *
+   * @return the list of strings or regex patterns
+   */
+  @ApiStatus.Experimental
+  public @Nullable List<FilterString> getIgnoredSpanOrigins() {
+    return ignoredSpanOrigins;
+  }
+
+  /**
+   * Adds an item to the list of strings/regex patterns the origin of a new span/transaction will be
+   * tested against to determine whether the span/transaction shall be created.
+   *
+   * @param ignoredSpanOrigin the string/regex pattern
+   */
+  @ApiStatus.Experimental
+  public void addIgnoredSpanOrigin(String ignoredSpanOrigin) {
+    if (ignoredSpanOrigins == null) {
+      ignoredSpanOrigins = new ArrayList<>();
+    }
+    ignoredSpanOrigins.add(new FilterString(ignoredSpanOrigin));
+  }
+
+  /**
+   * Sets the list of strings/regex patterns the origin of a new span/transaction will be tested
+   * against to determine whether the span/transaction shall be created.
+   *
+   * @param ignoredSpanOrigins the list of strings/regex patterns
+   */
+  @ApiStatus.Experimental
+  public void setIgnoredSpanOrigins(final @Nullable List<String> ignoredSpanOrigins) {
+    if (ignoredSpanOrigins == null) {
+      this.ignoredSpanOrigins = null;
+    } else {
+      @NotNull final List<FilterString> filtered = new ArrayList<>();
+      for (String origin : ignoredSpanOrigins) {
+        if (origin != null && !origin.isEmpty()) {
+          filtered.add(new FilterString(origin));
+        }
+      }
+
+      this.ignoredSpanOrigins = filtered;
+    }
+  }
+
+  /**
+   * Returns the list of monitor slugs for which captured check-ins should not be sent to Sentry.
+   *
+   * @return the list of monitor slugs
+   */
+  @ApiStatus.Experimental
+  public @Nullable List<FilterString> getIgnoredCheckIns() {
+    return ignoredCheckIns;
+  }
+
+  /**
+   * Adds a monitor slug to the list of slugs for which captured check-ins should not be sent to
+   * Sentry.
+   *
+   * @param ignoredCheckIn the monitor slug
+   */
+  @ApiStatus.Experimental
+  public void addIgnoredCheckIn(String ignoredCheckIn) {
+    if (ignoredCheckIns == null) {
+      ignoredCheckIns = new ArrayList<>();
+    }
+    ignoredCheckIns.add(new FilterString(ignoredCheckIn));
+  }
+
+  /**
+   * Sets the list of monitor slugs for which captured check-ins should not be sent to Sentry.
+   *
+   * @param ignoredCheckIns the list of monitor slugs for which check-ins should not be sent
+   */
   @ApiStatus.Experimental
   public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
     if (ignoredCheckIns == null) {
       this.ignoredCheckIns = null;
     } else {
-      @NotNull final List<String> filteredIgnoredCheckIns = new ArrayList<>();
+      @NotNull final List<FilterString> filteredIgnoredCheckIns = new ArrayList<>();
       for (String slug : ignoredCheckIns) {
         if (!slug.isEmpty()) {
-          filteredIgnoredCheckIns.add(slug);
+          filteredIgnoredCheckIns.add(new FilterString(slug));
         }
       }
 
@@ -2271,9 +2337,50 @@ public class SentryOptions {
     }
   }
 
+  /**
+   * Returns the list of strings/regex patterns that captured transaction names are checked against
+   * to determine if a transaction shall be sent to Sentry or ignored.
+   *
+   * @return the list of strings/regex patterns
+   */
+  public @Nullable List<FilterString> getIgnoredTransactions() {
+    return ignoredTransactions;
+  }
+
+  /**
+   * Adds an element the list of strings/regex patterns that captured transaction names are checked
+   * against to determine if a transaction shall be sent to Sentry or ignored.
+   *
+   * @param ignoredTransaction the string/regex pattern
+   */
   @ApiStatus.Experimental
-  public @Nullable List<String> getIgnoredCheckIns() {
-    return ignoredCheckIns;
+  public void addIgnoredTransaction(String ignoredTransaction) {
+    if (ignoredTransactions == null) {
+      ignoredTransactions = new ArrayList<>();
+    }
+    ignoredTransactions.add(new FilterString(ignoredTransaction));
+  }
+
+  /**
+   * Sets the list of strings/regex patterns that captured transaction names are checked against to
+   * determine if a transaction shall be sent to Sentry or ignored.
+   *
+   * @param ignoredTransactions the list of string/regex patterns
+   */
+  @ApiStatus.Experimental
+  public void setIgnoredTransactions(final @Nullable List<String> ignoredTransactions) {
+    if (ignoredTransactions == null) {
+      this.ignoredTransactions = null;
+    } else {
+      @NotNull final List<FilterString> filtered = new ArrayList<>();
+      for (String transactionName : ignoredTransactions) {
+        if (transactionName != null && !transactionName.isEmpty()) {
+          filtered.add(new FilterString(transactionName));
+        }
+      }
+
+      this.ignoredTransactions = filtered;
+    }
   }
 
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
@@ -2411,48 +2518,6 @@ public class SentryOptions {
     this.enableScopePersistence = enableScopePersistence;
   }
 
-  @ApiStatus.Experimental
-  public boolean isEnableMetrics() {
-    return enableMetrics;
-  }
-
-  @ApiStatus.Experimental
-  public void setEnableMetrics(boolean enableMetrics) {
-    this.enableMetrics = enableMetrics;
-  }
-
-  @ApiStatus.Experimental
-  public boolean isEnableSpanLocalMetricAggregation() {
-    return isEnableMetrics() && enableSpanLocalMetricAggregation;
-  }
-
-  @ApiStatus.Experimental
-  public void setEnableSpanLocalMetricAggregation(final boolean enableSpanLocalMetricAggregation) {
-    this.enableSpanLocalMetricAggregation = enableSpanLocalMetricAggregation;
-  }
-
-  @ApiStatus.Experimental
-  public boolean isEnableDefaultTagsForMetrics() {
-    return isEnableMetrics() && enableDefaultTagsForMetrics;
-  }
-
-  @ApiStatus.Experimental
-  public void setEnableDefaultTagsForMetrics(final boolean enableDefaultTagsForMetrics) {
-    this.enableDefaultTagsForMetrics = enableDefaultTagsForMetrics;
-  }
-
-  @ApiStatus.Experimental
-  @Nullable
-  public BeforeEmitMetricCallback getBeforeEmitMetricCallback() {
-    return beforeEmitMetricCallback;
-  }
-
-  @ApiStatus.Experimental
-  public void setBeforeEmitMetricCallback(
-      final @Nullable BeforeEmitMetricCallback beforeEmitMetricCallback) {
-    this.beforeEmitMetricCallback = beforeEmitMetricCallback;
-  }
-
   public @Nullable Cron getCron() {
     return cron;
   }
@@ -2484,6 +2549,81 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setEnableScreenTracking(final boolean enableScreenTracking) {
     this.enableScreenTracking = enableScreenTracking;
+  }
+
+  public void setDefaultScopeType(final @NotNull ScopeType scopeType) {
+    this.defaultScopeType = scopeType;
+  }
+
+  public @NotNull ScopeType getDefaultScopeType() {
+    return defaultScopeType;
+  }
+
+  @ApiStatus.Internal
+  public void setInitPriority(final @NotNull InitPriority initPriority) {
+    this.initPriority = initPriority;
+  }
+
+  @ApiStatus.Internal
+  public @NotNull InitPriority getInitPriority() {
+    return initPriority;
+  }
+
+  /**
+   * If set to true a call to Sentry.init (or SentryAndroid.init) will go through and replace
+   * previous options if there are any.
+   *
+   * <p>By default the SDK will check whether a previous call to Sentry.init has higher priority
+   * than the current one and decide whether to actually perform the init and replace options.
+   *
+   * @param forceInit true = replace previous init and options
+   */
+  public void setForceInit(final boolean forceInit) {
+    this.forceInit = forceInit;
+  }
+
+  public boolean isForceInit() {
+    return forceInit;
+  }
+
+  /**
+   * If set to true, automatic scope forking will be disabled. If set to false, scopes will be
+   * forked automatically, e.g. when scopes are accessed on a thread for the first time, pushScope
+   * is invoked, in some cases when we explicitly want to fork the root scopes, etc.
+   *
+   * <p>If this is set to something other than `null`, it will take precedence over what is passed
+   * to Sentry.init.
+   *
+   * <p>Enabling this is intended for mobile and desktop apps, not backends. For Android the default
+   * value passed to Sentry.init is true (globalHubMode enabled), for backends it defaults to false.
+   *
+   * @param globalHubMode true = automatic scope forking is disabled
+   */
+  public void setGlobalHubMode(final @Nullable Boolean globalHubMode) {
+    this.globalHubMode = globalHubMode;
+  }
+
+  public @Nullable Boolean isGlobalHubMode() {
+    return globalHubMode;
+  }
+
+  /**
+   * Configures the SDK to either automatically determine if OpenTelemetry is available, whether to
+   * use it and what way to use it in.
+   *
+   * <p>See {@link SentryOpenTelemetryMode}
+   *
+   * <p>By default the SDK will use OpenTelemetry if available, preferring the agent. On Android
+   * OpenTelemetry is not used.
+   *
+   * @param openTelemetryMode the mode
+   */
+  public void setOpenTelemetryMode(final @NotNull SentryOpenTelemetryMode openTelemetryMode) {
+    this.openTelemetryMode = openTelemetryMode;
+  }
+
+  public @NotNull SentryOpenTelemetryMode getOpenTelemetryMode() {
+    return openTelemetryMode;
   }
 
   @NotNull
@@ -2624,7 +2764,7 @@ public class SentryOptions {
   /**
    * Creates SentryOptions instance without initializing any of the internal parts.
    *
-   * <p>Used by {@link NoOpHub}.
+   * <p>Used by {@link NoOpScopes}.
    *
    * @return SentryOptions
    */
@@ -2648,6 +2788,7 @@ public class SentryOptions {
     experimental = new ExperimentalOptions(empty, sdkVersion);
     sessionReplay = new SentryReplayOptions(empty, sdkVersion);
     if (!empty) {
+      setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
       executorService = new SentryExecutorService();
@@ -2703,9 +2844,6 @@ public class SentryOptions {
     if (options.getPrintUncaughtStackTrace() != null) {
       setPrintUncaughtStackTrace(options.getPrintUncaughtStackTrace());
     }
-    if (options.getEnableTracing() != null) {
-      setEnableTracing(options.getEnableTracing());
-    }
     if (options.getTracesSampleRate() != null) {
       setTracesSampleRate(options.getTracesSampleRate());
     }
@@ -2720,6 +2858,9 @@ public class SentryOptions {
     }
     if (options.getSendClientReports() != null) {
       setSendClientReports(options.getSendClientReports());
+    }
+    if (options.isForceInit() != null) {
+      setForceInit(options.isForceInit());
     }
     final Map<String, String> tags = new HashMap<>(options.getTags());
     for (final Map.Entry<String, String> tag : tags.entrySet()) {
@@ -2770,8 +2911,34 @@ public class SentryOptions {
       final List<String> ignoredCheckIns = new ArrayList<>(options.getIgnoredCheckIns());
       setIgnoredCheckIns(ignoredCheckIns);
     }
+    if (options.getIgnoredTransactions() != null) {
+      final List<String> ignoredTransactions = new ArrayList<>(options.getIgnoredTransactions());
+      setIgnoredTransactions(ignoredTransactions);
+    }
+    if (options.getIgnoredErrors() != null) {
+      final List<String> ignoredExceptions = new ArrayList<>(options.getIgnoredErrors());
+      setIgnoredErrors(ignoredExceptions);
+    }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
+    }
+    if (options.getMaxRequestBodySize() != null) {
+      setMaxRequestBodySize(options.getMaxRequestBodySize());
+    }
+    if (options.isSendDefaultPii() != null) {
+      setSendDefaultPii(options.isSendDefaultPii());
+    }
+
+    if (options.isEnableSpotlight() != null) {
+      setEnableSpotlight(options.isEnableSpotlight());
+    }
+
+    if (options.getSpotlightConnectionUrl() != null) {
+      setSpotlightConnectionUrl(options.getSpotlightConnectionUrl());
+    }
+
+    if (options.isGlobalHubMode() != null) {
+      setGlobalHubMode(options.isGlobalHubMode());
     }
 
     if (options.getCron() != null) {
@@ -2810,6 +2977,16 @@ public class SentryOptions {
   private void addPackageInfo() {
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry", BuildConfig.VERSION_NAME);
+  }
+
+  @ApiStatus.Internal
+  public @NotNull ISpanFactory getSpanFactory() {
+    return spanFactory;
+  }
+
+  @ApiStatus.Internal
+  public void setSpanFactory(final @NotNull ISpanFactory spanFactory) {
+    this.spanFactory = spanFactory;
   }
 
   public static final class Proxy {

@@ -7,7 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.DiagnosticLogger
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
@@ -62,13 +62,14 @@ class DefaultAndroidEventProcessorTest {
             sdkVersion = SdkVersion("test", "1.2.3")
         }
 
-        val hub: IHub = mock<IHub>()
+        val scopes: IScopes = mock<IScopes>()
 
         lateinit var sentryTracer: SentryTracer
 
-        fun getSut(context: Context): DefaultAndroidEventProcessor {
-            whenever(hub.options).thenReturn(options)
-            sentryTracer = SentryTracer(TransactionContext("", ""), hub)
+        fun getSut(context: Context, isSendDefaultPii: Boolean = false): DefaultAndroidEventProcessor {
+            options.isSendDefaultPii = isSendDefaultPii
+            whenever(scopes.options).thenReturn(options)
+            sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
             return DefaultAndroidEventProcessor(context, buildInfo, options)
         }
     }
@@ -284,8 +285,20 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `when event user data does not have ip address set, sets {{auto}} as the ip address`() {
-        val sut = fixture.getSut(context)
+    fun `when event user data does not have ip address set, sets no ip address if sendDefaultPii is false`() {
+        val sut = fixture.getSut(context, isSendDefaultPii = false)
+        val event = SentryEvent().apply {
+            user = User()
+        }
+        sut.process(event, Hint())
+        assertNotNull(event.user) {
+            assertNull(it.ipAddress)
+        }
+    }
+
+    @Test
+    fun `when event user data does not have ip address set, sets {{auto}} if sendDefaultPii is true`() {
+        val sut = fixture.getSut(context, isSendDefaultPii = true)
         val event = SentryEvent().apply {
             user = User()
         }
@@ -493,12 +506,11 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `Event sets language and locale`() {
+    fun `Event sets locale`() {
         val sut = fixture.getSut(context)
 
         assertNotNull(sut.process(SentryEvent(), Hint())) {
             val device = it.contexts.device!!
-            assertEquals("en", device.language)
             assertEquals("en_US", device.locale)
         }
     }

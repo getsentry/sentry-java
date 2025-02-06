@@ -1,9 +1,11 @@
 package io.sentry.jul
 
+import io.sentry.InitPriority
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
@@ -57,13 +59,14 @@ class SentryHandlerTest {
     }
 
     @Test
-    fun `does not initialize Sentry if Sentry is already enabled`() {
+    fun `does not initialize Sentry if Sentry is already enabled with higher prio`() {
         val transport = mock<ITransport>()
-        Sentry.init {
+        initForTest {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
             it.setTransportFactory { _, _ -> transport }
             it.isEnableBackpressureHandling = false
+            it.initPriority = InitPriority.LOW
         }
         fixture = Fixture(transport = transport)
         fixture.logger.severe("testing environment field")

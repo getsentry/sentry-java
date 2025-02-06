@@ -11,7 +11,7 @@ import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
 import io.sentry.protocol.SentryException
-import io.sentry.util.thread.IMainThreadChecker
+import io.sentry.util.thread.IThreadChecker
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -35,7 +35,7 @@ class ScreenshotEventProcessorTest {
         val window = mock<Window>()
         val view = mock<View>()
         val rootView = mock<View>()
-        val mainThreadChecker = mock<IMainThreadChecker>()
+        val threadChecker = mock<IThreadChecker>()
         val options = SentryAndroidOptions().apply {
             dsn = "https://key@sentry.io/proj"
         }
@@ -52,12 +52,12 @@ class ScreenshotEventProcessorTest {
                 it.getArgument<Runnable>(0).run()
             }
 
-            whenever(mainThreadChecker.isMainThread).thenReturn(true)
+            whenever(threadChecker.isMainThread).thenReturn(true)
         }
 
         fun getSut(attachScreenshot: Boolean = false): ScreenshotEventProcessor {
             options.isAttachScreenshot = attachScreenshot
-            options.mainThreadChecker = mainThreadChecker
+            options.threadChecker = threadChecker
 
             return ScreenshotEventProcessor(options, buildInfo)
         }
@@ -172,7 +172,7 @@ class ScreenshotEventProcessorTest {
     @Test
     fun `when screenshot event processor is called from background thread it executes on main thread`() {
         val sut = fixture.getSut(true)
-        whenever(fixture.mainThreadChecker.isMainThread).thenReturn(false)
+        whenever(fixture.threadChecker.isMainThread).thenReturn(false)
 
         CurrentActivityHolder.getInstance().setActivity(fixture.activity)
 

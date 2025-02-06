@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.uitest.android.critical"
-        minSdk = Config.Android.minSdkVersionCompose
+        minSdk = Config.Android.minSdkVersion
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 1
         versionName = "1.0"
@@ -42,10 +42,8 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
     }
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 
@@ -62,8 +60,4 @@ dependencies {
 tasks.withType<Detekt> {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
-}
-
-kotlin {
-    explicitApi()
 }

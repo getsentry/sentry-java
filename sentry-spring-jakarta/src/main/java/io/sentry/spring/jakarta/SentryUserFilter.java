@@ -1,8 +1,8 @@
 package io.sentry.spring.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IHub;
 import io.sentry.IScope;
+import io.sentry.IScopes;
 import io.sentry.IpAddressUtils;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
@@ -26,12 +26,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
  */
 @Open
 public class SentryUserFilter extends OncePerRequestFilter {
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
   private final @NotNull List<SentryUserProvider> sentryUserProviders;
 
   public SentryUserFilter(
-      final @NotNull IHub hub, final @NotNull List<SentryUserProvider> sentryUserProviders) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+      final @NotNull IScopes scopes, final @NotNull List<SentryUserProvider> sentryUserProviders) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.sentryUserProviders =
         Objects.requireNonNull(sentryUserProviders, "sentryUserProviders list is required");
   }
@@ -46,13 +46,13 @@ public class SentryUserFilter extends OncePerRequestFilter {
     for (final SentryUserProvider provider : sentryUserProviders) {
       apply(user, provider.provideUser());
     }
-    if (hub.getOptions().isSendDefaultPii()) {
+    if (scopes.getOptions().isSendDefaultPii()) {
       if (IpAddressUtils.isDefault(user.getIpAddress())) {
         // unset {{auto}} as it would set the server's ip address as a user ip address
         user.setIpAddress(null);
       }
     }
-    hub.setUser(user);
+    scopes.setUser(user);
     chain.doFilter(request, response);
   }
 

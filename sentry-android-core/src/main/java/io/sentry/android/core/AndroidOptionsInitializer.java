@@ -8,17 +8,20 @@ import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultTransactionPerformanceCollector;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpConnectionStatusProvider;
+import io.sentry.ScopeType;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOpenTelemetryMode;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
-import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
+import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
@@ -98,6 +101,8 @@ final class AndroidOptionsInitializer {
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
 
+    options.setDefaultScopeType(ScopeType.CURRENT);
+    options.setOpenTelemetryMode(SentryOpenTelemetryMode.OFF);
     options.setDateProvider(new SentryAndroidDateProvider());
 
     // set a lower flush timeout on Android to avoid ANRs
@@ -116,7 +121,7 @@ final class AndroidOptionsInitializer {
   static void initializeIntegrationsAndProcessors(
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
-      final @NotNull LoadClass loadClass,
+      final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
     initializeIntegrationsAndProcessors(
         options,
@@ -130,7 +135,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull LoadClass loadClass,
+      final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
 
     if (options.getCacheDirPath() != null
@@ -155,7 +160,7 @@ final class AndroidOptionsInitializer {
     // Check if the profiler was already instantiated in the app start.
     // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
     // state of the profiler, and it's only possible retaining the instance.
-    synchronized (AppStartMetrics.getInstance()) {
+    try (final @NotNull ISentryLifecycleToken ignored = AppStartMetrics.staticLock.acquire()) {
       final @Nullable ITransactionProfiler appStartProfiler =
           AppStartMetrics.getInstance().getAppStartProfiler();
       if (appStartProfiler != null) {
@@ -205,11 +210,10 @@ final class AndroidOptionsInitializer {
       options.setViewHierarchyExporters(viewHierarchyExporters);
     }
 
-    options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
+    options.setThreadChecker(AndroidThreadChecker.getInstance());
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
-      options.addPerformanceCollector(
-          new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
+      options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
 
       if (options.isEnablePerformanceV2()) {
         options.addPerformanceCollector(
@@ -234,7 +238,7 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull LoadClass loadClass,
+      final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable,
@@ -301,8 +305,6 @@ final class AndroidOptionsInitializer {
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
     options.addIntegration(
         new NetworkBreadcrumbsIntegration(context, buildInfoProvider, options.getLogger()));
-    options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
-    options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());
@@ -322,8 +324,8 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    final PackageInfo packageInfo =
-        ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
+    final @Nullable PackageInfo packageInfo =
+        ContextUtils.getPackageInfo(context, buildInfoProvider);
     if (packageInfo != null) {
       // Sets App's release if not set by Manifest
       if (options.getRelease() == null) {

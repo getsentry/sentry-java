@@ -12,12 +12,11 @@ class GraphqlTaskSystemTest {
     @Before
     fun setup() {
         testHelper = TestHelper("http://localhost:8080")
+        testHelper.reset()
     }
 
     @Test
     fun `tasks and assignees query works`() {
-        testHelper.snapshotEnvelopeCount()
-
         val response = testHelper.graphqlClient.tasksAndAssignees("project-slug")
 
         testHelper.ensureNoErrors(response)
@@ -31,6 +30,10 @@ class GraphqlTaskSystemTest {
         assertEquals("C3", firstTask.creatorId)
         assertEquals("C3", firstTask.creator?.id)
 
-        testHelper.ensureEnvelopeCountIncreased()
+        testHelper.ensureTransactionReceived { transaction ->
+            testHelper.doesTransactionContainSpanWithDescription(transaction, "Query.tasks") &&
+                testHelper.doesTransactionContainSpanWithDescription(transaction, "Task.assignee") &&
+                testHelper.doesTransactionContainSpanWithDescription(transaction, "Task.creator")
+        }
     }
 }

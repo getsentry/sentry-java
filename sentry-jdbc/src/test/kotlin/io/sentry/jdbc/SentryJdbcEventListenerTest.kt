@@ -2,7 +2,7 @@ package io.sentry.jdbc
 
 import com.p6spy.engine.common.StatementInformation
 import com.p6spy.engine.spy.P6DataSource
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanDataConvention.DB_NAME_KEY
@@ -26,7 +26,7 @@ import kotlin.test.assertTrue
 class SentryJdbcEventListenerTest {
 
     class Fixture {
-        val hub = mock<IHub>().apply {
+        val scopes = mock<IScopes>().apply {
             whenever(options).thenReturn(
                 SentryOptions().apply {
                     sdkVersion = SdkVersion("test", "1.2.3")
@@ -37,9 +37,9 @@ class SentryJdbcEventListenerTest {
         val actualDataSource = JDBCDataSource()
 
         fun getSut(withRunningTransaction: Boolean = true, existingRow: Int? = null): DataSource {
-            tx = SentryTracer(TransactionContext("name", "op"), hub)
+            tx = SentryTracer(TransactionContext("name", "op"), scopes)
             if (withRunningTransaction) {
-                whenever(hub.span).thenReturn(tx)
+                whenever(scopes.span).thenReturn(tx)
             }
             actualDataSource.setURL("jdbc:hsqldb:mem:testdb")
 
@@ -54,7 +54,7 @@ class SentryJdbcEventListenerTest {
                 }
             }
 
-            val sentryQueryExecutionListener = SentryJdbcEventListener(hub)
+            val sentryQueryExecutionListener = SentryJdbcEventListener(scopes)
             val p6spyDataSource = P6DataSource(actualDataSource)
             p6spyDataSource.setJdbcEventListenerFactory { sentryQueryExecutionListener }
             return p6spyDataSource
@@ -131,9 +131,9 @@ class SentryJdbcEventListenerTest {
     @Test
     fun `sets SDKVersion Info`() {
         val sut = fixture.getSut()
-        assertNotNull(fixture.hub.options.sdkVersion)
-        assert(fixture.hub.options.sdkVersion!!.integrationSet.contains("JDBC"))
-        val packageInfo = fixture.hub.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-jdbc" }
+        assertNotNull(fixture.scopes.options.sdkVersion)
+        assert(fixture.scopes.options.sdkVersion!!.integrationSet.contains("JDBC"))
+        val packageInfo = fixture.scopes.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-jdbc" }
         assertNotNull(packageInfo)
         assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }

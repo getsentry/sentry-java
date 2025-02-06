@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
@@ -45,6 +46,9 @@ public interface IScope {
    */
   @Nullable
   ISpan getSpan();
+
+  @ApiStatus.Internal
+  void setActiveSpan(@Nullable ISpan span);
 
   /**
    * Sets the current active transaction
@@ -320,8 +324,13 @@ public interface IScope {
    *
    * @return the event processors list
    */
+  @ApiStatus.Internal
   @NotNull
   List<EventProcessor> getEventProcessors();
+
+  @ApiStatus.Internal
+  @NotNull
+  List<EventProcessorAndOrder> getEventProcessorsWithOrder();
 
   /**
    * Adds an event processor to the Scope's event processors list
@@ -391,4 +400,26 @@ public interface IScope {
    */
   @NotNull
   IScope clone();
+
+  void setLastEventId(final @NotNull SentryId lastEventId);
+
+  @NotNull
+  SentryId getLastEventId();
+
+  void bindClient(final @NotNull ISentryClient client);
+
+  @NotNull
+  ISentryClient getClient();
+
+  @ApiStatus.Internal
+  void assignTraceContext(final @NotNull SentryEvent event);
+
+  @ApiStatus.Internal
+  void setSpanContext(
+      final @NotNull Throwable throwable,
+      final @NotNull ISpan span,
+      final @NotNull String transactionName);
+
+  @ApiStatus.Internal
+  void replaceOptions(final @NotNull SentryOptions options);
 }

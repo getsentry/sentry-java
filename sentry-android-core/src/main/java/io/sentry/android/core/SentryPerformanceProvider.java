@@ -7,10 +7,10 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
 import io.sentry.JsonSerializer;
 import io.sentry.SentryAppStartProfilingOptions;
@@ -21,6 +21,7 @@ import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,6 +44,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
   private final @NotNull ILogger logger;
   private final @NotNull BuildInfoProvider buildInfoProvider;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   @TestOnly
   SentryPerformanceProvider(
@@ -82,7 +84,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
   @Override
   public void shutdown() {
-    synchronized (AppStartMetrics.getInstance()) {
+    try (final @NotNull ISentryLifecycleToken ignored = AppStartMetrics.staticLock.acquire()) {
       final @Nullable ITransactionProfiler appStartProfiler =
           AppStartMetrics.getInstance().getAppStartProfiler();
       if (appStartProfiler != null) {
@@ -96,11 +98,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
     if (context == null) {
       logger.log(SentryLevel.FATAL, "App. Context from ContentProvider is null");
-      return;
-    }
-
-    // Debug.startMethodTracingSampling() is only available since Lollipop
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
       return;
     }
 

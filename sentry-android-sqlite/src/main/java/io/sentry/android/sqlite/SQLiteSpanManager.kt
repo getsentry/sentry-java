@@ -2,10 +2,10 @@ package io.sentry.android.sqlite
 
 import android.database.CrossProcessCursor
 import android.database.SQLException
-import io.sentry.HubAdapter
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.Instrumenter
+import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryStackTraceFactory
 import io.sentry.SpanDataConvention
@@ -14,10 +14,10 @@ import io.sentry.SpanStatus
 private const val TRACE_ORIGIN = "auto.db.sqlite"
 
 internal class SQLiteSpanManager(
-    private val hub: IHub = HubAdapter.getInstance(),
+    private val scopes: IScopes = ScopesAdapter.getInstance(),
     private val databaseName: String? = null
 ) {
-    private val stackTraceFactory = SentryStackTraceFactory(hub.options)
+    private val stackTraceFactory = SentryStackTraceFactory(scopes.options)
 
     init {
         SentryIntegrationPackageStorage.getInstance().addIntegration("SQLite")
@@ -33,7 +33,7 @@ internal class SQLiteSpanManager(
     @Suppress("TooGenericExceptionCaught", "UNCHECKED_CAST")
     @Throws(SQLException::class)
     fun <T> performSql(sql: String, operation: () -> T): T {
-        val startTimestamp = hub.getOptions().dateProvider.now()
+        val startTimestamp = scopes.getOptions().dateProvider.now()
         var span: ISpan? = null
         return try {
             val result = operation()
@@ -45,19 +45,19 @@ internal class SQLiteSpanManager(
             if (result is CrossProcessCursor) {
                 return SentryCrossProcessCursor(result, this, sql) as T
             }
-            span = hub.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)
+            span = scopes.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)
             span?.spanContext?.origin = TRACE_ORIGIN
             span?.status = SpanStatus.OK
             result
         } catch (e: Throwable) {
-            span = hub.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)
+            span = scopes.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)
             span?.spanContext?.origin = TRACE_ORIGIN
             span?.status = SpanStatus.INTERNAL_ERROR
             span?.throwable = e
             throw e
         } finally {
             span?.apply {
-                val isMainThread: Boolean = hub.options.mainThreadChecker.isMainThread
+                val isMainThread: Boolean = scopes.options.threadChecker.isMainThread
                 setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread)
                 if (isMainThread) {
                     setData(SpanDataConvention.CALL_STACK_KEY, stackTraceFactory.inAppCallStack)

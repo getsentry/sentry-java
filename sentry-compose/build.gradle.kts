@@ -70,8 +70,7 @@ android {
     namespace = "io.sentry.compose"
 
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
-        minSdk = Config.Android.minSdkVersionCompose
+        minSdk = Config.Android.minSdkVersion
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
@@ -104,10 +103,12 @@ android {
         checkReleaseBuilds = false
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    buildFeatures {
+        buildConfig = true
+    }
+
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 
