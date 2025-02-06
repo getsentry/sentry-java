@@ -3,7 +3,7 @@ package io.sentry.android.core
 import android.content.ContentProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.MeasurementUnit
 import io.sentry.SentryTracer
 import io.sentry.SpanContext
@@ -13,17 +13,20 @@ import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD
+import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.core.performance.AppStartMetrics.AppStartType
 import io.sentry.protocol.MeasurementValue
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,7 +40,7 @@ class PerformanceAndroidEventProcessorTest {
     private class Fixture {
         val options = SentryAndroidOptions()
 
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val context = TransactionContext("name", "op", TracesSamplingDecision(true))
         lateinit var tracer: SentryTracer
         val activityFramesTracker = mock<ActivityFramesTracker>()
@@ -46,15 +49,33 @@ class PerformanceAndroidEventProcessorTest {
             tracesSampleRate: Double? = 1.0,
             enablePerformanceV2: Boolean = false
         ): PerformanceAndroidEventProcessor {
+            AppStartMetrics.getInstance().isAppLaunchedInForeground = true
             options.tracesSampleRate = tracesSampleRate
             options.isEnablePerformanceV2 = enablePerformanceV2
-            whenever(hub.options).thenReturn(options)
-            tracer = SentryTracer(context, hub)
+            whenever(scopes.options).thenReturn(options)
+            tracer = SentryTracer(context, scopes)
             return PerformanceAndroidEventProcessor(options, activityFramesTracker)
         }
     }
 
     private val fixture = Fixture()
+
+    private fun createAppStartSpan(traceId: SentryId, coldStart: Boolean = true) = SentrySpan(
+        0.0,
+        1.0,
+        traceId,
+        SpanId(),
+        null,
+        if (coldStart) APP_START_COLD else APP_START_WARM,
+        "App Start",
+        SpanStatus.OK,
+        null,
+        emptyMap(),
+        emptyMap(),
+        null
+    ).also {
+        AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
+    }
 
     @BeforeTest
     fun `reset instance`() {
@@ -183,7 +204,7 @@ class PerformanceAndroidEventProcessorTest {
     fun `add slow and frozen frames if auto transaction`() {
         val sut = fixture.getSut()
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
         val metrics = mapOf(
@@ -229,25 +250,11 @@ class PerformanceAndroidEventProcessorTest {
         // when an activity transaction is created
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
         // and it contains an app.start.cold span
-        val appStartSpan = SentrySpan(
-            0.0,
-            1.0,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            APP_START_COLD,
-            "App Start",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null,
-            null
-        )
+        val appStartSpan = createAppStartSpan(tr.contexts.trace!!.traceId)
         tr.spans.add(appStartSpan)
 
         // then the app start metrics should be attached
@@ -272,15 +279,154 @@ class PerformanceAndroidEventProcessorTest {
                 "application.load" == it.op
             }
         )
+    }
 
-        assertTrue(
+    @Test
+    fun `does not add app start metrics to app warm start txn`() {
+        // given some app start metrics
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.appStartType = AppStartType.WARM
+        appStartMetrics.appStartTimeSpan.setStartedAt(123)
+        appStartMetrics.appStartTimeSpan.setStoppedAt(456)
+
+        val contentProvider = mock<ContentProvider>()
+        AppStartMetrics.onContentProviderCreate(contentProvider)
+        AppStartMetrics.onContentProviderPostCreate(contentProvider)
+
+        appStartMetrics.applicationOnCreateTimeSpan.apply {
+            setStartedAt(10)
+            setStoppedAt(42)
+        }
+
+        val activityTimeSpan = ActivityLifecycleTimeSpan()
+        activityTimeSpan.onCreate.description = "MainActivity.onCreate"
+        activityTimeSpan.onStart.description = "MainActivity.onStart"
+
+        activityTimeSpan.onCreate.setStartedAt(200)
+        activityTimeSpan.onStart.setStartedAt(220)
+        activityTimeSpan.onStart.setStoppedAt(240)
+        activityTimeSpan.onCreate.setStoppedAt(260)
+        appStartMetrics.addActivityLifecycleTimeSpans(activityTimeSpan)
+
+        // when an activity transaction is created
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.scopes)
+        var tr = SentryTransaction(tracer)
+
+        // and it contains an app.start.warm span
+        val appStartSpan = createAppStartSpan(tr.contexts.trace!!.traceId, false)
+        tr.spans.add(appStartSpan)
+
+        // then the app start metrics should be attached
+        tr = sut.process(tr, Hint())
+
+        // process init, content provider and application span should not be attached
+        assertFalse(tr.spans.any { "process.load" == it.op })
+        assertFalse(tr.spans.any { "contentprovider.load" == it.op })
+        assertFalse(tr.spans.any { "application.load" == it.op })
+    }
+
+    @Test
+    fun `when app launched from background, app start spans are dropped`() {
+        // given some app start metrics
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.appStartType = AppStartType.COLD
+        appStartMetrics.appStartTimeSpan.setStartedAt(123)
+        appStartMetrics.appStartTimeSpan.setStoppedAt(456)
+
+        val contentProvider = mock<ContentProvider>()
+        AppStartMetrics.onContentProviderCreate(contentProvider)
+        AppStartMetrics.onContentProviderPostCreate(contentProvider)
+
+        appStartMetrics.applicationOnCreateTimeSpan.apply {
+            setStartedAt(10)
+            setStoppedAt(42)
+        }
+
+        val activityTimeSpan = ActivityLifecycleTimeSpan()
+        activityTimeSpan.onCreate.description = "MainActivity.onCreate"
+        activityTimeSpan.onStart.description = "MainActivity.onStart"
+
+        activityTimeSpan.onCreate.setStartedAt(200)
+        activityTimeSpan.onStart.setStartedAt(220)
+        activityTimeSpan.onStart.setStoppedAt(240)
+        activityTimeSpan.onCreate.setStoppedAt(260)
+        appStartMetrics.addActivityLifecycleTimeSpans(activityTimeSpan)
+
+        // when an activity transaction is created
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.scopes)
+        var tr = SentryTransaction(tracer)
+
+        // and it contains an app.start.cold span
+        val appStartSpan = createAppStartSpan(tr.contexts.trace!!.traceId)
+        tr.spans.add(appStartSpan)
+
+        // but app is launched in background
+        AppStartMetrics.getInstance().isAppLaunchedInForeground = false
+
+        // then the app start metrics are not attached
+        tr = sut.process(tr, Hint())
+
+        assertFalse(
             tr.spans.any {
-                "activity.load" == it.op && "MainActivity.onCreate" == it.description
+                "process.load" == it.op ||
+                    "contentprovider.load" == it.op ||
+                    "application.load" == it.op ||
+                    "activity.load" == it.op
             }
         )
-        assertTrue(
+    }
+
+    @Test
+    fun `when app start takes more than 1 minute, app start spans are dropped`() {
+        // given some app start metrics
+        val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.appStartType = AppStartType.COLD
+        appStartMetrics.appStartTimeSpan.setStartedAt(123)
+        // and app start takes more than 1 minute
+        appStartMetrics.appStartTimeSpan.setStoppedAt(TimeUnit.MINUTES.toMillis(1) + 124)
+
+        val contentProvider = mock<ContentProvider>()
+        AppStartMetrics.onContentProviderCreate(contentProvider)
+        AppStartMetrics.onContentProviderPostCreate(contentProvider)
+
+        appStartMetrics.applicationOnCreateTimeSpan.apply {
+            setStartedAt(10)
+            setStoppedAt(42)
+        }
+
+        val activityTimeSpan = ActivityLifecycleTimeSpan()
+        activityTimeSpan.onCreate.description = "MainActivity.onCreate"
+        activityTimeSpan.onStart.description = "MainActivity.onStart"
+
+        activityTimeSpan.onCreate.setStartedAt(200)
+        activityTimeSpan.onStart.setStartedAt(220)
+        activityTimeSpan.onStart.setStoppedAt(240)
+        activityTimeSpan.onCreate.setStoppedAt(260)
+        appStartMetrics.addActivityLifecycleTimeSpans(activityTimeSpan)
+
+        // when an activity transaction is created
+        val sut = fixture.getSut(enablePerformanceV2 = true)
+        val context = TransactionContext("Activity", UI_LOAD_OP)
+        val tracer = SentryTracer(context, fixture.scopes)
+        var tr = SentryTransaction(tracer)
+
+        // and it contains an app.start.cold span
+        val appStartSpan = createAppStartSpan(tr.contexts.trace!!.traceId)
+        tr.spans.add(appStartSpan)
+
+        // then the app start metrics are not attached
+        tr = sut.process(tr, Hint())
+
+        assertFalse(
             tr.spans.any {
-                "activity.load" == it.op && "MainActivity.onStart" == it.description
+                "process.load" == it.op ||
+                    "contentprovider.load" == it.op ||
+                    "application.load" == it.op ||
+                    "activity.load" == it.op
             }
         )
     }
@@ -299,7 +445,7 @@ class PerformanceAndroidEventProcessorTest {
         // when an activity transaction is created
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
         // then the app start metrics should not be attached
@@ -328,27 +474,15 @@ class PerformanceAndroidEventProcessorTest {
         // when the first activity transaction is created
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
-        val appStartSpan = SentrySpan(
-            0.0,
-            1.0,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            APP_START_COLD,
-            "App Start",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null,
-            null
-        )
+        val appStartSpan = createAppStartSpan(tr.contexts.trace!!.traceId)
         tr.spans.add(appStartSpan)
 
-        // then the app start metrics should not be attached
+        assertTrue(appStartMetrics.shouldSendStartMeasurements())
+        // then the app start metrics should be attached
         tr = sut.process(tr, Hint())
+        assertFalse(appStartMetrics.shouldSendStartMeasurements())
 
         assertTrue(
             tr.spans.any {
@@ -379,23 +513,9 @@ class PerformanceAndroidEventProcessorTest {
 
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
-        val appStartSpan = SentrySpan(
-            0.0,
-            1.0,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            APP_START_COLD,
-            "App Start",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null,
-            null
-        )
+        val appStartSpan = createAppStartSpan(tr.contexts.trace!!.traceId)
         tr.spans.add(appStartSpan)
 
         // when the processor attaches the app start spans
@@ -426,23 +546,9 @@ class PerformanceAndroidEventProcessorTest {
 
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
-        val appStartSpan = SentrySpan(
-            0.0,
-            1.0,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            APP_START_COLD,
-            "App Start",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null,
-            null
-        )
+        val appStartSpan = createAppStartSpan(tr.contexts.trace!!.traceId)
         tr.spans.add(appStartSpan)
 
         // when the processor attaches the app start spans
@@ -473,7 +579,7 @@ class PerformanceAndroidEventProcessorTest {
 
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
         // when it contains no app start span and is processed
@@ -490,24 +596,10 @@ class PerformanceAndroidEventProcessorTest {
 
         val sut = fixture.getSut(enablePerformanceV2 = true)
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
-        val appStartSpan = SentrySpan(
-            0.0,
-            1.0,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            APP_START_COLD,
-            "App Start",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null,
-            null
-        )
+        val appStartSpan = createAppStartSpan(tr.contexts.trace!!.traceId)
         tr.spans.add(appStartSpan)
 
         // when the processor attaches the app start spans
@@ -525,7 +617,7 @@ class PerformanceAndroidEventProcessorTest {
         val sut = fixture.getSut()
 
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         val tr = SentryTransaction(tracer)
 
         // given a ttid from 0.0 -> 1.0
@@ -542,7 +634,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
 
@@ -558,7 +649,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
         tr.spans.add(ttid)
@@ -578,7 +668,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
 
@@ -595,7 +684,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
 
@@ -612,7 +700,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             mutableMapOf<String, Any>(
                 "tag" to "value"
             )
@@ -649,7 +736,7 @@ class PerformanceAndroidEventProcessorTest {
         val sut = fixture.getSut()
 
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         val tr = SentryTransaction(tracer)
 
         val span = SentrySpan(
@@ -664,7 +751,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
 
@@ -683,7 +769,7 @@ class PerformanceAndroidEventProcessorTest {
         val sut = fixture.getSut()
 
         val context = TransactionContext("Activity", UI_LOAD_OP)
-        val tracer = SentryTracer(context, fixture.hub)
+        val tracer = SentryTracer(context, fixture.scopes)
         val tr = SentryTransaction(tracer)
 
         // given a ttid from 0.0 -> 1.0
@@ -700,7 +786,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
 
@@ -716,7 +801,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
         tr.spans.add(ttid)
@@ -735,7 +819,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             null
         )
 
@@ -752,7 +835,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             mutableMapOf<String, Any>(
                 "thread.name" to "main"
             )
@@ -771,7 +853,6 @@ class PerformanceAndroidEventProcessorTest {
             null,
             emptyMap(),
             emptyMap(),
-            null,
             mutableMapOf<String, Any>(
                 "thread.name" to "background"
             )
@@ -818,7 +899,7 @@ class PerformanceAndroidEventProcessorTest {
             AppStartType.UNKNOWN -> "ui.load"
         }
         val txn = SentryTransaction(fixture.tracer)
-        txn.contexts.trace = SpanContext(op, TracesSamplingDecision(false))
+        txn.contexts.setTrace(SpanContext(op, TracesSamplingDecision(false)))
         return txn
     }
 }

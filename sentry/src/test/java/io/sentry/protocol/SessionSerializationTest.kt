@@ -11,7 +11,6 @@ import org.junit.Test
 import org.mockito.kotlin.mock
 import java.io.StringReader
 import java.io.StringWriter
-import java.util.UUID
 import kotlin.test.assertEquals
 
 class SessionSerializationTest {
@@ -25,7 +24,7 @@ class SessionSerializationTest {
             DateUtils.getDateTime("1970-04-21T09:32:21.000Z"),
             9001,
             "631693c2-3d61-4a93-8fd1-89817426ba5a",
-            UUID.fromString("3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17"),
+            "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
             true,
             4,
             5.5,

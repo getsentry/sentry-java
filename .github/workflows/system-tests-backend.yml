@@ -20,10 +20,26 @@ jobs:
       fail-fast: false
       matrix:
         sample: [ "sentry-samples-spring-boot-jakarta" ]
+        agent: [ "0" ]
+        agent-auto-init: [ "true" ]
         include:
           - sample: "sentry-samples-spring-boot"
+          - sample: "sentry-samples-spring-boot-opentelemetry-noagent"
+          - sample: "sentry-samples-spring-boot-opentelemetry"
+            agent: "1"
+            agent-auto-init: "true"
+          - sample: "sentry-samples-spring-boot-opentelemetry"
+            agent: "1"
+            agent-auto-init: "false"
           - sample: "sentry-samples-spring-boot-webflux-jakarta"
           - sample: "sentry-samples-spring-boot-webflux"
+          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry-noagent"
+          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
+            agent: "1"
+            agent-auto-init: "true"
+          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
+            agent: "1"
+            agent-auto-init: "false"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,38 +56,63 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@579fbbe7221704325eb4c4d4bf20c2b0859fba76 # pin@v3
+        uses: gradle/actions/setup-gradle@6962c6c931ff9effc947259cc1b9c6edba90b9d3 # pin@v3
         with:
           gradle-home-cache-cleanup: true
 
       - name: Exclude android modules from build
         run: |
-          sed -i -e '/.*"sentry-android-ndk",/d' -e '/.*"sentry-android",/d' -e '/.*"sentry-compose",/d' -e '/.*"sentry-android-core",/d' -e '/.*"sentry-android-fragment",/d' -e '/.*"sentry-android-navigation",/d' -e '/.*"sentry-android-okhttp",/d' -e '/.*"sentry-android-sqlite",/d' -e '/.*"sentry-android-timber",/d' -e '/.*"sentry-android-integration-tests:sentry-uitest-android-benchmark",/d' -e '/.*"sentry-android-integration-tests:sentry-uitest-android",/d' -e '/.*"sentry-android-integration-tests:test-app-sentry",/d' -e '/.*"sentry-samples:sentry-samples-android",/d' settings.gradle.kts
+          sed -i \
+            -e '/.*"sentry-android-ndk",/d' \
+            -e '/.*"sentry-android",/d' \
+            -e '/.*"sentry-compose",/d' \
+            -e '/.*"sentry-android-core",/d' \
+            -e '/.*"sentry-android-fragment",/d' \
+            -e '/.*"sentry-android-navigation",/d' \
+            -e '/.*"sentry-android-sqlite",/d' \
+            -e '/.*"sentry-android-timber",/d' \
+            -e '/.*"sentry-android-integration-tests:sentry-uitest-android-benchmark",/d' \
+            -e '/.*"sentry-android-integration-tests:sentry-uitest-android",/d' \
+            -e '/.*"sentry-android-integration-tests:sentry-uitest-android-critical",/d' \
+            -e '/.*"sentry-android-integration-tests:test-app-sentry",/d' \
+            -e '/.*"sentry-samples:sentry-samples-android",/d' \
+            -e '/.*"sentry-android-replay",/d' \
+            settings.gradle.kts
 
       - name: Exclude android modules from ignore list
         run: |
-          sed -i -e '/.*"sentry-uitest-android",/d' -e '/.*"sentry-uitest-android-benchmark",/d' -e '/.*"test-app-sentry",/d' -e '/.*"sentry-samples-android",/d' build.gradle.kts
+          sed -i \
+            -e '/.*"sentry-uitest-android",/d' \
+            -e '/.*"sentry-uitest-android-benchmark",/d' \
+            -e '/.*"sentry-uitest-android-critical",/d' \
+            -e '/.*"test-app-sentry",/d' \
+            -e '/.*"sentry-samples-android",/d' \
+            build.gradle.kts
 
       - name: Build server jar
         run: |
-          ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar
+          ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar --no-configuration-cache
+
+      - name: Build agent jar
+        run: |
+          ./gradlew :sentry-opentelemetry:sentry-opentelemetry-agent:assemble --no-configuration-cache
 
       - name: Start server and run integration test for sentry-cli commands
         run: |
-          test/system-test-sentry-server-start.sh > sentry-mock-server.txt 2>&1 & test/system-test-spring-server-start.sh "${{ matrix.sample }}" > spring-server.txt 2>&1 & test/wait-for-spring.sh && ./gradlew :sentry-samples:${{ matrix.sample }}:systemTest
+          test/system-test-run.sh "${{ matrix.sample }}" "${{ matrix.agent }}" "${{ matrix.agent-auto-init }}"
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.sample }}-system-test
+          name: test-results-${{ matrix.sample }}-${{ matrix.agent }}-${{ matrix.agent-auto-init }}-system-test
           path: |
             **/build/reports/*
             sentry-mock-server.txt
             spring-server.txt
 
       - name: Test Report
-        uses: phoenix-actions/test-reporting@41efe7ebebe7ef156ef46f6b0acf50ec0f10315b # pin@v12
+        uses: phoenix-actions/test-reporting@f957cd93fc2d848d556fa0d03c57bc79127b6b5e # pin@v15
         if: always()
         with:
           name: JUnit System Tests ${{ matrix.sample }}

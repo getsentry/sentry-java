@@ -7,6 +7,8 @@ import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryItemType;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.protocol.SentrySpan;
+import io.sentry.protocol.SentryTransaction;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -84,8 +86,19 @@ public final class ClientReportRecorder implements IClientReportRecorder {
               .log(SentryLevel.ERROR, "Unable to restore counts from previous client report.");
         }
       } else {
-        recordLostEventInternal(
-            reason.getReason(), categoryFromItemType(itemType).getCategory(), 1L);
+        final @NotNull DataCategory itemCategory = categoryFromItemType(itemType);
+        if (itemCategory.equals(DataCategory.Transaction)) {
+          final @Nullable SentryTransaction transaction =
+              envelopeItem.getTransaction(options.getSerializer());
+          if (transaction != null) {
+            final @NotNull List<SentrySpan> spans = transaction.getSpans();
+            // When a transaction is dropped, we also record its spans as dropped plus one,
+            // since Relay extracts an additional span from the transaction.
+            recordLostEventInternal(
+                reason.getReason(), DataCategory.Span.getCategory(), spans.size() + 1L);
+          }
+        }
+        recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), 1L);
       }
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope item.");
@@ -94,8 +107,14 @@ public final class ClientReportRecorder implements IClientReportRecorder {
 
   @Override
   public void recordLostEvent(@NotNull DiscardReason reason, @NotNull DataCategory category) {
+    recordLostEvent(reason, category, 1);
+  }
+
+  @Override
+  public void recordLostEvent(
+      @NotNull DiscardReason reason, @NotNull DataCategory category, long count) {
     try {
-      recordLostEventInternal(reason.getReason(), category.getCategory(), 1L);
+      recordLostEventInternal(reason.getReason(), category.getCategory(), count);
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost event.");
     }
@@ -146,14 +165,14 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     if (SentryItemType.Profile.equals(itemType)) {
       return DataCategory.Profile;
     }
-    if (SentryItemType.Statsd.equals(itemType)) {
-      return DataCategory.MetricBucket;
-    }
     if (SentryItemType.Attachment.equals(itemType)) {
       return DataCategory.Attachment;
     }
     if (SentryItemType.CheckIn.equals(itemType)) {
       return DataCategory.Monitor;
+    }
+    if (SentryItemType.ReplayVideo.equals(itemType)) {
+      return DataCategory.Replay;
     }
 
     return DataCategory.Default;

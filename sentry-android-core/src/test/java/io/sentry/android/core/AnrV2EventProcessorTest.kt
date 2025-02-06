@@ -15,18 +15,20 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SpanContext
-import io.sentry.cache.PersistingOptionsObserver
 import io.sentry.cache.PersistingOptionsObserver.DIST_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.OPTIONS_CACHE
 import io.sentry.cache.PersistingOptionsObserver.PROGUARD_UUID_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME
+import io.sentry.cache.PersistingOptionsObserver.REPLAY_ERROR_SAMPLE_RATE_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.SDK_VERSION_FILENAME
+import io.sentry.cache.PersistingScopeObserver
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.EXTRAS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.FINGERPRINT_FILENAME
 import io.sentry.cache.PersistingScopeObserver.LEVEL_FILENAME
+import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.cache.PersistingScopeObserver.REQUEST_FILENAME
 import io.sentry.cache.PersistingScopeObserver.SCOPE_CACHE
 import io.sentry.cache.PersistingScopeObserver.TAGS_FILENAME
@@ -44,6 +46,7 @@ import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
 import io.sentry.protocol.SdkVersion
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryStackFrame
 import io.sentry.protocol.SentryStackTrace
 import io.sentry.protocol.SentryThread
@@ -75,22 +78,27 @@ class AnrV2EventProcessorTest {
     val tmpDir = TemporaryFolder()
 
     class Fixture {
-
+        companion object {
+            const val REPLAY_ID = "64cf554cc8d74c6eafa3e08b7c984f6d"
+        }
         val buildInfo = mock<BuildInfoProvider>()
         lateinit var context: Context
         val options = SentryAndroidOptions().apply {
             setLogger(NoOpLogger.getInstance())
-            isSendDefaultPii = true
         }
 
         fun getSut(
             dir: TemporaryFolder,
             currentSdk: Int = Build.VERSION_CODES.LOLLIPOP,
             populateScopeCache: Boolean = false,
-            populateOptionsCache: Boolean = false
+            populateOptionsCache: Boolean = false,
+            replayErrorSampleRate: Double? = null,
+            isSendDefaultPii: Boolean = true
         ): AnrV2EventProcessor {
             options.cacheDirPath = dir.newFolder().absolutePath
             options.environment = "release"
+            options.isSendDefaultPii = isSendDefaultPii
+
             whenever(buildInfo.sdkInfoVersion).thenReturn(currentSdk)
             whenever(buildInfo.isEmulator).thenReturn(true)
 
@@ -109,7 +117,7 @@ class AnrV2EventProcessorTest {
                 persistScope(
                     CONTEXTS_FILENAME,
                     Contexts().apply {
-                        trace = SpanContext("test")
+                        setTrace(SpanContext("test"))
                         setResponse(Response().apply { bodySize = 1024 })
                         setBrowser(Browser().apply { name = "Google Chrome" })
                     }
@@ -118,6 +126,7 @@ class AnrV2EventProcessorTest {
                     REQUEST_FILENAME,
                     Request().apply { url = "google.com"; method = "GET" }
                 )
+                persistScope(REPLAY_FILENAME, SentryId(REPLAY_ID))
             }
 
             if (populateOptionsCache) {
@@ -126,7 +135,10 @@ class AnrV2EventProcessorTest {
                 persistOptions(SDK_VERSION_FILENAME, SdkVersion("sentry.java.android", "6.15.0"))
                 persistOptions(DIST_FILENAME, "232")
                 persistOptions(ENVIRONMENT_FILENAME, "debug")
-                persistOptions(PersistingOptionsObserver.TAGS_FILENAME, mapOf("option" to "tag"))
+                persistOptions(TAGS_FILENAME, mapOf("option" to "tag"))
+                replayErrorSampleRate?.let {
+                    persistOptions(REPLAY_ERROR_SAMPLE_RATE_FILENAME, it.toString())
+                }
             }
 
             return AnrV2EventProcessor(context, options, buildInfo)
@@ -160,6 +172,7 @@ class AnrV2EventProcessorTest {
 
     @BeforeTest
     fun `set up`() {
+        DeviceInfoUtil.resetInstance()
         fixture.context = ApplicationProvider.getApplicationContext()
     }
 
@@ -169,7 +182,7 @@ class AnrV2EventProcessorTest {
 
         assertNull(processed.platform)
         assertNull(processed.exceptions)
-        assertEquals(emptyMap(), processed.contexts)
+        assertTrue(processed.contexts.isEmpty)
     }
 
     @Test
@@ -268,6 +281,7 @@ class AnrV2EventProcessorTest {
         // user
         assertEquals("bot", processed.user!!.username)
         assertEquals("bot@me.com", processed.user!!.id)
+        assertEquals("{{auto}}", processed.user!!.ipAddress)
         // trace
         assertEquals("ui.load", processed.contexts.trace!!.operation)
         // tags
@@ -292,6 +306,13 @@ class AnrV2EventProcessorTest {
         // contexts
         assertEquals(1024, processed.contexts.response!!.bodySize)
         assertEquals("Google Chrome", processed.contexts.browser!!.name)
+    }
+
+    @Test
+    fun `when backfillable event is enrichable, does not backfill user ip`() {
+        val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+        val processed = processEvent(hint, isSendDefaultPii = false, populateScopeCache = true)
+        assertNull(processed.user!!.ipAddress)
     }
 
     @Test
@@ -544,10 +565,70 @@ class AnrV2EventProcessorTest {
         assertEquals(listOf("{{ default }}", "foreground-anr"), processedForeground.fingerprints)
     }
 
+    @Test
+    fun `sets replayId when replay folder exists`() {
+        val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+        val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+        val replayFolder = File(fixture.options.cacheDirPath, "replay_${Fixture.REPLAY_ID}").also { it.mkdirs() }
+
+        val processed = processor.process(SentryEvent(), hint)!!
+
+        assertEquals(Fixture.REPLAY_ID, processed.contexts[Contexts.REPLAY_ID].toString())
+    }
+
+    @Test
+    fun `does not set replayId when replay folder does not exist and no sample rate persisted`() {
+        val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+        val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+        val replayId1 = SentryId()
+        val replayId2 = SentryId()
+
+        val replayFolder1 = File(fixture.options.cacheDirPath, "replay_$replayId1").also { it.mkdirs() }
+        val replayFolder2 = File(fixture.options.cacheDirPath, "replay_$replayId2").also { it.mkdirs() }
+
+        val processed = processor.process(SentryEvent(), hint)!!
+
+        assertNull(processed.contexts[Contexts.REPLAY_ID])
+    }
+
+    @Test
+    fun `does not set replayId when replay folder does not exist and not sampled`() {
+        val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+        val processor = fixture.getSut(tmpDir, populateScopeCache = true, populateOptionsCache = true, replayErrorSampleRate = 0.0)
+        val replayId1 = SentryId()
+        val replayId2 = SentryId()
+
+        val replayFolder1 = File(fixture.options.cacheDirPath, "replay_$replayId1").also { it.mkdirs() }
+        val replayFolder2 = File(fixture.options.cacheDirPath, "replay_$replayId2").also { it.mkdirs() }
+
+        val processed = processor.process(SentryEvent(), hint)!!
+
+        assertNull(processed.contexts[Contexts.REPLAY_ID])
+    }
+
+    @Test
+    fun `set replayId of the last modified folder`() {
+        val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+        val processor = fixture.getSut(tmpDir, populateScopeCache = true, populateOptionsCache = true, replayErrorSampleRate = 1.0)
+        val replayId1 = SentryId()
+        val replayId2 = SentryId()
+
+        val replayFolder1 = File(fixture.options.cacheDirPath, "replay_$replayId1").also { it.mkdirs() }
+        val replayFolder2 = File(fixture.options.cacheDirPath, "replay_$replayId2").also { it.mkdirs() }
+        replayFolder1.setLastModified(1000)
+        replayFolder2.setLastModified(500)
+
+        val processed = processor.process(SentryEvent(), hint)!!
+
+        assertEquals(replayId1.toString(), processed.contexts[Contexts.REPLAY_ID].toString())
+        assertEquals(replayId1.toString(), PersistingScopeObserver.read(fixture.options, REPLAY_FILENAME, String::class.java))
+    }
+
     private fun processEvent(
         hint: Hint,
         populateScopeCache: Boolean = false,
         populateOptionsCache: Boolean = false,
+        isSendDefaultPii: Boolean = true,
         configureEvent: SentryEvent.() -> Unit = {}
     ): SentryEvent {
         val original = SentryEvent().apply(configureEvent)
@@ -555,7 +636,8 @@ class AnrV2EventProcessorTest {
         val processor = fixture.getSut(
             tmpDir,
             populateScopeCache = populateScopeCache,
-            populateOptionsCache = populateOptionsCache
+            populateOptionsCache = populateOptionsCache,
+            isSendDefaultPii = isSendDefaultPii
         )
         return processor.process(original, hint)!!
     }

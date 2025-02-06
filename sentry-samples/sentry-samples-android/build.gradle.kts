@@ -9,22 +9,17 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
-        minSdk = Config.Android.minSdkVersionCompose
+        minSdk = Config.Android.minSdkVersion
         targetSdk = Config.Android.targetSdkVersion
         versionCode = 2
         versionName = project.version.toString()
 
         externalNativeBuild {
-            val sentryNativeSrc = if (File("${project.projectDir}/../../sentry-android-ndk/sentry-native-local").exists()) {
-                "sentry-native-local"
-            } else {
-                "sentry-native"
-            }
-            println("sentry-samples-android: $sentryNativeSrc")
-
             cmake {
-                arguments.add(0, "-DANDROID_STL=c++_static")
-                arguments.add(0, "-DSENTRY_NATIVE_SRC=$sentryNativeSrc")
+                // Android 15: As we're using an older version of AGP / NDK, the STL is not 16kb page aligned yet
+                // Our example code doesn't use the STL, so we simply disable it
+                // See https://developer.android.com/guide/practices/page-sizes
+                arguments.add(0, "-DANDROID_STL=none")
             }
         }
 
@@ -33,11 +28,27 @@ android {
         }
     }
 
+    lint {
+        disable.addAll(
+            listOf(
+                "Typos",
+                "PluralsCandidate",
+                "MonochromeLauncherIcon",
+                "TextFields",
+                "ContentDescription",
+                "LabelFor",
+                "HardcodedText"
+            )
+        )
+    }
+
     buildFeatures {
         // Determines whether to support View Binding.
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
         compose = true
+        buildConfig = true
+        prefab = true
     }
 
     composeOptions {
@@ -94,9 +105,14 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    }
+
+    @Suppress("UnstableApiUsage")
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 }
@@ -107,10 +123,11 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
     implementation(projects.sentryAndroid)
-    implementation(projects.sentryAndroidOkhttp)
     implementation(projects.sentryAndroidFragment)
     implementation(projects.sentryAndroidTimber)
     implementation(projects.sentryCompose)
+    implementation(projects.sentryComposeHelper)
+    implementation(projects.sentryOkhttp)
     implementation(Config.Libs.fragment)
     implementation(Config.Libs.timber)
 
@@ -131,6 +148,8 @@ dependencies {
     implementation(Config.Libs.composeFoundationLayout)
     implementation(Config.Libs.composeNavigation)
     implementation(Config.Libs.composeMaterial)
+    implementation(Config.Libs.composeCoil)
+    implementation(Config.Libs.sentryNativeNdk)
 
     debugImplementation(Config.Libs.leakCanary)
 }

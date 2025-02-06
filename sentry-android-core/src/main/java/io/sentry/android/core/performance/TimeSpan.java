@@ -4,8 +4,6 @@ import android.os.SystemClock;
 import io.sentry.DateUtils;
 import io.sentry.SentryDate;
 import io.sentry.SentryLongDate;
-import io.sentry.SentryNanotimeDate;
-import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,17 +20,25 @@ import org.jetbrains.annotations.TestOnly;
 public class TimeSpan implements Comparable<TimeSpan> {
 
   private @Nullable String description;
-
-  private long startSystemNanos;
   private long startUnixTimeMs;
   private long startUptimeMs;
   private long stopUptimeMs;
+
+  public void setup(
+      final @Nullable String description,
+      final long startUnixTimeMs,
+      final long startUptimeMs,
+      final long stopUptimeMs) {
+    this.description = description;
+    this.startUnixTimeMs = startUnixTimeMs;
+    this.startUptimeMs = startUptimeMs;
+    this.stopUptimeMs = stopUptimeMs;
+  }
 
   /** Start the time span */
   public void start() {
     startUptimeMs = SystemClock.uptimeMillis();
     startUnixTimeMs = System.currentTimeMillis();
-    startSystemNanos = System.nanoTime();
   }
 
   /**
@@ -44,7 +50,6 @@ public class TimeSpan implements Comparable<TimeSpan> {
 
     final long shiftMs = SystemClock.uptimeMillis() - startUptimeMs;
     startUnixTimeMs = System.currentTimeMillis() - shiftMs;
-    startSystemNanos = System.nanoTime() - TimeUnit.MILLISECONDS.toNanos(shiftMs);
   }
 
   /** Stops the time span */
@@ -95,8 +100,7 @@ public class TimeSpan implements Comparable<TimeSpan> {
    */
   public @Nullable SentryDate getStartTimestamp() {
     if (hasStarted()) {
-      return new SentryNanotimeDate(
-          DateUtils.nanosToDate(DateUtils.millisToNanos(getStartTimestampMs())), startSystemNanos);
+      return new SentryLongDate(DateUtils.millisToNanos(getStartTimestampMs()));
     }
     return null;
   }
@@ -168,7 +172,6 @@ public class TimeSpan implements Comparable<TimeSpan> {
     startUptimeMs = 0;
     stopUptimeMs = 0;
     startUnixTimeMs = 0;
-    startSystemNanos = 0;
   }
 
   @Override

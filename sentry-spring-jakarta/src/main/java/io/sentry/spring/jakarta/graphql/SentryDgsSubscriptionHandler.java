@@ -1,7 +1,7 @@
 package io.sentry.spring.jakarta.graphql;
 
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.graphql.ExceptionReporter;
 import io.sentry.graphql.SentrySubscriptionHandler;
@@ -17,7 +17,7 @@ public final class SentryDgsSubscriptionHandler implements SentrySubscriptionHan
   @Override
   public @NotNull Object onSubscriptionResult(
       final @NotNull Object result,
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @NotNull ExceptionReporter exceptionReporter,
       final @NotNull InstrumentationFieldFetchParameters parameters) {
     if (result instanceof Flux) {
@@ -25,7 +25,7 @@ public final class SentryDgsSubscriptionHandler implements SentrySubscriptionHan
       return flux.doOnError(
           throwable -> {
             final @NotNull ExceptionReporter.ExceptionDetails exceptionDetails =
-                new ExceptionReporter.ExceptionDetails(hub, parameters.getEnvironment(), true);
+                new ExceptionReporter.ExceptionDetails(scopes, parameters.getEnvironment(), true);
             exceptionReporter.captureThrowable(throwable, exceptionDetails, null);
           });
     }

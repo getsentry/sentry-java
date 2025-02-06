@@ -17,10 +17,10 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
   private final @Nullable String release;
   private final @Nullable String environment;
   private final @Nullable String userId;
-  private final @Nullable String userSegment;
   private final @Nullable String transaction;
   private final @Nullable String sampleRate;
   private final @Nullable String sampled;
+  private final @Nullable SentryId replayId;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
@@ -35,19 +35,19 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       @Nullable String release,
       @Nullable String environment,
       @Nullable String userId,
-      @Nullable String userSegment,
       @Nullable String transaction,
       @Nullable String sampleRate,
-      @Nullable String sampled) {
+      @Nullable String sampled,
+      @Nullable SentryId replayId) {
     this.traceId = traceId;
     this.publicKey = publicKey;
     this.release = release;
     this.environment = environment;
     this.userId = userId;
-    this.userSegment = userSegment;
     this.transaction = transaction;
     this.sampleRate = sampleRate;
     this.sampled = sampled;
+    this.replayId = replayId;
   }
 
   @SuppressWarnings("UnusedMethod")
@@ -80,10 +80,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     return userId;
   }
 
-  public @Nullable String getUserSegment() {
-    return userSegment;
-  }
-
   public @Nullable String getTransaction() {
     return transaction;
   }
@@ -96,82 +92,8 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     return sampled;
   }
 
-  /**
-   * @deprecated only here to support parsing legacy JSON with non flattened user
-   */
-  @Deprecated
-  private static final class TraceContextUser implements JsonUnknown {
-    private @Nullable String id;
-    private @Nullable String segment;
-
-    @SuppressWarnings("unused")
-    private @Nullable Map<String, @NotNull Object> unknown;
-
-    private TraceContextUser(final @Nullable String id, final @Nullable String segment) {
-      this.id = id;
-      this.segment = segment;
-    }
-
-    public @Nullable String getId() {
-      return id;
-    }
-
-    public @Nullable String getSegment() {
-      return segment;
-    }
-
-    // region json
-
-    @Nullable
-    @Override
-    public Map<String, Object> getUnknown() {
-      return unknown;
-    }
-
-    @Override
-    public void setUnknown(@Nullable Map<String, Object> unknown) {
-      this.unknown = unknown;
-    }
-
-    public static final class JsonKeys {
-      public static final String ID = "id";
-      public static final String SEGMENT = "segment";
-    }
-
-    public static final class Deserializer implements JsonDeserializer<TraceContextUser> {
-      @Override
-      public @NotNull TraceContextUser deserialize(
-          @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
-        reader.beginObject();
-
-        String id = null;
-        String segment = null;
-        Map<String, Object> unknown = null;
-        while (reader.peek() == JsonToken.NAME) {
-          final String nextName = reader.nextName();
-          switch (nextName) {
-            case TraceContextUser.JsonKeys.ID:
-              id = reader.nextStringOrNull();
-              break;
-            case TraceContextUser.JsonKeys.SEGMENT:
-              segment = reader.nextStringOrNull();
-              break;
-            default:
-              if (unknown == null) {
-                unknown = new ConcurrentHashMap<>();
-              }
-              reader.nextUnknown(logger, unknown, nextName);
-              break;
-          }
-        }
-        TraceContextUser traceStateUser = new TraceContextUser(id, segment);
-        traceStateUser.setUnknown(unknown);
-        reader.endObject();
-        return traceStateUser;
-      }
-    }
-
-    // endregion
+  public @Nullable SentryId getReplayId() {
+    return replayId;
   }
 
   // region json
@@ -192,12 +114,11 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     public static final String PUBLIC_KEY = "public_key";
     public static final String RELEASE = "release";
     public static final String ENVIRONMENT = "environment";
-    public static final String USER = "user";
     public static final String USER_ID = "user_id";
-    public static final String USER_SEGMENT = "user_segment";
     public static final String TRANSACTION = "transaction";
     public static final String SAMPLE_RATE = "sample_rate";
     public static final String SAMPLED = "sampled";
+    public static final String REPLAY_ID = "replay_id";
   }
 
   @Override
@@ -215,9 +136,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     if (userId != null) {
       writer.name(TraceContext.JsonKeys.USER_ID).value(userId);
     }
-    if (userSegment != null) {
-      writer.name(TraceContext.JsonKeys.USER_SEGMENT).value(userSegment);
-    }
     if (transaction != null) {
       writer.name(TraceContext.JsonKeys.TRANSACTION).value(transaction);
     }
@@ -226,6 +144,9 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     }
     if (sampled != null) {
       writer.name(TraceContext.JsonKeys.SAMPLED).value(sampled);
+    }
+    if (replayId != null) {
+      writer.name(TraceContext.JsonKeys.REPLAY_ID).value(logger, replayId);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -239,20 +160,19 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<TraceContext> {
     @Override
-    public @NotNull TraceContext deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull TraceContext deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
 
       SentryId traceId = null;
       String publicKey = null;
       String release = null;
       String environment = null;
-      TraceContextUser user = null;
       String userId = null;
-      String userSegment = null;
       String transaction = null;
       String sampleRate = null;
       String sampled = null;
+      SentryId replayId = null;
 
       Map<String, Object> unknown = null;
       while (reader.peek() == JsonToken.NAME) {
@@ -270,14 +190,8 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
           case TraceContext.JsonKeys.ENVIRONMENT:
             environment = reader.nextStringOrNull();
             break;
-          case TraceContext.JsonKeys.USER:
-            user = reader.nextOrNull(logger, new TraceContextUser.Deserializer());
-            break;
           case TraceContext.JsonKeys.USER_ID:
             userId = reader.nextStringOrNull();
-            break;
-          case TraceContext.JsonKeys.USER_SEGMENT:
-            userSegment = reader.nextStringOrNull();
             break;
           case TraceContext.JsonKeys.TRANSACTION:
             transaction = reader.nextStringOrNull();
@@ -287,6 +201,9 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
             break;
           case TraceContext.JsonKeys.SAMPLED:
             sampled = reader.nextStringOrNull();
+            break;
+          case TraceContext.JsonKeys.REPLAY_ID:
+            replayId = new SentryId.Deserializer().deserialize(reader, logger);
             break;
           default:
             if (unknown == null) {
@@ -302,14 +219,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       if (publicKey == null) {
         throw missingRequiredFieldException(TraceContext.JsonKeys.PUBLIC_KEY, logger);
       }
-      if (user != null) {
-        if (userId == null) {
-          userId = user.getId();
-        }
-        if (userSegment == null) {
-          userSegment = user.getSegment();
-        }
-      }
       TraceContext traceContext =
           new TraceContext(
               traceId,
@@ -317,10 +226,10 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
               release,
               environment,
               userId,
-              userSegment,
               transaction,
               sampleRate,
-              sampled);
+              sampled,
+              replayId);
       traceContext.setUnknown(unknown);
       reader.endObject();
       return traceContext;

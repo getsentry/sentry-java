@@ -2,7 +2,7 @@ package io.sentry.android.core;
 
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -28,8 +28,8 @@ public final class NdkIntegration implements Integration, Closeable {
   }
 
   @Override
-  public final void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(hub, "Hub is required");
+  public final void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(scopes, "Scopes are required");
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -38,7 +38,8 @@ public final class NdkIntegration implements Integration, Closeable {
     final boolean enabled = this.options.isEnableNdk();
     this.options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration enabled: %s", enabled);
 
-    // Note: `hub` isn't used here because the NDK integration writes files to disk which are picked
+    // Note: `scopes` isn't used here because the NDK integration writes files to disk which are
+    // picked
     // up by another integration (EnvelopeFileObserverIntegration).
     if (enabled && sentryNdkClass != null) {
       final String cachedDir = this.options.getCacheDirPath();
@@ -55,7 +56,7 @@ public final class NdkIntegration implements Integration, Closeable {
         method.invoke(null, args);
 
         this.options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
-        addIntegrationToSdkVersion(getClass());
+        addIntegrationToSdkVersion("Ndk");
       } catch (NoSuchMethodException e) {
         disableNdkIntegration(this.options);
         this.options

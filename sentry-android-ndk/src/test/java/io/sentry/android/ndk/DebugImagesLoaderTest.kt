@@ -1,11 +1,10 @@
 package io.sentry.android.ndk
 
 import io.sentry.android.core.SentryAndroidOptions
-import io.sentry.protocol.DebugImage
+import io.sentry.ndk.NativeModuleListLoader
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.lang.RuntimeException
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -38,7 +37,7 @@ class DebugImagesLoaderTest {
         whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf())
         assertNotNull(sut.loadDebugImages())
 
-        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(DebugImage()))
+        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(io.sentry.ndk.DebugImage()))
         assertTrue(sut.loadDebugImages()!!.isEmpty())
     }
 

@@ -1,0 +1,18 @@
+{
+  "type": 5,
+  "timestamp": 12345678901,
+  "data": {
+    "tag": "options",
+    "payload": {
+      "unmaskedViewClasses": ["com.example.MyClass"],
+      "nativeSdkVersion": "7.19.1",
+      "errorSampleRate": 0.1,
+      "maskAllImages": false,
+      "maskAllText": false,
+      "maskedViewClasses": [],
+      "nativeSdkName": "sentry.java",
+      "sessionSampleRate": 0.5,
+      "quality": "low"
+    }
+  }
+}

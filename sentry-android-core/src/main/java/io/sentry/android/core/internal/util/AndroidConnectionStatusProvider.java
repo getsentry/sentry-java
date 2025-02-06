@@ -12,6 +12,7 @@ import io.sentry.IConnectionStatusProvider;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
+import io.sentry.android.core.ContextUtils;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -37,7 +38,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
       @NotNull Context context,
       @NotNull ILogger logger,
       @NotNull BuildInfoProvider buildInfoProvider) {
-    this.context = context;
+    this.context = ContextUtils.getApplicationContext(context);
     this.logger = logger;
     this.buildInfoProvider = buildInfoProvider;
     this.registeredCallbacks = new HashMap<>();
@@ -62,13 +63,8 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
     return getConnectionType(context, logger, buildInfoProvider);
   }
 
-  @SuppressLint("NewApi") // we have an if-check for that down below
   @Override
   public boolean addConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
-      logger.log(SentryLevel.DEBUG, "addConnectionStatusObserver requires Android 5+.");
-      return false;
-    }
 
     final ConnectivityManager.NetworkCallback callback =
         new ConnectivityManager.NetworkCallback() {
@@ -102,7 +98,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
     final @Nullable ConnectivityManager.NetworkCallback callback =
         registeredCallbacks.remove(observer);
     if (callback != null) {
-      unregisterNetworkCallback(context, logger, buildInfoProvider, callback);
+      unregisterNetworkCallback(context, logger, callback);
     }
   }
 
@@ -252,13 +248,8 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
    * @param networkCapabilities the NetworkCapabilities to check the transport type
    * @return the connection type wifi, ethernet, cellular or null
    */
-  @SuppressLint("NewApi")
   public static @Nullable String getConnectionType(
-      final @NotNull NetworkCapabilities networkCapabilities,
-      final @NotNull BuildInfoProvider buildInfoProvider) {
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
-      return null;
-    }
+      final @NotNull NetworkCapabilities networkCapabilities) {
     // TODO: change the protocol to be a list of transports as a device may have the capability of
     // multiple
 
@@ -316,11 +307,8 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   public static void unregisterNetworkCallback(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull ConnectivityManager.NetworkCallback networkCallback) {
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP) {
-      return;
-    }
+
     final ConnectivityManager connectivityManager = getConnectivityManager(context, logger);
     if (connectivityManager == null) {
       return;

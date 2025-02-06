@@ -1,6 +1,6 @@
 package io.sentry.internal
 
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeEnvelopeCallback
 import io.sentry.SpotlightIntegration
@@ -19,7 +19,7 @@ class SpotlightIntegrationTest {
         }
 
         val spotlight = SpotlightIntegration()
-        spotlight.register(mock<IHub>(), options)
+        spotlight.register(mock<IScopes>(), options)
 
         assertNull(options.beforeEnvelopeCallback)
     }
@@ -33,7 +33,7 @@ class SpotlightIntegrationTest {
         }
 
         val spotlight = SpotlightIntegration()
-        spotlight.register(mock<IHub>(), options)
+        spotlight.register(mock<IScopes>(), options)
 
         assertEquals(envelopeCallback, options.beforeEnvelopeCallback)
     }
@@ -45,7 +45,7 @@ class SpotlightIntegrationTest {
         }
 
         val spotlight = SpotlightIntegration()
-        spotlight.register(mock<IHub>(), options)
+        spotlight.register(mock<IScopes>(), options)
 
         assertEquals(options.beforeEnvelopeCallback, spotlight)
         spotlight.close()
@@ -71,7 +71,7 @@ class SpotlightIntegrationTest {
         }
 
         val spotlight = SpotlightIntegration()
-        spotlight.register(mock<IHub>(), options)
+        spotlight.register(mock<IScopes>(), options)
 
         assertEquals("http://example.com:1234/stream", spotlight.spotlightConnectionUrl)
     }

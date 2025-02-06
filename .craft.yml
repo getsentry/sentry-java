@@ -37,17 +37,21 @@ targets:
       maven:io.sentry:sentry-android-core:
       maven:io.sentry:sentry-android-ndk:
       maven:io.sentry:sentry-android-timber:
-      maven:io.sentry:sentry-android-okhttp:
       maven:io.sentry:sentry-kotlin-extensions:
       maven:io.sentry:sentry-android-fragment:
       maven:io.sentry:sentry-bom:
       maven:io.sentry:sentry-openfeign:
       maven:io.sentry:sentry-opentelemetry-agent:
       maven:io.sentry:sentry-opentelemetry-agentcustomization:
+      maven:io.sentry:sentry-opentelemetry-agentless:
+      maven:io.sentry:sentry-opentelemetry-agentless-spring:
+      maven:io.sentry:sentry-opentelemetry-bootstrap:
       maven:io.sentry:sentry-opentelemetry-core:
       maven:io.sentry:sentry-apollo:
       maven:io.sentry:sentry-jdbc:
       maven:io.sentry:sentry-graphql:
+      maven:io.sentry:sentry-graphql-22:
+      maven:io.sentry:sentry-graphql-core:
       maven:io.sentry:sentry-quartz:
       maven:io.sentry:sentry-okhttp:
       maven:io.sentry:sentry-android-navigation:
@@ -56,3 +60,4 @@ targets:
       maven:io.sentry:sentry-compose-desktop:
       maven:io.sentry:sentry-apollo-3:
       maven:io.sentry:sentry-android-sqlite:
+      maven:io.sentry:sentry-android-replay:

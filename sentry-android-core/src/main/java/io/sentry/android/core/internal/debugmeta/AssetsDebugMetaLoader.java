@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.res.AssetManager;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.ContextUtils;
 import io.sentry.internal.debugmeta.IDebugMetaLoader;
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
@@ -24,7 +25,7 @@ public final class AssetsDebugMetaLoader implements IDebugMetaLoader {
   private final @NotNull ILogger logger;
 
   public AssetsDebugMetaLoader(final @NotNull Context context, final @NotNull ILogger logger) {
-    this.context = context;
+    this.context = ContextUtils.getApplicationContext(context);
     this.logger = logger;
   }
 

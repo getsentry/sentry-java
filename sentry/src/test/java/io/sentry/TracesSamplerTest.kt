@@ -1,11 +1,11 @@
 package io.sentry
 
+import io.sentry.util.Random
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.security.SecureRandom
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -16,21 +16,17 @@ class TracesSamplerTest {
     class Fixture {
         internal fun getSut(
             randomResult: Double? = null,
-            enableTracing: Boolean? = null,
             tracesSampleRate: Double? = null,
             profilesSampleRate: Double? = null,
             tracesSamplerCallback: SentryOptions.TracesSamplerCallback? = null,
             profilesSamplerCallback: SentryOptions.ProfilesSamplerCallback? = null,
             logger: ILogger? = null
         ): TracesSampler {
-            val random = mock<SecureRandom>()
+            val random = mock<Random>()
             if (randomResult != null) {
                 whenever(random.nextDouble()).thenReturn(randomResult)
             }
             val options = SentryOptions()
-            if (enableTracing != null) {
-                options.enableTracing = enableTracing
-            }
             if (tracesSampleRate != null) {
                 options.tracesSampleRate = tracesSampleRate
             }
@@ -52,14 +48,6 @@ class TracesSamplerTest {
     }
 
     private val fixture = Fixture()
-
-    @Test
-    fun `when no tracesSampleRate is set, uses default rate`() {
-        val sampler = fixture.getSut(randomResult = 0.9, enableTracing = true)
-        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null))
-        assertTrue(samplingDecision.sampled)
-        assertEquals(1.0, samplingDecision.sampleRate)
-    }
 
     @Test
     fun `when tracesSampleRate is set and random returns greater number returns false`() {

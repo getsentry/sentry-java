@@ -15,7 +15,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
-import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
+import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.ClassUtil;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
@@ -25,7 +25,7 @@ import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.util.HintUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
-import io.sentry.util.thread.IMainThreadChecker;
+import io.sentry.util.thread.IThreadChecker;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -55,7 +55,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
             DEBOUNCE_MAX_EXECUTIONS);
 
     if (options.isAttachViewHierarchy()) {
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("ViewHierarchy");
     }
   }
 
@@ -101,7 +101,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
         snapshotViewHierarchy(
             activity,
             options.getViewHierarchyExporters(),
-            options.getMainThreadChecker(),
+            options.getThreadChecker(),
             options.getLogger());
 
     if (viewHierarchy != null) {
@@ -113,13 +113,13 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
 
   public static byte[] snapshotViewHierarchyAsData(
       @Nullable Activity activity,
-      @NotNull IMainThreadChecker mainThreadChecker,
+      @NotNull IThreadChecker threadChecker,
       @NotNull ISerializer serializer,
       @NotNull ILogger logger) {
 
     @Nullable
     ViewHierarchy viewHierarchy =
-        snapshotViewHierarchy(activity, new ArrayList<>(0), mainThreadChecker, logger);
+        snapshotViewHierarchy(activity, new ArrayList<>(0), threadChecker, logger);
 
     if (viewHierarchy == null) {
       logger.log(SentryLevel.ERROR, "Could not get ViewHierarchy.");
@@ -144,14 +144,14 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
   public static ViewHierarchy snapshotViewHierarchy(
       final @Nullable Activity activity, final @NotNull ILogger logger) {
     return snapshotViewHierarchy(
-        activity, new ArrayList<>(0), AndroidMainThreadChecker.getInstance(), logger);
+        activity, new ArrayList<>(0), AndroidThreadChecker.getInstance(), logger);
   }
 
   @Nullable
   public static ViewHierarchy snapshotViewHierarchy(
       final @Nullable Activity activity,
       final @NotNull List<ViewHierarchyExporter> exporters,
-      final @NotNull IMainThreadChecker mainThreadChecker,
+      final @NotNull IThreadChecker threadChecker,
       final @NotNull ILogger logger) {
 
     if (activity == null) {
@@ -172,7 +172,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     }
 
     try {
-      if (mainThreadChecker.isMainThread()) {
+      if (threadChecker.isMainThread()) {
         return snapshotViewHierarchy(decorView, exporters);
       } else {
         final CountDownLatch latch = new CountDownLatch(1);
@@ -283,5 +283,10 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     }
 
     return node;
+  }
+
+  @Override
+  public @Nullable Long getOrder() {
+    return 11000L;
   }
 }

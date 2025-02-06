@@ -75,7 +75,7 @@ class ProfilingActivity : AppCompatActivity() {
     private fun finishTransactionAndPrintResults(t: ITransaction) {
         t.finish()
         profileFinished = true
-        val profilesDirPath = Sentry.getCurrentHub().options.profilingTracesDirPath
+        val profilesDirPath = Sentry.getCurrentScopes().options.profilingTracesDirPath
         if (profilesDirPath == null) {
             Toast.makeText(this, R.string.profiling_no_dir_set, Toast.LENGTH_SHORT).show()
             return
@@ -84,7 +84,7 @@ class ProfilingActivity : AppCompatActivity() {
         // We have concurrent profiling now. We have to wait for all transactions to finish (e.g. button click)
         //  before reading the profile, otherwise it's empty and a crash occurs
         if (Sentry.getSpan() != null) {
-            val timeout = Sentry.getCurrentHub().options.idleTimeout ?: 0
+            val timeout = Sentry.getCurrentScopes().options.idleTimeout ?: 0
             val duration = (getProfileDuration() * 1000).toLong()
             Thread.sleep((timeout - duration).coerceAtLeast(0))
         }
@@ -100,7 +100,7 @@ class ProfilingActivity : AppCompatActivity() {
             val traceData = ProfilingTraceData(profile, t)
             // Create envelope item from copied profile
             val item =
-                SentryEnvelopeItem.fromProfilingTrace(traceData, Long.MAX_VALUE, Sentry.getCurrentHub().options.serializer)
+                SentryEnvelopeItem.fromProfilingTrace(traceData, Long.MAX_VALUE, Sentry.getCurrentScopes().options.serializer)
             val itemData = item.data
 
             // Compress the envelope item using Gzip

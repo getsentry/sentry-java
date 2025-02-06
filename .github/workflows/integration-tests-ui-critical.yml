@@ -1,0 +1,133 @@
+name: UI Tests Critical
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BASE_PATH: "sentry-android-integration-tests/sentry-uitest-android-critical"
+  BUILD_PATH: "build/outputs/apk/release"
+  APK_NAME: "sentry-uitest-android-critical-release.apk"
+  APK_ARTIFACT_NAME: "sentry-uitest-android-critical-release"
+  MAESTRO_VERSION: "1.39.0"
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    env:
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@6962c6c931ff9effc947259cc1b9c6edba90b9d3 # pin@v3
+        with:
+          gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Build debug APK
+        run: make assembleUiTestCriticalRelease
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.APK_ARTIFACT_NAME}}
+          path: "${{env.BASE_PATH}}/${{env.BUILD_PATH}}/${{env.APK_NAME}}"
+          retention-days: 1
+
+  run-maestro-tests:
+    name: Run Tests for API Level ${{ matrix.api-level }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      # we want that the matrix keeps running, default is to cancel them if it fails.
+      fail-fast: false
+      matrix:
+        include:
+          - api-level: 30 # Android 11
+            target: aosp_atd
+            channel: canary # Necessary for ATDs
+            arch: x86_64
+          - api-level: 31 # Android 12
+            target: aosp_atd
+            channel: canary # Necessary for ATDs
+            arch: x86_64
+          - api-level: 33 # Android 13
+            target: aosp_atd
+            channel: canary # Necessary for ATDs
+            arch: x86_64
+          - api-level: 34 # Android 14
+            target: aosp_atd
+            channel: canary # Necessary for ATDs
+            arch: x86_64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup KVM
+        shell: bash
+        run: |
+          # check if virtualization is supported...
+          sudo apt install -y --no-install-recommends cpu-checker coreutils && echo "CPUs=$(nproc --all)" && kvm-ok
+          # allow access to KVM to run the emulator
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{env.APK_ARTIFACT_NAME}}
+
+      - name: Install Maestro
+        uses: dniHze/maestro-test-action@bda8a93211c86d0a05b7a4597c5ad134566fbde4 # pin@v1.0.0
+        with:
+          version: ${{env.MAESTRO_VERSION}}
+
+      - name: Run tests
+        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d # pin@v2.33.0
+        with:
+          api-level: ${{ matrix.api-level }}
+          force-avd-creation: false
+          disable-animations: true
+          disable-spellchecker: true
+          target: ${{ matrix.target }}
+          channel: ${{ matrix.channel }}
+          arch: ${{ matrix.arch }}
+          emulator-options: >
+            -no-window
+            -no-snapshot-save
+            -gpu swiftshader_indirect
+            -noaudio
+            -no-boot-anim
+            -camera-back none
+            -camera-front none
+            -timezone US/Pacific
+          script: |
+            adb install -r -d "${{env.APK_NAME}}"
+            maestro test "${{env.BASE_PATH}}/maestro" --debug-output "${{env.BASE_PATH}}/maestro-logs"
+
+      - name: Upload Maestro test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-logs
+          path: "${{env.BASE_PATH}}/maestro-logs"
+          retention-days: 1

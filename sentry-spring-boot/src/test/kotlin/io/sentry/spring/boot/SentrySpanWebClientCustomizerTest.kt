@@ -2,16 +2,18 @@ package io.sentry.spring.boot
 
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
-import io.sentry.IHub
 import io.sentry.IScope
+import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.Sentry.OptionsConfiguration
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
+import io.sentry.mockServerRequestTimeoutMillis
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -30,6 +32,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -39,26 +42,27 @@ class SentrySpanWebClientCustomizerTest {
     class Fixture {
         lateinit var sentryOptions: SentryOptions
         lateinit var scope: IScope
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         var mockServer = MockWebServer()
         lateinit var transaction: SentryTracer
-        private val customizer = SentrySpanWebClientCustomizer(hub)
+        private val customizer = SentrySpanWebClientCustomizer(scopes)
 
-        fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, throwIOException: Boolean = false, includeMockServerInTracingOrigins: Boolean = true): WebClient {
-            sentryOptions = SentryOptions().apply {
+        fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, throwIOException: Boolean = false, includeMockServerInTracingOrigins: Boolean = true, optionsConfiguration: OptionsConfiguration<SentryOptions>? = null): WebClient {
+            sentryOptions = SentryOptions().also {
+                optionsConfiguration?.configure(it)
                 if (includeMockServerInTracingOrigins) {
-                    setTracePropagationTargets(listOf(mockServer.hostName))
+                    it.setTracePropagationTargets(listOf(mockServer.hostName))
                 } else {
-                    setTracePropagationTargets(listOf("other-api"))
+                    it.setTracePropagationTargets(listOf("other-api"))
                 }
-                dsn = "http://key@localhost/proj"
+                it.dsn = "http://key@localhost/proj"
             }
             scope = Scope(sentryOptions)
-            whenever(hub.options).thenReturn(sentryOptions)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(
+            whenever(scopes.options).thenReturn(sentryOptions)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(
                 any()
             )
-            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), hub)
+            transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), scopes)
             val webClientBuilder = WebClient.builder()
             customizer.customize(webClientBuilder)
             val webClient = webClientBuilder.build()
@@ -66,7 +70,7 @@ class SentrySpanWebClientCustomizerTest {
             if (isTransactionActive) {
                 val scope = Scope(sentryOptions)
                 scope.transaction = transaction
-                whenever(hub.span).thenReturn(transaction)
+                whenever(scopes.span).thenReturn(transaction)
             }
 
             val dispatcher: Dispatcher = object : Dispatcher() {
@@ -132,7 +136,7 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -145,7 +149,7 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -158,9 +162,25 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
+    fun `does not add sentry-trace header when span origin is ignored`() {
+        val sut = fixture.getSut(isTransactionActive = false, includeMockServerInTracingOrigins = true) { options ->
+            options.setIgnoredSpanOrigins(listOf("auto.http.spring.webclient"))
+        }
+        sut
+            .get()
+            .uri(fixture.mockServer.url("/test/123").toUri())
+            .retrieve()
+            .bodyToMono(String::class.java)
+            .block()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+        assertNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test
@@ -171,7 +191,7 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        val recordedRequest = fixture.mockServer.takeRequest()
+        val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recordedRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -238,7 +258,7 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(uri.toString(), it.data["url"])
@@ -261,7 +281,7 @@ class SentrySpanWebClientCustomizerTest {
                 .block()
         } catch (e: Throwable) {
         }
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(uri.toString(), it.data["url"])
@@ -281,7 +301,7 @@ class SentrySpanWebClientCustomizerTest {
             .retrieve()
             .bodyToMono(String::class.java)
             .block()
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(uri.toString(), it.data["url"])
@@ -304,7 +324,7 @@ class SentrySpanWebClientCustomizerTest {
                 .block()
         } catch (e: Throwable) {
         }
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 assertEquals(uri.toString(), it.data["url"])

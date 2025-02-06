@@ -1,0 +1,11 @@
+query ProjectQuery($slug: ID!) {
+    project(slug: $slug) {
+        slug
+        name
+        status
+    }
+}
+
+mutation AddProjectMutation($slug: ID!) {
+    addProject(slug: $slug)
+}

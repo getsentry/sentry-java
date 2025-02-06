@@ -14,6 +14,9 @@ jobs:
     name: Build Job ubuntu-latest - Java 17
     runs-on: ubuntu-latest
 
+    env:
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -27,18 +30,20 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@579fbbe7221704325eb4c4d4bf20c2b0859fba76 # pin@v3
+        uses: gradle/actions/setup-gradle@6962c6c931ff9effc947259cc1b9c6edba90b9d3 # pin@v3
         with:
           gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Run Tests with coverage and Lint
         run: make preMerge
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@e0b68c6749509c5f83f984dd99a76a1c1a231044 # pin@v3
+        uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # pin@v4
         with:
           name: sentry-java
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload test results
         if: always()
@@ -49,7 +54,7 @@ jobs:
             **/build/reports/*
 
       - name: Test Report
-        uses: phoenix-actions/test-reporting@41efe7ebebe7ef156ef46f6b0acf50ec0f10315b # pin@v12
+        uses: phoenix-actions/test-reporting@f957cd93fc2d848d556fa0d03c57bc79127b6b5e # pin@v15
         if: always()
         with:
           name: JUnit Build

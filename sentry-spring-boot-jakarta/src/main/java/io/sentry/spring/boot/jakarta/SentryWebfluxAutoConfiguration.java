@@ -1,8 +1,8 @@
 package io.sentry.spring.boot.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IHub;
 import io.sentry.IScope;
+import io.sentry.IScopes;
 import io.sentry.spring.jakarta.webflux.SentryScheduleHook;
 import io.sentry.spring.jakarta.webflux.SentryWebExceptionHandler;
 import io.sentry.spring.jakarta.webflux.SentryWebFilter;
@@ -28,7 +28,7 @@ import reactor.core.scheduler.Schedulers;
 /** Configures Sentry integration for Spring Webflux and Project Reactor. */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-@ConditionalOnBean(IHub.class)
+@ConditionalOnBean(IScopes.class)
 @ConditionalOnClass(Schedulers.class)
 @Open
 @ApiStatus.Experimental
@@ -44,14 +44,14 @@ public class SentryWebfluxAutoConfiguration {
      * Configures a filter that sets up Sentry {@link IScope} for each request.
      *
      * <p>Makes use of newer reactor-core and context-propagation library feature
-     * ThreadLocalAccessor to propagate the Sentry hub.
+     * ThreadLocalAccessor to propagate the Sentry scopes.
      */
     @Bean
     @Order(SENTRY_SPRING_FILTER_PRECEDENCE)
     public @NotNull SentryWebFilterWithThreadLocalAccessor sentryWebFilterWithContextPropagation(
-        final @NotNull IHub hub) {
+        final @NotNull IScopes scopes) {
       Hooks.enableAutomaticContextPropagation();
-      return new SentryWebFilterWithThreadLocalAccessor(hub);
+      return new SentryWebFilterWithThreadLocalAccessor(scopes);
     }
   }
 
@@ -60,7 +60,7 @@ public class SentryWebfluxAutoConfiguration {
   @Open
   static class SentryWebfluxFilterConfiguration {
 
-    /** Configures hook that sets correct hub on the executing thread. */
+    /** Configures hook that sets correct scopes on the executing thread. */
     @Bean
     public @NotNull ApplicationRunner sentryScheduleHookApplicationRunner() {
       return args -> {
@@ -71,15 +71,16 @@ public class SentryWebfluxAutoConfiguration {
     /** Configures a filter that sets up Sentry {@link IScope} for each request. */
     @Bean
     @Order(SENTRY_SPRING_FILTER_PRECEDENCE)
-    public @NotNull SentryWebFilter sentryWebFilter(final @NotNull IHub hub) {
-      return new SentryWebFilter(hub);
+    public @NotNull SentryWebFilter sentryWebFilter(final @NotNull IScopes scopes) {
+      return new SentryWebFilter(scopes);
     }
   }
 
   /** Configures exception handler that handles unhandled exceptions and sends them to Sentry. */
   @Bean
-  public @NotNull SentryWebExceptionHandler sentryWebExceptionHandler(final @NotNull IHub hub) {
-    return new SentryWebExceptionHandler(hub);
+  public @NotNull SentryWebExceptionHandler sentryWebExceptionHandler(
+      final @NotNull IScopes scopes) {
+    return new SentryWebExceptionHandler(scopes);
   }
 
   static final class SentryLegacyFilterConfigurationCondition extends AnyNestedCondition {
@@ -90,8 +91,7 @@ public class SentryWebfluxAutoConfiguration {
 
     @ConditionalOnProperty(
         name = "sentry.reactive.thread-local-accessor-enabled",
-        havingValue = "false",
-        matchIfMissing = true)
+        havingValue = "false")
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryDisableThreadLocalAccessorCondition {}
 
@@ -108,7 +108,8 @@ public class SentryWebfluxAutoConfiguration {
 
     @ConditionalOnProperty(
         name = "sentry.reactive.thread-local-accessor-enabled",
-        havingValue = "true")
+        havingValue = "true",
+        matchIfMissing = true)
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryEnableThreadLocalAccessorCondition {}
 

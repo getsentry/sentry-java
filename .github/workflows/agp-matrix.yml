@@ -17,13 +17,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        agp: [ '8.0.0','8.1.4','8.2.0','8.3.0-beta01' ]
+        agp: [ '8.7.0','8.8.0','8.9.0-beta01' ]
         integrations: [ true, false ]
 
     name: AGP Matrix Release - AGP ${{ matrix.agp }} - Integrations ${{ matrix.integrations }}
     env:
       VERSION_AGP: ${{ matrix.agp }}
       APPLY_SENTRY_INTEGRATIONS: ${{ matrix.integrations }}
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
       - name: Checkout Repo
@@ -38,9 +39,10 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@579fbbe7221704325eb4c4d4bf20c2b0859fba76 # pin@v3
+        uses: gradle/actions/setup-gradle@6962c6c931ff9effc947259cc1b9c6edba90b9d3 # pin@v3
         with:
           gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Setup KVM
         shell: bash
@@ -59,7 +61,7 @@ jobs:
 
       # We tried to use the cache action to cache gradle stuff, but it made tests slower and timeout
       - name: Run instrumentation tests
-        uses: reactivecircus/android-emulator-runner@6b0df4b0efb23bb0ec63d881db79aefbc976e4b2 # pin@v2
+        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d # pin@v2
         with:
           api-level: 30
           force-avd-creation: false
@@ -69,7 +71,8 @@ jobs:
           target: 'aosp_atd'
           arch: x86
           channel: canary # Necessary for ATDs
-          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release --daemon
+          disk-size: 4096M
+          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release -Denvironment=github --daemon
 
       - name: Upload test results
         if: always()
@@ -82,7 +85,7 @@ jobs:
             **/build/outputs/mapping/release/*
 
       - name: Test Report
-        uses: phoenix-actions/test-reporting@41efe7ebebe7ef156ef46f6b0acf50ec0f10315b # pin@v12
+        uses: phoenix-actions/test-reporting@f957cd93fc2d848d556fa0d03c57bc79127b6b5e # pin@v15
         if: always()
         with:
           name: JUnit AGP ${{ matrix.agp }} - Integrations ${{ matrix.integrations }}
