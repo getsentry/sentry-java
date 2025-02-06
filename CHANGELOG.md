@@ -9,6 +9,7 @@
 ### Features
 
 - Create onCreate and onStart spans for all Activities ([#4025](https://github.com/getsentry/sentry-java/pull/4025))
+- Add split apks info to the `App` context ([#3193](https://github.com/getsentry/sentry-java/pull/3193)))
 
 ### Fixes
 
