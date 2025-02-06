@@ -2,7 +2,7 @@ package io.sentry;
 
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.SentryId;
-import io.sentry.util.SentryRandom;
+import io.sentry.util.SampleRateUtils;
 import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -59,7 +59,7 @@ public final class PropagationContext {
   private @Nullable Boolean sampled;
   private @NotNull Double sampleRand;
 
-  private @Nullable Baggage baggage;
+  private @NotNull Baggage baggage;
 
   public PropagationContext() {
     this(new SentryId(), new SpanId(), null, null, null, null);
@@ -70,11 +70,12 @@ public final class PropagationContext {
         propagationContext.getTraceId(),
         propagationContext.getSpanId(),
         propagationContext.getParentSpanId(),
-        cloneBaggage(propagationContext.getBaggage()),
+        propagationContext.getBaggage(),
         propagationContext.isSampled(),
         propagationContext.getSampleRand());
   }
 
+  @SuppressWarnings("UnusedMethod")
   private static @Nullable Baggage cloneBaggage(final @Nullable Baggage baggage) {
     if (baggage != null) {
       return new Baggage(baggage);
@@ -83,6 +84,7 @@ public final class PropagationContext {
     return null;
   }
 
+  @SuppressWarnings("ObjectToString")
   public PropagationContext(
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,
@@ -93,26 +95,40 @@ public final class PropagationContext {
     this.traceId = traceId;
     this.spanId = spanId;
     this.parentSpanId = parentSpanId;
-    this.baggage = baggage;
-    this.sampled = sampled;
-    if (sampleRand != null) {
-      this.sampleRand = sampleRand;
-    } else if (baggage != null && baggage.getSampleRandDouble() != null) {
-      this.sampleRand = baggage.getSampleRandDouble();
+    boolean shouldFreezeBaggage = false;
+    if (baggage != null) {
+      this.baggage = baggage;
+      shouldFreezeBaggage = true;
     } else {
-      final @Nullable Double sampleRate = baggage == null ? null : baggage.getSampleRateDouble();
-      final @NotNull Double sampleRandToUse = SentryRandom.current().nextDouble();
-
-      if (sampled != null && sampleRate != null) {
-        if (sampled) {
-          this.sampleRand = sampleRandToUse * sampleRate;
-        } else {
-          this.sampleRand = sampleRate + (sampleRandToUse * (1 - sampleRate));
-        }
+      this.baggage = new Baggage(ScopesAdapter.getInstance().getOptions().getLogger());
+    }
+    this.sampled = sampled;
+    StringBuilder sb = new StringBuilder("sample rand");
+    if (sampleRand != null) {
+      sb.append(" [passed in as param]");
+      this.sampleRand = sampleRand;
+    } else {
+      sb.append(" [maybe baggage maybe backfill]");
+      final @Nullable Double sampleRandMaybe = this.baggage.getSampleRandDouble();
+      sb.append(" [baggage " + sampleRandMaybe + "]");
+      final @Nullable Double sampleRateMaybe = this.baggage.getSampleRateDouble();
+      this.sampleRand =
+          SampleRateUtils.backfilledSampleRand(sampleRandMaybe, sampleRateMaybe, sampled);
+    }
+    if (this.baggage.getSampleRand() == null) {
+      sb.append(" [setting sample rand on baggage " + this.baggage + "]");
+      this.baggage.setSampleRandDouble(this.sampleRand);
+    }
+    if (shouldFreezeBaggage) {
+      if (this.baggage.isMutable()) {
+        sb.append(" [freezing baggage]");
+        this.baggage.freeze();
       } else {
-        this.sampleRand = sampleRandToUse;
+        sb.append(" [baggage already frozen]");
       }
     }
+    sb.append(" {" + this.sampleRand + "}");
+    new RuntimeException("PropagationContext ctor" + sb.toString()).printStackTrace();
   }
 
   public @NotNull SentryId getTraceId() {
@@ -139,12 +155,8 @@ public final class PropagationContext {
     this.parentSpanId = parentSpanId;
   }
 
-  public @Nullable Baggage getBaggage() {
+  public @NotNull Baggage getBaggage() {
     return baggage;
-  }
-
-  public void setBaggage(final @Nullable Baggage baggage) {
-    this.baggage = baggage;
   }
 
   public @Nullable Boolean isSampled() {

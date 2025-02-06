@@ -2,6 +2,8 @@ package io.sentry;
 
 import static io.sentry.protocol.Contexts.REPLAY_ID;
 
+import com.jakewharton.nopen.annotation.Open;
+
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.SampleRateUtils;
@@ -25,7 +27,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Experimental
-public final class Baggage {
+@Open
+public class Baggage {
 
   static final @NotNull String CHARSET = "UTF-8";
   static final @NotNull Integer MAX_BAGGAGE_STRING_LENGTH = 8192;
@@ -103,7 +106,7 @@ public final class Baggage {
               final String valueDecoded = decode(value);
 
               keyValues.put(keyDecoded, valueDecoded);
-              mutable = false;
+//              mutable = false;
             } catch (Throwable e) {
               logger.log(
                   SentryLevel.ERROR,
@@ -140,6 +143,7 @@ public final class Baggage {
     // we don't persist sample rate
     baggage.setSampleRate(null);
     baggage.setSampled(null);
+    baggage.setSampleRand(null); // TODO do we need this?
     final @Nullable Object replayId = event.getContexts().get(REPLAY_ID);
     if (replayId != null && !replayId.toString().equals(SentryId.EMPTY_ID.toString())) {
       baggage.setReplayId(replayId.toString());
@@ -161,6 +165,7 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  @SuppressWarnings("ObjectToString")
   public Baggage(
       final @NotNull Map<String, String> keyValues,
       final @Nullable String thirdPartyHeader,
@@ -170,10 +175,13 @@ public final class Baggage {
     this.logger = logger;
     this.mutable = isMutable;
     this.thirdPartyHeader = thirdPartyHeader;
+    new RuntimeException("creating new baggage" + this).printStackTrace();
   }
 
+  @SuppressWarnings("ObjectToString")
   @ApiStatus.Internal
   public void freeze() {
+    new RuntimeException("freezing baggage " + this).printStackTrace();
     this.mutable = false;
   }
 
@@ -187,6 +195,7 @@ public final class Baggage {
     return thirdPartyHeader;
   }
 
+  @SuppressWarnings("ObjectToString")
   public @NotNull String toHeaderString(@Nullable String thirdPartyBaggageHeaderString) {
     final StringBuilder sb = new StringBuilder();
     String separator = "";
@@ -239,6 +248,8 @@ public final class Baggage {
         }
       }
     }
+
+    sb.append(",sbg=" + this);
 
     return sb.toString();
   }
@@ -490,6 +501,10 @@ public final class Baggage {
     return null;
   }
 
+  public @NotNull Baggage toReadOnly() {
+    return new ReadOnlyBaggage(this);
+  }
+
   @ApiStatus.Internal
   @Nullable
   public TraceContext toTraceContext() {
@@ -508,7 +523,8 @@ public final class Baggage {
               getTransaction(),
               getSampleRate(),
               getSampled(),
-              replayIdString == null ? null : new SentryId(replayIdString));
+              replayIdString == null ? null : new SentryId(replayIdString),
+              getSampleRand());
       traceContext.setUnknown(getUnknown());
       return traceContext;
     } else {
@@ -541,5 +557,97 @@ public final class Baggage {
             SAMPLE_RAND,
             SAMPLED,
             REPLAY_ID);
+  }
+
+  private static final class ReadOnlyBaggage extends Baggage {
+
+    public ReadOnlyBaggage(@NotNull Baggage baggage) {
+      super(baggage);
+    }
+
+    @Override
+    public void freeze() {
+      // do nothing
+    }
+
+    @Override
+    public boolean isMutable() {
+      return false;
+    }
+
+    @Override
+    public void setTraceId(@Nullable String traceId) {
+      // do nothing
+    }
+
+    @Override
+    public void setPublicKey(@Nullable String publicKey) {
+      // do nothing
+    }
+
+    @Override
+    public void setEnvironment(@Nullable String environment) {
+      // do nothing
+    }
+
+    @Override
+    public void setRelease(@Nullable String release) {
+      // do nothing
+    }
+
+    @Override
+    public void setUserId(@Nullable String userId) {
+      // do nothing
+    }
+
+    @Override
+    public void setTransaction(@Nullable String transaction) {
+      // do nothing
+    }
+
+    @Override
+    public void setSampleRate(@Nullable String sampleRate) {
+      // do nothing
+    }
+
+    @Override
+    public void setSampleRand(@Nullable String sampleRand) {
+      // do nothing
+    }
+
+    @Override
+    public void setSampleRandDouble(@Nullable Double sampleRand) {
+      // do nothing
+    }
+
+    @Override
+    public void setSampled(@Nullable String sampled) {
+      // do nothing
+    }
+
+    @Override
+    public void setReplayId(@Nullable String replayId) {
+      // do nothing
+    }
+
+    @Override
+    public void set(@NotNull String key, @Nullable String value) {
+      // do nothing
+    }
+
+    @Override
+    public void setValuesFromTransaction(@NotNull SentryId traceId, @Nullable SentryId replayId, @NotNull SentryOptions sentryOptions, @Nullable TracesSamplingDecision samplingDecision, @Nullable String transactionName, @Nullable TransactionNameSource transactionNameSource) {
+      // do nothing
+    }
+
+    @Override
+    public void setValuesFromScope(@NotNull IScope scope, @NotNull SentryOptions options) {
+      // do nothing
+    }
+
+    @Override
+    public @NotNull Baggage toReadOnly() {
+      return this;
+    }
   }
 }

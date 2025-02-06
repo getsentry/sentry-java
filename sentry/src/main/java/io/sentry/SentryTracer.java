@@ -84,6 +84,7 @@ public final class SentryTracer implements ITransaction {
     if (context.getBaggage() != null) {
       this.baggage = context.getBaggage();
     } else {
+      System.out.println("---- new baggage created in SentryTracer");
       this.baggage = new Baggage(scopes.getOptions().getLogger());
     }
 
@@ -657,7 +658,6 @@ public final class SentryTracer implements ITransaction {
             scope -> {
               replayId.set(scope.getReplayId());
             });
-        // TODO sampleRand?
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
             replayId.get(),

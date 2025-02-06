@@ -24,6 +24,7 @@ public final class TracesSampler {
   @NotNull
   public TracesSamplingDecision sample(final @NotNull SamplingContext samplingContext) {
     final @NotNull Double sampleRand = samplingContext.getSampleRand();
+    System.out.println("sample rand used in TracesSampler " + sampleRand);
     final TracesSamplingDecision samplingContextSamplingDecision =
         samplingContext.getTransactionContext().getSamplingDecision();
     if (samplingContextSamplingDecision != null) {
@@ -56,7 +57,11 @@ public final class TracesSampler {
       }
       if (samplerResult != null) {
         return new TracesSamplingDecision(
-            sample(samplerResult, sampleRand), samplerResult, profilesSampled, profilesSampleRate);
+            sample(samplerResult, sampleRand),
+            samplerResult,
+            sampleRand,
+            profilesSampled,
+            profilesSampleRate);
       }
     }
 
@@ -76,6 +81,7 @@ public final class TracesSampler {
       return new TracesSamplingDecision(
           sample(downsampledTracesSampleRate, sampleRand),
           downsampledTracesSampleRate,
+          sampleRand,
           profilesSampled,
           profilesSampleRate);
     }

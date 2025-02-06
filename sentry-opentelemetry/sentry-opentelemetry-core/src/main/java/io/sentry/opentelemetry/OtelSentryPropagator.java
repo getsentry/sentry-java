@@ -19,6 +19,8 @@ import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
+import io.sentry.util.TracingUtils;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -73,12 +75,15 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       return;
     }
 
+    // TODO can we use traceIfAllowed? do we have the URL here?
+    TracingUtils.trace(scopes, Collections.emptyList(), sentrySpan);
+
     final @NotNull SentryTraceHeader sentryTraceHeader = sentrySpan.toSentryTrace();
     setter.set(carrier, sentryTraceHeader.getName(), sentryTraceHeader.getValue());
     final @Nullable BaggageHeader baggageHeader =
         sentrySpan.toBaggageHeader(Collections.emptyList());
     if (baggageHeader != null) {
-      System.out.println("outgoing baggage:");
+      System.out.println("outgoing baggage: ");
       System.out.println(baggageHeader.getValue());
       setter.set(carrier, baggageHeader.getName(), baggageHeader.getValue());
     }
@@ -129,10 +134,9 @@ public final class OtelSentryPropagator implements TextMapPropagator {
           .getLogger()
           .log(SentryLevel.DEBUG, "Continuing Sentry trace %s", sentryTraceHeader.getTraceId());
 
-      final @NotNull PropagationContext propagationContext =
-          PropagationContext.fromHeaders(
-              scopes.getOptions().getLogger(), sentryTraceString, baggageString);
-      scopesToUse.getIsolationScope().setPropagationContext(propagationContext);
+//      final @NotNull PropagationContext propagationContext =
+//          PropagationContext.fromHeaders(sentryTraceHeader, baggage, null);
+//      scopesToUse.getIsolationScope().setPropagationContext(propagationContext);
 
       return modifiedContext;
     } catch (InvalidSentryTraceHeaderException e) {

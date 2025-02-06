@@ -23,6 +23,7 @@ import io.sentry.TracesSamplingDecision;
 import io.sentry.TransactionContext;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.SampleRateUtils;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -82,12 +83,25 @@ public final class SentrySampler implements Sampler {
       baggage = baggageFromContext;
     }
 
+    final @Nullable Boolean sampledFromHeaders =
+        sentryTraceHeader == null ? null : sentryTraceHeader.isSampled();
+    final @Nullable Double sampleRandFromHeaders =
+        baggage == null ? null : baggage.getSampleRandDouble();
+    final @Nullable Double sampleRateFromHeaders =
+        baggage == null ? null : baggage.getSampleRateDouble();
+    final @NotNull Double sampleRand =
+        SampleRateUtils.backfilledSampleRand(
+            sampleRandFromHeaders, sampleRateFromHeaders, sampledFromHeaders);
+
     // there's no way to get the span id here, so we just use a random id for sampling
     SpanId randomSpanId = new SpanId();
+    final @Nullable Baggage baggageToUse = baggage == null ? null : baggage.toReadOnly();
+    // TODO this freezes baggage but should not
     final @NotNull PropagationContext propagationContext =
         sentryTraceHeader == null
-            ? new PropagationContext(new SentryId(traceId), randomSpanId, null, baggage, null, null)
-            : PropagationContext.fromHeaders(sentryTraceHeader, baggage, randomSpanId);
+            ? new PropagationContext(
+                new SentryId(traceId), randomSpanId, null, baggageToUse, null, sampleRand)
+            : PropagationContext.fromHeaders(sentryTraceHeader, baggageToUse, randomSpanId);
 
     final @NotNull TransactionContext transactionContext =
         TransactionContext.fromPropagationContext(propagationContext);
@@ -95,8 +109,7 @@ public final class SentrySampler implements Sampler {
         scopes
             .getOptions()
             .getInternalTracesSampler()
-            .sample(
-                new SamplingContext(transactionContext, null, propagationContext.getSampleRand()));
+            .sample(new SamplingContext(transactionContext, null, sampleRand));
 
     if (!sentryDecision.getSampled()) {
       scopes

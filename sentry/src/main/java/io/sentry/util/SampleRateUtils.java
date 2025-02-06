@@ -23,6 +23,26 @@ public final class SampleRateUtils {
     return isValidRate(profilesSampleRate, true);
   }
 
+  public static Double backfilledSampleRand(
+      final @Nullable Double sampleRand,
+      final @Nullable Double sampleRate,
+      final @Nullable Boolean sampled) {
+    if (sampleRand != null) {
+      return sampleRand;
+    }
+
+    double newSampleRand = SentryRandom.current().nextDouble();
+    if (sampleRate != null && sampled != null) {
+      if (sampled) {
+        return newSampleRand * sampleRate;
+      } else {
+        return sampleRate + (newSampleRand * (1 - sampleRate));
+      }
+    }
+
+    return newSampleRand;
+  }
+
   private static boolean isValidRate(final @Nullable Double rate, final boolean allowNull) {
     if (rate == null) {
       return allowNull;
