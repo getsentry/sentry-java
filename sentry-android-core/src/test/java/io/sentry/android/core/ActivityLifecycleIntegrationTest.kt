@@ -1572,7 +1572,7 @@ class ActivityLifecycleIntegrationTest {
         // Don't set app start time, so there's no app start span
         // setAppStartTime(appStartDate)
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         assertTrue(sut.activitySpanHelpers.isEmpty())
 
         sut.onActivityPreCreated(activity, null)
