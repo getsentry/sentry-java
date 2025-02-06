@@ -4333,6 +4333,8 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun getDeviceAppHash ()Ljava/lang/String;
 	public fun getInForeground ()Ljava/lang/Boolean;
 	public fun getPermissions ()Ljava/util/Map;
+	public fun getSplitApks ()Ljava/lang/Boolean;
+	public fun getSplitNames ()Ljava/util/List;
 	public fun getStartType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getViewNames ()Ljava/util/List;
@@ -4347,6 +4349,8 @@ public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentr
 	public fun setDeviceAppHash (Ljava/lang/String;)V
 	public fun setInForeground (Ljava/lang/Boolean;)V
 	public fun setPermissions (Ljava/util/Map;)V
+	public fun setSplitApks (Ljava/lang/Boolean;)V
+	public fun setSplitNames (Ljava/util/List;)V
 	public fun setStartType (Ljava/lang/String;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setViewNames (Ljava/util/List;)V
@@ -4368,6 +4372,8 @@ public final class io/sentry/protocol/App$JsonKeys {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEVICE_APP_HASH Ljava/lang/String;
 	public static final field IN_FOREGROUND Ljava/lang/String;
+	public static final field IS_SPLIT_APKS Ljava/lang/String;
+	public static final field SPLIT_NAMES Ljava/lang/String;
 	public static final field START_TYPE Ljava/lang/String;
 	public static final field VIEW_NAMES Ljava/lang/String;
 	public fun <init> ()V

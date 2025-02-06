@@ -23,7 +23,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
@@ -132,20 +131,24 @@ class ContextUtilsTest {
 
         whenever(mockedContext.packageName).thenReturn("dummy")
 
-        whenever(mockedPackageManager.getApplicationInfo(
-            any<String>(),
-            any<PackageManager.ApplicationInfoFlags>()
-        )).thenReturn(mockedApplicationInfo)
+        whenever(
+            mockedPackageManager.getApplicationInfo(
+                any<String>(),
+                any<PackageManager.ApplicationInfoFlags>()
+            )
+        ).thenReturn(mockedApplicationInfo)
 
-        whenever(mockedPackageManager.getPackageInfo(
-            any<String>(),
-            any<PackageManager.PackageInfoFlags>()
-        )).thenReturn(mockedPackageInfo)
+        whenever(
+            mockedPackageManager.getPackageInfo(
+                any<String>(),
+                any<PackageManager.PackageInfoFlags>()
+            )
+        ).thenReturn(mockedPackageInfo)
 
         whenever(mockedContext.packageManager).thenReturn(mockedPackageManager)
 
         val splitApksInfo =
-            ContextUtils.retrieveSplitApksInfo(mockedContext, logger, BuildInfoProvider(logger))
+            ContextUtils.retrieveSplitApksInfo(mockedContext, BuildInfoProvider(logger))
         assertContentEquals(splitNames, splitApksInfo!!.splitNames)
     }
 
