@@ -13,6 +13,8 @@ public enum DataCategory {
   Monitor("monitor"),
   Profile("profile"),
   Transaction("transaction"),
+  Replay("replay"),
+  Span("span"),
   Security("security"),
   UserReport("user_report"),
   Unknown("unknown");

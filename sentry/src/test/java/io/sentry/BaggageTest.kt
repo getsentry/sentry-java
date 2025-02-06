@@ -299,7 +299,6 @@ class BaggageTest {
         baggage.environment = null
         baggage.transaction = null
         baggage.userId = null
-        baggage.userSegment = null
 
         assertEquals("", baggage.toHeaderString(null))
     }
@@ -317,11 +316,10 @@ class BaggageTest {
         baggage.setEnvironment("production")
         baggage.setTransaction("TX")
         baggage.setUserId(userId)
-        baggage.setUserSegment("segmentA")
         baggage.setSampleRate((1.0 / 3.0).toString())
         baggage.setSampled("true")
 
-        assertEquals("sentry-environment=production,sentry-public_key=$publicKey,sentry-release=1.0-rc.1,sentry-sample_rate=0.3333333333333333,sentry-sampled=true,sentry-trace_id=$traceId,sentry-transaction=TX,sentry-user_id=$userId,sentry-user_segment=segmentA", baggage.toHeaderString(null))
+        assertEquals("sentry-environment=production,sentry-public_key=$publicKey,sentry-release=1.0-rc.1,sentry-sample_rate=0.3333333333333333,sentry-sampled=true,sentry-trace_id=$traceId,sentry-transaction=TX,sentry-user_id=$userId", baggage.toHeaderString(null))
     }
 
     @Test
@@ -527,15 +525,13 @@ class BaggageTest {
 
     @Test
     fun `unknown returns sentry- prefixed keys that are not known and passes them on to TraceContext`() {
-        val baggage = Baggage.fromHeader(listOf("sentry-trace_id=${SentryId()},sentry-public_key=b, sentry-replay_id=def", "sentry-transaction=sentryTransaction, sentry-anewkey=abc"))
+        val baggage = Baggage.fromHeader(listOf("sentry-trace_id=${SentryId()},sentry-public_key=b, sentry-replay_id=${SentryId()}", "sentry-transaction=sentryTransaction, sentry-anewkey=abc"))
         val unknown = baggage.unknown
-        assertEquals(2, unknown.size)
-        assertEquals("def", unknown["replay_id"])
+        assertEquals(1, unknown.size)
         assertEquals("abc", unknown["anewkey"])
 
         val traceContext = baggage.toTraceContext()!!
-        assertEquals(2, traceContext.unknown!!.size)
-        assertEquals("def", traceContext.unknown!!["replay_id"])
+        assertEquals(1, traceContext.unknown!!.size)
         assertEquals("abc", traceContext.unknown!!["anewkey"])
     }
 

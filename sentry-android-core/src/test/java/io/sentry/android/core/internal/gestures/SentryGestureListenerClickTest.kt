@@ -10,8 +10,8 @@ import android.view.Window
 import android.widget.CheckBox
 import android.widget.RadioButton
 import io.sentry.Breadcrumb
-import io.sentry.IHub
 import io.sentry.IScope
+import io.sentry.IScopes
 import io.sentry.PropagationContext
 import io.sentry.Scope.IWithPropagationContext
 import io.sentry.ScopeCallback
@@ -40,7 +40,7 @@ class SentryGestureListenerClickTest {
             gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
             dsn = "https://key@sentry.io/proj"
         }
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val scope = mock<IScope>()
         val propagationContext = PropagationContext()
         lateinit var target: View
@@ -86,11 +86,11 @@ class SentryGestureListenerClickTest {
             whenever(context.resources).thenReturn(resources)
             whenever(this.target.context).thenReturn(context)
             whenever(activity.window).thenReturn(window)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
             doAnswer { (it.arguments[0] as IWithPropagationContext).accept(propagationContext); propagationContext; }.whenever(scope).withPropagationContext(any())
             return SentryGestureListener(
                 activity,
-                hub,
+                scopes,
                 options
             )
         }
@@ -123,7 +123,7 @@ class SentryGestureListenerClickTest {
 
         sut.onSingleTapUp(event)
 
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("ui.click", it.category)
                 assertEquals("user", it.type)
@@ -146,7 +146,7 @@ class SentryGestureListenerClickTest {
 
         sut.onSingleTapUp(event)
 
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("radio_button", it.data["view.id"])
                 assertEquals("android.widget.RadioButton", it.data["view.class"])
@@ -166,7 +166,7 @@ class SentryGestureListenerClickTest {
 
         sut.onSingleTapUp(event)
 
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("check_box", it.data["view.id"])
                 assertEquals("android.widget.CheckBox", it.data["view.class"])
@@ -185,7 +185,7 @@ class SentryGestureListenerClickTest {
 
         sut.onSingleTapUp(event)
 
-        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -198,7 +198,7 @@ class SentryGestureListenerClickTest {
         val sut = fixture.getSut<ViewGroup>(event, "decor_view", targetOverride = decorView)
         sut.onSingleTapUp(event)
 
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals(decorView.javaClass.canonicalName, it.data["view.class"])
                 assertEquals("decor_view", it.data["view.id"])
@@ -214,7 +214,7 @@ class SentryGestureListenerClickTest {
 
         sut.onSingleTapUp(event)
 
-        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 
     @Test
@@ -223,14 +223,14 @@ class SentryGestureListenerClickTest {
 
         val event = mock<MotionEvent>()
         val sut = fixture.getSut<LocalView>(event, attachViewsToRoot = false)
-        fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = false) {
+        fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = true) {
             whenever(it.childCount).thenReturn(1)
             whenever(it.getChildAt(0)).thenReturn(fixture.target)
         }
 
         sut.onSingleTapUp(event)
 
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals(fixture.target.javaClass.simpleName, it.data["view.class"])
             },
@@ -244,7 +244,7 @@ class SentryGestureListenerClickTest {
 
         val event = mock<MotionEvent>()
         val sut = fixture.getSut<LocalView>(event, attachViewsToRoot = false)
-        fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = false) {
+        fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = true) {
             whenever(it.childCount).thenReturn(1)
             whenever(it.getChildAt(0)).thenReturn(fixture.target)
         }
@@ -252,5 +252,19 @@ class SentryGestureListenerClickTest {
         sut.onSingleTapUp(event)
 
         verify(fixture.scope).propagationContext = any()
+    }
+
+    @Test
+    fun `if touch is not within view group bounds does not traverse its children`() {
+        val event = mock<MotionEvent>()
+        val sut = fixture.getSut<View>(event, attachViewsToRoot = false)
+        fixture.window.mockDecorView<ViewGroup>(event = event, touchWithinBounds = false) {
+            whenever(it.childCount).thenReturn(1)
+            whenever(it.getChildAt(0)).thenReturn(fixture.target)
+        }
+
+        sut.onSingleTapUp(event)
+
+        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 }

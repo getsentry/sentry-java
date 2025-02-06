@@ -4,6 +4,8 @@ import io.sentry.JsonObjectReader
 import java.io.StringReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class CollectionUtilsTest {
 
@@ -61,5 +63,20 @@ class CollectionUtilsTest {
         assertEquals(2, result?.size)
         assertEquals("value1", result?.get("key1"))
         assertEquals("value3", result?.get("key3"))
+    }
+
+    @Test
+    fun `contains returns false for empty arrays`() {
+        assertFalse(CollectionUtils.contains(emptyArray<String>(), ""))
+    }
+
+    @Test
+    fun `contains returns true if element is present`() {
+        assertTrue(CollectionUtils.contains(arrayOf("one", "two", "three"), "two"))
+    }
+
+    @Test
+    fun `contains returns false if element is not present`() {
+        assertFalse(CollectionUtils.contains(arrayOf("one", "two", "three"), "four"))
     }
 }

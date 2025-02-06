@@ -1,7 +1,7 @@
 import com.diffplug.spotless.LineEnding
+import com.vanniktech.maven.publish.JavaLibrary
+import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
-import com.vanniktech.maven.publish.MavenPublishPlugin
-import com.vanniktech.maven.publish.MavenPublishPluginExtension
 import groovy.util.Node
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
 import kotlinx.kover.gradle.plugin.dsl.KoverReportExtension
@@ -17,6 +17,7 @@ plugins {
     id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion
     id(Config.QualityPlugins.jacocoAndroid) version Config.QualityPlugins.jacocoAndroidVersion apply false
     id(Config.QualityPlugins.kover) version Config.QualityPlugins.koverVersion apply false
+    id(Config.BuildPlugins.gradleMavenPublishPlugin) version Config.BuildPlugins.gradleMavenPublishPluginVersion apply false
 }
 
 buildscript {
@@ -26,21 +27,17 @@ buildscript {
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
         classpath(kotlin(Config.BuildPlugins.kotlinGradlePlugin, version = Config.kotlinVersion))
-        classpath(Config.BuildPlugins.gradleMavenPublishPlugin)
         // dokka is required by gradle-maven-publish-plugin.
         classpath(Config.BuildPlugins.dokkaPlugin)
         classpath(Config.QualityPlugins.errorpronePlugin)
         classpath(Config.QualityPlugins.gradleVersionsPlugin)
-
-        // add classpath of androidNativeBundle
-        // com.ydq.android.gradle.build.tool:nativeBundle:{version}}
-        classpath(Config.NativePlugins.nativeBundlePlugin)
 
         // add classpath of sentry android gradle plugin
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
         classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
         classpath(Config.BuildPlugins.composeGradlePlugin)
+        classpath(Config.BuildPlugins.commonsCompressOverride)
     }
 }
 
@@ -54,6 +51,7 @@ apiValidation {
         listOf(
             "sentry-samples-android",
             "sentry-samples-console",
+            "sentry-samples-console-opentelemetry-noagent",
             "sentry-samples-jul",
             "sentry-samples-log4j2",
             "sentry-samples-logback",
@@ -62,11 +60,16 @@ apiValidation {
             "sentry-samples-spring",
             "sentry-samples-spring-jakarta",
             "sentry-samples-spring-boot",
+            "sentry-samples-spring-boot-opentelemetry",
+            "sentry-samples-spring-boot-opentelemetry-noagent",
             "sentry-samples-spring-boot-jakarta",
+            "sentry-samples-spring-boot-jakarta-opentelemetry",
+            "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-spring-boot-webflux-jakarta",
             "sentry-uitest-android",
             "sentry-uitest-android-benchmark",
+            "sentry-uitest-android-critical",
             "test-app-plain",
             "test-app-sentry",
             "sentry-samples-netflix-dgs"
@@ -78,6 +81,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        mavenLocal()
     }
     group = Config.Sentry.group
     version = properties[Config.Sentry.versionNameProp].toString()
@@ -91,15 +95,15 @@ allprojects {
                 TestLogEvent.PASSED,
                 TestLogEvent.FAILED
             )
-            maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+            maxParallelForks = 1
 
             // Cap JVM args per test
-            minHeapSize = "128m"
-            maxHeapSize = "1g"
+            minHeapSize = "256m"
+            maxHeapSize = "2g"
             dependsOn("cleanTest")
         }
         withType<JavaCompile> {
-            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing"))
+            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try"))
         }
     }
 }
@@ -110,8 +114,8 @@ subprojects {
         "sentry-android-fragment",
         "sentry-android-navigation",
         "sentry-android-ndk",
-        "sentry-android-okhttp",
         "sentry-android-sqlite",
+        "sentry-android-replay",
         "sentry-android-timber"
     )
     if (jacocoAndroidModules.contains(name)) {
@@ -136,7 +140,7 @@ subprojects {
                 androidReports("release") {
                     xml {
                         // Change the report file name so the Codecov Github action can find it
-                        setReportFile(file("$buildDir/reports/kover/report.xml"))
+                        setReportFile(project.layout.buildDirectory.file("reports/kover/report.xml").get().asFile)
                     }
                 }
             }
@@ -153,6 +157,7 @@ subprojects {
 
     if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support" && this.name != "sentry-compose-helper") {
         apply<DistributionPlugin>()
+        apply<com.vanniktech.maven.publish.MavenPublishPlugin>()
 
         val sep = File.separator
 
@@ -160,16 +165,7 @@ subprojects {
             if (this@subprojects.name.contains("-compose")) {
                 this.configureForMultiplatform(this@subprojects)
             } else {
-                this.getByName("main").contents {
-                    // non android modules
-                    from("build${sep}libs")
-                    from("build${sep}publications${sep}maven")
-                    // android modules
-                    from("build${sep}outputs${sep}aar") {
-                        include("*-release*")
-                    }
-                    from("build${sep}publications${sep}release")
-                }
+                this.configureForJvm(this@subprojects)
             }
             // craft only uses zip archives
             this.forEach { dist ->
@@ -184,22 +180,30 @@ subprojects {
         tasks.named("distZip").configure {
             this.dependsOn("publishToMavenLocal")
             this.doLast {
-                val distributionFilePath =
-                    "${this.project.buildDir}${sep}distributions${sep}${this.project.name}-${this.project.version}.zip"
-                val file = File(distributionFilePath)
-                if (!file.exists()) throw IllegalStateException("Distribution file: $distributionFilePath does not exist")
-                if (file.length() == 0L) throw IllegalStateException("Distribution file: $distributionFilePath is empty")
+                val file = this.project.layout.buildDirectory.file("distributions${sep}${this.project.name}-${this.project.version}.zip").get().asFile
+                if (!file.exists()) throw IllegalStateException("Distribution file: ${file.absolutePath} does not exist")
+                if (file.length() == 0L) throw IllegalStateException("Distribution file: ${file.absolutePath} is empty")
+            }
+        }
+
+        plugins.withId("java-library") {
+            configure<MavenPublishBaseExtension> {
+                // we have to disable javadoc publication in maven-publish plugin as it's not
+                // including it in the .module file https://github.com/vanniktech/gradle-maven-publish-plugin/issues/861
+                // and do it ourselves
+                configure(JavaLibrary(JavadocJar.None(), sourcesJar = true))
+            }
+
+            configure<JavaPluginExtension> {
+                withJavadocJar()
+
+                sourceCompatibility = JavaVersion.VERSION_1_8
+                targetCompatibility = JavaVersion.VERSION_1_8
             }
         }
 
         afterEvaluate {
             apply<MavenPublishPlugin>()
-
-            configure<MavenPublishPluginExtension> {
-                // signing is done when uploading files to MC
-                // via gpg:sign-and-deploy-file (release.kts)
-                releaseSigningEnabled = false
-            }
 
             @Suppress("UnstableApiUsage")
             configure<MavenPublishBaseExtension> {
@@ -211,7 +215,7 @@ subprojects {
                 repositories {
                     maven {
                         name = "unityMaven"
-                        url = file("${rootProject.buildDir}/unityMaven").toURI()
+                        url = rootProject.layout.buildDirectory.file("unityMaven").get().asFile.toURI()
                     }
                 }
             }
@@ -232,7 +236,7 @@ spotless {
         target("**/*.java")
         removeUnusedImports()
         googleJavaFormat()
-        targetExclude("**/generated/**", "**/vendor/**")
+        targetExclude("**/generated/**", "**/vendor/**", "**/sentry-native/**")
     }
     kotlin {
         target("**/*.kt")
@@ -246,48 +250,46 @@ spotless {
     }
 }
 
-gradle.projectsEvaluated {
-    tasks.create("aggregateJavadocs", Javadoc::class.java) {
-        setDestinationDir(file("$buildDir/docs/javadoc"))
-        title = "${project.name} $version API"
-        val opts = options as StandardJavadocDocletOptions
-        opts.quiet()
-        opts.encoding = "UTF-8"
-        opts.memberLevel = JavadocMemberLevel.PROTECTED
-        opts.stylesheetFile(file("$projectDir/docs/stylesheet.css"))
-        opts.links = listOf(
-            "https://docs.oracle.com/javase/8/docs/api/",
-            "https://docs.spring.io/spring-framework/docs/current/javadoc-api/",
-            "https://docs.spring.io/spring-boot/docs/current/api/"
-        )
-        subprojects
-            .filter { !it.name.contains("sample") && !it.name.contains("integration-tests") }
-            .forEach { proj ->
-                proj.tasks.withType<Javadoc>().forEach { javadocTask ->
-                    source += javadocTask.source
-                    classpath += javadocTask.classpath
-                    excludes += javadocTask.excludes
-                    includes += javadocTask.includes
-                }
+tasks.register("aggregateJavadocs", Javadoc::class.java) {
+    setDestinationDir(project.layout.buildDirectory.file("docs/javadoc").get().asFile)
+    title = "${project.name} $version API"
+    val opts = options as StandardJavadocDocletOptions
+    opts.quiet()
+    opts.encoding = "UTF-8"
+    opts.memberLevel = JavadocMemberLevel.PROTECTED
+    opts.stylesheetFile(file("$projectDir/docs/stylesheet.css"))
+    opts.links = listOf(
+        "https://docs.oracle.com/javase/8/docs/api/",
+        "https://docs.spring.io/spring-framework/docs/current/javadoc-api/",
+        "https://docs.spring.io/spring-boot/docs/current/api/"
+    )
+    subprojects
+        .filter { !it.name.contains("sample") && !it.name.contains("integration-tests") }
+        .forEach { proj ->
+            proj.tasks.withType<Javadoc>().forEach { javadocTask ->
+                source += javadocTask.source
+                classpath += javadocTask.classpath
+                excludes += javadocTask.excludes
+                includes += javadocTask.includes
             }
-    }
+        }
+}
 
-    tasks.create("buildForCodeQL") {
-        subprojects
-            .filter {
-                !it.displayName.contains("sample") &&
-                    !it.displayName.contains("integration-tests") &&
-                    !it.displayName.contains("bom") &&
-                    it.name != "sentry-opentelemetry"
+tasks.register("buildForCodeQL") {
+    subprojects
+        .filter {
+            !it.displayName.contains("sample") &&
+                !it.displayName.contains("integration-tests") &&
+                !it.displayName.contains("bom") &&
+                it.name != "sentry-opentelemetry"
+        }
+        .forEach { proj ->
+            if (proj.plugins.hasPlugin("com.android.library")) {
+                this.dependsOn(proj.tasks.findByName("compileReleaseUnitTestSources"))
+            } else {
+                this.dependsOn(proj.tasks.findByName("testClasses"))
             }
-            .forEach { proj ->
-                if (proj.plugins.hasPlugin("com.android.library")) {
-                    this.dependsOn(proj.tasks.findByName("compileReleaseUnitTestSources"))
-                } else {
-                    this.dependsOn(proj.tasks.findByName("testClasses"))
-                }
-            }
-    }
+        }
 }
 
 // Workaround for https://youtrack.jetbrains.com/issue/IDEA-316081/Gradle-8-toolchain-error-Toolchain-from-executable-property-does-not-match-toolchain-from-javaLauncher-property-when-different
@@ -303,9 +305,10 @@ private val androidLibs = setOf(
     "sentry-android-ndk",
     "sentry-android-fragment",
     "sentry-android-navigation",
-    "sentry-android-okhttp",
     "sentry-android-timber",
-    "sentry-compose-android"
+    "sentry-compose-android",
+    "sentry-android-sqlite",
+    "sentry-android-replay"
 )
 
 private val androidXLibs = listOf(

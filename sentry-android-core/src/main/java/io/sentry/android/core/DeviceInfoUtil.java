@@ -9,18 +9,20 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Build;
-import android.os.Environment;
 import android.os.LocaleList;
 import android.os.StatFs;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.OperatingSystem;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.io.File;
 import java.util.Calendar;
 import java.util.Collections;
@@ -38,6 +40,9 @@ public final class DeviceInfoUtil {
 
   @SuppressLint("StaticFieldLeak")
   private static volatile DeviceInfoUtil instance;
+
+  private static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
 
   private final @NotNull Context context;
   private final @NotNull SentryAndroidOptions options;
@@ -76,9 +81,9 @@ public final class DeviceInfoUtil {
   public static DeviceInfoUtil getInstance(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     if (instance == null) {
-      synchronized (DeviceInfoUtil.class) {
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (instance == null) {
-          instance = new DeviceInfoUtil(context.getApplicationContext(), options);
+          instance = new DeviceInfoUtil(ContextUtils.getApplicationContext(context), options);
         }
       }
     }
@@ -106,7 +111,7 @@ public final class DeviceInfoUtil {
     device.setFamily(ContextUtils.getFamily(options.getLogger()));
     device.setModel(Build.MODEL);
     device.setModelId(Build.ID);
-    device.setArchs(ContextUtils.getArchitectures(buildInfoProvider));
+    device.setArchs(ContextUtils.getArchitectures());
 
     device.setOrientation(getOrientation());
     if (isEmulator != null) {
@@ -130,9 +135,6 @@ public final class DeviceInfoUtil {
     }
 
     final @NotNull Locale locale = Locale.getDefault();
-    if (device.getLanguage() == null) {
-      device.setLanguage(locale.getLanguage());
-    }
     if (device.getLocale() == null) {
       device.setLocale(locale.toString()); // eg en_US
     }
@@ -158,8 +160,13 @@ public final class DeviceInfoUtil {
     return os;
   }
 
+  @Nullable
+  public Long getTotalMemory() {
+    return totalMem;
+  }
+
   @NotNull
-  protected OperatingSystem retrieveOperatingSystemInformation() {
+  private OperatingSystem retrieveOperatingSystemInformation() {
 
     final OperatingSystem os = new OperatingSystem();
     os.setName("Android");
@@ -193,8 +200,8 @@ public final class DeviceInfoUtil {
   private void setDeviceIO(final @NotNull Device device, final boolean includeDynamicData) {
     final Intent batteryIntent = getBatteryIntent();
     if (batteryIntent != null) {
-      device.setBatteryLevel(getBatteryLevel(batteryIntent));
-      device.setCharging(isCharging(batteryIntent));
+      device.setBatteryLevel(getBatteryLevel(batteryIntent, options));
+      device.setCharging(isCharging(batteryIntent, options));
       device.setBatteryTemperature(getBatteryTemperature(batteryIntent));
     }
 
@@ -279,7 +286,8 @@ public final class DeviceInfoUtil {
    * @return the device's current battery level (as a percentage of total), or null if unknown
    */
   @Nullable
-  private Float getBatteryLevel(final @NotNull Intent batteryIntent) {
+  public static Float getBatteryLevel(
+      final @NotNull Intent batteryIntent, final @NotNull SentryOptions options) {
     try {
       int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
       int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
@@ -303,7 +311,8 @@ public final class DeviceInfoUtil {
    * @return whether or not the device is currently plugged in and charging, or null if unknown
    */
   @Nullable
-  private Boolean isCharging(final @NotNull Intent batteryIntent) {
+  public static Boolean isCharging(
+      final @NotNull Intent batteryIntent, final @NotNull SentryOptions options) {
     try {
       int plugged = batteryIntent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
       return plugged == BatteryManager.BATTERY_PLUGGED_AC
@@ -390,15 +399,14 @@ public final class DeviceInfoUtil {
 
   @Nullable
   private StatFs getExternalStorageStat(final @Nullable File internalStorage) {
-    if (!isExternalStorageMounted()) {
+    try {
       File path = getExternalStorageDep(internalStorage);
       if (path != null) { // && path.canRead()) { canRead() will read return false
         return new StatFs(path.getPath());
       }
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.INFO, "Not possible to read external files directory");
-      return null;
     }
-    options.getLogger().log(SentryLevel.INFO, "External storage is not mounted or emulated.");
     return null;
   }
 
@@ -448,13 +456,6 @@ public final class DeviceInfoUtil {
       options.getLogger().log(SentryLevel.ERROR, "Error getting total external storage amount.", e);
       return null;
     }
-  }
-
-  private boolean isExternalStorageMounted() {
-    final String storageState = Environment.getExternalStorageState();
-    return (Environment.MEDIA_MOUNTED.equals(storageState)
-            || Environment.MEDIA_MOUNTED_READ_ONLY.equals(storageState))
-        && !Environment.isExternalStorageEmulated();
   }
 
   /**

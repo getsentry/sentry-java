@@ -1,6 +1,7 @@
 public final class io/sentry/transport/apache/ApacheHttpClientTransport : io/sentry/transport/ITransport {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;Lorg/apache/hc/client5/http/impl/async/CloseableHttpAsyncClient;Lio/sentry/transport/RateLimiter;)V
 	public fun close ()V
+	public fun close (Z)V
 	public fun flush (J)V
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun send (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V

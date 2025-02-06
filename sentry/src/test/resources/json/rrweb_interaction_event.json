@@ -1,0 +1,13 @@
+{
+  "type": 3,
+  "timestamp": 12345678901,
+  "data": {
+    "source": 2,
+    "type": 7,
+    "id": 1,
+    "x": 1.0,
+    "y": 2.0,
+    "pointerType": 2,
+    "pointerId": 1
+  }
+}

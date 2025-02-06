@@ -28,7 +28,7 @@ public final class UncaughtExceptionHandlerIntegration
   /** Reference to the pre-existing uncaught exception handler. */
   private @Nullable Thread.UncaughtExceptionHandler defaultExceptionHandler;
 
-  private @Nullable IHub hub;
+  private @Nullable IScopes scopes;
   private @Nullable SentryOptions options;
 
   private boolean registered = false;
@@ -43,7 +43,7 @@ public final class UncaughtExceptionHandlerIntegration
   }
 
   @Override
-  public final void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+  public final void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     if (registered) {
       options
           .getLogger()
@@ -54,7 +54,7 @@ public final class UncaughtExceptionHandlerIntegration
     }
     registered = true;
 
-    this.hub = Objects.requireNonNull(hub, "Hub is required");
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options = Objects.requireNonNull(options, "SentryOptions is required");
 
     this.options
@@ -75,7 +75,14 @@ public final class UncaughtExceptionHandlerIntegration
                 "default UncaughtExceptionHandler class='"
                     + currentHandler.getClass().getName()
                     + "'");
-        defaultExceptionHandler = currentHandler;
+
+        if (currentHandler instanceof UncaughtExceptionHandlerIntegration) {
+          final UncaughtExceptionHandlerIntegration currentHandlerIntegration =
+              (UncaughtExceptionHandlerIntegration) currentHandler;
+          defaultExceptionHandler = currentHandlerIntegration.defaultExceptionHandler;
+        } else {
+          defaultExceptionHandler = currentHandler;
+        }
       }
 
       threadAdapter.setDefaultUncaughtExceptionHandler(this);
@@ -83,13 +90,13 @@ public final class UncaughtExceptionHandlerIntegration
       this.options
           .getLogger()
           .log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration installed.");
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("UncaughtExceptionHandler");
     }
   }
 
   @Override
   public void uncaughtException(Thread thread, Throwable thrown) {
-    if (options != null && hub != null) {
+    if (options != null && scopes != null) {
       options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
 
       try {
@@ -99,14 +106,14 @@ public final class UncaughtExceptionHandlerIntegration
         final SentryEvent event = new SentryEvent(throwable);
         event.setLevel(SentryLevel.FATAL);
 
-        final ITransaction transaction = hub.getTransaction();
+        final ITransaction transaction = scopes.getTransaction();
         if (transaction == null && event.getEventId() != null) {
           // if there's no active transaction on scope, this event can trigger flush notification
           exceptionHint.setFlushable(event.getEventId());
         }
         final Hint hint = HintUtils.createWithTypeCheckHint(exceptionHint);
 
-        final @NotNull SentryId sentryId = hub.captureEvent(event, hint);
+        final @NotNull SentryId sentryId = scopes.captureEvent(event, hint);
         final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
         final EventDropReason eventDropReason = HintUtils.getEventDropReason(hint);
         // in case the event has been dropped by multithreaded deduplicator, the other threads will

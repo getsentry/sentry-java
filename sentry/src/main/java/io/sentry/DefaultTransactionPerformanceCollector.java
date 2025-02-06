@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +19,7 @@ public final class DefaultTransactionPerformanceCollector
     implements TransactionPerformanceCollector {
   private static final long TRANSACTION_COLLECTION_INTERVAL_MILLIS = 100;
   private static final long TRANSACTION_COLLECTION_TIMEOUT_MILLIS = 30000;
-  private final @NotNull Object timerLock = new Object();
+  private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
   private volatile @Nullable Timer timer = null;
   private final @NotNull Map<String, List<PerformanceCollectionData>> performanceDataMap =
       new ConcurrentHashMap<>();
@@ -28,6 +29,7 @@ public final class DefaultTransactionPerformanceCollector
 
   private final @NotNull SentryOptions options;
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
+  private long lastCollectionTimestamp = 0;
 
   public DefaultTransactionPerformanceCollector(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
@@ -81,7 +83,7 @@ public final class DefaultTransactionPerformanceCollector
       }
     }
     if (!isStarted.getAndSet(true)) {
-      synchronized (timerLock) {
+      try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
         if (timer == null) {
           timer = new Timer(true);
         }
@@ -104,6 +106,14 @@ public final class DefaultTransactionPerformanceCollector
             new TimerTask() {
               @Override
               public void run() {
+                long now = System.currentTimeMillis();
+                // The timer is scheduled to run every 100ms on average. In case it takes longer,
+                // subsequent tasks are executed more quickly. If two tasks are scheduled to run in
+                // less than 10ms, the measurement that we collect is not meaningful, so we skip it
+                if (now - lastCollectionTimestamp < 10) {
+                  return;
+                }
+                lastCollectionTimestamp = now;
                 final @NotNull PerformanceCollectionData tempData = new PerformanceCollectionData();
 
                 for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
@@ -172,7 +182,7 @@ public final class DefaultTransactionPerformanceCollector
       collector.clear();
     }
     if (isStarted.getAndSet(false)) {
-      synchronized (timerLock) {
+      try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
         if (timer != null) {
           timer.cancel();
           timer = null;

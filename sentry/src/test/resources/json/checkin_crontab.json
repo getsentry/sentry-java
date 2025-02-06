@@ -14,7 +14,9 @@
     },
     "checkin_margin": 8,
     "max_runtime": 9,
-    "timezone": "Europe/Vienna"
+    "timezone": "Europe/Vienna",
+    "failure_issue_threshold": 10,
+    "recovery_threshold": 20
   },
   "contexts":
   {

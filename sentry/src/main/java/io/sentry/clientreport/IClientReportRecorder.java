@@ -16,6 +16,8 @@ public interface IClientReportRecorder {
 
   void recordLostEvent(@NotNull DiscardReason reason, @NotNull DataCategory category);
 
+  void recordLostEvent(@NotNull DiscardReason reason, @NotNull DataCategory category, long count);
+
   @NotNull
   SentryEnvelope attachReportToEnvelope(@NotNull SentryEnvelope envelope);
 }

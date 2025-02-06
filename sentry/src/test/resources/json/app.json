@@ -12,5 +12,6 @@
       "CAMERA": "granted"
     },
     "in_foreground": true,
-    "view_names": ["MainActivity", "SidebarActivity"]
+    "view_names": ["MainActivity", "SidebarActivity"],
+    "start_type": "cold"
 }

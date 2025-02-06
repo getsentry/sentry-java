@@ -54,8 +54,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    * Enables the Auto instrumentation for Activity lifecycle tracing.
    *
    * <ul>
-   *   <li>It also requires setting any of {@link SentryOptions#getEnableTracing()}, {@link
-   *       SentryOptions#getTracesSampleRate()} or {@link SentryOptions#getTracesSampler()}.
+   *   <li>It also requires setting any of {@link SentryOptions#getTracesSampleRate()} or {@link
+   *       SentryOptions#getTracesSampler()}.
    * </ul>
    *
    * <ul>
@@ -157,6 +157,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Turns NDK on or off. Default is enabled. */
   private boolean enableNdk = true;
 
+  @NotNull
+  private NdkHandlerStrategy ndkHandlerStrategy =
+      NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_DEFAULT;
   /**
    * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
    * for sentry-android.
@@ -206,7 +209,7 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean attachAnrThreadDump = false;
 
-  private boolean enablePerformanceV2 = false;
+  private boolean enablePerformanceV2 = true;
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
@@ -338,27 +341,6 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * Returns the interval for profiling traces in milliseconds.
-   *
-   * @return the interval for profiling traces in milliseconds.
-   * @deprecated has no effect and will be removed in future versions. It now just returns 0.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public int getProfilingTracesIntervalMillis() {
-    return 0;
-  }
-
-  /**
-   * Sets the interval for profiling traces in milliseconds.
-   *
-   * @param profilingTracesIntervalMillis - the interval for profiling traces in milliseconds.
-   * @deprecated has no effect and will be removed in future versions.
-   */
-  @Deprecated
-  public void setProfilingTracesIntervalMillis(final int profilingTracesIntervalMillis) {}
-
-  /**
    * Returns the Debug image loader
    *
    * @return the image loader
@@ -472,6 +454,16 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.nativeSdkName = nativeSdkName;
   }
 
+  @ApiStatus.Internal
+  public void setNativeHandlerStrategy(final @NotNull NdkHandlerStrategy ndkHandlerStrategy) {
+    this.ndkHandlerStrategy = ndkHandlerStrategy;
+  }
+
+  @ApiStatus.Internal
+  public int getNdkHandlerStrategy() {
+    return ndkHandlerStrategy.getValue();
+  }
+
   /**
    * Returns the sdk name for the sentry native ndk module.
    *
@@ -576,20 +568,18 @@ public final class SentryAndroidOptions extends SentryOptions {
    * @return true if performance-v2 is enabled. See {@link #setEnablePerformanceV2(boolean)} for
    *     more details.
    */
-  @ApiStatus.Experimental
   public boolean isEnablePerformanceV2() {
     return enablePerformanceV2;
   }
 
   /**
-   * Experimental: Enables or disables the Performance V2 SDK features.
+   * Enables or disables the Performance V2 SDK features.
    *
    * <p>With this change - Cold app start spans will provide more accurate timings - Cold app start
    * spans will be enriched with detailed ContentProvider, Application and Activity startup times
    *
    * @param enablePerformanceV2 true if enabled or false otherwise
    */
-  @ApiStatus.Experimental
   public void setEnablePerformanceV2(final boolean enablePerformanceV2) {
     this.enablePerformanceV2 = enablePerformanceV2;
   }

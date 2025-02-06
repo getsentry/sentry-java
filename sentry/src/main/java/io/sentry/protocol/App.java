@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -40,8 +40,10 @@ public final class App implements JsonUnknown, JsonSerializable {
   private @Nullable String appBuild;
   /** Application permissions in the form of "permission_name" : "granted|not_granted" */
   private @Nullable Map<String, String> permissions;
-  /** The list of the visibile UI screens * */
+  /** The list of the visible UI screens * */
   private @Nullable List<String> viewNames;
+  /** the app start type */
+  private @Nullable String startType;
   /**
    * A flag indicating whether the app is in foreground or not. An app is in foreground when it's
    * visible to the user.
@@ -61,6 +63,7 @@ public final class App implements JsonUnknown, JsonSerializable {
     this.permissions = CollectionUtils.newConcurrentHashMap(app.permissions);
     this.inForeground = app.inForeground;
     this.viewNames = CollectionUtils.newArrayList(app.viewNames);
+    this.startType = app.startType;
     this.unknown = CollectionUtils.newConcurrentHashMap(app.unknown);
   }
 
@@ -151,6 +154,15 @@ public final class App implements JsonUnknown, JsonSerializable {
     this.viewNames = viewNames;
   }
 
+  @Nullable
+  public String getStartType() {
+    return startType;
+  }
+
+  public void setStartType(final @Nullable String startType) {
+    this.startType = startType;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -165,7 +177,8 @@ public final class App implements JsonUnknown, JsonSerializable {
         && Objects.equals(appBuild, app.appBuild)
         && Objects.equals(permissions, app.permissions)
         && Objects.equals(inForeground, app.inForeground)
-        && Objects.equals(viewNames, app.viewNames);
+        && Objects.equals(viewNames, app.viewNames)
+        && Objects.equals(startType, app.startType);
   }
 
   @Override
@@ -180,7 +193,8 @@ public final class App implements JsonUnknown, JsonSerializable {
         appBuild,
         permissions,
         inForeground,
-        viewNames);
+        viewNames,
+        startType);
   }
 
   // region json
@@ -207,6 +221,7 @@ public final class App implements JsonUnknown, JsonSerializable {
     public static final String APP_PERMISSIONS = "permissions";
     public static final String IN_FOREGROUND = "in_foreground";
     public static final String VIEW_NAMES = "view_names";
+    public static final String START_TYPE = "start_type";
   }
 
   @Override
@@ -243,6 +258,9 @@ public final class App implements JsonUnknown, JsonSerializable {
     if (viewNames != null) {
       writer.name(JsonKeys.VIEW_NAMES).value(logger, viewNames);
     }
+    if (startType != null) {
+      writer.name(JsonKeys.START_TYPE).value(startType);
+    }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -255,7 +273,7 @@ public final class App implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<App> {
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull App deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+    public @NotNull App deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       reader.beginObject();
       App app = new App();
@@ -297,6 +315,9 @@ public final class App implements JsonUnknown, JsonSerializable {
             if (viewNames != null) {
               app.setViewNames(viewNames);
             }
+            break;
+          case JsonKeys.START_TYPE:
+            app.startType = reader.nextStringOrNull();
             break;
           default:
             if (unknown == null) {

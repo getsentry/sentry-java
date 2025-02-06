@@ -26,6 +26,7 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * {@link ITransport} implementation that executes request asynchronously in a blocking manner using
@@ -39,6 +40,7 @@ public final class AsyncHttpTransport implements ITransport {
   private final @NotNull RateLimiter rateLimiter;
   private final @NotNull ITransportGate transportGate;
   private final @NotNull HttpConnection connection;
+  private volatile @Nullable Runnable currentRunnable = null;
 
   public AsyncHttpTransport(
       final @NotNull SentryOptions options,
@@ -163,16 +165,30 @@ public final class AsyncHttpTransport implements ITransport {
 
   @Override
   public void close() throws IOException {
+    close(false);
+  }
+
+  @Override
+  public void close(final boolean isRestarting) throws IOException {
+    rateLimiter.close();
     executor.shutdown();
     options.getLogger().log(SentryLevel.DEBUG, "Shutting down");
     try {
-      if (!executor.awaitTermination(options.getFlushTimeoutMillis(), TimeUnit.MILLISECONDS)) {
+      // We need a small timeout to be able to save to disk any rejected envelope
+      long timeout = isRestarting ? 0 : options.getFlushTimeoutMillis();
+      if (!executor.awaitTermination(timeout, TimeUnit.MILLISECONDS)) {
         options
             .getLogger()
             .log(
                 SentryLevel.WARNING,
-                "Failed to shutdown the async connection async sender within 1 minute. Trying to force it now.");
+                "Failed to shutdown the async connection async sender  within "
+                    + timeout
+                    + " ms. Trying to force it now.");
         executor.shutdownNow();
+        if (currentRunnable != null) {
+          // We store to disk any envelope that is currently being sent
+          executor.getRejectedExecutionHandler().rejectedExecution(currentRunnable, executor);
+        }
       }
     } catch (InterruptedException e) {
       // ok, just give up then...
@@ -222,6 +238,7 @@ public final class AsyncHttpTransport implements ITransport {
 
     @Override
     public void run() {
+      currentRunnable = this;
       TransportResult result = this.failedResult;
       try {
         result = flush();
@@ -243,6 +260,7 @@ public final class AsyncHttpTransport implements ITransport {
                       finalResult.isSuccess());
               submissionResult.setResult(finalResult.isSuccess());
             });
+        currentRunnable = null;
       }
     }
 

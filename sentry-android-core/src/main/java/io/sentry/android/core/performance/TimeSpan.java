@@ -20,10 +20,20 @@ import org.jetbrains.annotations.TestOnly;
 public class TimeSpan implements Comparable<TimeSpan> {
 
   private @Nullable String description;
-
   private long startUnixTimeMs;
   private long startUptimeMs;
   private long stopUptimeMs;
+
+  public void setup(
+      final @Nullable String description,
+      final long startUnixTimeMs,
+      final long startUptimeMs,
+      final long stopUptimeMs) {
+    this.description = description;
+    this.startUnixTimeMs = startUnixTimeMs;
+    this.startUptimeMs = startUptimeMs;
+    this.stopUptimeMs = stopUptimeMs;
+  }
 
   /** Start the time span */
   public void start() {

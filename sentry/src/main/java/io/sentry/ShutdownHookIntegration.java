@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.annotations.VisibleForTesting;
 
-/** Registers hook that flushes {@link Hub} when main thread shuts down. */
+/** Registers hook that flushes {@link Scopes} when main thread shuts down. */
 public final class ShutdownHookIntegration implements Integration, Closeable {
 
   private final @NotNull Runtime runtime;
@@ -27,15 +27,18 @@ public final class ShutdownHookIntegration implements Integration, Closeable {
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(hub, "Hub is required");
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(scopes, "Scopes are required");
     Objects.requireNonNull(options, "SentryOptions is required");
 
     if (options.isEnableShutdownHook()) {
-      thread = new Thread(() -> hub.flush(options.getFlushTimeoutMillis()));
-      runtime.addShutdownHook(thread);
-      options.getLogger().log(SentryLevel.DEBUG, "ShutdownHookIntegration installed.");
-      addIntegrationToSdkVersion(getClass());
+      thread = new Thread(() -> scopes.flush(options.getFlushTimeoutMillis()));
+      handleShutdownInProgress(
+          () -> {
+            runtime.addShutdownHook(thread);
+            options.getLogger().log(SentryLevel.DEBUG, "ShutdownHookIntegration installed.");
+            addIntegrationToSdkVersion("ShutdownHook");
+          });
     } else {
       options.getLogger().log(SentryLevel.INFO, "enableShutdownHook is disabled.");
     }
@@ -44,16 +47,22 @@ public final class ShutdownHookIntegration implements Integration, Closeable {
   @Override
   public void close() throws IOException {
     if (thread != null) {
-      try {
-        runtime.removeShutdownHook(thread);
-      } catch (IllegalStateException e) {
-        @Nullable final String message = e.getMessage();
-        // https://github.com/openjdk/jdk/blob/09b8a1959771213cb982d062f0a913285e4a0c6e/src/java.base/share/classes/java/lang/ApplicationShutdownHooks.java#L83
-        if (message != null && message.equals("Shutdown in progress")) {
-          // ignore
-        } else {
-          throw e;
-        }
+      handleShutdownInProgress(() -> runtime.removeShutdownHook(thread));
+    }
+  }
+
+  private void handleShutdownInProgress(final @NotNull Runnable runnable) {
+    try {
+      runnable.run();
+    } catch (IllegalStateException e) {
+      @Nullable final String message = e.getMessage();
+      // https://github.com/openjdk/jdk/blob/09b8a1959771213cb982d062f0a913285e4a0c6e/src/java.base/share/classes/java/lang/ApplicationShutdownHooks.java#L83
+      if (message != null
+          && (message.equals("Shutdown in progress")
+              || message.equals("VM already shutting down"))) {
+        // ignore
+      } else {
+        throw e;
       }
     }
   }

@@ -1,5 +1,6 @@
 package io.sentry.android.core
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.ActivityManager.MemoryInfo
 import android.app.ActivityManager.RunningAppProcessInfo
@@ -34,6 +35,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 @Config(sdk = [33])
@@ -46,6 +48,7 @@ class ContextUtilsTest {
 
     @BeforeTest
     fun `set up`() {
+        ContextUtils.resetInstance()
         context = ApplicationProvider.getApplicationContext()
         logger = NoOpLogger.getInstance()
         ShadowBuild.reset()
@@ -55,20 +58,20 @@ class ContextUtilsTest {
 
     @Test
     fun `Given a valid context, returns a valid PackageInfo`() {
-        val packageInfo = ContextUtils.getPackageInfo(context, mock(), mock())
+        val packageInfo = ContextUtils.getPackageInfo(context, mock())
         assertNotNull(packageInfo)
     }
 
     @Test
     fun `Given an  invalid context, do not throw Error`() {
         // as Context is not fully mocked, it'll throw NPE but catch it and return null
-        val packageInfo = ContextUtils.getPackageInfo(mock(), mock(), mock())
+        val packageInfo = ContextUtils.getPackageInfo(mock(), mock())
         assertNull(packageInfo)
     }
 
     @Test
     fun `Given a valid PackageInfo, returns a valid versionCode`() {
-        val packageInfo = ContextUtils.getPackageInfo(context, mock(), mock())
+        val packageInfo = ContextUtils.getPackageInfo(context, mock())
         val versionCode = ContextUtils.getVersionCode(packageInfo!!, mock())
 
         assertNotNull(versionCode)
@@ -77,7 +80,7 @@ class ContextUtilsTest {
     @Test
     fun `Given a valid PackageInfo, returns a valid versionName`() {
         // VersionName is null during tests, so we mock it the second time
-        val packageInfo = ContextUtils.getPackageInfo(context, mock(), mock())!!
+        val packageInfo = ContextUtils.getPackageInfo(context, mock())!!
         val versionName = ContextUtils.getVersionName(packageInfo)
         assertNull(versionName)
         val mockedPackageInfo = spy(packageInfo) { it.versionName = "" }
@@ -87,13 +90,13 @@ class ContextUtilsTest {
 
     @Test
     fun `when context is valid, getApplicationName returns application name`() {
-        val appName = ContextUtils.getApplicationName(context, logger)
+        val appName = ContextUtils.getApplicationName(context)
         assertEquals("io.sentry.android.core.test", appName)
     }
 
     @Test
     fun `when context is invalid, getApplicationName returns null`() {
-        val appName = ContextUtils.getApplicationName(mock(), logger)
+        val appName = ContextUtils.getApplicationName(mock())
         assertNull(appName)
     }
 
@@ -178,7 +181,7 @@ class ContextUtilsTest {
 
     @Test
     fun `when supported abis is specified, getArchitectures returns correct values`() {
-        val architectures = ContextUtils.getArchitectures(BuildInfoProvider(logger))
+        val architectures = ContextUtils.getArchitectures()
         assertEquals("armeabi-v7a", architectures[0])
     }
 
@@ -206,6 +209,7 @@ class ContextUtilsTest {
         assertNull(memInfo)
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Test
     fun `registerReceiver calls context_registerReceiver without exported flag on API 32-`() {
         val buildInfo = mock<BuildInfoProvider>()
@@ -225,7 +229,7 @@ class ContextUtilsTest {
         val context = mock<Context>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.TIRAMISU)
         ContextUtils.registerReceiver(context, buildInfo, receiver, filter)
-        verify(context).registerReceiver(eq(receiver), eq(filter), eq(Context.RECEIVER_EXPORTED))
+        verify(context).registerReceiver(eq(receiver), eq(filter), eq(Context.RECEIVER_NOT_EXPORTED))
     }
 
     @Test
@@ -245,5 +249,22 @@ class ContextUtilsTest {
             )
         )
         assertFalse(ContextUtils.isForegroundImportance())
+    }
+
+    @Test
+    fun `getApplicationContext returns context if app context is null`() {
+        val contextMock = mock<Context>()
+        val appContext = ContextUtils.getApplicationContext(contextMock)
+        assertSame(contextMock, appContext)
+    }
+
+    @Test
+    fun `getApplicationContext returns app context`() {
+        val contextMock = mock<Context>()
+        val appContextMock = mock<Context>()
+        whenever(contextMock.applicationContext).thenReturn(appContextMock)
+
+        val appContext = ContextUtils.getApplicationContext(contextMock)
+        assertSame(appContextMock, appContext)
     }
 }

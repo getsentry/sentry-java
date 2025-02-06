@@ -10,6 +10,9 @@ jobs:
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
       - name: set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -17,13 +20,15 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@982da8e78c05368c70dac0351bb82647a9e9a5d2 # pin@v2
+        uses: gradle/actions/setup-gradle@6962c6c931ff9effc947259cc1b9c6edba90b9d3 # pin@v3
+        with:
+          gradle-home-cache-cleanup: true
 
       - name: Generate Aggregate Javadocs
         run: |
           ./gradlew aggregateJavadocs
       - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@65b5dfd4f5bcd3a7403bbc2959c144256167464e # pin@4.5.0
+        uses: JamesIves/github-pages-deploy-action@15de0f09300eea763baee31dff6c6184995c5f6a # pin@4.7.2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages

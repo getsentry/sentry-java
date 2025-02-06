@@ -2,8 +2,8 @@ package io.sentry.protocol
 
 import io.sentry.ILogger
 import io.sentry.JsonDeserializer
-import io.sentry.JsonObjectReader
 import io.sentry.JsonSerializable
+import io.sentry.ObjectReader
 import io.sentry.ObjectWriter
 import io.sentry.SentryBaseEvent
 import io.sentry.SentryIntegrationPackageStorage
@@ -27,7 +27,7 @@ class SentryBaseEventSerializationTest {
         }
 
         class Deserializer : JsonDeserializer<Sut> {
-            override fun deserialize(reader: JsonObjectReader, logger: ILogger): Sut {
+            override fun deserialize(reader: ObjectReader, logger: ILogger): Sut {
                 val sut = Sut()
                 reader.beginObject()
 
@@ -56,7 +56,7 @@ class SentryBaseEventSerializationTest {
                     setOperatingSystem(OperatingSystemSerializationTest.Fixture().getSut())
                     setRuntime(SentryRuntimeSerializationTest.Fixture().getSut())
                     setResponse(ResponseSerializationTest.Fixture().getSut())
-                    trace = SpanContextSerializationTest.Fixture().getSut()
+                    setTrace(SpanContextSerializationTest.Fixture().getSut())
                 }
                 sdk = SdkVersionSerializationTest.Fixture().getSut()
                 request = RequestSerializationTest.Fixture().getSut()

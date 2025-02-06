@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
 
       - name: Setup Java Version
         uses: actions/setup-java@v4
@@ -24,7 +26,9 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@982da8e78c05368c70dac0351bb82647a9e9a5d2 # pin@v2
+        uses: gradle/actions/setup-gradle@6962c6c931ff9effc947259cc1b9c6edba90b9d3 # pin@v3
+        with:
+          gradle-home-cache-cleanup: true
 
       - name: Build artifacts
         run: make publish

@@ -1,8 +1,12 @@
 package io.sentry
 
 import io.sentry.protocol.SentryId
+import io.sentry.test.injectForField
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
@@ -17,10 +21,10 @@ import kotlin.test.assertTrue
 class SpanTest {
 
     private class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
 
         init {
-            whenever(hub.options).thenReturn(
+            whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
                     dsn = "https://key@sentry.io/proj"
                     isTraceSampling = true
@@ -29,20 +33,27 @@ class SpanTest {
         }
 
         fun getSut(options: SpanOptions = SpanOptions()): Span {
-            return Span(
+            val context = SpanContext(
                 SentryId(),
                 SpanId(),
-                SentryTracer(TransactionContext("name", "op"), hub),
+                SpanId(),
                 "op",
-                hub,
                 null,
+                null,
+                null,
+                null
+            )
+            return Span(
+                SentryTracer(TransactionContext("name", "op"), scopes),
+                scopes,
+                context,
                 options,
                 null
             )
         }
 
         fun getRootSut(options: TransactionOptions = TransactionOptions()): Span {
-            return SentryTracer(TransactionContext("name", "op"), hub, options).root
+            return SentryTracer(TransactionContext("name", "op"), scopes, options).root
         }
     }
 
@@ -97,15 +108,25 @@ class SpanTest {
     fun `converts to Sentry trace header`() {
         val traceId = SentryId()
         val parentSpanId = SpanId()
-        val span = Span(
+        val spanContext = SpanContext(
             traceId,
+            SpanId(),
             parentSpanId,
+            "op",
+            null,
+            TracesSamplingDecision(true),
+            null,
+            null
+        )
+        val span = Span(
             SentryTracer(
                 TransactionContext("name", "op", TracesSamplingDecision(true)),
-                fixture.hub
+                fixture.scopes
             ),
-            "op",
-            fixture.hub
+            fixture.scopes,
+            spanContext,
+            SpanOptions(),
+            null
         )
         val sentryTrace = span.toSentryTrace()
 
@@ -114,6 +135,38 @@ class SpanTest {
         assertNotNull(sentryTrace.isSampled) {
             assertTrue(it)
         }
+    }
+
+    @Test
+    fun `transfers span origin from options to span context`() {
+        val traceId = SentryId()
+        val parentSpanId = SpanId()
+        val spanContext = SpanContext(
+            traceId,
+            SpanId(),
+            parentSpanId,
+            "op",
+            null,
+            TracesSamplingDecision(true),
+            null,
+            "old-origin"
+        )
+
+        val spanOptions = SpanOptions()
+        spanOptions.origin = "new-origin"
+
+        val span = Span(
+            SentryTracer(
+                TransactionContext("name", "op", TracesSamplingDecision(true)),
+                fixture.scopes
+            ),
+            fixture.scopes,
+            spanContext,
+            spanOptions,
+            null
+        )
+
+        assertEquals("new-origin", span.spanContext.origin)
     }
 
     @Test
@@ -159,17 +212,17 @@ class SpanTest {
     }
 
     @Test
-    fun `when span has throwable set set, it assigns itself to throwable on the Hub`() {
+    fun `when span has throwable set set, it assigns itself to throwable on the Scopes`() {
         val transaction = SentryTracer(
             TransactionContext("name", "op"),
-            fixture.hub
+            fixture.scopes
         )
         val span = transaction.startChild("op")
         val ex = RuntimeException()
         span.throwable = ex
         span.finish()
 
-        verify(fixture.hub).setSpanContext(ex, span, "name")
+        verify(fixture.scopes).setSpanContext(ex, span, "name")
     }
 
     @Test
@@ -184,7 +237,7 @@ class SpanTest {
         span.finish(SpanStatus.UNKNOWN_ERROR)
 
         // call only once
-        verify(fixture.hub).setSpanContext(any(), any(), any())
+        verify(fixture.scopes).setSpanContext(any(), any(), any())
         assertEquals(SpanStatus.OK, span.status)
         assertEquals(timestamp, span.finishDate)
     }
@@ -406,7 +459,6 @@ class SpanTest {
         assertEquals(transactionTraceContext.publicKey, spanTraceContext.publicKey)
         assertEquals(transactionTraceContext.sampleRate, spanTraceContext.sampleRate)
         assertEquals(transactionTraceContext.userId, spanTraceContext.userId)
-        assertEquals(transactionTraceContext.userSegment, spanTraceContext.userSegment)
     }
 
     @Test
@@ -439,8 +491,64 @@ class SpanTest {
         assertEquals(endDate, span.finishDate)
     }
 
+    @Test
+    fun `setMeasurement sets a measurement`() {
+        val span = fixture.getSut()
+        span.setMeasurement("test", 1)
+        assertNotNull(span.measurements["test"])
+        assertEquals(1, span.measurements["test"]!!.value)
+    }
+
+    @Test
+    fun `setMeasurement does not set a measurement if a span is finished`() {
+        val span = fixture.getSut()
+        span.finish()
+        span.setMeasurement("test", 1)
+        assertTrue(span.measurements.isEmpty())
+    }
+
+    @Test
+    fun `setMeasurement also set a measurement to the transaction root span`() {
+        val transaction = spy(getTransaction())
+        val span = transaction.startChild("op") as Span
+        // We need to inject the mock, otherwise the span calls the real transaction object
+        span.injectForField("transaction", transaction)
+        span.setMeasurement("test", 1)
+        verify(transaction).setMeasurementFromChild(eq("test"), eq(1))
+        verify(transaction).setMeasurement(eq("test"), eq(1))
+        assertNotNull(span.measurements["test"])
+        assertEquals(1, span.measurements["test"]!!.value)
+        assertNotNull(transaction.root.measurements["test"])
+        assertEquals(1, transaction.root.measurements["test"]!!.value)
+    }
+
+    @Test
+    fun `setMeasurement on transaction root span does not call transaction setMeasurement to avoid infinite recursion`() {
+        val transaction = spy(getTransaction())
+        // We need to inject the mock, otherwise the span calls the real transaction object
+        transaction.root.injectForField("transaction", transaction)
+        transaction.root.setMeasurement("test", 1)
+        verify(transaction, never()).setMeasurementFromChild(any(), any())
+        verify(transaction, never()).setMeasurementFromChild(any(), any(), any())
+        assertNotNull(transaction.root.measurements["test"])
+        assertEquals(1, transaction.root.measurements["test"]!!.value)
+    }
+
+    // test to ensure that the span is not finished when the finishCallback is called
+    @Test
+    fun `span is not finished when finishCallback is called`() {
+        val span = fixture.getSut()
+        span.setSpanFinishedCallback {
+            assertFalse(span.isFinished)
+            assertNotNull(span.finishDate)
+        }
+        assertFalse(span.isFinished)
+        assertNull(span.finishDate)
+        span.finish()
+    }
+
     private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer {
-        return SentryTracer(transactionContext, fixture.hub)
+        return SentryTracer(transactionContext, fixture.scopes)
     }
 
     private fun startChildFromSpan(): Span {

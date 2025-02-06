@@ -57,7 +57,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     if (HintUtils.hasType(hint, UncaughtExceptionHandlerIntegration.UncaughtExceptionHint.class)
         && sdkInitTimeSpan.hasStarted()) {
       long timeSinceSdkInit =
-          currentDateProvider.getCurrentTimeMillis() - sdkInitTimeSpan.getStartTimestampMs();
+          currentDateProvider.getCurrentTimeMillis() - sdkInitTimeSpan.getStartUptimeMs();
       if (timeSinceSdkInit <= options.getStartupCrashDurationThresholdMillis()) {
         options
             .getLogger()

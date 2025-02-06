@@ -2,9 +2,9 @@ package io.sentry.profilemeasurements;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -92,7 +92,7 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
 
     @Override
     public @NotNull ProfileMeasurementValue deserialize(
-        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
+        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       ProfileMeasurementValue data = new ProfileMeasurementValue();
       Map<String, Object> unknown = null;

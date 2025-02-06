@@ -6,6 +6,7 @@ import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
+import okhttp3.mockwebserver.SocketPolicy
 import kotlin.test.assertNotNull
 
 /** Mocks a relay server. */
@@ -32,24 +33,24 @@ class MockRelay(
     init {
         relay.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
-                // If a request with a body size of 0 is received, we drop it.
-                // This shouldn't happen in reality, but it rarely happens in tests.
-                if (request.bodySize == 0L || request.failure != null) {
-                    return MockResponse()
-                }
                 // We check if there is any custom response previously set to return to this request,
                 // otherwise we return a successful MockResponse.
-                val response = responses.asSequence()
-                    .mapNotNull { it(request) }
-                    .firstOrNull()
-                    ?: MockResponse()
+                val response = responses.removeFirstOrNull()?.let { it(request) } ?: MockResponse()
 
                 // We should receive only envelopes on this path.
                 if (request.path == envelopePath) {
                     val relayResponse = RelayAsserter.RelayResponse(request, response)
+                    // If we reply with NO_RESPONSE, we can ignore the request, so we can return here
+                    if (relayResponse.envelope == null || response.socketPolicy == SocketPolicy.NO_RESPONSE) {
+                        // If we are waiting for requests to be received, we decrement the associated counter.
+                        if (waitForRequests) {
+                            relayIdlingResource.decrement()
+                        }
+                        return response
+                    }
                     assertNotNull(relayResponse.envelope)
                     val envelopeId: String = relayResponse.envelope!!.header.eventId!!.toString()
-                    // If we already received the envelope (e.g. retrying mechanism) we drop it
+                    // If we already received the envelope (e.g. retrying mechanism) we ignore it
                     if (receivedEnvelopes.contains(envelopeId)) {
                         return MockResponse()
                     }
@@ -88,6 +89,13 @@ class MockRelay(
         // Responses are added to the beginning of the list so they'll take precedence over
         // previously added ones.
         responses.add(0, response)
+    }
+
+    /** Add a custom response to be returned at the next request received. */
+    fun addTimeoutResponse() {
+        addResponse {
+            MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE)
+        }
     }
 
     /** Add a custom response to be returned at the next request received, if it satisfies the [filter]. */

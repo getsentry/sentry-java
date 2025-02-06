@@ -231,6 +231,28 @@ class HttpConnectionTest {
     }
 
     @Test
+    fun `When Proxy type is not set, it defaults to HTTP`() {
+        fixture.proxy = Proxy("proxy.example.com", "8080")
+        val transport = fixture.getSUT()
+
+        transport.send(createEnvelope())
+
+        assertEquals(Type.HTTP, transport.proxy!!.type())
+    }
+
+    @Test
+    fun `When Proxy type is set to SOCKS, HTTP connection uses it`() {
+        fixture.proxy = Proxy("proxy.example.com", "8080").apply {
+            type = Type.SOCKS
+        }
+        val transport = fixture.getSUT()
+
+        transport.send(createEnvelope())
+
+        assertEquals(Type.SOCKS, transport.proxy!!.type())
+    }
+
+    @Test
     fun `sets common headers and on http connection`() {
         val transport = fixture.getSUT()
 

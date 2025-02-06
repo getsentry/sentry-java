@@ -1,11 +1,12 @@
 package io.sentry.spring.jakarta.webflux
 
-import io.sentry.HubAdapter
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ITransportFactory
+import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.checkEvent
 import io.sentry.checkTransaction
+import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
@@ -95,7 +96,7 @@ class SentryWebfluxIntegrationTest {
             checkEvent { event ->
                 assertEquals("GET /throws", event.transaction)
                 assertNotNull(event.exceptions) {
-                    val ex = it.first()
+                    val ex = it.last()
                     assertEquals("something went wrong", ex.value)
                     assertNotNull(ex.mechanism) {
                         assertThat(it.isHandled).isFalse()
@@ -160,13 +161,13 @@ open class App {
     open fun mockTransport() = transport
 
     @Bean
-    open fun hub() = HubAdapter.getInstance()
+    open fun scopes() = ScopesAdapter.getInstance()
 
     @Bean
-    open fun sentryFilter(hub: IHub) = SentryWebFilter(hub)
+    open fun sentryFilter(scopes: IScopes) = SentryWebFilter(scopes)
 
     @Bean
-    open fun sentryWebExceptionHandler(hub: IHub) = SentryWebExceptionHandler(hub)
+    open fun sentryWebExceptionHandler(scopes: IScopes) = SentryWebExceptionHandler(scopes)
 
     @Bean
     open fun sentryScheduleHookRegistrar() = ApplicationRunner {
@@ -175,11 +176,12 @@ open class App {
 
     @Bean
     open fun sentryInitializer(transportFactory: ITransportFactory) = ApplicationRunner {
-        Sentry.init {
+        initForTest {
             it.dsn = "http://key@localhost/proj"
             it.setDebug(true)
             it.setTransportFactory(transportFactory)
-            it.enableTracing = true
+            it.tracesSampleRate = 1.0
+            it.isEnableBackpressureHandling = false
         }
     }
 }

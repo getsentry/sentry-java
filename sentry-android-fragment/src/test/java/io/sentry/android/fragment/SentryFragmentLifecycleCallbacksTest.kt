@@ -5,8 +5,8 @@ import android.os.Bundle
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import io.sentry.Breadcrumb
-import io.sentry.Hub
 import io.sentry.IScope
+import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.ITransaction
 import io.sentry.ScopeCallback
@@ -32,7 +32,7 @@ class SentryFragmentLifecycleCallbacksTest {
 
     private class Fixture {
         val fragmentManager = mock<FragmentManager>()
-        val hub = mock<Hub>()
+        val scopes = mock<IScopes>()
         val fragment = mock<Fragment>()
         val context = mock<Context>()
         val scope = mock<IScope>()
@@ -40,12 +40,12 @@ class SentryFragmentLifecycleCallbacksTest {
         val span = mock<ISpan>()
 
         fun getSut(
-            loggedFragmentLifecycleStates: Set<FragmentLifecycleState> = FragmentLifecycleState.values().toSet(),
+            loggedFragmentLifecycleStates: Set<FragmentLifecycleState> = FragmentLifecycleState.states,
             enableAutoFragmentLifecycleTracing: Boolean = false,
             tracesSampleRate: Double? = 1.0,
             isAdded: Boolean = true
         ): SentryFragmentLifecycleCallbacks {
-            whenever(hub.options).thenReturn(
+            whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
                     setTracesSampleRate(tracesSampleRate)
                 }
@@ -53,14 +53,14 @@ class SentryFragmentLifecycleCallbacksTest {
             whenever(span.spanContext).thenReturn(
                 SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null)
             )
-            whenever(transaction.startChild(any(), any())).thenReturn(span)
+            whenever(transaction.startChild(any<String>(), any<String>())).thenReturn(span)
             whenever(scope.transaction).thenReturn(transaction)
-            whenever(hub.configureScope(any())).thenAnswer {
+            whenever(scopes.configureScope(any())).thenAnswer {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }
             whenever(fragment.isAdded).thenReturn(isAdded)
             return SentryFragmentLifecycleCallbacks(
-                hub = hub,
+                scopes = scopes,
                 filterFragmentLifecycleBreadcrumbs = loggedFragmentLifecycleStates,
                 enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
             )
@@ -190,7 +190,7 @@ class SentryFragmentLifecycleCallbacksTest {
 
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
-        verify(fixture.transaction, never()).startChild(any(), any())
+        verify(fixture.transaction, never()).startChild(any<String>(), any<String>())
     }
 
     @Test
@@ -200,10 +200,10 @@ class SentryFragmentLifecycleCallbacksTest {
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
         verify(fixture.transaction).startChild(
-            check {
+            check<String> {
                 assertEquals(SentryFragmentLifecycleCallbacks.FRAGMENT_LOAD_OP, it)
             },
-            check {
+            check<String> {
                 assertEquals("androidx.fragment.app.Fragment", it)
             }
         )
@@ -215,7 +215,7 @@ class SentryFragmentLifecycleCallbacksTest {
 
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
-        verify(fixture.transaction, never()).startChild(any(), any())
+        verify(fixture.transaction, never()).startChild(any<String>(), any<String>())
     }
 
     @Test
@@ -225,15 +225,15 @@ class SentryFragmentLifecycleCallbacksTest {
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
 
-        verify(fixture.transaction).startChild(any(), any())
+        verify(fixture.transaction).startChild(any<String>(), any<String>())
     }
 
     @Test
-    fun `When fragment is resumed, it should stop tracing if enabled`() {
+    fun `When fragment is started, it should stop tracing if enabled`() {
         val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
 
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
-        sut.onFragmentResumed(fixture.fragmentManager, fixture.fragment)
+        sut.onFragmentStarted(fixture.fragmentManager, fixture.fragment)
 
         verify(fixture.span).finish(
             check {
@@ -243,12 +243,12 @@ class SentryFragmentLifecycleCallbacksTest {
     }
 
     @Test
-    fun `When fragment is resumed, it should stop tracing if enabled but keep status`() {
+    fun `When fragment is started, it should stop tracing if enabled but keep status`() {
         val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
 
         whenever(fixture.span.status).thenReturn(SpanStatus.ABORTED)
         sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
-        sut.onFragmentResumed(fixture.fragmentManager, fixture.fragment)
+        sut.onFragmentStarted(fixture.fragmentManager, fixture.fragment)
 
         verify(fixture.span).finish(
             check {
@@ -272,7 +272,7 @@ class SentryFragmentLifecycleCallbacksTest {
     }
 
     private fun verifyBreadcrumbAdded(expectedState: String) {
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check { breadcrumb: Breadcrumb ->
                 assertEquals("ui.fragment.lifecycle", breadcrumb.category)
                 assertEquals("navigation", breadcrumb.type)
@@ -285,6 +285,6 @@ class SentryFragmentLifecycleCallbacksTest {
     }
 
     private fun verifyBreadcrumbAddedCount(count: Int) {
-        verify(fixture.hub, times(count)).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+        verify(fixture.scopes, times(count)).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
     }
 }

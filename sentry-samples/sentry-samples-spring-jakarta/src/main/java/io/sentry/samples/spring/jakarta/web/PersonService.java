@@ -32,6 +32,7 @@ public class PersonService {
     try {
       Thread.sleep(100);
     } catch (InterruptedException e) {
+      // ignored
     }
     return person;
   }

@@ -11,13 +11,9 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
-import io.sentry.util.CheckInUtils;
-import io.sentry.util.HintUtils;
-import io.sentry.util.Objects;
-import io.sentry.util.TracingUtils;
+import io.sentry.util.*;
 import java.io.Closeable;
 import java.io.IOException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,8 +33,6 @@ public final class SentryClient implements ISentryClient {
 
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
-  private final @Nullable SecureRandom random;
-
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
 
   @Override
@@ -46,7 +40,8 @@ public final class SentryClient implements ISentryClient {
     return enabled;
   }
 
-  SentryClient(final @NotNull SentryOptions options) {
+  @ApiStatus.Internal
+  public SentryClient(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;
 
@@ -58,8 +53,6 @@ public final class SentryClient implements ISentryClient {
 
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
-
-    this.random = options.getSampleRate() == null ? null : new SecureRandom();
   }
 
   private boolean shouldApplyScopeData(
@@ -105,13 +98,27 @@ public final class SentryClient implements ISentryClient {
 
     if (event != null) {
       final Throwable eventThrowable = event.getThrowable();
-      if (eventThrowable != null && options.containsIgnoredExceptionForType(eventThrowable)) {
+      if (eventThrowable != null
+          && ExceptionUtils.isIgnored(options.getIgnoredExceptionsForType(), eventThrowable)) {
         options
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
                 "Event was dropped as the exception %s is ignored",
                 eventThrowable.getClass());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+        return SentryId.EMPTY_ID;
+      }
+
+      if (ErrorUtils.isIgnored(options.getIgnoredErrors(), event)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was dropped as it matched a string/pattern in ignoredErrors",
+                event.getMessage());
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
@@ -191,9 +198,16 @@ public final class SentryClient implements ISentryClient {
       sentryId = event.getEventId();
     }
 
+    final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
+    // if event is backfillable we don't wanna trigger capture replay, because it's an event from
+    // the past
+    if (event != null && !isBackfillable && (event.isErrored() || event.isCrashed())) {
+      options.getReplayController().captureReplay(event.isCrashed());
+    }
+
     try {
       @Nullable TraceContext traceContext = null;
-      if (HintUtils.hasType(hint, Backfillable.class)) {
+      if (isBackfillable) {
         // for backfillable hint we synthesize Baggage from event values
         if (event != null) {
           final Baggage baggage = Baggage.fromEvent(event, options);
@@ -212,12 +226,12 @@ public final class SentryClient implements ISentryClient {
 
       final boolean shouldSendAttachments = event != null;
       List<Attachment> attachments = shouldSendAttachments ? getAttachments(hint) : null;
-      final SentryEnvelope envelope =
+      final @Nullable SentryEnvelope envelope =
           buildEnvelope(event, attachments, session, traceContext, null);
 
       hint.clear();
       if (envelope != null) {
-        transport.send(envelope, hint);
+        sentryId = sendEnvelope(envelope, hint);
       }
     } catch (IOException | SentryEnvelopeException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
@@ -227,20 +241,91 @@ public final class SentryClient implements ISentryClient {
     }
 
     // if we encountered a crash/abnormal exit finish tracing in order to persist and send
-    // any running transaction / profiling data
+    // any running transaction / profiling data.
     if (scope != null) {
-      final @Nullable ITransaction transaction = scope.getTransaction();
-      if (transaction != null) {
-        if (HintUtils.hasType(hint, TransactionEnd.class)) {
-          final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
-          if (sentrySdkHint instanceof DiskFlushNotification) {
-            ((DiskFlushNotification) sentrySdkHint).setFlushable(transaction.getEventId());
-            transaction.forceFinish(SpanStatus.ABORTED, false, hint);
-          } else {
-            transaction.forceFinish(SpanStatus.ABORTED, false, null);
-          }
+      finalizeTransaction(scope, hint);
+    }
+
+    return sentryId;
+  }
+
+  private void finalizeTransaction(final @NotNull IScope scope, final @NotNull Hint hint) {
+    final @Nullable ITransaction transaction = scope.getTransaction();
+    if (transaction != null) {
+      if (HintUtils.hasType(hint, TransactionEnd.class)) {
+        final Object sentrySdkHint = HintUtils.getSentrySdkHint(hint);
+        if (sentrySdkHint instanceof DiskFlushNotification) {
+          ((DiskFlushNotification) sentrySdkHint).setFlushable(transaction.getEventId());
+          transaction.forceFinish(SpanStatus.ABORTED, false, hint);
+        } else {
+          transaction.forceFinish(SpanStatus.ABORTED, false, null);
         }
       }
+    }
+  }
+
+  @Override
+  public @NotNull SentryId captureReplayEvent(
+      @NotNull SentryReplayEvent event, final @Nullable IScope scope, @Nullable Hint hint) {
+    Objects.requireNonNull(event, "SessionReplay is required.");
+
+    if (hint == null) {
+      hint = new Hint();
+    }
+
+    if (shouldApplyScopeData(event, hint)) {
+      applyScope(event, scope);
+    }
+
+    options.getLogger().log(SentryLevel.DEBUG, "Capturing session replay: %s", event.getEventId());
+
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (event.getEventId() != null) {
+      sentryId = event.getEventId();
+    }
+
+    event = processReplayEvent(event, hint, options.getEventProcessors());
+
+    if (event != null) {
+      event = executeBeforeSendReplay(event, hint);
+
+      if (event == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSendReplay");
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Replay);
+      }
+    }
+
+    if (event == null) {
+      return SentryId.EMPTY_ID;
+    }
+
+    try {
+      // TODO: check if event is Backfillable and backfill traceContext from the event values
+      @Nullable TraceContext traceContext = null;
+      if (scope != null) {
+        final @Nullable ITransaction transaction = scope.getTransaction();
+        if (transaction != null) {
+          traceContext = transaction.traceContext();
+        } else {
+          final @NotNull PropagationContext propagationContext =
+              TracingUtils.maybeUpdateBaggage(scope, options);
+          traceContext = propagationContext.traceContext();
+        }
+      }
+
+      final boolean cleanupReplayFolder = HintUtils.hasType(hint, Backfillable.class);
+      final SentryEnvelope envelope =
+          buildEnvelope(event, hint.getReplayRecording(), traceContext, cleanupReplayFolder);
+
+      hint.clear();
+      transport.send(envelope, hint);
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
+
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
     }
 
     return sentryId;
@@ -404,6 +489,7 @@ public final class SentryClient implements ISentryClient {
       final @NotNull Hint hint,
       final @NotNull List<EventProcessor> eventProcessors) {
     for (final EventProcessor processor : eventProcessors) {
+      final int spanCountBeforeProcessor = transaction.getSpans().size();
       try {
         transaction = processor.process(transaction, hint);
       } catch (Throwable e) {
@@ -415,6 +501,7 @@ public final class SentryClient implements ISentryClient {
                 "An exception occurred while processing transaction by processor: %s",
                 processor.getClass().getName());
       }
+      final int spanCountAfterProcessor = transaction == null ? 0 : transaction.getSpans().size();
 
       if (transaction == null) {
         options
@@ -426,10 +513,62 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
+        // If we drop a transaction, we are also dropping all its spans (+1 for the root span)
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.EVENT_PROCESSOR, DataCategory.Span, spanCountBeforeProcessor + 1);
         break;
+      } else if (spanCountAfterProcessor < spanCountBeforeProcessor) {
+        // If the callback removed some spans, we report it
+        final int droppedSpanCount = spanCountBeforeProcessor - spanCountAfterProcessor;
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "%d spans were dropped by a processor: %s",
+                droppedSpanCount,
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Span, droppedSpanCount);
       }
     }
     return transaction;
+  }
+
+  @Nullable
+  private SentryReplayEvent processReplayEvent(
+      @NotNull SentryReplayEvent replayEvent,
+      final @NotNull Hint hint,
+      final @NotNull List<EventProcessor> eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        replayEvent = processor.process(replayEvent, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while processing replay event by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (replayEvent == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Replay event was dropped by a processor: %s",
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Replay);
+        break;
+      }
+    }
+    return replayEvent;
   }
 
   @Override
@@ -445,8 +584,8 @@ public final class SentryClient implements ISentryClient {
         .log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
 
     try {
-      final SentryEnvelope envelope = buildEnvelope(userFeedback);
-      transport.send(envelope);
+      final @NotNull SentryEnvelope envelope = buildEnvelope(userFeedback);
+      sendEnvelope(envelope, null);
     } catch (IOException e) {
       options
           .getLogger()
@@ -481,6 +620,32 @@ public final class SentryClient implements ISentryClient {
 
     final SentryEnvelopeHeader envelopeHeader =
         new SentryEnvelopeHeader(checkIn.getCheckInId(), options.getSdkVersion(), traceContext);
+
+    return new SentryEnvelope(envelopeHeader, envelopeItems);
+  }
+
+  private @NotNull SentryEnvelope buildEnvelope(
+      final @NotNull SentryReplayEvent event,
+      final @Nullable ReplayRecording replayRecording,
+      final @Nullable TraceContext traceContext,
+      final boolean cleanupReplayFolder) {
+    final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+
+    final SentryEnvelopeItem replayItem =
+        SentryEnvelopeItem.fromReplay(
+            options.getSerializer(),
+            options.getLogger(),
+            event,
+            replayRecording,
+            cleanupReplayFolder);
+    envelopeItems.add(replayItem);
+    final SentryId sentryId = event.getEventId();
+
+    // SdkVersion from ReplayOptions defaults to SdkVersion from SentryOptions and can be
+    // overwritten by the hybrid SDKs
+    final SentryEnvelopeHeader envelopeHeader =
+        new SentryEnvelopeHeader(
+            sentryId, options.getSessionReplay().getSdkVersion(), traceContext);
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
@@ -582,17 +747,33 @@ public final class SentryClient implements ISentryClient {
 
     try {
       hint.clear();
-      transport.send(envelope, hint);
+      return sendEnvelope(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
-      return SentryId.EMPTY_ID;
     }
-    final SentryId eventId = envelope.getHeader().getEventId();
-    if (eventId != null) {
-      return eventId;
+    return SentryId.EMPTY_ID;
+  }
+
+  private @NotNull SentryId sendEnvelope(
+      @NotNull final SentryEnvelope envelope, @Nullable final Hint hint) throws IOException {
+    final @Nullable SentryOptions.BeforeEnvelopeCallback beforeEnvelopeCallback =
+        options.getBeforeEnvelopeCallback();
+    if (beforeEnvelopeCallback != null) {
+      try {
+        beforeEnvelopeCallback.execute(envelope, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "The BeforeEnvelope callback threw an exception.", e);
+      }
+    }
+    if (hint == null) {
+      transport.send(envelope);
     } else {
-      return SentryId.EMPTY_ID;
+      transport.send(envelope, hint);
     }
+    final @Nullable SentryId id = envelope.getHeader().getEventId();
+    return id != null ? id : SentryId.EMPTY_ID;
   }
 
   @Override
@@ -615,6 +796,23 @@ public final class SentryClient implements ISentryClient {
     options
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
+
+    if (TracingUtils.isIgnored(options.getIgnoredTransactions(), transaction.getTransaction())) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction was dropped as transaction name %s is ignored",
+              transaction.getTransaction());
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(
+              DiscardReason.EVENT_PROCESSOR, DataCategory.Span, transaction.getSpans().size() + 1);
+      return SentryId.EMPTY_ID;
+    }
 
     SentryId sentryId = SentryId.EMPTY_ID;
     if (transaction.getEventId() != null) {
@@ -642,7 +840,9 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
+    final int spanCountBeforeCallback = transaction.getSpans().size();
     transaction = executeBeforeSendTransaction(transaction, hint);
+    final int spanCountAfterCallback = transaction == null ? 0 : transaction.getSpans().size();
 
     if (transaction == null) {
       options
@@ -651,7 +851,24 @@ public final class SentryClient implements ISentryClient {
       options
           .getClientReportRecorder()
           .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Transaction);
+      // If we drop a transaction, we are also dropping all its spans (+1 for the root span)
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(
+              DiscardReason.BEFORE_SEND, DataCategory.Span, spanCountBeforeCallback + 1);
       return SentryId.EMPTY_ID;
+    } else if (spanCountAfterCallback < spanCountBeforeCallback) {
+      // If the callback removed some spans, we report it
+      final int droppedSpanCount = spanCountBeforeCallback - spanCountAfterCallback;
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "%d spans were dropped by beforeSendTransaction.",
+              droppedSpanCount);
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Span, droppedSpanCount);
     }
 
     try {
@@ -665,9 +882,7 @@ public final class SentryClient implements ISentryClient {
 
       hint.clear();
       if (envelope != null) {
-        transport.send(envelope, hint);
-      } else {
-        sentryId = SentryId.EMPTY_ID;
+        sentryId = sendEnvelope(envelope, hint);
       }
     } catch (IOException | SentryEnvelopeException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
@@ -705,10 +920,9 @@ public final class SentryClient implements ISentryClient {
               SentryLevel.DEBUG,
               "Check-in was dropped as slug %s is ignored",
               checkIn.getMonitorSlug());
-      // TODO in a follow up PR with DataCategory.Monitor
-      //      options
-      //        .getClientReportRecorder()
-      //        .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Monitor);
       return SentryId.EMPTY_ID;
     }
 
@@ -729,10 +943,10 @@ public final class SentryClient implements ISentryClient {
         }
       }
 
-      final SentryEnvelope envelope = buildEnvelope(checkIn, traceContext);
+      final @NotNull SentryEnvelope envelope = buildEnvelope(checkIn, traceContext);
 
       hint.clear();
-      transport.send(envelope, hint);
+      sentryId = sendEnvelope(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing check-in %s failed.", sentryId);
       // if there was an error capturing the event, we return an emptyId
@@ -804,6 +1018,47 @@ public final class SentryClient implements ISentryClient {
       }
     }
     return checkIn;
+  }
+
+  private @NotNull SentryReplayEvent applyScope(
+      final @NotNull SentryReplayEvent replayEvent, final @Nullable IScope scope) {
+    // no breadcrumbs and extras for replay events
+    if (scope != null) {
+      if (replayEvent.getRequest() == null) {
+        replayEvent.setRequest(scope.getRequest());
+      }
+      if (replayEvent.getUser() == null) {
+        replayEvent.setUser(scope.getUser());
+      }
+      if (replayEvent.getTags() == null) {
+        replayEvent.setTags(new HashMap<>(scope.getTags()));
+      } else {
+        for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
+          if (!replayEvent.getTags().containsKey(item.getKey())) {
+            replayEvent.getTags().put(item.getKey(), item.getValue());
+          }
+        }
+      }
+      final Contexts contexts = replayEvent.getContexts();
+      for (Map.Entry<String, Object> entry : new Contexts(scope.getContexts()).entrySet()) {
+        if (!contexts.containsKey(entry.getKey())) {
+          contexts.put(entry.getKey(), entry.getValue());
+        }
+      }
+
+      // Set trace data from active span to connect replays with transactions
+      final ISpan span = scope.getSpan();
+      if (replayEvent.getContexts().getTrace() == null) {
+        if (span == null) {
+          replayEvent
+              .getContexts()
+              .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
+        } else {
+          replayEvent.getContexts().setTrace(span.getSpanContext());
+        }
+      }
+    }
+    return replayEvent;
   }
 
   private <T extends SentryBaseEvent> @NotNull T applyScope(
@@ -901,13 +1156,38 @@ public final class SentryClient implements ISentryClient {
     return transaction;
   }
 
+  private @Nullable SentryReplayEvent executeBeforeSendReplay(
+      @NotNull SentryReplayEvent event, final @NotNull Hint hint) {
+    final SentryOptions.BeforeSendReplayCallback beforeSendReplay = options.getBeforeSendReplay();
+    if (beforeSendReplay != null) {
+      try {
+        event = beforeSendReplay.execute(event, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The BeforeSendReplay callback threw an exception. It will be added as breadcrumb and continue.",
+                e);
+
+        // drop event in case of an error in beforeSend due to PII concerns
+        event = null;
+      }
+    }
+    return event;
+  }
+
   @Override
   public void close() {
-    options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
+    close(false);
+  }
 
+  @Override
+  public void close(final boolean isRestarting) {
+    options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
     try {
-      flush(options.getShutdownTimeoutMillis());
-      transport.close();
+      flush(isRestarting ? 0 : options.getShutdownTimeoutMillis());
+      transport.close(isRestarting);
     } catch (IOException e) {
       options
           .getLogger()
@@ -947,6 +1227,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private boolean sample() {
+    final @Nullable Random random = options.getSampleRate() == null ? null : SentryRandom.current();
     // https://docs.sentry.io/development/sdk-dev/features/#event-sampling
     if (options.getSampleRate() != null && random != null) {
       final double sampling = options.getSampleRate();

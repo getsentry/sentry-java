@@ -39,4 +39,5 @@
 -dontwarn org.opentest4j.AssertionFailedError
 -dontwarn org.mockito.internal.**
 -dontwarn org.jetbrains.annotations.**
-
+-dontwarn io.sentry.android.replay.ReplayIntegration
+-keep class curtains.** { *; }

@@ -32,4 +32,7 @@ public final class NoOpTransport implements ITransport {
 
   @Override
   public void close() throws IOException {}
+
+  @Override
+  public void close(final boolean isRestarting) throws IOException {}
 }

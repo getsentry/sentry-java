@@ -196,9 +196,14 @@ public final class ApacheHttpClientTransport implements ITransport {
 
   @Override
   public void close() throws IOException {
+    close(false);
+  }
+
+  @Override
+  public void close(final boolean isRestarting) throws IOException {
     options.getLogger().log(DEBUG, "Shutting down");
     try {
-      httpclient.awaitShutdown(TimeValue.ofSeconds(1));
+      httpclient.awaitShutdown(TimeValue.ofSeconds(isRestarting ? 0 : 1));
     } catch (InterruptedException e) {
       options.getLogger().log(DEBUG, "Thread interrupted while closing the connection.");
       Thread.currentThread().interrupt();

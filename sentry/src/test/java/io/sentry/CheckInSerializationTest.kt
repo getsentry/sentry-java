@@ -22,11 +22,13 @@ class CheckInSerializationTest {
 
         fun getSut(type: MonitorScheduleType): CheckIn {
             return CheckIn("some_slug", CheckInStatus.ERROR).apply {
-                contexts.trace = TransactionContext.fromPropagationContext(
-                    PropagationContext().also {
-                        it.traceId = SentryId("f382e3180c714217a81371f8c644aefe")
-                        it.spanId = SpanId("85694b9f567145a6")
-                    }
+                contexts.setTrace(
+                    TransactionContext.fromPropagationContext(
+                        PropagationContext().also {
+                            it.traceId = SentryId("f382e3180c714217a81371f8c644aefe")
+                            it.spanId = SpanId("85694b9f567145a6")
+                        }
+                    )
                 )
                 duration = 12.3
                 environment = "env"
@@ -41,6 +43,8 @@ class CheckInSerializationTest {
                     checkinMargin = 8L
                     maxRuntime = 9L
                     timezone = ZoneId.of("Europe/Vienna").id
+                    failureIssueThreshold = 10
+                    recoveryThreshold = 20
                 }
             }
         }
@@ -90,6 +94,8 @@ class CheckInSerializationTest {
         assertEquals(expectedConfig.maxRuntime, actualConfig.maxRuntime)
         assertEquals(expectedConfig.checkinMargin, actualConfig.checkinMargin)
         assertEquals(expectedConfig.timezone, actualConfig.timezone)
+        assertEquals(expectedConfig.failureIssueThreshold, actualConfig.failureIssueThreshold)
+        assertEquals(expectedConfig.recoveryThreshold, actualConfig.recoveryThreshold)
         assertEquals(expectedSchedule.type, actualSchedule.type)
         assertEquals(expectedSchedule.value, actualSchedule.value)
         assertEquals(expectedSchedule.unit, actualSchedule.unit)
@@ -116,6 +122,8 @@ class CheckInSerializationTest {
         assertEquals(expectedConfig.maxRuntime, actualConfig.maxRuntime)
         assertEquals(expectedConfig.checkinMargin, actualConfig.checkinMargin)
         assertEquals(expectedConfig.timezone, actualConfig.timezone)
+        assertEquals(expectedConfig.failureIssueThreshold, actualConfig.failureIssueThreshold)
+        assertEquals(expectedConfig.recoveryThreshold, actualConfig.recoveryThreshold)
         assertEquals(expectedSchedule.type, actualSchedule.type)
         assertEquals(expectedSchedule.value, actualSchedule.value)
         assertEquals(expectedSchedule.unit, actualSchedule.unit)

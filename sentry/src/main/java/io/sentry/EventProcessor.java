@@ -32,4 +32,27 @@ public interface EventProcessor {
   default SentryTransaction process(@NotNull SentryTransaction transaction, @NotNull Hint hint) {
     return transaction;
   }
+
+  /**
+   * May mutate or drop a SentryEvent
+   *
+   * @param event the SentryEvent
+   * @param hint the Hint
+   * @return the event itself, a mutated SentryEvent or null
+   */
+  @Nullable
+  default SentryReplayEvent process(@NotNull SentryReplayEvent event, @NotNull Hint hint) {
+    return event;
+  }
+
+  /**
+   * Controls when this EventProcessor is invoked.
+   *
+   * @return order higher number = later, lower number = earlier (negative values may also be
+   *     passed), null = latest (note: multiple event processors using null may lead to random
+   *     ordering)
+   */
+  default @Nullable Long getOrder() {
+    return null;
+  }
 }

@@ -1,0 +1,9 @@
+{
+  "type": 4,
+  "timestamp": 1234567890,
+  "data": {
+    "href": "https://sentry.io",
+    "height": 1920,
+    "width": 1080
+  }
+}

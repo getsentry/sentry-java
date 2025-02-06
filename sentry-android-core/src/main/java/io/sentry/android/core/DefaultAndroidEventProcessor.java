@@ -10,16 +10,22 @@ import io.sentry.IpAddressUtils;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
-import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
+import io.sentry.SentryReplayEvent;
+import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.App;
 import io.sentry.protocol.OperatingSystem;
+import io.sentry.protocol.SentryException;
+import io.sentry.protocol.SentryStackFrame;
+import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -41,7 +47,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull SentryAndroidOptions options) {
-    this.context = Objects.requireNonNull(context, "The application context is required.");
+    this.context =
+        Objects.requireNonNull(
+            ContextUtils.getApplicationContext(context), "The application context is required.");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "The BuildInfoProvider is required.");
     this.options = Objects.requireNonNull(options, "The options object is required.");
@@ -51,7 +59,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // some device info performs disk I/O, but it's result is cached, let's pre-cache it
     final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
     this.deviceInfoUtil =
-        executorService.submit(() -> DeviceInfoUtil.getInstance(context, options));
+        executorService.submit(() -> DeviceInfoUtil.getInstance(this.context, options));
     executorService.shutdown();
   }
 
@@ -68,7 +76,49 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     setCommons(event, true, applyScopeData);
 
+    fixExceptionOrder(event);
+
     return event;
+  }
+
+  /**
+   * The last exception is usually used for picking the issue title, but the convention is to send
+   * inner exceptions first, e.g. [inner, outer] This doesn't work very well on Android, as some
+   * hooks like Application.onCreate is wrapped by Android framework with a RuntimeException. Thus,
+   * if the last exception is a RuntimeInit$MethodAndArgsCaller, reverse the order to get a better
+   * issue title. This is a quick fix, for more details see: <a
+   * href="https://github.com/getsentry/sentry/issues/64074">#64074</a> <a
+   * href="https://github.com/getsentry/sentry/issues/59679">#59679</a> <a
+   * href="https://github.com/getsentry/sentry/issues/64088">#64088</a>
+   *
+   * @param event the event to process
+   */
+  private static void fixExceptionOrder(final @NotNull SentryEvent event) {
+    boolean reverseExceptions = false;
+
+    final @Nullable List<SentryException> exceptions = event.getExceptions();
+    if (exceptions != null && exceptions.size() > 1) {
+      final @NotNull SentryException lastException = exceptions.get(exceptions.size() - 1);
+      if ("java.lang".equals(lastException.getModule())) {
+        final @Nullable SentryStackTrace stacktrace = lastException.getStacktrace();
+        if (stacktrace != null) {
+          final @Nullable List<SentryStackFrame> frames = stacktrace.getFrames();
+          if (frames != null) {
+            for (final @NotNull SentryStackFrame frame : frames) {
+              if ("com.android.internal.os.RuntimeInit$MethodAndArgsCaller"
+                  .equals(frame.getModule())) {
+                reverseExceptions = true;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (reverseExceptions) {
+      Collections.reverse(exceptions);
+    }
   }
 
   private void setCommons(
@@ -107,7 +157,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (user.getId() == null) {
       user.setId(Installation.id(context));
     }
-    if (user.getIpAddress() == null) {
+    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
@@ -167,7 +217,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       final boolean isHybridSDK = HintUtils.isFromHybridSdk(hint);
 
       for (final SentryThread thread : event.getThreads()) {
-        final boolean isMainThread = AndroidMainThreadChecker.getInstance().isMainThread(thread);
+        final boolean isMainThread = AndroidThreadChecker.getInstance().isMainThread(thread);
 
         // TODO: Fix https://github.com/getsentry/team-mobile/issues/47
         if (thread.isCurrent() == null) {
@@ -201,7 +251,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setAppExtras(final @NotNull App app, final @NotNull Hint hint) {
-    app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+    app.setAppName(ContextUtils.getApplicationName(context));
     final @NotNull TimeSpan appStartTimeSpan =
         AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
     if (appStartTimeSpan.hasStarted()) {
@@ -268,5 +318,23 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     setCommons(transaction, false, applyScopeData);
 
     return transaction;
+  }
+
+  @Override
+  public @NotNull SentryReplayEvent process(
+      final @NotNull SentryReplayEvent event, final @NotNull Hint hint) {
+    final boolean applyScopeData = shouldApplyScopeData(event, hint);
+    if (applyScopeData) {
+      processNonCachedEvent(event, hint);
+    }
+
+    setCommons(event, false, applyScopeData);
+
+    return event;
+  }
+
+  @Override
+  public @Nullable Long getOrder() {
+    return 8000L;
   }
 }

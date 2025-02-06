@@ -2,7 +2,10 @@ package io.sentry
 
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.test.createSentryClientMock
+import io.sentry.test.initForTest
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
@@ -13,11 +16,14 @@ import kotlin.test.Test
 
 class HubAdapterTest {
 
-    val hub: Hub = mock()
+    val scopes: IScopes = mock()
 
     @BeforeTest
     fun `set up`() {
-        Sentry.setCurrentHub(hub)
+        initForTest {
+            it.dsn = "https://key@localhost/proj"
+        }
+        Sentry.setCurrentScopes(scopes)
     }
 
     @AfterTest
@@ -27,7 +33,7 @@ class HubAdapterTest {
 
     @Test fun `isEnabled calls Hub`() {
         HubAdapter.getInstance().isEnabled
-        verify(hub).isEnabled
+        verify(scopes).isEnabled
     }
 
     @Test fun `captureEvent calls Hub`() {
@@ -35,27 +41,27 @@ class HubAdapterTest {
         val hint = mock<Hint>()
         val scopeCallback = mock<ScopeCallback>()
         HubAdapter.getInstance().captureEvent(event, hint)
-        verify(hub).captureEvent(eq(event), eq(hint))
+        verify(scopes).captureEvent(eq(event), eq(hint))
 
         HubAdapter.getInstance().captureEvent(event, hint, scopeCallback)
-        verify(hub).captureEvent(eq(event), eq(hint), eq(scopeCallback))
+        verify(scopes).captureEvent(eq(event), eq(hint), eq(scopeCallback))
     }
 
     @Test fun `captureMessage calls Hub`() {
         val scopeCallback = mock<ScopeCallback>()
         val sentryLevel = mock<SentryLevel>()
         HubAdapter.getInstance().captureMessage("message", sentryLevel)
-        verify(hub).captureMessage(eq("message"), eq(sentryLevel))
+        verify(scopes).captureMessage(eq("message"), eq(sentryLevel))
 
         HubAdapter.getInstance().captureMessage("message", sentryLevel, scopeCallback)
-        verify(hub).captureMessage(eq("message"), eq(sentryLevel), eq(scopeCallback))
+        verify(scopes).captureMessage(eq("message"), eq(sentryLevel), eq(scopeCallback))
     }
 
     @Test fun `captureEnvelope calls Hub`() {
         val envelope = mock<SentryEnvelope>()
         val hint = mock<Hint>()
         HubAdapter.getInstance().captureEnvelope(envelope, hint)
-        verify(hub).captureEnvelope(eq(envelope), eq(hint))
+        verify(scopes).captureEnvelope(eq(envelope), eq(hint))
     }
 
     @Test fun `captureException calls Hub`() {
@@ -63,135 +69,145 @@ class HubAdapterTest {
         val hint = mock<Hint>()
         val scopeCallback = mock<ScopeCallback>()
         HubAdapter.getInstance().captureException(throwable, hint)
-        verify(hub).captureException(eq(throwable), eq(hint))
+        verify(scopes).captureException(eq(throwable), eq(hint))
 
         HubAdapter.getInstance().captureException(throwable, hint, scopeCallback)
-        verify(hub).captureException(eq(throwable), eq(hint), eq(scopeCallback))
+        verify(scopes).captureException(eq(throwable), eq(hint), eq(scopeCallback))
     }
 
     @Test fun `captureUserFeedback calls Hub`() {
         val userFeedback = mock<UserFeedback>()
         HubAdapter.getInstance().captureUserFeedback(userFeedback)
-        verify(hub).captureUserFeedback(eq(userFeedback))
+        verify(scopes).captureUserFeedback(eq(userFeedback))
     }
 
     @Test fun `captureCheckIn calls Hub`() {
         val checkIn = mock<CheckIn>()
         HubAdapter.getInstance().captureCheckIn(checkIn)
-        verify(hub).captureCheckIn(eq(checkIn))
+        verify(scopes).captureCheckIn(eq(checkIn))
     }
 
     @Test fun `startSession calls Hub`() {
         HubAdapter.getInstance().startSession()
-        verify(hub).startSession()
+        verify(scopes).startSession()
     }
 
     @Test fun `endSession calls Hub`() {
         HubAdapter.getInstance().endSession()
-        verify(hub).endSession()
+        verify(scopes).endSession()
     }
 
     @Test fun `close calls Hub`() {
         HubAdapter.getInstance().close()
-        verify(hub).close()
+        verify(scopes).close(false)
+    }
+
+    @Test fun `close with isRestarting true calls Hub with isRestarting false`() {
+        HubAdapter.getInstance().close(true)
+        verify(scopes).close(false)
+    }
+
+    @Test fun `close with isRestarting false calls Hub with isRestarting false`() {
+        HubAdapter.getInstance().close(false)
+        verify(scopes).close(false)
     }
 
     @Test fun `addBreadcrumb calls Hub`() {
         val breadcrumb = mock<Breadcrumb>()
         val hint = mock<Hint>()
         HubAdapter.getInstance().addBreadcrumb(breadcrumb, hint)
-        verify(hub).addBreadcrumb(eq(breadcrumb), eq(hint))
+        verify(scopes).addBreadcrumb(eq(breadcrumb), eq(hint))
     }
 
     @Test fun `setLevel calls Hub`() {
         val sentryLevel = mock<SentryLevel>()
         HubAdapter.getInstance().setLevel(sentryLevel)
-        verify(hub).setLevel(eq(sentryLevel))
+        verify(scopes).setLevel(eq(sentryLevel))
     }
 
     @Test fun `setTransaction calls Hub`() {
         HubAdapter.getInstance().setTransaction("transaction")
-        verify(hub).setTransaction(eq("transaction"))
+        verify(scopes).setTransaction(eq("transaction"))
     }
 
     @Test fun `setUser calls Hub`() {
         val user = mock<User>()
         HubAdapter.getInstance().setUser(user)
-        verify(hub).setUser(eq(user))
+        verify(scopes).setUser(eq(user))
     }
 
     @Test fun `setFingerprint calls Hub`() {
         val fingerprint = ArrayList<String>()
         HubAdapter.getInstance().setFingerprint(fingerprint)
-        verify(hub).setFingerprint(eq(fingerprint))
+        verify(scopes).setFingerprint(eq(fingerprint))
     }
 
     @Test fun `clearBreadcrumbs calls Hub`() {
         HubAdapter.getInstance().clearBreadcrumbs()
-        verify(hub).clearBreadcrumbs()
+        verify(scopes).clearBreadcrumbs()
     }
 
     @Test fun `setTag calls Hub`() {
         HubAdapter.getInstance().setTag("key", "value")
-        verify(hub).setTag(eq("key"), eq("value"))
+        verify(scopes).setTag(eq("key"), eq("value"))
     }
 
     @Test fun `removeTag calls Hub`() {
         HubAdapter.getInstance().removeTag("key")
-        verify(hub).removeTag(eq("key"))
+        verify(scopes).removeTag(eq("key"))
     }
 
     @Test fun `setExtra calls Hub`() {
         HubAdapter.getInstance().setExtra("key", "value")
-        verify(hub).setExtra(eq("key"), eq("value"))
+        verify(scopes).setExtra(eq("key"), eq("value"))
     }
 
     @Test fun `removeExtra calls Hub`() {
         HubAdapter.getInstance().removeExtra("key")
-        verify(hub).removeExtra(eq("key"))
+        verify(scopes).removeExtra(eq("key"))
     }
 
     @Test fun `getLastEventId calls Hub`() {
         HubAdapter.getInstance().lastEventId
-        verify(hub).lastEventId
+        verify(scopes).lastEventId
     }
 
     @Test fun `pushScope calls Hub`() {
         HubAdapter.getInstance().pushScope()
-        verify(hub).pushScope()
+        verify(scopes).pushScope()
     }
 
     @Test fun `popScope calls Hub`() {
         HubAdapter.getInstance().popScope()
-        verify(hub).popScope()
+        verify(scopes).popScope()
     }
 
     @Test fun `withScope calls Hub`() {
         val scopeCallback = mock<ScopeCallback>()
         HubAdapter.getInstance().withScope(scopeCallback)
-        verify(hub).withScope(eq(scopeCallback))
+        verify(scopes).withScope(eq(scopeCallback))
     }
 
     @Test fun `configureScope calls Hub`() {
         val scopeCallback = mock<ScopeCallback>()
         HubAdapter.getInstance().configureScope(scopeCallback)
-        verify(hub).configureScope(eq(scopeCallback))
+        verify(scopes).configureScope(anyOrNull(), eq(scopeCallback))
     }
 
     @Test fun `bindClient calls Hub`() {
-        val client = mock<ISentryClient>()
+        val client = createSentryClientMock()
         HubAdapter.getInstance().bindClient(client)
-        verify(hub).bindClient(eq(client))
+        verify(scopes).bindClient(eq(client))
     }
 
     @Test fun `flush calls Hub`() {
         HubAdapter.getInstance().flush(1)
-        verify(hub).flush(eq(1))
+        verify(scopes).flush(eq(1))
     }
 
     @Test fun `clone calls Hub`() {
         HubAdapter.getInstance().clone()
-        verify(hub).clone()
+        verify(scopes).clone()
     }
 
     @Test fun `captureTransaction calls Hub`() {
@@ -200,7 +216,7 @@ class HubAdapterTest {
         val hint = mock<Hint>()
         val profilingTraceData = mock<ProfilingTraceData>()
         HubAdapter.getInstance().captureTransaction(transaction, traceContext, hint, profilingTraceData)
-        verify(hub).captureTransaction(eq(transaction), eq(traceContext), eq(hint), eq(profilingTraceData))
+        verify(scopes).captureTransaction(eq(transaction), eq(traceContext), eq(hint), eq(profilingTraceData))
     }
 
     @Test fun `startTransaction calls Hub`() {
@@ -208,48 +224,43 @@ class HubAdapterTest {
         val samplingContext = mock<CustomSamplingContext>()
         val transactionOptions = mock<TransactionOptions>()
         HubAdapter.getInstance().startTransaction(transactionContext)
-        verify(hub).startTransaction(eq(transactionContext), any<TransactionOptions>())
+        verify(scopes).startTransaction(eq(transactionContext), any<TransactionOptions>())
 
-        reset(hub)
+        reset(scopes)
 
         HubAdapter.getInstance().startTransaction(transactionContext, transactionOptions)
-        verify(hub).startTransaction(eq(transactionContext), eq(transactionOptions))
-    }
-
-    @Test fun `traceHeaders calls Hub`() {
-        HubAdapter.getInstance().traceHeaders()
-        verify(hub).traceHeaders()
+        verify(scopes).startTransaction(eq(transactionContext), eq(transactionOptions))
     }
 
     @Test fun `setSpanContext calls Hub`() {
         val throwable = mock<Throwable>()
         val span = mock<ISpan>()
         HubAdapter.getInstance().setSpanContext(throwable, span, "transactionName")
-        verify(hub).setSpanContext(eq(throwable), eq(span), eq("transactionName"))
+        verify(scopes).setSpanContext(eq(throwable), eq(span), eq("transactionName"))
     }
 
     @Test fun `getSpan calls Hub`() {
         HubAdapter.getInstance().span
-        verify(hub).span
+        verify(scopes).span
     }
 
     @Test fun `getTransaction calls Hub`() {
         HubAdapter.getInstance().transaction
-        verify(hub).transaction
+        verify(scopes).transaction
     }
 
     @Test fun `getOptions calls Hub`() {
         HubAdapter.getInstance().options
-        verify(hub).options
+        verify(scopes).options
     }
 
     @Test fun `isCrashedLastRun calls Hub`() {
         HubAdapter.getInstance().isCrashedLastRun
-        verify(hub).isCrashedLastRun
+        verify(scopes).isCrashedLastRun
     }
 
     @Test fun `reportFullyDisplayed calls Hub`() {
         HubAdapter.getInstance().reportFullyDisplayed()
-        verify(hub).reportFullyDisplayed()
+        verify(scopes).reportFullyDisplayed()
     }
 }

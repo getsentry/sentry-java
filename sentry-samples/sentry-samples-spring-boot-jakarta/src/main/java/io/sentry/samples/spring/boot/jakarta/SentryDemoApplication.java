@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.quartz.CronTriggerFactoryBean;
 import org.springframework.scheduling.quartz.JobDetailFactoryBean;
 import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -31,6 +32,11 @@ public class SentryDemoApplication {
 
   @Bean
   WebClient webClient(WebClient.Builder builder) {
+    return builder.build();
+  }
+
+  @Bean
+  RestClient restClient(RestClient.Builder builder) {
     return builder.build();
   }
 

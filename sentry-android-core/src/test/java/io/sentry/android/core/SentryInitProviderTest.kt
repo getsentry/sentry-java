@@ -20,6 +20,7 @@ class SentryInitProviderTest {
     @BeforeTest
     fun `set up`() {
         Sentry.close()
+        ContextUtils.resetInstance()
     }
 
     @Test
@@ -142,6 +143,7 @@ class SentryInitProviderTest {
             BuildInfoProvider(AndroidLogger()),
             loadClass,
             activityFramesTracker,
+            false,
             false,
             false
         )

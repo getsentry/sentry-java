@@ -1,8 +1,8 @@
 package io.sentry.spring.boot;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IHub;
 import io.sentry.IScope;
+import io.sentry.IScopes;
 import io.sentry.spring.webflux.SentryScheduleHook;
 import io.sentry.spring.webflux.SentryWebExceptionHandler;
 import io.sentry.spring.webflux.SentryWebFilter;
@@ -21,14 +21,14 @@ import reactor.core.scheduler.Schedulers;
 /** Configures Sentry integration for Spring Webflux and Project Reactor. */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-@ConditionalOnBean(IHub.class)
+@ConditionalOnBean(IScopes.class)
 @ConditionalOnClass(Schedulers.class)
 @Open
 @ApiStatus.Experimental
 public class SentryWebfluxAutoConfiguration {
   private static final int SENTRY_SPRING_FILTER_PRECEDENCE = Ordered.HIGHEST_PRECEDENCE;
 
-  /** Configures hook that sets correct hub on the executing thread. */
+  /** Configures hook that sets correct scopes on the executing thread. */
   @Bean
   public @NotNull ApplicationRunner sentryScheduleHookApplicationRunner() {
     return args -> {
@@ -39,13 +39,14 @@ public class SentryWebfluxAutoConfiguration {
   /** Configures a filter that sets up Sentry {@link IScope} for each request. */
   @Bean
   @Order(SENTRY_SPRING_FILTER_PRECEDENCE)
-  public @NotNull SentryWebFilter sentryWebFilter(final @NotNull IHub hub) {
-    return new SentryWebFilter(hub);
+  public @NotNull SentryWebFilter sentryWebFilter(final @NotNull IScopes scopes) {
+    return new SentryWebFilter(scopes);
   }
 
   /** Configures exception handler that handles unhandled exceptions and sends them to Sentry. */
   @Bean
-  public @NotNull SentryWebExceptionHandler sentryWebExceptionHandler(final @NotNull IHub hub) {
-    return new SentryWebExceptionHandler(hub);
+  public @NotNull SentryWebExceptionHandler sentryWebExceptionHandler(
+      final @NotNull IScopes scopes) {
+    return new SentryWebExceptionHandler(scopes);
   }
 }

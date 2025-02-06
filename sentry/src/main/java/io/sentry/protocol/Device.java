@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -103,14 +103,6 @@ public final class Device implements JsonUnknown, JsonSerializable {
 
   private @Nullable String id;
 
-  /**
-   * This method returns the language code for this locale, which will either be the empty string or
-   * a lowercase ISO 639 code.
-   *
-   * @deprecated use {@link Device#getLocale()}
-   */
-  @Deprecated private @Nullable String language;
-
   /** The locale of the device. For example, en-US. */
   private @Nullable String locale;
 
@@ -162,7 +154,6 @@ public final class Device implements JsonUnknown, JsonSerializable {
     this.screenDpi = device.screenDpi;
     this.bootTime = device.bootTime;
     this.id = device.id;
-    this.language = device.language;
     this.connectionType = device.connectionType;
     this.batteryTemperature = device.batteryTemperature;
     this.batteryLevel = device.batteryLevel;
@@ -398,14 +389,6 @@ public final class Device implements JsonUnknown, JsonSerializable {
     this.id = id;
   }
 
-  public @Nullable String getLanguage() {
-    return language;
-  }
-
-  public void setLanguage(final @Nullable String language) {
-    this.language = language;
-  }
-
   public @Nullable String getConnectionType() {
     return connectionType;
   }
@@ -477,7 +460,6 @@ public final class Device implements JsonUnknown, JsonSerializable {
         && Objects.equals(screenDpi, device.screenDpi)
         && Objects.equals(bootTime, device.bootTime)
         && Objects.equals(id, device.id)
-        && Objects.equals(language, device.language)
         && Objects.equals(locale, device.locale)
         && Objects.equals(connectionType, device.connectionType)
         && Objects.equals(batteryTemperature, device.batteryTemperature)
@@ -516,7 +498,6 @@ public final class Device implements JsonUnknown, JsonSerializable {
             bootTime,
             timezone,
             id,
-            language,
             locale,
             connectionType,
             batteryTemperature,
@@ -544,7 +525,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     public static final class Deserializer implements JsonDeserializer<DeviceOrientation> {
       @Override
       public @NotNull DeviceOrientation deserialize(
-          @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+          @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
         return DeviceOrientation.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
       }
     }
@@ -580,7 +561,6 @@ public final class Device implements JsonUnknown, JsonSerializable {
     public static final String BOOT_TIME = "boot_time";
     public static final String TIMEZONE = "timezone";
     public static final String ID = "id";
-    public static final String LANGUAGE = "language";
     public static final String CONNECTION_TYPE = "connection_type";
     public static final String BATTERY_TEMPERATURE = "battery_temperature";
     public static final String LOCALE = "locale";
@@ -674,9 +654,6 @@ public final class Device implements JsonUnknown, JsonSerializable {
     if (id != null) {
       writer.name(JsonKeys.ID).value(id);
     }
-    if (language != null) {
-      writer.name(JsonKeys.LANGUAGE).value(language);
-    }
     if (connectionType != null) {
       writer.name(JsonKeys.CONNECTION_TYPE).value(connectionType);
     }
@@ -726,7 +703,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<Device> {
 
     @Override
-    public @NotNull Device deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+    public @NotNull Device deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       reader.beginObject();
       Device device = new Device();
@@ -821,9 +798,6 @@ public final class Device implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.ID:
             device.id = reader.nextStringOrNull();
-            break;
-          case JsonKeys.LANGUAGE:
-            device.language = reader.nextStringOrNull();
             break;
           case JsonKeys.CONNECTION_TYPE:
             device.connectionType = reader.nextStringOrNull();

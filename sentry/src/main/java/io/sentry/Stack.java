@@ -1,11 +1,13 @@
 package io.sentry;
 
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.jetbrains.annotations.NotNull;
 
+/** TODO [POTEL] can this class be removed? */
 final class Stack {
 
   static final class StackItem {
@@ -47,6 +49,7 @@ final class Stack {
 
   private final @NotNull Deque<StackItem> items = new LinkedBlockingDeque<>();
   private final @NotNull ILogger logger;
+  private final @NotNull AutoClosableReentrantLock itemsLock = new AutoClosableReentrantLock();
 
   public Stack(final @NotNull ILogger logger, final @NotNull StackItem rootStackItem) {
     this.logger = Objects.requireNonNull(logger, "logger is required");
@@ -73,7 +76,7 @@ final class Stack {
   }
 
   void pop() {
-    synchronized (items) {
+    try (final @NotNull ISentryLifecycleToken ignored = itemsLock.acquire()) {
       if (items.size() != 1) {
         items.pop();
       } else {

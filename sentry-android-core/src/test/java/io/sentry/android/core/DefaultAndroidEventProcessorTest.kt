@@ -7,7 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.DiagnosticLogger
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryTracer
@@ -16,6 +16,9 @@ import io.sentry.TypeCheckHint.SENTRY_DART_SDK_NAME
 import io.sentry.android.core.internal.util.CpuInfoUtils
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.SdkVersion
+import io.sentry.protocol.SentryException
+import io.sentry.protocol.SentryStackFrame
+import io.sentry.protocol.SentryStackTrace
 import io.sentry.protocol.SentryThread
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
@@ -59,13 +62,14 @@ class DefaultAndroidEventProcessorTest {
             sdkVersion = SdkVersion("test", "1.2.3")
         }
 
-        val hub: IHub = mock<IHub>()
+        val scopes: IScopes = mock<IScopes>()
 
         lateinit var sentryTracer: SentryTracer
 
-        fun getSut(context: Context): DefaultAndroidEventProcessor {
-            whenever(hub.options).thenReturn(options)
-            sentryTracer = SentryTracer(TransactionContext("", ""), hub)
+        fun getSut(context: Context, isSendDefaultPii: Boolean = false): DefaultAndroidEventProcessor {
+            options.isSendDefaultPii = isSendDefaultPii
+            whenever(scopes.options).thenReturn(options)
+            sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
             return DefaultAndroidEventProcessor(context, buildInfo, options)
         }
     }
@@ -281,8 +285,20 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `when event user data does not have ip address set, sets {{auto}} as the ip address`() {
-        val sut = fixture.getSut(context)
+    fun `when event user data does not have ip address set, sets no ip address if sendDefaultPii is false`() {
+        val sut = fixture.getSut(context, isSendDefaultPii = false)
+        val event = SentryEvent().apply {
+            user = User()
+        }
+        sut.process(event, Hint())
+        assertNotNull(event.user) {
+            assertNull(it.ipAddress)
+        }
+    }
+
+    @Test
+    fun `when event user data does not have ip address set, sets {{auto}} if sendDefaultPii is true`() {
+        val sut = fixture.getSut(context, isSendDefaultPii = true)
         val event = SentryEvent().apply {
             user = User()
         }
@@ -490,12 +506,11 @@ class DefaultAndroidEventProcessorTest {
     }
 
     @Test
-    fun `Event sets language and locale`() {
+    fun `Event sets locale`() {
         val sut = fixture.getSut(context)
 
         assertNotNull(sut.process(SentryEvent(), Hint())) {
             val device = it.contexts.device!!
-            assertEquals("en", device.language)
             assertEquals("en_US", device.locale)
         }
     }
@@ -571,6 +586,89 @@ class DefaultAndroidEventProcessorTest {
             assertNull(app.inForeground)
             val thread = it.threads!!.first()
             assertNull(thread.isMain)
+        }
+    }
+
+    @Test
+    fun `the exception list is reversed in case there's an RuntimeException`() {
+        val sut = fixture.getSut(context)
+        val event = SentryEvent().apply {
+            exceptions = listOf(
+                SentryException().apply {
+                    type = "IllegalStateException"
+                    module = "com.example"
+                    stacktrace = SentryStackTrace(
+                        listOf(
+                            SentryStackFrame().apply {
+                                function = "onCreate"
+                                module = "com.example.Application"
+                                filename = "Application.java"
+                            }
+                        )
+                    )
+                },
+                SentryException().apply {
+                    type = "RuntimeException"
+                    value = "Unable to create application com.example.Application: java.lang.IllegalStateException"
+                    module = "java.lang"
+                    stacktrace = SentryStackTrace(
+                        listOf(
+                            SentryStackFrame().apply {
+                                function = "run"
+                                module = "com.android.internal.os.RuntimeInit\$MethodAndArgsCaller"
+                                filename = "RuntimeInit.java"
+                            }
+                        )
+                    )
+                }
+            )
+        }
+        val processedEvent = sut.process(event, Hint())
+        assertNotNull(processedEvent) {
+            assertEquals(2, it.exceptions!!.size)
+            assertEquals("RuntimeException", it.exceptions!![0].type)
+            assertEquals("IllegalStateException", it.exceptions!![1].type)
+        }
+    }
+
+    @Test
+    fun `the exception list is kept as-is in case there's no RuntimeException`() {
+        val sut = fixture.getSut(context)
+        val event = SentryEvent().apply {
+            exceptions = listOf(
+                SentryException().apply {
+                    type = "IllegalStateException"
+                    module = "com.example"
+                    stacktrace = SentryStackTrace(
+                        listOf(
+                            SentryStackFrame().apply {
+                                function = "onCreate"
+                                module = "com.example.Application"
+                                filename = "Application.java"
+                            }
+                        )
+                    )
+                },
+                SentryException().apply {
+                    type = "IllegalArgumentException"
+                    module = "com.example"
+                    stacktrace = SentryStackTrace(
+                        listOf(
+                            SentryStackFrame().apply {
+                                function = "onCreate"
+                                module = "com.example.Application"
+                                filename = "Application.java"
+                            }
+                        )
+                    )
+                }
+            )
+        }
+        val processedEvent = sut.process(event, Hint())
+        assertNotNull(processedEvent) {
+            assertEquals(2, it.exceptions!!.size)
+            assertEquals("IllegalStateException", it.exceptions!![0].type)
+            assertEquals("IllegalArgumentException", it.exceptions!![1].type)
         }
     }
 }

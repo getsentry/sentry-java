@@ -41,4 +41,7 @@ public final class StdoutTransport implements ITransport {
 
   @Override
   public void close() {}
+
+  @Override
+  public void close(final boolean isRestarting) {}
 }

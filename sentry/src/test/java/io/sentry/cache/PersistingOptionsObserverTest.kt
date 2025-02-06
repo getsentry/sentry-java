@@ -5,6 +5,7 @@ import io.sentry.cache.PersistingOptionsObserver.DIST_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.PROGUARD_UUID_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME
+import io.sentry.cache.PersistingOptionsObserver.REPLAY_ERROR_SAMPLE_RATE_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.SDK_VERSION_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.TAGS_FILENAME
 import io.sentry.protocol.SdkVersion
@@ -28,13 +29,18 @@ class DeleteOptionsValue(private val delete: PersistingOptionsObserver.() -> Uni
     }
 }
 
+class ReadOptionsValue<T>(private val read: (options: SentryOptions) -> T) {
+    operator fun invoke(options: SentryOptions) = read(options)
+}
+
 @RunWith(Parameterized::class)
 class PersistingOptionsObserverTest<T>(
     private val entity: T,
     private val store: StoreOptionsValue<T>,
     private val filename: String,
     private val delete: DeleteOptionsValue,
-    private val deletedEntity: T?
+    private val deletedEntity: T?,
+    private val read: ReadOptionsValue<T>?
 ) {
 
     @get:Rule
@@ -60,7 +66,7 @@ class PersistingOptionsObserverTest<T>(
         val sut = fixture.getSut(tmpDir)
         store(entity, sut)
 
-        val persisted = read()
+        val persisted = read?.invoke(fixture.options) ?: read()
         assertEquals(entity, persisted)
 
         delete(sut)
@@ -81,6 +87,7 @@ class PersistingOptionsObserverTest<T>(
             StoreOptionsValue<String> { setRelease(it) },
             RELEASE_FILENAME,
             DeleteOptionsValue { setRelease(null) },
+            null,
             null
         )
 
@@ -89,6 +96,7 @@ class PersistingOptionsObserverTest<T>(
             StoreOptionsValue<String> { setProguardUuid(it) },
             PROGUARD_UUID_FILENAME,
             DeleteOptionsValue { setProguardUuid(null) },
+            null,
             null
         )
 
@@ -97,6 +105,7 @@ class PersistingOptionsObserverTest<T>(
             StoreOptionsValue<SdkVersion> { setSdkVersion(it) },
             SDK_VERSION_FILENAME,
             DeleteOptionsValue { setSdkVersion(null) },
+            null,
             null
         )
 
@@ -105,6 +114,7 @@ class PersistingOptionsObserverTest<T>(
             StoreOptionsValue<String> { setDist(it) },
             DIST_FILENAME,
             DeleteOptionsValue { setDist(null) },
+            null,
             null
         )
 
@@ -113,6 +123,7 @@ class PersistingOptionsObserverTest<T>(
             StoreOptionsValue<String> { setEnvironment(it) },
             ENVIRONMENT_FILENAME,
             DeleteOptionsValue { setEnvironment(null) },
+            null,
             null
         )
 
@@ -124,7 +135,23 @@ class PersistingOptionsObserverTest<T>(
             StoreOptionsValue<Map<String, String>> { setTags(it) },
             TAGS_FILENAME,
             DeleteOptionsValue { setTags(emptyMap()) },
-            emptyMap<String, String>()
+            emptyMap<String, String>(),
+            null
+        )
+
+        private fun replaysErrorSampleRate(): Array<Any?> = arrayOf(
+            0.5,
+            StoreOptionsValue<Double> { setReplayErrorSampleRate(it) },
+            REPLAY_ERROR_SAMPLE_RATE_FILENAME,
+            DeleteOptionsValue { setReplayErrorSampleRate(null) },
+            null,
+            ReadOptionsValue {
+                PersistingOptionsObserver.read(
+                    it,
+                    REPLAY_ERROR_SAMPLE_RATE_FILENAME,
+                    String::class.java
+                )!!.toDouble()
+            }
         )
 
         @JvmStatic
@@ -136,7 +163,8 @@ class PersistingOptionsObserverTest<T>(
                 dist(),
                 environment(),
                 sdkVersion(),
-                tags()
+                tags(),
+                replaysErrorSampleRate()
             )
         }
     }

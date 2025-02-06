@@ -16,6 +16,7 @@ import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.Enqueable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
+import io.sentry.test.injectForField
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -28,6 +29,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.IOException
 import java.util.Date
+import java.util.concurrent.RejectedExecutionHandler
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -328,12 +330,53 @@ class AsyncHttpTransportTest {
     }
 
     @Test
+    fun `close closes the rate limiter`() {
+        val sut = fixture.getSUT()
+        sut.close()
+
+        verify(fixture.rateLimiter).close()
+    }
+
+    @Test
     fun `close uses flushTimeoutMillis option to schedule termination`() {
         fixture.sentryOptions.flushTimeoutMillis = 123
         val sut = fixture.getSUT()
         sut.close()
 
         verify(fixture.executor).awaitTermination(eq(123), eq(TimeUnit.MILLISECONDS))
+    }
+
+    @Test
+    fun `close with isRestarting false uses flushTimeoutMillis option to schedule termination`() {
+        fixture.sentryOptions.flushTimeoutMillis = 123
+        val sut = fixture.getSUT()
+        sut.close(false)
+
+        verify(fixture.executor).awaitTermination(eq(123), eq(TimeUnit.MILLISECONDS))
+    }
+
+    @Test
+    fun `close with isRestarting true does not await termination`() {
+        fixture.sentryOptions.flushTimeoutMillis = 123
+        val sut = fixture.getSUT()
+        sut.close(true)
+
+        verify(fixture.executor).awaitTermination(eq(0), eq(TimeUnit.MILLISECONDS))
+    }
+
+    @Test
+    fun `close shuts down the executor and runs executing runnable through rejectedExecutionHandler`() {
+        val rejectedExecutionHandler = mock<RejectedExecutionHandler>()
+        val sut = fixture.getSUT()
+        val runnable = mock<Runnable>()
+
+        // Emulate a runnable currently being executed
+        sut.injectForField("currentRunnable", runnable)
+        whenever(fixture.executor.rejectedExecutionHandler).thenReturn(rejectedExecutionHandler)
+        sut.close(true)
+
+        verify(fixture.executor).shutdownNow()
+        verify(rejectedExecutionHandler).rejectedExecution(eq(runnable), eq(fixture.executor))
     }
 
     @Test

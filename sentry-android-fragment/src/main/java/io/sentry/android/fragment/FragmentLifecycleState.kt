@@ -1,6 +1,6 @@
 package io.sentry.android.fragment
 
-enum class FragmentLifecycleState(internal val breadcrumbName: String) {
+public enum class FragmentLifecycleState(internal val breadcrumbName: String) {
     ATTACHED("attached"),
     SAVE_INSTANCE_STATE("save instance state"),
     CREATED("created"),
@@ -11,5 +11,21 @@ enum class FragmentLifecycleState(internal val breadcrumbName: String) {
     STOPPED("stopped"),
     VIEW_DESTROYED("view destroyed"),
     DESTROYED("destroyed"),
-    DETACHED("detached")
+    DETACHED("detached");
+
+    public companion object {
+        public val states: Set<FragmentLifecycleState> = HashSet<FragmentLifecycleState>().apply {
+            add(ATTACHED)
+            add(SAVE_INSTANCE_STATE)
+            add(CREATED)
+            add(VIEW_CREATED)
+            add(STARTED)
+            add(RESUMED)
+            add(PAUSED)
+            add(STOPPED)
+            add(VIEW_DESTROYED)
+            add(DESTROYED)
+            add(DETACHED)
+        }
+    }
 }

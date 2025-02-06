@@ -20,4 +20,9 @@ public interface SpanDataConvention {
   String FRAMES_TOTAL = "frames.total";
   String FRAMES_SLOW = "frames.slow";
   String FRAMES_FROZEN = "frames.frozen";
+  String FRAMES_DELAY = "frames.delay";
+  String CONTRIBUTES_TTID = "ui.contributes_to_ttid";
+  String CONTRIBUTES_TTFD = "ui.contributes_to_ttfd";
+  String HTTP_START_TIMESTAMP = "http.start_timestamp";
+  String HTTP_END_TIMESTAMP = "http.end_timestamp";
 }

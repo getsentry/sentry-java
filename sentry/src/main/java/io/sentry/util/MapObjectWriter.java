@@ -121,6 +121,11 @@ public final class MapObjectWriter implements ObjectWriter {
   }
 
   @Override
+  public void setLenient(boolean lenient) {
+    // no-op
+  }
+
+  @Override
   public MapObjectWriter beginArray() throws IOException {
     stack.add(new ArrayList<>());
     return this;
@@ -148,6 +153,12 @@ public final class MapObjectWriter implements ObjectWriter {
   @Override
   public MapObjectWriter value(final @Nullable String value) throws IOException {
     postValue(value);
+    return this;
+  }
+
+  @Override
+  public ObjectWriter jsonValue(@Nullable String value) throws IOException {
+    // no-op
     return this;
   }
 

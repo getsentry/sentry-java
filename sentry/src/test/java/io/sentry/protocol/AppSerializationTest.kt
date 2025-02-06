@@ -31,6 +31,7 @@ class AppSerializationTest {
             )
             inForeground = true
             viewNames = listOf("MainActivity", "SidebarActivity")
+            startType = "cold"
         }
     }
     private val fixture = Fixture()

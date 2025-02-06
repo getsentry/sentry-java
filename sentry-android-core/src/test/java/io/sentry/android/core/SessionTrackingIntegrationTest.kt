@@ -15,6 +15,7 @@ import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent
 import io.sentry.Session
 import io.sentry.TraceContext
 import io.sentry.UserFeedback
@@ -43,7 +44,7 @@ class SessionTrackingIntegrationTest {
     @Test
     fun `session tracking works properly with multiple backgrounds and foregrounds`() {
         lateinit var options: SentryAndroidOptions
-        SentryAndroid.init(context) {
+        initForTest(context) {
             it.dsn = "https://key@sentry.io/proj"
             it.release = "io.sentry.samples@2.3.0"
             it.environment = "production"
@@ -133,11 +134,23 @@ class SessionTrackingIntegrationTest {
             TODO("Not yet implemented")
         }
 
+        override fun close(isRestarting: Boolean) {
+            TODO("Not yet implemented")
+        }
+
         override fun close() {
             TODO("Not yet implemented")
         }
 
         override fun flush(timeoutMillis: Long) {
+            TODO("Not yet implemented")
+        }
+
+        override fun captureReplayEvent(
+            event: SentryReplayEvent,
+            scope: IScope?,
+            hint: Hint?
+        ): SentryId {
             TODO("Not yet implemented")
         }
 

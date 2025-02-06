@@ -1,7 +1,7 @@
 package io.sentry.spring.boot.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.spring.jakarta.tracing.SentrySpanClientWebRequestFilter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.web.reactive.function.client.WebClientCustomizer;
@@ -11,8 +11,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 class SentrySpanWebClientCustomizer implements WebClientCustomizer {
   private final @NotNull SentrySpanClientWebRequestFilter filter;
 
-  public SentrySpanWebClientCustomizer(final @NotNull IHub hub) {
-    this.filter = new SentrySpanClientWebRequestFilter(hub);
+  public SentrySpanWebClientCustomizer(final @NotNull IScopes scopes) {
+    this.filter = new SentrySpanClientWebRequestFilter(scopes);
   }
 
   @Override

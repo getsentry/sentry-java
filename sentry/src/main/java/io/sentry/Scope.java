@@ -1,18 +1,27 @@
 package io.sentry;
 
+import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.protocol.User;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.EventProcessorUtils;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
+import io.sentry.util.Pair;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.ApiStatus;
@@ -22,11 +31,15 @@ import org.jetbrains.annotations.Nullable;
 /** Scope data to be sent with the event */
 public final class Scope implements IScope {
 
+  private volatile @NotNull SentryId lastEventId;
+
   /** Scope's SentryLevel */
   private @Nullable SentryLevel level;
 
   /** Scope's {@link ITransaction}. */
   private @Nullable ITransaction transaction;
+
+  private @NotNull WeakReference<ISpan> activeSpan = new WeakReference<>(null);
 
   /** Scope's transaction name. Used when using error reporting without the performance feature. */
   private @Nullable String transactionName;
@@ -44,7 +57,7 @@ public final class Scope implements IScope {
   private @NotNull List<String> fingerprint = new ArrayList<>();
 
   /** Scope's breadcrumb queue */
-  private final @NotNull Queue<Breadcrumb> breadcrumbs;
+  private volatile @NotNull Queue<Breadcrumb> breadcrumbs;
 
   /** Scope's tags */
   private @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
@@ -53,10 +66,10 @@ public final class Scope implements IScope {
   private @NotNull Map<String, @NotNull Object> extra = new ConcurrentHashMap<>();
 
   /** Scope's event processor list */
-  private @NotNull List<EventProcessor> eventProcessors = new CopyOnWriteArrayList<>();
+  private @NotNull List<EventProcessorAndOrder> eventProcessors = new CopyOnWriteArrayList<>();
 
   /** Scope's SentryOptions */
-  private final @NotNull SentryOptions options;
+  private volatile @NotNull SentryOptions options;
 
   // TODO Consider: Scope clone doesn't clone sessions
 
@@ -64,13 +77,15 @@ public final class Scope implements IScope {
   private volatile @Nullable Session session;
 
   /** Session lock, Ops should be atomic */
-  private final @NotNull Object sessionLock = new Object();
+  private final @NotNull AutoClosableReentrantLock sessionLock = new AutoClosableReentrantLock();
 
   /** Transaction lock, Ops should be atomic */
-  private final @NotNull Object transactionLock = new Object();
+  private final @NotNull AutoClosableReentrantLock transactionLock =
+      new AutoClosableReentrantLock();
 
   /** PropagationContext lock, Ops should be atomic */
-  private final @NotNull Object propagationContextLock = new Object();
+  private final @NotNull AutoClosableReentrantLock propagationContextLock =
+      new AutoClosableReentrantLock();
 
   /** Scope's contexts */
   private @NotNull Contexts contexts = new Contexts();
@@ -79,6 +94,14 @@ public final class Scope implements IScope {
   private @NotNull List<Attachment> attachments = new CopyOnWriteArrayList<>();
 
   private @NotNull PropagationContext propagationContext;
+
+  /** Scope's session replay id */
+  private @NotNull SentryId replayId = SentryId.EMPTY_ID;
+
+  private @NotNull ISentryClient client = NoOpSentryClient.getInstance();
+
+  private final @NotNull Map<Throwable, Pair<WeakReference<ISpan>, String>> throwableToSpan =
+      Collections.synchronizedMap(new WeakHashMap<>());
 
   /**
    * Scope's ctor
@@ -89,6 +112,7 @@ public final class Scope implements IScope {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.breadcrumbs = createBreadcrumbsList(this.options.getMaxBreadcrumbs());
     this.propagationContext = new PropagationContext();
+    this.lastEventId = SentryId.EMPTY_ID;
   }
 
   private Scope(final @NotNull Scope scope) {
@@ -97,10 +121,13 @@ public final class Scope implements IScope {
     this.session = scope.session;
     this.options = scope.options;
     this.level = scope.level;
+    this.client = scope.client;
+    this.lastEventId = scope.getLastEventId();
 
     final User userRef = scope.user;
     this.user = userRef != null ? new User(userRef) : null;
     this.screen = scope.screen;
+    this.replayId = scope.replayId;
 
     final Request requestRef = scope.request;
     this.request = requestRef != null ? new Request(requestRef) : null;
@@ -214,15 +241,25 @@ public final class Scope implements IScope {
   @Nullable
   @Override
   public ISpan getSpan() {
+    final @Nullable ISpan activeSpan = this.activeSpan.get();
+    if (activeSpan != null) {
+      return activeSpan;
+    }
+
     final ITransaction tx = transaction;
     if (tx != null) {
-      final Span span = tx.getLatestActiveSpan();
+      final ISpan span = tx.getLatestActiveSpan();
 
       if (span != null) {
         return span;
       }
     }
     return tx;
+  }
+
+  @Override
+  public void setActiveSpan(final @Nullable ISpan span) {
+    activeSpan = new WeakReference<>(span);
   }
 
   /**
@@ -232,16 +269,16 @@ public final class Scope implements IScope {
    */
   @Override
   public void setTransaction(final @Nullable ITransaction transaction) {
-    synchronized (transactionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = transactionLock.acquire()) {
       this.transaction = transaction;
 
       for (final IScopeObserver observer : options.getScopeObservers()) {
         if (transaction != null) {
           observer.setTransaction(transaction.getName());
-          observer.setTrace(transaction.getSpanContext());
+          observer.setTrace(transaction.getSpanContext(), this);
         } else {
           observer.setTransaction(null);
-          observer.setTrace(null);
+          observer.setTrace(null, this);
         }
       }
     }
@@ -309,6 +346,20 @@ public final class Scope implements IScope {
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
       observer.setContexts(contexts);
+    }
+  }
+
+  @Override
+  public @NotNull SentryId getReplayId() {
+    return replayId;
+  }
+
+  @Override
+  public void setReplayId(final @NotNull SentryId replayId) {
+    this.replayId = replayId;
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setReplayId(replayId);
     }
   }
 
@@ -462,14 +513,14 @@ public final class Scope implements IScope {
   /** Clears the transaction. */
   @Override
   public void clearTransaction() {
-    synchronized (transactionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = transactionLock.acquire()) {
       transaction = null;
     }
     transactionName = null;
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
       observer.setTransaction(null);
-      observer.setTrace(null);
+      observer.setTrace(null, this);
     }
   }
 
@@ -734,8 +785,10 @@ public final class Scope implements IScope {
    * @param maxBreadcrumb the max number of breadcrumbs
    * @return the breadcrumbs queue
    */
-  private @NotNull Queue<Breadcrumb> createBreadcrumbsList(final int maxBreadcrumb) {
-    return SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxBreadcrumb));
+  static @NotNull Queue<Breadcrumb> createBreadcrumbsList(final int maxBreadcrumb) {
+    return maxBreadcrumb > 0
+        ? SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxBreadcrumb))
+        : SynchronizedQueue.synchronizedQueue(new DisabledQueue<>());
   }
 
   /**
@@ -747,6 +800,18 @@ public final class Scope implements IScope {
   @NotNull
   @Override
   public List<EventProcessor> getEventProcessors() {
+    return EventProcessorUtils.unwrap(eventProcessors);
+  }
+
+  /**
+   * Returns the Scope's event processors including their order
+   *
+   * @return the event processors list and their order
+   */
+  @ApiStatus.Internal
+  @NotNull
+  @Override
+  public List<EventProcessorAndOrder> getEventProcessorsWithOrder() {
     return eventProcessors;
   }
 
@@ -757,7 +822,7 @@ public final class Scope implements IScope {
    */
   @Override
   public void addEventProcessor(final @NotNull EventProcessor eventProcessor) {
-    eventProcessors.add(eventProcessor);
+    eventProcessors.add(new EventProcessorAndOrder(eventProcessor, eventProcessor.getOrder()));
   }
 
   /**
@@ -771,7 +836,7 @@ public final class Scope implements IScope {
   @Override
   public Session withSession(final @NotNull IWithSession sessionCallback) {
     Session cloneSession = null;
-    synchronized (sessionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       sessionCallback.accept(session);
 
       if (session != null) {
@@ -803,9 +868,9 @@ public final class Scope implements IScope {
   public SessionPair startSession() {
     Session previousSession;
     SessionPair pair = null;
-    synchronized (sessionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       if (session != null) {
-        // Assumes session will NOT flush itself (Not passing any hub to it)
+        // Assumes session will NOT flush itself (Not passing any scopes to it)
         session.end();
       }
       previousSession = session;
@@ -877,7 +942,7 @@ public final class Scope implements IScope {
   @Override
   public Session endSession() {
     Session previousSession = null;
-    synchronized (sessionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       if (session != null) {
         session.end();
         previousSession = session.clone();
@@ -895,7 +960,7 @@ public final class Scope implements IScope {
   @ApiStatus.Internal
   @Override
   public void withTransaction(final @NotNull IWithTransaction callback) {
-    synchronized (transactionLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = transactionLock.acquire()) {
       callback.accept(transaction);
     }
   }
@@ -915,8 +980,19 @@ public final class Scope implements IScope {
 
   @ApiStatus.Internal
   @Override
+  public void clearSession() {
+    session = null;
+  }
+
+  @ApiStatus.Internal
+  @Override
   public void setPropagationContext(final @NotNull PropagationContext propagationContext) {
     this.propagationContext = propagationContext;
+
+    final @NotNull SpanContext spanContext = propagationContext.toSpanContext();
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setTrace(spanContext, this);
+    }
   }
 
   @ApiStatus.Internal
@@ -929,7 +1005,7 @@ public final class Scope implements IScope {
   @Override
   public @NotNull PropagationContext withPropagationContext(
       final @NotNull IWithPropagationContext callback) {
-    synchronized (propagationContextLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = propagationContextLock.acquire()) {
       callback.accept(propagationContext);
       return new PropagationContext(propagationContext);
     }
@@ -943,6 +1019,80 @@ public final class Scope implements IScope {
   @Override
   public @NotNull IScope clone() {
     return new Scope(this);
+  }
+
+  @Override
+  public void setLastEventId(@NotNull SentryId lastEventId) {
+    this.lastEventId = lastEventId;
+  }
+
+  @Override
+  public @NotNull SentryId getLastEventId() {
+    return lastEventId;
+  }
+
+  @Override
+  public void bindClient(@NotNull ISentryClient client) {
+    this.client = client;
+  }
+
+  @Override
+  public @NotNull ISentryClient getClient() {
+    return client;
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public void assignTraceContext(final @NotNull SentryEvent event) {
+    if (options.isTracingEnabled() && event.getThrowable() != null) {
+      final Pair<WeakReference<ISpan>, String> pair =
+          throwableToSpan.get(ExceptionUtils.findRootCause(event.getThrowable()));
+      if (pair != null) {
+        final WeakReference<ISpan> spanWeakRef = pair.getFirst();
+        if (event.getContexts().getTrace() == null && spanWeakRef != null) {
+          final ISpan span = spanWeakRef.get();
+          if (span != null) {
+            event.getContexts().setTrace(span.getSpanContext());
+          }
+        }
+        final String transactionName = pair.getSecond();
+        if (event.getTransaction() == null && transactionName != null) {
+          event.setTransaction(transactionName);
+        }
+      }
+    }
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public void setSpanContext(
+      final @NotNull Throwable throwable,
+      final @NotNull ISpan span,
+      final @NotNull String transactionName) {
+    Objects.requireNonNull(throwable, "throwable is required");
+    Objects.requireNonNull(span, "span is required");
+    Objects.requireNonNull(transactionName, "transactionName is required");
+    // to match any cause, span context is always attached to the root cause of the exception
+    final Throwable rootCause = ExceptionUtils.findRootCause(throwable);
+    // the most inner span should be assigned to a throwable
+    if (!throwableToSpan.containsKey(rootCause)) {
+      throwableToSpan.put(rootCause, new Pair<>(new WeakReference<>(span), transactionName));
+    }
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public void replaceOptions(final @NotNull SentryOptions options) {
+    this.options = options;
+    final Queue<Breadcrumb> oldBreadcrumbs = breadcrumbs;
+    breadcrumbs = createBreadcrumbsList(options.getMaxBreadcrumbs());
+    for (Breadcrumb breadcrumb : oldBreadcrumbs) {
+      /*
+      this should trigger beforeBreadcrumb
+      and notify observers for breadcrumbs added before options where customized in Sentry.init
+      */
+      addBreadcrumb(breadcrumb);
+    }
   }
 
   /** The IWithTransaction callback */

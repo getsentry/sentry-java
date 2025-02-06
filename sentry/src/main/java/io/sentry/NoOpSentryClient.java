@@ -29,6 +29,9 @@ final class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
+  public void close(final boolean isRestarting) {}
+
+  @Override
   public void close() {}
 
   @Override
@@ -59,6 +62,12 @@ final class NoOpSentryClient implements ISentryClient {
   @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(
       @NotNull CheckIn checkIn, @Nullable IScope scope, @Nullable Hint hint) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public @NotNull SentryId captureReplayEvent(
+      @NotNull SentryReplayEvent event, @Nullable IScope scope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
 

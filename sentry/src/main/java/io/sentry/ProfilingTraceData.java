@@ -5,11 +5,11 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -64,6 +64,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
   private @NotNull String profileId;
   private @NotNull String environment;
   private @NotNull String truncationReason;
+  private @NotNull Date timestamp;
   private final @NotNull Map<String, ProfileMeasurement> measurementsMap;
 
   // Stacktrace (file)
@@ -78,6 +79,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
       final @NotNull File traceFile, final @NotNull ITransaction transaction) {
     this(
         traceFile,
+        DateUtils.getCurrentDateTime(),
         new ArrayList<>(),
         transaction.getName(),
         transaction.getEventId().toString(),
@@ -101,6 +103,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
   public ProfilingTraceData(
       @NotNull File traceFile,
+      @NotNull Date profileStartTimestamp,
       @NotNull List<ProfilingTransactionData> transactions,
       @NotNull String transactionName,
       @NotNull String transactionId,
@@ -120,6 +123,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
       @NotNull String truncationReason,
       final @NotNull Map<String, ProfileMeasurement> measurementsMap) {
     this.traceFile = traceFile;
+    this.timestamp = profileStartTimestamp;
     this.cpuArchitecture = cpuArchitecture;
     this.deviceCpuFrequenciesReader = deviceCpuFrequenciesReader;
 
@@ -139,7 +143,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
     // Transaction info
     this.transactions = transactions;
-    this.transactionName = transactionName;
+    this.transactionName = transactionName.isEmpty() ? "unknown" : transactionName;
     this.durationNs = durationNanos;
 
     // App info
@@ -149,7 +153,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     // Stacktrace context
     this.transactionId = transactionId;
     this.traceId = traceId;
-    this.profileId = UUID.randomUUID().toString();
+    this.profileId = SentryUUID.generateSentryId();
     this.environment = environment != null ? environment : DEFAULT_ENVIRONMENT;
     this.truncationReason = truncationReason;
     if (!isTruncationReasonValid()) {
@@ -262,6 +266,10 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     return truncationReason;
   }
 
+  public @NotNull Date getTimestamp() {
+    return timestamp;
+  }
+
   public @NotNull Map<String, ProfileMeasurement> getMeasurementsMap() {
     return measurementsMap;
   }
@@ -304,6 +312,10 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
   public void setDevicePhysicalMemoryBytes(final @NotNull String devicePhysicalMemoryBytes) {
     this.devicePhysicalMemoryBytes = devicePhysicalMemoryBytes;
+  }
+
+  public void setTimestamp(final @NotNull Date timestamp) {
+    this.timestamp = timestamp;
   }
 
   public void setTruncationReason(final @NotNull String truncationReason) {
@@ -386,6 +398,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     public static final String SAMPLED_PROFILE = "sampled_profile";
     public static final String TRUNCATION_REASON = "truncation_reason";
     public static final String MEASUREMENTS = "measurements";
+    public static final String TIMESTAMP = "timestamp";
   }
 
   @Override
@@ -422,6 +435,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
       writer.name(JsonKeys.SAMPLED_PROFILE).value(sampledProfile);
     }
     writer.name(JsonKeys.MEASUREMENTS).value(logger, measurementsMap);
+    writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -448,7 +462,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull ProfilingTraceData deserialize(
-        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
+        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       ProfilingTraceData data = new ProfilingTraceData();
       Map<String, Object> unknown = null;
@@ -600,6 +614,12 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
                 reader.nextMapOrNull(logger, new ProfileMeasurement.Deserializer());
             if (measurements != null) {
               data.measurementsMap.putAll(measurements);
+            }
+            break;
+          case JsonKeys.TIMESTAMP:
+            Date timestamp = reader.nextDateOrNull(logger);
+            if (timestamp != null) {
+              data.timestamp = timestamp;
             }
             break;
           case JsonKeys.SAMPLED_PROFILE:

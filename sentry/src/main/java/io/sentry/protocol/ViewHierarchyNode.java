@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -205,7 +205,7 @@ public final class ViewHierarchyNode implements JsonUnknown, JsonSerializable {
 
     @Override
     public @NotNull ViewHierarchyNode deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       @Nullable Map<String, Object> unknown = null;
       @NotNull final ViewHierarchyNode node = new ViewHierarchyNode();
 

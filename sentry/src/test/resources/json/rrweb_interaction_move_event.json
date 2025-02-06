@@ -1,0 +1,16 @@
+{
+  "type": 3,
+  "timestamp": 12345678901,
+  "data": {
+    "source": 6,
+    "positions": [
+      {
+        "id": 1,
+        "x": 1.0,
+        "y": 2.0,
+        "timeOffset": 100
+      }
+    ],
+    "pointerId": 1
+  }
+}

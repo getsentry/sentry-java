@@ -8,7 +8,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -25,16 +25,17 @@ public final class AppComponentsBreadcrumbsIntegration
     implements Integration, Closeable, ComponentCallbacks2 {
 
   private final @NotNull Context context;
-  private @Nullable IHub hub;
+  private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
 
   public AppComponentsBreadcrumbsIntegration(final @NotNull Context context) {
-    this.context = Objects.requireNonNull(context, "Context is required");
+    this.context =
+        Objects.requireNonNull(ContextUtils.getApplicationContext(context), "Context is required");
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    this.hub = Objects.requireNonNull(hub, "Hub is required");
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -54,7 +55,7 @@ public final class AppComponentsBreadcrumbsIntegration
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration installed.");
-        addIntegrationToSdkVersion(getClass());
+        addIntegrationToSdkVersion("AppComponentsBreadcrumbs");
       } catch (Throwable e) {
         this.options.setEnableAppComponentBreadcrumbs(false);
         options.getLogger().log(SentryLevel.INFO, e, "ComponentCallbacks2 is not available.");
@@ -84,43 +85,25 @@ public final class AppComponentsBreadcrumbsIntegration
   @SuppressWarnings("deprecation")
   @Override
   public void onConfigurationChanged(@NotNull Configuration newConfig) {
-    if (hub != null) {
-      final Device.DeviceOrientation deviceOrientation =
-          DeviceOrientations.getOrientation(context.getResources().getConfiguration().orientation);
-
-      String orientation;
-      if (deviceOrientation != null) {
-        orientation = deviceOrientation.name().toLowerCase(Locale.ROOT);
-      } else {
-        orientation = "undefined";
-      }
-
-      final Breadcrumb breadcrumb = new Breadcrumb();
-      breadcrumb.setType("navigation");
-      breadcrumb.setCategory("device.orientation");
-      breadcrumb.setData("position", orientation);
-      breadcrumb.setLevel(SentryLevel.INFO);
-
-      final Hint hint = new Hint();
-      hint.set(ANDROID_CONFIGURATION, newConfig);
-
-      hub.addBreadcrumb(breadcrumb, hint);
-    }
+    final long now = System.currentTimeMillis();
+    executeInBackground(() -> captureConfigurationChangedBreadcrumb(now, newConfig));
   }
 
   @Override
   public void onLowMemory() {
-    createLowMemoryBreadcrumb(null);
+    final long now = System.currentTimeMillis();
+    executeInBackground(() -> captureLowMemoryBreadcrumb(now, null));
   }
 
   @Override
   public void onTrimMemory(final int level) {
-    createLowMemoryBreadcrumb(level);
+    final long now = System.currentTimeMillis();
+    executeInBackground(() -> captureLowMemoryBreadcrumb(now, level));
   }
 
-  private void createLowMemoryBreadcrumb(final @Nullable Integer level) {
-    if (hub != null) {
-      final Breadcrumb breadcrumb = new Breadcrumb();
+  private void captureLowMemoryBreadcrumb(final long timeMs, final @Nullable Integer level) {
+    if (scopes != null) {
+      final Breadcrumb breadcrumb = new Breadcrumb(timeMs);
       if (level != null) {
         // only add breadcrumb if TRIM_MEMORY_BACKGROUND, TRIM_MEMORY_MODERATE or
         // TRIM_MEMORY_COMPLETE.
@@ -143,7 +126,45 @@ public final class AppComponentsBreadcrumbsIntegration
       breadcrumb.setMessage("Low memory");
       breadcrumb.setData("action", "LOW_MEMORY");
       breadcrumb.setLevel(SentryLevel.WARNING);
-      hub.addBreadcrumb(breadcrumb);
+      scopes.addBreadcrumb(breadcrumb);
+    }
+  }
+
+  private void captureConfigurationChangedBreadcrumb(
+      final long timeMs, final @NotNull Configuration newConfig) {
+    if (scopes != null) {
+      final Device.DeviceOrientation deviceOrientation =
+          DeviceOrientations.getOrientation(context.getResources().getConfiguration().orientation);
+
+      String orientation;
+      if (deviceOrientation != null) {
+        orientation = deviceOrientation.name().toLowerCase(Locale.ROOT);
+      } else {
+        orientation = "undefined";
+      }
+
+      final Breadcrumb breadcrumb = new Breadcrumb(timeMs);
+      breadcrumb.setType("navigation");
+      breadcrumb.setCategory("device.orientation");
+      breadcrumb.setData("position", orientation);
+      breadcrumb.setLevel(SentryLevel.INFO);
+
+      final Hint hint = new Hint();
+      hint.set(ANDROID_CONFIGURATION, newConfig);
+
+      scopes.addBreadcrumb(breadcrumb, hint);
+    }
+  }
+
+  private void executeInBackground(final @NotNull Runnable runnable) {
+    if (options != null) {
+      try {
+        options.getExecutorService().submit(runnable);
+      } catch (Throwable t) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, t, "Failed to submit app components breadcrumb task");
+      }
     }
   }
 }

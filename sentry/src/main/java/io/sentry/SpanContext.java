@@ -16,6 +16,7 @@ import org.jetbrains.annotations.TestOnly;
 @Open
 public class SpanContext implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "trace";
+  public static final String DEFAULT_ORIGIN = "manual";
 
   /** Determines which trace the Span belongs to. */
   private final @NotNull SentryId traceId;
@@ -24,7 +25,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   private final @NotNull SpanId spanId;
 
   /** Id of a parent span. */
-  private final @Nullable SpanId parentSpanId;
+  private @Nullable SpanId parentSpanId;
 
   private transient @Nullable TracesSamplingDecision samplingDecision;
 
@@ -43,10 +44,15 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   /** A map or list of tags for this event. Each tag must be less than 200 characters. */
   protected @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
 
-  /** Describes the status of the Transaction. */
-  protected @Nullable String origin = "manual";
+  protected @Nullable String origin = DEFAULT_ORIGIN;
+
+  protected @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
 
   private @Nullable Map<String, Object> unknown;
+
+  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
+
+  protected @Nullable Baggage baggage;
 
   public SpanContext(
       final @NotNull String operation, final @Nullable TracesSamplingDecision samplingDecision) {
@@ -68,7 +74,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       final @NotNull String operation,
       final @Nullable SpanId parentSpanId,
       final @Nullable TracesSamplingDecision samplingDecision) {
-    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null, "manual");
+    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null, DEFAULT_ORIGIN);
   }
 
   @ApiStatus.Internal
@@ -213,6 +219,42 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.origin = origin;
   }
 
+  public @NotNull Instrumenter getInstrumenter() {
+    return instrumenter;
+  }
+
+  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
+    this.instrumenter = instrumenter;
+  }
+
+  public @Nullable Baggage getBaggage() {
+    return baggage;
+  }
+
+  public @NotNull Map<String, Object> getData() {
+    return data;
+  }
+
+  public void setData(final @NotNull String key, final @NotNull Object value) {
+    data.put(key, value);
+  }
+
+  @ApiStatus.Internal
+  public SpanContext copyForChild(
+      final @NotNull String operation,
+      final @Nullable SpanId parentSpanId,
+      final @Nullable SpanId spanId) {
+    return new SpanContext(
+        traceId,
+        spanId == null ? new SpanId() : spanId,
+        parentSpanId,
+        operation,
+        null,
+        samplingDecision,
+        null,
+        DEFAULT_ORIGIN);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -223,12 +265,12 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
         && Objects.equals(parentSpanId, that.parentSpanId)
         && op.equals(that.op)
         && Objects.equals(description, that.description)
-        && status == that.status;
+        && getStatus() == that.getStatus();
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(traceId, spanId, parentSpanId, op, description, status);
+    return Objects.hash(traceId, spanId, parentSpanId, op, description, getStatus());
   }
 
   // region JsonSerializable
@@ -242,6 +284,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     public static final String STATUS = "status";
     public static final String TAGS = "tags";
     public static final String ORIGIN = "origin";
+    public static final String DATA = "data";
   }
 
   @Override
@@ -260,14 +303,17 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     if (description != null) {
       writer.name(JsonKeys.DESCRIPTION).value(description);
     }
-    if (status != null) {
-      writer.name(JsonKeys.STATUS).value(logger, status);
+    if (getStatus() != null) {
+      writer.name(JsonKeys.STATUS).value(logger, getStatus());
     }
     if (origin != null) {
       writer.name(JsonKeys.ORIGIN).value(logger, origin);
     }
     if (!tags.isEmpty()) {
       writer.name(JsonKeys.TAGS).value(logger, tags);
+    }
+    if (!data.isEmpty()) {
+      writer.name(JsonKeys.DATA).value(logger, data);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -292,8 +338,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<SpanContext> {
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull SpanContext deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull SpanContext deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
       SentryId traceId = null;
       SpanId spanId = null;
@@ -303,6 +349,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       SpanStatus status = null;
       String origin = null;
       Map<String, String> tags = null;
+      Map<String, Object> data = null;
 
       Map<String, Object> unknown = null;
       while (reader.peek() == JsonToken.NAME) {
@@ -333,6 +380,9 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
             tags =
                 CollectionUtils.newConcurrentHashMap(
                     (Map<String, String>) reader.nextObjectOrNull());
+            break;
+          case JsonKeys.DATA:
+            data = (Map<String, Object>) reader.nextObjectOrNull();
             break;
           default:
             if (unknown == null) {
@@ -371,9 +421,15 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       spanContext.setDescription(description);
       spanContext.setStatus(status);
       spanContext.setOrigin(origin);
+
       if (tags != null) {
         spanContext.tags = tags;
       }
+
+      if (data != null) {
+        spanContext.data = data;
+      }
+
       spanContext.setUnknown(unknown);
       reader.endObject();
       return spanContext;

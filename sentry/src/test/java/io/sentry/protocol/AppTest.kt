@@ -21,6 +21,7 @@ class AppTest {
         app.permissions = mapOf(Pair("internet", "granted"))
         app.viewNames = listOf("MainActivity")
         app.inForeground = true
+        app.startType = "cold"
         val unknown = mapOf(Pair("unknown", "unknown"))
         app.unknown = unknown
 
@@ -49,6 +50,7 @@ class AppTest {
         app.permissions = mapOf(Pair("internet", "granted"))
         app.viewNames = listOf("MainActivity")
         app.inForeground = true
+        app.startType = "cold"
         val unknown = mapOf(Pair("unknown", "unknown"))
         app.unknown = unknown
 
@@ -67,6 +69,7 @@ class AppTest {
         assertEquals(listOf("MainActivity"), clone.viewNames)
 
         assertEquals(true, clone.inForeground)
+        assertEquals("cold", clone.startType)
         assertNotNull(clone.unknown) {
             assertEquals("unknown", it["unknown"])
         }

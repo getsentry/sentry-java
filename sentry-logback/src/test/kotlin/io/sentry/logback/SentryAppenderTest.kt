@@ -8,10 +8,12 @@ import ch.qos.logback.core.encoder.Encoder
 import ch.qos.logback.core.encoder.EncoderBase
 import ch.qos.logback.core.status.Status
 import io.sentry.ITransportFactory
+import io.sentry.InitPriority
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -35,17 +37,18 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryAppenderTest {
-    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, contextTags: List<String>? = null, encoder: Encoder<ILoggingEvent>? = null, sendDefaultPii: Boolean = false) {
+    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, contextTags: List<String>? = null, encoder: Encoder<ILoggingEvent>? = null, sendDefaultPii: Boolean = false, options: SentryOptions = SentryOptions(), startLater: Boolean = false) {
         val logger: Logger = LoggerFactory.getLogger(SentryAppenderTest::class.java)
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
         val transportFactory = mock<ITransportFactory>()
         val transport = mock<ITransport>()
         val utcTimeZone: ZoneId = ZoneId.of("UTC")
+        val appender = SentryAppender()
+        var encoder: Encoder<ILoggingEvent>? = null
 
         init {
             whenever(this.transportFactory.create(any(), any())).thenReturn(transport)
-            val appender = SentryAppender()
-            val options = SentryOptions()
+            this.encoder = encoder
             options.dsn = dsn
             options.isSendDefaultPii = sendDefaultPii
             contextTags?.forEach { options.addContextTag(it) }
@@ -59,6 +62,12 @@ class SentryAppenderTest {
             val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
             rootLogger.level = Level.TRACE
             rootLogger.addAppender(appender)
+            if (!startLater) {
+                start()
+            }
+        }
+
+        fun start() {
             appender.start()
             encoder?.start()
             loggerContext.start()
@@ -77,21 +86,32 @@ class SentryAppenderTest {
     @BeforeTest
     fun `clear MDC`() {
         MDC.clear()
+        Sentry.close()
     }
 
     @Test
-    fun `does not initialize Sentry if Sentry is already enabled`() {
-        fixture = Fixture()
-        Sentry.init {
+    fun `does not initialize Sentry if Sentry is already enabled with higher prio`() {
+        fixture = Fixture(
+            startLater = true,
+            options = SentryOptions().also {
+                it.setTag("only-present-if-logger-init-was-run", "another-value")
+            }
+        )
+        initForTest {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
             it.setTransportFactory(fixture.transportFactory)
+            it.setTag("tag-from-first-init", "some-value")
+            it.isEnableBackpressureHandling = false
+            it.initPriority = InitPriority.LOW
         }
+        fixture.start()
+
         fixture.logger.error("testing environment field")
 
         verify(fixture.transport).send(
             checkEvent { event ->
-                assertEquals("manual-environment", event.environment)
+                assertNull(event.tags?.get("only-present-if-logger-init-was-run"))
             },
             anyOrNull()
         )

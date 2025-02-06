@@ -28,4 +28,11 @@ public interface ITransport extends Closeable {
 
   @Nullable
   RateLimiter getRateLimiter();
+
+  /**
+   * Closes the transport.
+   *
+   * @param isRestarting if true, avoids locking the main thread by dropping the current connection.
+   */
+  void close(boolean isRestarting) throws IOException;
 }

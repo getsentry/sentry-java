@@ -15,6 +15,8 @@ body:
         - sentry-apollo-3
         - sentry-kotlin-extensions
         - sentry-opentelemetry-agent
+        - sentry-opentelemetry-agentless
+        - sentry-opentelemetry-agentless-spring
         - sentry-opentelemetry-core
         - sentry-servlet
         - sentry-servlet-jakarta
@@ -27,6 +29,7 @@ body:
         - sentry-logback
         - sentry-log4j2
         - sentry-graphql
+        - sentry-graphql-22
         - sentry-quartz
         - sentry-openfeign
         - sentry-apache-http-client-5

@@ -3,6 +3,7 @@ package io.sentry.android.core.internal.modules;
 import android.content.Context;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.ContextUtils;
 import io.sentry.internal.modules.ModulesLoader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -19,7 +20,7 @@ public final class AssetsModulesLoader extends ModulesLoader {
 
   public AssetsModulesLoader(final @NotNull Context context, final @NotNull ILogger logger) {
     super(logger);
-    this.context = context;
+    this.context = ContextUtils.getApplicationContext(context);
   }
 
   @Override

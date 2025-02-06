@@ -15,11 +15,20 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
   private @Nullable Long checkinMargin;
   private @Nullable Long maxRuntime;
   private @Nullable String timezone;
-
+  private @Nullable Long failureIssueThreshold;
+  private @Nullable Long recoveryThreshold;
   private @Nullable Map<String, Object> unknown;
 
   public MonitorConfig(final @NotNull MonitorSchedule schedule) {
     this.schedule = schedule;
+    final SentryOptions.Cron defaultCron = ScopesAdapter.getInstance().getOptions().getCron();
+    if (defaultCron != null) {
+      this.checkinMargin = defaultCron.getDefaultCheckinMargin();
+      this.maxRuntime = defaultCron.getDefaultMaxRuntime();
+      this.timezone = defaultCron.getDefaultTimezone();
+      this.failureIssueThreshold = defaultCron.getDefaultFailureIssueThreshold();
+      this.recoveryThreshold = defaultCron.getDefaultRecoveryThreshold();
+    }
   }
 
   public @NotNull MonitorSchedule getSchedule() {
@@ -54,6 +63,22 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
     this.timezone = timezone;
   }
 
+  public @Nullable Long getFailureIssueThreshold() {
+    return failureIssueThreshold;
+  }
+
+  public void setFailureIssueThreshold(@Nullable Long failureIssueThreshold) {
+    this.failureIssueThreshold = failureIssueThreshold;
+  }
+
+  public @Nullable Long getRecoveryThreshold() {
+    return recoveryThreshold;
+  }
+
+  public void setRecoveryThreshold(@Nullable Long recoveryThreshold) {
+    this.recoveryThreshold = recoveryThreshold;
+  }
+
   // JsonKeys
 
   public static final class JsonKeys {
@@ -61,6 +86,8 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
     public static final String CHECKIN_MARGIN = "checkin_margin";
     public static final String MAX_RUNTIME = "max_runtime";
     public static final String TIMEZONE = "timezone";
+    public static final String FAILURE_ISSUE_THRESHOLD = "failure_issue_threshold";
+    public static final String RECOVERY_THRESHOLD = "recovery_threshold";
   }
 
   // JsonUnknown
@@ -92,6 +119,12 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
     if (timezone != null) {
       writer.name(JsonKeys.TIMEZONE).value(timezone);
     }
+    if (failureIssueThreshold != null) {
+      writer.name(JsonKeys.FAILURE_ISSUE_THRESHOLD).value(failureIssueThreshold);
+    }
+    if (recoveryThreshold != null) {
+      writer.name(JsonKeys.RECOVERY_THRESHOLD).value(recoveryThreshold);
+    }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -105,12 +138,14 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<MonitorConfig> {
     @Override
-    public @NotNull MonitorConfig deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull MonitorConfig deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       MonitorSchedule schedule = null;
       Long checkinMargin = null;
       Long maxRuntime = null;
       String timezone = null;
+      Long failureIssureThreshold = null;
+      Long recoveryThreshold = null;
       Map<String, Object> unknown = null;
 
       reader.beginObject();
@@ -128,6 +163,12 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.TIMEZONE:
             timezone = reader.nextStringOrNull();
+            break;
+          case JsonKeys.FAILURE_ISSUE_THRESHOLD:
+            failureIssureThreshold = reader.nextLongOrNull();
+            break;
+          case JsonKeys.RECOVERY_THRESHOLD:
+            recoveryThreshold = reader.nextLongOrNull();
             break;
           default:
             if (unknown == null) {
@@ -150,6 +191,8 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
       monitorConfig.setCheckinMargin(checkinMargin);
       monitorConfig.setMaxRuntime(maxRuntime);
       monitorConfig.setTimezone(timezone);
+      monitorConfig.setFailureIssueThreshold(failureIssureThreshold);
+      monitorConfig.setRecoveryThreshold(recoveryThreshold);
       monitorConfig.setUnknown(unknown);
       return monitorConfig;
     }
