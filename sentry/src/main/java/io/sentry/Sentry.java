@@ -1169,9 +1169,9 @@ public final class Sentry {
    * @param spanId the span ID
    */
   // return TransactionContext (if performance enabled) or null (if performance disabled)
-  public static void continueTrace(
+  public static void setTrace(
       final @NotNull String traceId, final @NotNull String spanId) {
-    getCurrentScopes().continueTrace(traceId, spanId);
+    getCurrentScopes().setTrace(traceId, spanId);
   }
 
   /**
