@@ -60,6 +60,11 @@ kotlin {
                 implementation(Config.TestLibs.mockitoKotlin)
                 implementation(Config.TestLibs.mockitoInline)
                 implementation(Config.Libs.composeNavigation)
+                implementation(Config.TestLibs.robolectric)
+                implementation(Config.TestLibs.androidxRunner)
+                implementation(Config.TestLibs.androidxJunit)
+                implementation(Config.TestLibs.androidxTestRules)
+                implementation(Config.TestLibs.composeUiTestJunit4)
             }
         }
     }
