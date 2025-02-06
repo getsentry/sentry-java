@@ -83,15 +83,6 @@ public final class ContextUtils {
     public @Nullable String[] getSplitNames() {
       return splitNames;
     }
-
-    public @NotNull Map<String, Object> asExtras() {
-      final Map<String, Object> data = new HashMap<>();
-      data.put("isSplitApks", String.valueOf(isSplitApks));
-      if (splitNames != null) {
-        data.put("splitNames", String.join(", ", splitNames));
-      }
-      return data;
-    }
   }
 
   private ContextUtils() {}
