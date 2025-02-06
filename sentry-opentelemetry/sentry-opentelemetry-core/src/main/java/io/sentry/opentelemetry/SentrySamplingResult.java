@@ -29,6 +29,7 @@ public final class SentrySamplingResult implements SamplingResult {
     return Attributes.builder()
         .put(InternalSemanticAttributes.SAMPLED, sentryDecision.getSampled())
         .put(InternalSemanticAttributes.SAMPLE_RATE, sentryDecision.getSampleRate())
+        .put(InternalSemanticAttributes.SAMPLE_RAND, sentryDecision.getSampleRand())
         .put(InternalSemanticAttributes.PROFILE_SAMPLED, sentryDecision.getProfileSampled())
         .put(InternalSemanticAttributes.PROFILE_SAMPLE_RATE, sentryDecision.getProfileSampleRate())
         .build();

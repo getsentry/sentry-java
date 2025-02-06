@@ -22,20 +22,25 @@ public final class TransactionContext extends SpanContext {
       final @NotNull PropagationContext propagationContext) {
     @Nullable Boolean parentSampled = propagationContext.isSampled();
     TracesSamplingDecision samplingDecision =
-        parentSampled == null ? null : new TracesSamplingDecision(parentSampled);
+        parentSampled == null
+            ? null
+            : new TracesSamplingDecision(parentSampled, null, propagationContext.getSampleRand());
 
-    @Nullable Baggage baggage = propagationContext.getBaggage();
+    @NotNull Baggage baggage = propagationContext.getBaggage();
 
-    if (baggage != null) {
-      baggage.freeze();
+    // TODO is this ok?
+//      baggage.freeze();
 
-      Double sampleRate = baggage.getSampleRateDouble();
-      if (parentSampled != null) {
-        if (sampleRate != null) {
-          samplingDecision = new TracesSamplingDecision(parentSampled.booleanValue(), sampleRate);
-        } else {
-          samplingDecision = new TracesSamplingDecision(parentSampled.booleanValue());
-        }
+    Double sampleRate = baggage.getSampleRateDouble();
+    if (parentSampled != null) {
+      if (sampleRate != null) {
+        samplingDecision =
+            new TracesSamplingDecision(
+                parentSampled.booleanValue(), sampleRate, propagationContext.getSampleRand());
+      } else {
+        samplingDecision =
+            new TracesSamplingDecision(
+                parentSampled.booleanValue(), null, propagationContext.getSampleRand());
       }
     }
 
