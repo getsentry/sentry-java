@@ -9,6 +9,8 @@
 ### Features
 
 - Create onCreate and onStart spans for all Activities ([#4025](https://github.com/getsentry/sentry-java/pull/4025))
+- A list of active Spring profiles is attached to the trace context and displayed in the Sentry UI when using our Spring or Spring Boot integrations ([#4147](https://github.com/getsentry/sentry-java/pull/4147))
+  - This consists of an empty list when only the default profile is active
 
 ### Fixes
 
