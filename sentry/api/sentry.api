@@ -29,10 +29,11 @@ public final class io/sentry/Attachment {
 public abstract interface class io/sentry/BackfillingEventProcessor : io/sentry/EventProcessor {
 }
 
-public final class io/sentry/Baggage {
+public class io/sentry/Baggage {
+	public static final field NOOP Lio/sentry/Baggage;
 	public fun <init> (Lio/sentry/Baggage;)V
 	public fun <init> (Lio/sentry/ILogger;)V
-	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZLio/sentry/ILogger;)V
+	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZZLio/sentry/ILogger;)V
 	public fun freeze ()V
 	public static fun fromEvent (Lio/sentry/SentryEvent;Lio/sentry/SentryOptions;)Lio/sentry/Baggage;
 	public static fun fromHeader (Ljava/lang/String;)Lio/sentry/Baggage;
@@ -57,6 +58,7 @@ public final class io/sentry/Baggage {
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserId ()Ljava/lang/String;
 	public fun isMutable ()Z
+	public fun isShouldFreeze ()Z
 	public fun set (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setPublicKey (Ljava/lang/String;)V
@@ -598,6 +600,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getParentScopes ()Lio/sentry/IScopes;
+	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
 	public fun getSpan ()Lio/sentry/ISpan;
@@ -662,6 +665,7 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getParentScopes ()Lio/sentry/IScopes;
+	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
 	public fun getSpan ()Lio/sentry/ISpan;
@@ -888,6 +892,7 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getOptions ()Lio/sentry/SentryOptions;
 	public abstract fun getParentScopes ()Lio/sentry/IScopes;
+	public abstract fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public abstract fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public abstract fun getScope ()Lio/sentry/IScope;
 	public abstract fun getSpan ()Lio/sentry/ISpan;
@@ -1410,6 +1415,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getParentScopes ()Lio/sentry/IScopes;
+	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
 	public fun getSpan ()Lio/sentry/ISpan;
@@ -1569,6 +1575,7 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getParentScopes ()Lio/sentry/IScopes;
+	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
 	public fun getSpan ()Lio/sentry/ISpan;
@@ -1944,9 +1951,10 @@ public final class io/sentry/ProfilingTransactionData$JsonKeys {
 }
 
 public final class io/sentry/PropagationContext {
+	public static field NOOP Lio/sentry/PropagationContext;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/PropagationContext;)V
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Lio/sentry/Baggage;Ljava/lang/Boolean;Ljava/lang/Double;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Lio/sentry/Baggage;Ljava/lang/Boolean;)V
 	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/PropagationContext;
 	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/util/List;)Lio/sentry/PropagationContext;
 	public static fun fromHeaders (Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;Lio/sentry/SpanId;)Lio/sentry/PropagationContext;
@@ -2170,6 +2178,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getParentScopes ()Lio/sentry/IScopes;
+	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
 	public fun getSpan ()Lio/sentry/ISpan;
@@ -2234,6 +2243,7 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getOptions ()Lio/sentry/SentryOptions;
 	public fun getParentScopes ()Lio/sentry/IScopes;
+	public fun getPropagationContext ()Lio/sentry/PropagationContext;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
 	public fun getSpan ()Lio/sentry/ISpan;

@@ -46,7 +46,6 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull AtomicBoolean isIdleFinishTimerRunning = new AtomicBoolean(false);
   private final @NotNull AtomicBoolean isDeadlineTimerRunning = new AtomicBoolean(false);
 
-  private final @NotNull Baggage baggage;
   private @NotNull TransactionNameSource transactionNameSource;
   private final @NotNull Instrumenter instrumenter;
   private final @NotNull Contexts contexts = new Contexts();
@@ -80,13 +79,6 @@ public final class SentryTracer implements ITransaction {
     this.transactionPerformanceCollector = transactionPerformanceCollector;
     this.transactionNameSource = context.getTransactionNameSource();
     this.transactionOptions = transactionOptions;
-
-    if (context.getBaggage() != null) {
-      this.baggage = context.getBaggage();
-    } else {
-      System.out.println("---- new baggage created in SentryTracer");
-      this.baggage = new Baggage(scopes.getOptions().getLogger());
-    }
 
     // We are currently sending the performance data only in profiles, but we are always sending
     // performance measurements.
@@ -643,14 +635,16 @@ public final class SentryTracer implements ITransaction {
   @Override
   public @Nullable TraceContext traceContext() {
     if (scopes.getOptions().isTraceSampling()) {
-      updateBaggageValues();
-      return baggage.toTraceContext();
-    } else {
-      return null;
+      final @Nullable Baggage baggage = getSpanContext().getBaggage();
+      if (baggage != null) {
+        updateBaggageValues(baggage);
+        return baggage.toTraceContext();
+      }
     }
+    return null;
   }
 
-  private void updateBaggageValues() {
+  private void updateBaggageValues(final @NotNull Baggage baggage) {
     try (final @NotNull ISentryLifecycleToken ignored = tracerLock.acquire()) {
       if (baggage.isMutable()) {
         final AtomicReference<SentryId> replayId = new AtomicReference<>();
@@ -673,20 +667,24 @@ public final class SentryTracer implements ITransaction {
   @Override
   public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
     if (scopes.getOptions().isTraceSampling()) {
-      updateBaggageValues();
+      final @Nullable Baggage baggage = getSpanContext().getBaggage();
+      if (baggage != null) {
+        updateBaggageValues(baggage);
+        BaggageHeader baggageHeader =
+            BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
+        if (baggageHeader != null) {
+          System.out.println("outgoing baggage in SentryTracer:");
+          System.out.println(baggageHeader.getValue());
+        } else {
+          System.out.println("baggage header null in SentryTracer");
+        }
 
-      BaggageHeader baggageHeader =
-          BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
-      if (baggageHeader != null) {
-        System.out.println(baggageHeader.getName());
-        System.out.println(baggageHeader.getValue());
+        return baggageHeader;
       } else {
-        System.out.println("baggage header null in SentryTracer");
+        System.out.println("baggage null in SentryTracer");
       }
-      return baggageHeader;
-    } else {
-      return null;
     }
+    return null;
   }
 
   private boolean hasAllChildrenFinished() {

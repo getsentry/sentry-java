@@ -298,6 +298,11 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
+  public @NotNull PropagationContext getPropagationContext() {
+    return PropagationContext.NOOP;
+  }
+
+  @Override
   public @Nullable RateLimiter getRateLimiter() {
     return null;
   }

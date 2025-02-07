@@ -689,4 +689,8 @@ public interface IScopes {
 
   @NotNull
   SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint);
+
+  @ApiStatus.Internal
+  @NotNull
+  PropagationContext getPropagationContext();
 }

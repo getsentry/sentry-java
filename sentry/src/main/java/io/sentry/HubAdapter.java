@@ -344,6 +344,11 @@ public final class HubAdapter implements IHub {
     return Sentry.getCurrentScopes().captureReplay(replay, hint);
   }
 
+  @Override
+  public @NotNull PropagationContext getPropagationContext() {
+    return Sentry.getCurrentScopes().getPropagationContext();
+  }
+
   @ApiStatus.Internal
   @Override
   public @Nullable RateLimiter getRateLimiter() {

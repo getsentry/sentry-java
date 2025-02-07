@@ -3,6 +3,8 @@ package io.sentry;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.SampleRateUtils;
+import io.sentry.util.TracingUtils;
+
 import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -11,6 +13,9 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class PropagationContext {
+
+  public static @NotNull PropagationContext NOOP =
+      new PropagationContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, null, Baggage.NOOP, false);
 
   public static PropagationContext fromHeaders(
       final @NotNull ILogger logger,
@@ -48,8 +53,7 @@ public final class PropagationContext {
         spanIdToUse,
         sentryTraceHeader.getSpanId(),
         baggage,
-        sentryTraceHeader.isSampled(),
-        null);
+        sentryTraceHeader.isSampled());
   }
 
   private @NotNull SentryId traceId;
@@ -57,12 +61,11 @@ public final class PropagationContext {
   private @Nullable SpanId parentSpanId;
 
   private @Nullable Boolean sampled;
-  private @NotNull Double sampleRand;
 
   private @NotNull Baggage baggage;
 
   public PropagationContext() {
-    this(new SentryId(), new SpanId(), null, null, null, null);
+    this(new SentryId(), new SpanId(), null, null, null);
   }
 
   public PropagationContext(final @NotNull PropagationContext propagationContext) {
@@ -71,17 +74,7 @@ public final class PropagationContext {
         propagationContext.getSpanId(),
         propagationContext.getParentSpanId(),
         propagationContext.getBaggage(),
-        propagationContext.isSampled(),
-        propagationContext.getSampleRand());
-  }
-
-  @SuppressWarnings("UnusedMethod")
-  private static @Nullable Baggage cloneBaggage(final @Nullable Baggage baggage) {
-    if (baggage != null) {
-      return new Baggage(baggage);
-    }
-
-    return null;
+        propagationContext.isSampled());
   }
 
   @SuppressWarnings("ObjectToString")
@@ -90,45 +83,12 @@ public final class PropagationContext {
       final @NotNull SpanId spanId,
       final @Nullable SpanId parentSpanId,
       final @Nullable Baggage baggage,
-      final @Nullable Boolean sampled,
-      final @Nullable Double sampleRand) {
+      final @Nullable Boolean sampled) {
     this.traceId = traceId;
     this.spanId = spanId;
     this.parentSpanId = parentSpanId;
-    boolean shouldFreezeBaggage = false;
-    if (baggage != null) {
-      this.baggage = baggage;
-      shouldFreezeBaggage = true;
-    } else {
-      this.baggage = new Baggage(ScopesAdapter.getInstance().getOptions().getLogger());
-    }
+    this.baggage = TracingUtils.ensureBaggage(baggage, sampled, null, null);
     this.sampled = sampled;
-    StringBuilder sb = new StringBuilder("sample rand");
-    if (sampleRand != null) {
-      sb.append(" [passed in as param]");
-      this.sampleRand = sampleRand;
-    } else {
-      sb.append(" [maybe baggage maybe backfill]");
-      final @Nullable Double sampleRandMaybe = this.baggage.getSampleRandDouble();
-      sb.append(" [baggage " + sampleRandMaybe + "]");
-      final @Nullable Double sampleRateMaybe = this.baggage.getSampleRateDouble();
-      this.sampleRand =
-          SampleRateUtils.backfilledSampleRand(sampleRandMaybe, sampleRateMaybe, sampled);
-    }
-    if (this.baggage.getSampleRand() == null) {
-      sb.append(" [setting sample rand on baggage " + this.baggage + "]");
-      this.baggage.setSampleRandDouble(this.sampleRand);
-    }
-    if (shouldFreezeBaggage) {
-      if (this.baggage.isMutable()) {
-        sb.append(" [freezing baggage]");
-        this.baggage.freeze();
-      } else {
-        sb.append(" [baggage already frozen]");
-      }
-    }
-    sb.append(" {" + this.sampleRand + "}");
-    new RuntimeException("PropagationContext ctor" + sb.toString()).printStackTrace();
   }
 
   public @NotNull SentryId getTraceId() {
@@ -182,6 +142,8 @@ public final class PropagationContext {
   }
 
   public @NotNull Double getSampleRand() {
-    return sampleRand;
+    final @Nullable Double sampleRand = baggage.getSampleRandDouble();
+    // should never be null since we ensure it in ctor
+    return sampleRand == null ? 0.0 : sampleRand;
   }
 }

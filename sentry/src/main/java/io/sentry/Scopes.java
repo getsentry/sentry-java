@@ -857,8 +857,7 @@ public final class Scopes implements IScopes {
               SentryLevel.INFO, "Tracing is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
     } else {
-      final @NotNull Double sampleRand =
-          getCombinedScopeView().getPropagationContext().getSampleRand();
+      final Double sampleRand = getSampleRand(transactionContext);
       final SamplingContext samplingContext =
           new SamplingContext(
               transactionContext, transactionOptions.getCustomSamplingContext(), sampleRand);
@@ -895,6 +894,18 @@ public final class Scopes implements IScopes {
       transaction.makeCurrent();
     }
     return transaction;
+  }
+
+  private @NotNull Double getSampleRand(final @NotNull TransactionContext transactionContext) {
+    final @Nullable Baggage baggage = transactionContext.getBaggage();
+    if (baggage != null) {
+      final @Nullable Double sampleRandFromBaggageMaybe = baggage.getSampleRandDouble();
+      if (sampleRandFromBaggageMaybe != null) {
+        return sampleRandFromBaggageMaybe;
+      }
+    }
+
+    return getCombinedScopeView().getPropagationContext().getSampleRand();
   }
 
   @Override
@@ -966,7 +977,10 @@ public final class Scopes implements IScopes {
         PropagationContext.fromHeaders(getOptions().getLogger(), sentryTrace, baggageHeaders);
     configureScope(
         (scope) -> {
-          scope.setPropagationContext(propagationContext);
+          scope.withPropagationContext(
+              oldPropagationContext -> {
+                scope.setPropagationContext(propagationContext);
+              });
         });
     if (getOptions().isTracingEnabled()) {
       return TransactionContext.fromPropagationContext(propagationContext);
@@ -1052,6 +1066,11 @@ public final class Scopes implements IScopes {
       }
     }
     return sentryId;
+  }
+
+  @Override
+  public @NotNull PropagationContext getPropagationContext() {
+    return getCombinedScopeView().getPropagationContext();
   }
 
   @ApiStatus.Internal
