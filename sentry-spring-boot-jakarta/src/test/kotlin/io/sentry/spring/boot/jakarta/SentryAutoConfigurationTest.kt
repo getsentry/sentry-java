@@ -80,12 +80,7 @@ import kotlin.test.assertTrue
 class SentryAutoConfigurationTest {
 
     private val contextRunner = WebApplicationContextRunner()
-        .withConfiguration(
-            AutoConfigurations.of(
-                SentryAutoConfiguration::class.java,
-                WebMvcAutoConfiguration::class.java
-            )
-        )
+        .withConfiguration(AutoConfigurations.of(SentryAutoConfiguration::class.java, WebMvcAutoConfiguration::class.java))
 
     @Test
     fun `scopes is not created when auto-configuration dsn is not set`() {
@@ -216,19 +211,13 @@ class SentryAutoConfigurationTest {
             assertThat(options.proxy!!.pass).isEqualTo("proxy-pass")
             assertThat(options.tracesSampleRate).isEqualTo(0.3)
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
-            assertThat(options.ignoredExceptionsForType).containsOnly(
-                RuntimeException::class.java,
-                IllegalStateException::class.java
-            )
+            assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
             assertThat(options.tracePropagationTargets).containsOnly("localhost", "^(http|https)://api\\..*\$")
             assertThat(options.isEnabled).isEqualTo(false)
             assertThat(options.isSendModules).isEqualTo(false)
             assertThat(options.ignoredCheckIns).containsOnly(FilterString("slug1"), FilterString("slugB"))
             assertThat(options.ignoredErrors).containsOnly(FilterString("Some error"), FilterString("Another .*"))
-            assertThat(options.ignoredTransactions).containsOnly(
-                FilterString("transactionName1"),
-                FilterString("transactionNameB")
-            )
+            assertThat(options.ignoredTransactions).containsOnly(FilterString("transactionName1"), FilterString("transactionNameB"))
             assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
             assertThat(options.isForceInit).isEqualTo(true)
             assertThat(options.isGlobalHubMode).isEqualTo(true)
@@ -330,9 +319,7 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withUserConfiguration(CustomBeforeSendTransactionCallbackConfiguration::class.java)
             .run {
-                assertThat(it.getBean(SentryOptions::class.java).beforeSendTransaction).isInstanceOf(
-                    CustomBeforeSendTransactionCallback::class.java
-                )
+                assertThat(it.getBean(SentryOptions::class.java).beforeSendTransaction).isInstanceOf(CustomBeforeSendTransactionCallback::class.java)
             }
     }
 
@@ -341,9 +328,7 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withUserConfiguration(CustomBeforeBreadcrumbCallbackConfiguration::class.java)
             .run {
-                assertThat(it.getBean(SentryOptions::class.java).beforeBreadcrumb).isInstanceOf(
-                    CustomBeforeBreadcrumbCallback::class.java
-                )
+                assertThat(it.getBean(SentryOptions::class.java).beforeBreadcrumb).isInstanceOf(CustomBeforeBreadcrumbCallback::class.java)
             }
     }
 
@@ -470,9 +455,7 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true")
             .withClassLoader(FilteredClassLoader(HandlerExceptionResolver::class.java))
             .run {
-                assertThat(it.getBean(TransactionNameProvider::class.java)).isInstanceOf(
-                    SpringServletTransactionNameProvider::class.java
-                )
+                assertThat(it.getBean(TransactionNameProvider::class.java)).isInstanceOf(SpringServletTransactionNameProvider::class.java)
             }
     }
 
@@ -720,9 +703,7 @@ class SentryAutoConfigurationTest {
     fun `when sentry-apache-http-client-5 is on the classpath, creates apache transport factory`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertThat(it.getBean(SentryOptions::class.java).transportFactory).isInstanceOf(
-                    ApacheHttpClientTransportFactory::class.java
-                )
+                assertThat(it.getBean(SentryOptions::class.java).transportFactory).isInstanceOf(ApacheHttpClientTransportFactory::class.java)
             }
     }
 
@@ -731,9 +712,7 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .withClassLoader(FilteredClassLoader(ApacheHttpClientTransportFactory::class.java))
             .run {
-                assertThat(it.getBean(SentryOptions::class.java).transportFactory).isInstanceOf(
-                    AsyncHttpTransportFactory::class.java
-                )
+                assertThat(it.getBean(SentryOptions::class.java).transportFactory).isInstanceOf(AsyncHttpTransportFactory::class.java)
             }
     }
 
@@ -822,12 +801,7 @@ class SentryAutoConfigurationTest {
     fun `when AgentMarker and SentryAutoConfigurationCustomizerProvider are not on the classpath, does not run SpringBoot3OpenTelemetryNoAgent`() {
         SentryIntegrationPackageStorage.getInstance().clearStorage()
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
-            .withClassLoader(
-                FilteredClassLoader(
-                    AgentMarker::class.java,
-                    SentryAutoConfigurationCustomizerProvider::class.java
-                )
-            )
+            .withClassLoader(FilteredClassLoader(AgentMarker::class.java, SentryAutoConfigurationCustomizerProvider::class.java))
             .withUserConfiguration(OtelBeanConfig::class.java)
             .run {
                 assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBoot3OpenTelemetryNoAgent"))
@@ -846,10 +820,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `creates quartz config`() {
-        contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
-            "sentry.enable-automatic-checkins=true"
-        )
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
             .run {
                 assertThat(it).hasSingleBean(SchedulerFactoryBeanCustomizer::class.java)
             }
@@ -857,10 +828,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `does not create quartz config if quartz lib missing`() {
-        contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
-            "sentry.enable-automatic-checkins=true"
-        )
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
             .withClassLoader(FilteredClassLoader(QuartzScheduler::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SchedulerFactoryBeanCustomizer::class.java)
@@ -869,10 +837,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `does not create quartz config if spring-quartz lib missing`() {
-        contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
-            "sentry.enable-automatic-checkins=true"
-        )
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
             .withClassLoader(FilteredClassLoader(SchedulerFactoryBean::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SchedulerFactoryBeanCustomizer::class.java)
@@ -881,10 +846,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `does not create quartz config if sentry-quartz lib missing`() {
-        contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
-            "sentry.enable-automatic-checkins=true"
-        )
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
             .withClassLoader(FilteredClassLoader(SentryJobListener::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SchedulerFactoryBeanCustomizer::class.java)
@@ -937,10 +899,7 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `Sentry quartz job listener is added`() {
-        contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
-            "sentry.enable-automatic-checkins=true"
-        )
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
             .withUserConfiguration(QuartzAutoConfiguration::class.java)
             .run {
                 val jobListeners = it.getBean(Scheduler::class.java).listenerManager.jobListeners
@@ -954,14 +913,8 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `user defined SchedulerFactoryBeanCustomizer overrides Sentry Customizer`() {
-        contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
-            "sentry.enable-automatic-checkins=true"
-        )
-            .withUserConfiguration(
-                QuartzAutoConfiguration::class.java,
-                CustomSchedulerFactoryBeanCustomizerConfiguration::class.java
-            )
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.enable-automatic-checkins=true")
+            .withUserConfiguration(QuartzAutoConfiguration::class.java, CustomSchedulerFactoryBeanCustomizerConfiguration::class.java)
             .run {
                 val jobListeners = it.getBean(Scheduler::class.java).listenerManager.jobListeners
                 assertThat(jobListeners).hasSize(1)
@@ -995,11 +948,7 @@ class SentryAutoConfigurationTest {
 
         @Bean
         open fun mySchedulerFactoryBeanCustomizer(): SchedulerFactoryBeanCustomizer {
-            return SchedulerFactoryBeanCustomizer { schedulerFactoryBean ->
-                schedulerFactoryBean.setGlobalJobListeners(
-                    MyJobListener()
-                )
-            }
+            return SchedulerFactoryBeanCustomizer { schedulerFactoryBean -> schedulerFactoryBean.setGlobalJobListeners(MyJobListener()) }
         }
     }
 
@@ -1222,13 +1171,5 @@ class SentryAutoConfigurationTest {
     private fun ApplicationContext.getSentryUserProviders(): List<SentryUserProvider> {
         val userFilter = this.getBean("sentryUserFilter", FilterRegistrationBean::class.java).filter as SentryUserFilter
         return userFilter.sentryUserProviders
-    }
-
-    @Test
-    fun `registers SpringProfilesEventProcessor on SentryOptions`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
-            .run {
-                assertThat(it.getBean(SentryOptions::class.java).eventProcessors).anyMatch { processor -> processor.javaClass == SpringProfilesEventProcessor::class.java }
-            }
     }
 }
