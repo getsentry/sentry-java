@@ -7,6 +7,9 @@ import android.app.ActivityManager.RunningAppProcessInfo
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Process
 import androidx.test.core.app.ApplicationProvider
@@ -26,6 +29,7 @@ import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowBuild
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -114,6 +118,38 @@ class ContextUtilsTest {
             ContextUtils.retrieveSideLoadedInfo(mockedContext, logger, BuildInfoProvider(logger))
         assertFalse(sideLoadedInfo!!.isSideLoaded)
         assertEquals("play.google.com", sideLoadedInfo.installerStore)
+    }
+
+    @Test
+    fun `given a valid PackageInfo, returns valid splitNames`() {
+        val splitNames = arrayOf<String?>("config.arm64_v8a")
+        val mockedContext = mock<Context>()
+        val mockedPackageManager = mock<PackageManager>()
+        val mockedApplicationInfo = mock<ApplicationInfo>()
+        val mockedPackageInfo = mock<PackageInfo>()
+        mockedPackageInfo.splitNames = splitNames
+
+        whenever(mockedContext.packageName).thenReturn("dummy")
+
+        whenever(
+            mockedPackageManager.getApplicationInfo(
+                any<String>(),
+                any<PackageManager.ApplicationInfoFlags>()
+            )
+        ).thenReturn(mockedApplicationInfo)
+
+        whenever(
+            mockedPackageManager.getPackageInfo(
+                any<String>(),
+                any<PackageManager.PackageInfoFlags>()
+            )
+        ).thenReturn(mockedPackageInfo)
+
+        whenever(mockedContext.packageManager).thenReturn(mockedPackageManager)
+
+        val splitApksInfo =
+            ContextUtils.retrieveSplitApksInfo(mockedContext, BuildInfoProvider(logger))
+        assertContentEquals(splitNames, splitApksInfo!!.splitNames)
     }
 
     @Test

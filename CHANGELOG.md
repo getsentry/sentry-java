@@ -8,9 +8,12 @@
 
 ### Features
 
-- Create onCreate and onStart spans for all Activities ([#4025](https://github.com/getsentry/sentry-java/pull/4025))
 - A list of active Spring profiles is attached to the trace context and displayed in the Sentry UI when using our Spring or Spring Boot integrations ([#4147](https://github.com/getsentry/sentry-java/pull/4147))
   - This consists of an empty list when only the default profile is active
+- Create onCreate and onStart spans for all Activities ([#4025](https://github.com/getsentry/sentry-java/pull/4025))
+- Add split apks info to the `App` context ([#3193](https://github.com/getsentry/sentry-java/pull/3193))
+- Expose new `withSentryObservableEffect` method overload that accepts `SentryNavigationListener` as a parameter ([#4143](https://github.com/getsentry/sentry-java/pull/4143))
+  - This allows sharing the same `SentryNavigationListener` instance across fragments and composables to preserve the trace 
 
 ### Fixes
 
@@ -22,6 +25,8 @@
   - Fix `IllegalStateException` when registering `onDrawListener`
   - Fix SIGABRT native crashes on Motorola devices when encoding a video
 - Mention javadoc and sources for published artifacts in Gradle `.module` metadata ([#3936](https://github.com/getsentry/sentry-java/pull/3936))
+- (Jetpack Compose) Modifier.sentryTag now uses Modifier.Node ([#4029](https://github.com/getsentry/sentry-java/pull/4029))
+  - This allows Composables that use this modifier to be skippable
 
 ### Dependencies
 
