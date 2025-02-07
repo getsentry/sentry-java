@@ -23,6 +23,8 @@
   - Fix `IllegalStateException` when registering `onDrawListener`
   - Fix SIGABRT native crashes on Motorola devices when encoding a video
 - Mention javadoc and sources for published artifacts in Gradle `.module` metadata ([#3936](https://github.com/getsentry/sentry-java/pull/3936))
+- (Jetpack Compose) Modifier.sentryTag now uses Modifier.Node ([#4029](https://github.com/getsentry/sentry-java/pull/4029))
+  - This allows Composables that use this modifier to be skippable
 
 ### Dependencies
 
