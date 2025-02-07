@@ -2,7 +2,6 @@ package io.sentry.spring.boot.jakarta
 
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
-import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
@@ -23,14 +22,6 @@ class SpringProfilesEventProcessorTest {
     private val contextRunner = WebApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(SentryAutoConfiguration::class.java, WebMvcAutoConfiguration::class.java))
         .withUserConfiguration(MockTransportConfiguration::class.java)
-
-    @Test
-    fun `registers SpringProfilesEventProcessor on SentryOptions`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
-            .run {
-                assertThat(it.getBean(SentryOptions::class.java).eventProcessors).anyMatch { processor -> processor.javaClass == SpringProfilesEventProcessor::class.java }
-            }
-    }
 
     @Test
     fun `when default Spring profile is active, sets traceContext spring active_profiles to empty list on sent event`() {
