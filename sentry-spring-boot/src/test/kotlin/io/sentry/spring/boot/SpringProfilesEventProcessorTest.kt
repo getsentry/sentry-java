@@ -2,6 +2,7 @@ package io.sentry.spring.boot
 
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
+import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.spring.boot.SentryAutoConfigurationTest.MockTransportConfiguration
 import io.sentry.transport.ITransport
@@ -24,25 +25,18 @@ class SpringProfilesEventProcessorTest {
         .withConfiguration(AutoConfigurations.of(SentryAutoConfiguration::class.java, WebMvcAutoConfiguration::class.java))
         .withUserConfiguration(MockTransportConfiguration::class.java)
 
-    @Configuration(proxyBeanMethods = false)
-    open class MockTransportConfiguration {
-
-        private val transport = mock<ITransport>()
-
-        @Bean
-        open fun mockTransportFactory(): ITransportFactory {
-            val factory = mock<ITransportFactory>()
-            whenever(factory.create(any(), any())).thenReturn(transport)
-            return factory
-        }
-
-        @Bean
-        open fun sentryTransport() = transport
+    @Test
+    fun `registers SpringProfilesEventProcessor on SentryOptions`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).eventProcessors).anyMatch { processor -> processor.javaClass == SpringProfilesEventProcessor::class.java }
+            }
     }
 
     @Test
     fun `when default Spring profile is active, sets traceContext spring active_profiles to empty list on sent event`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withUserConfiguration(MockTransportConfiguration::class.java)
             .run {
                 Sentry.captureMessage("test")
                 val transport = it.getBean(ITransport::class.java)
@@ -62,6 +56,7 @@ class SpringProfilesEventProcessorTest {
     fun `when non-default Spring profiles are active, sets traceContext spring active_profiles to array of profile names`() {
         contextRunner
             .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withUserConfiguration(MockTransportConfiguration::class.java)
             .withPropertyValues(
                 "spring.profiles.active=test1,test2"
             )
@@ -78,5 +73,21 @@ class SpringProfilesEventProcessorTest {
                     anyOrNull()
                 )
             }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    open class MockTransportConfiguration {
+
+        private val transport = mock<ITransport>()
+
+        @Bean
+        open fun mockTransportFactory(): ITransportFactory {
+            val factory = mock<ITransportFactory>()
+            whenever(factory.create(any(), any())).thenReturn(transport)
+            return factory
+        }
+
+        @Bean
+        open fun sentryTransport() = transport
     }
 }

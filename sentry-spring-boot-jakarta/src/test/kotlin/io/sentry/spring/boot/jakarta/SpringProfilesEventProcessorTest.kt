@@ -24,22 +24,6 @@ class SpringProfilesEventProcessorTest {
         .withConfiguration(AutoConfigurations.of(SentryAutoConfiguration::class.java, WebMvcAutoConfiguration::class.java))
         .withUserConfiguration(MockTransportConfiguration::class.java)
 
-    @Configuration(proxyBeanMethods = false)
-    open class MockTransportConfiguration {
-
-        private val transport = mock<ITransport>()
-
-        @Bean
-        open fun mockTransportFactory(): ITransportFactory {
-            val factory = mock<ITransportFactory>()
-            whenever(factory.create(any(), any())).thenReturn(transport)
-            return factory
-        }
-
-        @Bean
-        open fun sentryTransport() = transport
-    }
-
     @Test
     fun `registers SpringProfilesEventProcessor on SentryOptions`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
@@ -88,5 +72,21 @@ class SpringProfilesEventProcessorTest {
                     anyOrNull()
                 )
             }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    open class MockTransportConfiguration {
+
+        private val transport = mock<ITransport>()
+
+        @Bean
+        open fun mockTransportFactory(): ITransportFactory {
+            val factory = mock<ITransportFactory>()
+            whenever(factory.create(any(), any())).thenReturn(transport)
+            return factory
+        }
+
+        @Bean
+        open fun sentryTransport() = transport
     }
 }

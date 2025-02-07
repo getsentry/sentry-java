@@ -925,6 +925,14 @@ class SentryAutoConfigurationTest {
             }
     }
 
+    @Test
+    fun `registers SpringProfilesEventProcessor on SentryOptions`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).eventProcessors).anyMatch { processor -> processor.javaClass == SpringProfilesEventProcessor::class.java }
+            }
+    }
+
     @Configuration(proxyBeanMethods = false)
     open class CustomSchedulerFactoryBeanCustomizerConfiguration {
         class MyJobListener : JobListener {
