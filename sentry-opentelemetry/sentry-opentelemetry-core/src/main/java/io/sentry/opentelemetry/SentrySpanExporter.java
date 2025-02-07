@@ -62,6 +62,7 @@ public final class SentrySpanExporter implements SpanExporter {
           InternalSemanticAttributes.BAGGAGE_MUTABLE.getKey(),
           InternalSemanticAttributes.SAMPLED.getKey(),
           InternalSemanticAttributes.SAMPLE_RATE.getKey(),
+          InternalSemanticAttributes.SAMPLE_RAND.getKey(),
           InternalSemanticAttributes.PROFILE_SAMPLED.getKey(),
           InternalSemanticAttributes.PROFILE_SAMPLE_RATE.getKey(),
           InternalSemanticAttributes.PARENT_SAMPLED.getKey(),

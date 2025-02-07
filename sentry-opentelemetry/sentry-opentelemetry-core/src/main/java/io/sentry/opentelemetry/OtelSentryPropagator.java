@@ -13,14 +13,12 @@ import io.opentelemetry.context.propagation.TextMapSetter;
 import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
-import io.sentry.PropagationContext;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.util.TracingUtils;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -75,17 +73,21 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       return;
     }
 
-    // TODO can we use traceIfAllowed? do we have the URL here?
-    TracingUtils.trace(scopes, Collections.emptyList(), sentrySpan);
+    // TODO can we use traceIfAllowed? do we have the URL here? need to access span attrs
+    final @Nullable TracingUtils.TracingHeaders tracingHeaders =
+        TracingUtils.trace(scopes, Collections.emptyList(), sentrySpan);
 
-    final @NotNull SentryTraceHeader sentryTraceHeader = sentrySpan.toSentryTrace();
-    setter.set(carrier, sentryTraceHeader.getName(), sentryTraceHeader.getValue());
-    final @Nullable BaggageHeader baggageHeader =
-        sentrySpan.toBaggageHeader(Collections.emptyList());
-    if (baggageHeader != null) {
-      System.out.println("outgoing baggage: ");
-      System.out.println(baggageHeader.getValue());
-      setter.set(carrier, baggageHeader.getName(), baggageHeader.getValue());
+    if (tracingHeaders != null) {
+      final @NotNull SentryTraceHeader sentryTraceHeader = tracingHeaders.getSentryTraceHeader();
+      setter.set(carrier, sentryTraceHeader.getName(), sentryTraceHeader.getValue());
+      final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
+      if (baggageHeader != null) {
+        System.out.println("outgoing baggage: ");
+        System.out.println(baggageHeader.getValue());
+        setter.set(carrier, baggageHeader.getName(), baggageHeader.getValue());
+      }
+    } else {
+      System.out.println("not tracing headers found");
     }
   }
 
@@ -108,6 +110,8 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       SentryTraceHeader sentryTraceHeader = new SentryTraceHeader(sentryTraceString);
 
       final @Nullable String baggageString = getter.get(carrier, BaggageHeader.BAGGAGE_HEADER);
+      System.out.println("incoming sentry-trace:");
+      System.out.println(sentryTraceString);
       System.out.println("incoming baggage:");
       System.out.println(baggageString);
       final Baggage baggage = Baggage.fromHeader(baggageString);
@@ -134,9 +138,9 @@ public final class OtelSentryPropagator implements TextMapPropagator {
           .getLogger()
           .log(SentryLevel.DEBUG, "Continuing Sentry trace %s", sentryTraceHeader.getTraceId());
 
-//      final @NotNull PropagationContext propagationContext =
-//          PropagationContext.fromHeaders(sentryTraceHeader, baggage, null);
-//      scopesToUse.getIsolationScope().setPropagationContext(propagationContext);
+      //      final @NotNull PropagationContext propagationContext =
+      //          PropagationContext.fromHeaders(sentryTraceHeader, baggage, null);
+      //      scopesToUse.getIsolationScope().setPropagationContext(propagationContext);
 
       return modifiedContext;
     } catch (InvalidSentryTraceHeaderException e) {

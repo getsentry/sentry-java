@@ -30,6 +30,11 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     this(traceId, publicKey, null, null, null, null, null, null, null);
   }
 
+  @SuppressWarnings("InlineMeSuggester")
+  /**
+   * @deprecated please use the constructor than also takes sampleRand
+   */
+  @Deprecated
   TraceContext(
       @NotNull SentryId traceId,
       @NotNull String publicKey,

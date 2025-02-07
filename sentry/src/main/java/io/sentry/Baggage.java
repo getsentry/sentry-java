@@ -3,7 +3,6 @@ package io.sentry;
 import static io.sentry.protocol.Contexts.REPLAY_ID;
 
 import com.jakewharton.nopen.annotation.Open;
-
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.SampleRateUtils;
@@ -30,6 +29,8 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class Baggage {
 
+  public static final @NotNull Baggage NOOP =
+      new Baggage(new HashMap<>(), null, false, true, NoOpLogger.getInstance());
   static final @NotNull String CHARSET = "UTF-8";
   static final @NotNull Integer MAX_BAGGAGE_STRING_LENGTH = 8192;
   static final @NotNull Integer MAX_BAGGAGE_LIST_MEMBER_COUNT = 64;
@@ -38,6 +39,7 @@ public class Baggage {
   final @NotNull Map<String, String> keyValues;
   final @Nullable String thirdPartyHeader;
   private boolean mutable;
+  private boolean shouldFreeze;
   final @NotNull ILogger logger;
 
   @NotNull
@@ -88,7 +90,7 @@ public class Baggage {
       final @NotNull ILogger logger) {
     final @NotNull Map<String, String> keyValues = new HashMap<>();
     final @NotNull List<String> thirdPartyKeyValueStrings = new ArrayList<>();
-    boolean mutable = true;
+    boolean shouldFreeze = false;
 
     if (headerValue != null) {
       try {
@@ -106,7 +108,9 @@ public class Baggage {
               final String valueDecoded = decode(value);
 
               keyValues.put(keyDecoded, valueDecoded);
-//              mutable = false;
+              if (!DSCKeys.SAMPLE_RAND.equalsIgnoreCase(key)) {
+                shouldFreeze = true;
+              }
             } catch (Throwable e) {
               logger.log(
                   SentryLevel.ERROR,
@@ -126,7 +130,12 @@ public class Baggage {
         thirdPartyKeyValueStrings.isEmpty()
             ? null
             : StringUtils.join(",", thirdPartyKeyValueStrings);
-    return new Baggage(keyValues, thirdPartyHeader, mutable, logger);
+    /*
+     can't freeze Baggage right away as we might have to backfill sampleRand
+     also we don't receive sentry-trace header here or in ctor so we can't
+     backfill then freeze here unless we pass sentry-trace header.
+    */
+    return new Baggage(keyValues, thirdPartyHeader, true, shouldFreeze, logger);
   }
 
   @ApiStatus.Internal
@@ -156,12 +165,17 @@ public class Baggage {
 
   @ApiStatus.Internal
   public Baggage(final @NotNull ILogger logger) {
-    this(new HashMap<>(), null, true, logger);
+    this(new HashMap<>(), null, true, false, logger);
   }
 
   @ApiStatus.Internal
   public Baggage(final @NotNull Baggage baggage) {
-    this(baggage.keyValues, baggage.thirdPartyHeader, baggage.mutable, baggage.logger);
+    this(
+        baggage.keyValues,
+        baggage.thirdPartyHeader,
+        baggage.mutable,
+        baggage.shouldFreeze,
+        baggage.logger);
   }
 
   @ApiStatus.Internal
@@ -170,24 +184,43 @@ public class Baggage {
       final @NotNull Map<String, String> keyValues,
       final @Nullable String thirdPartyHeader,
       boolean isMutable,
+      boolean shouldFreeze,
       final @NotNull ILogger logger) {
     this.keyValues = keyValues;
     this.logger = logger;
-    this.mutable = isMutable;
     this.thirdPartyHeader = thirdPartyHeader;
-    new RuntimeException("creating new baggage" + this).printStackTrace();
+    this.mutable = isMutable;
+    this.shouldFreeze = shouldFreeze;
+    //    new RuntimeException(
+    //            "creating new baggage "
+    //                + this
+    //                + " mutable "
+    //                + mutable
+    //                + " shouldFreeze "
+    //                + shouldFreeze)
+    //        .printStackTrace();
   }
 
   @SuppressWarnings("ObjectToString")
   @ApiStatus.Internal
   public void freeze() {
-    new RuntimeException("freezing baggage " + this).printStackTrace();
+    //    if (mutable) {
+    //      new RuntimeException("freezing baggage " + this).printStackTrace();
+    //    } else {
+    //      new RuntimeException("freezing baggage that is already frozen " +
+    // this).printStackTrace();
+    //    }
     this.mutable = false;
   }
 
   @ApiStatus.Internal
   public boolean isMutable() {
     return mutable;
+  }
+
+  @ApiStatus.Internal
+  public boolean isShouldFreeze() {
+    return shouldFreeze;
   }
 
   @Nullable
@@ -249,7 +282,7 @@ public class Baggage {
       }
     }
 
-    sb.append(",sbg=" + this);
+    //    sb.append(",sbg=" + this);
 
     return sb.toString();
   }
@@ -501,10 +534,6 @@ public class Baggage {
     return null;
   }
 
-  public @NotNull Baggage toReadOnly() {
-    return new ReadOnlyBaggage(this);
-  }
-
   @ApiStatus.Internal
   @Nullable
   public TraceContext toTraceContext() {
@@ -557,97 +586,5 @@ public class Baggage {
             SAMPLE_RAND,
             SAMPLED,
             REPLAY_ID);
-  }
-
-  private static final class ReadOnlyBaggage extends Baggage {
-
-    public ReadOnlyBaggage(@NotNull Baggage baggage) {
-      super(baggage);
-    }
-
-    @Override
-    public void freeze() {
-      // do nothing
-    }
-
-    @Override
-    public boolean isMutable() {
-      return false;
-    }
-
-    @Override
-    public void setTraceId(@Nullable String traceId) {
-      // do nothing
-    }
-
-    @Override
-    public void setPublicKey(@Nullable String publicKey) {
-      // do nothing
-    }
-
-    @Override
-    public void setEnvironment(@Nullable String environment) {
-      // do nothing
-    }
-
-    @Override
-    public void setRelease(@Nullable String release) {
-      // do nothing
-    }
-
-    @Override
-    public void setUserId(@Nullable String userId) {
-      // do nothing
-    }
-
-    @Override
-    public void setTransaction(@Nullable String transaction) {
-      // do nothing
-    }
-
-    @Override
-    public void setSampleRate(@Nullable String sampleRate) {
-      // do nothing
-    }
-
-    @Override
-    public void setSampleRand(@Nullable String sampleRand) {
-      // do nothing
-    }
-
-    @Override
-    public void setSampleRandDouble(@Nullable Double sampleRand) {
-      // do nothing
-    }
-
-    @Override
-    public void setSampled(@Nullable String sampled) {
-      // do nothing
-    }
-
-    @Override
-    public void setReplayId(@Nullable String replayId) {
-      // do nothing
-    }
-
-    @Override
-    public void set(@NotNull String key, @Nullable String value) {
-      // do nothing
-    }
-
-    @Override
-    public void setValuesFromTransaction(@NotNull SentryId traceId, @Nullable SentryId replayId, @NotNull SentryOptions sentryOptions, @Nullable TracesSamplingDecision samplingDecision, @Nullable String transactionName, @Nullable TransactionNameSource transactionNameSource) {
-      // do nothing
-    }
-
-    @Override
-    public void setValuesFromScope(@NotNull IScope scope, @NotNull SentryOptions options) {
-      // do nothing
-    }
-
-    @Override
-    public @NotNull Baggage toReadOnly() {
-      return this;
-    }
   }
 }

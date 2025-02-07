@@ -2,6 +2,8 @@ package io.sentry;
 
 import io.sentry.util.Objects;
 import io.sentry.util.Random;
+import io.sentry.util.SampleRateUtils;
+
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,23 +14,18 @@ public final class TracesSampler {
   private final @NotNull SentryOptions options;
 
   public TracesSampler(final @NotNull SentryOptions options) {
-    this(Objects.requireNonNull(options, "options are required"), null);
+    this.options = Objects.requireNonNull(options, "options are required");
   }
 
-  @TestOnly
-  TracesSampler(final @NotNull SentryOptions options, final @Nullable Random random) {
-    this.options = options;
-  }
-
-  @SuppressWarnings("deprecation")
+  @SuppressWarnings({"deprecation", "ObjectToString"})
   @NotNull
   public TracesSamplingDecision sample(final @NotNull SamplingContext samplingContext) {
     final @NotNull Double sampleRand = samplingContext.getSampleRand();
-    System.out.println("sample rand used in TracesSampler " + sampleRand);
+//    new RuntimeException("sample rand used in TracesSampler " + sampleRand).printStackTrace();
     final TracesSamplingDecision samplingContextSamplingDecision =
         samplingContext.getTransactionContext().getSamplingDecision();
     if (samplingContextSamplingDecision != null) {
-      return samplingContextSamplingDecision;
+      return SampleRateUtils.backfilledSampleRand(samplingContextSamplingDecision);
     }
 
     Double profilesSampleRate = null;
@@ -68,7 +65,7 @@ public final class TracesSampler {
     final TracesSamplingDecision parentSamplingDecision =
         samplingContext.getTransactionContext().getParentSamplingDecision();
     if (parentSamplingDecision != null) {
-      return parentSamplingDecision;
+      return SampleRateUtils.backfilledSampleRand(parentSamplingDecision);
     }
 
     final @Nullable Double tracesSampleRateFromOptions = options.getTracesSampleRate();
@@ -86,7 +83,7 @@ public final class TracesSampler {
           profilesSampleRate);
     }
 
-    return new TracesSamplingDecision(false, null, false, null);
+    return new TracesSamplingDecision(false, null, sampleRand, false, null);
   }
 
   private boolean sample(final @NotNull Double sampleRate, final @NotNull Double sampleRand) {
