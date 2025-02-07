@@ -10,7 +10,6 @@ import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +18,6 @@ import org.jetbrains.annotations.TestOnly;
 final class LifecycleWatcher implements DefaultLifecycleObserver {
 
   private final AtomicLong lastUpdatedSession = new AtomicLong(0L);
-  private final AtomicBoolean isFreshSession = new AtomicBoolean(false);
 
   private final long sessionIntervalMillis;
 
@@ -80,7 +78,6 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
             final @Nullable Session currentSession = scope.getSession();
             if (currentSession != null && currentSession.getStarted() != null) {
               lastUpdatedSession.set(currentSession.getStarted().getTime());
-              isFreshSession.set(true);
             }
           }
         });
@@ -92,11 +89,8 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
         hub.startSession();
       }
       hub.getOptions().getReplayController().start();
-    } else if (!isFreshSession.get()) {
-      // only resume if it's not a fresh session, which has been started in SentryAndroid.init
-      hub.getOptions().getReplayController().resume();
     }
-    isFreshSession.set(false);
+    hub.getOptions().getReplayController().resume();
     this.lastUpdatedSession.set(currentTimeMillis);
   }
 

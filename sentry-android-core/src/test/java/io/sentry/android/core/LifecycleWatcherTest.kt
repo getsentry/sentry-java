@@ -254,7 +254,7 @@ class LifecycleWatcherTest {
     }
 
     @Test
-    fun `if the hub has already a fresh session running, doesn't resume replay`() {
+    fun `if the hub has already a fresh session running, resumes replay to invalidate isManualPause flag`() {
         val watcher = fixture.getSUT(
             enableAppLifecycleBreadcrumbs = false,
             session = Session(
@@ -276,7 +276,7 @@ class LifecycleWatcherTest {
         )
 
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.replayController, never()).resume()
+        verify(fixture.replayController).resume()
     }
 
     @Test
@@ -293,7 +293,7 @@ class LifecycleWatcherTest {
         verify(fixture.replayController).pause()
 
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.replayController).resume()
+        verify(fixture.replayController, times(2)).resume()
 
         watcher.onStop(fixture.ownerMock)
         verify(fixture.replayController, timeout(10000)).stop()

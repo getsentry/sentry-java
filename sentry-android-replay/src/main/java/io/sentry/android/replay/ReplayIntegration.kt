@@ -21,6 +21,11 @@ import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.android.replay.ReplayState.CLOSED
+import io.sentry.android.replay.ReplayState.PAUSED
+import io.sentry.android.replay.ReplayState.RESUMED
+import io.sentry.android.replay.ReplayState.STARTED
+import io.sentry.android.replay.ReplayState.STOPPED
 import io.sentry.android.replay.capture.BufferCaptureStrategy
 import io.sentry.android.replay.capture.CaptureStrategy
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
@@ -100,15 +105,15 @@ public class ReplayIntegration(
         Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
     }
 
-    // TODO: probably not everything has to be thread-safe here
     internal val isEnabled = AtomicBoolean(false)
-    private val isRecording = AtomicBoolean(false)
+    internal val isManualPause = AtomicBoolean(false)
     private var captureStrategy: CaptureStrategy? = null
     public val replayCacheDir: File? get() = captureStrategy?.replayCacheDir
     private var replayBreadcrumbConverter: ReplayBreadcrumbConverter = NoOpReplayBreadcrumbConverter.getInstance()
     private var replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null
     private var mainLooperHandler: MainLooperHandler = MainLooperHandler()
     private var gestureRecorderProvider: (() -> GestureRecorder)? = null
+    private val lifecycle = ReplayLifecycle()
 
     override fun register(hub: IHub, options: SentryOptions) {
         this.options = options
@@ -151,15 +156,15 @@ public class ReplayIntegration(
         finalizePreviousReplay()
     }
 
-    override fun isRecording() = isRecording.get()
+    override fun isRecording() = lifecycle.currentState >= STARTED && lifecycle.currentState < STOPPED
 
+    @Synchronized
     override fun start() {
-        // TODO: add lifecycle state instead and manage it in start/pause/resume/stop
         if (!isEnabled.get()) {
             return
         }
 
-        if (isRecording.getAndSet(true)) {
+        if (!lifecycle.isAllowed(STARTED)) {
             options.logger.log(
                 DEBUG,
                 "Session replay is already being recorded, not starting a new one"
@@ -183,19 +188,35 @@ public class ReplayIntegration(
         captureStrategy?.start(recorderConfig)
         recorder?.start(recorderConfig)
         registerRootViewListeners()
+        lifecycle.currentState = STARTED
     }
 
     override fun resume() {
-        if (!isEnabled.get() || !isRecording.get()) {
+        isManualPause.set(false)
+        resumeInternal()
+    }
+
+    @Synchronized
+    private fun resumeInternal() {
+        if (!isEnabled.get() || !lifecycle.isAllowed(RESUMED)) {
+            return
+        }
+
+        if (isManualPause.get() || options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
+            hub?.rateLimiter?.isActiveForCategory(All) == true ||
+            hub?.rateLimiter?.isActiveForCategory(Replay) == true
+        ) {
             return
         }
 
         captureStrategy?.resume()
         recorder?.resume()
+        lifecycle.currentState = RESUMED
     }
 
+    @Synchronized
     override fun captureReplay(isTerminating: Boolean?) {
-        if (!isEnabled.get() || !isRecording.get()) {
+        if (!isEnabled.get() || !isRecording()) {
             return
         }
 
@@ -220,16 +241,24 @@ public class ReplayIntegration(
     override fun getBreadcrumbConverter(): ReplayBreadcrumbConverter = replayBreadcrumbConverter
 
     override fun pause() {
-        if (!isEnabled.get() || !isRecording.get()) {
+        isManualPause.set(true)
+        pauseInternal()
+    }
+
+    @Synchronized
+    private fun pauseInternal() {
+        if (!isEnabled.get() || !lifecycle.isAllowed(PAUSED)) {
             return
         }
 
         recorder?.pause()
         captureStrategy?.pause()
+        lifecycle.currentState = PAUSED
     }
 
+    @Synchronized
     override fun stop() {
-        if (!isEnabled.get() || !isRecording.get()) {
+        if (!isEnabled.get() || !lifecycle.isAllowed(STOPPED)) {
             return
         }
 
@@ -237,8 +266,8 @@ public class ReplayIntegration(
         recorder?.stop()
         gestureRecorder?.stop()
         captureStrategy?.stop()
-        isRecording.set(false)
         captureStrategy = null
+        lifecycle.currentState = STOPPED
     }
 
     override fun onScreenshotRecorded(bitmap: Bitmap) {
@@ -257,8 +286,9 @@ public class ReplayIntegration(
         }
     }
 
+    @Synchronized
     override fun close() {
-        if (!isEnabled.get()) {
+        if (!isEnabled.get() || !lifecycle.isAllowed(CLOSED)) {
             return
         }
 
@@ -275,10 +305,11 @@ public class ReplayIntegration(
         recorder = null
         rootViewsSpy.close()
         replayExecutor.gracefullyShutdown(options)
+        lifecycle.currentState = CLOSED
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        if (!isEnabled.get() || !isRecording.get()) {
+        if (!isEnabled.get() || !isRecording()) {
             return
         }
 
@@ -289,6 +320,10 @@ public class ReplayIntegration(
         captureStrategy?.onConfigurationChanged(recorderConfig)
 
         recorder?.start(recorderConfig)
+        // we have to restart recorder with a new config and pause immediately if the replay is paused
+        if (lifecycle.currentState == PAUSED) {
+            recorder?.pause()
+        }
     }
 
     override fun onConnectionStatusChanged(status: ConnectionStatus) {
@@ -298,10 +333,10 @@ public class ReplayIntegration(
         }
 
         if (status == DISCONNECTED) {
-            pause()
+            pauseInternal()
         } else {
             // being positive for other states, even if it's NO_PERMISSION
-            resume()
+            resumeInternal()
         }
     }
 
@@ -312,15 +347,18 @@ public class ReplayIntegration(
         }
 
         if (rateLimiter.isActiveForCategory(All) || rateLimiter.isActiveForCategory(Replay)) {
-            pause()
+            pauseInternal()
         } else {
-            resume()
+            resumeInternal()
         }
     }
 
     override fun onLowMemory() = Unit
 
     override fun onTouchEvent(event: MotionEvent) {
+        if (!isEnabled.get() || !lifecycle.isTouchRecordingAllowed()) {
+            return
+        }
         captureStrategy?.onTouchEvent(event)
     }
 
@@ -336,7 +374,7 @@ public class ReplayIntegration(
                     hub?.rateLimiter?.isActiveForCategory(Replay) == true
                 )
         ) {
-            pause()
+            pauseInternal()
         }
     }
 

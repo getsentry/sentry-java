@@ -4,8 +4,12 @@
 
 ### Fixes
 
+- Session Replay: Fix various crashes and issues ([#4135](https://github.com/getsentry/sentry-java/pull/4135))
+    - Fix `FileNotFoundException` when trying to read/write `.ongoing_segment` file
+    - Fix `IllegalStateException` when registering `onDrawListener`
+    - Fix SIGABRT native crashes on Motorola devices when encoding a video
 - (Jetpack Compose) Modifier.sentryTag now uses Modifier.Node ([#4029](https://github.com/getsentry/sentry-java/pull/4029))
-  - This allows Composables that use this modifier to be skippable
+    - This allows Composables that use this modifier to be skippable
 
 ## 7.21.0
 
