@@ -277,6 +277,7 @@ class ReplayIntegrationTest {
 
         replay.register(fixture.hub, fixture.options)
         replay.start()
+        replay.pause()
         replay.resume()
 
         verify(captureStrategy).resume()
@@ -646,6 +647,7 @@ class ReplayIntegrationTest {
 
         replay.register(fixture.hub, fixture.options)
         replay.start()
+        replay.onConnectionStatusChanged(DISCONNECTED)
         replay.onConnectionStatusChanged(CONNECTED)
 
         verify(recorder).resume()
@@ -677,12 +679,186 @@ class ReplayIntegrationTest {
             context,
             recorderProvider = { recorder },
             replayCaptureStrategyProvider = { captureStrategy },
-            isRateLimited = false
+            isRateLimited = true
         )
 
         replay.register(fixture.hub, fixture.options)
         replay.start()
+
         replay.onRateLimitChanged(fixture.rateLimiter)
+        whenever(fixture.rateLimiter.isActiveForCategory(any())).thenReturn(false)
+        replay.onRateLimitChanged(fixture.rateLimiter)
+
+        verify(recorder).resume()
+    }
+
+    @Test
+    fun `closed replay cannot be started`() {
+        val replay = fixture.getSut(context)
+        replay.register(fixture.scopes, fixture.options)
+        replay.start()
+        replay.close()
+
+        replay.start()
+
+        assertFalse(replay.isRecording)
+    }
+
+    @Test
+    fun `if recording is paused in configChanges re-pauses it again`() {
+        var configChanged = false
+        val recorderConfig = mock<ScreenshotRecorderConfig>()
+        val captureStrategy = mock<CaptureStrategy>()
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy },
+            recorderConfigProvider = { configChanged = it; recorderConfig }
+        )
+
+        replay.register(fixture.scopes, fixture.options)
+        replay.start()
+        replay.pause()
+        replay.onConfigurationChanged(mock())
+
+        verify(recorder).stop()
+        verify(captureStrategy).onConfigurationChanged(eq(recorderConfig))
+        verify(recorder, times(2)).start(eq(recorderConfig))
+        verify(recorder, times(2)).pause()
+        assertTrue(configChanged)
+    }
+
+    @Test
+    fun `onTouchEvent does nothing when not started or resumed`() {
+        val captureStrategy = mock<CaptureStrategy>()
+        val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+
+        replay.register(fixture.scopes, fixture.options)
+        replay.start()
+        replay.pause()
+        replay.onTouchEvent(mock())
+
+        verify(captureStrategy, never()).onTouchEvent(any())
+    }
+
+    @Test
+    fun `when paused manually onConnectionStatusChanged does not resume`() {
+        val captureStrategy = getSessionCaptureStrategy(fixture.options)
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy }
+        )
+
+        replay.register(fixture.scopes, fixture.options)
+        replay.start()
+        replay.onConnectionStatusChanged(DISCONNECTED)
+        replay.pause()
+        replay.onConnectionStatusChanged(CONNECTED)
+
+        verify(recorder, never()).resume()
+    }
+
+    @Test
+    fun `when paused manually onRateLimitChanged does not resume`() {
+        val captureStrategy = getSessionCaptureStrategy(fixture.options)
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy },
+            isRateLimited = true
+        )
+
+        replay.register(fixture.scopes, fixture.options)
+        replay.start()
+
+        replay.onRateLimitChanged(fixture.rateLimiter)
+        replay.pause()
+        whenever(fixture.rateLimiter.isActiveForCategory(any())).thenReturn(false)
+        replay.onRateLimitChanged(fixture.rateLimiter)
+
+        verify(recorder, never()).resume()
+    }
+
+    @Test
+    fun `when rate limit is active manual resume does nothing`() {
+        val captureStrategy = getSessionCaptureStrategy(fixture.options)
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy },
+            isRateLimited = true
+        )
+
+        replay.register(fixture.scopes, fixture.options)
+        replay.start()
+
+        replay.pause()
+        replay.resume()
+
+        verify(recorder, never()).resume()
+    }
+
+    @Test
+    fun `when no connection manual resume does nothing`() {
+        val captureStrategy = getSessionCaptureStrategy(fixture.options)
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy },
+            isOffline = true
+        )
+
+        replay.register(fixture.scopes, fixture.options)
+        replay.start()
+
+        replay.pause()
+        replay.resume()
+
+        verify(recorder, never()).resume()
+    }
+
+    @Test
+    fun `when already paused does not pause again`() {
+        val captureStrategy = getSessionCaptureStrategy(fixture.options)
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy }
+        )
+
+        replay.register(fixture.scopes, fixture.options)
+        replay.start()
+
+        replay.pause()
+        replay.pause()
+
+        verify(recorder).pause()
+    }
+
+    @Test
+    fun `when already resumed does not resume again`() {
+        val captureStrategy = getSessionCaptureStrategy(fixture.options)
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(
+            context,
+            recorderProvider = { recorder },
+            replayCaptureStrategyProvider = { captureStrategy }
+        )
+
+        replay.register(fixture.scopes, fixture.options)
+        replay.start()
+
+        replay.pause()
+        replay.resume()
+
+        replay.resume()
 
         verify(recorder).resume()
     }
