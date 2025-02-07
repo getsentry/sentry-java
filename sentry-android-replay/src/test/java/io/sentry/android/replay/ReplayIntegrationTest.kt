@@ -695,7 +695,7 @@ class ReplayIntegrationTest {
     @Test
     fun `closed replay cannot be started`() {
         val replay = fixture.getSut(context)
-        replay.register(fixture.scopes, fixture.options)
+        replay.register(fixture.hub, fixture.options)
         replay.start()
         replay.close()
 
@@ -717,7 +717,7 @@ class ReplayIntegrationTest {
             recorderConfigProvider = { configChanged = it; recorderConfig }
         )
 
-        replay.register(fixture.scopes, fixture.options)
+        replay.register(fixture.hub, fixture.options)
         replay.start()
         replay.pause()
         replay.onConfigurationChanged(mock())
@@ -734,7 +734,7 @@ class ReplayIntegrationTest {
         val captureStrategy = mock<CaptureStrategy>()
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
-        replay.register(fixture.scopes, fixture.options)
+        replay.register(fixture.hub, fixture.options)
         replay.start()
         replay.pause()
         replay.onTouchEvent(mock())
@@ -752,7 +752,7 @@ class ReplayIntegrationTest {
             replayCaptureStrategyProvider = { captureStrategy }
         )
 
-        replay.register(fixture.scopes, fixture.options)
+        replay.register(fixture.hub, fixture.options)
         replay.start()
         replay.onConnectionStatusChanged(DISCONNECTED)
         replay.pause()
@@ -772,7 +772,7 @@ class ReplayIntegrationTest {
             isRateLimited = true
         )
 
-        replay.register(fixture.scopes, fixture.options)
+        replay.register(fixture.hub, fixture.options)
         replay.start()
 
         replay.onRateLimitChanged(fixture.rateLimiter)
@@ -794,7 +794,7 @@ class ReplayIntegrationTest {
             isRateLimited = true
         )
 
-        replay.register(fixture.scopes, fixture.options)
+        replay.register(fixture.hub, fixture.options)
         replay.start()
 
         replay.pause()
@@ -814,7 +814,7 @@ class ReplayIntegrationTest {
             isOffline = true
         )
 
-        replay.register(fixture.scopes, fixture.options)
+        replay.register(fixture.hub, fixture.options)
         replay.start()
 
         replay.pause()
@@ -833,7 +833,7 @@ class ReplayIntegrationTest {
             replayCaptureStrategyProvider = { captureStrategy }
         )
 
-        replay.register(fixture.scopes, fixture.options)
+        replay.register(fixture.hub, fixture.options)
         replay.start()
 
         replay.pause()
@@ -852,7 +852,7 @@ class ReplayIntegrationTest {
             replayCaptureStrategyProvider = { captureStrategy }
         )
 
-        replay.register(fixture.scopes, fixture.options)
+        replay.register(fixture.hub, fixture.options)
         replay.start()
 
         replay.pause()
