@@ -1,7 +1,5 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.plugin.SpringBootPlugin
-
 
 plugins {
     `java-library`
@@ -10,7 +8,6 @@ plugins {
     id(Config.QualityPlugins.errorProne)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
-    id(Config.BuildPlugins.springBoot) version Config.springBoot3Version apply false
 }
 
 configure<JavaPluginExtension> {
@@ -25,56 +22,26 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-    compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
-    compileOnly(Config.Libs.springWeb)
-    compileOnly(Config.Libs.springAop)
-    compileOnly(Config.Libs.springSecurityWeb)
-    compileOnly(Config.Libs.springBoot3StarterGraphql)
-    compileOnly(Config.Libs.springBoot3StarterQuartz)
-    compileOnly(Config.Libs.aspectj)
-    compileOnly(Config.Libs.servletApiJakarta)
-    compileOnly(Config.Libs.slf4jApi)
+    compileOnly(Config.Libs.reactorCore)
     compileOnly(Config.Libs.contextPropagation)
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
-
-    compileOnly(Config.Libs.springWebflux)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
     errorprone(Config.CompileOnly.errorprone)
     errorprone(Config.CompileOnly.errorProneNullAway)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
-    compileOnly(projects.sentryGraphql)
-    compileOnly(projects.sentryGraphql22)
-    compileOnly(projects.sentryQuartz)
-    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
-    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
-    compileOnly(projects.sentryReactor)
 
     // tests
     testImplementation(projects.sentryTestSupport)
-    testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.Libs.springBoot3StarterTest)
-    testImplementation(Config.Libs.springBoot3StarterWeb)
-    testImplementation(Config.Libs.springBoot3StarterWebflux)
-    testImplementation(Config.Libs.springBoot3StarterSecurity)
-    testImplementation(Config.Libs.springBoot3StarterAop)
-    testImplementation(Config.Libs.springBoot3StarterGraphql)
-    testImplementation(Config.Libs.contextPropagation)
-    testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.Libs.graphQlJava22)
-    testImplementation(projects.sentryReactor)
-}
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
+    testImplementation(Config.Libs.reactorCore)
+    testImplementation(Config.Libs.contextPropagation)
+
+    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
 configure<SourceSetContainer> {
@@ -108,8 +75,8 @@ tasks {
 
 buildConfig {
     useJavaOutput()
-    packageName("io.sentry.spring.jakarta")
-    buildConfigField("String", "SENTRY_SPRING_JAKARTA_SDK_NAME", "\"${Config.Sentry.SENTRY_SPRING_JAKARTA_SDK_NAME}\"")
+    packageName("io.sentry.reactor")
+    buildConfigField("String", "SENTRY_REACTOR_SDK_NAME", "\"${Config.Sentry.SENTRY_REACTOR_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
@@ -120,4 +87,8 @@ tasks.withType<JavaCompile>().configureEach {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
     }
+}
+
+repositories {
+    mavenCentral()
 }

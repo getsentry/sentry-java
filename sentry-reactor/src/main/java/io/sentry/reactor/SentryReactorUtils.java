@@ -1,4 +1,4 @@
-package io.sentry.spring.jakarta.webflux;
+package io.sentry.reactor;
 
 import io.sentry.IScopes;
 import io.sentry.Sentry;
@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
 @ApiStatus.Experimental
-public final class ReactorUtils {
+public final class SentryReactorUtils {
 
   /**
    * Writes the current Sentry {@link IScopes} to the {@link Context} and uses {@link

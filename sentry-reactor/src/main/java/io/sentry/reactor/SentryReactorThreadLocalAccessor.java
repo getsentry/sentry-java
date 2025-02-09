@@ -1,4 +1,4 @@
-package io.sentry.spring.jakarta.webflux;
+package io.sentry.reactor;
 
 import io.micrometer.context.ThreadLocalAccessor;
 import io.sentry.IScopes;

@@ -1,1 +1,1 @@
-io.sentry.spring.jakarta.webflux.SentryReactorThreadLocalAccessor
+io.sentry.reactor.SentryReactorThreadLocalAccessor
