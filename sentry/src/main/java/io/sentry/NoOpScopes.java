@@ -301,10 +301,4 @@ public final class NoOpScopes implements IScopes {
   public @NotNull SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
   }
-
-  @ApiStatus.Internal
-  @Override
-  public @NotNull PropagationContext getPropagationContext() {
-    return PropagationContext.NOOP;
-  }
 }
