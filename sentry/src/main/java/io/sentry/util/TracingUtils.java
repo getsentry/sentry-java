@@ -205,7 +205,6 @@ public final class TracingUtils {
       baggage.setSampleRandDouble(sampleRand);
     }
     if (baggage.isMutable()) {
-      // cannot freeze on scope fork
       if (baggage.isShouldFreeze()) {
         baggage.freeze();
       }
