@@ -40,4 +40,6 @@
 -dontwarn org.mockito.internal.**
 -dontwarn org.jetbrains.annotations.**
 -dontwarn io.sentry.android.replay.ReplayIntegration
+-dontwarn io.sentry.android.fragment.FragmentLifecycleIntegration
+-dontwarn io.sentry.android.timber.SentryTimberIntegration
 -keep class curtains.** { *; }
