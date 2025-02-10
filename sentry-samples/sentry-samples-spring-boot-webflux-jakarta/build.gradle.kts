@@ -29,6 +29,7 @@ dependencies {
     implementation(projects.sentryLogback)
     implementation(projects.sentryJdbc)
     implementation(projects.sentryGraphql22)
+    implementation(projects.sentryReactor)
 
     testImplementation(Config.Libs.springBoot3StarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
