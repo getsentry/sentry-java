@@ -11,7 +11,6 @@ import io.sentry.PropagationContext;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import io.sentry.TracesSamplingDecision;
-
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -150,18 +149,20 @@ public final class TracingUtils {
   }
 
   /**
-   * Ensures a non null baggage instance is present by creating a new Baggage instance if null
-   * is passed in.
+   * Ensures a non null baggage instance is present by creating a new Baggage instance if null is
+   * passed in.
    *
-   * Also ensures there is a sampleRand value present on the baggage if it is still mutable.
-   * If the baggage should be frozen, it also takes care of freezing it.
+   * <p>Also ensures there is a sampleRand value present on the baggage if it is still mutable. If
+   * the baggage should be frozen, it also takes care of freezing it.
    *
    * @param incomingBaggage a nullable baggage instance, if null a new one will be created
-   * @param decision a TracesSamplingDecision for potentially backfilling sampleRand to match that decision
+   * @param decision a TracesSamplingDecision for potentially backfilling sampleRand to match that
+   *     decision
    * @return previous baggage instance or a new one
    */
   @ApiStatus.Internal
-  public static @NotNull Baggage ensureBaggage(final @Nullable Baggage incomingBaggage, final @Nullable TracesSamplingDecision decision) {
+  public static @NotNull Baggage ensureBaggage(
+      final @Nullable Baggage incomingBaggage, final @Nullable TracesSamplingDecision decision) {
     final @Nullable Boolean decisionSampled = decision == null ? null : decision.getSampled();
     final @Nullable Double decisionSampleRate = decision == null ? null : decision.getSampleRate();
     final @Nullable Double decisionSampleRand = decision == null ? null : decision.getSampleRand();
@@ -170,11 +171,11 @@ public final class TracingUtils {
   }
 
   /**
-   * Ensures a non null baggage instance is present by creating a new Baggage instance if null
-   * is passed in.
+   * Ensures a non null baggage instance is present by creating a new Baggage instance if null is
+   * passed in.
    *
-   * Also ensures there is a sampleRand value present on the baggage if it is still mutable.
-   * If the baggage should be frozen, it also takes care of freezing it.
+   * <p>Also ensures there is a sampleRand value present on the baggage if it is still mutable. If
+   * the baggage should be frozen, it also takes care of freezing it.
    *
    * @param incomingBaggage a nullable baggage instance, if null a new one will be created
    * @param decisionSampled sampled decision for potential backfilling
@@ -183,8 +184,13 @@ public final class TracingUtils {
    * @return previous baggage instance or a new one
    */
   @ApiStatus.Internal
-  public static @NotNull Baggage ensureBaggage(final @Nullable Baggage incomingBaggage, final @Nullable Boolean decisionSampled, final @Nullable Double decisionSampleRate, final @Nullable Double decisionSampleRand) {
-    final @NotNull Baggage baggage = incomingBaggage == null ? new Baggage(NoOpLogger.getInstance()) : incomingBaggage;
+  public static @NotNull Baggage ensureBaggage(
+      final @Nullable Baggage incomingBaggage,
+      final @Nullable Boolean decisionSampled,
+      final @Nullable Double decisionSampleRate,
+      final @Nullable Double decisionSampleRand) {
+    final @NotNull Baggage baggage =
+        incomingBaggage == null ? new Baggage(NoOpLogger.getInstance()) : incomingBaggage;
 
     StringBuilder sb = new StringBuilder("sample rand");
 
@@ -192,11 +198,13 @@ public final class TracingUtils {
       final @Nullable Double baggageSampleRate = baggage.getSampleRateDouble();
       final @Nullable Double baggageSampleRand = baggage.getSampleRandDouble();
 
-      final @Nullable Double sampleRandMaybe = baggageSampleRand == null ? decisionSampleRand : baggageSampleRand;
+      final @Nullable Double sampleRandMaybe =
+          baggageSampleRand == null ? decisionSampleRand : baggageSampleRand;
       sb.append(" [baggage " + sampleRandMaybe + "]");
-      final @Nullable Double sampleRateMaybe = baggageSampleRate == null ? decisionSampleRate : baggageSampleRate;
+      final @Nullable Double sampleRateMaybe =
+          baggageSampleRate == null ? decisionSampleRate : baggageSampleRate;
       final @NotNull Double sampleRand =
-        SampleRateUtils.backfilledSampleRand(sampleRandMaybe, sampleRateMaybe, decisionSampled);
+          SampleRateUtils.backfilledSampleRand(sampleRandMaybe, sampleRateMaybe, decisionSampled);
       sb.append(" [setting sample rand on baggage " + baggage + "]");
       baggage.setSampleRandDouble(sampleRand);
       sb.append(" {" + sampleRand + "}");
@@ -211,7 +219,7 @@ public final class TracingUtils {
     } else {
       sb.append(" [baggage already frozen]");
     }
-//    new RuntimeException("PropagationContext ctor" + sb.toString()).printStackTrace();
+    //    new RuntimeException("PropagationContext ctor" + sb.toString()).printStackTrace();
 
     return baggage;
   }

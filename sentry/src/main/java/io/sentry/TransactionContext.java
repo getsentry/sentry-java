@@ -4,7 +4,6 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -108,7 +107,7 @@ public final class TransactionContext extends SpanContext {
     this.name = DEFAULT_TRANSACTION_NAME;
     this.parentSamplingDecision = parentSamplingDecision;
     this.transactionNameSource = DEFAULT_NAME_SOURCE;
-    this.baggage = TracingUtils.ensureBaggage(baggage, parentSamplingDecision);
+    this.baggage = TracingUtils.ensureBaggage(baggage, parentSamplingDecision); // todo test
   }
 
   public @NotNull String getName() {
