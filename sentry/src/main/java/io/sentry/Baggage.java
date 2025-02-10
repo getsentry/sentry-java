@@ -2,7 +2,6 @@ package io.sentry;
 
 import static io.sentry.protocol.Contexts.REPLAY_ID;
 
-import com.jakewharton.nopen.annotation.Open;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.SampleRateUtils;
@@ -26,8 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Experimental
-@Open
-public class Baggage {
+public final class Baggage {
 
   public static final @NotNull Baggage NOOP =
       new Baggage(new HashMap<>(), null, false, true, NoOpLogger.getInstance());
