@@ -14,7 +14,7 @@ public final class TracesSampler {
     this.options = Objects.requireNonNull(options, "options are required");
   }
 
-  @SuppressWarnings({"deprecation", "ObjectToString"})
+  @SuppressWarnings("deprecation")
   @NotNull
   public TracesSamplingDecision sample(final @NotNull SamplingContext samplingContext) {
     final @NotNull Double sampleRand = samplingContext.getSampleRand();
