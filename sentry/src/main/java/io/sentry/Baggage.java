@@ -177,7 +177,6 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
-  @SuppressWarnings("ObjectToString")
   public Baggage(
       final @NotNull Map<String, String> keyValues,
       final @Nullable String thirdPartyHeader,
@@ -191,7 +190,6 @@ public final class Baggage {
     this.shouldFreeze = shouldFreeze;
   }
 
-  @SuppressWarnings("ObjectToString")
   @ApiStatus.Internal
   public void freeze() {
     this.mutable = false;
@@ -212,7 +210,6 @@ public final class Baggage {
     return thirdPartyHeader;
   }
 
-  @SuppressWarnings("ObjectToString")
   public @NotNull String toHeaderString(@Nullable String thirdPartyBaggageHeaderString) {
     final StringBuilder sb = new StringBuilder();
     String separator = "";

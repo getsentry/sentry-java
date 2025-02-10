@@ -75,7 +75,6 @@ public final class PropagationContext {
         propagationContext.isSampled());
   }
 
-  @SuppressWarnings("ObjectToString")
   public PropagationContext(
       final @NotNull SentryId traceId,
       final @NotNull SpanId spanId,
