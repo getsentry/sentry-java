@@ -6,12 +6,25 @@
 
 - The Kotlin Language version is now set to 1.6 ([#3936](https://github.com/getsentry/sentry-java/pull/3936))
 
+### Features
+
+- Create onCreate and onStart spans for all Activities ([#4025](https://github.com/getsentry/sentry-java/pull/4025))
+- Add split apks info to the `App` context ([#3193](https://github.com/getsentry/sentry-java/pull/3193))
+- Expose new `withSentryObservableEffect` method overload that accepts `SentryNavigationListener` as a parameter ([#4143](https://github.com/getsentry/sentry-java/pull/4143))
+  - This allows sharing the same `SentryNavigationListener` instance across fragments and composables to preserve the trace 
+
 ### Fixes
 
 - Do not log if `OtelContextScopesStorage` cannot be found ([#4127](https://github.com/getsentry/sentry-java/pull/4127))
   - Previously `java.lang.ClassNotFoundException: io.sentry.opentelemetry.OtelContextScopesStorage` was shown in the log if the class could not be found.
   - This is just a lookup the SDK performs to configure itself. The SDK also works without OpenTelemetry.
+- Session Replay: Fix various crashes and issues ([#4135](https://github.com/getsentry/sentry-java/pull/4135))
+  - Fix `FileNotFoundException` when trying to read/write `.ongoing_segment` file
+  - Fix `IllegalStateException` when registering `onDrawListener`
+  - Fix SIGABRT native crashes on Motorola devices when encoding a video
 - Mention javadoc and sources for published artifacts in Gradle `.module` metadata ([#3936](https://github.com/getsentry/sentry-java/pull/3936))
+- (Jetpack Compose) Modifier.sentryTag now uses Modifier.Node ([#4029](https://github.com/getsentry/sentry-java/pull/4029))
+  - This allows Composables that use this modifier to be skippable
 
 ### Dependencies
 

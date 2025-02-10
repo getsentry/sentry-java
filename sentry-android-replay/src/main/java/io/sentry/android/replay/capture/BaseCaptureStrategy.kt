@@ -5,6 +5,7 @@ import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.IScopes
+import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
@@ -183,7 +184,11 @@ internal abstract class BaseCaptureStrategy(
                         task()
                     }
                 } else {
-                    task()
+                    try {
+                        task()
+                    } catch (e: Throwable) {
+                        options.logger.log(ERROR, "Failed to execute task $TAG.runInBackground", e)
+                    }
                 }
             }
 

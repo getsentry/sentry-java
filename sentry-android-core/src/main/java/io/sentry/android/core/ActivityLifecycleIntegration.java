@@ -430,7 +430,8 @@ public final class ActivityLifecycleIntegration
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
     final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
     if (helper != null) {
-      helper.createAndStopOnCreateSpan(appStartSpan);
+      helper.createAndStopOnCreateSpan(
+          appStartSpan != null ? appStartSpan : activitiesWithOngoingTransactions.get(activity));
     }
   }
 
@@ -468,7 +469,8 @@ public final class ActivityLifecycleIntegration
   public void onActivityPostStarted(final @NotNull Activity activity) {
     final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
     if (helper != null) {
-      helper.createAndStopOnStartSpan(appStartSpan);
+      helper.createAndStopOnStartSpan(
+          appStartSpan != null ? appStartSpan : activitiesWithOngoingTransactions.get(activity));
       // Needed to handle hybrid SDKs
       helper.saveSpanToAppStartMetrics();
     }

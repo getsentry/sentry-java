@@ -48,6 +48,39 @@ internal class SentryLifecycleObserver(
  * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
  * them to Sentry for every navigation event when being attached to the respective [NavHostController].
  *
+ * @param navListener An instance of a [SentryNavigationListener] that is shared with other sentry integrations, like
+ * the fragment navigation integration.
+ */
+@Composable
+@NonRestartableComposable
+public fun NavHostController.withSentryObservableEffect(
+    navListener: SentryNavigationListener
+): NavHostController {
+    val navListenerSnapshot by rememberUpdatedState(navListener)
+
+    // As described in https://developer.android.com/codelabs/jetpack-compose-advanced-state-side-effects#6
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, this) {
+        val observer = SentryLifecycleObserver(
+            this@withSentryObservableEffect,
+            navListener = navListenerSnapshot
+        )
+
+        lifecycle.addObserver(observer)
+
+        onDispose {
+            observer.dispose()
+            lifecycle.removeObserver(observer)
+        }
+    }
+    return this
+}
+
+/**
+ * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
+ * them to Sentry for every navigation event when being attached to the respective [NavHostController].
+ * This version of withSentryObservableEffect should be used if you are working purely with Compose.
+ *
  * @param enableNavigationBreadcrumbs Whether the integration should capture breadcrumbs for
  * navigation events.
  * @param enableNavigationTracing Whether the integration should start a new [ITransaction]
@@ -62,26 +95,13 @@ public fun NavHostController.withSentryObservableEffect(
     val enableBreadcrumbsSnapshot by rememberUpdatedState(enableNavigationBreadcrumbs)
     val enableTracingSnapshot by rememberUpdatedState(enableNavigationTracing)
 
-    // As described in https://developer.android.com/codelabs/jetpack-compose-advanced-state-side-effects#6
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle, this) {
-        val observer = SentryLifecycleObserver(
-            this@withSentryObservableEffect,
-            navListener = SentryNavigationListener(
-                enableNavigationBreadcrumbs = enableBreadcrumbsSnapshot,
-                enableNavigationTracing = enableTracingSnapshot,
-                traceOriginAppendix = TRACE_ORIGIN_APPENDIX
-            )
+    return withSentryObservableEffect(
+        navListener = SentryNavigationListener(
+            enableNavigationBreadcrumbs = enableBreadcrumbsSnapshot,
+            enableNavigationTracing = enableTracingSnapshot,
+            traceOriginAppendix = TRACE_ORIGIN_APPENDIX
         )
-
-        lifecycle.addObserver(observer)
-
-        onDispose {
-            observer.dispose()
-            lifecycle.removeObserver(observer)
-        }
-    }
-    return this
+    )
 }
 
 /**
