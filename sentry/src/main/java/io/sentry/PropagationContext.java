@@ -12,9 +12,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class PropagationContext {
 
-  public static @NotNull PropagationContext NOOP =
-      new PropagationContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, null, Baggage.NOOP, false);
-
   public static PropagationContext fromHeaders(
       final @NotNull ILogger logger,
       final @Nullable String sentryTraceHeader,

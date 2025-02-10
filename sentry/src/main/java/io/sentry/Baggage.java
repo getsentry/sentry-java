@@ -27,8 +27,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Experimental
 public final class Baggage {
 
-  public static final @NotNull Baggage NOOP =
-      new Baggage(new HashMap<>(), null, false, true, NoOpLogger.getInstance());
   static final @NotNull String CHARSET = "UTF-8";
   static final @NotNull Integer MAX_BAGGAGE_STRING_LENGTH = 8192;
   static final @NotNull Integer MAX_BAGGAGE_LIST_MEMBER_COUNT = 64;
