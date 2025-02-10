@@ -1,10 +1,9 @@
 package io.sentry.util;
 
+import io.sentry.TracesSamplingDecision;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import io.sentry.TracesSamplingDecision;
 
 @ApiStatus.Internal
 public final class SampleRateUtils {
@@ -54,13 +53,20 @@ public final class SampleRateUtils {
 
   // TODO test
   @SuppressWarnings("ObjectToString")
-  public static @NotNull TracesSamplingDecision backfilledSampleRand(final @NotNull TracesSamplingDecision samplingDecision) {
+  public static @NotNull TracesSamplingDecision backfilledSampleRand(
+      final @NotNull TracesSamplingDecision samplingDecision) {
     if (samplingDecision.getSampleRand() != null) {
       return samplingDecision;
     }
 
-    final @NotNull Double sampleRand = backfilledSampleRand(null, samplingDecision.getSampleRate(), samplingDecision.getSampled());
-    return new TracesSamplingDecision(samplingDecision.getSampled(), samplingDecision.getSampleRate(), sampleRand, samplingDecision.getProfileSampled(), samplingDecision.getProfileSampleRate());
+    final @NotNull Double sampleRand =
+        backfilledSampleRand(null, samplingDecision.getSampleRate(), samplingDecision.getSampled());
+    return new TracesSamplingDecision(
+        samplingDecision.getSampled(),
+        samplingDecision.getSampleRate(),
+        sampleRand,
+        samplingDecision.getProfileSampled(),
+        samplingDecision.getProfileSampleRate());
   }
 
   private static boolean isValidRate(final @Nullable Double rate, final boolean allowNull) {

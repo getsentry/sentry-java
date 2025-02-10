@@ -6297,6 +6297,7 @@ public final class io/sentry/util/Random : java/io/Serializable {
 
 public final class io/sentry/util/SampleRateUtils {
 	public fun <init> ()V
+	public static fun backfilledSampleRand (Lio/sentry/TracesSamplingDecision;)Lio/sentry/TracesSamplingDecision;
 	public static fun backfilledSampleRand (Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Boolean;)Ljava/lang/Double;
 	public static fun isValidProfilesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidSampleRate (Ljava/lang/Double;)Z
@@ -6333,6 +6334,8 @@ public final class io/sentry/util/StringUtils {
 
 public final class io/sentry/util/TracingUtils {
 	public fun <init> ()V
+	public static fun ensureBaggage (Lio/sentry/Baggage;Lio/sentry/TracesSamplingDecision;)Lio/sentry/Baggage;
+	public static fun ensureBaggage (Lio/sentry/Baggage;Ljava/lang/Boolean;Ljava/lang/Double;Ljava/lang/Double;)Lio/sentry/Baggage;
 	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
 	public static fun maybeUpdateBaggage (Lio/sentry/IScope;Lio/sentry/SentryOptions;)Lio/sentry/PropagationContext;
 	public static fun startNewTrace (Lio/sentry/IScopes;)V

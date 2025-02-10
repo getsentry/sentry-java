@@ -1,13 +1,10 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
-import io.sentry.util.Random;
 import io.sentry.util.SampleRateUtils;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class TracesSampler {
@@ -21,7 +18,7 @@ public final class TracesSampler {
   @NotNull
   public TracesSamplingDecision sample(final @NotNull SamplingContext samplingContext) {
     final @NotNull Double sampleRand = samplingContext.getSampleRand();
-//    new RuntimeException("sample rand used in TracesSampler " + sampleRand).printStackTrace();
+    //    new RuntimeException("sample rand used in TracesSampler " + sampleRand).printStackTrace();
     final TracesSamplingDecision samplingContextSamplingDecision =
         samplingContext.getTransactionContext().getSamplingDecision();
     if (samplingContextSamplingDecision != null) {

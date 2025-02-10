@@ -2,9 +2,7 @@ package io.sentry;
 
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.SentryId;
-import io.sentry.util.SampleRateUtils;
 import io.sentry.util.TracingUtils;
-
 import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
