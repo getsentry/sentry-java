@@ -182,7 +182,7 @@ class SentryAndroidOptionsTest {
 
     private class CustomDebugImagesLoader : IDebugImagesLoader {
         override fun loadDebugImages(): List<DebugImage>? = null
-        override fun loadDebugImagesForAddresses(addresses: Set<Long>?): Set<DebugImage>? = null
+        override fun loadDebugImagesForAddresses(addresses: Set<String>?): Set<DebugImage>? = null
 
         override fun clearDebugImages() {}
     }
