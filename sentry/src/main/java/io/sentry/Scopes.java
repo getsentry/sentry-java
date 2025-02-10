@@ -1070,12 +1070,6 @@ public final class Scopes implements IScopes {
 
   @ApiStatus.Internal
   @Override
-  public @NotNull PropagationContext getPropagationContext() {
-    return getCombinedScopeView().getPropagationContext();
-  }
-
-  @ApiStatus.Internal
-  @Override
   public @Nullable RateLimiter getRateLimiter() {
     return getClient().getRateLimiter();
   }
