@@ -1068,6 +1068,7 @@ public final class Scopes implements IScopes {
     return sentryId;
   }
 
+  @ApiStatus.Internal
   @Override
   public @NotNull PropagationContext getPropagationContext() {
     return getCombinedScopeView().getPropagationContext();

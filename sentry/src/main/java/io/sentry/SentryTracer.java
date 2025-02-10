@@ -670,18 +670,7 @@ public final class SentryTracer implements ITransaction {
       final @Nullable Baggage baggage = getSpanContext().getBaggage();
       if (baggage != null) {
         updateBaggageValues(baggage);
-        BaggageHeader baggageHeader =
-            BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
-        if (baggageHeader != null) {
-          System.out.println("outgoing baggage in SentryTracer:");
-          System.out.println(baggageHeader.getValue());
-        } else {
-          System.out.println("baggage header null in SentryTracer");
-        }
-
-        return baggageHeader;
-      } else {
-        System.out.println("baggage null in SentryTracer");
+        return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
       }
     }
     return null;

@@ -154,11 +154,7 @@ public final class Span implements ISpan {
 
   @Override
   public @NotNull SentryTraceHeader toSentryTrace() {
-    SentryTraceHeader sentryTraceHeader =
-        new SentryTraceHeader(context.getTraceId(), context.getSpanId(), context.getSampled());
-    System.out.println("outgoing sentry-trace:");
-    System.out.println(sentryTraceHeader.getValue());
-    return sentryTraceHeader;
+    return new SentryTraceHeader(context.getTraceId(), context.getSpanId(), context.getSampled());
   }
 
   @Override

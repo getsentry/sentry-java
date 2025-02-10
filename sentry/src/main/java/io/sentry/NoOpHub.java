@@ -297,6 +297,7 @@ public final class NoOpHub implements IHub {
     return SentryId.EMPTY_ID;
   }
 
+  @ApiStatus.Internal
   @Override
   public @NotNull PropagationContext getPropagationContext() {
     return PropagationContext.NOOP;

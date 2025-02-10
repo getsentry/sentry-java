@@ -302,6 +302,7 @@ public final class NoOpScopes implements IScopes {
     return SentryId.EMPTY_ID;
   }
 
+  @ApiStatus.Internal
   @Override
   public @NotNull PropagationContext getPropagationContext() {
     return PropagationContext.NOOP;

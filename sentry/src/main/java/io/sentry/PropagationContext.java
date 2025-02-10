@@ -60,7 +60,7 @@ public final class PropagationContext {
 
   private @Nullable Boolean sampled;
 
-  private @NotNull Baggage baggage;
+  private final @NotNull Baggage baggage;
 
   public PropagationContext() {
     this(new SentryId(), new SpanId(), null, null, null);

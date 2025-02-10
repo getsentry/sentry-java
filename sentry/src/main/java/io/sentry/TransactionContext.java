@@ -107,7 +107,7 @@ public final class TransactionContext extends SpanContext {
     this.name = DEFAULT_TRANSACTION_NAME;
     this.parentSamplingDecision = parentSamplingDecision;
     this.transactionNameSource = DEFAULT_NAME_SOURCE;
-    this.baggage = TracingUtils.ensureBaggage(baggage, parentSamplingDecision); // todo test
+    this.baggage = TracingUtils.ensureBaggage(baggage, parentSamplingDecision);
   }
 
   public @NotNull String getName() {

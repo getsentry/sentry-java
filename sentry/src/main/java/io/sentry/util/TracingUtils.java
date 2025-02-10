@@ -192,34 +192,24 @@ public final class TracingUtils {
     final @NotNull Baggage baggage =
         incomingBaggage == null ? new Baggage(NoOpLogger.getInstance()) : incomingBaggage;
 
-    StringBuilder sb = new StringBuilder("sample rand");
-
     if (baggage.getSampleRand() == null) {
       final @Nullable Double baggageSampleRate = baggage.getSampleRateDouble();
       final @Nullable Double baggageSampleRand = baggage.getSampleRandDouble();
 
       final @Nullable Double sampleRandMaybe =
           baggageSampleRand == null ? decisionSampleRand : baggageSampleRand;
-      sb.append(" [baggage " + sampleRandMaybe + "]");
       final @Nullable Double sampleRateMaybe =
           baggageSampleRate == null ? decisionSampleRate : baggageSampleRate;
       final @NotNull Double sampleRand =
           SampleRateUtils.backfilledSampleRand(sampleRandMaybe, sampleRateMaybe, decisionSampled);
-      sb.append(" [setting sample rand on baggage " + baggage + "]");
       baggage.setSampleRandDouble(sampleRand);
-      sb.append(" {" + sampleRand + "}");
     }
     if (baggage.isMutable()) {
-      sb.append(" [baggage mutable]");
       // cannot freeze on scope fork
       if (baggage.isShouldFreeze()) {
-        sb.append(" [freezing baggage]");
         baggage.freeze();
       }
-    } else {
-      sb.append(" [baggage already frozen]");
     }
-    //    new RuntimeException("PropagationContext ctor" + sb.toString()).printStackTrace();
 
     return baggage;
   }

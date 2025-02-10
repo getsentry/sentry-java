@@ -344,6 +344,7 @@ public final class HubAdapter implements IHub {
     return Sentry.getCurrentScopes().captureReplay(replay, hint);
   }
 
+  @ApiStatus.Internal
   @Override
   public @NotNull PropagationContext getPropagationContext() {
     return Sentry.getCurrentScopes().getPropagationContext();
