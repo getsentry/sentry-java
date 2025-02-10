@@ -18,7 +18,6 @@ public final class TracesSampler {
   @NotNull
   public TracesSamplingDecision sample(final @NotNull SamplingContext samplingContext) {
     final @NotNull Double sampleRand = samplingContext.getSampleRand();
-    //    new RuntimeException("sample rand used in TracesSampler " + sampleRand).printStackTrace();
     final TracesSamplingDecision samplingContextSamplingDecision =
         samplingContext.getTransactionContext().getSamplingDecision();
     if (samplingContextSamplingDecision != null) {

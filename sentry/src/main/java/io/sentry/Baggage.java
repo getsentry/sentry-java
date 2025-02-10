@@ -152,7 +152,7 @@ public class Baggage {
     // we don't persist sample rate
     baggage.setSampleRate(null);
     baggage.setSampled(null);
-    baggage.setSampleRand(null); // TODO do we need this?
+    baggage.setSampleRand(null);
     final @Nullable Object replayId = event.getContexts().get(REPLAY_ID);
     if (replayId != null && !replayId.toString().equals(SentryId.EMPTY_ID.toString())) {
       baggage.setReplayId(replayId.toString());
@@ -191,25 +191,11 @@ public class Baggage {
     this.thirdPartyHeader = thirdPartyHeader;
     this.mutable = isMutable;
     this.shouldFreeze = shouldFreeze;
-    //    new RuntimeException(
-    //            "creating new baggage "
-    //                + this
-    //                + " mutable "
-    //                + mutable
-    //                + " shouldFreeze "
-    //                + shouldFreeze)
-    //        .printStackTrace();
   }
 
   @SuppressWarnings("ObjectToString")
   @ApiStatus.Internal
   public void freeze() {
-    //    if (mutable) {
-    //      new RuntimeException("freezing baggage " + this).printStackTrace();
-    //    } else {
-    //      new RuntimeException("freezing baggage that is already frozen " +
-    // this).printStackTrace();
-    //    }
     this.mutable = false;
   }
 
@@ -281,8 +267,6 @@ public class Baggage {
         }
       }
     }
-
-    //    sb.append(",sbg=" + this);
 
     return sb.toString();
   }

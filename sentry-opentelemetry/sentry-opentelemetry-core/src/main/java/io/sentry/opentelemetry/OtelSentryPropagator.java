@@ -82,12 +82,8 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       setter.set(carrier, sentryTraceHeader.getName(), sentryTraceHeader.getValue());
       final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
       if (baggageHeader != null) {
-        System.out.println("outgoing baggage: ");
-        System.out.println(baggageHeader.getValue());
         setter.set(carrier, baggageHeader.getName(), baggageHeader.getValue());
       }
-    } else {
-      System.out.println("not tracing headers found");
     }
   }
 
@@ -110,10 +106,6 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       SentryTraceHeader sentryTraceHeader = new SentryTraceHeader(sentryTraceString);
 
       final @Nullable String baggageString = getter.get(carrier, BaggageHeader.BAGGAGE_HEADER);
-      System.out.println("incoming sentry-trace:");
-      System.out.println(sentryTraceString);
-      System.out.println("incoming baggage:");
-      System.out.println(baggageString);
       final Baggage baggage = Baggage.fromHeader(baggageString);
       final @NotNull TraceState traceState = TraceState.getDefault();
 
@@ -137,10 +129,6 @@ public final class OtelSentryPropagator implements TextMapPropagator {
           .getOptions()
           .getLogger()
           .log(SentryLevel.DEBUG, "Continuing Sentry trace %s", sentryTraceHeader.getTraceId());
-
-      //      final @NotNull PropagationContext propagationContext =
-      //          PropagationContext.fromHeaders(sentryTraceHeader, baggage, null);
-      //      scopesToUse.getIsolationScope().setPropagationContext(propagationContext);
 
       return modifiedContext;
     } catch (InvalidSentryTraceHeaderException e) {

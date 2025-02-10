@@ -252,7 +252,8 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
               }
             }
 
-            return new TracesSamplingDecision(true, sampleRate);
+            return SampleRateUtils.backfilledSampleRand(
+                new TracesSamplingDecision(true, sampleRate));
           }
         } catch (Exception e) {
           logger.log(

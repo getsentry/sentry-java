@@ -343,6 +343,7 @@ public final class HubScopesWrapper implements IHub {
     return scopes.captureReplay(replay, hint);
   }
 
+  @ApiStatus.Internal
   @Override
   public @NotNull PropagationContext getPropagationContext() {
     return scopes.getPropagationContext();

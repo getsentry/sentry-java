@@ -348,6 +348,7 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.getCurrentScopes().captureReplay(replay, hint);
   }
 
+  @ApiStatus.Internal
   @Override
   public @NotNull PropagationContext getPropagationContext() {
     return Sentry.getCurrentScopes().getPropagationContext();

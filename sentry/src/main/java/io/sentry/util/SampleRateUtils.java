@@ -25,8 +25,6 @@ public final class SampleRateUtils {
     return isValidRate(profilesSampleRate, true);
   }
 
-  // TODO test
-  @SuppressWarnings("ObjectToString")
   public static @NotNull Double backfilledSampleRand(
       final @Nullable Double sampleRand,
       final @Nullable Double sampleRate,
@@ -34,10 +32,6 @@ public final class SampleRateUtils {
     if (sampleRand != null) {
       return sampleRand;
     }
-
-    new RuntimeException(
-            "backfilling sample rand " + sampleRand + " rate " + sampleRate + " sampled " + sampled)
-        .printStackTrace();
 
     double newSampleRand = SentryRandom.current().nextDouble();
     if (sampleRate != null && sampled != null) {
@@ -51,8 +45,6 @@ public final class SampleRateUtils {
     return newSampleRand;
   }
 
-  // TODO test
-  @SuppressWarnings("ObjectToString")
   public static @NotNull TracesSamplingDecision backfilledSampleRand(
       final @NotNull TracesSamplingDecision samplingDecision) {
     if (samplingDecision.getSampleRand() != null) {
