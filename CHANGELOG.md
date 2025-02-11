@@ -11,6 +11,10 @@
 - (Jetpack Compose) Modifier.sentryTag now uses Modifier.Node ([#4029](https://github.com/getsentry/sentry-java/pull/4029))
     - This allows Composables that use this modifier to be skippable
 
+### Features
+
+- (Internal) Add API to filter native debug images based on stacktrace addresses ([#4089](https://github.com/getsentry/sentry-java/pull/4089))
+
 ## 7.21.0
 
 ### Fixes

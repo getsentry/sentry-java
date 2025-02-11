@@ -208,6 +208,7 @@ public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : i
 public abstract interface class io/sentry/android/core/IDebugImagesLoader {
 	public abstract fun clearDebugImages ()V
 	public abstract fun loadDebugImages ()Ljava/util/List;
+	public abstract fun loadDebugImagesForAddresses (Ljava/util/Set;)Ljava/util/Set;
 }
 
 public final class io/sentry/android/core/InternalSentrySdk {
