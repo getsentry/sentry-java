@@ -14,6 +14,7 @@
 - Add split apks info to the `App` context ([#3193](https://github.com/getsentry/sentry-java/pull/3193))
 - Expose new `withSentryObservableEffect` method overload that accepts `SentryNavigationListener` as a parameter ([#4143](https://github.com/getsentry/sentry-java/pull/4143))
   - This allows sharing the same `SentryNavigationListener` instance across fragments and composables to preserve the trace 
+- (Internal) Add API to filter native debug images based on stacktrace addresses ([#4089](https://github.com/getsentry/sentry-java/pull/4089))
 
 ### Fixes
 
