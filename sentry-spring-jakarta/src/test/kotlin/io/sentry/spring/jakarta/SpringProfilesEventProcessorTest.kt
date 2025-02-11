@@ -10,9 +10,9 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.core.env.Environment
 import kotlin.test.Test
 
@@ -69,7 +69,7 @@ class SpringProfilesEventProcessorTest {
     open class SpringProfilesEventProcessorConfiguration {
         @Bean
         open fun springProfilesEventProcessor(environment: Environment): SpringProfilesEventProcessor {
-            return SpringProfilesEventProcessor(environment);
+            return SpringProfilesEventProcessor(environment)
         }
     }
 

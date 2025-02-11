@@ -63,14 +63,6 @@ public class io/sentry/spring/boot/SentryWebfluxAutoConfiguration {
 	public fun sentryWebFilter (Lio/sentry/IScopes;)Lio/sentry/spring/webflux/SentryWebFilter;
 }
 
-public final class io/sentry/spring/boot/SpringProfilesEventProcessor : io/sentry/EventProcessor {
-	public fun <init> (Lorg/springframework/core/env/Environment;)V
-	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
-	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
-	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
-	public fun processInternal (Lio/sentry/SentryBaseEvent;)V
-}
-
 public class io/sentry/spring/boot/graphql/SentryGraphqlAutoConfiguration {
 	public fun <init> ()V
 	public fun exceptionResolverAdapter ()Lio/sentry/spring/graphql/SentryDataFetcherExceptionResolverAdapter;

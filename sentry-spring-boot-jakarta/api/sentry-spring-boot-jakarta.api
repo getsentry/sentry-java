@@ -71,14 +71,6 @@ public class io/sentry/spring/boot/jakarta/SentryWebfluxAutoConfiguration {
 	public fun sentryWebExceptionHandler (Lio/sentry/IScopes;)Lio/sentry/spring/jakarta/webflux/SentryWebExceptionHandler;
 }
 
-public final class io/sentry/spring/boot/jakarta/SpringProfilesEventProcessor : io/sentry/EventProcessor {
-	public fun <init> (Lorg/springframework/core/env/Environment;)V
-	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
-	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
-	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
-	public fun processInternal (Lio/sentry/SentryBaseEvent;)V
-}
-
 public class io/sentry/spring/boot/jakarta/graphql/SentryGraphql22AutoConfiguration {
 	public fun <init> ()V
 	public fun exceptionResolverAdapter ()Lio/sentry/spring/jakarta/graphql/SentryDataFetcherExceptionResolverAdapter;
