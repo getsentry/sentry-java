@@ -1,6 +1,6 @@
 package io.sentry.instrumentation.file;
 
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
@@ -28,8 +28,8 @@ final class FileIOSpanManager {
 
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
 
-  static @Nullable ISpan startSpan(final @NotNull IHub hub, final @NotNull String op) {
-    final ISpan parent = Platform.isAndroid() ? hub.getTransaction() : hub.getSpan();
+  static @Nullable ISpan startSpan(final @NotNull IScopes scopes, final @NotNull String op) {
+    final ISpan parent = Platform.isAndroid() ? scopes.getTransaction() : scopes.getSpan();
     return parent != null ? parent.startChild(op) : null;
   }
 
@@ -93,22 +93,38 @@ final class FileIOSpanManager {
     if (currentSpan != null) {
       final String byteCountToString = StringUtils.byteCountToString(byteCount);
       if (file != null) {
-        final String description = file.getName() + " " + "(" + byteCountToString + ")";
+        final String description = getDescription(file);
         currentSpan.setDescription(description);
-        if (Platform.isAndroid() || options.isSendDefaultPii()) {
+        if (options.isSendDefaultPii()) {
           currentSpan.setData("file.path", file.getAbsolutePath());
         }
       } else {
         currentSpan.setDescription(byteCountToString);
       }
       currentSpan.setData("file.size", byteCount);
-      final boolean isMainThread = options.getMainThreadChecker().isMainThread();
+      final boolean isMainThread = options.getThreadChecker().isMainThread();
       currentSpan.setData(SpanDataConvention.BLOCKED_MAIN_THREAD_KEY, isMainThread);
       if (isMainThread) {
         currentSpan.setData(
             SpanDataConvention.CALL_STACK_KEY, stackTraceFactory.getInAppCallStack());
       }
       currentSpan.finish(spanStatus);
+    }
+  }
+
+  private @NotNull String getDescription(final @NotNull File file) {
+    final String byteCountToString = StringUtils.byteCountToString(byteCount);
+    // if we send PII, we can send the file name directly
+    if (options.isSendDefaultPii()) {
+      return file.getName() + " (" + byteCountToString + ")";
+    }
+    final int lastDotIndex = file.getName().lastIndexOf('.');
+    // if the file has an extension, show it in the description, even without sending PII
+    if (lastDotIndex > 0 && lastDotIndex < file.getName().length() - 1) {
+      final String fileExtension = file.getName().substring(lastDotIndex);
+      return "***" + fileExtension + " (" + byteCountToString + ")";
+    } else {
+      return "***" + " (" + byteCountToString + ")";
     }
   }
 

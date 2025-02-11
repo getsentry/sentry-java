@@ -5,7 +5,7 @@ import android.app.Application
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Integration
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
@@ -13,7 +13,7 @@ import io.sentry.SentryOptions
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.io.Closeable
 
-class FragmentLifecycleIntegration(
+public class FragmentLifecycleIntegration(
     private val application: Application,
     private val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
     private val enableAutoFragmentLifecycleTracing: Boolean
@@ -22,13 +22,13 @@ class FragmentLifecycleIntegration(
     Integration,
     Closeable {
 
-    constructor(application: Application) : this(
+    public constructor(application: Application) : this(
         application = application,
         filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states,
         enableAutoFragmentLifecycleTracing = false
     )
 
-    constructor(
+    public constructor(
         application: Application,
         enableFragmentLifecycleBreadcrumbs: Boolean,
         enableAutoFragmentLifecycleTracing: Boolean
@@ -40,11 +40,11 @@ class FragmentLifecycleIntegration(
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
     )
 
-    private lateinit var hub: IHub
+    private lateinit var scopes: IScopes
     private lateinit var options: SentryOptions
 
-    override fun register(hub: IHub, options: SentryOptions) {
-        this.hub = hub
+    override fun register(scopes: IScopes, options: SentryOptions) {
+        this.scopes = scopes
         this.options = options
 
         application.registerActivityLifecycleCallbacks(this)
@@ -66,7 +66,7 @@ class FragmentLifecycleIntegration(
             ?.supportFragmentManager
             ?.registerFragmentLifecycleCallbacks(
                 SentryFragmentLifecycleCallbacks(
-                    hub = hub,
+                    scopes = scopes,
                     filterFragmentLifecycleBreadcrumbs = filterFragmentLifecycleBreadcrumbs,
                     enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
                 ),

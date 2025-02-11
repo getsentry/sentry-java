@@ -21,8 +21,8 @@ class SentryWebfluxAutoConfigurationTest {
     fun `configures sentryWebFilter`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertThat(it).hasSingleBean(SentryWebFilter::class.java)
-                assertThat(it).doesNotHaveBean(SentryWebFilterWithThreadLocalAccessor::class.java)
+                assertThat(it).hasSingleBean(SentryWebFilterWithThreadLocalAccessor::class.java)
+                assertThat(it).doesNotHaveBean(SentryWebFilter::class.java)
             }
     }
 
@@ -63,6 +63,7 @@ class SentryWebfluxAutoConfigurationTest {
             )
             .run {
                 assertThat(it).hasSingleBean(SentryWebFilterWithThreadLocalAccessor::class.java)
+                assertThat(it).doesNotHaveBean(SentryWebFilter::class.java)
             }
     }
 
@@ -75,6 +76,7 @@ class SentryWebfluxAutoConfigurationTest {
             )
             .run {
                 assertThat(it).doesNotHaveBean(SentryWebFilterWithThreadLocalAccessor::class.java)
+                assertThat(it).hasSingleBean(SentryWebFilter::class.java)
             }
     }
 

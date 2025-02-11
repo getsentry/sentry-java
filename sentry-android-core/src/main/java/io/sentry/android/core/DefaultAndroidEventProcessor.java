@@ -11,7 +11,7 @@ import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryReplayEvent;
-import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
+import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.App;
@@ -156,7 +156,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (user.getId() == null) {
       user.setId(Installation.id(context));
     }
-    if (user.getIpAddress() == null) {
+    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
@@ -216,7 +216,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       final boolean isHybridSDK = HintUtils.isFromHybridSdk(hint);
 
       for (final SentryThread thread : event.getThreads()) {
-        final boolean isMainThread = AndroidMainThreadChecker.getInstance().isMainThread(thread);
+        final boolean isMainThread = AndroidThreadChecker.getInstance().isMainThread(thread);
 
         // TODO: Fix https://github.com/getsentry/team-mobile/issues/47
         if (thread.isCurrent() == null) {
@@ -239,7 +239,15 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       String versionCode = ContextUtils.getVersionCode(packageInfo, buildInfoProvider);
 
       setDist(event, versionCode);
-      ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, app);
+
+      @Nullable DeviceInfoUtil deviceInfoUtil = null;
+      try {
+        deviceInfoUtil = this.deviceInfoUtil.get();
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+      }
+
+      ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, deviceInfoUtil, app);
     }
   }
 
@@ -250,7 +258,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setAppExtras(final @NotNull App app, final @NotNull Hint hint) {
-    app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+    app.setAppName(ContextUtils.getApplicationName(context));
     final @NotNull TimeSpan appStartTimeSpan =
         AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
     if (appStartTimeSpan.hasStarted()) {
@@ -318,5 +326,10 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     setCommons(event, false, applyScopeData);
 
     return event;
+  }
+
+  @Override
+  public @Nullable Long getOrder() {
+    return 8000L;
   }
 }

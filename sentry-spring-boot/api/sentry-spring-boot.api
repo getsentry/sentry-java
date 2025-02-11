@@ -18,6 +18,12 @@ public class io/sentry/spring/boot/SentryLogbackAppenderAutoConfiguration {
 	public fun sentryLogbackInitializer (Lio/sentry/spring/boot/SentryProperties;)Lio/sentry/spring/boot/SentryLogbackInitializer;
 }
 
+public class io/sentry/spring/boot/SentryLogbackInitializer : org/springframework/context/event/GenericApplicationListener {
+	public fun <init> (Lio/sentry/spring/boot/SentryProperties;)V
+	public fun onApplicationEvent (Lorg/springframework/context/ApplicationEvent;)V
+	public fun supportsEventType (Lorg/springframework/core/ResolvableType;)Z
+}
+
 public class io/sentry/spring/boot/SentryProperties : io/sentry/SentryOptions {
 	public fun <init> ()V
 	public fun getExceptionResolverOrder ()I
@@ -53,15 +59,15 @@ public class io/sentry/spring/boot/SentryProperties$Logging {
 public class io/sentry/spring/boot/SentryWebfluxAutoConfiguration {
 	public fun <init> ()V
 	public fun sentryScheduleHookApplicationRunner ()Lorg/springframework/boot/ApplicationRunner;
-	public fun sentryWebExceptionHandler (Lio/sentry/IHub;)Lio/sentry/spring/webflux/SentryWebExceptionHandler;
-	public fun sentryWebFilter (Lio/sentry/IHub;)Lio/sentry/spring/webflux/SentryWebFilter;
+	public fun sentryWebExceptionHandler (Lio/sentry/IScopes;)Lio/sentry/spring/webflux/SentryWebExceptionHandler;
+	public fun sentryWebFilter (Lio/sentry/IScopes;)Lio/sentry/spring/webflux/SentryWebFilter;
 }
 
 public class io/sentry/spring/boot/graphql/SentryGraphqlAutoConfiguration {
 	public fun <init> ()V
 	public fun exceptionResolverAdapter ()Lio/sentry/spring/graphql/SentryDataFetcherExceptionResolverAdapter;
 	public static fun graphqlBeanPostProcessor ()Lio/sentry/spring/graphql/SentryGraphqlBeanPostProcessor;
-	public fun sourceBuilderCustomizerWebflux (Lio/sentry/spring/boot/SentryProperties;)Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
-	public fun sourceBuilderCustomizerWebmvc (Lio/sentry/spring/boot/SentryProperties;)Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
+	public fun sentryInstrumentationWebMvc (Lio/sentry/spring/boot/SentryProperties;Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql/SentryInstrumentation;
+	public fun sentryInstrumentationWebflux (Lio/sentry/spring/boot/SentryProperties;Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql/SentryInstrumentation;
 }
 

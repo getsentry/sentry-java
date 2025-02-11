@@ -1,11 +1,15 @@
 package io.sentry.android.core
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.ActivityManager.MemoryInfo
 import android.app.ActivityManager.RunningAppProcessInfo
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Process
 import androidx.test.core.app.ApplicationProvider
@@ -25,6 +29,7 @@ import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowBuild
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -42,6 +47,7 @@ class ContextUtilsTest {
 
     @BeforeTest
     fun `set up`() {
+        ContextUtils.resetInstance()
         context = ApplicationProvider.getApplicationContext()
         logger = NoOpLogger.getInstance()
         ShadowBuild.reset()
@@ -51,20 +57,20 @@ class ContextUtilsTest {
 
     @Test
     fun `Given a valid context, returns a valid PackageInfo`() {
-        val packageInfo = ContextUtils.getPackageInfo(context, mock(), mock())
+        val packageInfo = ContextUtils.getPackageInfo(context, mock())
         assertNotNull(packageInfo)
     }
 
     @Test
     fun `Given an  invalid context, do not throw Error`() {
         // as Context is not fully mocked, it'll throw NPE but catch it and return null
-        val packageInfo = ContextUtils.getPackageInfo(mock(), mock(), mock())
+        val packageInfo = ContextUtils.getPackageInfo(mock(), mock())
         assertNull(packageInfo)
     }
 
     @Test
     fun `Given a valid PackageInfo, returns a valid versionCode`() {
-        val packageInfo = ContextUtils.getPackageInfo(context, mock(), mock())
+        val packageInfo = ContextUtils.getPackageInfo(context, mock())
         val versionCode = ContextUtils.getVersionCode(packageInfo!!, mock())
 
         assertNotNull(versionCode)
@@ -73,7 +79,7 @@ class ContextUtilsTest {
     @Test
     fun `Given a valid PackageInfo, returns a valid versionName`() {
         // VersionName is null during tests, so we mock it the second time
-        val packageInfo = ContextUtils.getPackageInfo(context, mock(), mock())!!
+        val packageInfo = ContextUtils.getPackageInfo(context, mock())!!
         val versionName = ContextUtils.getVersionName(packageInfo)
         assertNull(versionName)
         val mockedPackageInfo = spy(packageInfo) { it.versionName = "" }
@@ -83,13 +89,13 @@ class ContextUtilsTest {
 
     @Test
     fun `when context is valid, getApplicationName returns application name`() {
-        val appName = ContextUtils.getApplicationName(context, logger)
+        val appName = ContextUtils.getApplicationName(context)
         assertEquals("io.sentry.android.core.test", appName)
     }
 
     @Test
     fun `when context is invalid, getApplicationName returns null`() {
-        val appName = ContextUtils.getApplicationName(mock(), logger)
+        val appName = ContextUtils.getApplicationName(mock())
         assertNull(appName)
     }
 
@@ -112,6 +118,38 @@ class ContextUtilsTest {
             ContextUtils.retrieveSideLoadedInfo(mockedContext, logger, BuildInfoProvider(logger))
         assertFalse(sideLoadedInfo!!.isSideLoaded)
         assertEquals("play.google.com", sideLoadedInfo.installerStore)
+    }
+
+    @Test
+    fun `given a valid PackageInfo, returns valid splitNames`() {
+        val splitNames = arrayOf<String?>("config.arm64_v8a")
+        val mockedContext = mock<Context>()
+        val mockedPackageManager = mock<PackageManager>()
+        val mockedApplicationInfo = mock<ApplicationInfo>()
+        val mockedPackageInfo = mock<PackageInfo>()
+        mockedPackageInfo.splitNames = splitNames
+
+        whenever(mockedContext.packageName).thenReturn("dummy")
+
+        whenever(
+            mockedPackageManager.getApplicationInfo(
+                any<String>(),
+                any<PackageManager.ApplicationInfoFlags>()
+            )
+        ).thenReturn(mockedApplicationInfo)
+
+        whenever(
+            mockedPackageManager.getPackageInfo(
+                any<String>(),
+                any<PackageManager.PackageInfoFlags>()
+            )
+        ).thenReturn(mockedPackageInfo)
+
+        whenever(mockedContext.packageManager).thenReturn(mockedPackageManager)
+
+        val splitApksInfo =
+            ContextUtils.retrieveSplitApksInfo(mockedContext, BuildInfoProvider(logger))
+        assertContentEquals(splitNames, splitApksInfo!!.splitNames)
     }
 
     @Test
@@ -146,7 +184,7 @@ class ContextUtilsTest {
 
     @Test
     fun `when supported abis is specified, getArchitectures returns correct values`() {
-        val architectures = ContextUtils.getArchitectures(BuildInfoProvider(logger))
+        val architectures = ContextUtils.getArchitectures()
         assertEquals("armeabi-v7a", architectures[0])
     }
 
@@ -174,6 +212,7 @@ class ContextUtilsTest {
         assertNull(memInfo)
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Test
     fun `registerReceiver calls context_registerReceiver without exported flag on API 32-`() {
         val buildInfo = mock<BuildInfoProvider>()
@@ -193,7 +232,7 @@ class ContextUtilsTest {
         val context = mock<Context>()
         whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.TIRAMISU)
         ContextUtils.registerReceiver(context, buildInfo, receiver, filter)
-        verify(context).registerReceiver(eq(receiver), eq(filter), eq(Context.RECEIVER_EXPORTED))
+        verify(context).registerReceiver(eq(receiver), eq(filter), eq(Context.RECEIVER_NOT_EXPORTED))
     }
 
     @Test

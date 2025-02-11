@@ -7,7 +7,6 @@ import java.net.URI
 import java.util.Calendar
 import java.util.Currency
 import java.util.Locale
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicIntegerArray
 import kotlin.test.assertEquals
@@ -318,7 +317,7 @@ class JsonReflectionObjectSerializerTest {
 
     @Test
     fun `UUID is serialized`() {
-        val actual = fixture.getSut().serialize(UUID.fromString("828900a5-15dc-413f-8c17-6ef04d74e074"), fixture.logger)
+        val actual = fixture.getSut().serialize("828900a5-15dc-413f-8c17-6ef04d74e074", fixture.logger)
         assertEquals("828900a5-15dc-413f-8c17-6ef04d74e074", actual)
     }
 

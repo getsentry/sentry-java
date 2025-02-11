@@ -9,11 +9,6 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
@@ -24,6 +19,7 @@ dependencies {
         exclude(group = "io.opentelemetry")
         exclude(group = "io.opentelemetry.javaagent")
     }
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
     compileOnly(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)

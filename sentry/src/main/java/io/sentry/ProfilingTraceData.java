@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -154,7 +153,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     // Stacktrace context
     this.transactionId = transactionId;
     this.traceId = traceId;
-    this.profileId = UUID.randomUUID().toString();
+    this.profileId = SentryUUID.generateSentryId();
     this.environment = environment != null ? environment : DEFAULT_ENVIRONMENT;
     this.truncationReason = truncationReason;
     if (!isTruncationReasonValid()) {

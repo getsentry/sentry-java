@@ -77,7 +77,9 @@ tasks.register<Test>("systemTest").configure {
     group = "verification"
     description = "Runs the System tests"
 
-//    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+    outputs.upToDateWhen { false }
+
+    maxParallelForks = 1
 
     // Cap JVM args per test
     minHeapSize = "128m"

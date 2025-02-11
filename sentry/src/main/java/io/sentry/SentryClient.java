@@ -6,20 +6,12 @@ import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
-import io.sentry.metrics.EncodedMetrics;
-import io.sentry.metrics.IMetricsClient;
-import io.sentry.metrics.NoopMetricsAggregator;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
-import io.sentry.util.CheckInUtils;
-import io.sentry.util.HintUtils;
-import io.sentry.util.Objects;
-import io.sentry.util.Random;
-import io.sentry.util.SentryRandom;
-import io.sentry.util.TracingUtils;
+import io.sentry.util.*;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-public final class SentryClient implements ISentryClient, IMetricsClient {
+public final class SentryClient implements ISentryClient {
   static final String SENTRY_PROTOCOL_VERSION = "7";
 
   private boolean enabled;
@@ -42,14 +34,14 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
-  private final @NotNull IMetricsAggregator metricsAggregator;
 
   @Override
   public boolean isEnabled() {
     return enabled;
   }
 
-  SentryClient(final @NotNull SentryOptions options) {
+  @ApiStatus.Internal
+  public SentryClient(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;
 
@@ -61,11 +53,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
 
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
-
-    metricsAggregator =
-        options.isEnableMetrics()
-            ? new MetricsAggregator(options, this)
-            : NoopMetricsAggregator.getInstance();
   }
 
   private boolean shouldApplyScopeData(
@@ -111,13 +98,27 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
 
     if (event != null) {
       final Throwable eventThrowable = event.getThrowable();
-      if (eventThrowable != null && options.containsIgnoredExceptionForType(eventThrowable)) {
+      if (eventThrowable != null
+          && ExceptionUtils.isIgnored(options.getIgnoredExceptionsForType(), eventThrowable)) {
         options
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
                 "Event was dropped as the exception %s is ignored",
                 eventThrowable.getClass());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+        return SentryId.EMPTY_ID;
+      }
+
+      if (ErrorUtils.isIgnored(options.getIgnoredErrors(), event)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was dropped as it matched a string/pattern in ignoredErrors",
+                event.getMessage());
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
@@ -640,8 +641,11 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
     envelopeItems.add(replayItem);
     final SentryId sentryId = event.getEventId();
 
+    // SdkVersion from ReplayOptions defaults to SdkVersion from SentryOptions and can be
+    // overwritten by the hybrid SDKs
     final SentryEnvelopeHeader envelopeHeader =
-        new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), traceContext);
+        new SentryEnvelopeHeader(
+            sentryId, options.getSessionReplay().getSdkVersion(), traceContext);
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
@@ -793,6 +797,23 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
 
+    if (TracingUtils.isIgnored(options.getIgnoredTransactions(), transaction.getTransaction())) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Transaction was dropped as transaction name %s is ignored",
+              transaction.getTransaction());
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(
+              DiscardReason.EVENT_PROCESSOR, DataCategory.Span, transaction.getSpans().size() + 1);
+      return SentryId.EMPTY_ID;
+    }
+
     SentryId sentryId = SentryId.EMPTY_ID;
     if (transaction.getEventId() != null) {
       sentryId = transaction.getEventId();
@@ -899,10 +920,9 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
               SentryLevel.DEBUG,
               "Check-in was dropped as slug %s is ignored",
               checkIn.getMonitorSlug());
-      // TODO in a follow up PR with DataCategory.Monitor
-      //      options
-      //        .getClientReportRecorder()
-      //        .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+      options
+          .getClientReportRecorder()
+          .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Monitor);
       return SentryId.EMPTY_ID;
     }
 
@@ -1166,11 +1186,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
   public void close(final boolean isRestarting) {
     options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
     try {
-      metricsAggregator.close();
-    } catch (IOException e) {
-      options.getLogger().log(SentryLevel.WARNING, "Failed to close the metrics aggregator.", e);
-    }
-    try {
       flush(isRestarting ? 0 : options.getShutdownTimeoutMillis());
       transport.close(isRestarting);
     } catch (IOException e) {
@@ -1219,24 +1234,6 @@ public final class SentryClient implements ISentryClient, IMetricsClient {
       return !(sampling < random.nextDouble()); // bad luck
     }
     return true;
-  }
-
-  @Override
-  public @NotNull IMetricsAggregator getMetricsAggregator() {
-    return metricsAggregator;
-  }
-
-  @Override
-  public @NotNull SentryId captureMetrics(final @NotNull EncodedMetrics metrics) {
-
-    final @NotNull SentryEnvelopeItem envelopeItem = SentryEnvelopeItem.fromMetrics(metrics);
-    final @NotNull SentryEnvelopeHeader envelopeHeader =
-        new SentryEnvelopeHeader(new SentryId(), options.getSdkVersion(), null);
-
-    final @NotNull SentryEnvelope envelope =
-        new SentryEnvelope(envelopeHeader, Collections.singleton(envelopeItem));
-    final @Nullable SentryId id = captureEnvelope(envelope);
-    return id != null ? id : SentryId.EMPTY_ID;
   }
 
   private static final class SortBreadcrumbsByDate implements Comparator<Breadcrumb> {

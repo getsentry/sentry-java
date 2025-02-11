@@ -14,11 +14,11 @@ public final class io/sentry/android/timber/SentryTimberIntegration : io/sentry/
 	public fun close ()V
 	public final fun getMinBreadcrumbLevel ()Lio/sentry/SentryLevel;
 	public final fun getMinEventLevel ()Lio/sentry/SentryLevel;
-	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
+	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
 public final class io/sentry/android/timber/SentryTimberTree : timber/log/Timber$Tree {
-	public fun <init> (Lio/sentry/IHub;Lio/sentry/SentryLevel;Lio/sentry/SentryLevel;)V
+	public fun <init> (Lio/sentry/IScopes;Lio/sentry/SentryLevel;Lio/sentry/SentryLevel;)V
 	public fun d (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun d (Ljava/lang/Throwable;)V
 	public fun d (Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V

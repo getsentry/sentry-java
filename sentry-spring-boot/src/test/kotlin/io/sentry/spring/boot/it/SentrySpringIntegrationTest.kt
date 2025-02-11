@@ -1,8 +1,11 @@
 package io.sentry.spring.boot.it
 
-import io.sentry.IHub
+import io.sentry.DefaultSpanFactory
+import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
+import io.sentry.SentryOpenTelemetryMode
+import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.checkTransaction
 import io.sentry.spring.tracing.SentrySpan
@@ -44,6 +47,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -60,7 +64,7 @@ class SentrySpringIntegrationTest {
     lateinit var transport: ITransport
 
     @SpyBean
-    lateinit var hub: IHub
+    lateinit var scopes: IScopes
 
     @LocalServerPort
     var port: Int? = null
@@ -93,6 +97,24 @@ class SentrySpringIntegrationTest {
 
     @Test
     fun `attaches request body to SentryEvents`() {
+        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+        val headers = HttpHeaders().apply {
+            this.contentType = MediaType.APPLICATION_JSON
+        }
+        val httpEntity = HttpEntity("""{"body":"content"}""", headers)
+        restTemplate.exchange("http://localhost:$port/bodyAsParam", HttpMethod.POST, httpEntity, Void::class.java)
+
+        verify(transport).send(
+            checkEvent { event ->
+                assertThat(event.request).isNotNull()
+                assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `attaches request body to SentryEvents on empty ControllerMethod Params`() {
         val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
         val headers = HttpHeaders().apply {
             this.contentType = MediaType.APPLICATION_JSON
@@ -188,7 +210,7 @@ class SentrySpringIntegrationTest {
 
         restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
 
-        verify(hub, never()).captureEvent(any())
+        verify(scopes, never()).captureEvent(any())
     }
 
     @Test
@@ -223,6 +245,14 @@ open class App {
 
     @Bean
     open fun mockTransport() = transport
+
+    @Bean
+    open fun optionsCallback() = Sentry.OptionsConfiguration<SentryOptions> { options ->
+        // due to OTel being on the classpath we need to set the default again
+        options.spanFactory = DefaultSpanFactory()
+        // to test the actual spring implementation
+        options.openTelemetryMode = SentryOpenTelemetryMode.OFF
+    }
 }
 
 @RestController
@@ -256,6 +286,11 @@ class HelloController(private val helloService: HelloService) {
 
     @PostMapping("/body")
     fun body() {
+        Sentry.captureMessage("body")
+    }
+
+    @PostMapping("/bodyAsParam")
+    fun bodyWithReadingBodyInController(@RequestBody body: String) {
         Sentry.captureMessage("body")
     }
 }

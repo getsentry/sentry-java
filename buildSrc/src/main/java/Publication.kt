@@ -24,7 +24,10 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
         }
         from("build${sep}libs") {
             include("*android*")
-            withJavadoc(renameTo = "compose-android")
+            include("*androidRelease-javadoc*")
+            rename {
+                it.replace("androidRelease-javadoc", "android")
+            }
         }
     }
     this.getByName("main").contents {
@@ -38,8 +41,8 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
             rename {
                 it.replace("-kotlin", "")
                     .replace("-metadata", "")
+                    .replace("Multiplatform-javadoc", "")
             }
-            withJavadoc()
         }
     }
     this.maybeCreate("desktop").contents {
@@ -49,7 +52,10 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
         }
         from("build${sep}libs") {
             include("*desktop*")
-            withJavadoc(renameTo = "compose-desktop")
+            include("*desktop-javadoc*")
+            rename {
+                it.replace("desktop-javadoc", "desktop")
+            }
         }
     }
 
@@ -77,16 +83,13 @@ fun DistributionContainer.configureForJvm(project: Project) {
         from("build${sep}publications${sep}release") {
             renameModule(project.name, version = version)
         }
-    }
-}
-
-private fun CopySpec.withJavadoc(renameTo: String = "compose") {
-    include("*javadoc*")
-    rename {
-        if (it.contains("javadoc")) {
-            it.replace("compose", renameTo)
-        } else {
-            it
+        from("build${sep}intermediates${sep}java_doc_jar${sep}release") {
+            include("*javadoc*")
+            rename { it.replace("release", "${project.name}-$version") }
+        }
+        from("build${sep}intermediates${sep}source_jar${sep}release") {
+            include("*sources*")
+            rename { it.replace("release", "${project.name}-$version") }
         }
     }
 }

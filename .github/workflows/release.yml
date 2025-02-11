@@ -17,16 +17,22 @@ jobs:
     runs-on: ubuntu-latest
     name: "Release a new version"
     steps:
+      - name: Get auth token
+        id: token
+        uses: actions/create-github-app-token@67e27a7eb7db372a1c61a7f9bdab8699e9ee57f7 # v1.11.3
+        with:
+          app-id: ${{ vars.SENTRY_RELEASE_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.SENTRY_RELEASE_BOT_PRIVATE_KEY }}
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_RELEASE_PAT }}
+          token: ${{ steps.token.outputs.token }}
           # Needs to be set, otherwise git describe --tags will fail with: No names found, cannot describe anything
           fetch-depth: 0
           submodules: 'recursive'
       - name: Prepare release
         uses: getsentry/action-prepare-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_RELEASE_PAT }}
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
         with:
           version: ${{ github.event.inputs.version }}
           force: ${{ github.event.inputs.force }}

@@ -5,14 +5,16 @@ import static io.sentry.SentryLevel.INFO;
 
 import io.sentry.DataCategory;
 import io.sentry.Hint;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
-import io.sentry.util.CollectionUtils;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.StringUtils;
 import java.io.Closeable;
@@ -39,7 +41,7 @@ public final class RateLimiter implements Closeable {
       new ConcurrentHashMap<>();
   private final @NotNull List<IRateLimitObserver> rateLimitObservers = new CopyOnWriteArrayList<>();
   private @Nullable Timer timer = null;
-  private final @NotNull Object timerLock = new Object();
+  private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
 
   public RateLimiter(
       final @NotNull ICurrentDateProvider currentDateProvider,
@@ -144,9 +146,16 @@ public final class RateLimiter implements Closeable {
    * @param hint the Hints
    * @param retry if event should be retried or not
    */
-  private static void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
+  private void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
     HintUtils.runIfHasType(hint, SubmissionResult.class, result -> result.setResult(false));
     HintUtils.runIfHasType(hint, Retryable.class, retryable -> retryable.setRetry(retry));
+    HintUtils.runIfHasType(
+        hint,
+        DiskFlushNotification.class,
+        (diskFlushNotification) -> {
+          diskFlushNotification.markFlushed();
+          options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired due to rate limit");
+        });
   }
 
   /**
@@ -177,10 +186,6 @@ public final class RateLimiter implements Closeable {
         return DataCategory.Attachment;
       case "profile":
         return DataCategory.Profile;
-        // The envelope item type used for metrics is statsd, whereas the client report category is
-        // metric_bucket
-      case "statsd":
-        return DataCategory.MetricBucket;
       case "transaction":
         return DataCategory.Transaction;
       case "check_in":
@@ -215,7 +220,7 @@ public final class RateLimiter implements Closeable {
         // These can be ignored by the SDK.
         // final String scope = rateLimit.length > 2 ? rateLimit[2] : null;
         // final String reasonCode = rateLimit.length > 3 ? rateLimit[3] : null;
-        final @Nullable String limitNamespaces = rateLimit.length > 4 ? rateLimit[4] : null;
+        // final @Nullable String limitNamespaces = rateLimit.length > 4 ? rateLimit[4] : null;
 
         if (rateLimit.length > 0) {
           final String retryAfter = rateLimit[0];
@@ -246,17 +251,6 @@ public final class RateLimiter implements Closeable {
                 // we dont apply rate limiting for unknown categories
                 if (DataCategory.Unknown.equals(dataCategory)) {
                   continue;
-                }
-                // SDK doesn't support namespaces, yet. Namespaces can be returned by relay in case
-                // of metric_bucket items. If the namespaces are empty or contain "custom" we apply
-                // the rate limit to all metrics, otherwise to none.
-                if (DataCategory.MetricBucket.equals(dataCategory)
-                    && limitNamespaces != null
-                    && !limitNamespaces.equals("")) {
-                  final String[] namespaces = limitNamespaces.split(";", -1);
-                  if (namespaces.length > 0 && !CollectionUtils.contains(namespaces, "custom")) {
-                    continue;
-                  }
                 }
 
                 applyRetryAfterOnlyIfLonger(dataCategory, date);
@@ -293,7 +287,7 @@ public final class RateLimiter implements Closeable {
 
       notifyRateLimitObservers();
 
-      synchronized (timerLock) {
+      try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
         if (timer == null) {
           timer = new Timer(true);
         }
@@ -345,7 +339,7 @@ public final class RateLimiter implements Closeable {
 
   @Override
   public void close() throws IOException {
-    synchronized (timerLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       if (timer != null) {
         timer.cancel();
         timer = null;

@@ -9,7 +9,7 @@ import com.apollographql.apollo3.network.http.HttpInterceptor
 import com.apollographql.apollo3.network.http.HttpInterceptorChain
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.ScopeCallback
@@ -24,6 +24,7 @@ import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.apollo3.SentryApollo3HttpInterceptor.BeforeSpanCallback
+import io.sentry.mockServerRequestTimeoutMillis
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import io.sentry.util.Apollo3PlatformTestManipulator
@@ -40,6 +41,7 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -57,11 +59,11 @@ class SentryApollo3InterceptorTest {
                 sdkVersion = SdkVersion("test", "1.2.3")
             }
         val scope = Scope(options)
-        val hub = mock<IHub>().also {
+        val scopes = mock<IScopes>().also {
             whenever(it.options).thenReturn(options)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(it).configureScope(any())
         }
-        private var httpInterceptor = SentryApollo3HttpInterceptor(hub, captureFailedRequests = false)
+        private var httpInterceptor = SentryApollo3HttpInterceptor(scopes, captureFailedRequests = false)
 
         @SuppressWarnings("LongParameterList")
         fun getSut(
@@ -93,7 +95,7 @@ class SentryApollo3InterceptorTest {
             )
 
             if (beforeSpan != null) {
-                httpInterceptor = SentryApollo3HttpInterceptor(hub, beforeSpan, captureFailedRequests = false)
+                httpInterceptor = SentryApollo3HttpInterceptor(scopes, beforeSpan, captureFailedRequests = false)
             }
 
             val builder = ApolloClient.Builder()
@@ -124,7 +126,7 @@ class SentryApollo3InterceptorTest {
     fun `creates a span around the successful request`() {
         executeQuery()
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertTransactionDetails(it, httpStatusCode = 200)
                 assertEquals(SpanStatus.OK, it.spans.first().status)
@@ -139,7 +141,7 @@ class SentryApollo3InterceptorTest {
     fun `creates a span around the failed request`() {
         executeQuery(fixture.getSut(httpStatusCode = 403))
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertTransactionDetails(it, httpStatusCode = 403)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
@@ -159,7 +161,7 @@ class SentryApollo3InterceptorTest {
         }
         executeQuery(fixture.getSut(interceptor = failingInterceptor))
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertTransactionDetails(it, httpStatusCode = 404, contentLength = null)
                 assertEquals("POST", it.spans.first().data?.get(SpanDataConvention.HTTP_METHOD_KEY))
@@ -176,7 +178,7 @@ class SentryApollo3InterceptorTest {
     fun `creates a span around the request failing with network error`() {
         executeQuery(fixture.getSut(socketPolicy = SocketPolicy.DISCONNECT_DURING_REQUEST_BODY))
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertTransactionDetails(it, httpStatusCode = null, contentLength = null)
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
@@ -192,7 +194,7 @@ class SentryApollo3InterceptorTest {
         fixture.options.setTracePropagationTargets(listOf("some-host-that-does-not-exist"))
         executeQuery(isSpanActive = false)
 
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -201,15 +203,25 @@ class SentryApollo3InterceptorTest {
     fun `when there is no active span, does not add sentry trace header to the request`() {
         executeQuery(isSpanActive = false)
 
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test
+    fun `does not add sentry-trace header when span origin is ignored`() {
+        fixture.options.setIgnoredSpanOrigins(listOf("auto.graphql.apollo3"))
+        executeQuery(isSpanActive = false)
+
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+        assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
     fun `when there is an active span, adds sentry trace headers to the request`() {
         executeQuery()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -217,7 +229,7 @@ class SentryApollo3InterceptorTest {
     @Test
     fun `when there is an active span, existing baggage headers are merged with sentry baggage into single header`() {
         executeQuery(sut = fixture.getSut(addThirdPartyBaggageHeader = true))
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
 
@@ -241,7 +253,7 @@ class SentryApollo3InterceptorTest {
             )
         )
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertEquals(1, it.spans.size)
                 val httpClientSpan = it.spans.first()
@@ -261,7 +273,7 @@ class SentryApollo3InterceptorTest {
             )
         )
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertEquals(0, it.spans.size)
             },
@@ -281,7 +293,7 @@ class SentryApollo3InterceptorTest {
             )
         )
 
-        verify(fixture.hub).captureTransaction(
+        verify(fixture.scopes).captureTransaction(
             check {
                 assertEquals(1, it.spans.size)
             },
@@ -294,7 +306,7 @@ class SentryApollo3InterceptorTest {
     @Test
     fun `adds breadcrumb when http calls succeeds`() {
         executeQuery(fixture.getSut())
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("http", it.type)
                 // response_body_size is added but mock webserver returns 0 always
@@ -309,9 +321,9 @@ class SentryApollo3InterceptorTest {
 
     @Test
     fun `sets SDKVersion Info`() {
-        assertNotNull(fixture.hub.options.sdkVersion)
-        assert(fixture.hub.options.sdkVersion!!.integrationSet.contains("Apollo3"))
-        val packageInfo = fixture.hub.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-apollo-3" }
+        assertNotNull(fixture.scopes.options.sdkVersion)
+        assert(fixture.scopes.options.sdkVersion!!.integrationSet.contains("Apollo3"))
+        val packageInfo = fixture.scopes.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-apollo-3" }
         assertNotNull(packageInfo)
         assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }
@@ -320,14 +332,14 @@ class SentryApollo3InterceptorTest {
     fun `attaches to root transaction on Android`() {
         Apollo3PlatformTestManipulator.pretendIsAndroid(true)
         executeQuery(fixture.getSut())
-        verify(fixture.hub).transaction
+        verify(fixture.scopes).transaction
     }
 
     @Test
     fun `attaches to child span on non-Android`() {
         Apollo3PlatformTestManipulator.pretendIsAndroid(false)
         executeQuery(fixture.getSut())
-        verify(fixture.hub).span
+        verify(fixture.scopes).span
     }
 
     private fun assertTransactionDetails(it: SentryTransaction, httpStatusCode: Int? = 200, contentLength: Long? = 0L) {
@@ -350,9 +362,9 @@ class SentryApollo3InterceptorTest {
     private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true, id: String = "83") = runBlocking {
         var tx: ITransaction? = null
         if (isSpanActive) {
-            tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.hub)
-            whenever(fixture.hub.transaction).thenReturn(tx)
-            whenever(fixture.hub.span).thenReturn(tx)
+            tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
+            whenever(fixture.scopes.transaction).thenReturn(tx)
+            whenever(fixture.scopes.span).thenReturn(tx)
         }
 
         val coroutine = launch {

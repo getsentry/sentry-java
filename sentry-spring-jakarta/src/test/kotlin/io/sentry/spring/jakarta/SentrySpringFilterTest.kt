@@ -1,8 +1,9 @@
 package io.sentry.spring.jakarta
 
 import io.sentry.Breadcrumb
-import io.sentry.IHub
 import io.sentry.IScope
+import io.sentry.IScopes
+import io.sentry.ISentryLifecycleToken
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -26,6 +27,7 @@ import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.mock.web.MockServletContext
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.web.util.ContentCachingRequestWrapper
 import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,23 +39,29 @@ import kotlin.test.fail
 
 class SentrySpringFilterTest {
     private class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
+        val scopesBeforeForking = mock<IScopes>()
         val response = MockHttpServletResponse()
+        val lifecycleToken = mock<ISentryLifecycleToken>()
         val chain = mock<FilterChain>()
         lateinit var scope: IScope
         lateinit var request: HttpServletRequest
 
         fun getSut(request: HttpServletRequest? = null, options: SentryOptions = SentryOptions()): SentrySpringFilter {
             scope = Scope(options)
-            whenever(hub.options).thenReturn(options)
-            whenever(hub.isEnabled).thenReturn(true)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(hub).configureScope(any())
+            whenever(scopesBeforeForking.options).thenReturn(options)
+            whenever(scopesBeforeForking.isEnabled).thenReturn(true)
+            whenever(scopes.options).thenReturn(options)
+            whenever(scopes.isEnabled).thenReturn(true)
+            whenever(scopesBeforeForking.forkedScopes(any())).thenReturn(scopes)
+            whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
+            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
             this.request = request
                 ?: MockHttpServletRequest().apply {
                     this.requestURI = "http://localhost:8080/some-uri"
                     this.method = "post"
                 }
-            return SentrySpringFilter(hub)
+            return SentrySpringFilter(scopesBeforeForking)
         }
     }
 
@@ -64,7 +72,8 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).pushScope()
+        verify(fixture.scopesBeforeForking).forkedScopes(any())
+        verify(fixture.scopes).makeCurrent()
     }
 
     @Test
@@ -72,7 +81,7 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check { it: Breadcrumb ->
                 Assertions.assertThat(it.getData("url")).isEqualTo("http://localhost:8080/some-uri")
                 Assertions.assertThat(it.getData("method")).isEqualTo("POST")
@@ -87,7 +96,7 @@ class SentrySpringFilterTest {
         val listener = fixture.getSut()
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
-        verify(fixture.hub).popScope()
+        verify(fixture.lifecycleToken).close()
     }
 
     @Test
@@ -99,7 +108,7 @@ class SentrySpringFilterTest {
             listener.doFilter(fixture.request, fixture.response, fixture.chain)
             fail()
         } catch (e: Exception) {
-            verify(fixture.hub).popScope()
+            verify(fixture.lifecycleToken).close()
         }
     }
 
@@ -240,7 +249,8 @@ class SentrySpringFilterTest {
             TestParams(maxRequestBodySize = SMALL, body = "x".repeat(1001), expectedToBeCached = false),
             TestParams(maxRequestBodySize = MEDIUM, body = "x".repeat(1001), expectedToBeCached = true),
             TestParams(maxRequestBodySize = MEDIUM, body = "x".repeat(10001), expectedToBeCached = false),
-            TestParams(maxRequestBodySize = ALWAYS, body = "x".repeat(10001), expectedToBeCached = true)
+            TestParams(maxRequestBodySize = ALWAYS, body = "x".repeat(10001), expectedToBeCached = true),
+            TestParams(maxRequestBodySize = SMALL, body = "xxx", contentType = "application/x-www-form-urlencoded", expectedToBeCached = true)
         )
 
         params.forEach { param ->
@@ -264,7 +274,7 @@ class SentrySpringFilterTest {
 
                 verify(fixture.chain).doFilter(
                     check {
-                        assertEquals(param.expectedToBeCached, it is CachedBodyHttpServletRequest)
+                        assertEquals(param.expectedToBeCached, it is ContentCachingRequestWrapper)
                     },
                     any()
                 )

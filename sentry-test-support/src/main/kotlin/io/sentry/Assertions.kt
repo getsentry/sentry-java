@@ -99,3 +99,5 @@ If you are using `check` as part of a stubbing, use `argThat` or `argForWhich` i
 }
 
 class SkipError(message: String) : Error(message)
+
+val mockServerRequestTimeoutMillis = 5000L

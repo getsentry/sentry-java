@@ -13,7 +13,7 @@ import android.widget.LinearLayout.LayoutParams
 import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 @RunWith(AndroidJUnit4::class)
 @Config(
@@ -60,7 +61,7 @@ class ReplaySmokeTest {
     internal class Fixture {
         val options = SentryOptions()
         val scope = Scope(options)
-        val hub = mock<IHub> {
+        val scopes = mock<IScopes> {
             doAnswer {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }.whenever(it).configureScope(any())
@@ -103,15 +104,15 @@ class ReplaySmokeTest {
     @Test
     fun `works in session mode`() {
         val captured = AtomicBoolean(false)
-        whenever(fixture.hub.captureReplay(any(), anyOrNull())).then {
+        whenever(fixture.scopes.captureReplay(any(), anyOrNull())).then {
             captured.set(true)
         }
 
-        fixture.options.experimental.sessionReplay.sessionSampleRate = 1.0
+        fixture.options.sessionReplay.sessionSampleRate = 1.0
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
         val replay: ReplayIntegration = fixture.getSut(context)
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
 
         val controller = buildActivity(ExampleActivity::class.java, null).setup()
         controller.create().start().resume()
@@ -122,7 +123,7 @@ class ReplaySmokeTest {
 
         await.timeout(Duration.ofSeconds(15)).untilTrue(captured)
 
-        verify(fixture.hub).captureReplay(
+        verify(fixture.scopes).captureReplay(
             check {
                 assertEquals(replay.replayId, it.replayId)
                 assertEquals(ReplayType.SESSION, it.replayType)
@@ -150,15 +151,15 @@ class ReplaySmokeTest {
         ReplayShadowMediaCodec.framesToEncode = 10
 
         val captured = AtomicBoolean(false)
-        whenever(fixture.hub.captureReplay(any(), anyOrNull())).then {
+        whenever(fixture.scopes.captureReplay(any(), anyOrNull())).then {
             captured.set(true)
         }
 
-        fixture.options.experimental.sessionReplay.onErrorSampleRate = 1.0
+        fixture.options.sessionReplay.onErrorSampleRate = 1.0
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
         val replay: ReplayIntegration = fixture.getSut(context)
-        replay.register(fixture.hub, fixture.options)
+        replay.register(fixture.scopes, fixture.options)
 
         val controller = buildActivity(ExampleActivity::class.java, null).setup()
         controller.create().start().resume()
@@ -177,7 +178,7 @@ class ReplaySmokeTest {
 
         await.timeout(Duration.ofSeconds(5)).untilTrue(captured)
 
-        verify(fixture.hub).captureReplay(
+        verify(fixture.scopes).captureReplay(
             check {
                 assertEquals(replay.replayId, it.replayId)
                 assertEquals(ReplayType.BUFFER, it.replayType)
@@ -199,6 +200,40 @@ class ReplaySmokeTest {
                 assertEquals(0, videoEvents?.first()?.segmentId)
             }
         )
+    }
+
+    @Test
+    fun `works when double inited`() {
+        fixture.options.sessionReplay.sessionSampleRate = 1.0
+        fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+
+        // first init + close
+        val falseHub = mock<IScopes> {
+            doAnswer {
+                (it.arguments[0] as ScopeCallback).run(fixture.scope)
+            }.whenever(it).configureScope(any())
+        }
+        val falseReplay: ReplayIntegration = fixture.getSut(context)
+        falseReplay.register(falseHub, fixture.options)
+        falseReplay.start()
+        falseReplay.close()
+
+        // second init
+        val captured = AtomicBoolean(false)
+        whenever(fixture.scopes.captureReplay(any(), anyOrNull())).then {
+            captured.set(true)
+        }
+        val replay: ReplayIntegration = fixture.getSut(context)
+        replay.register(fixture.scopes, fixture.options)
+        replay.start()
+
+        val controller = buildActivity(ExampleActivity::class.java, null).setup()
+        controller.create().start().resume()
+        // wait for windows to be registered in our listeners
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertNotEquals(falseReplay.rootViewsSpy, replay.rootViewsSpy)
+        assertEquals(0, falseReplay.rootViewsSpy.listeners.size)
     }
 }
 

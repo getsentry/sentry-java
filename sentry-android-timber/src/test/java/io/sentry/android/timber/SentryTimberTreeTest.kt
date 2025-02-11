@@ -1,9 +1,8 @@
 package io.sentry.android.timber
 
 import io.sentry.Breadcrumb
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryLevel
-import io.sentry.getExc
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
@@ -19,13 +18,13 @@ import kotlin.test.assertNull
 class SentryTimberTreeTest {
 
     private class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
 
         fun getSut(
             minEventLevel: SentryLevel = SentryLevel.ERROR,
             minBreadcrumbLevel: SentryLevel = SentryLevel.INFO
         ): SentryTimberTree {
-            return SentryTimberTree(hub, minEventLevel, minBreadcrumbLevel)
+            return SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel)
         }
     }
 
@@ -40,28 +39,28 @@ class SentryTimberTreeTest {
     fun `Tree captures an event if min level is equal`() {
         val sut = fixture.getSut()
         sut.e(Throwable())
-        verify(fixture.hub).captureEvent(any())
+        verify(fixture.scopes).captureEvent(any())
     }
 
     @Test
     fun `Tree captures an event if min level is higher`() {
         val sut = fixture.getSut()
         sut.wtf(Throwable())
-        verify(fixture.hub).captureEvent(any())
+        verify(fixture.scopes).captureEvent(any())
     }
 
     @Test
     fun `Tree won't capture an event if min level is lower`() {
         val sut = fixture.getSut()
         sut.d(Throwable())
-        verify(fixture.hub, never()).captureEvent(any())
+        verify(fixture.scopes, never()).captureEvent(any())
     }
 
     @Test
     fun `Tree captures debug level event`() {
         val sut = fixture.getSut(SentryLevel.DEBUG)
         sut.d(Throwable())
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.DEBUG, it.level)
             }
@@ -72,7 +71,7 @@ class SentryTimberTreeTest {
     fun `Tree captures info level event`() {
         val sut = fixture.getSut(SentryLevel.DEBUG)
         sut.i(Throwable())
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.INFO, it.level)
             }
@@ -83,7 +82,7 @@ class SentryTimberTreeTest {
     fun `Tree captures warning level event`() {
         val sut = fixture.getSut(SentryLevel.DEBUG)
         sut.w(Throwable())
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.WARNING, it.level)
             }
@@ -94,7 +93,7 @@ class SentryTimberTreeTest {
     fun `Tree captures error level event`() {
         val sut = fixture.getSut(SentryLevel.DEBUG)
         sut.e(Throwable())
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.ERROR, it.level)
             }
@@ -105,7 +104,7 @@ class SentryTimberTreeTest {
     fun `Tree captures fatal level event`() {
         val sut = fixture.getSut(SentryLevel.DEBUG)
         sut.wtf(Throwable())
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.FATAL, it.level)
             }
@@ -116,7 +115,7 @@ class SentryTimberTreeTest {
     fun `Tree captures unknown as debug level event`() {
         val sut = fixture.getSut(SentryLevel.DEBUG)
         sut.log(15, Throwable())
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.DEBUG, it.level)
             }
@@ -128,9 +127,9 @@ class SentryTimberTreeTest {
         val sut = fixture.getSut()
         val throwable = Throwable()
         sut.e(throwable)
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
-                assertEquals(throwable, it.getExc())
+                assertEquals(throwable, it.throwable)
             }
         )
     }
@@ -139,9 +138,9 @@ class SentryTimberTreeTest {
     fun `Tree captures an event without an exception`() {
         val sut = fixture.getSut()
         sut.e("message")
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
-                assertNull(it.getExc())
+                assertNull(it.throwable)
             }
         )
     }
@@ -150,7 +149,7 @@ class SentryTimberTreeTest {
     fun `Tree captures an event and sets Timber as a logger`() {
         val sut = fixture.getSut()
         sut.e("message")
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertEquals("Timber", it.logger)
             }
@@ -164,7 +163,7 @@ class SentryTimberTreeTest {
         // only available thru static class
         Timber.tag("tag")
         Timber.e("message")
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertEquals("tag", it.getTag("TimberTag"))
             }
@@ -176,7 +175,7 @@ class SentryTimberTreeTest {
         val sut = fixture.getSut()
         Timber.plant(sut)
         Timber.e("message")
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertNull(it.getTag("TimberTag"))
             }
@@ -187,7 +186,7 @@ class SentryTimberTreeTest {
     fun `Tree captures an event with given message`() {
         val sut = fixture.getSut()
         sut.e("message")
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertNotNull(it.message) { message ->
                     assertEquals("message", message.message)
@@ -200,7 +199,7 @@ class SentryTimberTreeTest {
     fun `Tree captures an event with formatted message and arguments, when provided`() {
         val sut = fixture.getSut()
         sut.e("test count: %d", 32)
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertNotNull(it.message) { message ->
                     assertEquals("test count: %d", message.message)
@@ -216,7 +215,7 @@ class SentryTimberTreeTest {
         val sut = fixture.getSut()
         sut.e("test count: %d", 32)
 
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("test count: 32", it.message)
             }
@@ -227,28 +226,28 @@ class SentryTimberTreeTest {
     fun `Tree adds a breadcrumb if min level is equal`() {
         val sut = fixture.getSut()
         sut.i(Throwable("test"))
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `Tree adds a breadcrumb if min level is higher`() {
         val sut = fixture.getSut()
         sut.e(Throwable("test"))
-        verify(fixture.hub).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `Tree won't add a breadcrumb if min level is lower`() {
         val sut = fixture.getSut(minBreadcrumbLevel = SentryLevel.ERROR)
         sut.i(Throwable("test"))
-        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test
     fun `Tree adds an info breadcrumb`() {
         val sut = fixture.getSut()
         sut.i("message")
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("Timber", it.category)
                 assertEquals(SentryLevel.INFO, it.level)
@@ -261,7 +260,7 @@ class SentryTimberTreeTest {
     fun `Tree adds an error breadcrumb`() {
         val sut = fixture.getSut()
         sut.e(Throwable("test"))
-        verify(fixture.hub).addBreadcrumb(
+        verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("exception", it.category)
                 assertEquals(SentryLevel.ERROR, it.level)
@@ -274,7 +273,7 @@ class SentryTimberTreeTest {
     fun `Tree does not add a breadcrumb, if no message provided`() {
         val sut = fixture.getSut()
         sut.e(Throwable())
-        verify(fixture.hub, never()).addBreadcrumb(any<Breadcrumb>())
+        verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>())
     }
 
     @Test

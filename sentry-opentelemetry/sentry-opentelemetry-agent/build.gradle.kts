@@ -5,11 +5,6 @@ plugins {
     id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 fun relocatePackages(shadowJar: ShadowJar) {
     // rewrite dependencies calling Logger.getLogger
     shadowJar.relocate("java.util.logging.Logger", "io.opentelemetry.javaagent.bootstrap.PatchLogger")
@@ -53,6 +48,7 @@ val upstreamAgent = configurations.create("upstreamAgent") {
 
 dependencies {
     bootstrapLibs(projects.sentry)
+    bootstrapLibs(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
     javaagentLibs(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     upstreamAgent(Config.Libs.OpenTelemetry.otelJavaAgent)
 }
@@ -122,7 +118,7 @@ tasks {
         dependsOn(findByName("relocateJavaagentLibs"))
         with(isolateClasses(findByName("relocateJavaagentLibs")!!.outputs.files))
 
-        into("$buildDir/isolated/javaagentLibs")
+        into(project.layout.buildDirectory.file("isolated/javaagentLibs").get().asFile)
     }
 
     // 3. the relocated and isolated javaagent libs are merged together with the bootstrap libs (which undergo relocation
@@ -150,15 +146,19 @@ tasks {
             attributes.put("Can-Redefine-Classes", "true")
             attributes.put("Can-Retransform-Classes", "true")
             attributes.put("Implementation-Vendor", "Sentry")
-            attributes.put("Implementation-Version", "sentry-${project.version}-otel-${Config.Libs.OpenTelemetry.otelJavaagentVersion}")
+            attributes.put("Implementation-Version", "sentry-${project.version}-otel-${Config.Libs.OpenTelemetry.otelInstrumentationVersion}")
             attributes.put("Sentry-Version-Name", project.version)
             attributes.put("Sentry-Opentelemetry-SDK-Name", Config.Sentry.SENTRY_OPENTELEMETRY_AGENT_SDK_NAME)
             attributes.put("Sentry-Opentelemetry-Version-Name", Config.Libs.OpenTelemetry.otelVersion)
-            attributes.put("Sentry-Opentelemetry-Javaagent-Version-Name", Config.Libs.OpenTelemetry.otelJavaagentVersion)
+            attributes.put("Sentry-Opentelemetry-Javaagent-Version-Name", Config.Libs.OpenTelemetry.otelInstrumentationVersion)
         }
     }
 
     assemble {
         dependsOn(shadowJar)
     }
+}
+
+tasks.named("distZip").configure {
+    this.dependsOn("jar")
 }

@@ -2,6 +2,7 @@ package io.sentry.util;
 
 import static io.sentry.util.UrlUtils.SENSITIVE_DATA_SUBSTITUTE;
 
+import io.sentry.HttpStatusCodeRange;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,6 +42,12 @@ public final class HttpUtils {
           "SID",
           "CSRFTOKEN",
           "XSRF-TOKEN");
+
+  private static final HttpStatusCodeRange CLIENT_ERROR_STATUS_CODES =
+      new HttpStatusCodeRange(400, 499);
+
+  private static final HttpStatusCodeRange SEVER_ERROR_STATUS_CODES =
+      new HttpStatusCodeRange(500, 599);
 
   public static boolean containsSensitiveHeader(final @NotNull String header) {
     return SENSITIVE_HEADERS.contains(header.toUpperCase(Locale.ROOT));
@@ -129,5 +136,13 @@ public final class HttpUtils {
     }
 
     return false;
+  }
+
+  public static boolean isHttpClientError(final int statusCode) {
+    return CLIENT_ERROR_STATUS_CODES.isInRange(statusCode);
+  }
+
+  public static boolean isHttpServerError(final int statusCode) {
+    return SEVER_ERROR_STATUS_CODES.isInRange(statusCode);
   }
 }
