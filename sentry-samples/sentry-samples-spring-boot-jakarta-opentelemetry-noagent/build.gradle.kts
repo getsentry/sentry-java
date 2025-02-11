@@ -53,7 +53,6 @@ dependencies {
     implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
     implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
-    implementation(projects.sentryReactor)
 
     // database query tracing
     implementation(projects.sentryJdbc)

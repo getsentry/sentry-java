@@ -54,7 +54,6 @@ dependencies {
     implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
     implementation(Config.Libs.OpenTelemetry.otelSdk)
-    implementation(projects.sentryReactor)
 
     // database query tracing
     implementation(projects.sentryJdbc)

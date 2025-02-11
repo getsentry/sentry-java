@@ -49,7 +49,7 @@ dependencies {
     compileOnly(projects.sentryQuartz)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
-    compileOnly(projects.sentryReactor)
+    api(projects.sentryReactor)
 
     // tests
     testImplementation(projects.sentryTestSupport)
