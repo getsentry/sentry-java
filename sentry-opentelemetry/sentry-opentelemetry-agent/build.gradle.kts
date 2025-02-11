@@ -2,7 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     `java-library`
-    id("com.gradleup.shadow") version "9.0.0-beta8"
+    id("com.gradleup.shadow") version "8.3.6"
 }
 
 fun relocatePackages(shadowJar: ShadowJar) {
@@ -123,8 +123,8 @@ tasks {
 
     // 3. the relocated and isolated javaagent libs are merged together with the bootstrap libs (which undergo relocation
     // in this task) and the upstream javaagent jar; duplicates are removed
-    shadowJar {
-        configurations = listOf(bootstrapLibs, upstreamAgent)
+    named("shadowJar", ShadowJar::class) {
+        configurations = listOf(bootstrapLibs) + listOf(upstreamAgent)
 
         dependsOn(findByName("isolateJavaagentLibs"))
         from(findByName("isolateJavaagentLibs")!!.outputs)
