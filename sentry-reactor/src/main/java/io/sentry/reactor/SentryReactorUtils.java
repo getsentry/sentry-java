@@ -1,15 +1,15 @@
 package io.sentry.reactor;
 
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IScopes;
 import io.sentry.Sentry;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
-@ApiStatus.Experimental
-public final class SentryReactorUtils {
+@Open
+public class SentryReactorUtils {
 
   /**
    * Writes the current Sentry {@link IScopes} to the {@link Context} and uses {@link
