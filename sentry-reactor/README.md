@@ -8,11 +8,11 @@ Please refer to the documentation on how to set up our [Java SDK](https://docs.s
 or our [Spring](https://docs.sentry.io/platforms/java/guides/spring/) 
 or [Spring Boot](https://docs.sentry.io/platforms/java/guides/spring-boot/) integrations if you're using Spring WebFlux.
 
-If you're using our Spring Boot integration, this module will be available and used under the hood to automatically instrument WebFlux.
-If you're using our Spring integration, you need to configure WebFlux as we do in [SentryWebFluxAutoConfiguration](https://github.com/getsentry/sentry-java/blob/a5098280b52aec28c71c150e286b5c937767634d/sentry-spring-boot-jakarta/src/main/java/io/sentry/spring/boot/jakarta/SentryWebfluxAutoConfiguration.java) for Spring Boot.
+If you're using our Spring Boot integration with Spring Boot 3 (`sentry-spring-boot-jakarta`), this module will be available and used under the hood to automatically instrument WebFlux.
+If you're using our Spring integration with Spring 6 (`sentry-spring-jakarta`), you need to configure WebFlux as we do in [SentryWebFluxAutoConfiguration](https://github.com/getsentry/sentry-java/blob/a5098280b52aec28c71c150e286b5c937767634d/sentry-spring-boot-jakarta/src/main/java/io/sentry/spring/boot/jakarta/SentryWebfluxAutoConfiguration.java) for Spring Boot.
 Then, read on to the next section to find out how to use the utilities.
 
-If you're not using Spring or Spring Boot, you'll need to perform the following steps to get started.
+Otherwise, you'll need to perform the following steps to get started.
 
 Add the latest version of `io.sentry.reactor` as a dependency. 
 Make sure you're using `io.micrometer:context-propagation:1.0.2` or later, and `io.projectreactor:reactor-core:3.5.3` or later.
