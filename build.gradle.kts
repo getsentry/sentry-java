@@ -179,8 +179,8 @@ subprojects {
 
         tasks.named("distZip").configure {
             this.dependsOn("publishToMavenLocal")
+            val file = this.project.layout.buildDirectory.file("distributions${sep}${this.project.name}-${this.project.version}.zip").get().asFile
             this.doLast {
-                val file = this.project.layout.buildDirectory.file("distributions${sep}${this.project.name}-${this.project.version}.zip").get().asFile
                 if (!file.exists()) throw IllegalStateException("Distribution file: ${file.absolutePath} does not exist")
                 if (file.length() == 0L) throw IllegalStateException("Distribution file: ${file.absolutePath} is empty")
             }
@@ -300,21 +300,6 @@ gradle.taskGraph.whenReady {
     }
 }
 
-private val androidLibs = setOf(
-    "sentry-android-core",
-    "sentry-android-ndk",
-    "sentry-android-fragment",
-    "sentry-android-navigation",
-    "sentry-android-timber",
-    "sentry-compose-android",
-    "sentry-android-sqlite",
-    "sentry-android-replay"
-)
-
-private val androidXLibs = listOf(
-    "androidx.core:core"
-)
-
 /*
  * Adapted from https://github.com/androidx/androidx/blob/c799cba927a71f01ea6b421a8f83c181682633fb/buildSrc/private/src/main/kotlin/androidx/build/MavenUploadHelper.kt#L524-L549
  *
@@ -334,7 +319,6 @@ private val androidXLibs = listOf(
  */
 
 // Workaround for https://github.com/gradle/gradle/issues/3170
-@Suppress("UnstableApiUsage")
 fun MavenPublishBaseExtension.assignAarTypes() {
     pom {
         withXml {
@@ -356,9 +340,9 @@ fun MavenPublishBaseExtension.assignAarTypes() {
                 } as? Node
                 val artifactIdValue = artifactId?.children()?.firstOrNull() as? String
 
-                if (artifactIdValue in androidLibs) {
+                if (artifactIdValue in Config.BuildScript.androidLibs) {
                     dep.appendNode("type", "aar")
-                } else if ("$groupValue:$artifactIdValue" in androidXLibs) {
+                } else if ("$groupValue:$artifactIdValue" in Config.BuildScript.androidXLibs) {
                     dep.appendNode("type", "aar")
                 }
             }
