@@ -1,7 +1,7 @@
 package io.sentry.spring
 
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.exception.ExceptionMechanismException
@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletResponse
 import kotlin.test.Test
 
 class SentryExceptionResolverTest {
-    private val hub = mock<IHub>()
+    private val scopes = mock<IScopes>()
     private val transactionNameProvider = mock<TransactionNameProvider>()
 
     private val request = mock<HttpServletRequest>()
@@ -26,10 +26,10 @@ class SentryExceptionResolverTest {
     @Test
     fun `when handles exception, sets wrapped exception for event`() {
         val eventCaptor = argumentCaptor<SentryEvent>()
-        whenever(hub.captureEvent(eventCaptor.capture(), any<Hint>())).thenReturn(null)
+        whenever(scopes.captureEvent(eventCaptor.capture(), any<Hint>())).thenReturn(null)
         val expectedCause = RuntimeException("test")
 
-        SentryExceptionResolver(hub, transactionNameProvider, 1)
+        SentryExceptionResolver(scopes, transactionNameProvider, 1)
             .resolveException(request, response, null, expectedCause)
 
         assertThat(eventCaptor.firstValue.throwable).isEqualTo(expectedCause)
@@ -46,9 +46,9 @@ class SentryExceptionResolverTest {
     @Test
     fun `when handles exception, sets fatal level for event`() {
         val eventCaptor = argumentCaptor<SentryEvent>()
-        whenever(hub.captureEvent(eventCaptor.capture(), any<Hint>())).thenReturn(null)
+        whenever(scopes.captureEvent(eventCaptor.capture(), any<Hint>())).thenReturn(null)
 
-        SentryExceptionResolver(hub, transactionNameProvider, 1)
+        SentryExceptionResolver(scopes, transactionNameProvider, 1)
             .resolveException(request, response, null, RuntimeException("test"))
 
         assertThat(eventCaptor.firstValue.level).isEqualTo(SentryLevel.FATAL)
@@ -59,9 +59,9 @@ class SentryExceptionResolverTest {
         val expectedTransactionName = "test-transaction"
         whenever(transactionNameProvider.provideTransactionName(any())).thenReturn(expectedTransactionName)
         val eventCaptor = argumentCaptor<SentryEvent>()
-        whenever(hub.captureEvent(eventCaptor.capture(), any<Hint>())).thenReturn(null)
+        whenever(scopes.captureEvent(eventCaptor.capture(), any<Hint>())).thenReturn(null)
 
-        SentryExceptionResolver(hub, transactionNameProvider, 1)
+        SentryExceptionResolver(scopes, transactionNameProvider, 1)
             .resolveException(request, response, null, RuntimeException("test"))
 
         assertThat(eventCaptor.firstValue.transaction).isEqualTo(expectedTransactionName)
@@ -71,9 +71,9 @@ class SentryExceptionResolverTest {
     @Test
     fun `when handles exception, provides spring resolver hint`() {
         val hintCaptor = argumentCaptor<Hint>()
-        whenever(hub.captureEvent(any(), hintCaptor.capture())).thenReturn(null)
+        whenever(scopes.captureEvent(any(), hintCaptor.capture())).thenReturn(null)
 
-        SentryExceptionResolver(hub, transactionNameProvider, 1)
+        SentryExceptionResolver(scopes, transactionNameProvider, 1)
             .resolveException(request, response, null, RuntimeException("test"))
 
         with(hintCaptor.firstValue) {
@@ -86,8 +86,8 @@ class SentryExceptionResolverTest {
     fun `when custom create event method provided, uses it to capture event`() {
         val expectedEvent = SentryEvent()
         val eventCaptor = argumentCaptor<SentryEvent>()
-        whenever(hub.captureEvent(eventCaptor.capture(), any<Hint>())).thenReturn(null)
-        val resolver = object : SentryExceptionResolver(hub, transactionNameProvider, 1) {
+        whenever(scopes.captureEvent(eventCaptor.capture(), any<Hint>())).thenReturn(null)
+        val resolver = object : SentryExceptionResolver(scopes, transactionNameProvider, 1) {
             override fun createEvent(request: HttpServletRequest, ex: Exception) = expectedEvent
         }
 
@@ -100,8 +100,8 @@ class SentryExceptionResolverTest {
     fun `when custom create hint method provided, uses it to capture event`() {
         val expectedHint = Hint()
         val hintCaptor = argumentCaptor<Hint>()
-        whenever(hub.captureEvent(any(), hintCaptor.capture())).thenReturn(null)
-        val resolver = object : SentryExceptionResolver(hub, transactionNameProvider, 1) {
+        whenever(scopes.captureEvent(any(), hintCaptor.capture())).thenReturn(null)
+        val resolver = object : SentryExceptionResolver(scopes, transactionNameProvider, 1) {
             override fun createHint(request: HttpServletRequest, response: HttpServletResponse) = expectedHint
         }
 

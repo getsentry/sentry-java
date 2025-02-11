@@ -6,8 +6,8 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Hint
-import io.sentry.IHub
 import io.sentry.ILogger
+import io.sentry.IScopes
 import io.sentry.SentryEnvelope
 import io.sentry.SentryLevel
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
@@ -59,7 +59,7 @@ class AnrV2IntegrationTest {
         lateinit var lastReportedAnrFile: File
 
         val options = SentryAndroidOptions()
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val logger = mock<ILogger>()
 
         fun getSut(
@@ -93,7 +93,7 @@ class AnrV2IntegrationTest {
                 lastReportedAnrFile = File(cacheDir, AndroidEnvelopeCache.LAST_ANR_REPORT)
                 lastReportedAnrFile.writeText(lastReportedAnrTimestamp.toString())
             }
-            whenever(hub.captureEvent(any(), anyOrNull<Hint>())).thenReturn(lastEventId)
+            whenever(scopes.captureEvent(any(), anyOrNull<Hint>())).thenReturn(lastEventId)
             return AnrV2Integration(context)
         }
 
@@ -200,7 +200,7 @@ class AnrV2IntegrationTest {
     fun `when cacheDir is not set, does not process historical exits`() {
         val integration = fixture.getSut(null, useImmediateExecutorService = false)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
         verify(fixture.options.executorService, never()).submit(any())
     }
@@ -210,7 +210,7 @@ class AnrV2IntegrationTest {
         val integration =
             fixture.getSut(tmpDir, isAnrEnabled = false, useImmediateExecutorService = false)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
         verify(fixture.options.executorService, never()).submit(any())
     }
@@ -219,9 +219,9 @@ class AnrV2IntegrationTest {
     fun `when historical exit list is empty, does not process historical exits`() {
         val integration = fixture.getSut(tmpDir)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub, never()).captureEvent(any(), anyOrNull<Hint>())
+        verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
     }
 
     @Test
@@ -229,9 +229,9 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(tmpDir)
         fixture.addAppExitInfo(reason = null)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub, never()).captureEvent(any(), anyOrNull<Hint>())
+        verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
     }
 
     @Test
@@ -242,9 +242,9 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(tmpDir)
         fixture.addAppExitInfo(timestamp = oldTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub, never()).captureEvent(any(), anyOrNull<Hint>())
+        verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
     }
 
     @Test
@@ -252,9 +252,9 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
         fixture.addAppExitInfo(timestamp = oldTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub, never()).captureEvent(any(), anyOrNull<Hint>())
+        verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
     }
 
     @Test
@@ -262,9 +262,9 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = null)
         fixture.addAppExitInfo(timestamp = oldTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub).captureEvent(any(), anyOrNull<Hint>())
+        verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
     }
 
     @Test
@@ -272,9 +272,9 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(newTimestamp, it.timestamp.time)
                 assertEquals(SentryLevel.FATAL, it.level)
@@ -321,9 +321,9 @@ class AnrV2IntegrationTest {
             importance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
         )
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             any(),
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
@@ -341,7 +341,7 @@ class AnrV2IntegrationTest {
         )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
-        whenever(fixture.hub.captureEvent(any(), any<Hint>())).thenAnswer { invocation ->
+        whenever(fixture.scopes.captureEvent(any(), any<Hint>())).thenAnswer { invocation ->
             val hint = HintUtils.getSentrySdkHint(invocation.getArgument(1))
                 as DiskFlushNotification
             thread {
@@ -351,9 +351,9 @@ class AnrV2IntegrationTest {
             SentryId()
         }
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub).captureEvent(any(), anyOrNull<Hint>())
+        verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
         // shouldn't fall into timed out state, because we marked event as flushed on another thread
         verify(fixture.logger, never()).log(
             any(),
@@ -371,9 +371,9 @@ class AnrV2IntegrationTest {
         )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub).captureEvent(any(), anyOrNull<Hint>())
+        verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
         // we do not call markFlushed, hence it should time out waiting for flush, but because
         // we drop the event, it should not even come to this if-check
         verify(fixture.logger, never()).log(
@@ -390,9 +390,9 @@ class AnrV2IntegrationTest {
         fixture.addAppExitInfo(timestamp = newTimestamp - 1 * 60 * 1000)
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub, times(2)).captureEvent(
+        verify(fixture.scopes, times(2)).captureEvent(
             any(),
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
@@ -412,10 +412,10 @@ class AnrV2IntegrationTest {
         fixture.addAppExitInfo(timestamp = newTimestamp - 1 * 60 * 1000)
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
         // only the latest anr is reported which should be enrichable
-        verify(fixture.hub, atMost(1)).captureEvent(
+        verify(fixture.scopes, atMost(1)).captureEvent(
             any(),
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
@@ -432,20 +432,20 @@ class AnrV2IntegrationTest {
         fixture.addAppExitInfo(timestamp = newTimestamp - TimeUnit.DAYS.toMillis(1))
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
         // the order is reverse here, so the oldest ANR will be reported first to keep track of
         // last reported ANR in a marker file
-        inOrder(fixture.hub) {
-            verify(fixture.hub).captureEvent(
+        inOrder(fixture.scopes) {
+            verify(fixture.scopes).captureEvent(
                 argThat { timestamp.time == newTimestamp - TimeUnit.DAYS.toMillis(2) },
                 anyOrNull<Hint>()
             )
-            verify(fixture.hub).captureEvent(
+            verify(fixture.scopes).captureEvent(
                 argThat { timestamp.time == newTimestamp - TimeUnit.DAYS.toMillis(1) },
                 anyOrNull<Hint>()
             )
-            verify(fixture.hub).captureEvent(
+            verify(fixture.scopes).captureEvent(
                 argThat { timestamp.time == newTimestamp },
                 anyOrNull<Hint>()
             )
@@ -457,9 +457,9 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             any(),
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
@@ -473,9 +473,9 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             any(),
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
@@ -502,7 +502,7 @@ class AnrV2IntegrationTest {
             )
         }
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
         // we store envelope with StartSessionHint on different thread after some delay, which
         // triggers the previous session flush, so no timeout
@@ -523,14 +523,14 @@ class AnrV2IntegrationTest {
         )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
         verify(fixture.logger, never()).log(
             any(),
             argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
             any<Any>()
         )
-        verify(fixture.hub).captureEvent(any(), any<Hint>())
+        verify(fixture.scopes).captureEvent(any(), any<Hint>())
     }
 
     @Test
@@ -542,7 +542,7 @@ class AnrV2IntegrationTest {
         )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
         verify(fixture.logger).log(
             any(),
@@ -562,9 +562,9 @@ class AnrV2IntegrationTest {
         )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             any(),
             check<Hint> {
                 assertNotNull(it.threadDump)
@@ -577,9 +577,9 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
         fixture.addAppExitInfo(timestamp = newTimestamp, addTrace = false)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub, never()).captureEvent(any(), anyOrNull<Hint>())
+        verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
     }
 
     @Test
@@ -587,8 +587,8 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
         fixture.addAppExitInfo(timestamp = newTimestamp, addBadTrace = true)
 
-        integration.register(fixture.hub, fixture.options)
+        integration.register(fixture.scopes, fixture.options)
 
-        verify(fixture.hub, never()).captureEvent(any(), anyOrNull<Hint>())
+        verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
     }
 }

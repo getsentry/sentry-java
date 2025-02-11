@@ -2,20 +2,22 @@ package io.sentry.util;
 
 import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
-import io.sentry.IHub;
+import io.sentry.FilterString;
 import io.sentry.IScope;
+import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class TracingUtils {
 
-  public static void startNewTrace(final @NotNull IHub hub) {
-    hub.configureScope(
+  public static void startNewTrace(final @NotNull IScopes scopes) {
+    scopes.configureScope(
         scope -> {
           scope.withPropagationContext(
               propagationContext -> {
@@ -25,30 +27,30 @@ public final class TracingUtils {
   }
 
   public static @Nullable TracingHeaders traceIfAllowed(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @NotNull String requestUrl,
       @Nullable List<String> thirdPartyBaggageHeaders,
       final @Nullable ISpan span) {
-    final @NotNull SentryOptions sentryOptions = hub.getOptions();
+    final @NotNull SentryOptions sentryOptions = scopes.getOptions();
     if (sentryOptions.isTraceSampling() && shouldAttachTracingHeaders(requestUrl, sentryOptions)) {
-      return trace(hub, thirdPartyBaggageHeaders, span);
+      return trace(scopes, thirdPartyBaggageHeaders, span);
     }
 
     return null;
   }
 
   public static @Nullable TracingHeaders trace(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       @Nullable List<String> thirdPartyBaggageHeaders,
       final @Nullable ISpan span) {
-    final @NotNull SentryOptions sentryOptions = hub.getOptions();
+    final @NotNull SentryOptions sentryOptions = scopes.getOptions();
 
     if (span != null && !span.isNoOp()) {
       return new TracingHeaders(
           span.toSentryTrace(), span.toBaggageHeader(thirdPartyBaggageHeaders));
     } else {
       final @NotNull PropagationContextHolder returnValue = new PropagationContextHolder();
-      hub.configureScope(
+      scopes.configureScope(
           (scope) -> {
             returnValue.propagationContext = maybeUpdateBaggage(scope, sentryOptions);
           });
@@ -64,7 +66,9 @@ public final class TracingUtils {
 
         return new TracingHeaders(
             new SentryTraceHeader(
-                propagationContext.getTraceId(), propagationContext.getSpanId(), null),
+                propagationContext.getTraceId(),
+                propagationContext.getSpanId(),
+                propagationContext.isSampled()),
             baggageHeader);
       }
 
@@ -115,5 +119,37 @@ public final class TracingUtils {
     public @Nullable BaggageHeader getBaggageHeader() {
       return baggageHeader;
     }
+  }
+
+  /** Checks if a transaction is to be ignored. */
+  @ApiStatus.Internal
+  public static boolean isIgnored(
+      final @Nullable List<FilterString> ignoredTransactions,
+      final @Nullable String transactionName) {
+    if (transactionName == null) {
+      return false;
+    }
+    if (ignoredTransactions == null || ignoredTransactions.isEmpty()) {
+      return false;
+    }
+
+    for (final FilterString ignoredTransaction : ignoredTransactions) {
+      if (ignoredTransaction.getFilterString().equalsIgnoreCase(transactionName)) {
+        return true;
+      }
+    }
+
+    for (final FilterString ignoredTransaction : ignoredTransactions) {
+
+      try {
+        if (ignoredTransaction.matches(transactionName)) {
+          return true;
+        }
+      } catch (Throwable t) {
+        // ignore invalid regex
+      }
+    }
+
+    return false;
   }
 }

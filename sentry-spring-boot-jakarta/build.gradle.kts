@@ -30,6 +30,7 @@ dependencies {
     compileOnly(Config.Libs.springBoot3Starter)
     compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
     compileOnly(projects.sentryGraphql)
+    compileOnly(projects.sentryGraphql22)
     compileOnly(projects.sentryQuartz)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springWebflux)
@@ -40,7 +41,9 @@ dependencies {
     compileOnly(Config.Libs.springBoot3StarterQuartz)
     compileOnly(Config.Libs.reactorCore)
     compileOnly(Config.Libs.contextPropagation)
+    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
 
     annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
@@ -55,6 +58,8 @@ dependencies {
     // tests
     testImplementation(projects.sentryLogback)
     testImplementation(projects.sentryQuartz)
+    testImplementation(projects.sentryGraphql)
+    testImplementation(projects.sentryGraphql22)
     testImplementation(projects.sentryApacheHttpClient5)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
@@ -71,8 +76,15 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterSecurity)
     testImplementation(Config.Libs.springBoot3StarterAop)
     testImplementation(Config.Libs.springBoot3StarterQuartz)
-    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
+    testImplementation(Config.Libs.springBoot3StarterGraphql)
     testImplementation(Config.Libs.contextPropagation)
+    testImplementation(Config.Libs.OpenTelemetry.otelSdk)
+    testImplementation(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)
+    testImplementation(Config.Libs.springBoot3StarterOpenTelemetry)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 }
 
 configure<SourceSetContainer> {

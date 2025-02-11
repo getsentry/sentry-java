@@ -1,10 +1,14 @@
 package io.sentry.backpressure;
 
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ISentryExecutorService;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.util.AutoClosableReentrantLock;
+import java.util.concurrent.Future;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class BackpressureMonitor implements IBackpressureMonitor, Runnable {
   static final int MAX_DOWNSAMPLE_FACTOR = 10;
@@ -12,12 +16,15 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
   private static final int CHECK_INTERVAL_IN_MS = 10 * 1000;
 
   private final @NotNull SentryOptions sentryOptions;
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
   private int downsampleFactor = 0;
+  private volatile @Nullable Future<?> latestScheduledRun = null;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
-  public BackpressureMonitor(final @NotNull SentryOptions sentryOptions, final @NotNull IHub hub) {
+  public BackpressureMonitor(
+      final @NotNull SentryOptions sentryOptions, final @NotNull IScopes scopes) {
     this.sentryOptions = sentryOptions;
-    this.hub = hub;
+    this.scopes = scopes;
   }
 
   @Override
@@ -34,6 +41,16 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
   @Override
   public int getDownsampleFactor() {
     return downsampleFactor;
+  }
+
+  @Override
+  public void close() {
+    final @Nullable Future<?> currentRun = latestScheduledRun;
+    if (currentRun != null) {
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        currentRun.cancel(true);
+      }
+    }
   }
 
   void checkHealth() {
@@ -61,11 +78,13 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
   private void reschedule(final int delay) {
     final @NotNull ISentryExecutorService executorService = sentryOptions.getExecutorService();
     if (!executorService.isClosed()) {
-      executorService.schedule(this, delay);
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        latestScheduledRun = executorService.schedule(this, delay);
+      }
     }
   }
 
   private boolean isHealthy() {
-    return hub.isHealthy();
+    return scopes.isHealthy();
   }
 }

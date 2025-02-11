@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -9,14 +10,19 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Has been moved to `sentry` gradle module to include it in the bootstrap classloader without
  * having to introduce yet another module for OpenTelemetry support.
+ *
+ * @deprecated please use SentryWeakSpanStorage (from sentry-opentelemetry-bootstrap) instead.
  */
+@Deprecated
 @ApiStatus.Internal
 public final class SentrySpanStorage {
   private static volatile @Nullable SentrySpanStorage INSTANCE;
+  private static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
 
   public static @NotNull SentrySpanStorage getInstance() {
     if (INSTANCE == null) {
-      synchronized (SentrySpanStorage.class) {
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (INSTANCE == null) {
           INSTANCE = new SentrySpanStorage();
         }

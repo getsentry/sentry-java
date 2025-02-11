@@ -2,7 +2,7 @@ package io.sentry.android.core.performance
 
 import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
@@ -17,6 +17,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.util.Date
 import java.util.concurrent.TimeUnit
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -28,18 +29,17 @@ import kotlin.test.assertTrue
 class ActivityLifecycleSpanHelperTest {
     private class Fixture {
         val appStartSpan: ISpan
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val options = SentryOptions()
         val date = SentryNanotimeDate(Date(1), 1000000)
         val endDate = SentryNanotimeDate(Date(3), 3000000)
 
         init {
-            whenever(hub.options).thenReturn(options)
+            whenever(scopes.options).thenReturn(options)
             appStartSpan = Span(
                 TransactionContext("name", "op", TracesSamplingDecision(true)),
-                SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), hub),
-                hub,
-                null,
+                SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), scopes),
+                scopes,
                 SpanOptions()
             )
         }
@@ -48,6 +48,11 @@ class ActivityLifecycleSpanHelperTest {
         }
     }
     private val fixture = Fixture()
+
+    @BeforeTest
+    fun setup() {
+        AppStartMetrics.getInstance().clear()
+    }
 
     @Test
     fun `createAndStopOnCreateSpan creates and finishes onCreate span`() {

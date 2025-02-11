@@ -14,38 +14,42 @@ class GraphqlProjectSystemTest {
     @Before
     fun setup() {
         testHelper = TestHelper("http://localhost:8080")
+        testHelper.reset()
     }
 
     @Test
     fun `project query works`() {
-        testHelper.snapshotEnvelopeCount()
-
         val response = testHelper.graphqlClient.project("proj-slug")
 
         testHelper.ensureNoErrors(response)
         assertEquals("proj-slug", response?.data?.project?.slug)
-        testHelper.ensureEnvelopeCountIncreased()
+        testHelper.ensureTransactionReceived { transaction ->
+            testHelper.doesTransactionContainSpanWithDescription(transaction, "Query.project")
+        }
     }
 
     @Test
     fun `project mutation works`() {
-        testHelper.snapshotEnvelopeCount()
-
         val response = testHelper.graphqlClient.addProject("proj-slug")
 
         testHelper.ensureNoErrors(response)
         assertNotNull(response?.data?.addProject)
-        testHelper.ensureEnvelopeCountIncreased()
+        testHelper.ensureTransactionReceived { transaction ->
+            testHelper.doesTransactionContainSpanWithDescription(transaction, "Mutation.addProject")
+        }
     }
 
     @Test
     fun `project mutation error`() {
-        testHelper.snapshotEnvelopeCount()
-
         val response = testHelper.graphqlClient.addProject("addprojectcrash")
 
         testHelper.ensureErrorCount(response, 1)
         assertNull(response?.data?.addProject)
-        testHelper.ensureEnvelopeCountIncreased()
+        testHelper.ensureErrorReceived { error ->
+            error.message?.message?.startsWith("Unresolved RuntimeException for executionId ") ?: false
+        }
+        testHelper.ensureTransactionReceived { transaction ->
+            testHelper.doesTransactionContainSpanWithDescription(transaction, "Mutation.addProject")
+        }
     }
 }

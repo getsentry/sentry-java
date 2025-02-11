@@ -1,6 +1,10 @@
 package io.sentry.android.ndk;
 
+import io.sentry.android.core.NdkHandlerStrategy;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.ndk.NativeModuleListLoader;
+import io.sentry.ndk.NdkOptions;
+import io.sentry.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
@@ -16,16 +20,9 @@ public final class SentryNdk {
   static {
     new Thread(
             () -> {
-              // On older Android versions, it was necessary to manually call "`System.loadLibrary`
-              // on all
-              // transitive dependencies before loading [the] main library."
-              // The dependencies of `libsentry.so` are currently `lib{c,m,dl,log}.so`.
-              // See
-              // https://android.googlesource.com/platform/bionic/+/master/android-changes-for-ndk-developers.md#changes-to-library-dependency-resolution
               try {
-                System.loadLibrary("log");
-                System.loadLibrary("sentry");
-                System.loadLibrary("sentry-android");
+                //noinspection UnstableApiUsage
+                io.sentry.ndk.SentryNdk.loadNativeLibraries();
               } catch (Throwable t) {
                 // ignored
                 // if loadLibrary() fails, the later init() will throw an exception anyway
@@ -37,10 +34,6 @@ public final class SentryNdk {
         .start();
   }
 
-  private static native void initSentryNative(@NotNull final SentryAndroidOptions options);
-
-  private static native void shutdown();
-
   /**
    * Init the NDK integration
    *
@@ -50,7 +43,30 @@ public final class SentryNdk {
     SentryNdkUtil.addPackage(options.getSdkVersion());
     try {
       if (loadLibraryLatch.await(2000, TimeUnit.MILLISECONDS)) {
-        initSentryNative(options);
+        final @NotNull NdkOptions ndkOptions =
+            new NdkOptions(
+                Objects.requireNonNull(options.getDsn(), "DSN is required for sentry-ndk"),
+                options.isDebug(),
+                Objects.requireNonNull(
+                    options.getOutboxPath(), "outbox path is required for sentry-ndk"),
+                options.getRelease(),
+                options.getEnvironment(),
+                options.getDist(),
+                options.getMaxBreadcrumbs(),
+                options.getNativeSdkName());
+
+        final int handlerStrategy = options.getNdkHandlerStrategy();
+        if (handlerStrategy == NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_DEFAULT.getValue()) {
+          ndkOptions.setNdkHandlerStrategy(
+              io.sentry.ndk.NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_DEFAULT);
+        } else if (handlerStrategy
+            == NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START.getValue()) {
+          ndkOptions.setNdkHandlerStrategy(
+              io.sentry.ndk.NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START);
+        }
+
+        //noinspection UnstableApiUsage
+        io.sentry.ndk.SentryNdk.init(ndkOptions);
 
         // only add scope sync observer if the scope sync is enabled.
         if (options.isEnableScopeSync()) {
@@ -71,7 +87,8 @@ public final class SentryNdk {
   public static void close() {
     try {
       if (loadLibraryLatch.await(2000, TimeUnit.MILLISECONDS)) {
-        shutdown();
+        //noinspection UnstableApiUsage
+        io.sentry.ndk.SentryNdk.close();
       } else {
         throw new IllegalStateException("Timeout waiting for Sentry NDK library to load");
       }

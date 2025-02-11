@@ -8,7 +8,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -25,7 +25,7 @@ public final class AppComponentsBreadcrumbsIntegration
     implements Integration, Closeable, ComponentCallbacks2 {
 
   private final @NotNull Context context;
-  private @Nullable IHub hub;
+  private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
 
   public AppComponentsBreadcrumbsIntegration(final @NotNull Context context) {
@@ -34,8 +34,8 @@ public final class AppComponentsBreadcrumbsIntegration
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    this.hub = Objects.requireNonNull(hub, "Hub is required");
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -102,7 +102,7 @@ public final class AppComponentsBreadcrumbsIntegration
   }
 
   private void captureLowMemoryBreadcrumb(final long timeMs, final @Nullable Integer level) {
-    if (hub != null) {
+    if (scopes != null) {
       final Breadcrumb breadcrumb = new Breadcrumb(timeMs);
       if (level != null) {
         // only add breadcrumb if TRIM_MEMORY_BACKGROUND, TRIM_MEMORY_MODERATE or
@@ -126,13 +126,13 @@ public final class AppComponentsBreadcrumbsIntegration
       breadcrumb.setMessage("Low memory");
       breadcrumb.setData("action", "LOW_MEMORY");
       breadcrumb.setLevel(SentryLevel.WARNING);
-      hub.addBreadcrumb(breadcrumb);
+      scopes.addBreadcrumb(breadcrumb);
     }
   }
 
   private void captureConfigurationChangedBreadcrumb(
       final long timeMs, final @NotNull Configuration newConfig) {
-    if (hub != null) {
+    if (scopes != null) {
       final Device.DeviceOrientation deviceOrientation =
           DeviceOrientations.getOrientation(context.getResources().getConfiguration().orientation);
 
@@ -152,7 +152,7 @@ public final class AppComponentsBreadcrumbsIntegration
       final Hint hint = new Hint();
       hint.set(ANDROID_CONFIGURATION, newConfig);
 
-      hub.addBreadcrumb(breadcrumb, hint);
+      scopes.addBreadcrumb(breadcrumb, hint);
     }
   }
 

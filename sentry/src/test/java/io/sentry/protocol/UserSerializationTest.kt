@@ -29,7 +29,7 @@ class UserSerializationTest {
                 countryCode = "JP"
                 region = "273a3d0a-b1c5-11ed-afa1-0242ac120002"
             }
-            others = mapOf(
+            data = mapOf(
                 "dc2813d0-0f66-4a3f-a995-71268f61a8fa" to "991659ad-7c59-4dd3-bb89-0bd5c74014bd"
             )
         }
@@ -47,23 +47,6 @@ class UserSerializationTest {
     fun deserialize() {
         val expectedJson = sanitizedFile("json/user.json")
         val actual = deserialize(expectedJson)
-        val actualJson = serialize(actual)
-        assertEquals(expectedJson, actualJson)
-    }
-
-    @Test
-    fun `deserialize legacy`() {
-        var expectedJson = sanitizedFile("json/user.json")
-        val expected = deserialize(expectedJson)
-
-        // Not part of this test
-        expected.name = null
-        expected.geo = null
-
-        expectedJson = serialize(expected)
-
-        val inputJson = sanitizedFile("json/user_legacy.json")
-        val actual = deserialize(inputJson)
         val actualJson = serialize(actual)
         assertEquals(expectedJson, actualJson)
     }

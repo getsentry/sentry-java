@@ -16,7 +16,7 @@ import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.totalPaddingTopSafe
 
 @TargetApi(26)
-sealed class ViewHierarchyNode(
+internal sealed class ViewHierarchyNode(
     val x: Float,
     val y: Float,
     val width: Int,

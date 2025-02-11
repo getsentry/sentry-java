@@ -4,7 +4,7 @@ import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import io.sentry.test.injectForField
-import io.sentry.util.thread.MainThreadChecker
+import io.sentry.util.thread.ThreadChecker
 import org.mockito.kotlin.any
 import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.eq
@@ -28,12 +28,12 @@ class DefaultTransactionPerformanceCollectorTest {
     private val className = "io.sentry.DefaultTransactionPerformanceCollector"
     private val ctorTypes: Array<Class<*>> = arrayOf(SentryOptions::class.java)
     private val fixture = Fixture()
-    private val mainThreadChecker = MainThreadChecker.getInstance()
+    private val threadChecker = ThreadChecker.getInstance()
 
     private class Fixture {
         lateinit var transaction1: ITransaction
         lateinit var transaction2: ITransaction
-        val hub: IHub = mock()
+        val scopes: IScopes = mock()
         val options = SentryOptions()
         var mockTimer: Timer? = null
         val deferredExecutorService = DeferredExecutorService()
@@ -47,7 +47,7 @@ class DefaultTransactionPerformanceCollectorTest {
         }
 
         init {
-            whenever(hub.options).thenReturn(options)
+            whenever(scopes.options).thenReturn(options)
         }
 
         fun getSut(memoryCollector: IPerformanceSnapshotCollector? = JavaMemoryCollector(), cpuCollector: IPerformanceSnapshotCollector? = mockCpuCollector, executorService: ISentryExecutorService = deferredExecutorService): TransactionPerformanceCollector {
@@ -59,8 +59,8 @@ class DefaultTransactionPerformanceCollectorTest {
             if (memoryCollector != null) {
                 options.addPerformanceCollector(memoryCollector)
             }
-            transaction1 = SentryTracer(TransactionContext("", ""), hub)
-            transaction2 = SentryTracer(TransactionContext("", ""), hub)
+            transaction1 = SentryTracer(TransactionContext("", ""), scopes)
+            transaction2 = SentryTracer(TransactionContext("", ""), scopes)
             val collector = DefaultTransactionPerformanceCollector(options)
             val timer: Timer = collector.getProperty("timer") ?: Timer(true)
             mockTimer = spy(timer)
@@ -324,13 +324,13 @@ class DefaultTransactionPerformanceCollectorTest {
     inner class ThreadCheckerCollector :
         IPerformanceSnapshotCollector {
         override fun setup() {
-            if (mainThreadChecker.isMainThread) {
+            if (threadChecker.isMainThread) {
                 throw AssertionError("setup() was called in the main thread")
             }
         }
 
         override fun collect(performanceCollectionData: PerformanceCollectionData) {
-            if (mainThreadChecker.isMainThread) {
+            if (threadChecker.isMainThread) {
                 throw AssertionError("collect() was called in the main thread")
             }
         }

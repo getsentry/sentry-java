@@ -1,16 +1,12 @@
 public final class io/sentry/kotlin/SentryContext : kotlin/coroutines/AbstractCoroutineContextElement, kotlinx/coroutines/CopyableThreadContextElement {
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/IHub;)V
-	public synthetic fun <init> (Lio/sentry/IHub;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/IScopes;)V
+	public synthetic fun <init> (Lio/sentry/IScopes;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun copyForChild ()Lkotlinx/coroutines/CopyableThreadContextElement;
-	public fun fold (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
-	public fun get (Lkotlin/coroutines/CoroutineContext$Key;)Lkotlin/coroutines/CoroutineContext$Element;
 	public fun mergeForChild (Lkotlin/coroutines/CoroutineContext$Element;)Lkotlin/coroutines/CoroutineContext;
-	public fun minusKey (Lkotlin/coroutines/CoroutineContext$Key;)Lkotlin/coroutines/CoroutineContext;
-	public fun plus (Lkotlin/coroutines/CoroutineContext;)Lkotlin/coroutines/CoroutineContext;
-	public fun restoreThreadContext (Lkotlin/coroutines/CoroutineContext;Lio/sentry/IHub;)V
+	public fun restoreThreadContext (Lkotlin/coroutines/CoroutineContext;Lio/sentry/IScopes;)V
 	public synthetic fun restoreThreadContext (Lkotlin/coroutines/CoroutineContext;Ljava/lang/Object;)V
-	public fun updateThreadContext (Lkotlin/coroutines/CoroutineContext;)Lio/sentry/IHub;
+	public fun updateThreadContext (Lkotlin/coroutines/CoroutineContext;)Lio/sentry/IScopes;
 	public synthetic fun updateThreadContext (Lkotlin/coroutines/CoroutineContext;)Ljava/lang/Object;
 }
 

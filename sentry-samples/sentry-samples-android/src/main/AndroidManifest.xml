@@ -6,12 +6,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- add extra permission (optional) -->
-    <!-- extra recommended permission, we'd be able to collect device ringing breadcrumbs (PhoneStateBreadcrumbsIntegration) -->
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <!-- Just some random permissions to showcase the permission context sent to Sentry -->
     <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <!-- Needed by leakcanary.NotificationEventListener -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
@@ -19,9 +16,12 @@
     <uses-sdk
         tools:overrideLibrary="io.sentry.android"/>
 
-    <application
+  <uses-feature
+    android:name="android.hardware.camera"
+    android:required="false" />
+
+  <application
         android:name=".MyApplication"
-        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -66,9 +66,6 @@
       <activity android:name=".FrameDataForSpansActivity"
         android:exported="false"/>
 
-      <activity android:name=".MetricsActivity"
-        android:exported="false"/>
-
         <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
         <meta-data android:name="io.sentry.dsn" android:value="https://1053864c67cc410aa1ffc9701bd6f93d@o447951.ingest.sentry.io/5428559" />
 
@@ -108,15 +105,14 @@
         <!--    how to change the session tracking interval-->
         <meta-data android:name="io.sentry.session-tracking.timeout-interval-millis" android:value="10000" />
 
-        <!--    how to enable the performance API by either enabling tracing or setting a sample-rate-->
-        <meta-data android:name="io.sentry.traces.enable" android:value="true" />
-<!-- how to set custom sample rate different from the default 1.0 -->
-<!--        <meta-data android:name="io.sentry.traces.sample-rate" android:value="0.8" /> -->
+        <!-- how to enable the performance API by setting a sample-rate (0.0 to 1.0) -->
+        <!-- a sample-rate of 0.0 will disable the performance API  -->
+        <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
 
         <!--    how to enable profiling when starting transactions -->
         <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1" />
 
-      <!--    how to enable app start profiling -->
+        <!--    how to enable app start profiling -->
         <meta-data android:name="io.sentry.traces.profiling.enable-app-start" android:value="true" />
 
         <!--    how to disable the Activity auto instrumentation for tracing-->
@@ -165,8 +161,6 @@
         <!--    <meta-data android:name="io.sentry.enabled" android:value="false" /> -->
 
       <meta-data android:name="io.sentry.performance-v2.enable" android:value="true" />
-
-      <meta-data android:name="io.sentry.enable-metrics" android:value="true" />
 
       <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1" />
       <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="true" />

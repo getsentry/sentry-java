@@ -147,7 +147,7 @@ internal val TextView.totalPaddingTopSafe: Int
  */
 internal fun Int.toOpaque() = this or 0xFF000000.toInt()
 
-class AndroidTextLayout(private val layout: Layout) : TextLayout {
+internal class AndroidTextLayout(private val layout: Layout) : TextLayout {
     override val lineCount: Int get() = layout.lineCount
     override val dominantTextColor: Int? get() {
         if (layout.text !is Spanned) return null
@@ -184,12 +184,20 @@ internal fun View?.addOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListen
     if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
         return
     }
-    viewTreeObserver.addOnDrawListener(listener)
+    try {
+        viewTreeObserver.addOnDrawListener(listener)
+    } catch (e: IllegalStateException) {
+        // viewTreeObserver is already dead
+    }
 }
 
 internal fun View?.removeOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListener) {
     if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
         return
     }
-    viewTreeObserver.removeOnDrawListener(listener)
+    try {
+        viewTreeObserver.removeOnDrawListener(listener)
+    } catch (e: IllegalStateException) {
+        // viewTreeObserver is already dead
+    }
 }

@@ -44,4 +44,15 @@ public interface EventProcessor {
   default SentryReplayEvent process(@NotNull SentryReplayEvent event, @NotNull Hint hint) {
     return event;
   }
+
+  /**
+   * Controls when this EventProcessor is invoked.
+   *
+   * @return order higher number = later, lower number = earlier (negative values may also be
+   *     passed), null = latest (note: multiple event processors using null may lead to random
+   *     ordering)
+   */
+  default @Nullable Long getOrder() {
+    return null;
+  }
 }

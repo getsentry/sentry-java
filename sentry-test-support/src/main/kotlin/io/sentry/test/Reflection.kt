@@ -12,16 +12,23 @@ inline fun <reified T : Any> T.callMethod(name: String, parameterTypes: Class<*>
     val declaredMethod = try {
         T::class.java.getDeclaredMethod(name, parameterTypes)
     } catch (e: NoSuchMethodException) {
-        T::class.java.interfaces.first { it.containsMethod(name, parameterTypes) }.getDeclaredMethod(name, parameterTypes)
+        collectInterfaceHierarchy(T::class.java).first { it.containsMethod(name, parameterTypes) }.getDeclaredMethod(name, parameterTypes)
     }
     return declaredMethod.invoke(this, value)
+}
+
+fun collectInterfaceHierarchy(clazz: Class<*>): List<Class<*>> {
+    if (clazz.interfaces.isEmpty()) {
+        return listOf(clazz)
+    }
+    return clazz.interfaces.flatMap { iface -> collectInterfaceHierarchy(iface) }.also { it.toMutableList().add(clazz) }
 }
 
 inline fun <reified T : Any> T.callMethod(name: String, parameterTypes: Array<Class<*>>, vararg value: Any?): Any? {
     val declaredMethod = try {
         T::class.java.getDeclaredMethod(name, *parameterTypes)
     } catch (e: NoSuchMethodException) {
-        T::class.java.interfaces.first { it.containsMethod(name, parameterTypes) }.getDeclaredMethod(name, *parameterTypes)
+        collectInterfaceHierarchy(T::class.java).first { it.containsMethod(name, parameterTypes) }.getDeclaredMethod(name, *parameterTypes)
     }
     return declaredMethod.invoke(this, *value)
 }

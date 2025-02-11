@@ -18,7 +18,7 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
@@ -39,12 +39,12 @@ import kotlin.test.assertTrue
 class SentryInstrumentationTest {
 
     class Fixture {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         lateinit var activeSpan: SentryTracer
 
-        fun getSut(isTransactionActive: Boolean = true, dataFetcherThrows: Boolean = false, beforeSpan: SentryInstrumentation.BeforeSpanCallback? = null): GraphQL {
-            whenever(hub.options).thenReturn(SentryOptions())
-            activeSpan = SentryTracer(TransactionContext("name", "op"), hub)
+        fun getSut(isTransactionActive: Boolean = true, dataFetcherThrows: Boolean = false, beforeSpan: SentryGraphqlInstrumentation.BeforeSpanCallback? = null): GraphQL {
+            whenever(scopes.options).thenReturn(SentryOptions())
+            activeSpan = SentryTracer(TransactionContext("name", "op"), scopes)
             val schema = """
             type Query {
                 shows: [Show]
@@ -61,9 +61,9 @@ class SentryInstrumentationTest {
                 .build()
 
             if (isTransactionActive) {
-                whenever(hub.span).thenReturn(activeSpan)
+                whenever(scopes.span).thenReturn(activeSpan)
             } else {
-                whenever(hub.span).thenReturn(null)
+                whenever(scopes.span).thenReturn(null)
             }
 
             return graphQL
@@ -87,7 +87,7 @@ class SentryInstrumentationTest {
     fun `when transaction is active, creates inner spans`() {
         val sut = fixture.getSut()
 
-        withMockHub {
+        withMockScopes {
             val result = sut.execute("{ shows { id } }")
 
             assertTrue(result.errors.isEmpty())
@@ -105,7 +105,7 @@ class SentryInstrumentationTest {
     fun `when transaction is active, and data fetcher throws, creates inner spans`() {
         val sut = fixture.getSut(dataFetcherThrows = true)
 
-        withMockHub {
+        withMockScopes {
             val result = sut.execute("{ shows { id } }")
 
             assertTrue(result.errors.isNotEmpty())
@@ -122,7 +122,7 @@ class SentryInstrumentationTest {
     fun `when transaction is not active, does not create spans`() {
         val sut = fixture.getSut(isTransactionActive = false)
 
-        withMockHub {
+        withMockScopes {
             val result = sut.execute("{ shows { id } }")
 
             assertTrue(result.errors.isEmpty())
@@ -132,9 +132,9 @@ class SentryInstrumentationTest {
 
     @Test
     fun `beforeSpan can drop spans`() {
-        val sut = fixture.getSut(beforeSpan = SentryInstrumentation.BeforeSpanCallback { _, _, _ -> null })
+        val sut = fixture.getSut(beforeSpan = SentryGraphqlInstrumentation.BeforeSpanCallback { _, _, _ -> null })
 
-        withMockHub {
+        withMockScopes {
             val result = sut.execute("{ shows { id } }")
 
             assertTrue(result.errors.isEmpty())
@@ -150,9 +150,9 @@ class SentryInstrumentationTest {
 
     @Test
     fun `beforeSpan can modify spans`() {
-        val sut = fixture.getSut(beforeSpan = SentryInstrumentation.BeforeSpanCallback { span, _, _ -> span.apply { description = "changed" } })
+        val sut = fixture.getSut(beforeSpan = SentryGraphqlInstrumentation.BeforeSpanCallback { span, _, _ -> span.apply { description = "changed" } })
 
-        withMockHub {
+        withMockScopes {
             val result = sut.execute("{ shows { id } }")
 
             assertTrue(result.errors.isEmpty())
@@ -198,7 +198,7 @@ class SentryInstrumentationTest {
             environment,
             executionStrategyParameters,
             false
-        ).withNewState(SentryInstrumentation.TracingState())
+        ).withNewState(SentryGraphqlInstrumentation.TracingState())
         val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, parameters)
         val result = instrumentedDataFetcher.get(environment)
 
@@ -208,19 +208,19 @@ class SentryInstrumentationTest {
 
     @Test
     fun `Integration adds itself to integration and package list`() {
-        withMockHub {
+        withMockScopes {
             val sut = fixture.getSut()
-            assertNotNull(fixture.hub.options.sdkVersion)
-            assert(fixture.hub.options.sdkVersion!!.integrationSet.contains("GraphQL"))
+            assertNotNull(fixture.scopes.options.sdkVersion)
+            assert(fixture.scopes.options.sdkVersion!!.integrationSet.contains("GraphQL"))
             val packageInfo =
-                fixture.hub.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-graphql" }
+                fixture.scopes.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-graphql" }
             assertNotNull(packageInfo)
             assert(packageInfo.version == BuildConfig.VERSION_NAME)
         }
     }
 
-    fun withMockHub(closure: () -> Unit) = Mockito.mockStatic(Sentry::class.java).use {
-        it.`when`<Any> { Sentry.getCurrentHub() }.thenReturn(fixture.hub)
+    fun withMockScopes(closure: () -> Unit) = Mockito.mockStatic(Sentry::class.java).use {
+        it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
         closure.invoke()
     }
 

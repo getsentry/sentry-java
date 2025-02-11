@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MICROSECONDS
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
-class SimpleMp4FrameMuxer(path: String, fps: Float) : SimpleFrameMuxer {
+internal class SimpleMp4FrameMuxer(path: String, fps: Float) : SimpleFrameMuxer {
     private val frameDurationUsec: Long = (TimeUnit.SECONDS.toMicros(1L) / fps).toLong()
 
     private val muxer: MediaMuxer = MediaMuxer(path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)

@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.annotations.VisibleForTesting;
 
-/** Registers hook that flushes {@link Hub} when main thread shuts down. */
+/** Registers hook that flushes {@link Scopes} when main thread shuts down. */
 public final class ShutdownHookIntegration implements Integration, Closeable {
 
   private final @NotNull Runtime runtime;
@@ -27,12 +27,12 @@ public final class ShutdownHookIntegration implements Integration, Closeable {
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(hub, "Hub is required");
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(scopes, "Scopes are required");
     Objects.requireNonNull(options, "SentryOptions is required");
 
     if (options.isEnableShutdownHook()) {
-      thread = new Thread(() -> hub.flush(options.getFlushTimeoutMillis()));
+      thread = new Thread(() -> scopes.flush(options.getFlushTimeoutMillis()));
       handleShutdownInProgress(
           () -> {
             runtime.addShutdownHook(thread);

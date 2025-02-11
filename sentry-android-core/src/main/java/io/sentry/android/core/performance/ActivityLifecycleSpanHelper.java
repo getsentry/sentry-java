@@ -36,18 +36,18 @@ public class ActivityLifecycleSpanHelper {
     this.onStartStartTimestamp = onStartStartTimestamp;
   }
 
-  public void createAndStopOnCreateSpan(final @Nullable ISpan appStartSpan) {
-    if (onCreateStartTimestamp != null && appStartSpan != null) {
+  public void createAndStopOnCreateSpan(final @Nullable ISpan parentSpan) {
+    if (onCreateStartTimestamp != null && parentSpan != null) {
       onCreateSpan =
-          createLifecycleSpan(appStartSpan, activityName + ".onCreate", onCreateStartTimestamp);
+          createLifecycleSpan(parentSpan, activityName + ".onCreate", onCreateStartTimestamp);
       onCreateSpan.finish();
     }
   }
 
-  public void createAndStopOnStartSpan(final @Nullable ISpan appStartSpan) {
-    if (onStartStartTimestamp != null && appStartSpan != null) {
+  public void createAndStopOnStartSpan(final @Nullable ISpan parentSpan) {
+    if (onStartStartTimestamp != null && parentSpan != null) {
       onStartSpan =
-          createLifecycleSpan(appStartSpan, activityName + ".onStart", onStartStartTimestamp);
+          createLifecycleSpan(parentSpan, activityName + ".onStart", onStartStartTimestamp);
       onStartSpan.finish();
     }
   }
@@ -106,19 +106,18 @@ public class ActivityLifecycleSpanHelper {
   }
 
   private @NotNull ISpan createLifecycleSpan(
-      final @NotNull ISpan appStartSpan,
+      final @NotNull ISpan parentSpan,
       final @NotNull String description,
       final @NotNull SentryDate startTimestamp) {
     final @NotNull ISpan span =
-        appStartSpan.startChild(
+        parentSpan.startChild(
             APP_METRICS_ACTIVITIES_OP, description, startTimestamp, Instrumenter.SENTRY);
     setDefaultStartSpanData(span);
     return span;
   }
 
   public void clear() {
-    // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
-    // memory leak
+    // in case the parentSpan isn't completed yet, we finish it as cancelled to avoid memory leak
     if (onCreateSpan != null && !onCreateSpan.isFinished()) {
       onCreateSpan.finish(SpanStatus.CANCELLED);
     }
