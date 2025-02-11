@@ -334,3 +334,7 @@ public final class io/sentry/spring/jakarta/webflux/SentryWebFilterWithThreadLoc
 	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
 }
 
+public final class io/sentry/spring/jakarta/webflux/reactor/ReactorUtils : io/sentry/reactor/SentryReactorUtils {
+	public fun <init> ()V
+}
+

@@ -14,7 +14,7 @@ public final class io/sentry/reactor/SentryReactorThreadLocalAccessor : io/micro
 	public synthetic fun setValue (Ljava/lang/Object;)V
 }
 
-public final class io/sentry/reactor/SentryReactorUtils {
+public class io/sentry/reactor/SentryReactorUtils {
 	public fun <init> ()V
 	public static fun withSentry (Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;
 	public static fun withSentry (Lreactor/core/publisher/Mono;)Lreactor/core/publisher/Mono;
