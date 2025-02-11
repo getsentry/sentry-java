@@ -54,7 +54,7 @@ For more complex use cases, you can also use `withSentryForkedRoots` to fork the
 
 For more information on scopes and scope forking, please consult our [scopes documentation](https://docs.sentry.io/platforms/java/enriching-events/scopes).
 
-Examples of usage of this module with (Spring WebFlux) are provided in 
+Examples of usage of this module (with Spring WebFlux) are provided in 
 [sentry-samples-spring-boot-webflux](https://github.com/getsentry/sentry-java/tree/main/sentry-samples/sentry-samples-spring-boot-webflux)
 and
 [sentry-samples-spring-boot-webflux-jakarta](https://github.com/getsentry/sentry-java/tree/main/sentry-samples/sentry-samples-spring-boot-webflux-jakarta)
