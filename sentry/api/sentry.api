@@ -30,7 +30,6 @@ public abstract interface class io/sentry/BackfillingEventProcessor : io/sentry/
 }
 
 public final class io/sentry/Baggage {
-	public static final field NOOP Lio/sentry/Baggage;
 	public fun <init> (Lio/sentry/Baggage;)V
 	public fun <init> (Lio/sentry/ILogger;)V
 	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZZLio/sentry/ILogger;)V
@@ -1946,7 +1945,6 @@ public final class io/sentry/ProfilingTransactionData$JsonKeys {
 }
 
 public final class io/sentry/PropagationContext {
-	public static field NOOP Lio/sentry/PropagationContext;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/PropagationContext;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Lio/sentry/Baggage;Ljava/lang/Boolean;)V
