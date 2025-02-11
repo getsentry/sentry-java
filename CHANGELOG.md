@@ -13,7 +13,7 @@
 
 ### Features
 
-- (Internal) Add API to filter native debug images based on stacktrace addresses ([#4089](https://github.com/getsentry/sentry-java/pull/4089))
+- (Internal) Add API to filter native debug images based on stacktrace addresses ([#4159](https://github.com/getsentry/sentry-java/pull/4159))
 
 ## 7.21.0
 
