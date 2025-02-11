@@ -11,10 +11,11 @@ private object Consts {
 fun DistributionContainer.configureForMultiplatform(project: Project) {
     val sep = File.separator
     val version = project.properties["versionName"].toString()
+    val name = project.name
 
     this.maybeCreate("android").contents {
         from("build${sep}publications${sep}androidRelease") {
-            renameModule(project.name, "android", version = version)
+            renameModule(name, "android", version = version)
         }
         from("build${sep}outputs${sep}aar") {
             include("*-release*")
@@ -32,7 +33,7 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
     }
     this.getByName("main").contents {
         from("build${sep}publications${sep}kotlinMultiplatform") {
-            renameModule(project.name, version = version)
+            renameModule(name, version = version)
         }
         from("build${sep}kotlinToolingMetadata")
         from("build${sep}libs") {
@@ -48,7 +49,7 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
     this.maybeCreate("desktop").contents {
         // kotlin multiplatform modules
         from("build${sep}publications${sep}desktop") {
-            renameModule(project.name, "desktop", version = version)
+            renameModule(name, "desktop", version = version)
         }
         from("build${sep}libs") {
             include("*desktop*")
@@ -69,27 +70,28 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
 fun DistributionContainer.configureForJvm(project: Project) {
     val sep = File.separator
     val version = project.properties["versionName"].toString()
+    val name = project.name
 
     this.getByName("main").contents {
         // non android modules
         from("build${sep}libs")
         from("build${sep}publications${sep}maven") {
-            renameModule(project.name, version = version)
+            renameModule(name, version = version)
         }
         // android modules
         from("build${sep}outputs${sep}aar") {
             include("*-release*")
         }
         from("build${sep}publications${sep}release") {
-            renameModule(project.name, version = version)
+            renameModule(name, version = version)
         }
         from("build${sep}intermediates${sep}java_doc_jar${sep}release") {
             include("*javadoc*")
-            rename { it.replace("release", "${project.name}-$version") }
+            rename { it.replace("release", "$name-$version") }
         }
         from("build${sep}intermediates${sep}source_jar${sep}release") {
             include("*sources*")
-            rename { it.replace("release", "${project.name}-$version") }
+            rename { it.replace("release", "$name-$version") }
         }
     }
 }
