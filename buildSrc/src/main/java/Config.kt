@@ -27,8 +27,9 @@ object Config {
         val grettyVersion = "4.0.0"
         val gradleMavenPublishPlugin = "com.vanniktech.maven.publish"
         val gradleMavenPublishPluginVersion = "0.30.0"
-        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:1.9.20"
+        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:2.0.0"
         val dokkaPluginAlias = "org.jetbrains.dokka"
+        val dokkaPluginJavadocAlias = "org.jetbrains.dokka-javadoc"
         val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
         val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"
     }
@@ -270,5 +271,22 @@ object Config {
         val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
         val errorprone = "com.google.errorprone:error_prone_core:2.11.0"
         val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.5"
+    }
+
+    object BuildScript {
+        val androidLibs = setOf(
+            "sentry-android-core",
+            "sentry-android-ndk",
+            "sentry-android-fragment",
+            "sentry-android-navigation",
+            "sentry-android-timber",
+            "sentry-compose-android",
+            "sentry-android-sqlite",
+            "sentry-android-replay"
+        )
+
+        val androidXLibs = listOf(
+            "androidx.core:core"
+        )
     }
 }

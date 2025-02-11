@@ -10,6 +10,7 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
     id(Config.BuildPlugins.dokkaPluginAlias)
+    id(Config.BuildPlugins.dokkaPluginJavadocAlias)
     `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
 }
 
@@ -81,7 +82,9 @@ android {
     }
 
     buildTypes {
-        getByName("debug")
+        getByName("debug") {
+            consumerProguardFiles("proguard-rules.pro")
+        }
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }
