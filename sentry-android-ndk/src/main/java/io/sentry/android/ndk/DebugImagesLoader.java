@@ -6,7 +6,6 @@ import io.sentry.android.core.IDebugImagesLoader;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.protocol.DebugImage;
 import io.sentry.util.Objects;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
