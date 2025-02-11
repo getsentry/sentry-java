@@ -112,10 +112,10 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
   }
 
   /**
-   * Finds a debug image containing the given address using binary search. Requires the images to be
-   * sorted.
+   * Finds all debug image containing the given addresses. Assumes that the images are sorted by
+   * address, which should always be true on Linux/Android and Windows platforms
    *
-   * @return The matching debug image or null if not found
+   * @return All matching debug images or null if none are found
    */
   private @NotNull Set<DebugImage> filterImagesByAddresses(
       final @NotNull List<DebugImage> images, final @NotNull Set<String> addresses) {
