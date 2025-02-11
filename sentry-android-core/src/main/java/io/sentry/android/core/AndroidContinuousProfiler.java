@@ -36,7 +36,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 @ApiStatus.Internal
 public class AndroidContinuousProfiler
     implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
-  private static final long MAX_CHUNK_DURATION_MILLIS = 10000;
+  private static final long MAX_CHUNK_DURATION_MILLIS = 60000;
 
   private final @NotNull ILogger logger;
   private final @Nullable String profilingTracesDirPath;
