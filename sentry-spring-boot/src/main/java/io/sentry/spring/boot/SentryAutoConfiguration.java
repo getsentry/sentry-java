@@ -22,6 +22,7 @@ import io.sentry.spring.SentrySpringFilter;
 import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryWebConfiguration;
+import io.sentry.spring.SpringProfilesEventProcessor;
 import io.sentry.spring.SpringSecuritySentryUserProvider;
 import io.sentry.spring.boot.graphql.SentryGraphqlAutoConfiguration;
 import io.sentry.spring.checkin.SentryCheckInAdviceConfiguration;

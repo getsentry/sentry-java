@@ -23,6 +23,7 @@ import io.sentry.spring.jakarta.SentrySpringFilter;
 import io.sentry.spring.jakarta.SentryUserFilter;
 import io.sentry.spring.jakarta.SentryUserProvider;
 import io.sentry.spring.jakarta.SentryWebConfiguration;
+import io.sentry.spring.jakarta.SpringProfilesEventProcessor;
 import io.sentry.spring.jakarta.SpringSecuritySentryUserProvider;
 import io.sentry.spring.jakarta.checkin.SentryCheckInAdviceConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryCheckInPointcutConfiguration;

@@ -28,6 +28,7 @@ import io.sentry.spring.jakarta.HttpServletRequestSentryUserProvider
 import io.sentry.spring.jakarta.SentryExceptionResolver
 import io.sentry.spring.jakarta.SentryUserFilter
 import io.sentry.spring.jakarta.SentryUserProvider
+import io.sentry.spring.jakarta.SpringProfilesEventProcessor
 import io.sentry.spring.jakarta.SpringSecuritySentryUserProvider
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter
 import io.sentry.spring.jakarta.tracing.SpringServletTransactionNameProvider
