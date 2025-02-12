@@ -1,4 +1,4 @@
-package io.sentry.spring.jakarta.webflux
+package io.sentry.reactor
 
 import io.sentry.IScopes
 import io.sentry.NoOpScopes
@@ -18,11 +18,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 
-class ReactorUtilsTest {
+class SentryReactorUtilsTest {
 
     @BeforeTest
     fun setup() {
         Hooks.enableAutomaticContextPropagation()
+        Sentry.init("https://key@sentry.io/proj")
     }
 
     @AfterTest
@@ -34,7 +35,7 @@ class ReactorUtilsTest {
     fun `propagates scopes inside mono`() {
         val scopesToUse = mock<IScopes>()
         var scopesInside: IScopes? = null
-        val mono = ReactorUtils.withSentryScopes(
+        val mono = SentryReactorUtils.withSentryScopes(
             Mono.just("hello")
                 .publishOn(Schedulers.boundedElastic())
                 .map { it ->
@@ -52,7 +53,7 @@ class ReactorUtilsTest {
     fun `propagates scopes inside flux`() {
         val scopesToUse = mock<IScopes>()
         var scopesInside: IScopes? = null
-        val flux = ReactorUtils.withSentryScopes(
+        val flux = SentryReactorUtils.withSentryScopes(
             Flux.just("hello")
                 .publishOn(Schedulers.boundedElastic())
                 .map { it ->
@@ -101,7 +102,7 @@ class ReactorUtilsTest {
         val mockScopes = mock<IScopes>()
         whenever(mockScopes.forkedCurrentScope(any())).thenReturn(mock<IScopes>())
         Sentry.setCurrentScopes(mockScopes)
-        ReactorUtils.withSentry(Mono.just("hello")).block()
+        SentryReactorUtils.withSentry(Mono.just("hello")).block()
 
         verify(mockScopes).forkedCurrentScope(any())
     }
@@ -111,7 +112,7 @@ class ReactorUtilsTest {
         val mockScopes = mock<IScopes>()
         whenever(mockScopes.forkedCurrentScope(any())).thenReturn(mock<IScopes>())
         Sentry.setCurrentScopes(mockScopes)
-        ReactorUtils.withSentry(Flux.just("hello")).blockFirst()
+        SentryReactorUtils.withSentry(Flux.just("hello")).blockFirst()
 
         verify(mockScopes).forkedCurrentScope(any())
     }

@@ -44,6 +44,7 @@ dependencies {
     compileOnly(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    api(projects.sentryReactor)
 
     annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
@@ -85,6 +86,7 @@ dependencies {
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
+    testImplementation(projects.sentryReactor)
 }
 
 configure<SourceSetContainer> {

@@ -52,6 +52,7 @@ include(
     "sentry-opentelemetry:sentry-opentelemetry-agentless-spring",
     "sentry-quartz",
     "sentry-okhttp",
+    "sentry-reactor",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
     "sentry-samples:sentry-samples-console-opentelemetry-noagent",
