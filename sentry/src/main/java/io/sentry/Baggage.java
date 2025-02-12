@@ -368,6 +368,11 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  public void forceSetSampleRate(final @Nullable String sampleRate) {
+    set(DSCKeys.SAMPLE_RATE, sampleRate, true);
+  }
+
+  @ApiStatus.Internal
   public @Nullable String getSampleRand() {
     return get(DSCKeys.SAMPLE_RAND);
   }
@@ -399,7 +404,18 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public void set(final @NotNull String key, final @Nullable String value) {
-    if (mutable) {
+    set(key, value, false);
+  }
+
+  /**
+   * Sets / updates a value
+   *
+   * @param key key
+   * @param value value to set
+   * @param force ignores mutability of this baggage and sets the value anyways
+   */
+  private void set(final @NotNull String key, final @Nullable String value, final boolean force) {
+    if (mutable || force) {
       this.keyValues.put(key, value);
     }
   }
@@ -439,6 +455,25 @@ public final class Baggage {
     }
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
     setSampled(StringUtils.toString(sampled(samplingDecision)));
+    setSampleRand(sampleRateToString(sampleRand(samplingDecision))); // TODO check
+  }
+
+  @ApiStatus.Internal
+  public void setValuesFromSamplingDecision(
+      final @Nullable TracesSamplingDecision samplingDecision) {
+    if (samplingDecision == null) {
+      return;
+    }
+
+    setSampled(StringUtils.toString(sampled(samplingDecision)));
+
+    if (samplingDecision.getSampleRand() != null) {
+      setSampleRand(sampleRateToString(sampleRand(samplingDecision)));
+    }
+
+    if (samplingDecision.getSampleRate() != null) {
+      forceSetSampleRate(sampleRateToString(sampleRate(samplingDecision)));
+    }
   }
 
   @ApiStatus.Internal
@@ -464,6 +499,14 @@ public final class Baggage {
     }
 
     return samplingDecision.getSampleRate();
+  }
+
+  private static @Nullable Double sampleRand(@Nullable TracesSamplingDecision samplingDecision) {
+    if (samplingDecision == null) {
+      return null;
+    }
+
+    return samplingDecision.getSampleRand();
   }
 
   private static @Nullable String sampleRateToString(@Nullable Double sampleRateAsDouble) {

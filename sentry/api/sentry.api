@@ -33,6 +33,7 @@ public final class io/sentry/Baggage {
 	public fun <init> (Lio/sentry/Baggage;)V
 	public fun <init> (Lio/sentry/ILogger;)V
 	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZZLio/sentry/ILogger;)V
+	public fun forceSetSampleRate (Ljava/lang/String;)V
 	public fun freeze ()V
 	public static fun fromEvent (Lio/sentry/SentryEvent;Lio/sentry/SentryOptions;)Lio/sentry/Baggage;
 	public static fun fromHeader (Ljava/lang/String;)Lio/sentry/Baggage;
@@ -70,6 +71,7 @@ public final class io/sentry/Baggage {
 	public fun setTraceId (Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUserId (Ljava/lang/String;)V
+	public fun setValuesFromSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setValuesFromScope (Lio/sentry/IScope;Lio/sentry/SentryOptions;)V
 	public fun setValuesFromTransaction (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Lio/sentry/SentryOptions;Lio/sentry/TracesSamplingDecision;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun toHeaderString (Ljava/lang/String;)Ljava/lang/String;
