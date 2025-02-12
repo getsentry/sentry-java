@@ -197,7 +197,8 @@ public final class TracingUtils {
       final @Nullable Double sampleRateMaybe =
           baggageSampleRate == null ? decisionSampleRate : baggageSampleRate;
       final @NotNull Double sampleRand =
-          SampleRateUtils.backfilledSampleRand(decisionSampleRand, sampleRateMaybe, decisionSampled);
+          SampleRateUtils.backfilledSampleRand(
+              decisionSampleRand, sampleRateMaybe, decisionSampled);
       baggage.setSampleRandDouble(sampleRand);
     }
     if (baggage.isMutable()) {
