@@ -104,6 +104,17 @@ public final class Baggage {
               final String valueDecoded = decode(value);
 
               keyValues.put(keyDecoded, valueDecoded);
+
+              // Without ignoring SAMPLE_RAND here, we'd be freezing baggage that we're transporting
+              // via OTel span attributes.
+              // This is done when a transaction is created via Sentry API.
+              // In that case Baggage is created before the OTel span is created and we put it on
+              // the span attributes.
+              // It does however only contain the sample random value as its only value.
+              // The OTel code then uses it to create a propagation context from it and ends up
+              // freezing it,
+              // preventing outgoing requests (to other systems or Sentry) from adding info to
+              // baggage and only then freeze it.
               if (!DSCKeys.SAMPLE_RAND.equalsIgnoreCase(key)) {
                 shouldFreeze = true;
               }

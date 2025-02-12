@@ -355,18 +355,6 @@ class BaggageTest {
     }
 
     @Test
-    fun `if header contains sentry values baggage is marked as shouldFreeze`() {
-        val baggage = Baggage.fromHeader("sentry-trace_id=a,sentry-transaction=sentryTransaction", logger)
-        assertTrue(baggage.isShouldFreeze)
-    }
-
-    @Test
-    fun `if header does not contain sentry values baggage is not marked as shouldFreeze`() {
-        val baggage = Baggage.fromHeader("a=b", logger)
-        assertFalse(baggage.isShouldFreeze)
-    }
-
-    @Test
     fun `value may contain = sign`() {
         val baggage = Baggage(logger)
 

@@ -177,7 +177,7 @@ class SampleRateUtilTest {
     }
 
     @Test
-    fun `backfills sampleRand if missing with sampled true below samlpe rate`() {
+    fun `backfills sampleRand if missing with sampled true below sample rate`() {
         val sampleRand = SampleRateUtils.backfilledSampleRand(null, 0.0001, true)
         assertNotNull(sampleRand)
         assertTrue(sampleRand >= 0)

@@ -21,26 +21,14 @@ public final class TransactionContext extends SpanContext {
   @ApiStatus.Internal
   public static TransactionContext fromPropagationContext(
       final @NotNull PropagationContext propagationContext) {
-    @Nullable Boolean parentSampled = propagationContext.isSampled();
-    TracesSamplingDecision samplingDecision =
+    final @Nullable Boolean parentSampled = propagationContext.isSampled();
+    final @NotNull Baggage baggage = propagationContext.getBaggage();
+    final @Nullable Double sampleRate = baggage.getSampleRateDouble();
+    final @Nullable TracesSamplingDecision samplingDecision =
         parentSampled == null
             ? null
-            : new TracesSamplingDecision(parentSampled, null, propagationContext.getSampleRand());
-
-    @NotNull Baggage baggage = propagationContext.getBaggage();
-
-    Double sampleRate = baggage.getSampleRateDouble();
-    if (parentSampled != null) {
-      if (sampleRate != null) {
-        samplingDecision =
-            new TracesSamplingDecision(
-                parentSampled.booleanValue(), sampleRate, propagationContext.getSampleRand());
-      } else {
-        samplingDecision =
-            new TracesSamplingDecision(
-                parentSampled.booleanValue(), null, propagationContext.getSampleRand());
-      }
-    }
+            : new TracesSamplingDecision(
+                parentSampled, sampleRate, propagationContext.getSampleRand());
 
     return new TransactionContext(
         propagationContext.getTraceId(),
