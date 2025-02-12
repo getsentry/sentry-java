@@ -609,7 +609,7 @@ class BaggageTest {
         assertEquals("0.121", baggage.sampleRate)
         assertEquals("0.025", baggage.sampleRand)
     }
-    
+
     fun `sample rate can be retrieved as double`() {
         val baggage = Baggage.fromHeader("a=b,c=d")
         baggage.sampleRate = "0.1"
