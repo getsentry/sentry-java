@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.2.0
 
 ### Breaking Changes
 
