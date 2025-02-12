@@ -13,9 +13,12 @@
 - Expose new `withSentryObservableEffect` method overload that accepts `SentryNavigationListener` as a parameter ([#4143](https://github.com/getsentry/sentry-java/pull/4143))
   - This allows sharing the same `SentryNavigationListener` instance across fragments and composables to preserve the trace 
 - (Internal) Add API to filter native debug images based on stacktrace addresses ([#4089](https://github.com/getsentry/sentry-java/pull/4089))
+- Propagate sampling random value ([#4153](https://github.com/getsentry/sentry-java/pull/4153))
+  - The random value used for sampling traces is now sent to Sentry and attached to the `baggage` header on outgoing requests
 
 ### Fixes
 
+- Log a warning when envelope or items are dropped due to rate limiting ([#4148](https://github.com/getsentry/sentry-java/pull/4148))
 - Do not log if `OtelContextScopesStorage` cannot be found ([#4127](https://github.com/getsentry/sentry-java/pull/4127))
   - Previously `java.lang.ClassNotFoundException: io.sentry.opentelemetry.OtelContextScopesStorage` was shown in the log if the class could not be found.
   - This is just a lookup the SDK performs to configure itself. The SDK also works without OpenTelemetry.

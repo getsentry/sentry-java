@@ -10,6 +10,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class BaggageTest {
@@ -607,6 +608,40 @@ class BaggageTest {
         assertEquals("true", baggage.sampled)
         assertEquals("0.121", baggage.sampleRate)
         assertEquals("0.025", baggage.sampleRand)
+    }
+    
+    fun `sample rate can be retrieved as double`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.sampleRate = "0.1"
+        assertEquals(0.1, baggage.sampleRateDouble)
+    }
+
+    @Test
+    fun `sample rand can be retrieved as double`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.sampleRand = "0.1"
+        assertEquals(0.1, baggage.sampleRandDouble)
+    }
+
+    @Test
+    fun `sample rand can be set as double`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.sampleRandDouble = 0.1
+        assertEquals("0.1", baggage.sampleRand)
+    }
+
+    @Test
+    fun `broken sample rand returns null double`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.sampleRand = "a0.1"
+        assertNull(baggage.sampleRandDouble)
+    }
+
+    @Test
+    fun `broken sample rate returns null double`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.sampleRate = "a0.1"
+        assertNull(baggage.sampleRateDouble)
     }
 
     /**

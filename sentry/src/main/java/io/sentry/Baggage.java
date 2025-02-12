@@ -535,12 +535,20 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public @Nullable Double getSampleRateDouble() {
-    final String sampleRateString = getSampleRate();
-    if (sampleRateString != null) {
+    return toDouble(getSampleRate());
+  }
+
+  @ApiStatus.Internal
+  public @Nullable Double getSampleRandDouble() {
+    return toDouble(getSampleRand());
+  }
+
+  private @Nullable Double toDouble(final @Nullable String stringValue) {
+    if (stringValue != null) {
       try {
-        double sampleRate = Double.parseDouble(sampleRateString);
-        if (SampleRateUtils.isValidTracesSampleRate(sampleRate, false)) {
-          return sampleRate;
+        double doubleValue = Double.parseDouble(stringValue);
+        if (SampleRateUtils.isValidTracesSampleRate(doubleValue, false)) {
+          return doubleValue;
         }
       } catch (NumberFormatException e) {
         return null;
