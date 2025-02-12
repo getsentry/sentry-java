@@ -49,6 +49,33 @@ You can use the utilities provided by this module to wrap `Mono` and `Flux` obje
 For normal use cases, you should wrap your operations on `Mono` or `Flux` objects using the `withSentry` function.
 This will fork the *current scopes* and use them throughout the stream's execution context.
 
+For example:
+```java
+import reactor.core.publisher.Mono;
+import io.sentry.Sentry;
+import io.sentry.ISpan;
+import io.sentry.ITransaction;
+import io.sentry.TransactionOptions; 
+
+TransactionOptions txOptions = new TransactionOptions();
+txOptions.setBindToScope(true);
+ITransaction tx = Sentry.startTransaction("Transaction", "op", txOptions);
+ISpan child = tx.startChild("Outside Mono", "op")
+Sentry.captureMessage("Message outside Mono")
+child.finish()
+String result = SentryReactorUtils.withSentry(
+  Mono.just("hello")
+    .map({ (it) ->
+      ISpan span = Sentry.getCurrentScopes().transaction.startChild("Inside Mono", "map");
+      Sentry.captureMessage("Message inside Mono");
+      span.finish();
+      return it;
+    })
+).block();
+System.out.println(result);
+tx.finish();
+```
+
 For more complex use cases, you can also use `withSentryForkedRoots` to fork the root scopes or `withSentryScopes` to wrap the operation in arbitrary scopes.
 
 For more information on scopes and scope forking, please consult our [scopes documentation](https://docs.sentry.io/platforms/java/enriching-events/scopes).
