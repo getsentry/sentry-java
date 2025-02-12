@@ -16,6 +16,7 @@ jobs:
     continue-on-error: true
     env:
       SENTRY_URL: http://127.0.0.1:8000
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
     strategy:
       fail-fast: false
       matrix:
@@ -59,6 +60,7 @@ jobs:
         uses: gradle/actions/setup-gradle@aa23778d2dc6f6556fcc7164e99babbd8c3134e4 # pin@v3
         with:
           gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Exclude android modules from build
         run: |
@@ -91,11 +93,11 @@ jobs:
 
       - name: Build server jar
         run: |
-          ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar --no-configuration-cache
+          ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar
 
       - name: Build agent jar
         run: |
-          ./gradlew :sentry-opentelemetry:sentry-opentelemetry-agent:assemble --no-configuration-cache
+          ./gradlew :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
 
       - name: Start server and run integration test for sentry-cli commands
         run: |
