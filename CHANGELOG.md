@@ -16,6 +16,7 @@
 
 ### Fixes
 
+- Log a warning when envelope or items are dropped due to rate limiting ([#4148](https://github.com/getsentry/sentry-java/pull/4148))
 - Do not log if `OtelContextScopesStorage` cannot be found ([#4127](https://github.com/getsentry/sentry-java/pull/4127))
   - Previously `java.lang.ClassNotFoundException: io.sentry.opentelemetry.OtelContextScopesStorage` was shown in the log if the class could not be found.
   - This is just a lookup the SDK performs to configure itself. The SDK also works without OpenTelemetry.
