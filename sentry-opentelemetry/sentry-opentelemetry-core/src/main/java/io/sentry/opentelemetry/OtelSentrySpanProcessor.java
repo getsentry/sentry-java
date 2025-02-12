@@ -70,15 +70,10 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
         baggage = baggageFromContext;
       }
 
-      final @Nullable Boolean baggageMutable =
-          otelSpan.getAttribute(InternalSemanticAttributes.BAGGAGE_MUTABLE);
       final @Nullable String baggageString =
           otelSpan.getAttribute(InternalSemanticAttributes.BAGGAGE);
       if (baggageString != null) {
         baggage = Baggage.fromHeader(baggageString);
-        if (baggageMutable == true) {
-          baggage.freeze();
-        }
       }
 
       final @Nullable Boolean sampled = isSampled(otelSpan, samplingDecision);
@@ -86,6 +81,8 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
       final @NotNull PropagationContext propagationContext =
           new PropagationContext(
               new SentryId(traceId), sentrySpanId, sentryParentSpanId, baggage, sampled);
+
+      baggage = propagationContext.getBaggage();
 
       updatePropagationContext(scopes, propagationContext);
     }

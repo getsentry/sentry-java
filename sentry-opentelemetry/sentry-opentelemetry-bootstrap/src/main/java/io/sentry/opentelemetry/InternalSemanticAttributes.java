@@ -8,6 +8,8 @@ public final class InternalSemanticAttributes {
   public static final AttributeKey<Boolean> SAMPLED = AttributeKey.booleanKey("sentry.sampled");
   public static final AttributeKey<Double> SAMPLE_RATE =
       AttributeKey.doubleKey("sentry.sample_rate");
+  public static final AttributeKey<Double> SAMPLE_RAND =
+      AttributeKey.doubleKey("sentry.sample_rand");
   public static final AttributeKey<Boolean> PARENT_SAMPLED =
       AttributeKey.booleanKey("sentry.parent_sampled");
   public static final AttributeKey<Boolean> PROFILE_SAMPLED =

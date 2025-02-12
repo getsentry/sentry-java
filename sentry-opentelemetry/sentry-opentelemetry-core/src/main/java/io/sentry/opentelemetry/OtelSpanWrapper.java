@@ -64,7 +64,6 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   private final @NotNull Contexts contexts = new Contexts();
   private @Nullable String transactionName;
   private @Nullable TransactionNameSource transactionNameSource;
-  private final @Nullable Baggage baggage;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
@@ -86,17 +85,12 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.span = new WeakReference<>(span);
     this.startTimestamp = startTimestamp;
-
-    if (parentSpan != null) {
-      this.baggage = parentSpan.getSpanContext().getBaggage();
-    } else if (baggage != null) {
-      this.baggage = baggage;
-    } else {
-      this.baggage = null;
-    }
-
+    final @Nullable Baggage baggageToUse =
+        baggage != null
+            ? baggage
+            : (parentSpan != null ? parentSpan.getSpanContext().getBaggage() : null);
     this.context =
-        new OtelSpanContext(span, samplingDecision, parentSpan, parentSpanId, this.baggage);
+        new OtelSpanContext(span, samplingDecision, parentSpan, parentSpanId, baggageToUse);
   }
 
   @Override
@@ -207,15 +201,16 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   @Override
   public @Nullable TraceContext traceContext() {
     if (scopes.getOptions().isTraceSampling()) {
+      final @Nullable Baggage baggage = context.getBaggage();
       if (baggage != null) {
-        updateBaggageValues();
+        updateBaggageValues(baggage);
         return baggage.toTraceContext();
       }
     }
     return null;
   }
 
-  private void updateBaggageValues() {
+  private void updateBaggageValues(final @NotNull Baggage baggage) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (baggage != null && baggage.isMutable()) {
         final AtomicReference<SentryId> replayIdAtomicReference = new AtomicReference<>();
@@ -238,8 +233,9 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   @Override
   public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
     if (scopes.getOptions().isTraceSampling()) {
+      final @Nullable Baggage baggage = context.getBaggage();
       if (baggage != null) {
-        updateBaggageValues();
+        updateBaggageValues(baggage);
         return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
       }
     }
