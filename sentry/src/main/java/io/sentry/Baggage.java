@@ -558,22 +558,6 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
-  public @Nullable Double getSampleRandDouble() {
-    final String sampleRandString = getSampleRand();
-    if (sampleRandString != null) {
-      try {
-        double sampleRand = Double.parseDouble(sampleRandString);
-        if (SampleRateUtils.isValidTracesSampleRate(sampleRand, false)) {
-          return sampleRand;
-        }
-      } catch (NumberFormatException e) {
-        return null;
-      }
-    }
-    return null;
-  }
-
-  @ApiStatus.Internal
   @Nullable
   public TraceContext toTraceContext() {
     final String traceIdString = getTraceId();
