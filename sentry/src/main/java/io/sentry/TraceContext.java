@@ -178,7 +178,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     if (sampleRate != null) {
       writer.name(TraceContext.JsonKeys.SAMPLE_RATE).value(sampleRate);
     }
-    if (sampleRate != null) {
+    if (sampleRand != null) {
       writer.name(TraceContext.JsonKeys.SAMPLE_RAND).value(sampleRand);
     }
     if (sampled != null) {
