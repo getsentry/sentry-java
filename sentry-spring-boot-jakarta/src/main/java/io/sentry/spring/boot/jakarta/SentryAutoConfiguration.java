@@ -23,6 +23,7 @@ import io.sentry.spring.jakarta.SentrySpringFilter;
 import io.sentry.spring.jakarta.SentryUserFilter;
 import io.sentry.spring.jakarta.SentryUserProvider;
 import io.sentry.spring.jakarta.SentryWebConfiguration;
+import io.sentry.spring.jakarta.SpringProfilesEventProcessor;
 import io.sentry.spring.jakarta.SpringSecuritySentryUserProvider;
 import io.sentry.spring.jakarta.checkin.SentryCheckInAdviceConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryCheckInPointcutConfiguration;
@@ -68,6 +69,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -469,5 +471,15 @@ public class SentryAutoConfiguration {
     @ConditionalOnBean(SentryOptions.TracesSamplerCallback.class)
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryTracesSamplerBeanCondition {}
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @Open
+  static class SpringProfilesEventProcessorConfiguration {
+    @Bean
+    public @NotNull SpringProfilesEventProcessor springProfilesEventProcessor(
+        final Environment environment) {
+      return new SpringProfilesEventProcessor(environment);
+    }
   }
 }
