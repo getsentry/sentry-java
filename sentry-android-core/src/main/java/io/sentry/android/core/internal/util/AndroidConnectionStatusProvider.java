@@ -4,17 +4,19 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.ConnectivityManager.NetworkCallback;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
-import androidx.annotation.NonNull;
 import io.sentry.IConnectionStatusProvider;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
-import java.util.HashMap;
-import java.util.Map;
+import io.sentry.util.AutoClosableReentrantLock;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,8 +33,9 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   private final @NotNull Context context;
   private final @NotNull ILogger logger;
   private final @NotNull BuildInfoProvider buildInfoProvider;
-  private final @NotNull Map<IConnectionStatusObserver, ConnectivityManager.NetworkCallback>
-      registeredCallbacks;
+  private final @NotNull List<IConnectionStatusObserver> connectionStatusObservers;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+  private volatile @Nullable NetworkCallback networkCallback;
 
   public AndroidConnectionStatusProvider(
       @NotNull Context context,
@@ -41,7 +44,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
     this.context = ContextUtils.getApplicationContext(context);
     this.logger = logger;
     this.buildInfoProvider = buildInfoProvider;
-    this.registeredCallbacks = new HashMap<>();
+    this.connectionStatusObservers = new ArrayList<>();
   }
 
   @Override
@@ -65,40 +68,62 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
 
   @Override
   public boolean addConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      connectionStatusObservers.add(observer);
+    }
 
-    final ConnectivityManager.NetworkCallback callback =
-        new ConnectivityManager.NetworkCallback() {
-          @Override
-          public void onAvailable(@NonNull Network network) {
-            observer.onConnectionStatusChanged(getConnectionStatus());
+    if (networkCallback == null) {
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        if (networkCallback == null) {
+          final @NotNull NetworkCallback newNetworkCallback =
+              new NetworkCallback() {
+                @Override
+                public void onAvailable(final @NotNull Network network) {
+                  updateObservers();
+                }
+
+                @Override
+                public void onUnavailable() {
+                  updateObservers();
+                }
+
+                @Override
+                public void onLost(final @NotNull Network network) {
+                  updateObservers();
+                }
+
+                public void updateObservers() {
+                  final @NotNull ConnectionStatus status = getConnectionStatus();
+                  try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+                    for (final @NotNull IConnectionStatusObserver observer :
+                        connectionStatusObservers) {
+                      observer.onConnectionStatusChanged(status);
+                    }
+                  }
+                }
+              };
+
+          if (registerNetworkCallback(context, logger, buildInfoProvider, newNetworkCallback)) {
+            networkCallback = newNetworkCallback;
+            return true;
           }
-
-          @Override
-          public void onLosing(@NonNull Network network, int maxMsToLive) {
-            observer.onConnectionStatusChanged(getConnectionStatus());
-          }
-
-          @Override
-          public void onLost(@NonNull Network network) {
-            observer.onConnectionStatusChanged(getConnectionStatus());
-          }
-
-          @Override
-          public void onUnavailable() {
-            observer.onConnectionStatusChanged(getConnectionStatus());
-          }
-        };
-
-    registeredCallbacks.put(observer, callback);
-    return registerNetworkCallback(context, logger, buildInfoProvider, callback);
+        }
+        return true;
+      }
+    }
+    return true;
   }
 
   @Override
   public void removeConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
-    final @Nullable ConnectivityManager.NetworkCallback callback =
-        registeredCallbacks.remove(observer);
-    if (callback != null) {
-      unregisterNetworkCallback(context, logger, callback);
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      connectionStatusObservers.remove(observer);
+      if (connectionStatusObservers.isEmpty()) {
+        if (networkCallback != null) {
+          unregisterNetworkCallback(context, logger, networkCallback);
+          networkCallback = null;
+        }
+      }
     }
   }
 
@@ -281,7 +306,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull ConnectivityManager.NetworkCallback networkCallback) {
+      final @NotNull NetworkCallback networkCallback) {
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
       logger.log(SentryLevel.DEBUG, "NetworkCallbacks need Android N+.");
       return false;
@@ -307,7 +332,7 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   public static void unregisterNetworkCallback(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull ConnectivityManager.NetworkCallback networkCallback) {
+      final @NotNull NetworkCallback networkCallback) {
 
     final ConnectivityManager connectivityManager = getConnectivityManager(context, logger);
     if (connectivityManager == null) {
@@ -322,8 +347,13 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
 
   @TestOnly
   @NotNull
-  public Map<IConnectionStatusObserver, ConnectivityManager.NetworkCallback>
-      getRegisteredCallbacks() {
-    return registeredCallbacks;
+  public List<IConnectionStatusObserver> getStatusObservers() {
+    return connectionStatusObservers;
+  }
+
+  @TestOnly
+  @Nullable
+  public NetworkCallback getNetworkCallback() {
+    return networkCallback;
   }
 }
