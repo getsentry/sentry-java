@@ -51,6 +51,18 @@ public final class PropagationContext {
         sentryTraceHeader.isSampled());
   }
 
+  public static @NotNull PropagationContext fromId(
+      final @NotNull String traceId,
+      final @NotNull String spanId) {
+    return new PropagationContext(
+      new SentryId(traceId),
+      new SpanId(),
+      new SpanId(spanId),
+      null,
+      null
+    );
+  }
+
   private @NotNull SentryId traceId;
   private @NotNull SpanId spanId;
   private @Nullable SpanId parentSpanId;

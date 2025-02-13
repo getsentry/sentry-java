@@ -317,6 +317,12 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
+  public void setTrace(
+      @NotNull String traceId, @NotNull String spanId) {
+    scopes.setTrace(traceId, spanId);
+  }
+
+  @Override
   public @Nullable SentryTraceHeader getTraceparent() {
     return scopes.getTraceparent();
   }

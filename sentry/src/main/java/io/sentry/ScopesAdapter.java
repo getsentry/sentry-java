@@ -322,6 +322,12 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
+  public void setTrace(
+    final @NotNull String traceId, final @NotNull String spanId) {
+      Sentry.setTrace(traceId, spanId);
+  }
+
+  @Override
   public @Nullable SentryTraceHeader getTraceparent() {
     return Sentry.getTraceparent();
   }
