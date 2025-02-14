@@ -818,7 +818,7 @@ class ManifestMetadataReaderTest {
     fun `applyMetadata does not override continuousProfilesSampleRate from options`() {
         // Arrange
         val expectedSampleRate = 0.99f
-        fixture.options.continuousProfilesSampleRate = expectedSampleRate.toDouble()
+        fixture.options.experimental.continuousProfilesSampleRate = expectedSampleRate.toDouble()
         val bundle = bundleOf(ManifestMetadataReader.CONTINUOUS_PROFILES_SAMPLE_RATE to 0.1f)
         val context = fixture.getContext(metaData = bundle)
 

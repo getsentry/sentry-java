@@ -26,6 +26,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
   private @NotNull String release;
   private @Nullable String environment;
   private @NotNull String version;
+  private double timestamp;
 
   private final @NotNull File traceFile;
 
@@ -40,6 +41,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
         SentryId.EMPTY_ID,
         new File("dummy"),
         new HashMap<>(),
+        0.0,
         SentryOptions.empty());
   }
 
@@ -48,6 +50,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
       final @NotNull SentryId chunkId,
       final @NotNull File traceFile,
       final @NotNull Map<String, ProfileMeasurement> measurements,
+      final @NotNull Double timestamp,
       final @NotNull SentryOptions options) {
     this.profilerId = profilerId;
     this.chunkId = chunkId;
@@ -59,6 +62,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     this.environment = options.getEnvironment();
     this.platform = "android";
     this.version = "2";
+    this.timestamp = timestamp;
   }
 
   public @NotNull Map<String, ProfileMeasurement> getMeasurements() {
@@ -109,6 +113,10 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     return traceFile;
   }
 
+  public double getTimestamp() {
+    return timestamp;
+  }
+
   public @NotNull String getVersion() {
     return version;
   }
@@ -152,20 +160,23 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     private final @NotNull SentryId chunkId;
     private final @NotNull Map<String, ProfileMeasurement> measurements;
     private final @NotNull File traceFile;
+    private final double timestamp;
 
     public Builder(
         final @NotNull SentryId profilerId,
         final @NotNull SentryId chunkId,
         final @NotNull Map<String, ProfileMeasurement> measurements,
-        final @NotNull File traceFile) {
+        final @NotNull File traceFile,
+        final @NotNull SentryDate timestamp) {
       this.profilerId = profilerId;
       this.chunkId = chunkId;
       this.measurements = new ConcurrentHashMap<>(measurements);
       this.traceFile = traceFile;
+      this.timestamp = DateUtils.nanosToSeconds(timestamp.nanoTimestamp());
     }
 
     public ProfileChunk build(SentryOptions options) {
-      return new ProfileChunk(profilerId, chunkId, traceFile, measurements, options);
+      return new ProfileChunk(profilerId, chunkId, traceFile, measurements, timestamp, options);
     }
   }
 
@@ -182,6 +193,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     public static final String ENVIRONMENT = "environment";
     public static final String VERSION = "version";
     public static final String SAMPLED_PROFILE = "sampled_profile";
+    public static final String TIMESTAMP = "timestamp";
   }
 
   @Override
@@ -208,6 +220,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     if (sampledProfile != null) {
       writer.name(JsonKeys.SAMPLED_PROFILE).value(logger, sampledProfile);
     }
+    writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -299,6 +312,12 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
             String sampledProfile = reader.nextStringOrNull();
             if (sampledProfile != null) {
               data.sampledProfile = sampledProfile;
+            }
+            break;
+          case JsonKeys.TIMESTAMP:
+            Double timestamp = reader.nextDoubleOrNull();
+            if (timestamp != null) {
+              data.timestamp = timestamp;
             }
             break;
           default:

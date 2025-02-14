@@ -35,7 +35,7 @@ class TracesSamplerTest {
                 options.profilesSampleRate = profilesSampleRate
             }
             if (continuousProfilesSampleRate != null) {
-                options.continuousProfilesSampleRate = continuousProfilesSampleRate
+                options.experimental.continuousProfilesSampleRate = continuousProfilesSampleRate
             }
             if (tracesSamplerCallback != null) {
                 options.tracesSampler = tracesSamplerCallback

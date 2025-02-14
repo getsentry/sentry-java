@@ -885,7 +885,7 @@ class JsonSerializerTest {
         fixture.options.sdkVersion = SdkVersion("test", "1.2.3")
         fixture.options.release = "release"
         fixture.options.environment = "environment"
-        val profileChunk = ProfileChunk(profilerId, chunkId, fixture.traceFile, HashMap(), fixture.options)
+        val profileChunk = ProfileChunk(profilerId, chunkId, fixture.traceFile, HashMap(), 5.3, fixture.options)
         val measurementNow = SentryNanotimeDate()
         val measurementNowSeconds =
             BigDecimal.valueOf(DateUtils.nanosToSeconds(measurementNow.nanoTimestamp())).setScale(6, RoundingMode.DOWN)
@@ -928,6 +928,7 @@ class JsonSerializerTest {
         assertEquals("release", element["release"] as String)
         assertEquals(mapOf("name" to "test", "version" to "1.2.3"), element["client_sdk"] as Map<String, String>)
         assertEquals("2", element["version"] as String)
+        assertEquals(5.3, element["timestamp"] as Double)
         assertEquals("sampled profile in base 64", element["sampled_profile"] as String)
         assertEquals(
             mapOf(
@@ -992,6 +993,7 @@ class JsonSerializerTest {
                             "profiler_id":"$profilerId",
                             "release":"release",
                             "sampled_profile":"sampled profile in base 64",
+                            "timestamp":"5.3",
                             "version":"2",
                             "measurements":{
                                 "screen_frame_rates": {
@@ -1035,6 +1037,7 @@ class JsonSerializerTest {
         assertEquals(profilerId, profileChunk.profilerId)
         assertEquals("release", profileChunk.release)
         assertEquals("sampled profile in base 64", profileChunk.sampledProfile)
+        assertEquals(5.3, profileChunk.timestamp)
         assertEquals("2", profileChunk.version)
         val expectedMeasurements = mapOf(
             ProfileMeasurement.ID_SCREEN_FRAME_RATES to ProfileMeasurement(

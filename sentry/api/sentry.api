@@ -443,7 +443,9 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> (Z)V
+	public fun getContinuousProfilesSampleRate ()D
 	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
+	public fun setContinuousProfilesSampleRate (D)V
 	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 }
 
@@ -1846,7 +1848,7 @@ public final class io/sentry/PerformanceCollectionData {
 
 public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/io/File;Ljava/util/Map;Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/io/File;Ljava/util/Map;Ljava/lang/Double;Lio/sentry/SentryOptions;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
 	public fun getClientSdk ()Lio/sentry/protocol/SdkVersion;
@@ -1857,6 +1859,7 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getSampledProfile ()Ljava/lang/String;
+	public fun getTimestamp ()D
 	public fun getTraceFile ()Ljava/io/File;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getVersion ()Ljava/lang/String;
@@ -1868,7 +1871,7 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 }
 
 public final class io/sentry/ProfileChunk$Builder {
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/util/Map;Ljava/io/File;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/util/Map;Ljava/io/File;Lio/sentry/SentryDate;)V
 	public fun build (Lio/sentry/SentryOptions;)Lio/sentry/ProfileChunk;
 }
 
@@ -1888,6 +1891,7 @@ public final class io/sentry/ProfileChunk$JsonKeys {
 	public static final field PROFILER_ID Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
 	public static final field SAMPLED_PROFILE Ljava/lang/String;
+	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field VERSION Ljava/lang/String;
 	public fun <init> ()V
 }
@@ -3066,7 +3070,6 @@ public class io/sentry/SentryOptions {
 	public fun setConnectionStatusProvider (Lio/sentry/IConnectionStatusProvider;)V
 	public fun setConnectionTimeoutMillis (I)V
 	public fun setContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
-	public fun setContinuousProfilesSampleRate (D)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDebug (Z)V

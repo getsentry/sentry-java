@@ -357,15 +357,6 @@ public class SentryOptions {
    */
   private @Nullable ProfilesSamplerCallback profilesSampler;
 
-  /**
-   * Configures the continuous profiling sample rate as a percentage of profiles to be sent in the
-   * range of 0.0 to 1.0. if 1.0 is set it means that 100% of profiles will be sent. If set to 0.1
-   * only 10% of profiles will be sent. Profiles are picked randomly. Default is 1 (100%).
-   * ProfilesSampleRate takes precedence over this. To enable continuous profiling, don't set
-   * profilesSampleRate or profilesSampler, or set them to null.
-   */
-  private double continuousProfilesSampleRate = 1.0;
-
   /** Max trace file size in bytes. */
   private long maxTraceFileSize = 5 * 1024 * 1024;
 
@@ -1713,6 +1704,7 @@ public class SentryOptions {
    *
    * @return the continuous profiler.
    */
+  @ApiStatus.Experimental
   public @NotNull IContinuousProfiler getContinuousProfiler() {
     return continuousProfiler;
   }
@@ -1722,6 +1714,7 @@ public class SentryOptions {
    *
    * @param continuousProfiler - the continuous profiler
    */
+  @ApiStatus.Experimental
   public void setContinuousProfiler(final @Nullable IContinuousProfiler continuousProfiler) {
     // We allow to set the profiler only if it was not set before, and we don't allow to unset it.
     if (this.continuousProfiler == NoOpContinuousProfiler.getInstance()
@@ -1749,7 +1742,7 @@ public class SentryOptions {
   public boolean isContinuousProfilingEnabled() {
     return profilesSampleRate == null
         && profilesSampler == null
-        && continuousProfilesSampleRate > 0;
+        && experimental.getContinuousProfilesSampleRate() > 0;
   }
 
   /**
@@ -1803,18 +1796,9 @@ public class SentryOptions {
    *
    * @return the sample rate
    */
+  @ApiStatus.Experimental
   public double getContinuousProfilesSampleRate() {
-    return continuousProfilesSampleRate;
-  }
-
-  public void setContinuousProfilesSampleRate(final double continuousProfilesSampleRate) {
-    if (!SampleRateUtils.isValidContinuousProfilesSampleRate(continuousProfilesSampleRate)) {
-      throw new IllegalArgumentException(
-          "The value "
-              + continuousProfilesSampleRate
-              + " is not valid. Use values between 0.0 and 1.0.");
-    }
-    this.continuousProfilesSampleRate = continuousProfilesSampleRate;
+    return experimental.getContinuousProfilesSampleRate();
   }
 
   /**
@@ -2744,7 +2728,7 @@ public class SentryOptions {
       setProfilesSampleRate(options.getProfilesSampleRate());
     }
     if (options.getContinuousProfilesSampleRate() != null) {
-      setContinuousProfilesSampleRate(options.getContinuousProfilesSampleRate());
+      experimental.setContinuousProfilesSampleRate(options.getContinuousProfilesSampleRate());
     }
     if (options.getDebug() != null) {
       setDebug(options.getDebug());

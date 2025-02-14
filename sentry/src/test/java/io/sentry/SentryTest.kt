@@ -407,7 +407,7 @@ class SentryTest {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
-            it.continuousProfilesSampleRate = 1.0
+            it.experimental.continuousProfilesSampleRate = 1.0
             it.cacheDirPath = tempPath
             sentryOptions = it
         }
@@ -422,7 +422,7 @@ class SentryTest {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
-            it.continuousProfilesSampleRate = 0.0
+            it.experimental.continuousProfilesSampleRate = 0.0
             it.cacheDirPath = tempPath
             sentryOptions = it
         }
@@ -1336,7 +1336,7 @@ class SentryTest {
         Sentry.init {
             it.dsn = dsn
             it.setContinuousProfiler(profiler)
-            it.continuousProfilesSampleRate = 0.1
+            it.experimental.continuousProfilesSampleRate = 0.1
         }
         // We cannot set sample rate to 0, as it would not start the profiler. So we set the seed to have consistent results
         SentryRandom.current().setSeed(0)
