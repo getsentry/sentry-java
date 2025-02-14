@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.2.0
 
 ### Breaking Changes
 
@@ -13,6 +13,10 @@
 - Expose new `withSentryObservableEffect` method overload that accepts `SentryNavigationListener` as a parameter ([#4143](https://github.com/getsentry/sentry-java/pull/4143))
   - This allows sharing the same `SentryNavigationListener` instance across fragments and composables to preserve the trace 
 - (Internal) Add API to filter native debug images based on stacktrace addresses ([#4089](https://github.com/getsentry/sentry-java/pull/4089))
+- Propagate sampling random value ([#4153](https://github.com/getsentry/sentry-java/pull/4153))
+  - The random value used for sampling traces is now sent to Sentry and attached to the `baggage` header on outgoing requests
+- Update `sampleRate` that is sent to Sentry and attached to the `baggage` header on outgoing requests ([#4158](https://github.com/getsentry/sentry-java/pull/4158))
+  - If the SDK uses its `sampleRate` or `tracesSampler` callback, it now updates the `sampleRate` in Dynamic Sampling Context.
 
 ### Fixes
 
