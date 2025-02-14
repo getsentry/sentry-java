@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add Apollo 4 integration ([#4166](https://github.com/getsentry/sentry-java/pull/4166))
+
 ## 8.2.0
 
 ### Breaking Changes
