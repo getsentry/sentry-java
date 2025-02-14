@@ -106,11 +106,13 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
           if (registerNetworkCallback(context, logger, buildInfoProvider, newNetworkCallback)) {
             networkCallback = newNetworkCallback;
             return true;
+          } else {
+            return false;
           }
         }
-        return true;
       }
     }
+    // networkCallback is already registered, so we can safely return true
     return true;
   }
 
