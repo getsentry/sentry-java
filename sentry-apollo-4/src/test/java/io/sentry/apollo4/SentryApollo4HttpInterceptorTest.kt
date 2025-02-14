@@ -1,6 +1,9 @@
 package io.sentry.apollo4
 
+import com.apollographql.apollo.ApolloCall
 import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.api.ApolloResponse
+import com.apollographql.apollo.api.Operation
 import com.apollographql.apollo.api.http.HttpRequest
 import com.apollographql.apollo.api.http.HttpResponse
 import com.apollographql.apollo.exception.ApolloException
@@ -43,13 +46,19 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.util.concurrent.TimeUnit
+import kotlin.reflect.KSuspendFunction1
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class SentryApollo4HttpInterceptorTest {
+class SentryApollo4HttpInterceptorTestWithV4Implementation : SentryApollo4HttpInterceptorTest(ApolloCall<*>::execute)
+class SentryApollo4HttpInterceptorTestWithV3Implementation : SentryApollo4HttpInterceptorTest(ApolloCall<*>::executeV3)
+
+abstract class SentryApollo4HttpInterceptorTest(
+    private val executeQueryImplementation: KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>
+) {
 
     class Fixture {
         val server = MockWebServer()
@@ -367,7 +376,7 @@ class SentryApollo4HttpInterceptorTest {
 
         val coroutine = launch {
             try {
-                sut.query(LaunchDetailsQuery(id)).execute()
+                executeQueryImplementation(sut.query(LaunchDetailsQuery(id)))
             } catch (e: ApolloException) {
                 return@launch
             }
