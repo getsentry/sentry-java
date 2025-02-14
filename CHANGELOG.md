@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Move to a single NetworkCallback listener to reduce number of IPC calls ([#4164](https://github.com/getsentry/sentry-java/pull/4164))
+
 ## 8.2.0
 
 ### Breaking Changes
