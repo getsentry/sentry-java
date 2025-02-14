@@ -12,6 +12,7 @@ import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.apollo4.SentryApollo4HttpInterceptor.BeforeSpanCallback
+import io.sentry.apollo4.generated.LaunchDetailsQuery
 import io.sentry.mockServerRequestTimeoutMillis
 import io.sentry.protocol.SentryTransaction
 import kotlinx.coroutines.launch
@@ -28,9 +29,9 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
-class SentryApollo4InterceptorWithVariablesTest {
+class SentryApollo4BuilderExtensionsTest {
 
     class Fixture {
         val server = MockWebServer()
@@ -78,7 +79,7 @@ class SentryApollo4InterceptorWithVariablesTest {
     private val fixture = Fixture()
 
     @Test
-    fun `creates a span around the successful request`() {
+    fun `creates span around successful request`() {
         executeQuery()
 
         verify(fixture.scopes).captureTransaction(
@@ -93,7 +94,7 @@ class SentryApollo4InterceptorWithVariablesTest {
     }
 
     @Test
-    fun `creates a span around the failed request`() {
+    fun `creates span around failed request`() {
         executeQuery(fixture.getSut(httpStatusCode = 403))
 
         verify(fixture.scopes).captureTransaction(
@@ -108,7 +109,7 @@ class SentryApollo4InterceptorWithVariablesTest {
     }
 
     @Test
-    fun `creates a span around the request failing with network error`() {
+    fun `creates span around request failing with network error`() {
         executeQuery(fixture.getSut(socketPolicy = SocketPolicy.DISCONNECT_DURING_REQUEST_BODY))
 
         verify(fixture.scopes).captureTransaction(
@@ -118,6 +119,37 @@ class SentryApollo4InterceptorWithVariablesTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `adds breadcrumb when http call succeeds`() {
+        executeQuery(fixture.getSut())
+
+        verify(fixture.scopes).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(200, it.data["status_code"])
+                // response_body_size is added but mock webserver returns 0 always
+                assertEquals(0L, it.data["response_body_size"])
+                assertEquals(193L, it.data["request_body_size"])
+                assertEquals("query", it.data["operation_type"])
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `adds breadcrumb when http call fails`() {
+        executeQuery(fixture.getSut(socketPolicy = SocketPolicy.DISCONNECT_DURING_REQUEST_BODY))
+
+        verify(fixture.scopes).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("http", it.type)
+                assertEquals(193L, it.data["request_body_size"])
+                assertEquals("query", it.data["operation_type"])
+            },
             anyOrNull()
         )
     }
@@ -138,26 +170,12 @@ class SentryApollo4InterceptorWithVariablesTest {
     }
 
     @Test
-    fun `adds breadcrumb when http calls succeeds`() {
+    fun `does not send internal headers over the wire`() {
         executeQuery(fixture.getSut())
-        verify(fixture.scopes).addBreadcrumb(
-            check<Breadcrumb> {
-                assertEquals("http", it.type)
-                // response_body_size is added but mock webserver returns 0 always
-                assertEquals(0L, it.data["response_body_size"])
-                assertEquals(193L, it.data["request_body_size"])
-                assertEquals("query", it.data["operation_type"])
-            },
-            anyOrNull()
-        )
-    }
-
-    @Test
-    fun `internal headers are not sent over the wire`() {
-        executeQuery(fixture.getSut())
-        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
-        assertNull(recorderRequest.headers[SentryApollo4HttpInterceptor.SENTRY_APOLLO_4_VARIABLES])
-        assertNull(recorderRequest.headers[SentryApollo4HttpInterceptor.SENTRY_APOLLO_4_OPERATION_TYPE])
+        val recordedRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+        for (sentryHeader in INTERNAL_HEADER_NAMES) {
+            assertTrue(recordedRequest.headers.none { header -> header.first.equals(sentryHeader, true) })
+        }
     }
 
     private fun assertTransactionDetails(it: SentryTransaction) {

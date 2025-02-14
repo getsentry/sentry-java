@@ -1,15 +1,10 @@
 package io.sentry.apollo4
 
 import com.apollographql.apollo.ApolloClient
-import com.apollographql.apollo.api.ApolloRequest
-import com.apollographql.apollo.api.ApolloResponse
-import com.apollographql.apollo.api.Operation
 import com.apollographql.apollo.api.http.HttpRequest
 import com.apollographql.apollo.api.http.HttpResponse
 import com.apollographql.apollo.exception.ApolloException
 import com.apollographql.apollo.exception.ApolloHttpException
-import com.apollographql.apollo.interceptor.ApolloInterceptor
-import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import com.apollographql.apollo.network.http.HttpInterceptor
 import com.apollographql.apollo.network.http.HttpInterceptorChain
 import io.sentry.BaggageHeader
@@ -29,11 +24,11 @@ import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.apollo4.SentryApollo4HttpInterceptor.BeforeSpanCallback
+import io.sentry.apollo4.generated.LaunchDetailsQuery
 import io.sentry.mockServerRequestTimeoutMillis
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import io.sentry.util.Apollo4PlatformTestManipulator
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
@@ -54,7 +49,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class SentryApollo4InterceptorTest {
+class SentryApollo4HttpInterceptorTest {
 
     class Fixture {
         val server = MockWebServer()
@@ -107,16 +102,6 @@ class SentryApollo4InterceptorTest {
             val builder = ApolloClient.Builder()
                 .serverUrl(server.url("/").toString())
                 .addHttpInterceptor(httpInterceptor)
-                .addInterceptor(object : ApolloInterceptor { // Re-enable legacy headers
-                    override fun <D : Operation.Data> intercept(request: ApolloRequest<D>, chain: ApolloInterceptorChain): Flow<ApolloResponse<D>> {
-                        return chain.proceed(
-                            request.newBuilder()
-                                .addHttpHeader("X-APOLLO-OPERATION-NAME", request.operation.name())
-                                .addHttpHeader("X-APOLLO-OPERATION-ID", request.operation.id())
-                                .build()
-                        )
-                    }
-                })
 
             interceptor?.let {
                 builder.addHttpInterceptor(interceptor)
@@ -328,8 +313,6 @@ class SentryApollo4InterceptorTest {
                 // response_body_size is added but mock webserver returns 0 always
                 assertEquals(0L, it.data["response_body_size"])
                 assertEquals(193L, it.data["request_body_size"])
-                assertEquals("LaunchDetails", it.data["operation_name"])
-                assertNotNull(it.data["operation_id"])
             },
             anyOrNull()
         )
@@ -362,9 +345,8 @@ class SentryApollo4InterceptorTest {
         assertEquals(1, it.spans.size)
         val httpClientSpan = it.spans.first()
         assertEquals("http.graphql", httpClientSpan.op)
-        assertTrue { httpClientSpan.description?.startsWith("Post LaunchDetails") == true }
+        assertEquals("Post http://${fixture.server.hostName}:${fixture.server.port}/", httpClientSpan.description)
         assertNotNull(httpClientSpan.data) {
-            assertNotNull(it["operationId"])
             assertEquals("POST", it[HTTP_METHOD_KEY])
             httpStatusCode?.let { code ->
                 assertEquals(code, it[SpanDataConvention.HTTP_STATUS_CODE_KEY])

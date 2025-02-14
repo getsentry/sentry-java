@@ -1,7 +1,5 @@
 package io.sentry.apollo4
 
-import com.apollographql.apollo.api.http.DefaultHttpRequestComposer.Companion.HEADER_APOLLO_OPERATION_ID
-import com.apollographql.apollo.api.http.DefaultHttpRequestComposer.Companion.HEADER_APOLLO_OPERATION_NAME
 import com.apollographql.apollo.api.http.HttpHeader
 import com.apollographql.apollo.api.http.HttpRequest
 import com.apollographql.apollo.api.http.HttpResponse
@@ -68,9 +66,9 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
     ): HttpResponse {
         val activeSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
 
-        val operationName = getHeader("X-APOLLO-OPERATION-NAME", request.headers)
-        val operationType = decodeHeaderValue(request, SENTRY_APOLLO_4_OPERATION_TYPE)
-        val operationId = getHeader("X-APOLLO-OPERATION-ID", request.headers)
+        val operationId = decodeHeaderValue(request, OPERATION_ID_HEADER_NAME)
+        val operationName = decodeHeaderValue(request, OPERATION_NAME_HEADER_NAME)
+        val operationType = decodeHeaderValue(request, OPERATION_TYPE_HEADER_NAME)
 
         var span: ISpan? = null
 
@@ -140,13 +138,12 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
     }
 
     private fun isIgnored(): Boolean {
-        return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
+        return SpanUtils.isIgnored(scopes.getOptions().ignoredSpanOrigins, TRACE_ORIGIN)
     }
 
     private fun removeSentryInternalHeaders(headers: List<HttpHeader>): List<HttpHeader> {
-        return headers.filterNot {
-            it.name.equals(SENTRY_APOLLO_4_VARIABLES, true) ||
-                it.name.equals(SENTRY_APOLLO_4_OPERATION_TYPE, true)
+        return headers.filterNot { header ->
+            INTERNAL_HEADER_NAMES.any { internalHeader -> header.name.equals(internalHeader, true) }
         }
     }
 
@@ -161,7 +158,7 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
         val method = request.method.name
 
         val operation = if (operationType != null) "http.graphql.$operationType" else "http.graphql"
-        val variables = decodeHeaderValue(request, SENTRY_APOLLO_4_VARIABLES)
+        val variables = decodeHeaderValue(request, VARIABLES_HEADER_NAME)
 
         val description = "${operationType ?: method} ${operationName ?: urlDetails.urlOrFallback}"
 
@@ -177,7 +174,7 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
             variables?.let {
                 setData("variables", it)
             }
-            setData(HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT))
+            setData(HTTP_METHOD_KEY, method.uppercase(Locale.ROOT))
         }
     }
 
@@ -227,7 +224,7 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
                 } catch (e: Throwable) {
                     scopes.options.logger.log(
                         SentryLevel.ERROR,
-                        "An error occurred while executing beforeSpan on ApolloInterceptor",
+                        "An error occurred while executing beforeSpan in ApolloInterceptor",
                         e
                     )
                 }
@@ -327,7 +324,7 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
                 return
             }
 
-            // if there response body does not have the errors field, do not raise an issue
+            // if the response body does not have the errors field, do not raise an issue
             if (body.isEmpty() || !regex.containsMatchIn(body)) {
                 return
             }
@@ -340,7 +337,7 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
             // but that's not possible
             val urlDetails = UrlUtils.parse(request.url)
 
-            // return if its not a target match
+            // return if it's not a target match
             if (!PropagationTargetsUtils.contain(failedRequestTargets, urlDetails.urlOrFallback)) {
                 return
             }
@@ -451,8 +448,6 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
     }
 
     companion object {
-        const val SENTRY_APOLLO_4_VARIABLES = "SENTRY-APOLLO-4-VARIABLES"
-        const val SENTRY_APOLLO_4_OPERATION_TYPE = "SENTRY-APOLLO-4-OPERATION-TYPE"
         const val DEFAULT_CAPTURE_FAILED_REQUESTS = true
     }
 }

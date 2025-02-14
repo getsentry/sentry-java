@@ -17,7 +17,7 @@ plugins {
 kotlin {
     explicitApi()
 
-    androidTarget {
+    android {
         publishLibraryVariants("release")
         compilations.all {
             kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()

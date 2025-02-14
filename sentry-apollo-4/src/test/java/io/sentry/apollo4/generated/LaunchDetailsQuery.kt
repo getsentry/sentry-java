@@ -1,4 +1,4 @@
-package io.sentry.apollo4
+package io.sentry.apollo4.generated
 
 import com.apollographql.apollo.api.Adapter
 import com.apollographql.apollo.api.CompiledField
@@ -6,9 +6,9 @@ import com.apollographql.apollo.api.CustomScalarAdapters
 import com.apollographql.apollo.api.Query
 import com.apollographql.apollo.api.json.JsonWriter
 import com.apollographql.apollo.api.obj
-import io.sentry.apollo4.adapter.LaunchDetailsQuery_ResponseAdapter
-import io.sentry.apollo4.adapter.LaunchDetailsQuery_VariablesAdapter
-import io.sentry.apollo4.selections.LaunchDetailsQuerySelections
+import io.sentry.apollo4.generated.adapter.LaunchDetailsQuery_ResponseAdapter
+import io.sentry.apollo4.generated.adapter.LaunchDetailsQuery_VariablesAdapter
+import io.sentry.apollo4.generated.selections.LaunchDetailsQuerySelections
 import kotlin.String
 
 public data class LaunchDetailsQuery(
@@ -32,7 +32,7 @@ public data class LaunchDetailsQuery(
 
     public override fun rootField(): CompiledField = CompiledField.Builder(
         name = "data",
-        type = io.sentry.apollo4.type.Query.type
+        type = io.sentry.apollo4.generated.type.Query.type
     )
         .selections(selections = LaunchDetailsQuerySelections.root)
         .build()

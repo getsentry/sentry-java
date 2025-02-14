@@ -11,6 +11,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.TypeCheckHint
 import io.sentry.apollo4.SentryApollo4HttpInterceptor.Companion.DEFAULT_CAPTURE_FAILED_REQUESTS
+import io.sentry.apollo4.generated.LaunchDetailsQuery
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
@@ -32,7 +33,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class SentryApollo4InterceptorClientErrors {
+class SentryApollo4BuilderExtensionsClientErrorsTest {
     class Fixture {
         val server = MockWebServer()
         lateinit var scopes: IScopes
@@ -268,7 +269,6 @@ class SentryApollo4InterceptorClientErrors {
 
                 assertEquals("Test", request.cookies)
                 assertNotNull(request.headers)
-                assertEquals("LaunchDetails", request.headers?.get("X-APOLLO-OPERATION-NAME"))
             },
             any<Hint>()
         )

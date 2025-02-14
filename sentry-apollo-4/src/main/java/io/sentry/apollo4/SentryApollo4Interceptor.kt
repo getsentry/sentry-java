@@ -10,27 +10,39 @@ import com.apollographql.apollo.api.Subscription
 import com.apollographql.apollo.api.variables
 import com.apollographql.apollo.interceptor.ApolloInterceptor
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
-import io.sentry.apollo4.SentryApollo4HttpInterceptor.Companion.SENTRY_APOLLO_4_OPERATION_TYPE
-import io.sentry.apollo4.SentryApollo4HttpInterceptor.Companion.SENTRY_APOLLO_4_VARIABLES
+import io.sentry.IScopes
+import io.sentry.ScopesAdapter
 import io.sentry.vendor.Base64
 import kotlinx.coroutines.flow.Flow
+import org.jetbrains.annotations.ApiStatus
 
-class SentryApollo4Interceptor : ApolloInterceptor {
+/**
+ * Interceptor that adds the GraphQL request information to the outgoing HTTP request's headers so that
+ * the information can be accessed by {@link SentryApollo4HttpInterceptor}
+ */
+class SentryApollo4Interceptor @JvmOverloads constructor(
+    @ApiStatus.Internal private val scopes: IScopes = ScopesAdapter.getInstance()
+) : ApolloInterceptor {
 
     override fun <D : Operation.Data> intercept(
         request: ApolloRequest<D>,
         chain: ApolloInterceptorChain
     ): Flow<ApolloResponse<D>> {
         val builder = request.newBuilder()
-            .addHttpHeader(SENTRY_APOLLO_4_OPERATION_TYPE, Base64.encodeToString(operationType(request).toByteArray(), Base64.NO_WRAP))
+            .addHttpHeader(OPERATION_ID_HEADER_NAME, encodeHeaderValue(request.operation.id()))
+            .addHttpHeader(OPERATION_NAME_HEADER_NAME, encodeHeaderValue(request.operation.name()))
+            .addHttpHeader(OPERATION_TYPE_HEADER_NAME, encodeHeaderValue(operationType(request)))
 
         request.scalarAdapters?.let {
-            builder.addHttpHeader(SENTRY_APOLLO_4_VARIABLES, Base64.encodeToString(request.operation.variables(it).valueMap.toString().toByteArray(), Base64.NO_WRAP))
+            builder.addHttpHeader(VARIABLES_HEADER_NAME, encodeHeaderValue(request.operation.variables(it).valueMap.toString()))
         }
-        builder.addHttpHeader("X-APOLLO-OPERATION-NAME", request.operation.name())
-        builder.addHttpHeader("X-APOLLO-OPERATION-ID", request.operation.id())
+
         return chain.proceed(builder.build())
     }
+}
+
+private fun encodeHeaderValue(value: String): String {
+    return Base64.encodeToString(value.toByteArray(), Base64.NO_WRAP)
 }
 
 private fun <D : Operation.Data> operationType(apolloRequest: ApolloRequest<D>) = when (apolloRequest.operation) {

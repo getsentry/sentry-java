@@ -6,6 +6,6 @@ package io.sentry.apollo4
  */
 class SentryApollo4ClientException(message: String?) : Exception(message) {
     companion object {
-        private const val serialVersionUID = 4312120066430858144L
+        private const val serialVersionUID = 4312160066430858144L
     }
 }

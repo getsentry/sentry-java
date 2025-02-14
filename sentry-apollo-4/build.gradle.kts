@@ -41,6 +41,7 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.mockWebserver)
     testImplementation(Config.Libs.apolloKotlin4)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 }
 
 configure<SourceSetContainer> {
