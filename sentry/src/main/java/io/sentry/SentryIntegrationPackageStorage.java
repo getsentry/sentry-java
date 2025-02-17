@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryPackage;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -12,10 +13,12 @@ import org.jetbrains.annotations.TestOnly;
 @ApiStatus.Internal
 public final class SentryIntegrationPackageStorage {
   private static volatile @Nullable SentryIntegrationPackageStorage INSTANCE;
+  private static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
 
   public static @NotNull SentryIntegrationPackageStorage getInstance() {
     if (INSTANCE == null) {
-      synchronized (SentryIntegrationPackageStorage.class) {
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (INSTANCE == null) {
           INSTANCE = new SentryIntegrationPackageStorage();
         }

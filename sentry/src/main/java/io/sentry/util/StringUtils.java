@@ -20,8 +20,8 @@ public final class StringUtils {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
+  public static final String PROPER_NIL_UUID = "00000000-0000-0000-0000-000000000000";
   private static final String CORRUPTED_NIL_UUID = "0000-0000";
-  private static final String PROPER_NIL_UUID = "00000000-0000-0000-0000-000000000000";
   private static final @NotNull Pattern PATTERN_WORD_SNAKE_CASE = Pattern.compile("[\\W_]+");
 
   private StringUtils() {}

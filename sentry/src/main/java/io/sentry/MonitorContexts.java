@@ -39,7 +39,7 @@ public final class MonitorContexts extends ConcurrentHashMap<String, Object>
     return toContextType(SpanContext.TYPE, SpanContext.class);
   }
 
-  public void setTrace(final @Nullable SpanContext traceContext) {
+  public void setTrace(final @NotNull SpanContext traceContext) {
     Objects.requireNonNull(traceContext, "traceContext is required");
     this.put(SpanContext.TYPE, traceContext);
   }

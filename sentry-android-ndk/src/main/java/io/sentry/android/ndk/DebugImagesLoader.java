@@ -1,13 +1,18 @@
 package io.sentry.android.ndk;
 
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.IDebugImagesLoader;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.ndk.NativeModuleListLoader;
 import io.sentry.protocol.DebugImage;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -22,10 +27,11 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
 
   private final @NotNull NativeModuleListLoader moduleListLoader;
 
-  private static @Nullable List<DebugImage> debugImages;
+  private static volatile @Nullable List<DebugImage> debugImages;
 
   /** we need to lock it because it could be called from different threads */
-  private static final @NotNull Object debugImagesLock = new Object();
+  protected static final @NotNull AutoClosableReentrantLock debugImagesLock =
+      new AutoClosableReentrantLock();
 
   public DebugImagesLoader(
       final @NotNull SentryAndroidOptions options,
@@ -42,12 +48,25 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
    */
   @Override
   public @Nullable List<DebugImage> loadDebugImages() {
-    synchronized (debugImagesLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = debugImagesLock.acquire()) {
       if (debugImages == null) {
         try {
-          final DebugImage[] debugImagesArr = moduleListLoader.loadModuleList();
+          final io.sentry.ndk.DebugImage[] debugImagesArr = moduleListLoader.loadModuleList();
           if (debugImagesArr != null) {
-            debugImages = Arrays.asList(debugImagesArr);
+            debugImages = new ArrayList<>(debugImagesArr.length);
+            for (io.sentry.ndk.DebugImage d : debugImagesArr) {
+              final DebugImage debugImage = new DebugImage();
+              debugImage.setCodeFile(d.getCodeFile());
+              debugImage.setDebugFile(d.getDebugFile());
+              debugImage.setUuid(d.getUuid());
+              debugImage.setType(d.getType());
+              debugImage.setDebugId(d.getDebugId());
+              debugImage.setCodeId(d.getCodeId());
+              debugImage.setImageAddr(d.getImageAddr());
+              debugImage.setImageSize(d.getImageSize());
+              debugImage.setArch(d.getArch());
+              debugImages.add(debugImage);
+            }
             options
                 .getLogger()
                 .log(SentryLevel.DEBUG, "Debug images loaded: %d", debugImages.size());
@@ -60,10 +79,95 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
     return debugImages;
   }
 
-  /** Clears the caching of debug images on sentry-native and here. */
+  /**
+   * Loads debug images for the given set of addresses.
+   *
+   * @param addresses Set of memory addresses to find debug images for
+   * @return Set of matching debug images, or null if debug images couldn't be loaded
+   */
+  public @Nullable Set<DebugImage> loadDebugImagesForAddresses(
+      final @NotNull Set<String> addresses) {
+    try (final @NotNull ISentryLifecycleToken ignored = debugImagesLock.acquire()) {
+      final @Nullable List<DebugImage> allDebugImages = loadDebugImages();
+      if (allDebugImages == null) {
+        return null;
+      }
+      if (addresses.isEmpty()) {
+        return null;
+      }
+
+      final Set<DebugImage> referencedImages = filterImagesByAddresses(allDebugImages, addresses);
+      if (referencedImages.isEmpty()) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "No debug images found for any of the %d addresses.",
+                addresses.size());
+        return null;
+      }
+
+      return referencedImages;
+    }
+  }
+
+  /**
+   * Finds all debug image containing the given addresses. Assumes that the images are sorted by
+   * address, which should always be true on Linux/Android and Windows platforms
+   *
+   * @return All matching debug images or null if none are found
+   */
+  private @NotNull Set<DebugImage> filterImagesByAddresses(
+      final @NotNull List<DebugImage> images, final @NotNull Set<String> addresses) {
+    final Set<DebugImage> result = new HashSet<>();
+
+    for (int i = 0; i < images.size(); i++) {
+      final @NotNull DebugImage image = images.get(i);
+      final @Nullable DebugImage nextDebugImage =
+          (i + 1) < images.size() ? images.get(i + 1) : null;
+      final @Nullable String nextDebugImageAddress =
+          nextDebugImage != null ? nextDebugImage.getImageAddr() : null;
+
+      for (final @NotNull String rawAddress : addresses) {
+        try {
+          final long address = Long.parseLong(rawAddress.replace("0x", ""), 16);
+
+          final @Nullable String imageAddress = image.getImageAddr();
+          if (imageAddress != null) {
+            try {
+              final long imageStart = Long.parseLong(imageAddress.replace("0x", ""), 16);
+              final long imageEnd;
+
+              final @Nullable Long imageSize = image.getImageSize();
+              if (imageSize != null) {
+                imageEnd = imageStart + imageSize;
+              } else if (nextDebugImageAddress != null) {
+                imageEnd = Long.parseLong(nextDebugImageAddress.replace("0x", ""), 16);
+              } else {
+                imageEnd = Long.MAX_VALUE;
+              }
+              if (address >= imageStart && address < imageEnd) {
+                result.add(image);
+                // once image is added we can skip the remaining addresses and go straight to the
+                // next
+                // image
+                break;
+              }
+            } catch (NumberFormatException e) {
+              // ignored, invalid debug image address
+            }
+          }
+        } catch (NumberFormatException e) {
+          // ignored, invalid address supplied
+        }
+      }
+    }
+    return result;
+  }
+
   @Override
   public void clearDebugImages() {
-    synchronized (debugImagesLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = debugImagesLock.acquire()) {
       try {
         moduleListLoader.clearModuleList();
 

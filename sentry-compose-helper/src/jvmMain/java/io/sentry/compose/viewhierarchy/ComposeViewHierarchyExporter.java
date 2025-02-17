@@ -9,9 +9,11 @@ import androidx.compose.ui.semantics.SemanticsConfiguration;
 import androidx.compose.ui.semantics.SemanticsModifier;
 import androidx.compose.ui.semantics.SemanticsPropertyKey;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.compose.SentryComposeHelper;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.ViewHierarchyNode;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,7 @@ public final class ComposeViewHierarchyExporter implements ViewHierarchyExporter
 
   @NotNull private final ILogger logger;
   @Nullable private volatile SentryComposeHelper composeHelper;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   public ComposeViewHierarchyExporter(@NotNull final ILogger logger) {
     this.logger = logger;
@@ -37,7 +40,7 @@ public final class ComposeViewHierarchyExporter implements ViewHierarchyExporter
 
     // lazy init composeHelper as it's using some reflection under the hood
     if (composeHelper == null) {
-      synchronized (this) {
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
         if (composeHelper == null) {
           composeHelper = new SentryComposeHelper(logger);
         }

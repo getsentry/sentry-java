@@ -17,13 +17,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        agp: [ '8.0.0','8.1.4','8.2.0','8.3.0-beta01' ]
+        agp: [ '8.7.0','8.8.0','8.9.0-beta01' ]
         integrations: [ true, false ]
 
     name: AGP Matrix Release - AGP ${{ matrix.agp }} - Integrations ${{ matrix.integrations }}
     env:
       VERSION_AGP: ${{ matrix.agp }}
       APPLY_SENTRY_INTEGRATIONS: ${{ matrix.integrations }}
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
       - name: Checkout Repo
@@ -38,9 +39,10 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@4ba34e96c5f6493e99d0696180a9a8d431577ba9 # pin@v3
+        uses: gradle/actions/setup-gradle@aa23778d2dc6f6556fcc7164e99babbd8c3134e4 # pin@v3
         with:
           gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Setup KVM
         shell: bash
@@ -70,7 +72,7 @@ jobs:
           arch: x86
           channel: canary # Necessary for ATDs
           disk-size: 4096M
-          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release --daemon
+          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -DtestBuildType=release -Denvironment=github --daemon
 
       - name: Upload test results
         if: always()

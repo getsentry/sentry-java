@@ -30,7 +30,6 @@ class SentryItemTypeSerializationTest {
         assertEquals(serialize(SentryItemType.ReplayRecording), json("replay_recording"))
         assertEquals(serialize(SentryItemType.ReplayVideo), json("replay_video"))
         assertEquals(serialize(SentryItemType.CheckIn), json("check_in"))
-        assertEquals(serialize(SentryItemType.Statsd), json("statsd"))
         assertEquals(serialize(SentryItemType.Feedback), json("feedback"))
     }
 
@@ -47,7 +46,6 @@ class SentryItemTypeSerializationTest {
         assertEquals(deserialize(json("replay_recording")), SentryItemType.ReplayRecording)
         assertEquals(deserialize(json("replay_video")), SentryItemType.ReplayVideo)
         assertEquals(deserialize(json("check_in")), SentryItemType.CheckIn)
-        assertEquals(deserialize(json("statsd")), SentryItemType.Statsd)
         assertEquals(deserialize(json("feedback")), SentryItemType.Feedback)
     }
 

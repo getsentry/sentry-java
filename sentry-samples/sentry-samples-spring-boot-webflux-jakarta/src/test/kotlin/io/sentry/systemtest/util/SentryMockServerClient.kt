@@ -11,6 +11,15 @@ class SentryMockServerClient(private val baseUrl: String) : LoggingInsecureRestC
         return response.body!!
     }
 
+    fun reset() {
+        restTemplate().exchange("$baseUrl/reset", HttpMethod.GET, entityWithAuth(), Any::class.java)
+    }
+
+    fun getEnvelopes(): EnvelopesReceived {
+        val response = restTemplate().exchange("$baseUrl/envelopes-received", HttpMethod.GET, entityWithAuth(), EnvelopesReceived::class.java)
+        return response.body!!
+    }
+
     private fun entityWithAuth(request: Any? = null): HttpEntity<Any?> {
         val headers = HttpHeaders()
         return HttpEntity<Any?>(request, headers)
@@ -22,5 +31,13 @@ class EnvelopeCounts {
 
     override fun toString(): String {
         return "EnvelopeCounts{envelopes=$envelopes}"
+    }
+}
+
+class EnvelopesReceived {
+    val envelopes: List<String>? = null
+
+    override fun toString(): String {
+        return "EnvelopesReceived{envelopes=$envelopes}"
     }
 }

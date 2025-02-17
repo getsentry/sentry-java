@@ -13,6 +13,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -36,6 +37,11 @@ class ManifestMetadataReaderTest {
     }
 
     private val fixture = Fixture()
+
+    @BeforeTest
+    fun `set up`() {
+        ContextUtils.resetInstance()
+    }
 
     @Test
     fun `isAutoInit won't throw exception and is enabled by default`() {
@@ -104,19 +110,6 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertNull(fixture.options.sampleRate)
-    }
-
-    @Test
-    fun `applyMetadata reads session tracking to options`() {
-        // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.SESSION_TRACKING_ENABLE to false)
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertFalse(fixture.options.isEnableAutoSessionTracking)
     }
 
     @Test
@@ -698,45 +691,6 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads enableTracing from metadata`() {
-        // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.TRACING_ENABLE to true)
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertEquals(true, fixture.options.enableTracing)
-    }
-
-    @Test
-    fun `applyMetadata does not override enableTracing from options`() {
-        // Arrange
-        fixture.options.enableTracing = true
-        val bundle = bundleOf(ManifestMetadataReader.TRACING_ENABLE to false)
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertEquals(true, fixture.options.enableTracing)
-    }
-
-    @Test
-    fun `applyMetadata without specifying enableTracing, stays null`() {
-        // Arrange
-        val context = fixture.getContext()
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertNull(fixture.options.enableTracing)
-    }
-
-    @Test
     fun `applyMetadata reads enableAutoActivityLifecycleTracing to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.TRACES_ACTIVITY_ENABLE to false)
@@ -812,31 +766,6 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads enableTracesProfiling to options`() {
-        // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.TRACES_PROFILING_ENABLE to true)
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertTrue(fixture.options.isProfilingEnabled)
-    }
-
-    @Test
-    fun `applyMetadata reads enableTracesProfiling to options and keeps default`() {
-        // Arrange
-        val context = fixture.getContext()
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertFalse(fixture.options.isProfilingEnabled)
-    }
-
-    @Test
     fun `applyMetadata reads profilesSampleRate from metadata`() {
         // Arrange
         val expectedSampleRate = 0.99f
@@ -888,67 +817,6 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracePropagationTargets)
-    }
-
-    @Test
-    fun `applyMetadata ignores tracingOrigins if tracePropagationTargets is present`() {
-        // Arrange
-        val bundle = bundleOf(
-            ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to """localhost,^(http|https)://api\..*$""",
-            ManifestMetadataReader.TRACING_ORIGINS to """otherhost"""
-        )
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertEquals(listOf("localhost", """^(http|https)://api\..*$"""), fixture.options.tracePropagationTargets)
-    }
-
-    @Test
-    fun `applyMetadata ignores tracingOrigins if tracePropagationTargets is present even if null`() {
-        // Arrange
-        val bundle = bundleOf(
-            ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to null,
-            ManifestMetadataReader.TRACING_ORIGINS to """otherhost"""
-        )
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertTrue(fixture.options.tracePropagationTargets.isEmpty())
-    }
-
-    @Test
-    fun `applyMetadata ignores tracingOrigins if tracePropagationTargets is present even if empty string`() {
-        // Arrange
-        val bundle = bundleOf(
-            ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to "",
-            ManifestMetadataReader.TRACING_ORIGINS to """otherhost"""
-        )
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertTrue(fixture.options.tracePropagationTargets.isEmpty())
-    }
-
-    @Test
-    fun `applyMetadata uses tracingOrigins if tracePropagationTargets is not present`() {
-        // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.TRACING_ORIGINS to """otherhost""")
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertEquals(listOf("otherhost"), fixture.options.tracePropagationTargets)
     }
 
     @Test
@@ -1348,14 +1216,14 @@ class ManifestMetadataReaderTest {
     @Test
     fun `applyMetadata reads performance-v2 flag to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.ENABLE_PERFORMANCE_V2 to true)
+        val bundle = bundleOf(ManifestMetadataReader.ENABLE_PERFORMANCE_V2 to false)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.isEnablePerformanceV2)
+        assertFalse(fixture.options.isEnablePerformanceV2)
     }
 
     @Test
@@ -1367,7 +1235,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertFalse(fixture.options.isEnablePerformanceV2)
+        assertTrue(fixture.options.isEnablePerformanceV2)
     }
 
     @Test
@@ -1423,20 +1291,35 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads enableMetrics flag to options`() {
+    fun `applyMetadata does not override replays onErrorSampleRate from options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to true)
+        val expectedSampleRate = 0.99f
+        fixture.options.sessionReplay.onErrorSampleRate = expectedSampleRate.toDouble()
+        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to 0.1f)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.isEnableMetrics)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sessionReplay.onErrorSampleRate)
     }
 
     @Test
-    fun `applyMetadata reads enableMetrics flag to options and keeps default if not found`() {
+    fun `applyMetadata reads forceInit flag to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.FORCE_INIT to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isForceInit)
+    }
+
+    @Test
+    fun `applyMetadata reads forceInit flag to options and keeps default if not found`() {
         // Arrange
         val context = fixture.getContext()
 
@@ -1444,7 +1327,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertFalse(fixture.options.isEnableMetrics)
+        assertFalse(fixture.options.isForceInit)
     }
 
     @Test
@@ -1459,22 +1342,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
-    }
-
-    @Test
-    fun `applyMetadata does not override replays onErrorSampleRate from options`() {
-        // Arrange
-        val expectedSampleRate = 0.99f
-        fixture.options.experimental.sessionReplay.onErrorSampleRate = expectedSampleRate.toDouble()
-        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to 0.1f)
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sessionReplay.onErrorSampleRate)
     }
 
     @Test
@@ -1486,7 +1354,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertNull(fixture.options.experimental.sessionReplay.onErrorSampleRate)
+        assertNull(fixture.options.sessionReplay.onErrorSampleRate)
     }
 
     @Test
@@ -1499,8 +1367,8 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.experimental.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
-        assertTrue(fixture.options.experimental.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
     }
 
     @Test
@@ -1512,8 +1380,33 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.experimental.sessionReplay.maskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
-        assertTrue(fixture.options.experimental.sessionReplay.maskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.sessionReplay.maskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
+        assertTrue(fixture.options.sessionReplay.maskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+    }
+
+    @Test
+    fun `applyMetadata reads integers even when expecting floats`() {
+        // Arrange
+        val expectedSampleRate: Int = 1
+
+        val bundle = bundleOf(
+            ManifestMetadataReader.SAMPLE_RATE to expectedSampleRate,
+            ManifestMetadataReader.TRACES_SAMPLE_RATE to expectedSampleRate,
+            ManifestMetadataReader.PROFILES_SAMPLE_RATE to expectedSampleRate,
+            ManifestMetadataReader.REPLAYS_SESSION_SAMPLE_RATE to expectedSampleRate,
+            ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to expectedSampleRate
+        )
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.tracesSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.profilesSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sessionReplay.sessionSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.sessionReplay.onErrorSampleRate)
     }
 
     @Test
@@ -1539,30 +1432,5 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertEquals(100, fixture.options.maxBreadcrumbs)
-    }
-
-    @Test
-    fun `applyMetadata reads integers even when expecting floats`() {
-        // Arrange
-        val expectedSampleRate: Int = 1
-
-        val bundle = bundleOf(
-            ManifestMetadataReader.SAMPLE_RATE to expectedSampleRate,
-            ManifestMetadataReader.TRACES_SAMPLE_RATE to expectedSampleRate,
-            ManifestMetadataReader.PROFILES_SAMPLE_RATE to expectedSampleRate,
-            ManifestMetadataReader.REPLAYS_SESSION_SAMPLE_RATE to expectedSampleRate,
-            ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to expectedSampleRate
-        )
-        val context = fixture.getContext(metaData = bundle)
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.sampleRate)
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.tracesSampleRate)
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.profilesSampleRate)
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.sessionSampleRate)
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.experimental.sessionReplay.onErrorSampleRate)
     }
 }

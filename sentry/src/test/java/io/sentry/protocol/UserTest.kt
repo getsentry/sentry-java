@@ -31,7 +31,6 @@ class UserTest {
         assertEquals("123", clone.id)
         assertEquals("123.x", clone.ipAddress)
         assertEquals("userName", clone.username)
-        assertEquals("userSegment", clone.segment)
         assertEquals("data", clone.data!!["data"])
         assertEquals("unknown", clone.unknown!!["unknown"])
     }
@@ -45,7 +44,6 @@ class UserTest {
         user.id = "456"
         user.ipAddress = "456.x"
         user.username = "newUserName"
-        user.segment = "newUserSegment"
         user.data!!["data"] = "newOthers"
         user.data!!["anotherOne"] = "anotherOne"
         val newUnknown = mapOf(Pair("unknown", "newUnknown"), Pair("otherUnknown", "otherUnknown"))
@@ -55,7 +53,6 @@ class UserTest {
         assertEquals("123", clone.id)
         assertEquals("123.x", clone.ipAddress)
         assertEquals("userName", clone.username)
-        assertEquals("userSegment", clone.segment)
         assertEquals("data", clone.data!!["data"])
         assertEquals(1, clone.data!!.size)
         assertEquals("unknown", clone.unknown!!["unknown"])
@@ -87,7 +84,6 @@ class UserTest {
             id = "123"
             ipAddress = "123.x"
             username = "userName"
-            segment = "userSegment"
             val data = mutableMapOf(Pair("data", "data"))
             setData(data)
             val unknown = mapOf(Pair("unknown", "unknown"))

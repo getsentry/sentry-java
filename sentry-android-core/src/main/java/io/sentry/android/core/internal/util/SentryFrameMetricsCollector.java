@@ -16,6 +16,7 @@ import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.SentryUUID;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.util.Objects;
@@ -23,7 +24,6 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
@@ -68,7 +68,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     this(context, logger, buildInfoProvider, new WindowFrameMetricsManager() {});
   }
 
-  @SuppressWarnings("deprecation")
   @SuppressLint({"NewApi", "DiscouragedPrivateApi"})
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
@@ -79,7 +78,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   }
 
   @SuppressWarnings("deprecation")
-  @SuppressLint({"NewApi", "DiscouragedPrivateApi"})
+  @SuppressLint({"NewApi", "PrivateApi"})
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull ILogger logger,
@@ -262,7 +261,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     if (!isAvailable) {
       return null;
     }
-    final String uid = UUID.randomUUID().toString();
+    final String uid = SentryUUID.generateSentryId();
     listenerMap.put(uid, listener);
     trackCurrentWindow();
     return uid;

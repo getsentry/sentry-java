@@ -1,7 +1,6 @@
 package io.sentry.android.core
 
 import android.content.Context
-import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.CpuCollectionData
@@ -42,14 +41,11 @@ class AndroidProfilerTest {
     private lateinit var context: Context
 
     private val className = "io.sentry.android.core.AndroidProfiler"
-    private val ctorTypes = arrayOf(String::class.java, Int::class.java, SentryFrameMetricsCollector::class.java, ISentryExecutorService::class.java, ILogger::class.java, BuildInfoProvider::class.java)
+    private val ctorTypes = arrayOf(String::class.java, Int::class.java, SentryFrameMetricsCollector::class.java, ISentryExecutorService::class.java, ILogger::class.java)
     private val fixture = Fixture()
 
     private class Fixture {
         private val mockDsn = "http://key@localhost/proj"
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
-        }
         val mockLogger = mock<ILogger>()
         var lastScheduledRunnable: Runnable? = null
         val mockExecutorService = object : ISentryExecutorService {
@@ -86,14 +82,13 @@ class AndroidProfilerTest {
 
         val frameMetricsCollector: SentryFrameMetricsCollector = mock()
 
-        fun getSut(interval: Int = 1, buildInfoProvider: BuildInfoProvider = buildInfo): AndroidProfiler {
+        fun getSut(interval: Int = 1): AndroidProfiler {
             return AndroidProfiler(
                 options.profilingTracesDirPath!!,
                 interval,
                 frameMetricsCollector,
                 options.executorService,
-                options.logger,
-                buildInfoProvider
+                options.logger
             )
         }
     }
@@ -144,32 +139,17 @@ class AndroidProfilerTest {
         val ctor = className.getCtor(ctorTypes)
 
         assertFailsWith<IllegalArgumentException> {
-            ctor.newInstance(arrayOf(null, 0, mock(), mock<SentryExecutorService>(), mock<AndroidLogger>(), mock()))
+            ctor.newInstance(arrayOf(null, 0, mock(), mock<SentryExecutorService>(), mock<AndroidLogger>()))
         }
         assertFailsWith<IllegalArgumentException> {
-            ctor.newInstance(arrayOf("mock", 0, null, mock<SentryExecutorService>(), mock<AndroidLogger>(), mock()))
+            ctor.newInstance(arrayOf("mock", 0, null, mock<SentryExecutorService>(), mock<AndroidLogger>()))
         }
         assertFailsWith<IllegalArgumentException> {
-            ctor.newInstance(arrayOf("mock", 0, mock(), null, mock<AndroidLogger>(), mock()))
+            ctor.newInstance(arrayOf("mock", 0, mock(), null, mock<AndroidLogger>()))
         }
         assertFailsWith<IllegalArgumentException> {
-            ctor.newInstance(arrayOf("mock", 0, mock(), mock<SentryExecutorService>(), null, mock()))
+            ctor.newInstance(arrayOf("mock", 0, mock(), mock<SentryExecutorService>(), null))
         }
-        assertFailsWith<IllegalArgumentException> {
-            ctor.newInstance(arrayOf("mock", 0, mock(), mock<SentryExecutorService>(), mock<AndroidLogger>(), null))
-        }
-    }
-
-    @Test
-    fun `profiler works only on api 21+`() {
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.KITKAT)
-        }
-        val profiler = fixture.getSut(1, buildInfo)
-        val startData = profiler.start()
-        val endData = profiler.endAndCollect(false, null)
-        assertNull(startData)
-        assertNull(endData)
     }
 
     @Test
