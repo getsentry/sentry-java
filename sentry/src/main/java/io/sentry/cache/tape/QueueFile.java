@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2010 Square, Inc.
+ * Adapted from: https://github.com/square/tape/tree/445cd3fd0a7b3ec48c9ea3e0e86663fe6d3735d8/tape/src/main/java/com/squareup/tape2
+ *
+ *  Copyright (C) 2010 Square, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +28,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import org.jetbrains.annotations.Nullable;
 
+import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 /**
@@ -100,9 +103,6 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
   /** Keep file around for error reporting. */
   final File file;
 
-  /** True when using the versioned header format. Otherwise use the legacy format. */
-  final boolean versioned;
-
   /** The header length in bytes: 16 or 32. */
   final int headerLength;
 
@@ -131,9 +131,12 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
   /** When true, removing an element will also overwrite data with zero bytes. */
   private final boolean zero;
 
+  /** A number of elements at which this queue will wrap around (ring buffer). */
+  private final int maxElements;
+
   boolean closed;
 
-  static RandomAccessFile initializeFromFile(File file, boolean forceLegacy)
+  static RandomAccessFile initializeFromFile(File file)
       throws IOException {
     if (!file.exists()) {
       // Use a temp file so we don't leave a partially-initialized file.
@@ -142,12 +145,8 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
       try {
         raf.setLength(INITIAL_LENGTH);
         raf.seek(0);
-        if (forceLegacy) {
-          raf.writeInt(INITIAL_LENGTH);
-        } else {
-          raf.writeInt(VERSIONED_HEADER);
-          raf.writeLong(INITIAL_LENGTH);
-        }
+        raf.writeInt(VERSIONED_HEADER);
+        raf.writeLong(INITIAL_LENGTH);
       } finally {
         raf.close();
       }
@@ -166,37 +165,28 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     return new RandomAccessFile(file, "rwd");
   }
 
-  QueueFile(File file, RandomAccessFile raf, boolean zero, boolean forceLegacy) throws IOException {
+  QueueFile(File file, RandomAccessFile raf, boolean zero, int maxElements) throws IOException {
     this.file = file;
     this.raf = raf;
     this.zero = zero;
+    this.maxElements = maxElements;
 
     raf.seek(0);
     raf.readFully(buffer);
 
-    versioned = !forceLegacy && (buffer[0] & 0x80) != 0;
     long firstOffset;
     long lastOffset;
-    if (versioned) {
-      headerLength = 32;
+    headerLength = 32;
 
-      int version = readInt(buffer, 0) & 0x7FFFFFFF;
-      if (version != 1) {
-        throw new IOException(
-            "Unable to read version " + version + " format. Supported versions are 1 and legacy.");
-      }
-      fileLength = readLong(buffer, 4);
-      elementCount = readInt(buffer, 12);
-      firstOffset = readLong(buffer, 16);
-      lastOffset = readLong(buffer, 24);
-    } else {
-      headerLength = 16;
-
-      fileLength = readInt(buffer, 0);
-      elementCount = readInt(buffer, 4);
-      firstOffset = readInt(buffer, 8);
-      lastOffset = readInt(buffer, 12);
+    int version = readInt(buffer, 0) & 0x7FFFFFFF;
+    if (version != 1) {
+      throw new IOException(
+          "Unable to read version " + version + " format. Supported versions are 1 and legacy.");
     }
+    fileLength = readLong(buffer, 4);
+    elementCount = readInt(buffer, 12);
+    firstOffset = readLong(buffer, 16);
+    lastOffset = readLong(buffer, 24);
 
     if (fileLength > raf.length()) {
       throw new IOException(
@@ -266,22 +256,12 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
       throws IOException {
     raf.seek(0);
 
-    if (versioned) {
-      writeInt(buffer, 0, VERSIONED_HEADER);
-      writeLong(buffer, 4, fileLength);
-      writeInt(buffer, 12, elementCount);
-      writeLong(buffer, 16, firstPosition);
-      writeLong(buffer, 24, lastPosition);
-      raf.write(buffer, 0, 32);
-      return;
-    }
-
-    // Legacy queue header.
-    writeInt(buffer, 0, (int) fileLength); // Signed, so leading bit is always 0 aka legacy.
-    writeInt(buffer, 4, elementCount);
-    writeInt(buffer, 8, (int) firstPosition);
-    writeInt(buffer, 12, (int) lastPosition);
-    raf.write(buffer, 0, 16);
+    writeInt(buffer, 0, VERSIONED_HEADER);
+    writeLong(buffer, 4, fileLength);
+    writeInt(buffer, 12, elementCount);
+    writeLong(buffer, 16, firstPosition);
+    writeLong(buffer, 24, lastPosition);
+    raf.write(buffer, 0, 32);
   }
 
   Element readElement(long position) throws IOException {
@@ -379,6 +359,11 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
       throw new IndexOutOfBoundsException();
     }
     if (closed) throw new IllegalStateException("closed");
+
+    // If the queue is at full capacity, remove the oldest element first.
+    if (isAtFullCapacity()) {
+      remove();
+    }
 
     expandIfNecessary(count);
 
@@ -664,6 +649,20 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     modCount++;
   }
 
+  /**
+   * Returns {@code true} if the capacity limit of this queue has been reached, i.e. the number of
+   * elements stored in the queue equals its maximum size.
+   *
+   * @return {@code true} if the capacity limit has been reached, {@code false} otherwise
+   */
+  public boolean isAtFullCapacity() {
+    if (maxElements == -1) {
+      // unspecified
+      return false;
+    }
+    return size() == maxElements;
+  }
+
   /** The underlying {@link File} backing this queue. */
   public File file() {
     return file;
@@ -678,7 +677,6 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     return "QueueFile{"
         + "file=" + file
         + ", zero=" + zero
-        + ", versioned=" + versioned
         + ", length=" + fileLength
         + ", size=" + elementCount
         + ", first=" + first
@@ -722,7 +720,7 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
   public static final class Builder {
     final File file;
     boolean zero = true;
-    boolean forceLegacy = false;
+    int size = -1;
 
     /** Start constructing a new queue backed by the given file. */
     public Builder(File file) {
@@ -738,9 +736,9 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
       return this;
     }
 
-    /** When true, only the legacy (Tape 1.x) format will be used. */
-    public Builder forceLegacy(boolean forceLegacy) {
-      this.forceLegacy = forceLegacy;
+    /** The maximum number of elements this queue can hold before wrapping around. */
+    public Builder size(int size) {
+      this.size = size;
       return this;
     }
 
@@ -749,10 +747,10 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
      * file at a time.
      */
     public QueueFile build() throws IOException {
-      RandomAccessFile raf = initializeFromFile(file, forceLegacy);
+      RandomAccessFile raf = initializeFromFile(file);
       QueueFile qf = null;
       try {
-        qf = new QueueFile(file, raf, zero, forceLegacy);
+        qf = new QueueFile(file, raf, zero, size);
         return qf;
       } finally {
         if (qf == null) {

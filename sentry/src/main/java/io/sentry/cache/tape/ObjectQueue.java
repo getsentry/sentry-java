@@ -1,4 +1,20 @@
-// Copyright 2011 Square, Inc.
+/*
+ * Adapted from: https://github.com/square/tape/tree/445cd3fd0a7b3ec48c9ea3e0e86663fe6d3735d8/tape/src/main/java/com/squareup/tape2
+ *
+ *  Copyright (C) 2010 Square, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.sentry.cache.tape;
 
 import java.io.Closeable;
@@ -18,12 +34,11 @@ public abstract class ObjectQueue<T> implements Iterable<T>, Closeable {
   }
 
   /**
-   * A queue for objects that are not serious enough to be written to disk. Objects in this queue
-   * are kept in memory and will not be serialized.
+   * An empty queue for objects that is essentially a no-op.
    */
-  //public static <T> ObjectQueue<T> createInMemory() {
-  //  return new InMemoryObjectQueue<>();
-  //}
+  public static <T> ObjectQueue<T> createEmpty() {
+    return new EmptyObjectQueue<>();
+  }
 
   /** The underlying {@link QueueFile} backing this queue, or null if it's only in memory. */
   public abstract @Nullable QueueFile file();

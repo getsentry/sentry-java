@@ -12,12 +12,14 @@ import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanContext;
+import io.sentry.cache.tape.EmptyObjectQueue;
 import io.sentry.cache.tape.ObjectQueue;
 import io.sentry.cache.tape.QueueFile;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.LazyEvaluator;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -54,43 +56,48 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   public static final String TRACE_FILENAME = "trace.json";
   public static final String REPLAY_FILENAME = "replay.json";
 
-  private final @Nullable ObjectQueue<Breadcrumb> breadcrumbsQueue;
-  private final @NotNull SentryOptions options;
-
-  public PersistingScopeObserver(final @NotNull SentryOptions options) {
-    this.options = options;
-
+  private @NotNull SentryOptions options;
+  private final @NotNull LazyEvaluator<ObjectQueue<Breadcrumb>> breadcrumbsQueue = new LazyEvaluator<>(() -> {
     final File cacheDir = ensureCacheDir(options, SCOPE_CACHE);
     if (cacheDir == null) {
       options.getLogger().log(INFO, "Cache dir is not set, cannot store in scope cache");
-      breadcrumbsQueue = null;
-      return;
+      return new EmptyObjectQueue<>();
     }
 
     QueueFile queueFile = null;
+    final File file = new File(cacheDir, BREADCRUMBS_FILENAME);
+    store(new Breadcrumb(), BREADCRUMBS_FILENAME);
     try {
-      final File file = new File(cacheDir, BREADCRUMBS_FILENAME);
-      if (file.exists()) {
+      try {
+        queueFile = new QueueFile.Builder(file)
+          .size(options.getMaxBreadcrumbs())
+          .build();
+      } catch (IOException e) {
+        // if file is corrupted we simply delete it and try to create it again. We accept the trade
+        // off of losing breadcrumbs for ANRs that happened right before the app has received an
+        // update where the new format was introduced
         file.delete();
+
+        queueFile = new QueueFile.Builder(file)
+          .size(options.getMaxBreadcrumbs())
+          .build();
       }
-      queueFile = new QueueFile.Builder(file).build();
     } catch (IOException e) {
       options.getLogger().log(ERROR, "Failed to create breadcrumbs queue", e);
-      breadcrumbsQueue = null;
-      return;
+      return new EmptyObjectQueue<>();
     }
-    breadcrumbsQueue = ObjectQueue.create(queueFile,
+    return ObjectQueue.create(queueFile,
       new ObjectQueue.Converter<Breadcrumb>() {
         @Override
         @Nullable
         public Breadcrumb from(byte[] source) {
           try (final Reader reader =
                  new BufferedReader(new InputStreamReader(new ByteArrayInputStream(source), UTF_8))) {
-              return options.getSerializer().deserialize(reader, Breadcrumb.class);
+            return options.getSerializer().deserialize(reader, Breadcrumb.class);
           } catch (Throwable e) {
             options.getLogger().log(ERROR, e, "Error reading entity from scope cache");
           }
-          return null; // we don't read
+          return null;
         }
 
         @Override public void toStream(Breadcrumb value, OutputStream sink) throws IOException {
@@ -99,6 +106,10 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
           }
         }
       });
+  });
+
+  public PersistingScopeObserver(final @NotNull SentryOptions options) {
+    this.options = options;
   }
 
   @Override
@@ -116,9 +127,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   @Override public void addBreadcrumb(@NotNull Breadcrumb crumb) {
     serializeToDisk(() -> {
       try {
-        if (breadcrumbsQueue != null) {
-          breadcrumbsQueue.add(crumb);
-        }
+        breadcrumbsQueue.getValue().add(crumb);
       } catch (IOException e) {
         options.getLogger().log(ERROR, "Failed to add breadcrumb to file queue", e);
       }
@@ -129,17 +138,13 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   public void setBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs) {
     if (breadcrumbs.isEmpty()) {
       serializeToDisk(() -> {
-        if (breadcrumbsQueue != null) {
-          Iterator<Breadcrumb> iterator = breadcrumbsQueue.iterator();
-          while(iterator.hasNext()) {
-            Breadcrumb breadcrumb = iterator.next();
-            options.getLogger().log(DEBUG, "Removing breadcrumb from file queue: %s", breadcrumb);
-            iterator.remove();
-          }
+        try {
+          breadcrumbsQueue.getValue().clear();
+        } catch (IOException e) {
+          options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
         }
       });
     }
-    //serializeToDisk(() -> store(breadcrumbs, BREADCRUMBS_FILENAME));
   }
 
   @Override
@@ -219,9 +224,16 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private void serializeToDisk(final @NotNull Runnable task) {
+    if (!options.isEnableScopePersistence()) {
+      return;
+    }
     if (Thread.currentThread().getName().contains("SentryExecutor")) {
       // we're already on the sentry executor thread, so we can just execute it directly
-      task.run();
+      try {
+        task.run();
+      } catch (Throwable e) {
+        options.getLogger().log(ERROR, "Serialization task failed", e);
+      }
       return;
     }
 
@@ -256,10 +268,18 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     CacheUtils.store(options, entity, SCOPE_CACHE, fileName);
   }
 
-  public static <T> @Nullable T read(
+  public <T> @Nullable T read(
       final @NotNull SentryOptions options,
       final @NotNull String fileName,
       final @NotNull Class<T> clazz) {
+    if (fileName.equals(BREADCRUMBS_FILENAME)) {
+      try {
+        return clazz.cast(breadcrumbsQueue.getValue().asList());
+      } catch (IOException e) {
+        options.getLogger().log(ERROR, "Unable to read serialized breadcrumbs from QueueFile");
+        return null;
+      }
+    }
     return read(options, fileName, clazz, null);
   }
 

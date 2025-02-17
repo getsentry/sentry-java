@@ -34,6 +34,7 @@ import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.RejectedExecutionException;
@@ -495,6 +496,15 @@ public final class Sentry {
                   observer.setTags(options.getTags());
                   observer.setReplayErrorSampleRate(
                       options.getSessionReplay().getOnErrorSampleRate());
+                }
+
+                // since it's a new SDK init we clean up persisted scope values before serializing
+                // new ones, so they are not making it to the new events if they were e.g. disabled
+                // (e.g. replayId) or are simply irrelevant (e.g. breadcrumbs). NOTE: this happens
+                // after the integrations relying on those values are done with processing them.
+                for (final IScopeObserver observer : options.getScopeObservers()) {
+                  observer.setBreadcrumbs(Collections.emptyList());
+                  observer.setReplayId(SentryId.EMPTY_ID);
                 }
               });
     } catch (Throwable e) {

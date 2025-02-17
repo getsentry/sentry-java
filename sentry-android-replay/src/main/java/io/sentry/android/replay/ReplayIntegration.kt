@@ -418,7 +418,8 @@ public class ReplayIntegration(
         // TODO: previous run and set them directly to the ReplayEvent so they don't get overwritten in MainEventProcessor
 
         options.executorService.submitSafely(options, "ReplayIntegration.finalize_previous_replay") {
-            val previousReplayIdString = PersistingScopeObserver.read(options, REPLAY_FILENAME, String::class.java) ?: run {
+            val persistingScopeObserver = options.findPersistingScopeObserver()
+            val previousReplayIdString = persistingScopeObserver?.read(options, REPLAY_FILENAME, String::class.java) ?: run {
                 cleanupReplays()
                 return@submitSafely
             }
@@ -431,7 +432,8 @@ public class ReplayIntegration(
                 cleanupReplays()
                 return@submitSafely
             }
-            val breadcrumbs = PersistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List::class.java, Breadcrumb.Deserializer()) as? List<Breadcrumb>
+            @Suppress("UNCHECKED_CAST")
+            val breadcrumbs = persistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List::class.java) as? List<Breadcrumb>
             val segment = CaptureStrategy.createSegment(
                 scopes = scopes,
                 options = options,
