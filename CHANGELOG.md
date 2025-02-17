@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Behavioural Changes
+
+- The class `io.sentry.spring.jakarta.webflux.ReactorUtils` is now deprecated, please use `io.sentry.reactor.SentryReactorUtils` in the new `sentry-reactor` module instead ([#4155](https://github.com/getsentry/sentry-java/pull/4155))
+  - The new module will be exposed as an `api` dependency when using `sentry-spring-boot-jakarta` (Spring Boot 3) or `sentry-spring-jakarta` (Spring 6). 
+    Therefore, if you're using one of those modules, changing your imports will suffice.
+
 ## 8.2.0
 
 ### Breaking Changes
@@ -31,12 +39,6 @@
 - Mention javadoc and sources for published artifacts in Gradle `.module` metadata ([#3936](https://github.com/getsentry/sentry-java/pull/3936))
 - (Jetpack Compose) Modifier.sentryTag now uses Modifier.Node ([#4029](https://github.com/getsentry/sentry-java/pull/4029))
   - This allows Composables that use this modifier to be skippable
-
-### Behavioural Changes
-
-- The class `io.sentry.spring.jakarta.webflux.ReactorUtils` is now deprecated, please use `io.sentry.reactor.SentryReactorUtils` in the new `sentry-reactor` module instead ([#4155](https://github.com/getsentry/sentry-java/pull/4155))
-  - The new module will be exposed as an `api` dependency when using `sentry-spring-boot-jakarta` (Spring Boot 3) or `sentry-spring-jakarta` (Spring 6). 
-    Therefore, if you're using one of those modules, changing your imports will suffice.
 
 ### Dependencies
 
