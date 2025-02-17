@@ -91,7 +91,6 @@ public final class io/sentry/spring/jakarta/SpringProfilesEventProcessor : io/se
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
-	public fun processInternal (Lio/sentry/SentryBaseEvent;)V
 }
 
 public final class io/sentry/spring/jakarta/SpringSecuritySentryUserProvider : io/sentry/spring/jakarta/SentryUserProvider {

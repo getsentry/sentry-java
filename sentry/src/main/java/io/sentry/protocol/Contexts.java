@@ -56,6 +56,8 @@ public class Contexts implements JsonSerializable {
           this.setTrace(new SpanContext((SpanContext) value));
         } else if (Response.TYPE.equals(entry.getKey()) && value instanceof Response) {
           this.setResponse(new Response((Response) value));
+        } else if (Spring.TYPE.equals(entry.getKey()) && value instanceof Spring) {
+          this.setSpring(new Spring((Spring) value));
         } else {
           this.put(entry.getKey(), value);
         }
@@ -146,6 +148,14 @@ public class Contexts implements JsonSerializable {
     try (final @NotNull ISentryLifecycleToken ignored = responseLock.acquire()) {
       this.put(Response.TYPE, response);
     }
+  }
+
+  public @Nullable Spring getSpring() {
+    return toContextType(Spring.TYPE, Spring.class);
+  }
+
+  public void setSpring(final @NotNull Spring spring) {
+    this.put(Spring.TYPE, spring);
   }
 
   public int size() {
@@ -265,6 +275,9 @@ public class Contexts implements JsonSerializable {
             break;
           case Response.TYPE:
             contexts.setResponse(new Response.Deserializer().deserialize(reader, logger));
+            break;
+          case Spring.TYPE:
+            contexts.setSpring(new Spring.Deserializer().deserialize(reader, logger));
             break;
           default:
             Object object = reader.nextObjectOrNull();

@@ -5,8 +5,8 @@ import io.sentry.Hint;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryReplayEvent;
-import io.sentry.SpanContext;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.Spring;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.core.env.Environment;
@@ -16,8 +16,6 @@ import org.springframework.core.env.Environment;
  * to the {@link io.sentry.TraceContext} associated with the event.
  */
 public final class SpringProfilesEventProcessor implements EventProcessor {
-  private static final @NotNull String ACTIVE_PROFILES_TRACE_CONTEXT_KEY = "spring.active_profiles";
-
   private final @NotNull Environment environment;
 
   @Override
@@ -40,15 +38,11 @@ public final class SpringProfilesEventProcessor implements EventProcessor {
     return event;
   }
 
-  public void processInternal(final @NotNull SentryBaseEvent event) {
-    @Nullable SpanContext trace = event.getContexts().getTrace();
-    if (trace != null) {
-      @Nullable String[] activeProfiles = environment.getActiveProfiles();
-      if (activeProfiles == null) {
-        activeProfiles = new String[0];
-      }
-      trace.setData(ACTIVE_PROFILES_TRACE_CONTEXT_KEY, activeProfiles);
-    }
+  private void processInternal(final @NotNull SentryBaseEvent event) {
+    @Nullable String[] activeProfiles = environment.getActiveProfiles();
+    @NotNull Spring springContext = new Spring();
+    springContext.setActiveProfiles(activeProfiles);
+    event.getContexts().setSpring(springContext);
   }
 
   public SpringProfilesEventProcessor(final @NotNull Environment environment) {

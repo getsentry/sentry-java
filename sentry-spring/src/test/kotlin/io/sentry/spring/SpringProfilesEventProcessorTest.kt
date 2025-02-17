@@ -3,6 +3,7 @@ package io.sentry.spring
 import io.sentry.ITransportFactory
 import io.sentry.Sentry
 import io.sentry.checkEvent
+import io.sentry.protocol.Spring
 import io.sentry.transport.ITransport
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.kotlin.any
@@ -24,17 +25,16 @@ class SpringProfilesEventProcessorTest {
         .withUserConfiguration(MockTransportConfiguration::class.java)
 
     @Test
-    fun `when default Spring profile is active, sets traceContext spring active_profiles to empty list on sent event`() {
+    fun `when default Spring profile is active, sets active_profiles in Spring context to empty list on sent event`() {
         contextRunner
             .run {
                 Sentry.captureMessage("test")
                 val transport = it.getBean(ITransport::class.java)
                 verify(transport).send(
                     checkEvent { event ->
-                        val traceContext = event.contexts.trace
-                        assertThat(traceContext).isNotNull()
-                        val traceData = traceContext!!.data
-                        assertThat(traceData.get("spring.active_profiles")).isEqualTo(listOf<String>())
+                        val expected = Spring()
+                        expected.activeProfiles = listOf<String>().toTypedArray()
+                        assertThat(event.contexts.spring).isEqualTo(expected)
                     },
                     anyOrNull()
                 )
@@ -42,7 +42,7 @@ class SpringProfilesEventProcessorTest {
     }
 
     @Test
-    fun `when non-default Spring profiles are active, sets traceContext spring active_profiles to array of profile names`() {
+    fun `when non-default Spring profiles are active, sets active profiles in Spring context to list of profile names`() {
         contextRunner
             .withPropertyValues(
                 "spring.profiles.active=test1,test2"
@@ -52,10 +52,9 @@ class SpringProfilesEventProcessorTest {
                 val transport = it.getBean(ITransport::class.java)
                 verify(transport).send(
                     checkEvent { event ->
-                        val traceContext = event.contexts.trace
-                        assertThat(traceContext).isNotNull()
-                        val traceData = traceContext!!.data
-                        assertThat(traceData.get("spring.active_profiles")).isEqualTo(listOf("test1", "test2"))
+                        val expected = Spring()
+                        expected.activeProfiles = listOf("test1", "test2").toTypedArray()
+                        assertThat(event.contexts.spring).isEqualTo(expected)
                     },
                     anyOrNull()
                 )
