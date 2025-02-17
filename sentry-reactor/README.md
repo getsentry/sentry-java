@@ -23,25 +23,6 @@ import reactor.core.publisher.Hooks;
 Hooks.enableAutomaticContextPropagation();
 ```
 
-Finally, enable the `SentryReactorThreadLocalAccessor`:
-```java
-import io.micrometer.context.ContextRegistry;
-import io.sentry.reactor.SentryReactorThreadLocalAccessor;
-// ...
-ContextRegistry.getInstance().registerThreadLocalAccessor(SentryReactorThreadLocalAccessor());
-```
-
-You can also use SPI to enable it by creating a file in `resources/META-INF.services/io.micrometer.context.ThreadLocalAccessor` with the content:
-```
-io.sentry.reactor.SentryReactorThreadLocalAccessor
-```
-and then calling
-```java
-import io.micrometer.context.ContextRegistry;
-// ...
-ContextRegistry.getInstance().loadThreadLocalAccessors();
-```
-
 ## Usage
 
 You can use the utilities provided by this module to wrap `Mono` and `Flux` objects to enable correct errors, breadcrumbs and tracing in your application.
