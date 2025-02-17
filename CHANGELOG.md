@@ -73,7 +73,7 @@ Version 8 of the Sentry Android/Java SDK brings a variety of features and fixes.
     - You may now use both OpenTelemetry SDK and Sentry SDK to capture transactions and spans. They can also be mixed and end up on the same transaction.
     - OpenTelemetry extends the Sentry SDK by adding spans for numerous integrations, like Ktor, Vert.x and MongoDB. Please check [the OpenTelemetry GitHub repository](https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/instrumentation) for a full list.
     - OpenTelemetry allows propagating trace information from and to additional libraries, that Sentry did not support before, for example gRPC.
-    - OpenTelemetry also has broader support for propagating the Sentry `Scopes` through reactive libraries like {TODO examples}
+    - OpenTelemetry also has broader support for propagating the Sentry `Scopes` through reactive libraries like RxJava.
 - The SDK is now compatible with Spring Boot 3.4
 - We now support GraphQL v22 (`sentry-graphql-22`)
 - Metrics have been removed
