@@ -313,27 +313,6 @@ public abstract class io/sentry/spring/jakarta/webflux/AbstractSentryWebFilter :
 	protected fun startTransaction (Lio/sentry/IScopes;Lorg/springframework/http/server/reactive/ServerHttpRequest;Lio/sentry/TransactionContext;Ljava/lang/String;)Lio/sentry/ITransaction;
 }
 
-public final class io/sentry/spring/jakarta/webflux/ReactorUtils {
-	public fun <init> ()V
-	public static fun withSentry (Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;
-	public static fun withSentry (Lreactor/core/publisher/Mono;)Lreactor/core/publisher/Mono;
-	public static fun withSentryForkedRoots (Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;
-	public static fun withSentryForkedRoots (Lreactor/core/publisher/Mono;)Lreactor/core/publisher/Mono;
-	public static fun withSentryScopes (Lreactor/core/publisher/Flux;Lio/sentry/IScopes;)Lreactor/core/publisher/Flux;
-	public static fun withSentryScopes (Lreactor/core/publisher/Mono;Lio/sentry/IScopes;)Lreactor/core/publisher/Mono;
-}
-
-public final class io/sentry/spring/jakarta/webflux/SentryReactorThreadLocalAccessor : io/micrometer/context/ThreadLocalAccessor {
-	public static final field KEY Ljava/lang/String;
-	public fun <init> ()V
-	public fun getValue ()Lio/sentry/IScopes;
-	public synthetic fun getValue ()Ljava/lang/Object;
-	public fun key ()Ljava/lang/Object;
-	public fun reset ()V
-	public fun setValue (Lio/sentry/IScopes;)V
-	public synthetic fun setValue (Ljava/lang/Object;)V
-}
-
 public class io/sentry/spring/jakarta/webflux/SentryRequestResolver {
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun resolveSentryRequest (Lorg/springframework/http/server/reactive/ServerHttpRequest;)Lio/sentry/protocol/Request;
@@ -360,5 +339,9 @@ public final class io/sentry/spring/jakarta/webflux/SentryWebFilterWithThreadLoc
 	public static final field TRACE_ORIGIN Ljava/lang/String;
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
+}
+
+public final class io/sentry/spring/jakarta/webflux/reactor/ReactorUtils : io/sentry/reactor/SentryReactorUtils {
+	public fun <init> ()V
 }
 

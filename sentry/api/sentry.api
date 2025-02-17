@@ -32,7 +32,8 @@ public abstract interface class io/sentry/BackfillingEventProcessor : io/sentry/
 public final class io/sentry/Baggage {
 	public fun <init> (Lio/sentry/Baggage;)V
 	public fun <init> (Lio/sentry/ILogger;)V
-	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZLio/sentry/ILogger;)V
+	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZZLio/sentry/ILogger;)V
+	public fun forceSetSampleRate (Ljava/lang/String;)V
 	public fun freeze ()V
 	public static fun fromEvent (Lio/sentry/SentryEvent;Lio/sentry/SentryOptions;)Lio/sentry/Baggage;
 	public static fun fromHeader (Ljava/lang/String;)Lio/sentry/Baggage;
@@ -46,6 +47,8 @@ public final class io/sentry/Baggage {
 	public fun getPublicKey ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getReplayId ()Ljava/lang/String;
+	public fun getSampleRand ()Ljava/lang/String;
+	public fun getSampleRandDouble ()Ljava/lang/Double;
 	public fun getSampleRate ()Ljava/lang/String;
 	public fun getSampleRateDouble ()Ljava/lang/Double;
 	public fun getSampled ()Ljava/lang/String;
@@ -55,16 +58,20 @@ public final class io/sentry/Baggage {
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserId ()Ljava/lang/String;
 	public fun isMutable ()Z
+	public fun isShouldFreeze ()Z
 	public fun set (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setPublicKey (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setReplayId (Ljava/lang/String;)V
+	public fun setSampleRand (Ljava/lang/String;)V
+	public fun setSampleRandDouble (Ljava/lang/Double;)V
 	public fun setSampleRate (Ljava/lang/String;)V
 	public fun setSampled (Ljava/lang/String;)V
 	public fun setTraceId (Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUserId (Ljava/lang/String;)V
+	public fun setValuesFromSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setValuesFromScope (Lio/sentry/IScope;Lio/sentry/SentryOptions;)V
 	public fun setValuesFromTransaction (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Lio/sentry/SentryOptions;Lio/sentry/TracesSamplingDecision;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun toHeaderString (Ljava/lang/String;)Ljava/lang/String;
@@ -78,6 +85,7 @@ public final class io/sentry/Baggage$DSCKeys {
 	public static final field RELEASE Ljava/lang/String;
 	public static final field REPLAY_ID Ljava/lang/String;
 	public static final field SAMPLED Ljava/lang/String;
+	public static final field SAMPLE_RAND Ljava/lang/String;
 	public static final field SAMPLE_RATE Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public static final field TRANSACTION Ljava/lang/String;
@@ -1949,10 +1957,10 @@ public final class io/sentry/PropagationContext {
 	public static fun fromHeaders (Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;Lio/sentry/SpanId;)Lio/sentry/PropagationContext;
 	public fun getBaggage ()Lio/sentry/Baggage;
 	public fun getParentSpanId ()Lio/sentry/SpanId;
+	public fun getSampleRand ()Ljava/lang/Double;
 	public fun getSpanId ()Lio/sentry/SpanId;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public fun isSampled ()Ljava/lang/Boolean;
-	public fun setBaggage (Lio/sentry/Baggage;)V
 	public fun setParentSpanId (Lio/sentry/SpanId;)V
 	public fun setSampled (Ljava/lang/Boolean;)V
 	public fun setSpanId (Lio/sentry/SpanId;)V
@@ -2009,7 +2017,9 @@ public final class io/sentry/RequestDetails {
 
 public final class io/sentry/SamplingContext {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;)V
+	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Ljava/lang/Double;)V
 	public fun getCustomSamplingContext ()Lio/sentry/CustomSamplingContext;
+	public fun getSampleRand ()Ljava/lang/Double;
 	public fun getTransactionContext ()Lio/sentry/TransactionContext;
 }
 
@@ -3636,6 +3646,7 @@ public final class io/sentry/TraceContext : io/sentry/JsonSerializable, io/sentr
 	public fun getPublicKey ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
+	public fun getSampleRand ()Ljava/lang/String;
 	public fun getSampleRate ()Ljava/lang/String;
 	public fun getSampled ()Ljava/lang/String;
 	public fun getTraceId ()Lio/sentry/protocol/SentryId;
@@ -3658,6 +3669,7 @@ public final class io/sentry/TraceContext$JsonKeys {
 	public static final field RELEASE Ljava/lang/String;
 	public static final field REPLAY_ID Ljava/lang/String;
 	public static final field SAMPLED Ljava/lang/String;
+	public static final field SAMPLE_RAND Ljava/lang/String;
 	public static final field SAMPLE_RATE Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public static final field TRANSACTION Ljava/lang/String;
@@ -3674,8 +3686,11 @@ public final class io/sentry/TracesSamplingDecision {
 	public fun <init> (Ljava/lang/Boolean;)V
 	public fun <init> (Ljava/lang/Boolean;Ljava/lang/Double;)V
 	public fun <init> (Ljava/lang/Boolean;Ljava/lang/Double;Ljava/lang/Boolean;Ljava/lang/Double;)V
+	public fun <init> (Ljava/lang/Boolean;Ljava/lang/Double;Ljava/lang/Double;)V
+	public fun <init> (Ljava/lang/Boolean;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Boolean;Ljava/lang/Double;)V
 	public fun getProfileSampleRate ()Ljava/lang/Double;
 	public fun getProfileSampled ()Ljava/lang/Boolean;
+	public fun getSampleRand ()Ljava/lang/Double;
 	public fun getSampleRate ()Ljava/lang/Double;
 	public fun getSampled ()Ljava/lang/Boolean;
 }
@@ -6303,6 +6318,8 @@ public final class io/sentry/util/Random : java/io/Serializable {
 
 public final class io/sentry/util/SampleRateUtils {
 	public fun <init> ()V
+	public static fun backfilledSampleRand (Lio/sentry/TracesSamplingDecision;)Lio/sentry/TracesSamplingDecision;
+	public static fun backfilledSampleRand (Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Boolean;)Ljava/lang/Double;
 	public static fun isValidProfilesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;)Z
@@ -6338,6 +6355,8 @@ public final class io/sentry/util/StringUtils {
 
 public final class io/sentry/util/TracingUtils {
 	public fun <init> ()V
+	public static fun ensureBaggage (Lio/sentry/Baggage;Lio/sentry/TracesSamplingDecision;)Lio/sentry/Baggage;
+	public static fun ensureBaggage (Lio/sentry/Baggage;Ljava/lang/Boolean;Ljava/lang/Double;Ljava/lang/Double;)Lio/sentry/Baggage;
 	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
 	public static fun maybeUpdateBaggage (Lio/sentry/IScope;Lio/sentry/SentryOptions;)Lio/sentry/PropagationContext;
 	public static fun startNewTrace (Lio/sentry/IScopes;)V
