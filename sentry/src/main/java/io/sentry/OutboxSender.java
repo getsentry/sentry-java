@@ -244,7 +244,16 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
                 "Invalid sample rate parsed from TraceContext: %s",
                 sampleRateString);
           } else {
-            return new TracesSamplingDecision(true, sampleRate);
+            final @Nullable String sampleRandString = traceContext.getSampleRand();
+            if (sampleRandString != null) {
+              final Double sampleRand = Double.parseDouble(sampleRandString);
+              if (SampleRateUtils.isValidTracesSampleRate(sampleRand, false)) {
+                return new TracesSamplingDecision(true, sampleRate, sampleRand);
+              }
+            }
+
+            return SampleRateUtils.backfilledSampleRand(
+                new TracesSamplingDecision(true, sampleRate));
           }
         } catch (Exception e) {
           logger.log(

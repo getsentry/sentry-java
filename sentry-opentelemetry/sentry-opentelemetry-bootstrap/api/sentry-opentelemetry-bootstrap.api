@@ -20,6 +20,7 @@ public final class io/sentry/opentelemetry/InternalSemanticAttributes {
 	public static final field PROFILE_SAMPLED Lio/opentelemetry/api/common/AttributeKey;
 	public static final field PROFILE_SAMPLE_RATE Lio/opentelemetry/api/common/AttributeKey;
 	public static final field SAMPLED Lio/opentelemetry/api/common/AttributeKey;
+	public static final field SAMPLE_RAND Lio/opentelemetry/api/common/AttributeKey;
 	public static final field SAMPLE_RATE Lio/opentelemetry/api/common/AttributeKey;
 	public fun <init> ()V
 }
