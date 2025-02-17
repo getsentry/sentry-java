@@ -416,7 +416,7 @@ If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that
 
 ### Behavioural Changes
 
-- The user ip-address is now only set to `"{{auto}}"` if sendDefaultPii is enabled ([#4071](https://github.com/getsentry/sentry-java/pull/4071))
+- (changed in [7.20.1](https://github.com/getsentry/sentry-java/releases/tag/7.20.1)) The user ip-address is now only set to `"{{auto}}"` if sendDefaultPii is enabled ([#4071](https://github.com/getsentry/sentry-java/pull/4071))
     - This change gives you control over IP address collection directly on the client
 - Reduce the number of broadcasts the SDK is subscribed for ([#4052](https://github.com/getsentry/sentry-java/pull/4052))
   - Drop `TempSensorBreadcrumbsIntegration`
