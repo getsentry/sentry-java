@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- `SentryOptions.setTracePropagationTargets` is no longer marked internal ([#4170](https://github.com/getsentry/sentry-java/pull/4170))
+
 ### Behavioural Changes
 
 - The class `io.sentry.spring.jakarta.webflux.ReactorUtils` is now deprecated, please use `io.sentry.reactor.SentryReactorUtils` in the new `sentry-reactor` module instead ([#4155](https://github.com/getsentry/sentry-java/pull/4155))
