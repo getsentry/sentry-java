@@ -1,6 +1,5 @@
 package io.sentry.cache;
 
-import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.SentryLevel.INFO;
 import static io.sentry.cache.CacheUtils.ensureCacheDir;
@@ -24,7 +23,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -66,7 +64,6 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
 
     QueueFile queueFile = null;
     final File file = new File(cacheDir, BREADCRUMBS_FILENAME);
-    store(new Breadcrumb(), BREADCRUMBS_FILENAME);
     try {
       try {
         queueFile = new QueueFile.Builder(file)
