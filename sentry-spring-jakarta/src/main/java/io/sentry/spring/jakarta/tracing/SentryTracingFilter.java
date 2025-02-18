@@ -37,8 +37,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   private static final String TRANSACTION_OP = "http.server";
 
   private static final String TRACE_ORIGIN = "auto.http.spring_jakarta.webmvc";
-  private static final String TRANSACTION_ATTR =
-      SentryTracingFilter.class.getName() + ".transaction";
+  private static final String TRANSACTION_ATTR = "sentry.transaction";
 
   private final @NotNull TransactionNameProvider transactionNameProvider;
   private final @NotNull IScopes scopes;
@@ -86,12 +85,14 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       final @NotNull FilterChain filterChain)
       throws ServletException, IOException {
     if (scopes.isEnabled() && !isIgnored()) {
-      final @Nullable String sentryTraceHeader =
-          httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
-      final @Nullable List<String> baggageHeader =
-          Collections.list(httpRequest.getHeaders(BaggageHeader.BAGGAGE_HEADER));
-      final @Nullable TransactionContext transactionContext =
-          scopes.continueTrace(sentryTraceHeader, baggageHeader);
+      @Nullable TransactionContext transactionContext = null;
+      if (shouldContinueTrace(httpRequest)) {
+        final @Nullable String sentryTraceHeader =
+            httpRequest.getHeader(SentryTraceHeader.SENTRY_TRACE_HEADER);
+        final @Nullable List<String> baggageHeader =
+            Collections.list(httpRequest.getHeaders(BaggageHeader.BAGGAGE_HEADER));
+        transactionContext = scopes.continueTrace(sentryTraceHeader, baggageHeader);
+      }
       if (scopes.getOptions().isTracingEnabled() && shouldTraceRequest(httpRequest)) {
         doFilterWithTransaction(httpRequest, httpResponse, filterChain, transactionContext);
       } else {
@@ -112,23 +113,19 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       FilterChain filterChain,
       final @Nullable TransactionContext transactionContext)
       throws IOException, ServletException {
-    @Nullable ITransaction transaction = null;
-    if (isAsyncDispatch(httpRequest)) {
-      transaction = (ITransaction) httpRequest.getAttribute(TRANSACTION_ATTR);
-    } else {
-      // at this stage we are not able to get real transaction name
-      transaction = startTransaction(httpRequest, transactionContext);
-      httpRequest.setAttribute(TRANSACTION_ATTR, transaction);
-    }
+    final @Nullable ITransaction transaction =
+        getOrStartTransaction(httpRequest, transactionContext);
 
     try {
       filterChain.doFilter(httpRequest, httpResponse);
     } catch (Throwable e) {
-      // exceptions that are not handled by Spring
-      transaction.setStatus(SpanStatus.INTERNAL_ERROR);
+      if (transaction != null) {
+        // exceptions that are not handled by Spring
+        transaction.setStatus(SpanStatus.INTERNAL_ERROR);
+      }
       throw e;
     } finally {
-      if (!isAsyncStarted(httpRequest)) {
+      if (shouldFinishTransaction(httpRequest) && transaction != null) {
         // after all filters run, templated path pattern is available in request attribute
         final String transactionName = transactionNameProvider.provideTransactionName(httpRequest);
         final TransactionNameSource transactionNameSource =
@@ -147,6 +144,49 @@ public class SentryTracingFilter extends OncePerRequestFilter {
         }
       }
     }
+  }
+
+  private ITransaction getOrStartTransaction(
+      final @NotNull HttpServletRequest httpRequest,
+      final @Nullable TransactionContext transactionContext) {
+    if (isAsyncDispatch(httpRequest)) {
+      // second invocation of this filter for the same async request already has the transaction
+      // in the attributes
+      return (ITransaction) httpRequest.getAttribute(TRANSACTION_ATTR);
+    } else {
+      // at this stage we are not able to get real transaction name
+      final @NotNull ITransaction transaction = startTransaction(httpRequest, transactionContext);
+      if (shouldStoreTransactionForAsyncProcessing()) {
+        httpRequest.setAttribute(TRANSACTION_ATTR, transaction);
+      }
+      return transaction;
+    }
+  }
+
+  /**
+   * Returns false if an async request is being dispatched (first invocation of the filter for the
+   * same async request).
+   *
+   * <p>Returns true if not an async request or this is the second invocation of the filter for the
+   * same async request
+   */
+  private boolean shouldContinueTrace(HttpServletRequest httpRequest) {
+    return !isAsyncDispatch(httpRequest);
+  }
+
+  private boolean shouldStoreTransactionForAsyncProcessing() {
+    return true;
+  }
+
+  /**
+   * Returns false if async request handling has only been started but not yet finished (first
+   * invocation of this filter for the same async request).
+   *
+   * <p>Returns true if not an async request or async request handling has finished (second
+   * invocation of this filter for the same async request)
+   */
+  private boolean shouldFinishTransaction(HttpServletRequest httpRequest) {
+    return !isAsyncStarted(httpRequest);
   }
 
   private boolean shouldTraceRequest(final @NotNull HttpServletRequest request) {
