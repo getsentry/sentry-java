@@ -127,11 +127,11 @@ class ReplayIntegrationWithRecorderTest {
         replay.start()
         assertEquals(STARTED, recorder.state)
 
-        replay.resume()
-        assertEquals(RESUMED, recorder.state)
-
         replay.pause()
         assertEquals(PAUSED, recorder.state)
+
+        replay.resume()
+        assertEquals(RESUMED, recorder.state)
 
         replay.stop()
         assertEquals(STOPPED, recorder.state)

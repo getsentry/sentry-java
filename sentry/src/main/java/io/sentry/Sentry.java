@@ -22,6 +22,7 @@ import io.sentry.util.FileUtils;
 import io.sentry.util.InitUtil;
 import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
+import io.sentry.util.SentryRandom;
 import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
 import io.sentry.util.thread.ThreadChecker;
@@ -458,7 +459,8 @@ public final class Sentry {
       final @NotNull SentryOptions options) {
     TransactionContext appStartTransactionContext = new TransactionContext("app.launch", "profile");
     appStartTransactionContext.setForNextAppStart(true);
-    SamplingContext appStartSamplingContext = new SamplingContext(appStartTransactionContext, null);
+    SamplingContext appStartSamplingContext =
+        new SamplingContext(appStartTransactionContext, null, SentryRandom.current().nextDouble());
     return options.getInternalTracesSampler().sample(appStartSamplingContext);
   }
 

@@ -91,10 +91,10 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.spanId = Objects.requireNonNull(spanId, "spanId is required");
     this.op = Objects.requireNonNull(operation, "operation is required");
     this.parentSpanId = parentSpanId;
-    this.samplingDecision = samplingDecision;
     this.description = description;
     this.status = status;
     this.origin = origin;
+    setSamplingDecision(samplingDecision);
   }
 
   /**
@@ -106,7 +106,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.traceId = spanContext.traceId;
     this.spanId = spanContext.spanId;
     this.parentSpanId = spanContext.parentSpanId;
-    this.samplingDecision = spanContext.samplingDecision;
+    setSamplingDecision(spanContext.samplingDecision);
     this.op = spanContext.op;
     this.description = spanContext.description;
     this.status = spanContext.status;
@@ -209,6 +209,9 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   @ApiStatus.Internal
   public void setSamplingDecision(final @Nullable TracesSamplingDecision samplingDecision) {
     this.samplingDecision = samplingDecision;
+    if (this.baggage != null) {
+      this.baggage.setValuesFromSamplingDecision(this.samplingDecision);
+    }
   }
 
   public @Nullable String getOrigin() {

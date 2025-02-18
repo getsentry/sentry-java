@@ -13,7 +13,6 @@ android {
     namespace = "io.sentry.android.ndk"
 
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersion
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
@@ -27,7 +26,9 @@ android {
     }
 
     buildTypes {
-        getByName("debug")
+        getByName("debug") {
+            consumerProguardFiles("proguard-rules.pro")
+        }
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }
@@ -58,11 +59,17 @@ android {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    buildFeatures {
+        buildConfig = true
     }
+
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    }
+
+    // the default AGP version is too high, we keep this low for compatibility reasons
+    // see https://developer.android.com/build/releases/past-releases/ to find the AGP-NDK mapping
+    ndkVersion = "23.1.7779620"
 
     @Suppress("UnstableApiUsage")
     packagingOptions {
