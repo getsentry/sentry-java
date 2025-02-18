@@ -99,7 +99,7 @@ class PersistingScopeObserverTest<T>(
         fixture.options,
         filename,
         // need to cast breadcrumbs to a regular List, not kotlin lists
-        if (entity!!::class.java.name.contains("List") ) List::class.java else entity!!::class.java
+        if (entity!!::class.java.name.contains("List")) List::class.java else entity!!::class.java
     )
 
     companion object {

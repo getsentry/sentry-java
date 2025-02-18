@@ -219,14 +219,17 @@ class ObjectQueueTest {
         val parent = folder.root
         val file = File(parent, "object-queue")
         val queueFile = Builder(file).build()
-        val queue = ObjectQueue.create(queueFile, object : Converter<Any> {
-            override fun from(bytes: ByteArray): String {
-                throw IOException()
-            }
+        val queue = ObjectQueue.create(
+            queueFile,
+            object : Converter<Any> {
+                override fun from(bytes: ByteArray): String {
+                    throw IOException()
+                }
 
-            override fun toStream(o: Any, bytes: OutputStream) {
+                override fun toStream(o: Any, bytes: OutputStream) {
+                }
             }
-        })
+        )
         queue.add(Any())
         val iterator = queue.iterator()
         try {

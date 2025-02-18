@@ -17,6 +17,8 @@
  */
 package io.sentry.cache.tape;
 
+import static java.lang.Math.min;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,30 +31,27 @@ import java.util.NoSuchElementException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-
 /**
  * A reliable, efficient, file-based, FIFO queue. Additions and removals are O(1). All operations
- * are atomic. Writes are synchronous; data will be written to disk before an operation returns.
- * The underlying file is structured to survive process and even system crashes. If an I/O
- * exception is thrown during a mutating change, the change is aborted. It is safe to continue to
- * use a {@code QueueFile} instance after an exception.
+ * are atomic. Writes are synchronous; data will be written to disk before an operation returns. The
+ * underlying file is structured to survive process and even system crashes. If an I/O exception is
+ * thrown during a mutating change, the change is aborted. It is safe to continue to use a {@code
+ * QueueFile} instance after an exception.
  *
  * <p><strong>Note that this implementation is not synchronized.</strong>
  *
- * <p>In a traditional queue, the remove operation returns an element. In this queue,
- * {@link #peek} and {@link #remove} are used in conjunction. Use
- * {@code peek} to retrieve the first element, and then {@code remove} to remove it after
- * successful processing. If the system crashes after {@code peek} and during processing, the
- * element will remain in the queue, to be processed when the system restarts.
+ * <p>In a traditional queue, the remove operation returns an element. In this queue, {@link #peek}
+ * and {@link #remove} are used in conjunction. Use {@code peek} to retrieve the first element, and
+ * then {@code remove} to remove it after successful processing. If the system crashes after {@code
+ * peek} and during processing, the element will remain in the queue, to be processed when the
+ * system restarts.
  *
  * <p><strong>NOTE:</strong> The current implementation is built for file systems that support
  * atomic segment writes (like YAFFS). Most conventional file systems don't support this; if the
  * power goes out while writing a segment, the segment will contain garbage and the file will be
  * corrupt. We'll add journaling support so this class can be used with more file systems later.
  *
- * Construct instances with {@link Builder}.
+ * <p>Construct instances with {@link Builder}.
  *
  * @author Bob Lee (bob@squareup.com)
  */
@@ -68,13 +67,14 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
   private static final byte[] ZEROES = new byte[INITIAL_LENGTH];
 
   /**
-   * The underlying file. Uses a ring buffer to store entries. Designed so that a modification
-   * isn't committed or visible until we write the header. The header is much smaller than a
-   * segment. So long as the underlying file system supports atomic segment writes, changes to the
-   * queue are atomic. Storing the file length ensures we can recover from a failed expansion
-   * (i.e. if setting the file length succeeds but the process dies before the data can be copied).
-   * <p>
-   * This implementation supports two versions of the on-disk format.
+   * The underlying file. Uses a ring buffer to store entries. Designed so that a modification isn't
+   * committed or visible until we write the header. The header is much smaller than a segment. So
+   * long as the underlying file system supports atomic segment writes, changes to the queue are
+   * atomic. Storing the file length ensures we can recover from a failed expansion (i.e. if setting
+   * the file length succeeds but the process dies before the data can be copied).
+   *
+   * <p>This implementation supports two versions of the on-disk format.
+   *
    * <pre>
    * Format:
    *   16-32 bytes      Header
@@ -117,9 +117,9 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
   private final byte[] buffer = new byte[32];
 
   /**
-   * The number of times this file has been structurally modified — it is incremented during
-   * {@link #remove(int)} and {@link #add(byte[], int, int)}. Used by {@link ElementIterator}
-   * to guard against concurrent modification.
+   * The number of times this file has been structurally modified — it is incremented during {@link
+   * #remove(int)} and {@link #add(byte[], int, int)}. Used by {@link ElementIterator} to guard
+   * against concurrent modification.
    */
   int modCount = 0;
 
@@ -131,8 +131,7 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
 
   boolean closed;
 
-  static RandomAccessFile initializeFromFile(File file)
-      throws IOException {
+  static RandomAccessFile initializeFromFile(File file) throws IOException {
     if (!file.exists()) {
       // Use a temp file so we don't leave a partially-initialized file.
       File tempFile = new File(file.getPath() + ".tmp");
@@ -191,11 +190,11 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
   }
 
   /**
-   * Stores an {@code int} in the {@code byte[]}. The behavior is equivalent to calling
-   * {@link RandomAccessFile#writeInt}.
+   * Stores an {@code int} in the {@code byte[]}. The behavior is equivalent to calling {@link
+   * RandomAccessFile#writeInt}.
    */
   private static void writeInt(byte[] buffer, int offset, int value) {
-    buffer[offset    ] = (byte) (value >> 24);
+    buffer[offset] = (byte) (value >> 24);
     buffer[offset + 1] = (byte) (value >> 16);
     buffer[offset + 2] = (byte) (value >> 8);
     buffer[offset + 3] = (byte) value;
@@ -203,18 +202,18 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
 
   /** Reads an {@code int} from the {@code byte[]}. */
   private static int readInt(byte[] buffer, int offset) {
-    return ((buffer[offset    ] & 0xff) << 24)
-        +  ((buffer[offset + 1] & 0xff) << 16)
-        +  ((buffer[offset + 2] & 0xff) << 8)
-        +   (buffer[offset + 3] & 0xff);
+    return ((buffer[offset] & 0xff) << 24)
+        + ((buffer[offset + 1] & 0xff) << 16)
+        + ((buffer[offset + 2] & 0xff) << 8)
+        + (buffer[offset + 3] & 0xff);
   }
 
   /**
-   * Stores an {@code long} in the {@code byte[]}. The behavior is equivalent to calling
-   * {@link RandomAccessFile#writeLong}.
+   * Stores an {@code long} in the {@code byte[]}. The behavior is equivalent to calling {@link
+   * RandomAccessFile#writeLong}.
    */
   private static void writeLong(byte[] buffer, int offset, long value) {
-    buffer[offset    ] = (byte) (value >> 56);
+    buffer[offset] = (byte) (value >> 56);
     buffer[offset + 1] = (byte) (value >> 48);
     buffer[offset + 2] = (byte) (value >> 40);
     buffer[offset + 3] = (byte) (value >> 32);
@@ -226,21 +225,21 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
 
   /** Reads an {@code long} from the {@code byte[]}. */
   private static long readLong(byte[] buffer, int offset) {
-    return ((buffer[offset    ] & 0xffL) << 56)
-        +  ((buffer[offset + 1] & 0xffL) << 48)
-        +  ((buffer[offset + 2] & 0xffL) << 40)
-        +  ((buffer[offset + 3] & 0xffL) << 32)
-        +  ((buffer[offset + 4] & 0xffL) << 24)
-        +  ((buffer[offset + 5] & 0xffL) << 16)
-        +  ((buffer[offset + 6] & 0xffL) << 8)
-        +   (buffer[offset + 7] & 0xffL);
+    return ((buffer[offset] & 0xffL) << 56)
+        + ((buffer[offset + 1] & 0xffL) << 48)
+        + ((buffer[offset + 2] & 0xffL) << 40)
+        + ((buffer[offset + 3] & 0xffL) << 32)
+        + ((buffer[offset + 4] & 0xffL) << 24)
+        + ((buffer[offset + 5] & 0xffL) << 16)
+        + ((buffer[offset + 6] & 0xffL) << 8)
+        + (buffer[offset + 7] & 0xffL);
   }
 
   /**
    * Writes header atomically. The arguments contain the updated values. The class member fields
    * should not have changed yet. This only updates the state in the file. It's up to the caller to
-   * update the class member variables *after* this call succeeds. Assumes segment writes are
-   * atomic in the underlying file system.
+   * update the class member variables *after* this call succeeds. Assumes segment writes are atomic
+   * in the underlying file system.
    */
   private void writeHeader(long fileLength, int elementCount, long firstPosition, long lastPosition)
       throws IOException {
@@ -263,8 +262,7 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
 
   /** Wraps the position if it exceeds the end of the file. */
   long wrapPosition(long position) {
-    return position < fileLength ? position
-        : headerLength + position - fileLength;
+    return position < fileLength ? position : headerLength + position - fileLength;
   }
 
   /**
@@ -339,7 +337,7 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
    * @param offset to start from in buffer
    * @param count number of bytes to copy
    * @throws IndexOutOfBoundsException if {@code offset < 0} or {@code count < 0}, or if {@code
-   * offset + count} is bigger than the length of {@code buffer}.
+   *     offset + count} is bigger than the length of {@code buffer}.
    */
   public void add(byte[] data, int offset, int count) throws IOException {
     if (data == null) {
@@ -359,8 +357,8 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
 
     // Insert a new element after the current last element.
     boolean wasEmpty = isEmpty();
-    long position = wasEmpty ? headerLength
-        : wrapPosition(last.position + Element.HEADER_LENGTH + last.length);
+    long position =
+        wasEmpty ? headerLength : wrapPosition(last.position + Element.HEADER_LENGTH + last.length);
     Element newLast = new Element(position, count);
 
     // Write length.
@@ -384,14 +382,17 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
 
     if (last.position >= first.position) {
       // Contiguous queue.
-      return (last.position - first.position)   // all but last entry
-          + Element.HEADER_LENGTH + last.length // last entry
+      return (last.position - first.position) // all but last entry
+          + Element.HEADER_LENGTH
+          + last.length // last entry
           + headerLength;
     } else {
       // tail < head. The queue wraps.
-      return last.position                      // buffer front + header
-          + Element.HEADER_LENGTH + last.length // last entry
-          + fileLength - first.position;        // buffer end
+      return last.position // buffer front + header
+          + Element.HEADER_LENGTH
+          + last.length // last entry
+          + fileLength
+          - first.position; // buffer end
     }
   }
 
@@ -476,13 +477,14 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
    * Returns an iterator over elements in this QueueFile.
    *
    * <p>The iterator disallows modifications to be made to the QueueFile during iteration. Removing
-   * elements from the head of the QueueFile is permitted during iteration using
-   * {@link Iterator#remove()}.
+   * elements from the head of the QueueFile is permitted during iteration using {@link
+   * Iterator#remove()}.
    *
-   * <p>The iterator may throw an unchecked {@link IOException} during {@link Iterator#next()}
-   * or {@link Iterator#remove()}.
+   * <p>The iterator may throw an unchecked {@link IOException} during {@link Iterator#next()} or
+   * {@link Iterator#remove()}.
    */
-  @Override public Iterator<byte[]> iterator() {
+  @Override
+  public Iterator<byte[]> iterator() {
     return new ElementIterator();
   }
 
@@ -499,20 +501,21 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
      */
     int expectedModCount = modCount;
 
-    ElementIterator() {
-    }
+    ElementIterator() {}
 
     private void checkForComodification() {
       if (modCount != expectedModCount) throw new ConcurrentModificationException();
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
       if (closed) throw new IllegalStateException("closed");
       checkForComodification();
       return nextElementIndex != elementCount;
     }
 
-    @Override public byte[] next() {
+    @Override
+    public byte[] next() {
       if (closed) throw new IllegalStateException("closed");
       checkForComodification();
       if (isEmpty()) throw new NoSuchElementException();
@@ -537,7 +540,8 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
       }
     }
 
-    @Override public void remove() {
+    @Override
+    public void remove() {
       checkForComodification();
 
       if (isEmpty()) throw new NoSuchElementException();
@@ -658,24 +662,32 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     return file;
   }
 
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     closed = true;
     raf.close();
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return "QueueFile{"
-        + "file=" + file
-        + ", zero=" + zero
-        + ", length=" + fileLength
-        + ", size=" + elementCount
-        + ", first=" + first
-        + ", last=" + last
+        + "file="
+        + file
+        + ", zero="
+        + zero
+        + ", length="
+        + fileLength
+        + ", size="
+        + elementCount
+        + ", first="
+        + first
+        + ", last="
+        + last
         + '}';
   }
 
   /** A pointer to an element. */
- final static class Element {
+  static final class Element {
     static final Element NULL = new Element(0, 0);
 
     /** Length of element header in bytes. */
@@ -698,11 +710,9 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
       this.length = length;
     }
 
-    @Override public String toString() {
-      return getClass().getSimpleName()
-          + "[position=" + position
-          + ", length=" + length
-          + "]";
+    @Override
+    public String toString() {
+      return getClass().getSimpleName() + "[position=" + position + ", length=" + length + "]";
     }
   }
 

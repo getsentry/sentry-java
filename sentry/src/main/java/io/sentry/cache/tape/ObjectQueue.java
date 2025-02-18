@@ -35,9 +35,7 @@ public abstract class ObjectQueue<T> implements Iterable<T>, Closeable {
     return new FileObjectQueue<>(qf, converter);
   }
 
-  /**
-   * An empty queue for objects that is essentially a no-op.
-   */
+  /** An empty queue for objects that is essentially a no-op. */
   public static <T> ObjectQueue<T> createEmpty() {
     return new EmptyObjectQueue<>();
   }
@@ -63,9 +61,8 @@ public abstract class ObjectQueue<T> implements Iterable<T>, Closeable {
   public abstract @Nullable T peek() throws IOException;
 
   /**
-   * Reads up to {@code max} entries from the head of the queue without removing the entries.
-   * If the queue's {@link #size()} is less than {@code max} then only {@link #size()} entries
-   * are read.
+   * Reads up to {@code max} entries from the head of the queue without removing the entries. If the
+   * queue's {@link #size()} is less than {@code max} then only {@link #size()} entries are read.
    */
   public List<T> peek(int max) throws IOException {
     int end = Math.min(max, size());
@@ -102,7 +99,8 @@ public abstract class ObjectQueue<T> implements Iterable<T>, Closeable {
    */
   public interface Converter<T> {
     /** Converts bytes to an object. */
-    @Nullable T from(byte[] source) throws IOException;
+    @Nullable
+    T from(byte[] source) throws IOException;
 
     /** Converts {@code value} to bytes written to the specified stream. */
     void toStream(T value, OutputStream sink) throws IOException;

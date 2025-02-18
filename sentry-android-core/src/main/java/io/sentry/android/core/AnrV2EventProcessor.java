@@ -192,8 +192,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   private void setReplayId(final @NotNull SentryEvent event) {
-    @Nullable
-    String persistedReplayId = readFromDisk(options, REPLAY_FILENAME, String.class);
+    @Nullable String persistedReplayId = readFromDisk(options, REPLAY_FILENAME, String.class);
     final @NotNull File replayFolder =
         new File(options.getCacheDirPath(), "replay_" + persistedReplayId);
     if (!replayFolder.exists()) {
@@ -324,7 +323,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setScopeTags(final @NotNull SentryBaseEvent event) {
     final Map<String, String> tags =
         (Map<String, String>)
-          readFromDisk(options, PersistingScopeObserver.TAGS_FILENAME, Map.class);
+            readFromDisk(options, PersistingScopeObserver.TAGS_FILENAME, Map.class);
     if (tags == null) {
       return;
     }
@@ -353,10 +352,10 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
   }
 
-  private  <T> @Nullable T readFromDisk(
-    final @NotNull SentryOptions options,
-    final @NotNull String fileName,
-    final @NotNull Class<T> clazz) {
+  private <T> @Nullable T readFromDisk(
+      final @NotNull SentryOptions options,
+      final @NotNull String fileName,
+      final @NotNull Class<T> clazz) {
     if (persistingScopeObserver == null) {
       return null;
     }

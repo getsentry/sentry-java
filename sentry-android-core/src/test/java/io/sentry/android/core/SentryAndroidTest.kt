@@ -38,7 +38,6 @@ import io.sentry.cache.PersistingOptionsObserver
 import io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.OPTIONS_CACHE
 import io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME
-import io.sentry.cache.PersistingScopeObserver
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.cache.PersistingScopeObserver.SCOPE_CACHE

@@ -37,7 +37,6 @@ import io.sentry.android.replay.util.appContext
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
-import io.sentry.cache.PersistingScopeObserver
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.hints.Backfillable
@@ -432,6 +431,7 @@ public class ReplayIntegration(
                 cleanupReplays()
                 return@submitSafely
             }
+
             @Suppress("UNCHECKED_CAST")
             val breadcrumbs = persistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List::class.java) as? List<Breadcrumb>
             val segment = CaptureStrategy.createSegment(

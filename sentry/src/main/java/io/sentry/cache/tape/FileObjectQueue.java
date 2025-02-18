@@ -28,6 +28,7 @@ final class FileObjectQueue<T> extends ObjectQueue<T> {
   private final QueueFile queueFile;
   /** Reusable byte output buffer. */
   private final DirectByteArrayOutputStream bytes = new DirectByteArrayOutputStream();
+
   final Converter<T> converter;
 
   FileObjectQueue(QueueFile queueFile, Converter<T> converter) {
@@ -35,43 +36,52 @@ final class FileObjectQueue<T> extends ObjectQueue<T> {
     this.converter = converter;
   }
 
-  @Override public @NotNull QueueFile file() {
+  @Override
+  public @NotNull QueueFile file() {
     return queueFile;
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return queueFile.size();
   }
 
-  @Override public boolean isEmpty() {
+  @Override
+  public boolean isEmpty() {
     return queueFile.isEmpty();
   }
 
-  @Override public void add(T entry) throws IOException {
+  @Override
+  public void add(T entry) throws IOException {
     bytes.reset();
     converter.toStream(entry, bytes);
     queueFile.add(bytes.getArray(), 0, bytes.size());
   }
 
-  @Override public @Nullable T peek() throws IOException {
+  @Override
+  public @Nullable T peek() throws IOException {
     byte[] bytes = queueFile.peek();
     if (bytes == null) return null;
     return converter.from(bytes);
   }
 
-  @Override public void remove() throws IOException {
+  @Override
+  public void remove() throws IOException {
     queueFile.remove();
   }
 
-  @Override public void remove(int n) throws IOException {
+  @Override
+  public void remove(int n) throws IOException {
     queueFile.remove(n);
   }
 
-  @Override public void clear() throws IOException {
+  @Override
+  public void clear() throws IOException {
     queueFile.clear();
   }
 
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     queueFile.close();
   }
 
@@ -81,17 +91,17 @@ final class FileObjectQueue<T> extends ObjectQueue<T> {
    * <p>The iterator disallows modifications to the queue during iteration. Removing entries from
    * the head of the queue is permitted during iteration using {@link Iterator#remove()}.
    *
-   * <p>The iterator may throw an unchecked {@link IOException} during {@link Iterator#next()}
-   * or {@link Iterator#remove()}.
+   * <p>The iterator may throw an unchecked {@link IOException} during {@link Iterator#next()} or
+   * {@link Iterator#remove()}.
    */
-  @Override public Iterator<T> iterator() {
+  @Override
+  public Iterator<T> iterator() {
     return new QueueFileIterator(queueFile.iterator());
   }
 
-  @Override public String toString() {
-    return "FileObjectQueue{"
-        + "queueFile=" + queueFile
-        + '}';
+  @Override
+  public String toString() {
+    return "FileObjectQueue{" + "queueFile=" + queueFile + '}';
   }
 
   private final class QueueFileIterator implements Iterator<T> {
@@ -101,7 +111,8 @@ final class FileObjectQueue<T> extends ObjectQueue<T> {
       this.iterator = iterator;
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
       return iterator.hasNext();
     }
 
@@ -116,18 +127,18 @@ final class FileObjectQueue<T> extends ObjectQueue<T> {
       }
     }
 
-    @Override public void remove() {
+    @Override
+    public void remove() {
       iterator.remove();
     }
   }
 
   /** Enables direct access to the internal array. Avoids unnecessary copying. */
   private static final class DirectByteArrayOutputStream extends ByteArrayOutputStream {
-    DirectByteArrayOutputStream() {
-    }
+    DirectByteArrayOutputStream() {}
 
     /**
-     * Gets a reference to the internal byte array.  The {@link #size()} method indicates how many
+     * Gets a reference to the internal byte array. The {@link #size()} method indicates how many
      * bytes contain actual data added since the last {@link #reset()} call.
      */
     byte[] getArray() {

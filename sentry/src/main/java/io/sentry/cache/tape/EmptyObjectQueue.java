@@ -18,8 +18,7 @@ final class EmptyObjectQueue<T> extends ObjectQueue<T> {
   }
 
   @Override
-  public void add(T entry) throws IOException {
-  }
+  public void add(T entry) throws IOException {}
 
   @Override
   public @Nullable T peek() throws IOException {
@@ -27,12 +26,10 @@ final class EmptyObjectQueue<T> extends ObjectQueue<T> {
   }
 
   @Override
-  public void remove(int n) throws IOException {
-  }
+  public void remove(int n) throws IOException {}
 
   @Override
-  public void close() throws IOException {
-  }
+  public void close() throws IOException {}
 
   @NotNull
   @Override
@@ -40,7 +37,7 @@ final class EmptyObjectQueue<T> extends ObjectQueue<T> {
     return new EmptyIterator<>();
   }
 
-  private final static class EmptyIterator<T> implements Iterator<T> {
+  private static final class EmptyIterator<T> implements Iterator<T> {
 
     @Override
     public boolean hasNext() {

@@ -51,55 +51,59 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   public static final String REPLAY_FILENAME = "replay.json";
 
   private @NotNull SentryOptions options;
-  private final @NotNull LazyEvaluator<ObjectQueue<Breadcrumb>> breadcrumbsQueue = new LazyEvaluator<>(() -> {
-    final File cacheDir = ensureCacheDir(options, SCOPE_CACHE);
-    if (cacheDir == null) {
-      options.getLogger().log(INFO, "Cache dir is not set, cannot store in scope cache");
-      return ObjectQueue.createEmpty();
-    }
+  private final @NotNull LazyEvaluator<ObjectQueue<Breadcrumb>> breadcrumbsQueue =
+      new LazyEvaluator<>(
+          () -> {
+            final File cacheDir = ensureCacheDir(options, SCOPE_CACHE);
+            if (cacheDir == null) {
+              options.getLogger().log(INFO, "Cache dir is not set, cannot store in scope cache");
+              return ObjectQueue.createEmpty();
+            }
 
-    QueueFile queueFile = null;
-    final File file = new File(cacheDir, BREADCRUMBS_FILENAME);
-    try {
-      try {
-        queueFile = new QueueFile.Builder(file)
-          .size(options.getMaxBreadcrumbs())
-          .build();
-      } catch (IOException e) {
-        // if file is corrupted we simply delete it and try to create it again. We accept the trade
-        // off of losing breadcrumbs for ANRs that happened right before the app has received an
-        // update where the new format was introduced
-        file.delete();
+            QueueFile queueFile = null;
+            final File file = new File(cacheDir, BREADCRUMBS_FILENAME);
+            try {
+              try {
+                queueFile = new QueueFile.Builder(file).size(options.getMaxBreadcrumbs()).build();
+              } catch (IOException e) {
+                // if file is corrupted we simply delete it and try to create it again. We accept
+                // the trade
+                // off of losing breadcrumbs for ANRs that happened right before the app has
+                // received an
+                // update where the new format was introduced
+                file.delete();
 
-        queueFile = new QueueFile.Builder(file)
-          .size(options.getMaxBreadcrumbs())
-          .build();
-      }
-    } catch (IOException e) {
-      options.getLogger().log(ERROR, "Failed to create breadcrumbs queue", e);
-      return ObjectQueue.createEmpty();
-    }
-    return ObjectQueue.create(queueFile,
-      new ObjectQueue.Converter<Breadcrumb>() {
-        @Override
-        @Nullable
-        public Breadcrumb from(byte[] source) {
-          try (final Reader reader =
-                 new BufferedReader(new InputStreamReader(new ByteArrayInputStream(source), UTF_8))) {
-            return options.getSerializer().deserialize(reader, Breadcrumb.class);
-          } catch (Throwable e) {
-            options.getLogger().log(ERROR, e, "Error reading entity from scope cache");
-          }
-          return null;
-        }
+                queueFile = new QueueFile.Builder(file).size(options.getMaxBreadcrumbs()).build();
+              }
+            } catch (IOException e) {
+              options.getLogger().log(ERROR, "Failed to create breadcrumbs queue", e);
+              return ObjectQueue.createEmpty();
+            }
+            return ObjectQueue.create(
+                queueFile,
+                new ObjectQueue.Converter<Breadcrumb>() {
+                  @Override
+                  @Nullable
+                  public Breadcrumb from(byte[] source) {
+                    try (final Reader reader =
+                        new BufferedReader(
+                            new InputStreamReader(new ByteArrayInputStream(source), UTF_8))) {
+                      return options.getSerializer().deserialize(reader, Breadcrumb.class);
+                    } catch (Throwable e) {
+                      options.getLogger().log(ERROR, e, "Error reading entity from scope cache");
+                    }
+                    return null;
+                  }
 
-        @Override public void toStream(Breadcrumb value, OutputStream sink) throws IOException {
-          try (final Writer writer = new BufferedWriter(new OutputStreamWriter(sink, UTF_8))) {
-            options.getSerializer().serialize(value, writer);
-          }
-        }
-      });
-  });
+                  @Override
+                  public void toStream(Breadcrumb value, OutputStream sink) throws IOException {
+                    try (final Writer writer =
+                        new BufferedWriter(new OutputStreamWriter(sink, UTF_8))) {
+                      options.getSerializer().serialize(value, writer);
+                    }
+                  }
+                });
+          });
 
   public PersistingScopeObserver(final @NotNull SentryOptions options) {
     this.options = options;
@@ -117,26 +121,29 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
         });
   }
 
-  @Override public void addBreadcrumb(@NotNull Breadcrumb crumb) {
-    serializeToDisk(() -> {
-      try {
-        breadcrumbsQueue.getValue().add(crumb);
-      } catch (IOException e) {
-        options.getLogger().log(ERROR, "Failed to add breadcrumb to file queue", e);
-      }
-    });
+  @Override
+  public void addBreadcrumb(@NotNull Breadcrumb crumb) {
+    serializeToDisk(
+        () -> {
+          try {
+            breadcrumbsQueue.getValue().add(crumb);
+          } catch (IOException e) {
+            options.getLogger().log(ERROR, "Failed to add breadcrumb to file queue", e);
+          }
+        });
   }
 
   @Override
   public void setBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs) {
     if (breadcrumbs.isEmpty()) {
-      serializeToDisk(() -> {
-        try {
-          breadcrumbsQueue.getValue().clear();
-        } catch (IOException e) {
-          options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
-        }
-      });
+      serializeToDisk(
+          () -> {
+            try {
+              breadcrumbsQueue.getValue().clear();
+            } catch (IOException e) {
+              options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
+            }
+          });
     }
   }
 
