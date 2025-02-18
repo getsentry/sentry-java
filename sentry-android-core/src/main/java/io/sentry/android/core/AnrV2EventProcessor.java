@@ -353,7 +353,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
   }
 
-  public <T> @Nullable T readFromDisk(
+  private  <T> @Nullable T readFromDisk(
     final @NotNull SentryOptions options,
     final @NotNull String fileName,
     final @NotNull Class<T> clazz) {

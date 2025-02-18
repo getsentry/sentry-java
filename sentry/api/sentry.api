@@ -2827,6 +2827,7 @@ public class io/sentry/SentryOptions {
 	public fun addPerformanceCollector (Lio/sentry/IPerformanceCollector;)V
 	public fun addScopeObserver (Lio/sentry/IScopeObserver;)V
 	public static fun empty ()Lio/sentry/SentryOptions;
+	public fun findPersistingScopeObserver ()Lio/sentry/cache/PersistingScopeObserver;
 	public fun getBackpressureMonitor ()Lio/sentry/backpressure/IBackpressureMonitor;
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeEnvelopeCallback ()Lio/sentry/SentryOptions$BeforeEnvelopeCallback;
@@ -3902,8 +3903,8 @@ public final class io/sentry/cache/PersistingScopeObserver : io/sentry/ScopeObse
 	public static final field TRANSACTION_FILENAME Ljava/lang/String;
 	public static final field USER_FILENAME Ljava/lang/String;
 	public fun <init> (Lio/sentry/SentryOptions;)V
-	public static fun read (Lio/sentry/SentryOptions;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;
-	public static fun read (Lio/sentry/SentryOptions;Ljava/lang/String;Ljava/lang/Class;Lio/sentry/JsonDeserializer;)Ljava/lang/Object;
+	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
+	public fun read (Lio/sentry/SentryOptions;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;
 	public fun setBreadcrumbs (Ljava/util/Collection;)V
 	public fun setContexts (Lio/sentry/protocol/Contexts;)V
 	public fun setExtras (Ljava/util/Map;)V
@@ -3916,6 +3917,50 @@ public final class io/sentry/cache/PersistingScopeObserver : io/sentry/ScopeObse
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public static fun store (Lio/sentry/SentryOptions;Ljava/lang/Object;Ljava/lang/String;)V
+}
+
+public abstract class io/sentry/cache/tape/ObjectQueue : java/io/Closeable, java/lang/Iterable {
+	public fun <init> ()V
+	public abstract fun add (Ljava/lang/Object;)V
+	public fun asList ()Ljava/util/List;
+	public fun clear ()V
+	public static fun create (Lio/sentry/cache/tape/QueueFile;Lio/sentry/cache/tape/ObjectQueue$Converter;)Lio/sentry/cache/tape/ObjectQueue;
+	public static fun createEmpty ()Lio/sentry/cache/tape/ObjectQueue;
+	public abstract fun file ()Lio/sentry/cache/tape/QueueFile;
+	public fun isEmpty ()Z
+	public abstract fun peek ()Ljava/lang/Object;
+	public fun peek (I)Ljava/util/List;
+	public fun remove ()V
+	public abstract fun remove (I)V
+	public abstract fun size ()I
+}
+
+public abstract interface class io/sentry/cache/tape/ObjectQueue$Converter {
+	public abstract fun from ([B)Ljava/lang/Object;
+	public abstract fun toStream (Ljava/lang/Object;Ljava/io/OutputStream;)V
+}
+
+public final class io/sentry/cache/tape/QueueFile : java/io/Closeable, java/lang/Iterable {
+	public fun add ([B)V
+	public fun add ([BII)V
+	public fun clear ()V
+	public fun close ()V
+	public fun file ()Ljava/io/File;
+	public fun isAtFullCapacity ()Z
+	public fun isEmpty ()Z
+	public fun iterator ()Ljava/util/Iterator;
+	public fun peek ()[B
+	public fun remove ()V
+	public fun remove (I)V
+	public fun size ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/cache/tape/QueueFile$Builder {
+	public fun <init> (Ljava/io/File;)V
+	public fun build ()Lio/sentry/cache/tape/QueueFile;
+	public fun size (I)Lio/sentry/cache/tape/QueueFile$Builder;
+	public fun zero (Z)Lio/sentry/cache/tape/QueueFile$Builder;
 }
 
 public final class io/sentry/clientreport/ClientReport : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
