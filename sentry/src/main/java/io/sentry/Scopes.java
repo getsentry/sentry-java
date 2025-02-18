@@ -926,14 +926,7 @@ public final class Scopes implements IScopes {
   @Override
   public void startProfiler() {
     if (getOptions().isContinuousProfilingEnabled()) {
-      if (getOptions().getInternalTracesSampler().sampleContinuousProfile()) {
-        getOptions().getLogger().log(SentryLevel.DEBUG, "Started continuous Profiling.");
-        getOptions().getContinuousProfiler().start();
-      } else {
-        getOptions()
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Profiler was not started due to sampling decision.");
-      }
+      getOptions().getContinuousProfiler().start(getOptions().getInternalTracesSampler());
     } else if (getOptions().isProfilingEnabled()) {
       getOptions()
           .getLogger()

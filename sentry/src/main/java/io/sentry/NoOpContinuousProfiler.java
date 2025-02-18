@@ -14,9 +14,6 @@ public final class NoOpContinuousProfiler implements IContinuousProfiler {
   }
 
   @Override
-  public void start() {}
-
-  @Override
   public void stop() {}
 
   @Override
@@ -25,7 +22,13 @@ public final class NoOpContinuousProfiler implements IContinuousProfiler {
   }
 
   @Override
+  public void start(final @NotNull TracesSampler tracesSampler) {}
+
+  @Override
   public void close() {}
+
+  @Override
+  public void reevaluateSampling() {}
 
   @Override
   public @NotNull SentryId getProfilerId() {

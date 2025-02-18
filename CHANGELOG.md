@@ -15,7 +15,7 @@
   SentryAndroid.init(context) { options ->
    
     // Currently under experimental options:
-    options.getExperimental().setContinuousProfilesSampleRate(1.0);
+    options.getExperimental().setProfileSessionSampleRate(1.0);
   }
   // Start profiling
   Sentry.startProfiler();
@@ -29,7 +29,7 @@
   SentryAndroid.init(context) { options ->
    
     // Currently under experimental options:
-    options.experimental.continuousProfilesSampleRate = 1.0
+    options.experimental.profileSessionSampleRate = 1.0
   }
   // Start profiling
   Sentry.startProfiler()

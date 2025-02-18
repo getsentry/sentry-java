@@ -20,6 +20,7 @@ import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryOptions;
+import io.sentry.TracesSampler;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.RateLimiter;
@@ -55,6 +56,8 @@ public class AndroidContinuousProfiler
   private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
   private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
   private @NotNull SentryDate startProfileChunkTimestamp = new SentryNanotimeDate();
+  private boolean shouldSample = true;
+  private boolean isSampled = false;
 
   public AndroidContinuousProfiler(
       final @NotNull BuildInfoProvider buildInfoProvider,
@@ -100,7 +103,24 @@ public class AndroidContinuousProfiler
             logger);
   }
 
-  public synchronized void start() {
+  public synchronized void start(final @NotNull TracesSampler tracesSampler) {
+    if (shouldSample) {
+      isSampled = tracesSampler.sampleSessionProfile();
+      shouldSample = false;
+    }
+    if (!isSampled) {
+      logger.log(SentryLevel.DEBUG, "Profiler was not started due to sampling decision.");
+      return;
+    }
+    if (isRunning()) {
+      logger.log(SentryLevel.DEBUG, "Profiler is already running.");
+      return;
+    }
+    logger.log(SentryLevel.DEBUG, "Started Profiler.");
+    startProfile();
+  }
+
+  private synchronized void startProfile() {
     if ((scopes == null || scopes == NoOpScopes.getInstance())
         && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
       this.scopes = Sentry.getCurrentScopes();
@@ -236,12 +256,16 @@ public class AndroidContinuousProfiler
 
     if (restartProfiler) {
       logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
-      start();
+      startProfile();
     } else {
       // When the profiler is stopped manually, we have to reset its id
       profilerId = SentryId.EMPTY_ID;
       logger.log(SentryLevel.DEBUG, "Profile chunk finished.");
     }
+  }
+
+  public synchronized void reevaluateSampling() {
+    shouldSample = true;
   }
 
   public synchronized void close() {

@@ -44,7 +44,7 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
     traceSampleRate = samplingDecision.getSampleRate();
     profileSampled = samplingDecision.getProfileSampled();
     profileSampleRate = samplingDecision.getProfileSampleRate();
-    continuousProfileSampled = options.getInternalTracesSampler().sampleContinuousProfile();
+    continuousProfileSampled = options.getInternalTracesSampler().sampleSessionProfile();
     profilingTracesDirPath = options.getProfilingTracesDirPath();
     isProfilingEnabled = options.isProfilingEnabled();
     isContinuousProfilingEnabled = options.isContinuousProfilingEnabled();

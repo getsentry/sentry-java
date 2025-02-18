@@ -10,6 +10,7 @@ import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -389,6 +390,57 @@ class ScopeTest {
 
         val session = scope.endSession()
         assertNull(session)
+    }
+
+    @Test
+    fun `Starting a session multiple times reevaluates profileSessionSampleRate`() {
+        val profiler = mock<IContinuousProfiler>()
+        val options = SentryOptions().apply {
+            release = "0.0.1"
+            setContinuousProfiler(profiler)
+            experimental.profileSessionSampleRate = 1.0
+        }
+
+        val scope = Scope(options)
+        // The first time a session is started, sample rate is not reevaluated, as there's no need
+        scope.startSession()
+        verify(profiler, never()).reevaluateSampling()
+        // The second time a session is started, sample rate is reevaluated
+        scope.startSession()
+        verify(profiler).reevaluateSampling()
+        // Every time a session is started with an already running one, sample rate is reevaluated
+        scope.startSession()
+        verify(profiler, times(2)).reevaluateSampling()
+    }
+
+    @Test
+    fun `Scope ends a session and reevaluates profileSessionSampleRate`() {
+        val profiler = mock<IContinuousProfiler>()
+        val options = SentryOptions().apply {
+            release = "0.0.1"
+            setContinuousProfiler(profiler)
+            experimental.profileSessionSampleRate = 1.0
+        }
+
+        val scope = Scope(options)
+        scope.startSession()
+        verify(profiler, never()).reevaluateSampling()
+        scope.endSession()
+        verify(profiler).reevaluateSampling()
+    }
+
+    @Test
+    fun `Scope ends a session and does not reevaluate profileSessionSampleRate if none exist`() {
+        val profiler = mock<IContinuousProfiler>()
+        val options = SentryOptions().apply {
+            release = "0.0.1"
+            setContinuousProfiler(profiler)
+            experimental.profileSessionSampleRate = 1.0
+        }
+
+        val scope = Scope(options)
+        scope.endSession()
+        verify(profiler, never()).reevaluateSampling()
     }
 
     @Test
