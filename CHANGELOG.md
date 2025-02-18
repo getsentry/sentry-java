@@ -11,6 +11,7 @@
 - The class `io.sentry.spring.jakarta.webflux.ReactorUtils` is now deprecated, please use `io.sentry.reactor.SentryReactorUtils` in the new `sentry-reactor` module instead ([#4155](https://github.com/getsentry/sentry-java/pull/4155))
   - The new module will be exposed as an `api` dependency when using `sentry-spring-boot-jakarta` (Spring Boot 3) or `sentry-spring-jakarta` (Spring 6). 
     Therefore, if you're using one of those modules, changing your imports will suffice.
+- The user's `device.name` is not reported anymore via the device context, even if `options.isSendDefaultPii` is enabled ([#4179](https://github.com/getsentry/sentry-java/pull/4179))
 
 ## 8.2.0
 
