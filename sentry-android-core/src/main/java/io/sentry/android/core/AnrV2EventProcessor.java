@@ -632,9 +632,6 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   @SuppressLint("NewApi")
   private @NotNull Device getDevice() {
     Device device = new Device();
-    if (options.isSendDefaultPii()) {
-      device.setName(ContextUtils.getDeviceName(context));
-    }
     device.setManufacturer(Build.MANUFACTURER);
     device.setBrand(Build.BRAND);
     device.setFamily(ContextUtils.getFamily(options.getLogger()));

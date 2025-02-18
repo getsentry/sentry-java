@@ -101,10 +101,6 @@ public final class DeviceInfoUtil {
       final boolean collectDeviceIO, final boolean collectDynamicData) {
     // TODO: missing usable memory
     final @NotNull Device device = new Device();
-
-    if (options.isSendDefaultPii()) {
-      device.setName(ContextUtils.getDeviceName(context));
-    }
     device.setManufacturer(Build.MANUFACTURER);
     device.setBrand(Build.BRAND);
     device.setFamily(ContextUtils.getFamily(options.getLogger()));
