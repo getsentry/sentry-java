@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- The `ignoredErrors` option is now configurable via the manifest property `io.sentry.traces.ignored-errors` ([#4178](https://github.com/getsentry/sentry-java/pull/4178))
+
 ### Fixes
 
 - `SentryOptions.setTracePropagationTargets` is no longer marked internal ([#4170](https://github.com/getsentry/sentry-java/pull/4170))
