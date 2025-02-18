@@ -132,6 +132,7 @@ class ActivityLifecycleIntegrationTest {
     @BeforeTest
     fun `reset instance`() {
         AppStartMetrics.getInstance().clear()
+        ContextUtils.resetInstance()
 
         context = ApplicationProvider.getApplicationContext()
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
@@ -1545,6 +1546,43 @@ class ActivityLifecycleIntegrationTest {
 
         sut.onActivityCreated(activity, null)
         assertNotNull(sut.appStartSpan)
+
+        sut.onActivityPostCreated(activity, null)
+        assertTrue(helper.onCreateSpan!!.isFinished)
+
+        sut.onActivityPreStarted(activity)
+        assertNotNull(helper.onStartStartTimestamp)
+
+        sut.onActivityStarted(activity)
+        assertTrue(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
+
+        sut.onActivityPostStarted(activity)
+        assertTrue(helper.onStartSpan!!.isFinished)
+        assertFalse(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
+    }
+
+    @Test
+    fun `Creates activity lifecycle spans even when no app start span is available`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        val startDate = SentryNanotimeDate(Date(2), 0)
+        val appStartMetrics = AppStartMetrics.getInstance()
+        val activity = mock<Activity>()
+        fixture.options.dateProvider = SentryDateProvider { startDate }
+        // Don't set app start time, so there's no app start span
+        // setAppStartTime(appStartDate)
+
+        sut.register(fixture.scopes, fixture.options)
+        assertTrue(sut.activitySpanHelpers.isEmpty())
+
+        sut.onActivityPreCreated(activity, null)
+
+        assertFalse(sut.activitySpanHelpers.isEmpty())
+        val helper = sut.activitySpanHelpers.values.first()
+        assertNotNull(helper.onCreateStartTimestamp)
+
+        sut.onActivityCreated(activity, null)
+        assertNull(sut.appStartSpan)
 
         sut.onActivityPostCreated(activity, null)
         assertTrue(helper.onCreateSpan!!.isFinished)

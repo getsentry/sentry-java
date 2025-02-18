@@ -15,7 +15,6 @@ android {
     namespace = "io.sentry.android.core"
 
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersion
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
@@ -27,7 +26,9 @@ android {
     }
 
     buildTypes {
-        getByName("debug")
+        getByName("debug") {
+            consumerProguardFiles("proguard-rules.pro")
+        }
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }
@@ -53,15 +54,17 @@ android {
         checkReleaseBuilds = false
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     // needed because of Kotlin 1.4.x
     configurations.all {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 

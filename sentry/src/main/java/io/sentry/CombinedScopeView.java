@@ -426,6 +426,7 @@ public final class CombinedScopeView implements IScope {
     getDefaultWriteScope().setPropagationContext(propagationContext);
   }
 
+  @ApiStatus.Internal
   @Override
   public @NotNull PropagationContext getPropagationContext() {
     return getDefaultWriteScope().getPropagationContext();

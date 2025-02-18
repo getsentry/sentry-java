@@ -409,15 +409,15 @@ class SentrySpanProcessorTest {
                         assertEquals("1", it.baggage?.sampleRate)
                         assertEquals("HTTP GET", it.baggage?.transaction)
                         assertEquals("502f25099c204a2fbf4cb16edc5975d1", it.baggage?.publicKey)
+                        assertFalse(it.baggage!!.isMutable)
                     } else {
                         assertNotNull(it.baggage)
                         assertNull(it.baggage?.traceId)
                         assertNull(it.baggage?.sampleRate)
                         assertNull(it.baggage?.transaction)
                         assertNull(it.baggage?.publicKey)
-                        assertFalse(it.baggage!!.isMutable)
+                        assertTrue(it.baggage!!.isMutable)
                     }
-                    assertFalse(it.baggage!!.isMutable)
                 },
                 check<TransactionOptions> {
                     assertNotNull(it.startTimestamp)
@@ -434,7 +434,7 @@ class SentrySpanProcessorTest {
                     assertEquals(otelSpan.spanContext.traceId, it.traceId.toString())
                     assertNull(it.parentSpanId)
                     assertNull(it.parentSamplingDecision)
-                    assertNull(it.baggage)
+                    assertNotNull(it.baggage)
                 },
                 check<TransactionOptions> {
                     assertNotNull(it.startTimestamp)

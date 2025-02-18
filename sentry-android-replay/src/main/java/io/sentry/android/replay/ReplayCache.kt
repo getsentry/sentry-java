@@ -55,7 +55,7 @@ public class ReplayCache(
     internal val frames = mutableListOf<ReplayFrame>()
 
     private val ongoingSegment = LinkedHashMap<String, String>()
-    private val ongoingSegmentFile: File? by lazy {
+    internal val ongoingSegmentFile: File? by lazy {
         if (replayCacheDir == null) {
             return@lazy null
         }
@@ -247,7 +247,7 @@ public class ReplayCache(
      * @param until value until whose the frames should be removed, represented as unix timestamp
      * @return the first screen in the rotated buffer, if any
      */
-    fun rotate(until: Long): String? {
+    internal fun rotate(until: Long): String? {
         var screen: String? = null
         frames.removeAll {
             if (it.timestamp < until) {
@@ -270,10 +270,13 @@ public class ReplayCache(
     }
 
     // TODO: it's awful, choose a better serialization format
-    fun persistSegmentValues(key: String, value: String?) {
+    internal fun persistSegmentValues(key: String, value: String?) {
         lock.acquire().use {
             if (isClosed.get()) {
                 return
+            }
+            if (ongoingSegmentFile?.exists() != true) {
+                ongoingSegmentFile?.createNewFile()
             }
             if (ongoingSegment.isEmpty()) {
                 ongoingSegmentFile?.useLines { lines ->
@@ -292,7 +295,7 @@ public class ReplayCache(
         }
     }
 
-    companion object {
+    internal companion object {
         internal const val ONGOING_SEGMENT = ".ongoing_segment"
 
         internal const val SEGMENT_KEY_HEIGHT = "config.height"

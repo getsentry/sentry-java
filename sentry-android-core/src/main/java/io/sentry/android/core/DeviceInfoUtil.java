@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Build;
-import android.os.Environment;
 import android.os.LocaleList;
 import android.os.StatFs;
 import android.os.SystemClock;
@@ -50,6 +49,7 @@ public final class DeviceInfoUtil {
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @Nullable Boolean isEmulator;
   private final @Nullable ContextUtils.SideLoadedInfo sideLoadedInfo;
+  private final @Nullable ContextUtils.SplitApksInfo splitApksInfo;
   private final @NotNull OperatingSystem os;
 
   private final @Nullable Long totalMem;
@@ -66,6 +66,7 @@ public final class DeviceInfoUtil {
     isEmulator = buildInfoProvider.isEmulator();
     sideLoadedInfo =
         ContextUtils.retrieveSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
+    splitApksInfo = ContextUtils.retrieveSplitApksInfo(context, buildInfoProvider);
     final @Nullable ActivityManager.MemoryInfo memInfo =
         ContextUtils.getMemInfo(context, options.getLogger());
     if (memInfo != null) {
@@ -158,8 +159,13 @@ public final class DeviceInfoUtil {
     return os;
   }
 
+  @Nullable
+  public Long getTotalMemory() {
+    return totalMem;
+  }
+
   @NotNull
-  protected OperatingSystem retrieveOperatingSystemInformation() {
+  private OperatingSystem retrieveOperatingSystemInformation() {
 
     final OperatingSystem os = new OperatingSystem();
     os.setName("Android");
@@ -182,6 +188,11 @@ public final class DeviceInfoUtil {
   @Nullable
   public ContextUtils.SideLoadedInfo getSideLoadedInfo() {
     return sideLoadedInfo;
+  }
+
+  @Nullable
+  public ContextUtils.SplitApksInfo getSplitApksInfo() {
+    return splitApksInfo;
   }
 
   private void setDeviceIO(final @NotNull Device device, final boolean includeDynamicData) {
@@ -386,15 +397,14 @@ public final class DeviceInfoUtil {
 
   @Nullable
   private StatFs getExternalStorageStat(final @Nullable File internalStorage) {
-    if (!isExternalStorageMounted()) {
+    try {
       File path = getExternalStorageDep(internalStorage);
       if (path != null) { // && path.canRead()) { canRead() will read return false
         return new StatFs(path.getPath());
       }
+    } catch (Throwable e) {
       options.getLogger().log(SentryLevel.INFO, "Not possible to read external files directory");
-      return null;
     }
-    options.getLogger().log(SentryLevel.INFO, "External storage is not mounted or emulated.");
     return null;
   }
 
@@ -444,13 +454,6 @@ public final class DeviceInfoUtil {
       options.getLogger().log(SentryLevel.ERROR, "Error getting total external storage amount.", e);
       return null;
     }
-  }
-
-  private boolean isExternalStorageMounted() {
-    final String storageState = Environment.getExternalStorageState();
-    return (Environment.MEDIA_MOUNTED.equals(storageState)
-            || Environment.MEDIA_MOUNTED_READ_ONLY.equals(storageState))
-        && !Environment.isExternalStorageEmulated();
   }
 
   /**

@@ -37,7 +37,6 @@ import io.sentry.util.UrlUtils
 import io.sentry.vendor.Base64
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
-import java.util.Locale
 
 private const val TRACE_ORIGIN = "auto.graphql.apollo3"
 
@@ -177,7 +176,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             variables?.let {
                 setData("variables", it)
             }
-            setData(HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT))
+            setData(HTTP_METHOD_KEY, method.uppercase())
         }
     }
 
