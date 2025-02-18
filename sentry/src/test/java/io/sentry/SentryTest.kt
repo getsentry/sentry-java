@@ -18,7 +18,6 @@ import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.injectForField
 import io.sentry.util.PlatformTestManipulator
-import io.sentry.util.SentryRandom
 import io.sentry.util.thread.IThreadChecker
 import io.sentry.util.thread.ThreadChecker
 import org.awaitility.kotlin.await
@@ -407,7 +406,7 @@ class SentryTest {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
-            it.experimental.continuousProfilesSampleRate = 1.0
+            it.experimental.profileSessionSampleRate = 1.0
             it.cacheDirPath = tempPath
             sentryOptions = it
         }
@@ -422,7 +421,7 @@ class SentryTest {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
-            it.experimental.continuousProfilesSampleRate = 0.0
+            it.experimental.profileSessionSampleRate = 0.0
             it.cacheDirPath = tempPath
             sentryOptions = it
         }
@@ -1313,9 +1312,10 @@ class SentryTest {
         Sentry.init {
             it.dsn = dsn
             it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
         }
         Sentry.startProfiler()
-        verify(profiler).start()
+        verify(profiler).start(any())
     }
 
     @Test
@@ -1327,21 +1327,7 @@ class SentryTest {
             it.profilesSampleRate = 1.0
         }
         Sentry.startProfiler()
-        verify(profiler, never()).start()
-    }
-
-    @Test
-    fun `startProfiler is ignored when not sampled`() {
-        val profiler = mock<IContinuousProfiler>()
-        Sentry.init {
-            it.dsn = dsn
-            it.setContinuousProfiler(profiler)
-            it.experimental.continuousProfilesSampleRate = 0.1
-        }
-        // We cannot set sample rate to 0, as it would not start the profiler. So we set the seed to have consistent results
-        SentryRandom.current().setSeed(0)
-        Sentry.startProfiler()
-        verify(profiler, never()).start()
+        verify(profiler, never()).start(any())
     }
 
     @Test
@@ -1350,6 +1336,7 @@ class SentryTest {
         Sentry.init {
             it.dsn = dsn
             it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
         }
         Sentry.stopProfiler()
         verify(profiler).stop()

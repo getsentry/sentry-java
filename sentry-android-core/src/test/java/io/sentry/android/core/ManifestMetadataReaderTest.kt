@@ -801,36 +801,36 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
-    fun `applyMetadata reads continuousProfilesSampleRate from metadata`() {
+    fun `applyMetadata reads profileSessionSampleRate from metadata`() {
         // Arrange
         val expectedSampleRate = 0.99f
-        val bundle = bundleOf(ManifestMetadataReader.CONTINUOUS_PROFILES_SAMPLE_RATE to expectedSampleRate)
+        val bundle = bundleOf(ManifestMetadataReader.PROFILE_SESSION_SAMPLE_RATE to expectedSampleRate)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.continuousProfilesSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.profileSessionSampleRate)
     }
 
     @Test
-    fun `applyMetadata does not override continuousProfilesSampleRate from options`() {
+    fun `applyMetadata does not override profileSessionSampleRate from options`() {
         // Arrange
         val expectedSampleRate = 0.99f
-        fixture.options.experimental.continuousProfilesSampleRate = expectedSampleRate.toDouble()
-        val bundle = bundleOf(ManifestMetadataReader.CONTINUOUS_PROFILES_SAMPLE_RATE to 0.1f)
+        fixture.options.experimental.profileSessionSampleRate = expectedSampleRate.toDouble()
+        val bundle = bundleOf(ManifestMetadataReader.PROFILE_SESSION_SAMPLE_RATE to 0.1f)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(expectedSampleRate.toDouble(), fixture.options.continuousProfilesSampleRate)
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.profileSessionSampleRate)
     }
 
     @Test
-    fun `applyMetadata without specifying continuousProfilesSampleRate, stays 1`() {
+    fun `applyMetadata without specifying profileSessionSampleRate, stays 0`() {
         // Arrange
         val context = fixture.getContext()
 
@@ -838,7 +838,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertEquals(1.0, fixture.options.continuousProfilesSampleRate)
+        assertEquals(0.0, fixture.options.profileSessionSampleRate)
     }
 
     @Test

@@ -1,6 +1,7 @@
 package io.sentry
 
 import io.sentry.protocol.SentryId
+import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -10,7 +11,7 @@ class NoOpContinuousProfilerTest {
 
     @Test
     fun `start does not throw`() =
-        profiler.start()
+        profiler.start(mock())
 
     @Test
     fun `stop does not throw`() =
@@ -28,5 +29,10 @@ class NoOpContinuousProfilerTest {
     @Test
     fun `getProfilerId returns Empty SentryId`() {
         assertEquals(profiler.profilerId, SentryId.EMPTY_ID)
+    }
+
+    @Test
+    fun `reevaluateSampling does not throw`() {
+        profiler.reevaluateSampling()
     }
 }

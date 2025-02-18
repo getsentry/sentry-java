@@ -9,12 +9,14 @@ import org.jetbrains.annotations.NotNull;
 public interface IContinuousProfiler {
   boolean isRunning();
 
-  void start();
+  void start(final @NotNull TracesSampler tracesSampler);
 
   void stop();
 
   /** Cancel the profiler and stops it. Used on SDK close. */
   void close();
+
+  void reevaluateSampling();
 
   @NotNull
   SentryId getProfilerId();
