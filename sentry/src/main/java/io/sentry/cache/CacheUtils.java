@@ -57,11 +57,9 @@ final class CacheUtils {
     }
 
     final File file = new File(cacheDir, fileName);
-    if (file.exists()) {
-      options.getLogger().log(DEBUG, "Deleting %s from scope cache", fileName);
-      if (!file.delete()) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
-      }
+    options.getLogger().log(DEBUG, "Deleting %s from scope cache", fileName);
+    if (!file.delete()) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
     }
   }
 

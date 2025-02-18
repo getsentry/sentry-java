@@ -3905,6 +3905,7 @@ public final class io/sentry/cache/PersistingScopeObserver : io/sentry/ScopeObse
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
 	public fun read (Lio/sentry/SentryOptions;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;
+	public fun resetCache ()V
 	public fun setBreadcrumbs (Ljava/util/Collection;)V
 	public fun setContexts (Lio/sentry/protocol/Contexts;)V
 	public fun setExtras (Ljava/util/Map;)V

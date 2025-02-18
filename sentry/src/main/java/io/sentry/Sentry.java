@@ -4,6 +4,7 @@ import io.sentry.backpressure.BackpressureMonitor;
 import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.config.PropertiesProviderFactory;
 import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader;
@@ -34,7 +35,6 @@ import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.RejectedExecutionException;
@@ -502,9 +502,10 @@ public final class Sentry {
                 // new ones, so they are not making it to the new events if they were e.g. disabled
                 // (e.g. replayId) or are simply irrelevant (e.g. breadcrumbs). NOTE: this happens
                 // after the integrations relying on those values are done with processing them.
-                for (final IScopeObserver observer : options.getScopeObservers()) {
-                  observer.setBreadcrumbs(Collections.emptyList());
-                  observer.setReplayId(SentryId.EMPTY_ID);
+                final @Nullable PersistingScopeObserver scopeCache =
+                    options.findPersistingScopeObserver();
+                if (scopeCache != null) {
+                  scopeCache.resetCache();
                 }
               });
     } catch (Throwable e) {

@@ -282,4 +282,28 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     }
     return CacheUtils.read(options, SCOPE_CACHE, fileName, clazz, null);
   }
+
+  /**
+   * Resets the scope cache by deleting the files and/or clearing the QueueFiles. Note: this does
+   * I/O and should be called from a background thread.
+   */
+  public void resetCache() {
+    // since it keeps a reference to the file and we cannot delete it, breadcrumbs we just clear
+    try {
+      breadcrumbsQueue.getValue().clear();
+    } catch (IOException e) {
+      options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
+    }
+
+    // the reset we can safely delete
+    delete(USER_FILENAME);
+    delete(LEVEL_FILENAME);
+    delete(REQUEST_FILENAME);
+    delete(FINGERPRINT_FILENAME);
+    delete(CONTEXTS_FILENAME);
+    delete(EXTRAS_FILENAME);
+    delete(TAGS_FILENAME);
+    delete(TRACE_FILENAME);
+    delete(TRANSACTION_FILENAME);
+  }
 }
