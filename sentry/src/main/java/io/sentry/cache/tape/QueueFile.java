@@ -26,6 +26,7 @@ import java.nio.channels.FileChannel;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 import static java.lang.Math.max;
@@ -55,6 +56,7 @@ import static java.lang.Math.min;
  *
  * @author Bob Lee (bob@squareup.com)
  */
+@ApiStatus.Internal
 public final class QueueFile implements Closeable, Iterable<byte[]> {
   /** Leading bit set to 1 indicating a versioned header and the version of 1. */
   private static final int VERSIONED_HEADER = 0x80000001;
@@ -85,13 +87,6 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
    *   4 bytes          Element count
    *   8 bytes          Head element position
    *   8 bytes          Tail element position
-   *
-   * Legacy Header (16 bytes):
-   *   1 bit            Legacy indicator, always 0 (see "Header")
-   *   31 bits          File length
-   *   4 bytes          Element count
-   *   4 bytes          Head element position
-   *   4 bytes          Tail element position
    *
    * Element:
    *   4 bytes          Data length
@@ -178,11 +173,6 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     long lastOffset;
     headerLength = 32;
 
-    int version = readInt(buffer, 0) & 0x7FFFFFFF;
-    if (version != 1) {
-      throw new IOException(
-          "Unable to read version " + version + " format. Supported versions are 1 and legacy.");
-    }
     fileLength = readLong(buffer, 4);
     elementCount = readInt(buffer, 12);
     firstOffset = readLong(buffer, 16);

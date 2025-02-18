@@ -24,9 +24,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /** A queue of objects. */
+@ApiStatus.Internal
 public abstract class ObjectQueue<T> implements Iterable<T>, Closeable {
   /** A queue for objects that are atomically and durably serialized to {@code file}. */
   public static <T> ObjectQueue<T> create(QueueFile qf, Converter<T> converter) {

@@ -2,7 +2,6 @@ package io.sentry.cache
 
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
-import io.sentry.JsonDeserializer
 import io.sentry.Scope
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -56,13 +55,12 @@ class DeletedEntityProvider<T>(private val provider: (Scope) -> T?) {
 }
 
 @RunWith(Parameterized::class)
-class PersistingScopeObserverTest<T, R>(
+class PersistingScopeObserverTest<T>(
     private val entity: T,
     private val store: StoreScopeValue<T>,
     private val filename: String,
     private val delete: DeleteScopeValue,
-    private val deletedEntity: DeletedEntityProvider<T>,
-    private val elementDeserializer: JsonDeserializer<R>?
+    private val deletedEntity: DeletedEntityProvider<T>
 ) {
 
     @get:Rule
@@ -89,19 +87,19 @@ class PersistingScopeObserverTest<T, R>(
         val sut = fixture.getSut(tmpDir)
         store(entity, sut, fixture.scope)
 
-        val persisted = read()
+        val persisted = sut.read()
         assertEquals(entity, persisted)
 
         delete(sut, fixture.scope)
-        val persistedAfterDeletion = read()
+        val persistedAfterDeletion = sut.read()
         assertEquals(deletedEntity(fixture.scope), persistedAfterDeletion)
     }
 
-    private fun read(): T? = PersistingScopeObserver.read(
+    private fun PersistingScopeObserver.read(): Any? = read(
         fixture.options,
         filename,
-        entity!!::class.java,
-        elementDeserializer
+        // need to cast breadcrumbs to a regular List, not kotlin lists
+        if (entity!!::class.java.name.contains("List") ) List::class.java else entity!!::class.java
     )
 
     companion object {
@@ -115,8 +113,7 @@ class PersistingScopeObserverTest<T, R>(
             StoreScopeValue<User> { user, _ -> setUser(user) },
             USER_FILENAME,
             DeleteScopeValue { setUser(null) },
-            DeletedEntityProvider { null },
-            null
+            DeletedEntityProvider { null }
         )
 
         private fun breadcrumbs(): Array<Any?> = arrayOf(
@@ -124,11 +121,29 @@ class PersistingScopeObserverTest<T, R>(
                 Breadcrumb.navigation("one", "two"),
                 Breadcrumb.userInteraction("click", "viewId", "viewClass")
             ),
-            StoreScopeValue<List<Breadcrumb>> { breadcrumbs, _ -> setBreadcrumbs(breadcrumbs) },
+            StoreScopeValue<List<Breadcrumb>> { breadcrumbs, _ ->
+                breadcrumbs.forEach { addBreadcrumb(it) }
+            },
             BREADCRUMBS_FILENAME,
             DeleteScopeValue { setBreadcrumbs(emptyList()) },
-            DeletedEntityProvider { emptyList<Breadcrumb>() },
-            Breadcrumb.Deserializer()
+            DeletedEntityProvider { emptyList<Breadcrumb>() }
+        )
+
+        private fun legacyBreadcrumbs(): Array<Any?> = arrayOf(
+            emptyList<Breadcrumb>(),
+            StoreScopeValue<List<Breadcrumb>> { _, scope ->
+                PersistingScopeObserver.store(
+                    scope.options,
+                    listOf(
+                        Breadcrumb.navigation("one", "two"),
+                        Breadcrumb.userInteraction("click", "viewId", "viewClass")
+                    ),
+                    BREADCRUMBS_FILENAME
+                )
+            },
+            BREADCRUMBS_FILENAME,
+            DeleteScopeValue { setBreadcrumbs(emptyList()) },
+            DeletedEntityProvider { emptyList<Breadcrumb>() }
         )
 
         private fun tags(): Array<Any?> = arrayOf(
@@ -139,8 +154,7 @@ class PersistingScopeObserverTest<T, R>(
             StoreScopeValue<Map<String, String>> { tags, _ -> setTags(tags) },
             TAGS_FILENAME,
             DeleteScopeValue { setTags(emptyMap()) },
-            DeletedEntityProvider { emptyMap<String, String>() },
-            null
+            DeletedEntityProvider { emptyMap<String, String>() }
         )
 
         private fun extras(): Array<Any?> = arrayOf(
@@ -152,8 +166,7 @@ class PersistingScopeObserverTest<T, R>(
             StoreScopeValue<Map<String, Any>> { extras, _ -> setExtras(extras) },
             EXTRAS_FILENAME,
             DeleteScopeValue { setExtras(emptyMap()) },
-            DeletedEntityProvider { emptyMap<String, Any>() },
-            null
+            DeletedEntityProvider { emptyMap<String, Any>() }
         )
 
         private fun request(): Array<Any?> = arrayOf(
@@ -168,8 +181,7 @@ class PersistingScopeObserverTest<T, R>(
             StoreScopeValue<Request> { request, _ -> setRequest(request) },
             REQUEST_FILENAME,
             DeleteScopeValue { setRequest(null) },
-            DeletedEntityProvider { null },
-            null
+            DeletedEntityProvider { null }
         )
 
         private fun fingerprint(): Array<Any?> = arrayOf(
@@ -177,8 +189,7 @@ class PersistingScopeObserverTest<T, R>(
             StoreScopeValue<List<String>> { fingerprint, _ -> setFingerprint(fingerprint) },
             FINGERPRINT_FILENAME,
             DeleteScopeValue { setFingerprint(emptyList()) },
-            DeletedEntityProvider { emptyList<String>() },
-            null
+            DeletedEntityProvider { emptyList<String>() }
         )
 
         private fun level(): Array<Any?> = arrayOf(
@@ -186,8 +197,7 @@ class PersistingScopeObserverTest<T, R>(
             StoreScopeValue<SentryLevel> { level, _ -> setLevel(level) },
             LEVEL_FILENAME,
             DeleteScopeValue { setLevel(null) },
-            DeletedEntityProvider { null },
-            null
+            DeletedEntityProvider { null }
         )
 
         private fun transaction(): Array<Any?> = arrayOf(
@@ -195,8 +205,7 @@ class PersistingScopeObserverTest<T, R>(
             StoreScopeValue<String> { transaction, _ -> setTransaction(transaction) },
             TRANSACTION_FILENAME,
             DeleteScopeValue { setTransaction(null) },
-            DeletedEntityProvider { null },
-            null
+            DeletedEntityProvider { null }
         )
 
         private fun trace(): Array<Any?> = arrayOf(
@@ -204,8 +213,7 @@ class PersistingScopeObserverTest<T, R>(
             StoreScopeValue<SpanContext> { trace, scope -> setTrace(trace, scope) },
             TRACE_FILENAME,
             DeleteScopeValue { scope -> setTrace(null, scope) },
-            DeletedEntityProvider { scope -> scope.propagationContext.toSpanContext() },
-            null
+            DeletedEntityProvider { scope -> scope.propagationContext.toSpanContext() }
         )
 
         private fun contexts(): Array<Any?> = arrayOf(
@@ -269,8 +277,7 @@ class PersistingScopeObserverTest<T, R>(
             StoreScopeValue<Contexts> { contexts, _ -> setContexts(contexts) },
             CONTEXTS_FILENAME,
             DeleteScopeValue { setContexts(Contexts()) },
-            DeletedEntityProvider { Contexts() },
-            null
+            DeletedEntityProvider { Contexts() }
         )
 
         private fun replayId(): Array<Any?> = arrayOf(
@@ -278,8 +285,7 @@ class PersistingScopeObserverTest<T, R>(
             StoreScopeValue<String> { replayId, _ -> setReplayId(SentryId(replayId)) },
             REPLAY_FILENAME,
             DeleteScopeValue { setReplayId(SentryId.EMPTY_ID) },
-            DeletedEntityProvider { SentryId.EMPTY_ID.toString() },
-            null
+            DeletedEntityProvider { SentryId.EMPTY_ID.toString() }
         )
 
         @JvmStatic
@@ -288,6 +294,7 @@ class PersistingScopeObserverTest<T, R>(
             return listOf(
                 user(),
                 breadcrumbs(),
+                legacyBreadcrumbs(),
                 tags(),
                 extras(),
                 request(),

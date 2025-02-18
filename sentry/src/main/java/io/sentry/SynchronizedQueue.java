@@ -44,7 +44,7 @@ final class SynchronizedQueue<E> extends SynchronizedCollection<E> implements Qu
    * @return a new synchronized Queue
    * @throws NullPointerException if queue is null
    */
-  static <E> SynchronizedQueue<E> synchronizedQueue(final Queue<E> queue) {
+  public static <E> SynchronizedQueue<E> synchronizedQueue(final Queue<E> queue) {
     return new SynchronizedQueue<>(queue);
   }
 

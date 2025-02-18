@@ -6,12 +6,10 @@ import static io.sentry.cache.CacheUtils.ensureCacheDir;
 
 import io.sentry.Breadcrumb;
 import io.sentry.IScope;
-import io.sentry.JsonDeserializer;
 import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanContext;
-import io.sentry.cache.tape.EmptyObjectQueue;
 import io.sentry.cache.tape.ObjectQueue;
 import io.sentry.cache.tape.QueueFile;
 import io.sentry.protocol.Contexts;
@@ -30,9 +28,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,7 +55,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     final File cacheDir = ensureCacheDir(options, SCOPE_CACHE);
     if (cacheDir == null) {
       options.getLogger().log(INFO, "Cache dir is not set, cannot store in scope cache");
-      return new EmptyObjectQueue<>();
+      return ObjectQueue.createEmpty();
     }
 
     QueueFile queueFile = null;
@@ -81,7 +77,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
       }
     } catch (IOException e) {
       options.getLogger().log(ERROR, "Failed to create breadcrumbs queue", e);
-      return new EmptyObjectQueue<>();
+      return ObjectQueue.createEmpty();
     }
     return ObjectQueue.create(queueFile,
       new ObjectQueue.Converter<Breadcrumb>() {
@@ -277,14 +273,6 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
         return null;
       }
     }
-    return read(options, fileName, clazz, null);
-  }
-
-  public static <T, R> @Nullable T read(
-      final @NotNull SentryOptions options,
-      final @NotNull String fileName,
-      final @NotNull Class<T> clazz,
-      final @Nullable JsonDeserializer<R> elementDeserializer) {
-    return CacheUtils.read(options, SCOPE_CACHE, fileName, clazz, elementDeserializer);
+    return CacheUtils.read(options, SCOPE_CACHE, fileName, clazz, null);
   }
 }

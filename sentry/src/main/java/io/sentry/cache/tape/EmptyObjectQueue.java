@@ -6,7 +6,7 @@ import java.util.NoSuchElementException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class EmptyObjectQueue<T> extends ObjectQueue<T> {
+final class EmptyObjectQueue<T> extends ObjectQueue<T> {
   @Override
   public @Nullable QueueFile file() {
     return null;
