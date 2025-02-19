@@ -295,7 +295,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
       options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
     }
 
-    // the reset we can safely delete
+    // the rest we can safely delete
     delete(USER_FILENAME);
     delete(LEVEL_FILENAME);
     delete(REQUEST_FILENAME);
