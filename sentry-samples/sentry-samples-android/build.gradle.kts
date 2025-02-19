@@ -151,5 +151,5 @@ dependencies {
     implementation(Config.Libs.composeCoil)
     implementation(Config.Libs.sentryNativeNdk)
 
-//    debugImplementation(Config.Libs.leakCanary)
+    debugImplementation(Config.Libs.leakCanary)
 }

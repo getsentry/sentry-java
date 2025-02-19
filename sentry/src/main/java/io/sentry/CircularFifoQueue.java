@@ -86,7 +86,7 @@ final class CircularFifoQueue<E> extends AbstractCollection<E> implements Queue<
    * @throws IllegalArgumentException if the size is &lt; 1
    */
   @SuppressWarnings("unchecked")
-  public CircularFifoQueue(final int size) {
+  CircularFifoQueue(final int size) {
     if (size <= 0) {
       throw new IllegalArgumentException("The size must be greater than 0");
     }

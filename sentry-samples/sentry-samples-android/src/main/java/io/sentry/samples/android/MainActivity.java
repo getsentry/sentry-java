@@ -8,7 +8,6 @@ import io.sentry.Attachment;
 import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
-import io.sentry.SentryEvent;
 import io.sentry.UserFeedback;
 import io.sentry.instrumentation.file.SentryFileOutputStream;
 import io.sentry.protocol.SentryId;
