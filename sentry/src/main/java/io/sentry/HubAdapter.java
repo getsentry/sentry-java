@@ -278,13 +278,13 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void startProfiler() {
-    Sentry.startProfiler();
+  public void startProfileSession() {
+    Sentry.startProfileSession();
   }
 
   @Override
-  public void stopProfiler() {
-    Sentry.stopProfiler();
+  public void stopProfileSession() {
+    Sentry.stopProfileSession();
   }
 
   @Override
