@@ -95,7 +95,8 @@ public final class SentrySampler implements Sampler {
         scopes
             .getOptions()
             .getInternalTracesSampler()
-            .sample(new SamplingContext(transactionContext, null));
+            .sample(
+                new SamplingContext(transactionContext, null, propagationContext.getSampleRand()));
 
     if (!sentryDecision.getSampled()) {
       scopes

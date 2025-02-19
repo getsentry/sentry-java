@@ -260,6 +260,7 @@ object Config {
         val SENTRY_SERVLET_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.servlet.jakarta"
         val SENTRY_COMPOSE_HELPER_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.compose.helper"
         val SENTRY_OKHTTP_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.okhttp"
+        val SENTRY_REACTOR_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.reactor"
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val versionNameProp = "versionName"

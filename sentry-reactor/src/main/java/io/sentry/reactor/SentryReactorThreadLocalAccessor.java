@@ -1,12 +1,10 @@
-package io.sentry.spring.jakarta.webflux;
+package io.sentry.reactor;
 
 import io.micrometer.context.ThreadLocalAccessor;
 import io.sentry.IScopes;
 import io.sentry.NoOpScopes;
 import io.sentry.Sentry;
-import org.jetbrains.annotations.ApiStatus;
 
-@ApiStatus.Experimental
 public final class SentryReactorThreadLocalAccessor implements ThreadLocalAccessor<IScopes> {
 
   public static final String KEY = "sentry-scopes";
