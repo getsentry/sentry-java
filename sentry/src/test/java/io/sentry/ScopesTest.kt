@@ -2162,18 +2162,18 @@ class ScopesTest {
     }
 
     @Test
-    fun `startProfiler starts the continuous profiler`() {
+    fun `startProfileSession starts the continuous profiler`() {
         val profiler = mock<IContinuousProfiler>()
         val scopes = generateScopes {
             it.setContinuousProfiler(profiler)
             it.experimental.profileSessionSampleRate = 1.0
         }
-        scopes.startProfiler()
+        scopes.startProfileSession()
         verify(profiler).start(any())
     }
 
     @Test
-    fun `startProfiler logs instructions if continuous profiling is disabled`() {
+    fun `startProfileSession logs instructions if continuous profiling is disabled`() {
         val profiler = mock<IContinuousProfiler>()
         val logger = mock<ILogger>()
         val scopes = generateScopes {
@@ -2183,24 +2183,24 @@ class ScopesTest {
             it.setLogger(logger)
             it.isDebug = true
         }
-        scopes.startProfiler()
+        scopes.startProfileSession()
         verify(profiler, never()).start(any())
         verify(logger).log(eq(SentryLevel.WARNING), eq("Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."))
     }
 
     @Test
-    fun `stopProfiler stops the continuous profiler`() {
+    fun `stopProfileSession stops the continuous profiler`() {
         val profiler = mock<IContinuousProfiler>()
         val scopes = generateScopes {
             it.setContinuousProfiler(profiler)
             it.experimental.profileSessionSampleRate = 1.0
         }
-        scopes.stopProfiler()
+        scopes.stopProfileSession()
         verify(profiler).stop()
     }
 
     @Test
-    fun `stopProfiler logs instructions if continuous profiling is disabled`() {
+    fun `stopProfileSession logs instructions if continuous profiling is disabled`() {
         val profiler = mock<IContinuousProfiler>()
         val logger = mock<ILogger>()
         val scopes = generateScopes {
@@ -2210,7 +2210,7 @@ class ScopesTest {
             it.setLogger(logger)
             it.isDebug = true
         }
-        scopes.stopProfiler()
+        scopes.stopProfileSession()
         verify(profiler, never()).stop()
         verify(logger).log(eq(SentryLevel.WARNING), eq("Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."))
     }
