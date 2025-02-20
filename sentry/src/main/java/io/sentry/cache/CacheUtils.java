@@ -38,13 +38,6 @@ final class CacheUtils {
     }
 
     final File file = new File(cacheDir, fileName);
-    if (file.exists()) {
-      options.getLogger().log(DEBUG, "Overwriting %s in scope cache", fileName);
-      if (!file.delete()) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
-      }
-    }
-
     try (final OutputStream outputStream = new FileOutputStream(file);
         final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       options.getSerializer().serialize(entity, writer);
@@ -64,11 +57,9 @@ final class CacheUtils {
     }
 
     final File file = new File(cacheDir, fileName);
-    if (file.exists()) {
-      options.getLogger().log(DEBUG, "Deleting %s from scope cache", fileName);
-      if (!file.delete()) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
-      }
+    options.getLogger().log(DEBUG, "Deleting %s from scope cache", fileName);
+    if (!file.delete()) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
     }
   }
 
@@ -102,7 +93,7 @@ final class CacheUtils {
     return null;
   }
 
-  private static @Nullable File ensureCacheDir(
+  static @Nullable File ensureCacheDir(
       final @NotNull SentryOptions options, final @NotNull String cacheDirName) {
     final String cacheDir = options.getCacheDirPath();
     if (cacheDir == null) {
