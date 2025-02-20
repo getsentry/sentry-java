@@ -5,6 +5,7 @@
 ### Features
 
 - A list of active Spring profiles is attached to the trace context and displayed in the Sentry UI when using our Spring or Spring Boot integrations ([#4147](https://github.com/getsentry/sentry-java/pull/4147))
+  - This consists of an empty list when only the default profile is active
 
 ### Fixes
 
@@ -24,7 +25,6 @@
 
 ### Features
 
-  - This consists of an empty list when only the default profile is active
 - Create onCreate and onStart spans for all Activities ([#4025](https://github.com/getsentry/sentry-java/pull/4025))
 - Add split apks info to the `App` context ([#3193](https://github.com/getsentry/sentry-java/pull/3193))
 - Expose new `withSentryObservableEffect` method overload that accepts `SentryNavigationListener` as a parameter ([#4143](https://github.com/getsentry/sentry-java/pull/4143))
