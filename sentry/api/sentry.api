@@ -233,6 +233,7 @@ public final class io/sentry/CombinedContextsView : io/sentry/protocol/Contexts 
 	public fun getResponse ()Lio/sentry/protocol/Response;
 	public fun getRuntime ()Lio/sentry/protocol/SentryRuntime;
 	public fun getSize ()I
+	public fun getSpring ()Lio/sentry/protocol/Spring;
 	public fun getTrace ()Lio/sentry/SpanContext;
 	public fun isEmpty ()Z
 	public fun keys ()Ljava/util/Enumeration;
@@ -246,6 +247,7 @@ public final class io/sentry/CombinedContextsView : io/sentry/protocol/Contexts 
 	public fun setOperatingSystem (Lio/sentry/protocol/OperatingSystem;)V
 	public fun setResponse (Lio/sentry/protocol/Response;)V
 	public fun setRuntime (Lio/sentry/protocol/SentryRuntime;)V
+	public fun setSpring (Lio/sentry/protocol/Spring;)V
 	public fun setTrace (Lio/sentry/SpanContext;)V
 	public fun size ()I
 	public fun withResponse (Lio/sentry/util/HintUtils$SentryConsumer;)V
@@ -4437,6 +4439,7 @@ public class io/sentry/protocol/Contexts : io/sentry/JsonSerializable {
 	public fun getResponse ()Lio/sentry/protocol/Response;
 	public fun getRuntime ()Lio/sentry/protocol/SentryRuntime;
 	public fun getSize ()I
+	public fun getSpring ()Lio/sentry/protocol/Spring;
 	public fun getTrace ()Lio/sentry/SpanContext;
 	public fun hashCode ()I
 	public fun isEmpty ()Z
@@ -4454,6 +4457,7 @@ public class io/sentry/protocol/Contexts : io/sentry/JsonSerializable {
 	public fun setOperatingSystem (Lio/sentry/protocol/OperatingSystem;)V
 	public fun setResponse (Lio/sentry/protocol/Response;)V
 	public fun setRuntime (Lio/sentry/protocol/SentryRuntime;)V
+	public fun setSpring (Lio/sentry/protocol/Spring;)V
 	public fun setTrace (Lio/sentry/SpanContext;)V
 	public fun size ()I
 	public fun withResponse (Lio/sentry/util/HintUtils$SentryConsumer;)V
@@ -5364,6 +5368,30 @@ public final class io/sentry/protocol/SentryTransaction$JsonKeys {
 	public static final field TRANSACTION Ljava/lang/String;
 	public static final field TRANSACTION_INFO Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/Spring : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public static final field TYPE Ljava/lang/String;
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/protocol/Spring;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getActiveProfiles ()[Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setActiveProfiles ([Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/Spring$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/Spring;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/Spring$JsonKeys {
+	public static final field ACTIVE_PROFILES Ljava/lang/String;
 	public fun <init> ()V
 }
 
