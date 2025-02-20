@@ -157,6 +157,7 @@ object Config {
         val composeCoil = "io.coil-kt:coil-compose:2.6.0"
 
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
+        val apolloKotlin4 = "com.apollographql.apollo:apollo-runtime:4.1.1"
 
         val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.20"
 
@@ -250,6 +251,7 @@ object Config {
         val SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot.jakarta"
         val SENTRY_OPENTELEMETRY_AGENT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.agent"
         val SENTRY_APOLLO3_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo3"
+        val SENTRY_APOLLO4_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo4"
         val SENTRY_APOLLO_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo"
         val SENTRY_GRAPHQL_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql"
         val SENTRY_GRAPHQL22_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql22"

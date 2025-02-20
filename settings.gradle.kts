@@ -25,6 +25,7 @@ include(
     "sentry-compose-helper",
     "sentry-apollo",
     "sentry-apollo-3",
+    "sentry-apollo-4",
     "sentry-test-support",
     "sentry-log4j2",
     "sentry-logback",

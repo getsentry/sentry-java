@@ -5,6 +5,7 @@
 ### Features
 
 - The `ignoredErrors` option is now configurable via the manifest property `io.sentry.traces.ignored-errors` ([#4178](https://github.com/getsentry/sentry-java/pull/4178))
+- Add Apollo 4 integration ([#4166](https://github.com/getsentry/sentry-java/pull/4166))
 
 ### Fixes
 
