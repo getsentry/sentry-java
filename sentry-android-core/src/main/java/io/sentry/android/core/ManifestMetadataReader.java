@@ -383,7 +383,11 @@ final class ManifestMetadataReader {
                 metadata, logger, ENABLE_SCOPE_PERSISTENCE, options.isEnableScopePersistence()));
 
         options.setEnableAutoTraceIdGeneration(
-          readBool(metadata, logger, ENABLE_AUTO_TRACE_ID_GENERATION, options.isAttachScreenshot()));
+            readBool(
+                metadata,
+                logger,
+                ENABLE_AUTO_TRACE_ID_GENERATION,
+                options.isEnableAutoTraceIdGeneration()));
 
         if (options.getSessionReplay().getSessionSampleRate() == null) {
           final Double sessionSampleRate =

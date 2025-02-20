@@ -1389,7 +1389,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         val activity = mock<Activity>()
         fixture.options.tracesSampleRate = null
-        fixture.options.isEnableAutoTraceIdGeneration = true;
+        fixture.options.isEnableAutoTraceIdGeneration = true
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = Scope(fixture.options)
@@ -1411,7 +1411,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut()
         val activity = mock<Activity>()
         fixture.options.tracesSampleRate = null
-        fixture.options.isEnableAutoTraceIdGeneration = false;
+        fixture.options.isEnableAutoTraceIdGeneration = false
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = Scope(fixture.options)

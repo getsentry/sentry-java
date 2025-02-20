@@ -166,7 +166,8 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean enableScopeSync = true;
 
-  /** Whether to enable automatic trace ID generation. This is mainly used by the Hybrid SDKs to
+  /**
+   * Whether to enable automatic trace ID generation. This is mainly used by the Hybrid SDKs to
    * control the trace ID generation from the outside.
    */
   private boolean enableAutoTraceIdGeneration = true;

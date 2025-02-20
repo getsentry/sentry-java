@@ -24,9 +24,7 @@ import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import org.mockito.ArgumentCaptor
-import org.mockito.ArgumentMatchers
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.doAnswer
@@ -37,9 +35,9 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertNotEquals
 
 class SentryGestureListenerTracingTest {
     class Fixture {
@@ -378,7 +376,6 @@ class SentryGestureListenerTracingTest {
     @Test
     fun `when tracing is disabled and auto trace id generation is disabled, does not start a new trace`() {
         val sut = fixture.getSut<View>(tracesSampleRate = null, isEnableAutoTraceIdGeneration = false)
-        val scope = Scope(fixture.options)
 
         sut.onSingleTapUp(fixture.event)
 
