@@ -310,9 +310,14 @@ public class SentryAutoConfiguration {
       @ConditionalOnMissingBean(name = "sentryTracingFilter")
       public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
           final @NotNull IScopes scopes,
-          final @NotNull TransactionNameProvider transactionNameProvider) {
+          final @NotNull TransactionNameProvider transactionNameProvider,
+          final @NotNull SentryProperties sentryProperties) {
         FilterRegistrationBean<SentryTracingFilter> filter =
-            new FilterRegistrationBean<>(new SentryTracingFilter(scopes, transactionNameProvider));
+            new FilterRegistrationBean<>(
+                new SentryTracingFilter(
+                    scopes,
+                    transactionNameProvider,
+                    sentryProperties.isKeepTransactionsOpenForAsyncResponses()));
         filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE + 1); // must run after SentrySpringFilter
         return filter;
       }

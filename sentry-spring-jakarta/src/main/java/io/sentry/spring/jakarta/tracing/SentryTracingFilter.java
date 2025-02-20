@@ -41,6 +41,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
 
   private final @NotNull TransactionNameProvider transactionNameProvider;
   private final @NotNull IScopes scopes;
+  private final boolean isAsyncSupportEnabled;
 
   /**
    * Creates filter that resolves transaction name using {@link SpringMvcTransactionNameProvider}.
@@ -54,11 +55,6 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     this(ScopesAdapter.getInstance());
   }
 
-  @Override
-  protected boolean shouldNotFilterAsyncDispatch() {
-    return false;
-  }
-
   /**
    * Creates filter that resolves transaction name using transaction name provider given by
    * parameter.
@@ -69,13 +65,35 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   public SentryTracingFilter(
       final @NotNull IScopes scopes,
       final @NotNull TransactionNameProvider transactionNameProvider) {
+    this(scopes, transactionNameProvider, false);
+  }
+
+  /**
+   * Creates filter that resolves transaction name using transaction name provider given by
+   * parameter.
+   *
+   * @param scopes - the scopes
+   * @param transactionNameProvider - transaction name provider.
+   * @param isAsyncSupportEnabled - whether transactions should be kept open until async handling is
+   *     done
+   */
+  public SentryTracingFilter(
+      final @NotNull IScopes scopes,
+      final @NotNull TransactionNameProvider transactionNameProvider,
+      final boolean isAsyncSupportEnabled) {
     this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.transactionNameProvider =
         Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
+    this.isAsyncSupportEnabled = isAsyncSupportEnabled;
   }
 
   public SentryTracingFilter(final @NotNull IScopes scopes) {
     this(scopes, new SpringMvcTransactionNameProvider());
+  }
+
+  @Override
+  protected boolean shouldNotFilterAsyncDispatch() {
+    return !isAsyncSupportEnabled;
   }
 
   @Override
@@ -171,11 +189,11 @@ public class SentryTracingFilter extends OncePerRequestFilter {
    * same async request
    */
   private boolean shouldContinueTrace(HttpServletRequest httpRequest) {
-    return !isAsyncDispatch(httpRequest);
+    return !isAsyncSupportEnabled || !isAsyncDispatch(httpRequest);
   }
 
   private boolean shouldStoreTransactionForAsyncProcessing() {
-    return true;
+    return isAsyncSupportEnabled;
   }
 
   /**
@@ -186,7 +204,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
    * invocation of this filter for the same async request)
    */
   private boolean shouldFinishTransaction(HttpServletRequest httpRequest) {
-    return !isAsyncStarted(httpRequest);
+    return !isAsyncSupportEnabled || !isAsyncStarted(httpRequest);
   }
 
   private boolean shouldTraceRequest(final @NotNull HttpServletRequest request) {
