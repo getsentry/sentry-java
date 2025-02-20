@@ -166,6 +166,11 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean enableScopeSync = true;
 
+  /** Whether to enable automatic trace ID generation. This is mainly used by the Hybrid SDKs to
+   * control the trace ID generation from the outside.
+   */
+  private boolean enableAutoTraceIdGeneration = true;
+
   public interface BeforeCaptureCallback {
 
     /**
@@ -593,5 +598,14 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setFrameMetricsCollector(
       final @Nullable SentryFrameMetricsCollector frameMetricsCollector) {
     this.frameMetricsCollector = frameMetricsCollector;
+  }
+
+
+  public boolean isEnableAutoTraceIdGeneration() {
+    return enableAutoTraceIdGeneration;
+  }
+
+  public void setEnableAutoTraceIdGeneration(final boolean enableAutoTraceIdGeneration) {
+    this.enableAutoTraceIdGeneration = enableAutoTraceIdGeneration;
   }
 }

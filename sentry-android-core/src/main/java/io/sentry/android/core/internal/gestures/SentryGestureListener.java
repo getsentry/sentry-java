@@ -201,7 +201,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     final boolean isNewInteraction = isClickGesture || !isNewGestureSameAsActive;
 
     if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
-      if (isNewInteraction) {
+      if (options.isEnableAutoTraceIdGeneration() && isNewInteraction) {
         TracingUtils.startNewTrace(scopes);
         activeUiElement = target;
         activeEventType = eventType;
