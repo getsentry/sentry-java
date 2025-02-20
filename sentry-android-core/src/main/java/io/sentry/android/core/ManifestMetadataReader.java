@@ -107,6 +107,8 @@ final class ManifestMetadataReader {
 
   static final String IGNORED_ERRORS = "io.sentry.ignored-errors";
 
+  static final String ENABLE_AUTO_TRACE_ID_GENERATION = "io.sentry.enable-auto-trace-id-generation";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -379,6 +381,13 @@ final class ManifestMetadataReader {
         options.setEnableScopePersistence(
             readBool(
                 metadata, logger, ENABLE_SCOPE_PERSISTENCE, options.isEnableScopePersistence()));
+
+        options.setEnableAutoTraceIdGeneration(
+            readBool(
+                metadata,
+                logger,
+                ENABLE_AUTO_TRACE_ID_GENERATION,
+                options.isEnableAutoTraceIdGeneration()));
 
         if (options.getSessionReplay().getSessionSampleRate() == null) {
           final Double sessionSampleRate =

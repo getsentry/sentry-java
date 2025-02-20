@@ -161,7 +161,9 @@ public final class ActivityLifecycleIntegration
     if (scopes != null && !isRunningTransactionOrTrace(activity)) {
       if (!performanceEnabled) {
         activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
-        TracingUtils.startNewTrace(scopes);
+        if (options.isEnableAutoTraceIdGeneration()) {
+          TracingUtils.startNewTrace(scopes);
+        }
       } else {
         // as we allow a single transaction running on the bound Scope, we finish the previous ones
         stopPreviousTransactions();
