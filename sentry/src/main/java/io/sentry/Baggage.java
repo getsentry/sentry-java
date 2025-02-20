@@ -35,6 +35,7 @@ public final class Baggage {
   final @NotNull Map<String, String> keyValues;
   final @Nullable String thirdPartyHeader;
   private boolean mutable;
+  private boolean shouldFreeze;
   final @NotNull ILogger logger;
 
   @NotNull
@@ -85,7 +86,7 @@ public final class Baggage {
       final @NotNull ILogger logger) {
     final @NotNull Map<String, String> keyValues = new HashMap<>();
     final @NotNull List<String> thirdPartyKeyValueStrings = new ArrayList<>();
-    boolean mutable = true;
+    boolean shouldFreeze = false;
 
     if (headerValue != null) {
       try {
@@ -103,7 +104,20 @@ public final class Baggage {
               final String valueDecoded = decode(value);
 
               keyValues.put(keyDecoded, valueDecoded);
-              mutable = false;
+
+              // Without ignoring SAMPLE_RAND here, we'd be freezing baggage that we're transporting
+              // via OTel span attributes.
+              // This is done when a transaction is created via Sentry API.
+              // In that case Baggage is created before the OTel span is created and we put it on
+              // the span attributes.
+              // It does however only contain the sample random value as its only value.
+              // The OTel code then uses it to create a propagation context from it and ends up
+              // freezing it,
+              // preventing outgoing requests (to other systems or Sentry) from adding info to
+              // baggage and only then freeze it.
+              if (!DSCKeys.SAMPLE_RAND.equalsIgnoreCase(key)) {
+                shouldFreeze = true;
+              }
             } catch (Throwable e) {
               logger.log(
                   SentryLevel.ERROR,
@@ -123,7 +137,12 @@ public final class Baggage {
         thirdPartyKeyValueStrings.isEmpty()
             ? null
             : StringUtils.join(",", thirdPartyKeyValueStrings);
-    return new Baggage(keyValues, thirdPartyHeader, mutable, logger);
+    /*
+     can't freeze Baggage right away as we might have to backfill sampleRand
+     also we don't receive sentry-trace header here or in ctor so we can't
+     backfill then freeze here unless we pass sentry-trace header.
+    */
+    return new Baggage(keyValues, thirdPartyHeader, true, shouldFreeze, logger);
   }
 
   @ApiStatus.Internal
@@ -140,6 +159,7 @@ public final class Baggage {
     // we don't persist sample rate
     baggage.setSampleRate(null);
     baggage.setSampled(null);
+    baggage.setSampleRand(null);
     final @Nullable Object replayId = event.getContexts().get(REPLAY_ID);
     if (replayId != null && !replayId.toString().equals(SentryId.EMPTY_ID.toString())) {
       baggage.setReplayId(replayId.toString());
@@ -152,12 +172,17 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public Baggage(final @NotNull ILogger logger) {
-    this(new HashMap<>(), null, true, logger);
+    this(new HashMap<>(), null, true, false, logger);
   }
 
   @ApiStatus.Internal
   public Baggage(final @NotNull Baggage baggage) {
-    this(baggage.keyValues, baggage.thirdPartyHeader, baggage.mutable, baggage.logger);
+    this(
+        baggage.keyValues,
+        baggage.thirdPartyHeader,
+        baggage.mutable,
+        baggage.shouldFreeze,
+        baggage.logger);
   }
 
   @ApiStatus.Internal
@@ -165,11 +190,13 @@ public final class Baggage {
       final @NotNull Map<String, String> keyValues,
       final @Nullable String thirdPartyHeader,
       boolean isMutable,
+      boolean shouldFreeze,
       final @NotNull ILogger logger) {
     this.keyValues = keyValues;
     this.logger = logger;
-    this.mutable = isMutable;
     this.thirdPartyHeader = thirdPartyHeader;
+    this.mutable = isMutable;
+    this.shouldFreeze = shouldFreeze;
   }
 
   @ApiStatus.Internal
@@ -180,6 +207,11 @@ public final class Baggage {
   @ApiStatus.Internal
   public boolean isMutable() {
     return mutable;
+  }
+
+  @ApiStatus.Internal
+  public boolean isShouldFreeze() {
+    return shouldFreeze;
   }
 
   @Nullable
@@ -336,6 +368,26 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
+  public void forceSetSampleRate(final @Nullable String sampleRate) {
+    set(DSCKeys.SAMPLE_RATE, sampleRate, true);
+  }
+
+  @ApiStatus.Internal
+  public @Nullable String getSampleRand() {
+    return get(DSCKeys.SAMPLE_RAND);
+  }
+
+  @ApiStatus.Internal
+  public void setSampleRand(final @Nullable String sampleRand) {
+    set(DSCKeys.SAMPLE_RAND, sampleRand);
+  }
+
+  @ApiStatus.Internal
+  public void setSampleRandDouble(final @Nullable Double sampleRand) {
+    setSampleRand(sampleRateToString(sampleRand));
+  }
+
+  @ApiStatus.Internal
   public void setSampled(final @Nullable String sampled) {
     set(DSCKeys.SAMPLED, sampled);
   }
@@ -352,7 +404,18 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public void set(final @NotNull String key, final @Nullable String value) {
-    if (mutable) {
+    set(key, value, false);
+  }
+
+  /**
+   * Sets / updates a value
+   *
+   * @param key key
+   * @param value value to set
+   * @param force ignores mutability of this baggage and sets the value anyways
+   */
+  private void set(final @NotNull String key, final @Nullable String value, final boolean force) {
+    if (mutable || force) {
       this.keyValues.put(key, value);
     }
   }
@@ -392,6 +455,25 @@ public final class Baggage {
     }
     setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
     setSampled(StringUtils.toString(sampled(samplingDecision)));
+    setSampleRand(sampleRateToString(sampleRand(samplingDecision))); // TODO check
+  }
+
+  @ApiStatus.Internal
+  public void setValuesFromSamplingDecision(
+      final @Nullable TracesSamplingDecision samplingDecision) {
+    if (samplingDecision == null) {
+      return;
+    }
+
+    setSampled(StringUtils.toString(sampled(samplingDecision)));
+
+    if (samplingDecision.getSampleRand() != null) {
+      setSampleRand(sampleRateToString(sampleRand(samplingDecision)));
+    }
+
+    if (samplingDecision.getSampleRate() != null) {
+      forceSetSampleRate(sampleRateToString(sampleRate(samplingDecision)));
+    }
   }
 
   @ApiStatus.Internal
@@ -417,6 +499,14 @@ public final class Baggage {
     }
 
     return samplingDecision.getSampleRate();
+  }
+
+  private static @Nullable Double sampleRand(@Nullable TracesSamplingDecision samplingDecision) {
+    if (samplingDecision == null) {
+      return null;
+    }
+
+    return samplingDecision.getSampleRand();
   }
 
   private static @Nullable String sampleRateToString(@Nullable Double sampleRateAsDouble) {
@@ -445,12 +535,20 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public @Nullable Double getSampleRateDouble() {
-    final String sampleRateString = getSampleRate();
-    if (sampleRateString != null) {
+    return toDouble(getSampleRate());
+  }
+
+  @ApiStatus.Internal
+  public @Nullable Double getSampleRandDouble() {
+    return toDouble(getSampleRand());
+  }
+
+  private @Nullable Double toDouble(final @Nullable String stringValue) {
+    if (stringValue != null) {
       try {
-        double sampleRate = Double.parseDouble(sampleRateString);
-        if (SampleRateUtils.isValidTracesSampleRate(sampleRate, false)) {
-          return sampleRate;
+        double doubleValue = Double.parseDouble(stringValue);
+        if (SampleRateUtils.isValidTracesSampleRate(doubleValue, false)) {
+          return doubleValue;
         }
       } catch (NumberFormatException e) {
         return null;
@@ -477,7 +575,8 @@ public final class Baggage {
               getTransaction(),
               getSampleRate(),
               getSampled(),
-              replayIdString == null ? null : new SentryId(replayIdString));
+              replayIdString == null ? null : new SentryId(replayIdString),
+              getSampleRand());
       traceContext.setUnknown(getUnknown());
       return traceContext;
     } else {
@@ -494,6 +593,7 @@ public final class Baggage {
     public static final String ENVIRONMENT = "sentry-environment";
     public static final String TRANSACTION = "sentry-transaction";
     public static final String SAMPLE_RATE = "sentry-sample_rate";
+    public static final String SAMPLE_RAND = "sentry-sample_rand";
     public static final String SAMPLED = "sentry-sampled";
     public static final String REPLAY_ID = "sentry-replay_id";
 
@@ -506,6 +606,7 @@ public final class Baggage {
             ENVIRONMENT,
             TRANSACTION,
             SAMPLE_RATE,
+            SAMPLE_RAND,
             SAMPLED,
             REPLAY_ID);
   }

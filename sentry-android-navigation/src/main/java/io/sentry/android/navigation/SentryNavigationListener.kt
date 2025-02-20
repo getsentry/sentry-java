@@ -34,7 +34,7 @@ private const val TRACE_ORIGIN = "auto.navigation"
  * @param enableNavigationTracing Whether the integration should start a new idle [ITransaction]
  * with [SentryOptions.idleTimeout] for navigation events.
  */
-class SentryNavigationListener @JvmOverloads constructor(
+public class SentryNavigationListener @JvmOverloads constructor(
     private val scopes: IScopes = ScopesAdapter.getInstance(),
     private val enableNavigationBreadcrumbs: Boolean = true,
     private val enableNavigationTracing: Boolean = true,
@@ -193,7 +193,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         return "/" + name.substringBefore('/') // strip out arguments from the tx name
     }
 
-    companion object {
-        const val NAVIGATION_OP = "navigation"
+    public companion object {
+        public const val NAVIGATION_OP: String = "navigation"
     }
 }

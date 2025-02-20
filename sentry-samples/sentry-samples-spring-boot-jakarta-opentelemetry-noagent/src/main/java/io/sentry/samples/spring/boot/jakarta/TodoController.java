@@ -5,7 +5,7 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
 import io.sentry.ISpan;
 import io.sentry.Sentry;
-import io.sentry.spring.jakarta.webflux.ReactorUtils;
+import io.sentry.reactor.SentryReactorUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -51,7 +51,7 @@ public class TodoController {
   @GetMapping("/todo-webclient/{id}")
   Todo todoWebClient(@PathVariable Long id) {
     Hooks.enableAutomaticContextPropagation();
-    return ReactorUtils.withSentry(
+    return SentryReactorUtils.withSentry(
             Mono.just(true)
                 .publishOn(Schedulers.boundedElastic())
                 .flatMap(

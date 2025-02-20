@@ -471,12 +471,19 @@ public class SentryOptions {
   /** Whether to enable scope persistence so the scope values are preserved if the process dies */
   private boolean enableScopePersistence = true;
 
-  /** Contains a list of monitor slugs for which check-ins should not be sent. */
+  /** The monitor slugs for which captured check-ins should not be sent to Sentry. */
   @ApiStatus.Experimental private @Nullable List<FilterString> ignoredCheckIns = null;
 
-  /** Contains a list of span origins for which spans / transactions should not be created. */
+  /**
+   * Strings or regex patterns that the origin of a new span/transaction will be tested against. If
+   * there is a match, the span/transaction will not be created.
+   */
   @ApiStatus.Experimental private @Nullable List<FilterString> ignoredSpanOrigins = null;
 
+  /**
+   * Strings or regex patterns that captured transaction names will be tested against. If there is a
+   * match, the transaction will not be sent to Sentry.
+   */
   private @Nullable List<FilterString> ignoredTransactions = null;
 
   @ApiStatus.Experimental
@@ -1838,7 +1845,6 @@ public class SentryOptions {
     return tracePropagationTargets;
   }
 
-  @ApiStatus.Internal
   public void setTracePropagationTargets(final @Nullable List<String> tracePropagationTargets) {
     if (tracePropagationTargets == null) {
       this.tracePropagationTargets = null;
@@ -2238,11 +2244,23 @@ public class SentryOptions {
     this.sendModules = sendModules;
   }
 
+  /**
+   * Returns the list of strings/regex patterns the origin of a new span/transaction will be tested
+   * against to determine whether the span/transaction shall be created.
+   *
+   * @return the list of strings or regex patterns
+   */
   @ApiStatus.Experimental
   public @Nullable List<FilterString> getIgnoredSpanOrigins() {
     return ignoredSpanOrigins;
   }
 
+  /**
+   * Adds an item to the list of strings/regex patterns the origin of a new span/transaction will be
+   * tested against to determine whether the span/transaction shall be created.
+   *
+   * @param ignoredSpanOrigin the string/regex pattern
+   */
   @ApiStatus.Experimental
   public void addIgnoredSpanOrigin(String ignoredSpanOrigin) {
     if (ignoredSpanOrigins == null) {
@@ -2251,6 +2269,12 @@ public class SentryOptions {
     ignoredSpanOrigins.add(new FilterString(ignoredSpanOrigin));
   }
 
+  /**
+   * Sets the list of strings/regex patterns the origin of a new span/transaction will be tested
+   * against to determine whether the span/transaction shall be created.
+   *
+   * @param ignoredSpanOrigins the list of strings/regex patterns
+   */
   @ApiStatus.Experimental
   public void setIgnoredSpanOrigins(final @Nullable List<String> ignoredSpanOrigins) {
     if (ignoredSpanOrigins == null) {
@@ -2267,11 +2291,22 @@ public class SentryOptions {
     }
   }
 
+  /**
+   * Returns the list of monitor slugs for which captured check-ins should not be sent to Sentry.
+   *
+   * @return the list of monitor slugs
+   */
   @ApiStatus.Experimental
   public @Nullable List<FilterString> getIgnoredCheckIns() {
     return ignoredCheckIns;
   }
 
+  /**
+   * Adds a monitor slug to the list of slugs for which captured check-ins should not be sent to
+   * Sentry.
+   *
+   * @param ignoredCheckIn the monitor slug
+   */
   @ApiStatus.Experimental
   public void addIgnoredCheckIn(String ignoredCheckIn) {
     if (ignoredCheckIns == null) {
@@ -2280,6 +2315,11 @@ public class SentryOptions {
     ignoredCheckIns.add(new FilterString(ignoredCheckIn));
   }
 
+  /**
+   * Sets the list of monitor slugs for which captured check-ins should not be sent to Sentry.
+   *
+   * @param ignoredCheckIns the list of monitor slugs for which check-ins should not be sent
+   */
   @ApiStatus.Experimental
   public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
     if (ignoredCheckIns == null) {
@@ -2296,10 +2336,22 @@ public class SentryOptions {
     }
   }
 
+  /**
+   * Returns the list of strings/regex patterns that captured transaction names are checked against
+   * to determine if a transaction shall be sent to Sentry or ignored.
+   *
+   * @return the list of strings/regex patterns
+   */
   public @Nullable List<FilterString> getIgnoredTransactions() {
     return ignoredTransactions;
   }
 
+  /**
+   * Adds an element the list of strings/regex patterns that captured transaction names are checked
+   * against to determine if a transaction shall be sent to Sentry or ignored.
+   *
+   * @param ignoredTransaction the string/regex pattern
+   */
   @ApiStatus.Experimental
   public void addIgnoredTransaction(String ignoredTransaction) {
     if (ignoredTransactions == null) {
@@ -2308,6 +2360,12 @@ public class SentryOptions {
     ignoredTransactions.add(new FilterString(ignoredTransaction));
   }
 
+  /**
+   * Sets the list of strings/regex patterns that captured transaction names are checked against to
+   * determine if a transaction shall be sent to Sentry or ignored.
+   *
+   * @param ignoredTransactions the list of string/regex patterns
+   */
   @ApiStatus.Experimental
   public void setIgnoredTransactions(final @Nullable List<String> ignoredTransactions) {
     if (ignoredTransactions == null) {

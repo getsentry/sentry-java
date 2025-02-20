@@ -137,6 +137,8 @@ public final class OtelSpanFactory implements ISpanFactory {
       spanBuilder.setAttribute(
           InternalSemanticAttributes.SAMPLE_RATE, samplingDecision.getSampleRate());
       spanBuilder.setAttribute(
+          InternalSemanticAttributes.SAMPLE_RAND, samplingDecision.getSampleRand());
+      spanBuilder.setAttribute(
           InternalSemanticAttributes.PROFILE_SAMPLED, samplingDecision.getProfileSampled());
       spanBuilder.setAttribute(
           InternalSemanticAttributes.PROFILE_SAMPLE_RATE, samplingDecision.getProfileSampleRate());

@@ -49,6 +49,7 @@ dependencies {
     compileOnly(projects.sentryQuartz)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
+    api(projects.sentryReactor)
 
     // tests
     testImplementation(projects.sentryTestSupport)
@@ -66,6 +67,7 @@ dependencies {
     testImplementation(Config.Libs.contextPropagation)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.Libs.graphQlJava22)
+    testImplementation(projects.sentryReactor)
 }
 
 tasks.withType<KotlinCompile> {

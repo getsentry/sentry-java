@@ -2,12 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     `java-library`
-    id("com.github.johnrengelman.shadow") version "7.1.2"
-}
-
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    id("com.gradleup.shadow") version "8.3.6"
 }
 
 fun relocatePackages(shadowJar: ShadowJar) {
@@ -94,7 +89,7 @@ tasks {
     // building the final javaagent jar is done in 3 steps:
 
     // 1. all distro specific javaagent libs are relocated
-    create("relocateJavaagentLibs", ShadowJar::class.java) {
+    register("relocateJavaagentLibs", ShadowJar::class.java) {
         configurations = listOf(javaagentLibs)
 
         duplicatesStrategy = DuplicatesStrategy.FAIL
@@ -119,17 +114,17 @@ tasks {
     // having a separate task for isolating javaagent libs is required to avoid duplicates with the upstream javaagent
     // duplicatesStrategy in shadowJar won't be applied when adding files with with(CopySpec) because each CopySpec has
     // its own duplicatesStrategy
-    create("isolateJavaagentLibs", Copy::class.java) {
+    register("isolateJavaagentLibs", Copy::class.java) {
         dependsOn(findByName("relocateJavaagentLibs"))
         with(isolateClasses(findByName("relocateJavaagentLibs")!!.outputs.files))
 
-        into("$buildDir/isolated/javaagentLibs")
+        into(project.layout.buildDirectory.file("isolated/javaagentLibs").get().asFile)
     }
 
     // 3. the relocated and isolated javaagent libs are merged together with the bootstrap libs (which undergo relocation
     // in this task) and the upstream javaagent jar; duplicates are removed
-    shadowJar {
-        configurations = listOf(bootstrapLibs, upstreamAgent)
+    named("shadowJar", ShadowJar::class) {
+        configurations = listOf(bootstrapLibs) + listOf(upstreamAgent)
 
         dependsOn(findByName("isolateJavaagentLibs"))
         from(findByName("isolateJavaagentLibs")!!.outputs)

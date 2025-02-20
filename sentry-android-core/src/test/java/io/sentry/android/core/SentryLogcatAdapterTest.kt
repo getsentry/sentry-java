@@ -42,6 +42,7 @@ class SentryLogcatAdapterTest {
     fun `set up`() {
         Sentry.close()
         AppStartMetrics.getInstance().clear()
+        ContextUtils.resetInstance()
         breadcrumbs.clear()
 
         fixture.initSut {

@@ -13,12 +13,12 @@ import io.opentelemetry.context.propagation.TextMapSetter;
 import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
-import io.sentry.PropagationContext;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
+import io.sentry.util.TracingUtils;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -73,12 +73,17 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       return;
     }
 
-    final @NotNull SentryTraceHeader sentryTraceHeader = sentrySpan.toSentryTrace();
-    setter.set(carrier, sentryTraceHeader.getName(), sentryTraceHeader.getValue());
-    final @Nullable BaggageHeader baggageHeader =
-        sentrySpan.toBaggageHeader(Collections.emptyList());
-    if (baggageHeader != null) {
-      setter.set(carrier, baggageHeader.getName(), baggageHeader.getValue());
+    // TODO can we use traceIfAllowed? do we have the URL here? need to access span attrs
+    final @Nullable TracingUtils.TracingHeaders tracingHeaders =
+        TracingUtils.trace(scopes, Collections.emptyList(), sentrySpan);
+
+    if (tracingHeaders != null) {
+      final @NotNull SentryTraceHeader sentryTraceHeader = tracingHeaders.getSentryTraceHeader();
+      setter.set(carrier, sentryTraceHeader.getName(), sentryTraceHeader.getValue());
+      final @Nullable BaggageHeader baggageHeader = tracingHeaders.getBaggageHeader();
+      if (baggageHeader != null) {
+        setter.set(carrier, baggageHeader.getName(), baggageHeader.getValue());
+      }
     }
   }
 
@@ -124,11 +129,6 @@ public final class OtelSentryPropagator implements TextMapPropagator {
           .getOptions()
           .getLogger()
           .log(SentryLevel.DEBUG, "Continuing Sentry trace %s", sentryTraceHeader.getTraceId());
-
-      final @NotNull PropagationContext propagationContext =
-          PropagationContext.fromHeaders(
-              scopes.getOptions().getLogger(), sentryTraceString, baggageString);
-      scopesToUse.getIsolationScope().setPropagationContext(propagationContext);
 
       return modifiedContext;
     } catch (InvalidSentryTraceHeaderException e) {
