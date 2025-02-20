@@ -5,6 +5,7 @@ import io.sentry.SentryOptions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.event.Level;
@@ -27,6 +28,8 @@ public class SentryProperties extends SentryOptions {
    * guaranteed to run after Spring Security filter chain.
    */
   private @Nullable Integer userFilterOrder;
+
+  @ApiStatus.Experimental private boolean keepTransactionsOpenForAsyncResponses = false;
 
   /** Logging framework integration properties. */
   private @NotNull Logging logging = new Logging();
@@ -102,6 +105,15 @@ public class SentryProperties extends SentryOptions {
 
   public void setEnableAotCompatibility(boolean enableAotCompatibility) {
     this.enableAotCompatibility = enableAotCompatibility;
+  }
+
+  public boolean isKeepTransactionsOpenForAsyncResponses() {
+    return keepTransactionsOpenForAsyncResponses;
+  }
+
+  public void setKeepTransactionsOpenForAsyncResponses(
+      boolean keepTransactionsOpenForAsyncResponses) {
+    this.keepTransactionsOpenForAsyncResponses = keepTransactionsOpenForAsyncResponses;
   }
 
   public @NotNull Graphql getGraphql() {
