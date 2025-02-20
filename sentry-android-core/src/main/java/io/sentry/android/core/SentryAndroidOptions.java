@@ -600,7 +600,6 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.frameMetricsCollector = frameMetricsCollector;
   }
 
-
   public boolean isEnableAutoTraceIdGeneration() {
     return enableAutoTraceIdGeneration;
   }

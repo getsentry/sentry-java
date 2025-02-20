@@ -159,7 +159,12 @@ public final class ActivityLifecycleIntegration
   private void startTracing(final @NotNull Activity activity) {
     WeakReference<Activity> weakActivity = new WeakReference<>(activity);
     if (scopes != null && !isRunningTransactionOrTrace(activity)) {
-      if (performanceEnabled) {
+      if (!performanceEnabled) {
+        activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
+        if (options.isEnableAutoTraceIdGeneration()) {
+          TracingUtils.startNewTrace(scopes);
+        }
+      } else {
         // as we allow a single transaction running on the bound Scope, we finish the previous ones
         stopPreviousTransactions();
 
@@ -298,9 +303,6 @@ public final class ActivityLifecycleIntegration
             });
 
         activitiesWithOngoingTransactions.put(activity, transaction);
-      } else if (options.isEnableAutoTraceIdGeneration()) {
-        activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
-        TracingUtils.startNewTrace(scopes);
       }
     }
   }

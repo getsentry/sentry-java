@@ -107,7 +107,7 @@ final class ManifestMetadataReader {
 
   static final String IGNORED_ERRORS = "io.sentry.ignored-errors";
 
-  static final String ENABLE_AUTO_TRACE_ID_GENERATION = "io.sentry.enable-trace-update";
+  static final String ENABLE_AUTO_TRACE_ID_GENERATION = "io.sentry.enable-auto-trace-id-generation";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
