@@ -7,10 +7,8 @@ import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanContext;
-import io.sentry.SpanId;
 import io.sentry.ndk.INativeScope;
 import io.sentry.ndk.NativeScope;
-import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.Locale;
@@ -132,12 +130,17 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
 
   @Override
   public void setTrace(@Nullable SpanContext spanContext, @NotNull IScope scope) {
-    if(spanContext == null) {
+    if (spanContext == null) {
       return;
     }
 
     try {
-      options.getExecutorService().submit(() -> nativeScope.setTrace(spanContext.getTraceId().toString(), spanContext.getSpanId().toString()));
+      options
+          .getExecutorService()
+          .submit(
+              () ->
+                  nativeScope.setTrace(
+                      spanContext.getTraceId().toString(), spanContext.getSpanId().toString()));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTraceId failed.");
     }

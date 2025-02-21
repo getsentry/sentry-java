@@ -52,15 +52,9 @@ public final class PropagationContext {
   }
 
   public static @NotNull PropagationContext fromId(
-      final @NotNull String traceId,
-      final @NotNull String spanId) {
+      final @NotNull String traceId, final @NotNull String spanId) {
     return new PropagationContext(
-      new SentryId(traceId),
-      new SpanId(),
-      new SpanId(spanId),
-      null,
-      null
-    );
+        new SentryId(traceId), new SpanId(), new SpanId(spanId), null, null);
   }
 
   private @NotNull SentryId traceId;

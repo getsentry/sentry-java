@@ -272,8 +272,7 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
-  public void setTrace(
-    final @NotNull String traceId, final @NotNull String spanId) { }
+  public void setTrace(final @NotNull String traceId, final @NotNull String spanId) {}
 
   @Override
   public @Nullable SentryTraceHeader getTraceparent() {
