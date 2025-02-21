@@ -1,5 +1,6 @@
 package io.sentry.opentelemetry;
 
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
@@ -196,6 +197,16 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
 
   private @Nullable ReadWriteSpan getSpan() {
     return span.get();
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @Nullable Attributes getOpenTelemetrySpanAttributes() {
+    final @Nullable ReadWriteSpan readWriteSpan = span.get();
+    if (readWriteSpan != null) {
+      return readWriteSpan.getAttributes();
+    }
+    return null;
   }
 
   @Override

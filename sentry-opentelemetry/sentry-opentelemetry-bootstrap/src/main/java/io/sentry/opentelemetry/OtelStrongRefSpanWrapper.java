@@ -1,5 +1,6 @@
 package io.sentry.opentelemetry;
 
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Context;
 import io.sentry.BaggageHeader;
@@ -302,5 +303,11 @@ public final class OtelStrongRefSpanWrapper implements IOtelSpanWrapper {
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return delegate.makeCurrent();
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @Nullable Attributes getOpenTelemetrySpanAttributes() {
+    return delegate.getOpenTelemetrySpanAttributes();
   }
 }
