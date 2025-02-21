@@ -2,6 +2,7 @@ package io.sentry.opentelemetry;
 
 import static io.sentry.opentelemetry.SentryOtelKeys.SENTRY_SCOPES_KEY;
 
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.TraceFlags;
@@ -10,7 +11,6 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.context.propagation.TextMapSetter;
-import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
@@ -93,11 +93,11 @@ public final class OtelSentryPropagator implements TextMapPropagator {
   }
 
   private @Nullable String getUrl(final @NotNull IOtelSpanWrapper sentrySpan) {
-    final @Nullable ReadWriteSpan otelReadableSpan = sentrySpan.getSpan();
-    if (otelReadableSpan == null) {
+    final @Nullable Attributes attributes = sentrySpan.getOpenTelemetrySpanAttributes();
+    if (attributes == null) {
       return null;
     }
-    return attributesExtractor.extractUrl(otelReadableSpan.getAttributes());
+    return attributesExtractor.extractUrl(attributes);
   }
 
   @Override
