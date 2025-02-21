@@ -2,6 +2,7 @@ public abstract interface class io/sentry/opentelemetry/IOtelSpanWrapper : io/se
 	public abstract fun getData ()Ljava/util/Map;
 	public abstract fun getMeasurements ()Ljava/util/Map;
 	public abstract fun getScopes ()Lio/sentry/IScopes;
+	public abstract fun getSpan ()Lio/opentelemetry/sdk/trace/ReadWriteSpan;
 	public abstract fun getTags ()Ljava/util/Map;
 	public abstract fun getTraceId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getTransactionName ()Ljava/lang/String;
@@ -54,6 +55,7 @@ public final class io/sentry/opentelemetry/OtelStrongRefSpanWrapper : io/sentry/
 	public fun getOperation ()Ljava/lang/String;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getScopes ()Lio/sentry/IScopes;
+	public fun getSpan ()Lio/opentelemetry/sdk/trace/ReadWriteSpan;
 	public fun getSpanContext ()Lio/sentry/SpanContext;
 	public fun getStartDate ()Lio/sentry/SentryDate;
 	public fun getStatus ()Lio/sentry/SpanStatus;

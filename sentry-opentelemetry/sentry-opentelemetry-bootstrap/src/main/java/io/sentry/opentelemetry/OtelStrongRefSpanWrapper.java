@@ -2,6 +2,7 @@ package io.sentry.opentelemetry;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Context;
+import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
@@ -302,5 +303,11 @@ public final class OtelStrongRefSpanWrapper implements IOtelSpanWrapper {
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return delegate.makeCurrent();
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @Nullable ReadWriteSpan getSpan() {
+    return delegate.getSpan();
   }
 }

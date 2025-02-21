@@ -194,7 +194,9 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
     return context.getSpanId();
   }
 
-  private @Nullable ReadWriteSpan getSpan() {
+  @ApiStatus.Internal
+  @Override
+  public @Nullable ReadWriteSpan getSpan() {
     return span.get();
   }
 

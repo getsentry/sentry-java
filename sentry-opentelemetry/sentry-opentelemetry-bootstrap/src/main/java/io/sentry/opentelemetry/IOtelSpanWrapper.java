@@ -1,6 +1,7 @@
 package io.sentry.opentelemetry;
 
 import io.opentelemetry.context.Context;
+import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.protocol.MeasurementValue;
@@ -47,4 +48,8 @@ public interface IOtelSpanWrapper extends ISpan {
 
   @NotNull
   Context storeInContext(Context context);
+
+  @ApiStatus.Internal
+  @Nullable
+  ReadWriteSpan getSpan();
 }

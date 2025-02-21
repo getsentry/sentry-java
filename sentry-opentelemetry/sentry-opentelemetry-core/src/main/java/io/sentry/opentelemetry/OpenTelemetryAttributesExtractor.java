@@ -24,7 +24,8 @@ public final class OpenTelemetryAttributesExtractor {
     addRequestAttributesToScope(attributes, scope);
   }
 
-  private void addRequestAttributesToScope(Attributes attributes, IScope scope) {
+  private void addRequestAttributesToScope(
+      final @NotNull Attributes attributes, final @NotNull IScope scope) {
     if (scope.getRequest() == null) {
       scope.setRequest(new Request());
     }
@@ -36,17 +37,10 @@ public final class OpenTelemetryAttributesExtractor {
       }
 
       if (request.getUrl() == null) {
-        final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
-        if (urlFull != null) {
-          final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(urlFull);
+        final @Nullable String url = extractUrl(attributes);
+        if (url != null) {
+          final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(url);
           urlDetails.applyToRequest(request);
-        }
-      }
-
-      if (request.getUrl() == null) {
-        final String urlString = buildUrlString(attributes);
-        if (!urlString.isEmpty()) {
-          request.setUrl(urlString);
         }
       }
 
@@ -57,6 +51,20 @@ public final class OpenTelemetryAttributesExtractor {
         }
       }
     }
+  }
+
+  public @Nullable String extractUrl(final @NotNull Attributes attributes) {
+    final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
+    if (urlFull != null) {
+      return urlFull;
+    }
+
+    final String urlString = buildUrlString(attributes);
+    if (!urlString.isEmpty()) {
+      return urlString;
+    }
+
+    return null;
   }
 
   private @NotNull String buildUrlString(final @NotNull Attributes attributes) {
