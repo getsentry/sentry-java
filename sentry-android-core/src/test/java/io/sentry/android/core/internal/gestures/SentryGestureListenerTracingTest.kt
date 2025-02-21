@@ -35,6 +35,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -59,12 +60,14 @@ class SentryGestureListenerTracingTest {
             hasViewIdInRes: Boolean = true,
             tracesSampleRate: Double? = 1.0,
             isEnableUserInteractionTracing: Boolean = true,
-            transaction: SentryTracer? = null
+            transaction: SentryTracer? = null,
+            isEnableAutoTraceIdGeneration: Boolean = true
         ): SentryGestureListener {
             options.tracesSampleRate = tracesSampleRate
             options.isEnableUserInteractionTracing = isEnableUserInteractionTracing
             options.isEnableUserInteractionBreadcrumbs = true
             options.gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
+            options.isEnableAutoTraceIdGeneration = isEnableAutoTraceIdGeneration
 
             whenever(scopes.options).thenReturn(options)
 
@@ -368,6 +371,33 @@ class SentryGestureListenerTracingTest {
         fixture.transaction.status = OUT_OF_RANGE
         sut.stopTracing(SpanStatus.CANCELLED)
         assertEquals(OUT_OF_RANGE, fixture.transaction.status)
+    }
+
+    @Test
+    fun `when tracing is disabled and auto trace id generation is disabled, does not start a new trace`() {
+        val sut = fixture.getSut<View>(tracesSampleRate = null, isEnableAutoTraceIdGeneration = false)
+
+        sut.onSingleTapUp(fixture.event)
+
+        verify(fixture.scopes, never()).configureScope(any())
+    }
+
+    @Test
+    fun `when tracing is disabled and auto trace id generation is enabled, starts a new trace`() {
+        val sut = fixture.getSut<View>(tracesSampleRate = null, isEnableAutoTraceIdGeneration = true)
+        val scope = Scope(fixture.options)
+        val initialPropagationContext = scope.propagationContext
+
+        sut.onSingleTapUp(fixture.event)
+
+        verify(fixture.scopes).configureScope(
+            check { callback ->
+                callback.run(scope)
+                // Verify that a new propagation context was set and it's different from the initial one
+                assertNotNull(scope.propagationContext)
+                assertNotEquals(initialPropagationContext, scope.propagationContext)
+            }
+        )
     }
 
     internal open class ScrollableListView : AbsListView(mock()) {

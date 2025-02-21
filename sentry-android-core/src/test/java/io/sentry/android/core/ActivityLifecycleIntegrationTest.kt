@@ -1385,10 +1385,11 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `starts new trace if performance is disabled`() {
+    fun `starts new trace if performance is disabled and trace ID generation is enabled`() {
         val sut = fixture.getSut()
         val activity = mock<Activity>()
         fixture.options.tracesSampleRate = null
+        fixture.options.isEnableAutoTraceIdGeneration = true
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = Scope(fixture.options)
@@ -1403,6 +1404,28 @@ class ActivityLifecycleIntegrationTest {
         // once for the screen, and once for the tracing propagation context
         verify(fixture.scopes, times(2)).configureScope(any())
         assertNotSame(propagationContextAtStart, scope.propagationContext)
+    }
+
+    @Test
+    fun `does not start a new trace if performance is disabled and trace ID generation is disabled`() {
+        val sut = fixture.getSut()
+        val activity = mock<Activity>()
+        fixture.options.tracesSampleRate = null
+        fixture.options.isEnableAutoTraceIdGeneration = false
+
+        val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
+        val scope = Scope(fixture.options)
+        val propagationContextAtStart = scope.propagationContext
+        whenever(fixture.scopes.configureScope(argumentCaptor.capture())).thenAnswer {
+            argumentCaptor.value.run(scope)
+        }
+
+        sut.register(fixture.scopes, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        // once for the screen
+        verify(fixture.scopes).configureScope(any())
+        assertSame(propagationContextAtStart, scope.propagationContext)
     }
 
     @Test
