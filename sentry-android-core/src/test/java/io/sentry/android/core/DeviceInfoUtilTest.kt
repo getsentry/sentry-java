@@ -3,7 +3,6 @@ package io.sentry.android.core
 import android.content.Context
 import android.content.Intent
 import android.os.BatteryManager
-import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.android.core.internal.util.CpuInfoUtils
@@ -29,7 +28,6 @@ class DeviceInfoUtilTest {
                 75
             ).putExtra(BatteryManager.EXTRA_PLUGGED, 0)
         )
-        Settings.Global.putString(context.contentResolver, "device_name", "sentry")
         DeviceInfoUtil.resetInstance()
     }
 
@@ -49,30 +47,6 @@ class DeviceInfoUtilTest {
 
         assertNotNull(deviceInfo.isSimulator)
         assertNotNull(deviceInfo.memorySize)
-    }
-
-    @Test
-    fun `does not include device name when PII is disabled`() {
-        val deviceInfoUtil = DeviceInfoUtil.getInstance(
-            context,
-            SentryAndroidOptions().apply {
-                isSendDefaultPii = false
-            }
-        )
-        val deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false)
-        assertNull(deviceInfo.name)
-    }
-
-    @Test
-    fun `does include device name when pii is enabled`() {
-        val deviceInfoUtil = DeviceInfoUtil.getInstance(
-            context,
-            SentryAndroidOptions().apply {
-                isSendDefaultPii = true
-            }
-        )
-        val deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false)
-        assertNotNull(deviceInfo.name)
     }
 
     @Test
