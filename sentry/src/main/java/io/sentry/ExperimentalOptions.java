@@ -20,6 +20,12 @@ public final class ExperimentalOptions {
    */
   private double profileSessionSampleRate = 0.0;
 
+  /**
+   * Whether the profiling lifecycle is controlled manually or based on the trace lifecycle.
+   * Defaults to {@link ProfileLifecycle#MANUAL}.
+   */
+  private @NotNull ProfileLifecycle profileLifecycle = ProfileLifecycle.MANUAL;
+
   public ExperimentalOptions(final boolean empty) {
     this.sessionReplay = new SentryReplayOptions(empty);
   }
@@ -33,6 +39,27 @@ public final class ExperimentalOptions {
     this.sessionReplay = sessionReplayOptions;
   }
 
+  /**
+   * Returns whether the profiling cycle is controlled manually or based on the trace lifecycle.
+   * Defaults to {@link ProfileLifecycle#MANUAL}.
+   *
+   * @return the profile lifecycle
+   */
+  @ApiStatus.Experimental
+  @NotNull
+  public ProfileLifecycle getProfileLifecycle() {
+    return profileLifecycle;
+  }
+
+  /** Sets the profiling lifecycle. */
+  @ApiStatus.Experimental
+  public void setProfileLifecycle(final @NotNull ProfileLifecycle profileLifecycle) {
+    // TODO (when moved to SentryOptions): we should log a message if the user sets this to TRACE
+    // and tracing is disabled
+    this.profileLifecycle = profileLifecycle;
+  }
+
+  @ApiStatus.Experimental
   public double getProfileSessionSampleRate() {
     return profileSessionSampleRate;
   }

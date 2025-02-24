@@ -21,6 +21,7 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
   boolean isContinuousProfilingEnabled;
   int profilingTracesHz;
   boolean continuousProfileSampled;
+  @NotNull ProfileLifecycle profileLifecycle;
 
   private @Nullable Map<String, Object> unknown;
 
@@ -34,6 +35,7 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
     profilingTracesDirPath = null;
     isProfilingEnabled = false;
     isContinuousProfilingEnabled = false;
+    profileLifecycle = ProfileLifecycle.MANUAL;
     profilingTracesHz = 0;
   }
 
@@ -48,6 +50,7 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
     profilingTracesDirPath = options.getProfilingTracesDirPath();
     isProfilingEnabled = options.isProfilingEnabled();
     isContinuousProfilingEnabled = options.isContinuousProfilingEnabled();
+    profileLifecycle = options.getProfileLifecycle();
     profilingTracesHz = options.getProfilingTracesHz();
   }
 
@@ -65,6 +68,14 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
 
   public boolean isContinuousProfileSampled() {
     return continuousProfileSampled;
+  }
+
+  public void setProfileLifecycle(final @NotNull ProfileLifecycle profileLifecycle) {
+    this.profileLifecycle = profileLifecycle;
+  }
+
+  public @NotNull ProfileLifecycle getProfileLifecycle() {
+    return profileLifecycle;
   }
 
   public void setProfileSampleRate(final @Nullable Double profileSampleRate) {
@@ -134,6 +145,7 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
     public static final String PROFILING_TRACES_DIR_PATH = "profiling_traces_dir_path";
     public static final String IS_PROFILING_ENABLED = "is_profiling_enabled";
     public static final String IS_CONTINUOUS_PROFILING_ENABLED = "is_continuous_profiling_enabled";
+    public static final String PROFILE_LIFECYCLE = "profile_lifecycle";
     public static final String PROFILING_TRACES_HZ = "profiling_traces_hz";
   }
 
@@ -151,6 +163,7 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
     writer
         .name(JsonKeys.IS_CONTINUOUS_PROFILING_ENABLED)
         .value(logger, isContinuousProfilingEnabled);
+    writer.name(JsonKeys.PROFILE_LIFECYCLE).value(logger, profileLifecycle.name());
     writer.name(JsonKeys.PROFILING_TRACES_HZ).value(logger, profilingTracesHz);
 
     if (unknown != null) {
@@ -233,6 +246,18 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
             Boolean isContinuousProfilingEnabled = reader.nextBooleanOrNull();
             if (isContinuousProfilingEnabled != null) {
               options.isContinuousProfilingEnabled = isContinuousProfilingEnabled;
+            }
+            break;
+          case JsonKeys.PROFILE_LIFECYCLE:
+            String profileLifecycle = reader.nextStringOrNull();
+            if (profileLifecycle != null) {
+              try {
+                options.profileLifecycle = ProfileLifecycle.valueOf(profileLifecycle);
+              } catch (IllegalArgumentException e) {
+                logger.log(
+                    SentryLevel.ERROR,
+                    "Error when deserializing ProfileLifecycle: " + profileLifecycle);
+              }
             }
             break;
           case JsonKeys.PROFILING_TRACES_HZ:
