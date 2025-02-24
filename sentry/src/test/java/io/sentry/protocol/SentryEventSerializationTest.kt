@@ -40,6 +40,7 @@ class SentryEventSerializationTest {
             level = SentryLevel.ERROR
             transaction = "e7aea178-e3a6-46bc-be17-38a3ea8920b6"
             setModule("01c8a4f6-8861-4575-a10e-5ed3fba7c794", "b4083431-47e9-433a-b58f-58796f63e27c")
+            contexts.apply { setSpring(SpringSerializationTest.Fixture().getSut()) }
             SentryBaseEventSerializationTest.Fixture().update(this)
         }
     }

@@ -105,6 +105,8 @@ final class ManifestMetadataReader {
 
   static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
 
+  static final String IGNORED_ERRORS = "io.sentry.ignored-errors";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -400,6 +402,8 @@ final class ManifestMetadataReader {
         options
             .getSessionReplay()
             .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
+
+        options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
       }
 
       options

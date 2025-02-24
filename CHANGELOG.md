@@ -4,7 +4,20 @@
 
 ### Features
 
-- Move to a single NetworkCallback listener to reduce number of IPC calls ([#4164](https://github.com/getsentry/sentry-java/pull/4164))
+- The `ignoredErrors` option is now configurable via the manifest property `io.sentry.traces.ignored-errors` ([#4178](https://github.com/getsentry/sentry-java/pull/4178))
+- A list of active Spring profiles is attached to payloads sent to Sentry (errors, traces, etc.) and displayed in the UI when using our Spring or Spring Boot integrations ([#4147](https://github.com/getsentry/sentry-java/pull/4147))
+  - This consists of an empty list when only the default profile is active
+- Move to a single NetworkCallback listener to reduce number of IPC calls on Android ([#4164](https://github.com/getsentry/sentry-java/pull/4164))
+
+### Fixes
+
+- `SentryOptions.setTracePropagationTargets` is no longer marked internal ([#4170](https://github.com/getsentry/sentry-java/pull/4170))
+
+### Behavioural Changes
+
+- The class `io.sentry.spring.jakarta.webflux.ReactorUtils` is now deprecated, please use `io.sentry.reactor.SentryReactorUtils` in the new `sentry-reactor` module instead ([#4155](https://github.com/getsentry/sentry-java/pull/4155))
+  - The new module will be exposed as an `api` dependency when using `sentry-spring-boot-jakarta` (Spring Boot 3) or `sentry-spring-jakarta` (Spring 6). 
+    Therefore, if you're using one of those modules, changing your imports will suffice.
 
 ## 8.2.0
 
@@ -108,7 +121,11 @@ Version 8 of the Sentry Android/Java SDK brings a variety of features and fixes.
 - New `Scope` types have been introduced, see "Behavioural Changes" for more details.
 - Lifecycle tokens have been introduced to manage `Scope` lifecycle, see "Behavioural Changes" for more details.
 - Bumping `minSdk` level to 21 (Android 5.0)
-- Our `sentry-opentelemetry-agent` has been improved and now works in combination with the rest of Sentry. You may now mix and match OpenTelemetry and Sentry API for instrumenting your application.
+- Our `sentry-opentelemetry-agent` has been improved and now works in combination with the rest of Sentry. You may now combine OpenTelemetry and Sentry for instrumenting your application.
+    - You may now use both OpenTelemetry SDK and Sentry SDK to capture transactions and spans. They can also be mixed and end up on the same transaction.
+    - OpenTelemetry extends the Sentry SDK by adding spans for numerous integrations, like Ktor, Vert.x and MongoDB. Please check [the OpenTelemetry GitHub repository](https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/instrumentation) for a full list.
+    - OpenTelemetry allows propagating trace information from and to additional libraries, that Sentry did not support before, for example gRPC.
+    - OpenTelemetry also has broader support for propagating the Sentry `Scopes` through reactive libraries like RxJava.
 - The SDK is now compatible with Spring Boot 3.4
 - We now support GraphQL v22 (`sentry-graphql-22`)
 - Metrics have been removed
@@ -410,6 +427,8 @@ If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that
 
 ### Behavioural Changes
 
+- (changed in [7.20.1](https://github.com/getsentry/sentry-java/releases/tag/7.20.1)) The user ip-address is now only set to `"{{auto}}"` if sendDefaultPii is enabled ([#4071](https://github.com/getsentry/sentry-java/pull/4071))
+    - This change gives you control over IP address collection directly on the client
 - Reduce the number of broadcasts the SDK is subscribed for ([#4052](https://github.com/getsentry/sentry-java/pull/4052))
   - Drop `TempSensorBreadcrumbsIntegration`
   - Drop `PhoneStateBreadcrumbsIntegration`
@@ -459,7 +478,6 @@ If you would like to keep some of the default broadcast events as breadcrumbs, c
 
 - The user ip-address is now only set to `"{{auto}}"` if sendDefaultPii is enabled ([#4071](https://github.com/getsentry/sentry-java/pull/4071))
     - This change gives you control over IP address collection directly on the client
-
 
 ## 7.20.0
 
