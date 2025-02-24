@@ -90,7 +90,7 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
 
             return httpResponse
         } catch (e: Throwable) {
-            // https://github.com/apollographql/apollo-kotlin/issues/4711 will change error handling in v4
+            // client errors don't throw anymore in v4, but we should still be able to detect all of them by looking at the status code and/or errors in the response body
             when (e) {
                 is ApolloHttpException -> {
                     statusCode = e.statusCode
