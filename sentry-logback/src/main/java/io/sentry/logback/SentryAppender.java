@@ -116,8 +116,8 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         final Mechanism mechanism = new Mechanism();
         mechanism.setType(MECHANISM_TYPE);
         final Throwable mechanismException =
-                new ExceptionMechanismException(
-                        mechanism, throwableInformation.getThrowable(), Thread.currentThread());
+            new ExceptionMechanismException(
+                mechanism, throwableInformation.getThrowable(), Thread.currentThread());
         event.setThrowable(mechanismException);
       }
     }
