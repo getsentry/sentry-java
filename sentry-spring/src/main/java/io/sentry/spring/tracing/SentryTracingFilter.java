@@ -181,10 +181,10 @@ public class SentryTracingFilter extends OncePerRequestFilter {
   }
 
   /**
-   * Returns false if an async request is being dispatched (first invocation of the filter for the
+   * Returns false if an async request is being dispatched (second invocation of the filter for the
    * same async request).
    *
-   * <p>Returns true if not an async request or this is the second invocation of the filter for the
+   * <p>Returns true if not an async request or this is the first invocation of the filter for the
    * same async request
    */
   private boolean shouldContinueTrace(HttpServletRequest httpRequest) {
