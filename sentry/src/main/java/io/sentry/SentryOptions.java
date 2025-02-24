@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.backpressure.IBackpressureMonitor;
 import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
@@ -1448,6 +1449,17 @@ public class SentryOptions {
   @NotNull
   public List<IScopeObserver> getScopeObservers() {
     return observers;
+  }
+
+  @ApiStatus.Internal
+  @Nullable
+  public PersistingScopeObserver findPersistingScopeObserver() {
+    for (IScopeObserver observer : observers) {
+      if (observer instanceof PersistingScopeObserver) {
+        return (PersistingScopeObserver) observer;
+      }
+    }
+    return null;
   }
 
   /**
