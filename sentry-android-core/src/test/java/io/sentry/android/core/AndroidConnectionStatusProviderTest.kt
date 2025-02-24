@@ -24,6 +24,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -258,9 +259,12 @@ class AndroidConnectionStatusProviderTest {
         val observer = IConnectionStatusProvider.IConnectionStatusObserver { }
         val addResult = connectionStatusProvider.addConnectionStatusObserver(observer)
         assertTrue(addResult)
+        assertEquals(1, connectionStatusProvider.statusObservers.size)
+        assertNotNull(connectionStatusProvider.networkCallback)
 
         connectionStatusProvider.removeConnectionStatusObserver(observer)
-        assertTrue(connectionStatusProvider.registeredCallbacks.isEmpty())
+        assertTrue(connectionStatusProvider.statusObservers.isEmpty())
+        assertNull(connectionStatusProvider.networkCallback)
     }
 
     @Test
@@ -269,18 +273,16 @@ class AndroidConnectionStatusProviderTest {
 
         var callback: NetworkCallback? = null
         whenever(connectivityManager.registerDefaultNetworkCallback(any())).then { invocation ->
-            callback = invocation.getArgument(0, NetworkCallback::class.java)
+            callback = invocation.getArgument(0, NetworkCallback::class.java) as NetworkCallback
             Unit
         }
         val observer = mock<IConnectionStatusProvider.IConnectionStatusObserver>()
         connectionStatusProvider.addConnectionStatusObserver(observer)
         callback!!.onAvailable(mock<Network>())
         callback!!.onUnavailable()
-        callback!!.onLosing(mock<Network>(), 0)
         callback!!.onLost(mock<Network>())
-        callback!!.onUnavailable()
         connectionStatusProvider.removeConnectionStatusObserver(observer)
 
-        verify(observer, times(5)).onConnectionStatusChanged(any())
+        verify(observer, times(3)).onConnectionStatusChanged(any())
     }
 }
