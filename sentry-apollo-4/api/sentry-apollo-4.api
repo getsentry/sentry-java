@@ -3,17 +3,6 @@ public final class io/sentry/apollo4/BuildConfig {
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 
-public final class io/sentry/apollo4/SentryApollo4BuilderExtensionsKt {
-	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;)Lcom/apollographql/apollo/ApolloClient$Builder;
-	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;)Lcom/apollographql/apollo/ApolloClient$Builder;
-	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;Z)Lcom/apollographql/apollo/ApolloClient$Builder;
-	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;ZLjava/util/List;)Lcom/apollographql/apollo/ApolloClient$Builder;
-	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;ZLjava/util/List;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;)Lcom/apollographql/apollo/ApolloClient$Builder;
-	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;ZLjava/util/List;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;)Lcom/apollographql/apollo/ApolloClient$Builder;
-	public static synthetic fun sentryTracing$default (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;ZLjava/util/List;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;ILjava/lang/Object;)Lcom/apollographql/apollo/ApolloClient$Builder;
-	public static synthetic fun sentryTracing$default (Lcom/apollographql/apollo/ApolloClient$Builder;ZLjava/util/List;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;ILjava/lang/Object;)Lcom/apollographql/apollo/ApolloClient$Builder;
-}
-
 public final class io/sentry/apollo4/SentryApollo4ClientException : java/lang/Exception {
 	public static final field Companion Lio/sentry/apollo4/SentryApollo4ClientException$Companion;
 	public fun <init> (Ljava/lang/String;)V
@@ -46,5 +35,16 @@ public final class io/sentry/apollo4/SentryApollo4Interceptor : com/apollographq
 	public fun <init> (Lio/sentry/IScopes;)V
 	public synthetic fun <init> (Lio/sentry/IScopes;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun intercept (Lcom/apollographql/apollo/api/ApolloRequest;Lcom/apollographql/apollo/interceptor/ApolloInterceptorChain;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class io/sentry/apollo4/SentryApolloBuilderExtensionsKt {
+	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;Z)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;ZLjava/util/List;)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;ZLjava/util/List;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;ZLjava/util/List;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static synthetic fun sentryTracing$default (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;ZLjava/util/List;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;ILjava/lang/Object;)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static synthetic fun sentryTracing$default (Lcom/apollographql/apollo/ApolloClient$Builder;ZLjava/util/List;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;ILjava/lang/Object;)Lcom/apollographql/apollo/ApolloClient$Builder;
 }
 
