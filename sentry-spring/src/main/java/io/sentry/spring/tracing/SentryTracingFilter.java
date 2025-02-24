@@ -201,6 +201,9 @@ public class SentryTracingFilter extends OncePerRequestFilter {
    *
    * <p>Returns true if not an async request or async request handling has finished (second
    * invocation of this filter for the same async request)
+   *
+   * <p>Note: isAsyncStarted changes its return value after filterChain.doFilter() of the first
+   * async invocation
    */
   private boolean shouldFinishTransaction(HttpServletRequest httpRequest) {
     return !isAsyncSupportEnabled || !isAsyncStarted(httpRequest);
