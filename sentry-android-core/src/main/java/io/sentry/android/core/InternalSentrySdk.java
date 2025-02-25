@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import static io.sentry.Sentry.getCurrentScopes;
 import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.INFO;
 import static io.sentry.SentryLevel.WARNING;
@@ -328,5 +329,15 @@ public final class InternalSentrySdk {
           }
         });
     return sessionRef.get();
+  }
+
+  /**
+   * Continue a trace based on the trace ID and span ID provided
+   *
+   * @param traceId the trace ID
+   * @param spanId the span ID
+   */
+  public static void setTrace(final @NotNull String traceId, final @NotNull String spanId, final @Nullable String sampleRand) {
+    getCurrentScopes().setTrace(traceId, spanId);
   }
 }
