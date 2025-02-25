@@ -7,12 +7,19 @@
 - The `ignoredErrors` option is now configurable via the manifest property `io.sentry.traces.ignored-errors` ([#4178](https://github.com/getsentry/sentry-java/pull/4178))
 - A list of active Spring profiles is attached to payloads sent to Sentry (errors, traces, etc.) and displayed in the UI when using our Spring or Spring Boot integrations ([#4147](https://github.com/getsentry/sentry-java/pull/4147))
   - This consists of an empty list when only the default profile is active
+- Added `enableTraceIdGeneration` to the AndroidOptions. This allows Hybrid SDKs to "freeze" and control the trace and connect errors on different layers of the application ([4188](https://github.com/getsentry/sentry-java/pull/4188))
 - Move to a single NetworkCallback listener to reduce number of IPC calls on Android ([#4164](https://github.com/getsentry/sentry-java/pull/4164))
 - Add GraphQL Apollo Kotlin 4 integration ([#4166](https://github.com/getsentry/sentry-java/pull/4166))
 
 ### Fixes
 
 - `SentryOptions.setTracePropagationTargets` is no longer marked internal ([#4170](https://github.com/getsentry/sentry-java/pull/4170))
+- Check `tracePropagationTargets` in OpenTelemetry propagator ([#4191](https://github.com/getsentry/sentry-java/pull/4191))
+  - If a URL can be retrieved from OpenTelemetry span attributes, we check it against `tracePropagationTargets` before attaching `sentry-trace` and `baggage` headers to outgoing requests
+  - If no URL can be retrieved we always attach the headers
+- Fix `ignoredErrors`, `ignoredTransactions` and `ignoredCheckIns` being unset by external options like `sentry.properties` or ENV vars ([#4207](https://github.com/getsentry/sentry-java/pull/4207))
+  - Whenever parsing of external options was enabled (`enableExternalConfiguration`), which is the default for many integrations, the values set on `SentryOptions` passed to `Sentry.init` would be lost
+  - Even if the value was not set in any external configuration it would still be set to an empty list
 
 ### Behavioural Changes
 
