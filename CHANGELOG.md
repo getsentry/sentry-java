@@ -17,6 +17,9 @@
 - Check `tracePropagationTargets` in OpenTelemetry propagator ([#4191](https://github.com/getsentry/sentry-java/pull/4191))
   - If a URL can be retrieved from OpenTelemetry span attributes, we check it against `tracePropagationTargets` before attaching `sentry-trace` and `baggage` headers to outgoing requests
   - If no URL can be retrieved we always attach the headers
+- Fix `ignoredErrors`, `ignoredTransactions` and `ignoredCheckIns` being unset by external options like `sentry.properties` or ENV vars ([#4207](https://github.com/getsentry/sentry-java/pull/4207))
+  - Whenever parsing of external options was enabled (`enableExternalConfiguration`), which is the default for many integrations, the values set on `SentryOptions` passed to `Sentry.init` would be lost
+  - Even if the value was not set in any external configuration it would still be set to an empty list
 
 ### Behavioural Changes
 
