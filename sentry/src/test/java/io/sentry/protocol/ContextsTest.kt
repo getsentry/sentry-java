@@ -19,6 +19,7 @@ class ContextsTest {
         contexts.setGpu(Gpu())
         contexts.setResponse(Response())
         contexts.setTrace(SpanContext("op"))
+        contexts.setSpring(Spring())
 
         val clone = Contexts(contexts)
 
@@ -32,6 +33,7 @@ class ContextsTest {
         assertNotSame(contexts.gpu, clone.gpu)
         assertNotSame(contexts.trace, clone.trace)
         assertNotSame(contexts.response, clone.response)
+        assertNotSame(contexts.spring, clone.spring)
     }
 
     @Test
