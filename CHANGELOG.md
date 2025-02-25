@@ -7,7 +7,7 @@
 - Add HTTP server request headers from OpenTelemetry span attributes to sentry `request` in payload ([#4102](https://github.com/getsentry/sentry-java/pull/4102))
   - You have to explicitly enable each header by adding it to the [OpenTelemetry config](https://opentelemetry.io/docs/zero-code/java/agent/instrumentation/http/#capturing-http-request-and-response-headers)
   - Please only enable headers you actually want to send to Sentry. Some may contain sensitive data like PII, cookies, tokens etc.
-  - We are no longer adding request headers to `contexts/otel/attributes` of the event.
+  - We are no longer adding request/response headers to `contexts/otel/attributes` of the event.
 - The `ignoredErrors` option is now configurable via the manifest property `io.sentry.traces.ignored-errors` ([#4178](https://github.com/getsentry/sentry-java/pull/4178))
 - A list of active Spring profiles is attached to payloads sent to Sentry (errors, traces, etc.) and displayed in the UI when using our Spring or Spring Boot integrations ([#4147](https://github.com/getsentry/sentry-java/pull/4147))
   - This consists of an empty list when only the default profile is active
