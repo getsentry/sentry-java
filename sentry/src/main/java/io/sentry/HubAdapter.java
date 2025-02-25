@@ -323,8 +323,7 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
-  public void setTrace(
-     final @NotNull String traceId, final @NotNull String spanId) {
+  public void setTrace(final @NotNull String traceId, final @NotNull String spanId) {
     Sentry.setTrace(traceId, spanId);
   }
 
