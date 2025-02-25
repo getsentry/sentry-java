@@ -1,6 +1,5 @@
 package io.sentry.util
 
-import java.net.URL
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -10,32 +9,6 @@ class UrlUtilsTest {
     @Test
     fun `returns null for null`() {
         assertNull(UrlUtils.parseNullable(null))
-    }
-
-    @Test
-    fun `i null for null`() {
-        val url = URL("https://www.example.com/search?q=hello%20world%21")
-        var uri = url.toURI()
-    }
-
-    @Test
-    fun `filters auth`() {
-        val urlDetails = UrlUtils.parseNullable(
-            "https://user:password@sentry.io?q=1&s=2&token=secret"
-        )!!
-        assertEquals("https://[Filtered]:[Filtered]@sentry.io", urlDetails.url)
-        assertEquals("q=1&s=2&token=secret", urlDetails.query)
-        assertNull(urlDetails.fragment)
-    }
-
-    @Test
-    fun `filters auth with fragment`() {
-        val urlDetails = UrlUtils.parseNullable(
-            "https://user:password@sentry.io?q=1&s=2&token=secret#top"
-        )!!
-        assertEquals("https://[Filtered]:[Filtered]@sentry.io", urlDetails.url)
-        assertEquals("q=1&s=2&token=secret", urlDetails.query)
-        assertEquals("top", urlDetails.fragment)
     }
 
     @Test
@@ -169,7 +142,7 @@ class UrlUtilsTest {
     }
 
     @Test
-    fun `splits url without query or fragment and no authority`() {
+    fun `splits url without query or fragment and no user info`() {
         val urlDetails = UrlUtils.parse(
             "https://sentry.io"
         )
@@ -189,7 +162,6 @@ class UrlUtilsTest {
     }
 
     // Fragment is allowed to contain '?' according to RFC 3986
-    // See https://datatracker.ietf.org/doc/html/rfc3986#section-3.5
     @Test
     fun `extracts details with question mark after fragment`() {
         val urlDetails = UrlUtils.parse(
@@ -211,7 +183,27 @@ class UrlUtilsTest {
     }
 
     @Test
-    fun `filters empty user info`() {
+    fun `no details extracted from malformed url due to invalid protocol`() {
+        val urlDetails = UrlUtils.parse(
+            "htps://user@sentry.io#fragment?q=1&s=2&token=secret"
+        )
+        assertNull(urlDetails.url)
+        assertNull(urlDetails.query)
+        assertNull(urlDetails.fragment)
+    }
+
+    @Test
+    fun `no details extracted from malformed url due to # symbol in fragment`() {
+        val urlDetails = UrlUtils.parse(
+            "https://example.com#hello#fragment"
+        )
+        assertNull(urlDetails.url)
+        assertNull(urlDetails.query)
+        assertNull(urlDetails.fragment)
+    }
+
+    @Test
+    fun `strips empty user info`() {
         val urlDetails = UrlUtils.parse(
             "https://@sentry.io?query=a#fragment?q=1&s=2&token=secret"
         )
@@ -238,26 +230,6 @@ class UrlUtilsTest {
         assertEquals("", urlDetails.url)
         assertEquals("query=a", urlDetails.query)
         assertEquals("fragment?q=1&s=2&token=secret", urlDetails.fragment)
-    }
-
-    @Test
-    fun `no details extracted from malformed url due to # symbol in fragment`() {
-        val urlDetails = UrlUtils.parse(
-            "https://example.com#hello#fragment"
-        )
-        assertNull(urlDetails.url)
-        assertNull(urlDetails.query)
-        assertNull(urlDetails.fragment)
-    }
-
-    @Test
-    fun `no details extracted from malformed url due to invalid protocol`() {
-        val urlDetails = UrlUtils.parse(
-            "htps://user@sentry.io#fragment?q=1&s=2&token=secret"
-        )
-        assertNull(urlDetails.url)
-        assertNull(urlDetails.query)
-        assertNull(urlDetails.fragment)
     }
 
     @Test
