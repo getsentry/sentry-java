@@ -128,7 +128,7 @@ public final class ExternalOptions {
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
 
-    options.setIgnoredErrors(propertiesProvider.getList("ignored-errors"));
+    options.setIgnoredErrors(propertiesProvider.getListOrNull("ignored-errors"));
 
     options.setEnabled(propertiesProvider.getBooleanProperty("enabled"));
 
@@ -138,8 +138,8 @@ public final class ExternalOptions {
     options.setSendModules(propertiesProvider.getBooleanProperty("send-modules"));
     options.setSendDefaultPii(propertiesProvider.getBooleanProperty("send-default-pii"));
 
-    options.setIgnoredCheckIns(propertiesProvider.getList("ignored-checkins"));
-    options.setIgnoredTransactions(propertiesProvider.getList("ignored-transactions"));
+    options.setIgnoredCheckIns(propertiesProvider.getListOrNull("ignored-checkins"));
+    options.setIgnoredTransactions(propertiesProvider.getListOrNull("ignored-transactions"));
 
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
