@@ -3,15 +3,16 @@ package io.sentry;
 import static io.sentry.SpanContext.DEFAULT_ORIGIN;
 
 import com.jakewharton.nopen.annotation.Open;
-import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Internal
 @Open
 public class SpanOptions {
 
   /** The start timestamp of the transaction */
   private @Nullable SentryDate startTimestamp = null;
+
+  private @NotNull ScopeBindingMode scopeBindingMode = ScopeBindingMode.AUTO;
 
   /**
    * Gets the startTimestamp
@@ -83,5 +84,13 @@ public class SpanOptions {
 
   public void setOrigin(final @Nullable String origin) {
     this.origin = origin;
+  }
+
+  public @NotNull ScopeBindingMode getScopeBindingMode() {
+    return scopeBindingMode;
+  }
+
+  public void setScopeBindingMode(final @NotNull ScopeBindingMode scopeBindingMode) {
+    this.scopeBindingMode = scopeBindingMode;
   }
 }

@@ -4,7 +4,9 @@ import com.jakewharton.nopen.annotation.Open;
 import graphql.GraphQLError;
 import io.sentry.EventProcessor;
 import io.sentry.IScopes;
+import io.sentry.ISpanFactory;
 import io.sentry.ITransportFactory;
+import io.sentry.InitPriority;
 import io.sentry.Integration;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
@@ -20,6 +22,7 @@ import io.sentry.spring.SentrySpringFilter;
 import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryWebConfiguration;
+import io.sentry.spring.SpringProfilesEventProcessor;
 import io.sentry.spring.SpringSecuritySentryUserProvider;
 import io.sentry.spring.boot.graphql.SentryGraphqlAutoConfiguration;
 import io.sentry.spring.checkin.SentryCheckInAdviceConfiguration;
@@ -27,6 +30,8 @@ import io.sentry.spring.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.exception.SentryCaptureExceptionParameterPointcutConfiguration;
 import io.sentry.spring.exception.SentryExceptionParameterAdviceConfiguration;
+import io.sentry.spring.opentelemetry.SentryOpenTelemetryAgentWithoutAutoInitConfiguration;
+import io.sentry.spring.opentelemetry.SentryOpenTelemetryNoAgentConfiguration;
 import io.sentry.spring.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.tracing.SentryTracingFilter;
@@ -63,6 +68,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -114,10 +120,29 @@ public class SentryAutoConfiguration {
       return new InAppIncludesResolver();
     }
 
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryOpenTelemetryAgentWithoutAutoInitConfiguration.class)
+    @Open
+    @ConditionalOnProperty(name = "sentry.auto-init", havingValue = "false")
+    @ConditionalOnClass(name = {"io.sentry.opentelemetry.agent.AgentMarker"})
+    static class OpenTelemetryAgentWithoutAutoInitConfiguration {}
+
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryOpenTelemetryNoAgentConfiguration.class)
+    @Open
+    @ConditionalOnClass(
+        name = {
+          "io.opentelemetry.api.OpenTelemetry",
+          "io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider"
+        })
+    @ConditionalOnMissingClass("io.sentry.opentelemetry.agent.AgentMarker")
+    static class OpenTelemetryNoAgentConfiguration {}
+
     @Bean
     public @NotNull IScopes sentryHub(
         final @NotNull List<Sentry.OptionsConfiguration<SentryOptions>> optionsConfigurations,
         final @NotNull SentryProperties options,
+        final @NotNull ObjectProvider<ISpanFactory> spanFactory,
         final @NotNull ObjectProvider<GitProperties> gitProperties) {
       optionsConfigurations.forEach(
           optionsConfiguration -> optionsConfiguration.configure(options));
@@ -127,10 +152,12 @@ public class SentryAutoConfiguration {
               options.setRelease(git.getCommitId());
             }
           });
+      spanFactory.ifAvailable(options::setSpanFactory);
 
       options.setSentryClientName(
           BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       options.setSdkVersion(createSdkVersion(options));
+      options.setInitPriority(InitPriority.LOW);
       addPackageAndIntegrationInfo();
       // Spring Boot sets ignored exceptions in runtime using reflection - where the generic
       // information is lost
@@ -150,21 +177,6 @@ public class SentryAutoConfiguration {
       public @NotNull ContextTagsEventProcessor contextTagsEventProcessor(
           final @NotNull SentryOptions sentryOptions) {
         return new ContextTagsEventProcessor(sentryOptions);
-      }
-    }
-
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnProperty(name = "sentry.auto-init", havingValue = "false")
-    @ConditionalOnClass(io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor.class)
-    @SuppressWarnings("deprecation")
-    @Open
-    static class OpenTelemetryLinkErrorEventProcessorConfiguration {
-
-      @Bean
-      @ConditionalOnMissingBean
-      public @NotNull io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor
-          openTelemetryLinkErrorEventProcessor() {
-        return new io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor();
       }
     }
 
@@ -421,10 +433,6 @@ public class SentryAutoConfiguration {
       super(ConfigurationPhase.REGISTER_BEAN);
     }
 
-    @ConditionalOnProperty(name = "sentry.enable-tracing")
-    @SuppressWarnings("UnusedNestedClass")
-    private static class SentryEnableTracingCondition {}
-
     @ConditionalOnProperty(name = "sentry.traces-sample-rate")
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryTracesSampleRateCondition {}
@@ -432,5 +440,15 @@ public class SentryAutoConfiguration {
     @ConditionalOnBean(SentryOptions.TracesSamplerCallback.class)
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryTracesSamplerBeanCondition {}
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @Open
+  static class SpringProfilesEventProcessorConfiguration {
+    @Bean
+    public @NotNull SpringProfilesEventProcessor springProfilesEventProcessor(
+        final Environment environment) {
+      return new SpringProfilesEventProcessor(environment);
+    }
   }
 }

@@ -3,8 +3,6 @@ package io.sentry;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
-import io.sentry.metrics.LocalMetricsAggregator;
-import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -14,15 +12,12 @@ import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
+public final class Scopes implements IScopes {
 
   private final @NotNull IScope scope;
   private final @NotNull IScope isolationScope;
@@ -32,7 +27,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
   private final @NotNull String creator;
   private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
-  private final @NotNull MetricsApi metricsApi;
 
   private final @NotNull CombinedScopeView combinedScope;
 
@@ -60,7 +54,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     final @NotNull SentryOptions options = getOptions();
     validateOptions(options);
     this.transactionPerformanceCollector = options.getTransactionPerformanceCollector();
-    this.metricsApi = new MetricsApi(this);
   }
 
   public @NotNull String getCreator() {
@@ -410,6 +403,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
 
         configureScope(scope -> scope.clear());
         configureScope(ScopeType.ISOLATION, scope -> scope.clear());
+        getOptions().getBackpressureMonitor().close();
         getOptions().getTransactionProfiler().close();
         getOptions().getTransactionPerformanceCollector().close();
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
@@ -827,8 +821,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
     Objects.requireNonNull(transactionContext, "transactionContext is required");
-    // TODO [POTEL] what if span is already running and someone calls startTransaction?
-
     transactionContext.setOrigin(transactionOptions.getOrigin());
 
     ITransaction transaction;
@@ -841,7 +833,6 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
       transaction = NoOpTransaction.getInstance();
     } else if (SpanUtils.isIgnored(
         getOptions().getIgnoredSpanOrigins(), transactionContext.getOrigin())) {
-      // TODO [POTEL] may not have been set yet?
       getOptions()
           .getLogger()
           .log(
@@ -850,17 +841,15 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
               transactionContext.getOrigin());
       transaction = NoOpTransaction.getInstance();
 
-      //    } else if (!getOptions().getInstrumenter().equals(transactionContext.getInstrumenter()))
-      // {
-      //      getOptions()
-      //          .getLogger()
-      //          .log(
-      //              SentryLevel.DEBUG,
-      //              "Returning no-op for instrumenter %s as the SDK has been configured to use
-      // instrumenter %s",
-      //              transactionContext.getInstrumenter(),
-      //              getOptions().getInstrumenter());
-      //      transaction = NoOpTransaction.getInstance();
+    } else if (!getOptions().getInstrumenter().equals(transactionContext.getInstrumenter())) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Returning no-op for instrumenter %s as the SDK has been configured to use instrumenter %s",
+              transactionContext.getInstrumenter(),
+              getOptions().getInstrumenter());
+      transaction = NoOpTransaction.getInstance();
     } else if (!getOptions().isTracingEnabled()) {
       getOptions()
           .getLogger()
@@ -868,8 +857,10 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
               SentryLevel.INFO, "Tracing is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
     } else {
+      final Double sampleRand = getSampleRand(transactionContext);
       final SamplingContext samplingContext =
-          new SamplingContext(transactionContext, transactionOptions.getCustomSamplingContext());
+          new SamplingContext(
+              transactionContext, transactionOptions.getCustomSamplingContext(), sampleRand);
       final @NotNull TracesSampler tracesSampler = getOptions().getInternalTracesSampler();
       @NotNull TracesSamplingDecision samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSamplingDecision(samplingDecision);
@@ -905,11 +896,16 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return transaction;
   }
 
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @Override
-  public @Nullable SentryTraceHeader traceHeaders() {
-    return getTraceparent();
+  private @NotNull Double getSampleRand(final @NotNull TransactionContext transactionContext) {
+    final @Nullable Baggage baggage = transactionContext.getBaggage();
+    if (baggage != null) {
+      final @Nullable Double sampleRandFromBaggageMaybe = baggage.getSampleRandDouble();
+      if (sampleRandFromBaggageMaybe != null) {
+        return sampleRandFromBaggageMaybe;
+      }
+    }
+
+    return getCombinedScopeView().getPropagationContext().getSampleRand();
   }
 
   @Override
@@ -928,7 +924,7 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
           .getLogger()
           .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
     } else {
-      return getOptions().getSpanFactory().retrieveCurrentSpan(getCombinedScopeView());
+      return getCombinedScopeView().getSpan();
     }
     return null;
   }
@@ -981,7 +977,10 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
         PropagationContext.fromHeaders(getOptions().getLogger(), sentryTrace, baggageHeaders);
     configureScope(
         (scope) -> {
-          scope.setPropagationContext(propagationContext);
+          scope.withPropagationContext(
+              oldPropagationContext -> {
+                scope.setPropagationContext(propagationContext);
+              });
         });
     if (getOptions().isTracingEnabled()) {
       return TransactionContext.fromPropagationContext(propagationContext);
@@ -1049,65 +1048,30 @@ public final class Scopes implements IScopes, MetricsApi.IMetricsInterface {
     return sentryId;
   }
 
+  @Override
+  public @NotNull SentryId captureReplay(
+      final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureReplay' call is a no-op.");
+    } else {
+      try {
+        sentryId = getClient().captureReplayEvent(replay, getCombinedScopeView(), hint);
+      } catch (Throwable e) {
+        getOptions().getLogger().log(SentryLevel.ERROR, "Error while capturing replay", e);
+      }
+    }
+    return sentryId;
+  }
+
   @ApiStatus.Internal
   @Override
   public @Nullable RateLimiter getRateLimiter() {
     return getClient().getRateLimiter();
-  }
-
-  @Override
-  public @NotNull MetricsApi metrics() {
-    return metricsApi;
-  }
-
-  @Override
-  public @NotNull IMetricsAggregator getMetricsAggregator() {
-    return getClient().getMetricsAggregator();
-  }
-
-  @Override
-  public @NotNull Map<String, String> getDefaultTagsForMetrics() {
-    if (!getOptions().isEnableDefaultTagsForMetrics()) {
-      return Collections.emptyMap();
-    }
-
-    final @NotNull Map<String, String> tags = new HashMap<>();
-    final @Nullable String release = getOptions().getRelease();
-    if (release != null) {
-      tags.put("release", release);
-    }
-
-    final @Nullable String environment = getOptions().getEnvironment();
-    if (environment != null) {
-      tags.put("environment", environment);
-    }
-
-    final @Nullable String txnName = getCombinedScopeView().getTransactionName();
-    if (txnName != null) {
-      tags.put("transaction", txnName);
-    }
-    return Collections.unmodifiableMap(tags);
-  }
-
-  @Override
-  public @Nullable ISpan startSpanForMetric(@NotNull String op, @NotNull String description) {
-    final @Nullable ISpan span = getSpan();
-    if (span != null) {
-      return span.startChild(op, description);
-    }
-    return null;
-  }
-
-  @Override
-  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
-    if (!getOptions().isEnableSpanLocalMetricAggregation()) {
-      return null;
-    }
-    final @Nullable ISpan span = getSpan();
-    if (span != null) {
-      return span.getLocalMetricsAggregator();
-    }
-    return null;
   }
 
   private static void validateOptions(final @NotNull SentryOptions options) {

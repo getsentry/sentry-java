@@ -170,7 +170,7 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<CheckIn> {
     @Override
-    public @NotNull CheckIn deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+    public @NotNull CheckIn deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       SentryId sentryId = null;
       MonitorConfig monitorConfig = null;

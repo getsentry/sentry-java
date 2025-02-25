@@ -9,18 +9,21 @@ import static java.lang.String.format;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryCrashLastRunState;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryItemType;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.SentryUUID;
 import io.sentry.Session;
 import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.SessionEnd;
 import io.sentry.hints.SessionStart;
 import io.sentry.transport.NoOpEnvelopeCache;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
@@ -43,7 +46,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -70,6 +72,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   private final CountDownLatch previousSessionLatch;
 
   private final @NotNull Map<SentryEnvelope, String> fileNameMap = new WeakHashMap<>();
+  protected final @NotNull AutoClosableReentrantLock cacheLock = new AutoClosableReentrantLock();
 
   public static @NotNull IEnvelopeCache create(final @NotNull SentryOptions options) {
     final String cacheDirPath = options.getCacheDirPath();
@@ -116,7 +119,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         try (final Reader reader =
             new BufferedReader(
                 new InputStreamReader(new FileInputStream(currentSessionFile), UTF_8))) {
-          final Session session = serializer.deserialize(reader, Session.class);
+          final Session session = serializer.getValue().deserialize(reader, Session.class);
           if (session != null) {
             writeSessionToDisk(previousSessionFile, session);
           }
@@ -204,7 +207,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         try (final Reader reader =
             new BufferedReader(
                 new InputStreamReader(new FileInputStream(previousSessionFile), UTF_8))) {
-          final Session session = serializer.deserialize(reader, Session.class);
+          final Session session = serializer.getValue().deserialize(reader, Session.class);
           if (session != null) {
             final AbnormalExit abnormalHint = (AbnormalExit) sdkHint;
             final @Nullable Long abnormalExitTimestamp = abnormalHint.timestamp();
@@ -263,7 +266,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         try (final Reader reader =
             new BufferedReader(
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
-          final Session session = serializer.deserialize(reader, Session.class);
+          final Session session = serializer.getValue().deserialize(reader, Session.class);
           if (session == null) {
             options
                 .getLogger()
@@ -304,7 +307,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
 
     try (final OutputStream outputStream = new FileOutputStream(file)) {
-      serializer.serialize(envelope, outputStream);
+      serializer.getValue().serialize(envelope, outputStream);
     } catch (Throwable e) {
       options
           .getLogger()
@@ -324,7 +327,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
     try (final OutputStream outputStream = new FileOutputStream(file);
         final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
-      serializer.serialize(session, writer);
+      serializer.getValue().serialize(session, writer);
     } catch (Throwable e) {
       options
           .getLogger()
@@ -359,16 +362,18 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    * @param envelope the SentryEnvelope object
    * @return the file
    */
-  private synchronized @NotNull File getEnvelopeFile(final @NotNull SentryEnvelope envelope) {
-    final @NotNull String fileName;
-    if (fileNameMap.containsKey(envelope)) {
-      fileName = fileNameMap.get(envelope);
-    } else {
-      fileName = UUID.randomUUID() + SUFFIX_ENVELOPE_FILE;
-      fileNameMap.put(envelope, fileName);
-    }
+  private @NotNull File getEnvelopeFile(final @NotNull SentryEnvelope envelope) {
+    try (final @NotNull ISentryLifecycleToken ignored = cacheLock.acquire()) {
+      final @NotNull String fileName;
+      if (fileNameMap.containsKey(envelope)) {
+        fileName = fileNameMap.get(envelope);
+      } else {
+        fileName = SentryUUID.generateSentryId() + SUFFIX_ENVELOPE_FILE;
+        fileNameMap.put(envelope, fileName);
+      }
 
-    return new File(directory.getAbsolutePath(), fileName);
+      return new File(directory.getAbsolutePath(), fileName);
+    }
   }
 
   public static @NotNull File getCurrentSessionFile(final @NotNull String cacheDirPath) {
@@ -388,7 +393,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     for (final File file : allCachedEnvelopes) {
       try (final InputStream is = new BufferedInputStream(new FileInputStream(file))) {
 
-        ret.add(serializer.deserializeEnvelope(is));
+        ret.add(serializer.getValue().deserializeEnvelope(is));
       } catch (FileNotFoundException e) {
         options
             .getLogger()

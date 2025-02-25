@@ -15,9 +15,6 @@ public final class TransactionOptions extends SpanOptions {
    */
   private @Nullable CustomSamplingContext customSamplingContext = null;
 
-  /** Defines if transaction should be bound to scope */
-  private boolean bindToScope = false;
-
   /** Defines if transaction refers to the app start process */
   private boolean isAppStartTransaction = false;
 
@@ -81,7 +78,7 @@ public final class TransactionOptions extends SpanOptions {
    * @return true if enabled or false otherwise
    */
   public boolean isBindToScope() {
-    return bindToScope;
+    return ScopeBindingMode.ON == getScopeBindingMode();
   }
 
   /**
@@ -90,7 +87,7 @@ public final class TransactionOptions extends SpanOptions {
    * @param bindToScope true if enabled or false otherwise
    */
   public void setBindToScope(boolean bindToScope) {
-    this.bindToScope = bindToScope;
+    setScopeBindingMode(bindToScope ? ScopeBindingMode.ON : ScopeBindingMode.OFF);
   }
 
   /**

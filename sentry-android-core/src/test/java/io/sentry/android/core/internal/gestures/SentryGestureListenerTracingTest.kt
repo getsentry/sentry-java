@@ -23,6 +23,7 @@ import io.sentry.TransactionOptions
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
+import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.clearInvocations
@@ -34,6 +35,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -49,6 +51,7 @@ class SentryGestureListenerTracingTest {
         val scopes = mock<IScopes>()
         val event = mock<MotionEvent>()
         val scope = mock<IScope>()
+        val transactionOptionsArgumentCaptor: ArgumentCaptor<TransactionOptions> = ArgumentCaptor.forClass(TransactionOptions::class.java)
         lateinit var target: View
         lateinit var transaction: SentryTracer
 
@@ -57,12 +60,14 @@ class SentryGestureListenerTracingTest {
             hasViewIdInRes: Boolean = true,
             tracesSampleRate: Double? = 1.0,
             isEnableUserInteractionTracing: Boolean = true,
-            transaction: SentryTracer? = null
+            transaction: SentryTracer? = null,
+            isEnableAutoTraceIdGeneration: Boolean = true
         ): SentryGestureListener {
             options.tracesSampleRate = tracesSampleRate
             options.isEnableUserInteractionTracing = isEnableUserInteractionTracing
             options.isEnableUserInteractionBreadcrumbs = true
             options.gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
+            options.isEnableAutoTraceIdGeneration = isEnableAutoTraceIdGeneration
 
             whenever(scopes.options).thenReturn(options)
 
@@ -85,8 +90,7 @@ class SentryGestureListenerTracingTest {
             whenever(target.context).thenReturn(context)
 
             whenever(activity.window).thenReturn(window)
-
-            whenever(scopes.startTransaction(any(), any<TransactionOptions>()))
+            whenever(scopes.startTransaction(any(), transactionOptionsArgumentCaptor.capture()))
                 .thenReturn(this.transaction)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
 
@@ -349,15 +353,14 @@ class SentryGestureListenerTracingTest {
         )
     }
 
-    // TODO [POTEL] rewrite
-//    @Test
-//    fun `captures transaction and sets trace origin`() {
-//        val sut = fixture.getSut<View>()
-//
-//        sut.onSingleTapUp(fixture.event)
-//
-//        assertEquals("auto.ui.gesture_listener.old_view_system", fixture.transaction.spanContext.origin)
-//    }
+    @Test
+    fun `captures transaction and sets trace origin`() {
+        val sut = fixture.getSut<View>()
+
+        sut.onSingleTapUp(fixture.event)
+
+        assertEquals("auto.ui.gesture_listener.old_view_system", fixture.transactionOptionsArgumentCaptor.value.origin)
+    }
 
     @Test
     fun `preserves existing transaction status`() {
@@ -368,6 +371,33 @@ class SentryGestureListenerTracingTest {
         fixture.transaction.status = OUT_OF_RANGE
         sut.stopTracing(SpanStatus.CANCELLED)
         assertEquals(OUT_OF_RANGE, fixture.transaction.status)
+    }
+
+    @Test
+    fun `when tracing is disabled and auto trace id generation is disabled, does not start a new trace`() {
+        val sut = fixture.getSut<View>(tracesSampleRate = null, isEnableAutoTraceIdGeneration = false)
+
+        sut.onSingleTapUp(fixture.event)
+
+        verify(fixture.scopes, never()).configureScope(any())
+    }
+
+    @Test
+    fun `when tracing is disabled and auto trace id generation is enabled, starts a new trace`() {
+        val sut = fixture.getSut<View>(tracesSampleRate = null, isEnableAutoTraceIdGeneration = true)
+        val scope = Scope(fixture.options)
+        val initialPropagationContext = scope.propagationContext
+
+        sut.onSingleTapUp(fixture.event)
+
+        verify(fixture.scopes).configureScope(
+            check { callback ->
+                callback.run(scope)
+                // Verify that a new propagation context was set and it's different from the initial one
+                assertNotNull(scope.propagationContext)
+                assertNotEquals(initialPropagationContext, scope.propagationContext)
+            }
+        )
     }
 
     internal open class ScrollableListView : AbsListView(mock()) {

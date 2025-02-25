@@ -2,11 +2,13 @@ package io.sentry.protocol;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SpanContext;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -23,12 +25,13 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class Contexts implements JsonSerializable {
   private static final long serialVersionUID = 252445813254943011L;
+  public static final String REPLAY_ID = "replay_id";
 
   private final @NotNull ConcurrentHashMap<String, Object> internalStorage =
       new ConcurrentHashMap<>();
 
   /** Response lock, Ops should be atomic */
-  private final @NotNull Object responseLock = new Object();
+  protected final @NotNull AutoClosableReentrantLock responseLock = new AutoClosableReentrantLock();
 
   public Contexts() {}
 
@@ -53,6 +56,8 @@ public class Contexts implements JsonSerializable {
           this.setTrace(new SpanContext((SpanContext) value));
         } else if (Response.TYPE.equals(entry.getKey()) && value instanceof Response) {
           this.setResponse(new Response((Response) value));
+        } else if (Spring.TYPE.equals(entry.getKey()) && value instanceof Spring) {
+          this.setSpring(new Spring((Spring) value));
         } else {
           this.put(entry.getKey(), value);
         }
@@ -69,7 +74,7 @@ public class Contexts implements JsonSerializable {
     return toContextType(SpanContext.TYPE, SpanContext.class);
   }
 
-  public void setTrace(final @Nullable SpanContext traceContext) {
+  public void setTrace(final @NotNull SpanContext traceContext) {
     Objects.requireNonNull(traceContext, "traceContext is required");
     this.put(SpanContext.TYPE, traceContext);
   }
@@ -127,7 +132,7 @@ public class Contexts implements JsonSerializable {
   }
 
   public void withResponse(HintUtils.SentryConsumer<Response> callback) {
-    synchronized (responseLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = responseLock.acquire()) {
       final @Nullable Response response = getResponse();
       if (response != null) {
         callback.accept(response);
@@ -140,9 +145,17 @@ public class Contexts implements JsonSerializable {
   }
 
   public void setResponse(final @NotNull Response response) {
-    synchronized (responseLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = responseLock.acquire()) {
       this.put(Response.TYPE, response);
     }
+  }
+
+  public @Nullable Spring getSpring() {
+    return toContextType(Spring.TYPE, Spring.class);
+  }
+
+  public void setSpring(final @NotNull Spring spring) {
+    this.put(Spring.TYPE, spring);
   }
 
   public int size() {
@@ -232,7 +245,7 @@ public class Contexts implements JsonSerializable {
 
     @Override
     public @NotNull Contexts deserialize(
-        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
+        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
       final Contexts contexts = new Contexts();
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {
@@ -262,6 +275,9 @@ public class Contexts implements JsonSerializable {
             break;
           case Response.TYPE:
             contexts.setResponse(new Response.Deserializer().deserialize(reader, logger));
+            break;
+          case Spring.TYPE:
+            contexts.setSpring(new Spring.Deserializer().deserialize(reader, logger));
             break;
           default:
             Object object = reader.nextObjectOrNull();

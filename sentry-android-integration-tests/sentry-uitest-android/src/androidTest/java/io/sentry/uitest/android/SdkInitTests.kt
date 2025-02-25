@@ -9,8 +9,12 @@ import io.sentry.android.core.AndroidLogger
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeTransaction
 import io.sentry.protocol.SentryTransaction
+import leakcanary.LeakAssertions
+import leakcanary.LeakCanary
 import org.junit.runner.RunWith
-import kotlin.test.Ignore
+import shark.AndroidReferenceMatchers
+import shark.IgnoredReferenceMatcher
+import shark.ReferencePattern
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -36,7 +40,6 @@ class SdkInitTests : BaseUiTest() {
         transaction2.finish()
     }
 
-    @Ignore("TODO [POTEL] reinit should be discussed with mobile team")
     @Test
     fun doubleInitWithSameOptionsDoesNotThrow() {
         val options = SentryAndroidOptions()
@@ -95,7 +98,6 @@ class SdkInitTests : BaseUiTest() {
         }
     }
 
-    @Ignore("TODO [POTEL] reinit should be discussed with mobile team")
     @Test
     fun doubleInitDoesNotWait() {
         relayIdlingResource.increment()
@@ -125,8 +127,10 @@ class SdkInitTests : BaseUiTest() {
 
         Sentry.startTransaction("afterRestart", "emptyTransaction").finish()
         // We assert for less than 1 second just to account for slow devices in saucelabs or headless emulator
-        // TODO: Revert back to 1000ms after making scope.close() faster again
-        assertTrue(restartMs < 2500, "Expected less than 2500 ms for SDK restart. Got $restartMs ms")
+        assertTrue(
+            restartMs < 1000,
+            "Expected less than 1000 ms for SDK restart. Got $restartMs ms"
+        )
 
         relay.assert {
             findEnvelope {
@@ -173,6 +177,42 @@ class SdkInitTests : BaseUiTest() {
         }
         val afterRestart = System.currentTimeMillis()
         val restartMs = afterRestart - beforeRestart
-        assertTrue(restartMs > 3000, "Expected more than 3000 ms for SDK close and restart. Got $restartMs ms")
+        assertTrue(
+            restartMs > 3000,
+            "Expected more than 3000 ms for SDK close and restart. Got $restartMs ms"
+        )
+    }
+
+    @Test
+    fun initViaActivityDoesNotLeak() {
+        LeakCanary.config = LeakCanary.config.copy(
+            referenceMatchers = AndroidReferenceMatchers.appDefaults +
+                listOf(
+                    IgnoredReferenceMatcher(
+                        ReferencePattern.InstanceFieldPattern(
+                            "com.saucelabs.rdcinjector.testfairy.TestFairyEventQueue",
+                            "context"
+                        )
+                    )
+                ) + ('a'..'z').map { char ->
+                IgnoredReferenceMatcher(
+                    ReferencePattern.StaticFieldPattern(
+                        "com.testfairy.modules.capture.TouchListener",
+                        "$char"
+                    )
+                )
+            }
+        )
+
+        val activityScenario = launchActivity<ComposeActivity>()
+        activityScenario.moveToState(Lifecycle.State.RESUMED)
+
+        activityScenario.onActivity { activity ->
+            initSentry(context = activity)
+        }
+
+        activityScenario.moveToState(Lifecycle.State.DESTROYED)
+
+        LeakAssertions.assertNoLeaks()
     }
 }

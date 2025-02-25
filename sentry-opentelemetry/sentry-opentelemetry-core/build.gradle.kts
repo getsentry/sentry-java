@@ -9,23 +9,23 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
 
 dependencies {
     compileOnly(projects.sentry)
-    // TODO implementation?
+    /**
+     * sentryOpentelemetryBootstrap cannot be an implementation dependency
+     * because getSentryOpentelemetryCore is loaded into the agent classloader
+     * and sentryOpentelemetryBootstrap should be in the bootstrap classloader.
+     */
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
-    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryExtra)
 
     implementation(Config.Libs.OpenTelemetry.otelSdk)
+    implementation(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(Config.Libs.OpenTelemetry.otelSemconv)
+    compileOnly(Config.Libs.OpenTelemetry.otelSemconvIncubating)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -35,7 +35,6 @@ dependencies {
 
     // tests
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
-    testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryExtra)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
@@ -44,6 +43,7 @@ dependencies {
 
     testImplementation(Config.Libs.OpenTelemetry.otelSdk)
     testImplementation(Config.Libs.OpenTelemetry.otelSemconv)
+    testImplementation(Config.Libs.OpenTelemetry.otelSemconvIncubating)
 }
 
 configure<SourceSetContainer> {

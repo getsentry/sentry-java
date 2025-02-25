@@ -4,33 +4,23 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
-import java.security.SecureRandom
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TracesSamplerTest {
     class Fixture {
         internal fun getSut(
-            randomResult: Double? = null,
-            enableTracing: Boolean? = null,
             tracesSampleRate: Double? = null,
             profilesSampleRate: Double? = null,
             tracesSamplerCallback: SentryOptions.TracesSamplerCallback? = null,
             profilesSamplerCallback: SentryOptions.ProfilesSamplerCallback? = null,
             logger: ILogger? = null
         ): TracesSampler {
-            val random = mock<SecureRandom>()
-            if (randomResult != null) {
-                whenever(random.nextDouble()).thenReturn(randomResult)
-            }
             val options = SentryOptions()
-            if (enableTracing != null) {
-                options.enableTracing = enableTracing
-            }
             if (tracesSampleRate != null) {
                 options.tracesSampleRate = tracesSampleRate
             }
@@ -47,119 +37,123 @@ class TracesSamplerTest {
                 options.isDebug = true
                 options.setLogger(logger)
             }
-            return TracesSampler(options, random)
+            return TracesSampler(options)
         }
     }
 
     private val fixture = Fixture()
 
     @Test
-    fun `when no tracesSampleRate is set, uses default rate`() {
-        val sampler = fixture.getSut(randomResult = 0.9, enableTracing = true)
-        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null))
-        assertTrue(samplingDecision.sampled)
-        assertEquals(1.0, samplingDecision.sampleRate)
-    }
-
-    @Test
     fun `when tracesSampleRate is set and random returns greater number returns false`() {
-        val sampler = fixture.getSut(randomResult = 0.9, tracesSampleRate = 0.2, profilesSampleRate = 0.2)
-        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null))
+        val sampler = fixture.getSut(tracesSampleRate = 0.2, profilesSampleRate = 0.2)
+        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null, 0.9))
         assertFalse(samplingDecision.sampled)
         assertEquals(0.2, samplingDecision.sampleRate)
+        assertEquals(0.9, samplingDecision.sampleRand)
     }
 
     @Test
     fun `when tracesSampleRate is set and random returns lower number returns true`() {
-        val sampler = fixture.getSut(randomResult = 0.1, tracesSampleRate = 0.2, profilesSampleRate = 0.2)
-        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null))
+        val sampler = fixture.getSut(tracesSampleRate = 0.2, profilesSampleRate = 0.2)
+        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null, 0.1))
         assertTrue(samplingDecision.sampled)
         assertEquals(0.2, samplingDecision.sampleRate)
+        assertEquals(0.1, samplingDecision.sampleRand)
     }
 
     @Test
     fun `when profilesSampleRate is set and random returns greater number returns false`() {
-        val sampler = fixture.getSut(randomResult = 0.9, tracesSampleRate = 1.0, profilesSampleRate = 0.2)
-        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null))
+        val sampler = fixture.getSut(tracesSampleRate = 1.0, profilesSampleRate = 0.2)
+        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null, 0.9))
         assertTrue(samplingDecision.sampled)
         assertFalse(samplingDecision.profileSampled)
         assertEquals(0.2, samplingDecision.profileSampleRate)
+        assertEquals(0.9, samplingDecision.sampleRand)
     }
 
     @Test
     fun `when profilesSampleRate is set and random returns lower number returns true`() {
-        val sampler = fixture.getSut(randomResult = 0.1, tracesSampleRate = 1.0, profilesSampleRate = 0.2)
-        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null))
+        val sampler = fixture.getSut(tracesSampleRate = 1.0, profilesSampleRate = 0.2)
+        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null, 0.1))
         assertTrue(samplingDecision.sampled)
         assertTrue(samplingDecision.profileSampled)
         assertEquals(0.2, samplingDecision.profileSampleRate)
+        assertEquals(0.1, samplingDecision.sampleRand)
     }
 
     @Test
     fun `when trace is not sampled, profile is not sampled`() {
-        val sampler = fixture.getSut(randomResult = 0.3, tracesSampleRate = 0.0, profilesSampleRate = 1.0)
-        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null))
+        val sampler = fixture.getSut(tracesSampleRate = 0.0, profilesSampleRate = 1.0)
+        val samplingDecision = sampler.sample(SamplingContext(TransactionContext("name", "op"), null, 0.3))
         assertFalse(samplingDecision.sampled)
         assertFalse(samplingDecision.profileSampled)
         assertEquals(1.0, samplingDecision.profileSampleRate)
+        assertEquals(0.3, samplingDecision.sampleRand)
     }
 
     @Test
     fun `when tracesSampleRate is not set, tracesSampler is set and random returns lower number returns true`() {
         val sampler = fixture.getSut(
-            randomResult = 0.1,
             tracesSamplerCallback = { 0.2 },
             profilesSamplerCallback = { 0.2 }
         )
         val samplingDecision = sampler.sample(
             SamplingContext(
                 TransactionContext("name", "op"),
-                CustomSamplingContext()
+                CustomSamplingContext(),
+                0.1
             )
         )
         assertTrue(samplingDecision.sampled)
         assertEquals(0.2, samplingDecision.sampleRate)
+        assertEquals(0.1, samplingDecision.sampleRand)
     }
 
     @Test
     fun `when profilesSampleRate is not set, profilesSampler is set and random returns lower number returns true`() {
-        val sampler = fixture.getSut(randomResult = 0.1, tracesSampleRate = 1.0, profilesSamplerCallback = { 0.2 })
+        val sampler = fixture.getSut(tracesSampleRate = 1.0, profilesSamplerCallback = { 0.2 })
         val samplingDecision = sampler.sample(
             SamplingContext(
                 TransactionContext("name", "op"),
-                CustomSamplingContext()
+                CustomSamplingContext(),
+                0.1
             )
         )
         assertTrue(samplingDecision.sampled)
         assertTrue(samplingDecision.profileSampled)
         assertEquals(0.2, samplingDecision.profileSampleRate)
+        assertEquals(0.1, samplingDecision.sampleRand)
     }
 
     @Test
     fun `when tracesSampleRate is not set, tracesSampler is set and random returns greater number returns false`() {
-        val sampler = fixture.getSut(randomResult = 0.9, tracesSamplerCallback = { 0.2 })
+        val sampler = fixture.getSut(tracesSamplerCallback = { 0.2 })
         val samplingDecision = sampler.sample(
             SamplingContext(
                 TransactionContext("name", "op"),
-                CustomSamplingContext()
+                CustomSamplingContext(),
+                0.9
             )
         )
         assertFalse(samplingDecision.sampled)
         assertEquals(0.2, samplingDecision.sampleRate)
+        assertEquals(0.9, samplingDecision.sampleRand)
     }
 
     @Test
     fun `when profilesSampleRate is not set, profilesSampler is set and random returns greater number returns false`() {
-        val sampler = fixture.getSut(randomResult = 0.9, tracesSampleRate = 1.0, profilesSamplerCallback = { 0.2 })
+        val sampler = fixture.getSut(tracesSampleRate = 1.0, profilesSamplerCallback = { 0.2 })
         val samplingDecision = sampler.sample(
             SamplingContext(
                 TransactionContext("name", "op"),
-                CustomSamplingContext()
+                CustomSamplingContext(),
+                0.9
             )
         )
         assertTrue(samplingDecision.sampled)
         assertFalse(samplingDecision.profileSampled)
         assertEquals(0.2, samplingDecision.profileSampleRate)
+        assertEquals(0.9, samplingDecision.sampleRand)
     }
 
     @Test
@@ -170,11 +164,13 @@ class TracesSamplerTest {
         val samplingDecision = sampler.sample(
             SamplingContext(
                 transactionContextParentSampled,
-                CustomSamplingContext()
+                CustomSamplingContext(),
+                0.1
             )
         )
         assertTrue(samplingDecision.sampled)
         assertNull(samplingDecision.sampleRate)
+        assertNotNull(samplingDecision.sampleRand)
     }
 
     @Test
@@ -185,34 +181,39 @@ class TracesSamplerTest {
         val samplingDecision = sampler.sample(
             SamplingContext(
                 transactionContextParentSampled,
-                CustomSamplingContext()
+                CustomSamplingContext(),
+                0.1
             )
         )
         assertTrue(samplingDecision.sampled)
         assertTrue(samplingDecision.profileSampled)
         assertNull(samplingDecision.profileSampleRate)
+        assertNotNull(samplingDecision.sampleRand)
     }
 
     @Test
     fun `when tracesSampler returns null and tracesSampleRate is set sampler uses it as a sampling decision`() {
-        val sampler = fixture.getSut(randomResult = 0.1, tracesSampleRate = 0.2, tracesSamplerCallback = null)
+        val sampler = fixture.getSut(tracesSampleRate = 0.2, tracesSamplerCallback = null)
         val samplingDecision = sampler.sample(
             SamplingContext(
                 TransactionContext("name", "op"),
-                CustomSamplingContext()
+                CustomSamplingContext(),
+                0.1
             )
         )
         assertTrue(samplingDecision.sampled)
         assertEquals(0.2, samplingDecision.sampleRate)
+        assertEquals(0.1, samplingDecision.sampleRand)
     }
 
     @Test
     fun `when profilesSampler returns null and profilesSampleRate is set sampler uses it as a sampling decision`() {
-        val sampler = fixture.getSut(randomResult = 0.1, tracesSampleRate = 1.0, profilesSampleRate = 0.2, profilesSamplerCallback = null)
+        val sampler = fixture.getSut(tracesSampleRate = 1.0, profilesSampleRate = 0.2, profilesSamplerCallback = null)
         val samplingDecision = sampler.sample(
             SamplingContext(
                 TransactionContext("name", "op"),
-                CustomSamplingContext()
+                CustomSamplingContext(),
+                0.1
             )
         )
         assertTrue(samplingDecision.sampled)
@@ -222,29 +223,33 @@ class TracesSamplerTest {
 
     @Test
     fun `when tracesSampleRate is not set, and tracesSampler is not set returns false`() {
-        val sampler = fixture.getSut(randomResult = 0.1)
+        val sampler = fixture.getSut()
         val samplingDecision = sampler.sample(
             SamplingContext(
                 TransactionContext("name", "op"),
-                CustomSamplingContext()
+                CustomSamplingContext(),
+                0.1
             )
         )
         assertFalse(samplingDecision.sampled)
         assertNull(samplingDecision.sampleRate)
+        assertEquals(0.1, samplingDecision.sampleRand)
     }
 
     @Test
     fun `when profilesSampleRate is not set, and profilesSampler is not set returns false`() {
-        val sampler = fixture.getSut(randomResult = 0.1, tracesSampleRate = 1.0)
+        val sampler = fixture.getSut(tracesSampleRate = 1.0)
         val samplingDecision = sampler.sample(
             SamplingContext(
                 TransactionContext("name", "op"),
-                CustomSamplingContext()
+                CustomSamplingContext(),
+                0.1
             )
         )
         assertTrue(samplingDecision.sampled)
         assertFalse(samplingDecision.profileSampled)
         assertNull(samplingDecision.profileSampleRate)
+        assertEquals(0.1, samplingDecision.sampleRand)
     }
 
     @Test
@@ -255,11 +260,13 @@ class TracesSamplerTest {
         val samplingDecision = sampler.sample(
             SamplingContext(
                 transactionContextParentNotSampled,
-                CustomSamplingContext()
+                CustomSamplingContext(),
+                0.1
             )
         )
         assertFalse(samplingDecision.sampled)
         assertNull(samplingDecision.sampleRate)
+        assertNotNull(samplingDecision.sampleRand)
         assertFalse(samplingDecision.profileSampled)
         assertNull(samplingDecision.profileSampleRate)
 
@@ -268,11 +275,13 @@ class TracesSamplerTest {
         val samplingDecisionParentSampled = sampler.sample(
             SamplingContext(
                 transactionContextParentSampled,
-                CustomSamplingContext()
+                CustomSamplingContext(),
+                0.1
             )
         )
         assertTrue(samplingDecisionParentSampled.sampled)
         assertNull(samplingDecisionParentSampled.sampleRate)
+        assertNotNull(samplingDecisionParentSampled.sampleRand)
         assertTrue(samplingDecisionParentSampled.profileSampled)
         assertNull(samplingDecisionParentSampled.profileSampleRate)
     }
@@ -300,27 +309,30 @@ class TracesSamplerTest {
         val transactionContextNotSampled = TransactionContext("name", "op")
         transactionContextNotSampled.sampled = false
         val samplingDecision =
-            sampler.sample(SamplingContext(transactionContextNotSampled, CustomSamplingContext()))
+            sampler.sample(SamplingContext(transactionContextNotSampled, CustomSamplingContext(), 0.1))
         assertFalse(samplingDecision.sampled)
         assertNull(samplingDecision.sampleRate)
+        assertNotNull(samplingDecision.sampleRand)
         assertFalse(samplingDecision.profileSampled)
         assertNull(samplingDecision.profileSampleRate)
 
         val transactionContextSampled = TransactionContext("name", "op")
         transactionContextSampled.setSampled(true, true)
         val samplingDecisionContextSampled =
-            sampler.sample(SamplingContext(transactionContextSampled, CustomSamplingContext()))
+            sampler.sample(SamplingContext(transactionContextSampled, CustomSamplingContext(), 0.1))
         assertTrue(samplingDecisionContextSampled.sampled)
         assertNull(samplingDecisionContextSampled.sampleRate)
+        assertNotNull(samplingDecisionContextSampled.sampleRand)
         assertTrue(samplingDecisionContextSampled.profileSampled)
         assertNull(samplingDecisionContextSampled.profileSampleRate)
 
         val transactionContextUnsampledWithProfile = TransactionContext("name", "op")
         transactionContextUnsampledWithProfile.setSampled(false, true)
         val samplingDecisionContextUnsampledWithProfile =
-            sampler.sample(SamplingContext(transactionContextUnsampledWithProfile, CustomSamplingContext()))
+            sampler.sample(SamplingContext(transactionContextUnsampledWithProfile, CustomSamplingContext(), 0.1))
         assertFalse(samplingDecisionContextUnsampledWithProfile.sampled)
         assertNull(samplingDecisionContextUnsampledWithProfile.sampleRate)
+        assertNotNull(samplingDecisionContextUnsampledWithProfile.sampleRand)
         assertFalse(samplingDecisionContextUnsampledWithProfile.profileSampled)
         assertNull(samplingDecisionContextUnsampledWithProfile.profileSampleRate)
     }
@@ -338,7 +350,7 @@ class TracesSamplerTest {
             logger = logger
         )
         val decision = sampler.sample(
-            SamplingContext(TransactionContext("name", "op"), null)
+            SamplingContext(TransactionContext("name", "op"), null, 0.1)
         )
         assertFalse(decision.profileSampled)
         verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
@@ -348,7 +360,6 @@ class TracesSamplerTest {
     fun `when a profilingRate and a ProfilesSamplerCallback is set but the callback throws an exception then profiling should still be enabled`() {
         val exception = Exception("faulty ProfilesSamplerCallback")
         val sampler = fixture.getSut(
-            randomResult = 0.0,
             tracesSampleRate = 1.0,
             profilesSampleRate = 1.0,
             profilesSamplerCallback = {
@@ -356,9 +367,10 @@ class TracesSamplerTest {
             }
         )
         val decision = sampler.sample(
-            SamplingContext(TransactionContext("name", "op"), null)
+            SamplingContext(TransactionContext("name", "op"), null, 0.0)
         )
         assertTrue(decision.profileSampled)
+        assertEquals(0.0, decision.sampleRand)
     }
 
     @Test
@@ -373,9 +385,10 @@ class TracesSamplerTest {
             logger = logger
         )
         val decision = sampler.sample(
-            SamplingContext(TransactionContext("name", "op"), null)
+            SamplingContext(TransactionContext("name", "op"), null, 0.1)
         )
         assertFalse(decision.sampled)
+        assertEquals(0.1, decision.sampleRand)
         verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
     }
 
@@ -383,15 +396,15 @@ class TracesSamplerTest {
     fun `when a tracesSampleRate and a TracesSamplerCallback is set but the callback throws an exception then tracing should still be enabled`() {
         val exception = Exception("faulty TracesSamplerCallback")
         val sampler = fixture.getSut(
-            randomResult = 0.0,
             tracesSampleRate = 1.0,
             tracesSamplerCallback = {
                 throw exception
             }
         )
         val decision = sampler.sample(
-            SamplingContext(TransactionContext("name", "op"), null)
+            SamplingContext(TransactionContext("name", "op"), null, 0.0)
         )
         assertTrue(decision.sampled)
+        assertEquals(0.0, decision.sampleRand)
     }
 }

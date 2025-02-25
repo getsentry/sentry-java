@@ -14,9 +14,11 @@ import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import io.sentry.okhttp.SentryOkHttpInterceptor.BeforeSpanCallback
+import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import okhttp3.Interceptor
@@ -32,7 +34,7 @@ import java.io.IOException
  * @param scopes The [IScopes], internal and only used for testing.
  * @param beforeSpan The [ISpan] can be customized or dropped with the [BeforeSpanCallback].
  * @param captureFailedRequests The SDK will only capture HTTP Client errors if it is enabled,
- * Defaults to false.
+ * Defaults to true.
  * @param failedRequestStatusCodes The SDK will only capture HTTP Client errors if the HTTP Response
  * status code is within the defined ranges.
  * @param failedRequestTargets The SDK will only capture HTTP Client errors if the HTTP Request URL
@@ -53,7 +55,7 @@ public open class SentryOkHttpInterceptor(
     public constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
 
     init {
-        addIntegrationToSdkVersion(javaClass)
+        addIntegrationToSdkVersion("OkHttp")
         SentryIntegrationPackageStorage.getInstance()
             .addPackage("maven:io.sentry:sentry-okhttp", BuildConfig.VERSION_NAME)
     }
@@ -72,13 +74,14 @@ public open class SentryOkHttpInterceptor(
         if (SentryOkHttpEventListener.eventMap.containsKey(chain.call())) {
             // read the span from the event listener
             okHttpEvent = SentryOkHttpEventListener.eventMap[chain.call()]
-            span = okHttpEvent?.callRootSpan
+            span = okHttpEvent?.callSpan
         } else {
             // read the span from the bound scope
             okHttpEvent = null
             val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
             span = parentSpan?.startChild("http.client", "$method $url")
         }
+        val startTimestamp = CurrentDateProvider.getInstance().currentTimeMillis
 
         span?.spanContext?.origin = TRACE_ORIGIN
 
@@ -91,16 +94,21 @@ public open class SentryOkHttpInterceptor(
         try {
             val requestBuilder = request.newBuilder()
 
-            TracingUtils.traceIfAllowed(
-                scopes,
-                request.url.toString(),
-                request.headers(BaggageHeader.BAGGAGE_HEADER),
-                span
-            )?.let { tracingHeaders ->
-                requestBuilder.addHeader(tracingHeaders.sentryTraceHeader.name, tracingHeaders.sentryTraceHeader.value)
-                tracingHeaders.baggageHeader?.let {
-                    requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
-                    requestBuilder.addHeader(it.name, it.value)
+            if (!isIgnored()) {
+                TracingUtils.traceIfAllowed(
+                    scopes,
+                    request.url.toString(),
+                    request.headers(BaggageHeader.BAGGAGE_HEADER),
+                    span
+                )?.let { tracingHeaders ->
+                    requestBuilder.addHeader(
+                        tracingHeaders.sentryTraceHeader.name,
+                        tracingHeaders.sentryTraceHeader.value
+                    )
+                    tracingHeaders.baggageHeader?.let {
+                        requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
+                        requestBuilder.addHeader(it.name, it.value)
+                    }
                 }
             }
 
@@ -133,16 +141,25 @@ public open class SentryOkHttpInterceptor(
             }
             throw e
         } finally {
-            finishSpan(span, request, response, isFromEventListener)
+            finishSpan(span, request, response, isFromEventListener, okHttpEvent)
 
             // The SentryOkHttpEventListener will send the breadcrumb itself if used for this call
             if (!isFromEventListener) {
-                sendBreadcrumb(request, code, response)
+                sendBreadcrumb(request, code, response, startTimestamp)
             }
         }
     }
 
-    private fun sendBreadcrumb(request: Request, code: Int?, response: Response?) {
+    private fun isIgnored(): Boolean {
+        return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
+    }
+
+    private fun sendBreadcrumb(
+        request: Request,
+        code: Int?,
+        response: Response?,
+        startTimestamp: Long
+    ) {
         val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
         request.body?.contentLength().ifHasValidLength {
             breadcrumb.setData("http.request_content_length", it)
@@ -156,11 +173,14 @@ public open class SentryOkHttpInterceptor(
 
             hint[OKHTTP_RESPONSE] = it
         }
+        // needs this as unix timestamp for rrweb
+        breadcrumb.setData(SpanDataConvention.HTTP_START_TIMESTAMP, startTimestamp)
+        breadcrumb.setData(SpanDataConvention.HTTP_END_TIMESTAMP, CurrentDateProvider.getInstance().currentTimeMillis)
 
         scopes.addBreadcrumb(breadcrumb, hint)
     }
 
-    private fun finishSpan(span: ISpan?, request: Request, response: Response?, isFromEventListener: Boolean) {
+    private fun finishSpan(span: ISpan?, request: Request, response: Response?, isFromEventListener: Boolean, okHttpEvent: SentryOkHttpEvent?) {
         if (span == null) {
             return
         }
@@ -170,16 +190,12 @@ public open class SentryOkHttpInterceptor(
                 // span is dropped
                 span.spanContext.sampled = false
             }
-            // The SentryOkHttpEventListener will finish the span itself if used for this call
-            if (!isFromEventListener) {
-                span.finish()
-            }
-        } else {
-            // The SentryOkHttpEventListener will finish the span itself if used for this call
-            if (!isFromEventListener) {
-                span.finish()
-            }
         }
+        if (!isFromEventListener) {
+            span.finish()
+        }
+        // The SentryOkHttpEventListener waits until the response is closed (which may never happen), so we close it here
+        okHttpEvent?.finish()
     }
 
     private fun Long?.ifHasValidLength(fn: (Long) -> Unit) {

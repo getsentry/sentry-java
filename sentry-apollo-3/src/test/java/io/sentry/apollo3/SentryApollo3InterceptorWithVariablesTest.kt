@@ -12,6 +12,7 @@ import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.apollo3.SentryApollo3HttpInterceptor.BeforeSpanCallback
+import io.sentry.mockServerRequestTimeoutMillis
 import io.sentry.protocol.SentryTransaction
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -23,6 +24,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -153,7 +155,7 @@ class SentryApollo3InterceptorWithVariablesTest {
     @Test
     fun `internal headers are not sent over the wire`() {
         executeQuery(fixture.getSut())
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recorderRequest.headers[SentryApollo3HttpInterceptor.SENTRY_APOLLO_3_VARIABLES])
         assertNull(recorderRequest.headers[SentryApollo3HttpInterceptor.SENTRY_APOLLO_3_OPERATION_TYPE])
     }

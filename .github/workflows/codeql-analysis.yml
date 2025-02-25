@@ -16,12 +16,10 @@ concurrency:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    runs-on: macos-15
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ['cpp', 'java']
+    env:
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
       - name: Checkout Repo
@@ -36,23 +34,19 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@2cd2a6e951bd0b53f55a08e4e4c6f2586f3a36b9 # pin@v3
+        uses: gradle/actions/setup-gradle@aa23778d2dc6f6556fcc7164e99babbd8c3134e4 # pin@v3
         with:
           gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@23acc5c183826b7a8a97bce3cecc52db901f8251 # pin@v2
+        uses: github/codeql-action/init@9e8d0789d4a0fa9ceb6b1738f7e269594bdd67f0 # pin@v2
         with:
-          languages: ${{ matrix.language }}
+          languages: 'java'
 
-      - if: matrix.language == 'cpp'
-        name: Build Cpp
-        run: |
-          ./gradlew sentry-android-ndk:buildCMakeRelWithDebInfo
-      - if: matrix.language == 'java'
-        name: Build Java
+      - name: Build Java
         run: |
           ./gradlew buildForCodeQL
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@23acc5c183826b7a8a97bce3cecc52db901f8251 # pin@v2
+        uses: github/codeql-action/analyze@9e8d0789d4a0fa9ceb6b1738f7e269594bdd67f0 # pin@v2

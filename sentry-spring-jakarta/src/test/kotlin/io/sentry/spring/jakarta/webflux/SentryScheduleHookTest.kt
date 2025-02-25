@@ -1,6 +1,7 @@
 package io.sentry.spring.jakarta.webflux
 
 import io.sentry.Sentry
+import io.sentry.test.initForTest
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.test.AfterTest
@@ -27,7 +28,7 @@ class SentryScheduleHookTest {
 
     @Test
     fun `scopes is reset to its state within the thread after hook is done`() {
-        Sentry.init {
+        initForTest {
             it.dsn = dsn
         }
 

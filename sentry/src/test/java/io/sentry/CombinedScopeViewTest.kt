@@ -16,7 +16,6 @@ import org.mockito.kotlin.same
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.lang.RuntimeException
-import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -933,9 +932,9 @@ class CombinedScopeViewTest {
     @Test
     fun `retrieves last event id from global scope`() {
         val combined = fixture.getSut()
-        fixture.scope.lastEventId = SentryId(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2dc"))
-        fixture.isolationScope.lastEventId = SentryId(UUID.fromString("d81d4e2e-bcf2-11e6-869b-7df92533d2dd"))
-        fixture.globalScope.lastEventId = SentryId(UUID.fromString("e81d4e2e-bcf2-11e6-869b-7df92533d2de"))
+        fixture.scope.lastEventId = SentryId("c81d4e2e-bcf2-11e6-869b-7df92533d2dc")
+        fixture.isolationScope.lastEventId = SentryId("d81d4e2e-bcf2-11e6-869b-7df92533d2dd")
+        fixture.globalScope.lastEventId = SentryId("e81d4e2e-bcf2-11e6-869b-7df92533d2de")
 
         assertEquals("e81d4e2ebcf211e6869b7df92533d2de", combined.lastEventId.toString())
     }
@@ -943,7 +942,7 @@ class CombinedScopeViewTest {
     @Test
     fun `sets last event id on all scopes`() {
         val combined = fixture.getSut()
-        combined.lastEventId = SentryId(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db"))
+        combined.lastEventId = SentryId("c81d4e2e-bcf2-11e6-869b-7df92533d2db")
 
         assertEquals("c81d4e2ebcf211e6869b7df92533d2db", fixture.scope.lastEventId.toString())
         assertEquals("c81d4e2ebcf211e6869b7df92533d2db", fixture.isolationScope.lastEventId.toString())
@@ -953,9 +952,9 @@ class CombinedScopeViewTest {
     @Test
     fun `retrieves propagation context from default scope`() {
         val combined = fixture.getSut()
-        fixture.scope.propagationContext = PropagationContext().also { it.traceId = SentryId(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2dc")) }
-        fixture.isolationScope.propagationContext = PropagationContext().also { it.traceId = SentryId(UUID.fromString("d81d4e2e-bcf2-11e6-869b-7df92533d2dd")) }
-        fixture.globalScope.propagationContext = PropagationContext().also { it.traceId = SentryId(UUID.fromString("e81d4e2e-bcf2-11e6-869b-7df92533d2de")) }
+        fixture.scope.propagationContext = PropagationContext().also { it.traceId = SentryId("c81d4e2e-bcf2-11e6-869b-7df92533d2dc") }
+        fixture.isolationScope.propagationContext = PropagationContext().also { it.traceId = SentryId("d81d4e2e-bcf2-11e6-869b-7df92533d2dd") }
+        fixture.globalScope.propagationContext = PropagationContext().also { it.traceId = SentryId("e81d4e2e-bcf2-11e6-869b-7df92533d2de") }
 
         assertEquals(ScopeType.ISOLATION, fixture.options.defaultScopeType)
         assertEquals("d81d4e2ebcf211e6869b7df92533d2dd", combined.propagationContext.traceId.toString())
@@ -965,7 +964,7 @@ class CombinedScopeViewTest {
     fun `sets propagation context on default scope`() {
         val combined = fixture.getSut()
 
-        combined.propagationContext = PropagationContext().also { it.traceId = SentryId(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2db")) }
+        combined.propagationContext = PropagationContext().also { it.traceId = SentryId("c81d4e2e-bcf2-11e6-869b-7df92533d2db") }
 
         assertEquals(ScopeType.ISOLATION, fixture.options.defaultScopeType)
         assertNotEquals("c81d4e2ebcf211e6869b7df92533d2db", fixture.scope.propagationContext.traceId.toString())
@@ -976,9 +975,9 @@ class CombinedScopeViewTest {
     @Test
     fun `withPropagationContext uses default scope`() {
         val combined = fixture.getSut()
-        fixture.scope.propagationContext = PropagationContext().also { it.traceId = SentryId(UUID.fromString("c81d4e2e-bcf2-11e6-869b-7df92533d2dc")) }
-        fixture.isolationScope.propagationContext = PropagationContext().also { it.traceId = SentryId(UUID.fromString("d81d4e2e-bcf2-11e6-869b-7df92533d2dd")) }
-        fixture.globalScope.propagationContext = PropagationContext().also { it.traceId = SentryId(UUID.fromString("e81d4e2e-bcf2-11e6-869b-7df92533d2de")) }
+        fixture.scope.propagationContext = PropagationContext().also { it.traceId = SentryId("c81d4e2e-bcf2-11e6-869b-7df92533d2dc") }
+        fixture.isolationScope.propagationContext = PropagationContext().also { it.traceId = SentryId("d81d4e2e-bcf2-11e6-869b-7df92533d2dd") }
+        fixture.globalScope.propagationContext = PropagationContext().also { it.traceId = SentryId("e81d4e2e-bcf2-11e6-869b-7df92533d2de") }
 
         var capturedPropagationContext: PropagationContext? = null
         combined.withPropagationContext { propagationContext ->
@@ -1097,7 +1096,50 @@ class CombinedScopeViewTest {
         assertEquals(listOf("globalFingerprint"), combined.fingerprint)
     }
 
-    // TODO [HSM] test clone
+    @Test
+    fun `prefers replay ID from current scope`() {
+        val combined = fixture.getSut()
+        fixture.scope.replayId = SentryId("a9118105af4a2d42b4124532cd1065fa")
+        fixture.isolationScope.replayId = SentryId("e9118105af4a2d42b4124532cd1065fe")
+        fixture.globalScope.replayId = SentryId("f9118105af4a2d42b4124532cd1065ff")
+
+        assertEquals("a9118105af4a2d42b4124532cd1065fa", combined.replayId.toString())
+    }
+
+    @Test
+    fun `uses isolation scope replay ID if none in current scope`() {
+        val combined = fixture.getSut()
+        fixture.isolationScope.replayId = SentryId("e9118105af4a2d42b4124532cd1065fe")
+        fixture.globalScope.replayId = SentryId("f9118105af4a2d42b4124532cd1065ff")
+
+        assertEquals("e9118105af4a2d42b4124532cd1065fe", combined.replayId.toString())
+    }
+
+    @Test
+    fun `uses global scope replay ID if none in current or isolation scope`() {
+        val combined = fixture.getSut()
+        fixture.globalScope.replayId = SentryId("f9118105af4a2d42b4124532cd1065ff")
+
+        assertEquals("f9118105af4a2d42b4124532cd1065ff", combined.replayId.toString())
+    }
+
+    @Test
+    fun `returns empty replay ID if none in any scope`() {
+        val combined = fixture.getSut()
+
+        assertEquals(SentryId.EMPTY_ID, combined.replayId)
+    }
+
+    @Test
+    fun `set replay ID modifies default scope`() {
+        val combined = fixture.getSut()
+        combined.replayId = SentryId("b9118105af4a2d42b4124532cd1065fb")
+
+        assertEquals(ScopeType.ISOLATION, fixture.options.defaultScopeType)
+        assertEquals(SentryId.EMPTY_ID, fixture.scope.replayId)
+        assertEquals("b9118105af4a2d42b4124532cd1065fb", fixture.isolationScope.replayId.toString())
+        assertEquals(SentryId.EMPTY_ID, fixture.globalScope.replayId)
+    }
 
     private fun createTransaction(name: String, scopes: Scopes? = null): ITransaction {
         val scopesToUse = scopes ?: fixture.scopes

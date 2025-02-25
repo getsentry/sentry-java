@@ -49,6 +49,7 @@ public class io/sentry/spring/SentryRequestHttpServletRequestProcessor : io/sent
 }
 
 public class io/sentry/spring/SentryRequestResolver {
+	protected static final field staticLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun resolveSentryRequest (Ljavax/servlet/http/HttpServletRequest;)Lio/sentry/protocol/Request;
 }
@@ -83,6 +84,13 @@ public abstract interface class io/sentry/spring/SentryUserProvider {
 public class io/sentry/spring/SentryWebConfiguration {
 	public fun <init> ()V
 	public fun httpServletRequestSentryUserProvider (Lio/sentry/SentryOptions;)Lio/sentry/spring/HttpServletRequestSentryUserProvider;
+}
+
+public final class io/sentry/spring/SpringProfilesEventProcessor : io/sentry/EventProcessor {
+	public fun <init> (Lorg/springframework/core/env/Environment;)V
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
+	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
 public final class io/sentry/spring/SpringSecuritySentryUserProvider : io/sentry/spring/SentryUserProvider {
@@ -184,13 +192,24 @@ public class io/sentry/spring/graphql/SentryGraphqlConfiguration {
 	public fun <init> ()V
 	public fun exceptionResolverAdapter ()Lio/sentry/spring/graphql/SentryDataFetcherExceptionResolverAdapter;
 	public fun graphqlBeanPostProcessor ()Lio/sentry/spring/graphql/SentryGraphqlBeanPostProcessor;
-	public fun sourceBuilderCustomizerWebflux ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
-	public fun sourceBuilderCustomizerWebmvc ()Lorg/springframework/boot/autoconfigure/graphql/GraphQlSourceBuilderCustomizer;
+	public fun sentryInstrumentationWebMvc (Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql/SentryInstrumentation;
+	public fun sentryInstrumentationWebflux (Lorg/springframework/beans/factory/ObjectProvider;)Lio/sentry/graphql/SentryInstrumentation;
 }
 
 public final class io/sentry/spring/graphql/SentrySpringSubscriptionHandler : io/sentry/graphql/SentrySubscriptionHandler {
 	public fun <init> ()V
 	public fun onSubscriptionResult (Ljava/lang/Object;Lio/sentry/IScopes;Lio/sentry/graphql/ExceptionReporter;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;)Ljava/lang/Object;
+}
+
+public class io/sentry/spring/opentelemetry/SentryOpenTelemetryAgentWithoutAutoInitConfiguration {
+	public fun <init> ()V
+	public fun sentryOpenTelemetryOptionsConfiguration ()Lio/sentry/Sentry$OptionsConfiguration;
+}
+
+public class io/sentry/spring/opentelemetry/SentryOpenTelemetryNoAgentConfiguration {
+	public fun <init> ()V
+	public static fun openTelemetrySpanFactory (Lio/opentelemetry/api/OpenTelemetry;)Lio/sentry/ISpanFactory;
+	public fun sentryOpenTelemetryOptionsConfiguration ()Lio/sentry/Sentry$OptionsConfiguration;
 }
 
 public class io/sentry/spring/tracing/SentryAdviceConfiguration {

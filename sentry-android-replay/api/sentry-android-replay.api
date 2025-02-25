@@ -1,0 +1,157 @@
+public final class io/sentry/android/replay/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public class io/sentry/android/replay/DefaultReplayBreadcrumbConverter : io/sentry/ReplayBreadcrumbConverter {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun convert (Lio/sentry/Breadcrumb;)Lio/sentry/rrweb/RRWebEvent;
+}
+
+public final class io/sentry/android/replay/GeneratedVideo {
+	public static final field $stable I
+	public fun <init> (Ljava/io/File;IJ)V
+	public final fun component1 ()Ljava/io/File;
+	public final fun component2 ()I
+	public final fun component3 ()J
+	public final fun copy (Ljava/io/File;IJ)Lio/sentry/android/replay/GeneratedVideo;
+	public static synthetic fun copy$default (Lio/sentry/android/replay/GeneratedVideo;Ljava/io/File;IJILjava/lang/Object;)Lio/sentry/android/replay/GeneratedVideo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDuration ()J
+	public final fun getFrameCount ()I
+	public final fun getVideo ()Ljava/io/File;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/replay/ModifierExtensionsKt {
+	public static final fun sentryReplayMask (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
+	public static final fun sentryReplayUnmask (Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
+}
+
+public abstract interface class io/sentry/android/replay/Recorder : java/io/Closeable {
+	public abstract fun pause ()V
+	public abstract fun resume ()V
+	public abstract fun start (Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
+	public abstract fun stop ()V
+}
+
+public final class io/sentry/android/replay/ReplayCache : java/io/Closeable {
+	public static final field $stable I
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/protocol/SentryId;)V
+	public final fun addFrame (Ljava/io/File;JLjava/lang/String;)V
+	public static synthetic fun addFrame$default (Lio/sentry/android/replay/ReplayCache;Ljava/io/File;JLjava/lang/String;ILjava/lang/Object;)V
+	public fun close ()V
+	public final fun createVideoOf (JJIIIIILjava/io/File;)Lio/sentry/android/replay/GeneratedVideo;
+	public static synthetic fun createVideoOf$default (Lio/sentry/android/replay/ReplayCache;JJIIIIILjava/io/File;ILjava/lang/Object;)Lio/sentry/android/replay/GeneratedVideo;
+}
+
+public final class io/sentry/android/replay/ReplayIntegration : android/content/ComponentCallbacks, io/sentry/IConnectionStatusProvider$IConnectionStatusObserver, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, io/sentry/android/replay/gestures/TouchRecorderCallback, io/sentry/transport/RateLimiter$IRateLimitObserver, java/io/Closeable {
+	public static final field $stable I
+	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
+	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun captureReplay (Ljava/lang/Boolean;)V
+	public fun close ()V
+	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
+	public final fun getReplayCacheDir ()Ljava/io/File;
+	public fun getReplayId ()Lio/sentry/protocol/SentryId;
+	public fun isRecording ()Z
+	public fun onConfigurationChanged (Landroid/content/res/Configuration;)V
+	public fun onConnectionStatusChanged (Lio/sentry/IConnectionStatusProvider$ConnectionStatus;)V
+	public fun onLowMemory ()V
+	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
+	public fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
+	public fun onScreenshotRecorded (Ljava/io/File;J)V
+	public fun onTouchEvent (Landroid/view/MotionEvent;)V
+	public fun pause ()V
+	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+	public fun resume ()V
+	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
+	public fun start ()V
+	public fun stop ()V
+}
+
+public abstract interface class io/sentry/android/replay/ScreenshotRecorderCallback {
+	public abstract fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
+	public abstract fun onScreenshotRecorded (Ljava/io/File;J)V
+}
+
+public final class io/sentry/android/replay/ScreenshotRecorderConfig {
+	public static final field $stable I
+	public fun <init> (IIFFII)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()F
+	public final fun component4 ()F
+	public final fun component5 ()I
+	public final fun component6 ()I
+	public final fun copy (IIFFII)Lio/sentry/android/replay/ScreenshotRecorderConfig;
+	public static synthetic fun copy$default (Lio/sentry/android/replay/ScreenshotRecorderConfig;IIFFIIILjava/lang/Object;)Lio/sentry/android/replay/ScreenshotRecorderConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBitRate ()I
+	public final fun getFrameRate ()I
+	public final fun getRecordingHeight ()I
+	public final fun getRecordingWidth ()I
+	public final fun getScaleFactorX ()F
+	public final fun getScaleFactorY ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/replay/SentryReplayModifiers {
+	public static final field $stable I
+	public static final field INSTANCE Lio/sentry/android/replay/SentryReplayModifiers;
+	public final fun getSentryPrivacy ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
+}
+
+public final class io/sentry/android/replay/SessionReplayOptionsKt {
+	public static final fun getMaskAllImages (Lio/sentry/SentryReplayOptions;)Z
+	public static final fun getMaskAllText (Lio/sentry/SentryReplayOptions;)Z
+	public static final fun setMaskAllImages (Lio/sentry/SentryReplayOptions;Z)V
+	public static final fun setMaskAllText (Lio/sentry/SentryReplayOptions;Z)V
+}
+
+public final class io/sentry/android/replay/ViewExtensionsKt {
+	public static final fun sentryReplayMask (Landroid/view/View;)V
+	public static final fun sentryReplayUnmask (Landroid/view/View;)V
+}
+
+public abstract interface class io/sentry/android/replay/gestures/TouchRecorderCallback {
+	public abstract fun onTouchEvent (Landroid/view/MotionEvent;)V
+}
+
+public class io/sentry/android/replay/util/FixedWindowCallback : android/view/Window$Callback {
+	public final field delegate Landroid/view/Window$Callback;
+	public fun <init> (Landroid/view/Window$Callback;)V
+	public fun dispatchGenericMotionEvent (Landroid/view/MotionEvent;)Z
+	public fun dispatchKeyEvent (Landroid/view/KeyEvent;)Z
+	public fun dispatchKeyShortcutEvent (Landroid/view/KeyEvent;)Z
+	public fun dispatchPopulateAccessibilityEvent (Landroid/view/accessibility/AccessibilityEvent;)Z
+	public fun dispatchTouchEvent (Landroid/view/MotionEvent;)Z
+	public fun dispatchTrackballEvent (Landroid/view/MotionEvent;)Z
+	public fun onActionModeFinished (Landroid/view/ActionMode;)V
+	public fun onActionModeStarted (Landroid/view/ActionMode;)V
+	public fun onAttachedToWindow ()V
+	public fun onContentChanged ()V
+	public fun onCreatePanelMenu (ILandroid/view/Menu;)Z
+	public fun onCreatePanelView (I)Landroid/view/View;
+	public fun onDetachedFromWindow ()V
+	public fun onMenuItemSelected (ILandroid/view/MenuItem;)Z
+	public fun onMenuOpened (ILandroid/view/Menu;)Z
+	public fun onPanelClosed (ILandroid/view/Menu;)V
+	public fun onPointerCaptureChanged (Z)V
+	public fun onPreparePanel (ILandroid/view/View;Landroid/view/Menu;)Z
+	public fun onProvideKeyboardShortcuts (Ljava/util/List;Landroid/view/Menu;I)V
+	public fun onSearchRequested ()Z
+	public fun onSearchRequested (Landroid/view/SearchEvent;)Z
+	public fun onWindowAttributesChanged (Landroid/view/WindowManager$LayoutParams;)V
+	public fun onWindowFocusChanged (Z)V
+	public fun onWindowStartingActionMode (Landroid/view/ActionMode$Callback;)Landroid/view/ActionMode;
+	public fun onWindowStartingActionMode (Landroid/view/ActionMode$Callback;I)Landroid/view/ActionMode;
+}
+

@@ -1,9 +1,10 @@
 package io.sentry
 
+import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
 import io.sentry.test.createTestScopes
-import io.sentry.util.thread.IMainThreadChecker
+import io.sentry.util.thread.IThreadChecker
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -81,7 +82,17 @@ class SentryTracerTest {
         assertEquals("new-origin", transaction.spanContext.origin)
     }
 
-    // TODO [POTEL] test child creation is ignored because of span origin
+    @Test
+    fun `does not create child span if origin is ignored`() {
+        val tracer = fixture.getSut({
+            it.setDebug(true)
+            it.setLogger(SystemOutLogger())
+            it.setIgnoredSpanOrigins(listOf("ignored"))
+        })
+        tracer.startChild("child1", null, SpanOptions().also { it.origin = "ignored" })
+        tracer.startChild("child2")
+        assertEquals(1, tracer.children.size)
+    }
 
     @Test
     fun `does not add more spans than configured in options`() {
@@ -596,6 +607,8 @@ class SentryTracerTest {
                 id = "user-id"
             }
         )
+        val replayId = SentryId()
+        fixture.scopes.configureScope { it.replayId = replayId }
         val trace = transaction.traceContext()
         assertNotNull(trace) {
             assertEquals(transaction.spanContext.traceId, it.traceId)
@@ -603,6 +616,7 @@ class SentryTracerTest {
             assertEquals("environment", it.environment)
             assertEquals("release@3.0.0", it.release)
             assertEquals(transaction.name, it.transaction)
+            assertEquals(replayId, it.replayId)
         }
     }
 
@@ -666,6 +680,8 @@ class SentryTracerTest {
                 id = "userId12345"
             }
         )
+        val replayId = SentryId()
+        fixture.scopes.configureScope { it.replayId = replayId }
 
         val header = transaction.toBaggageHeader(null)
         assertNotNull(header) {
@@ -678,6 +694,7 @@ class SentryTracerTest {
             assertTrue(it.value.contains("sentry-environment=production,"))
             assertTrue(it.value.contains("sentry-transaction=name"))
             // assertTrue(it.value.contains("sentry-user_id=userId12345,"))
+            assertTrue(it.value.contains("sentry-replay_id=$replayId"))
         }
     }
 
@@ -735,13 +752,13 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `sets ITransaction data as extra in SentryTransaction`() {
+    fun `sets ITransaction data as tracecontext data in SentryTransaction`() {
         val transaction = fixture.getSut(samplingDecision = TracesSamplingDecision(true))
         transaction.setData("key", "val")
         transaction.finish()
         verify(fixture.scopes).captureTransaction(
             check {
-                assertEquals("val", it.getExtra("key"))
+                assertEquals("val", it.contexts.trace?.data?.get("key"))
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
@@ -1344,11 +1361,11 @@ class SentryTracerTest {
 
     @Test
     fun `when a span is launched on the main thread, the thread info should be set correctly`() {
-        val mainThreadChecker = mock<IMainThreadChecker>()
-        whenever(mainThreadChecker.isMainThread).thenReturn(true)
+        val threadChecker = mock<IThreadChecker>()
+        whenever(threadChecker.isMainThread).thenReturn(true)
 
         val tracer = fixture.getSut(optionsConfiguration = { options ->
-            options.mainThreadChecker = mainThreadChecker
+            options.threadChecker = threadChecker
         })
         val span = tracer.startChild("span.op")
         assertNotNull(span.getData(SpanDataConvention.THREAD_ID))
@@ -1357,11 +1374,11 @@ class SentryTracerTest {
 
     @Test
     fun `when a span is launched on the background thread, the thread info should be set correctly`() {
-        val mainThreadChecker = mock<IMainThreadChecker>()
-        whenever(mainThreadChecker.isMainThread).thenReturn(false)
+        val threadChecker = mock<IThreadChecker>()
+        whenever(threadChecker.isMainThread).thenReturn(false)
 
         val tracer = fixture.getSut(optionsConfiguration = { options ->
-            options.mainThreadChecker = mainThreadChecker
+            options.threadChecker = threadChecker
         })
         val span = tracer.startChild("span.op")
         assertNotNull(span.getData(SpanDataConvention.THREAD_ID))

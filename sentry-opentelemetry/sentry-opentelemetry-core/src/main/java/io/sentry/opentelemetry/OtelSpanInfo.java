@@ -1,8 +1,6 @@
 package io.sentry.opentelemetry;
 
 import io.sentry.protocol.TransactionNameSource;
-import java.util.HashMap;
-import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,19 +12,6 @@ public final class OtelSpanInfo {
   private final @Nullable String description;
   private final @NotNull TransactionNameSource transactionNameSource;
 
-  private final @NotNull Map<String, Object> dataFields;
-
-  public OtelSpanInfo(
-      final @NotNull String op,
-      final @Nullable String description,
-      final @NotNull TransactionNameSource transactionNameSource,
-      final @NotNull Map<String, Object> dataFields) {
-    this.op = op;
-    this.description = description;
-    this.transactionNameSource = transactionNameSource;
-    this.dataFields = dataFields;
-  }
-
   public OtelSpanInfo(
       final @NotNull String op,
       final @Nullable String description,
@@ -34,7 +19,6 @@ public final class OtelSpanInfo {
     this.op = op;
     this.description = description;
     this.transactionNameSource = transactionNameSource;
-    this.dataFields = new HashMap<>();
   }
 
   public @NotNull String getOp() {
@@ -47,13 +31,5 @@ public final class OtelSpanInfo {
 
   public @NotNull TransactionNameSource getTransactionNameSource() {
     return transactionNameSource;
-  }
-
-  public @NotNull Map<String, Object> getDataFields() {
-    return dataFields;
-  }
-
-  public void addDataField(final @NotNull String key, final @NotNull Object value) {
-    dataFields.put(key, value);
   }
 }

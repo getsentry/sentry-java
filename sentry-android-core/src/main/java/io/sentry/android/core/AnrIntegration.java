@@ -6,6 +6,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import io.sentry.Hint;
 import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -14,6 +15,7 @@ import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.protocol.Mechanism;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -30,10 +32,10 @@ public final class AnrIntegration implements Integration, Closeable {
 
   private final @NotNull Context context;
   private boolean isClosed = false;
-  private final @NotNull Object startLock = new Object();
+  private final @NotNull AutoClosableReentrantLock startLock = new AutoClosableReentrantLock();
 
   public AnrIntegration(final @NotNull Context context) {
-    this.context = context;
+    this.context = ContextUtils.getApplicationContext(context);
   }
 
   /**
@@ -45,7 +47,8 @@ public final class AnrIntegration implements Integration, Closeable {
 
   private @Nullable SentryOptions options;
 
-  private static final @NotNull Object watchDogLock = new Object();
+  protected static final @NotNull AutoClosableReentrantLock watchDogLock =
+      new AutoClosableReentrantLock();
 
   @Override
   public final void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
@@ -60,13 +63,13 @@ public final class AnrIntegration implements Integration, Closeable {
         .log(SentryLevel.DEBUG, "AnrIntegration enabled: %s", options.isAnrEnabled());
 
     if (options.isAnrEnabled()) {
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("Anr");
       try {
         options
             .getExecutorService()
             .submit(
                 () -> {
-                  synchronized (startLock) {
+                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
                     if (!isClosed) {
                       startAnrWatchdog(scopes, options);
                     }
@@ -82,7 +85,7 @@ public final class AnrIntegration implements Integration, Closeable {
 
   private void startAnrWatchdog(
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
-    synchronized (watchDogLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = watchDogLock.acquire()) {
       if (anrWatchDog == null) {
         options
             .getLogger()
@@ -151,10 +154,10 @@ public final class AnrIntegration implements Integration, Closeable {
 
   @Override
   public void close() throws IOException {
-    synchronized (startLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
       isClosed = true;
     }
-    synchronized (watchDogLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = watchDogLock.acquire()) {
       if (anrWatchDog != null) {
         anrWatchDog.interrupt();
         anrWatchDog = null;

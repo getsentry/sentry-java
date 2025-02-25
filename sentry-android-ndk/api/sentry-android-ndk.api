@@ -10,6 +10,7 @@ public final class io/sentry/android/ndk/DebugImagesLoader : io/sentry/android/c
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/ndk/NativeModuleListLoader;)V
 	public fun clearDebugImages ()V
 	public fun loadDebugImages ()Ljava/util/List;
+	public fun loadDebugImagesForAddresses (Ljava/util/Set;)Ljava/util/Set;
 }
 
 public final class io/sentry/android/ndk/NdkScopeObserver : io/sentry/ScopeObserverAdapter {

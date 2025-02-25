@@ -8,7 +8,9 @@ import io.sentry.protocol.Gpu
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.Response
 import io.sentry.protocol.SentryRuntime
+import io.sentry.protocol.Spring
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -37,7 +39,7 @@ class CombinedContextsViewTest {
     fun `uses default context CURRENT`() {
         fixture.getSut()
         val combined = CombinedContextsView(fixture.global, fixture.isolation, fixture.current, ScopeType.CURRENT)
-        combined.trace = SpanContext("some")
+        combined.setTrace(SpanContext("some"))
         assertEquals("some", fixture.current.trace?.op)
     }
 
@@ -45,7 +47,7 @@ class CombinedContextsViewTest {
     fun `uses default context ISOLATION`() {
         fixture.getSut()
         val combined = CombinedContextsView(fixture.global, fixture.isolation, fixture.current, ScopeType.ISOLATION)
-        combined.trace = SpanContext("some")
+        combined.setTrace(SpanContext("some"))
         assertEquals("some", fixture.isolation.trace?.op)
     }
 
@@ -53,16 +55,16 @@ class CombinedContextsViewTest {
     fun `uses default context GLOBAL`() {
         fixture.getSut()
         val combined = CombinedContextsView(fixture.global, fixture.isolation, fixture.current, ScopeType.GLOBAL)
-        combined.trace = SpanContext("some")
+        combined.setTrace(SpanContext("some"))
         assertEquals("some", fixture.global.trace?.op)
     }
 
     @Test
     fun `prefers trace from current context`() {
         val combined = fixture.getSut()
-        fixture.current.trace = SpanContext("current")
-        fixture.isolation.trace = SpanContext("isolation")
-        fixture.global.trace = SpanContext("global")
+        fixture.current.setTrace(SpanContext("current"))
+        fixture.isolation.setTrace(SpanContext("isolation"))
+        fixture.global.setTrace(SpanContext("global"))
 
         assertEquals("current", combined.trace?.op)
     }
@@ -70,8 +72,8 @@ class CombinedContextsViewTest {
     @Test
     fun `uses isolation trace if current context does not have it`() {
         val combined = fixture.getSut()
-        fixture.isolation.trace = SpanContext("isolation")
-        fixture.global.trace = SpanContext("global")
+        fixture.isolation.setTrace(SpanContext("isolation"))
+        fixture.global.setTrace(SpanContext("global"))
 
         assertEquals("isolation", combined.trace?.op)
     }
@@ -79,7 +81,7 @@ class CombinedContextsViewTest {
     @Test
     fun `uses global trace if current and isolation context do not have it`() {
         val combined = fixture.getSut()
-        fixture.global.trace = SpanContext("global")
+        fixture.global.setTrace(SpanContext("global"))
 
         assertEquals("global", combined.trace?.op)
     }
@@ -87,7 +89,7 @@ class CombinedContextsViewTest {
     @Test
     fun `sets trace on default context`() {
         val combined = fixture.getSut()
-        combined.trace = SpanContext("some")
+        combined.setTrace(SpanContext("some"))
 
         assertNull(fixture.current.trace)
         assertEquals("some", fixture.isolation.trace?.op)
@@ -412,9 +414,46 @@ class CombinedContextsViewTest {
     }
 
     @Test
+    fun `prefers spring from current context`() {
+        val combined = fixture.getSut()
+        fixture.current.setSpring(Spring().also { it.activeProfiles = listOf("current").toTypedArray() })
+        fixture.isolation.setSpring(Spring().also { it.activeProfiles = listOf("isolation").toTypedArray() })
+        fixture.global.setSpring(Spring().also { it.activeProfiles = listOf("global").toTypedArray() })
+
+        assertContentEquals(listOf("current").toTypedArray(), combined.spring?.activeProfiles)
+    }
+
+    @Test
+    fun `uses isolation spring if current context does not have it`() {
+        val combined = fixture.getSut()
+        fixture.isolation.setSpring(Spring().also { it.activeProfiles = listOf("isolation").toTypedArray() })
+        fixture.global.setSpring(Spring().also { it.activeProfiles = listOf("global").toTypedArray() })
+
+        assertContentEquals(listOf("isolation").toTypedArray(), combined.spring?.activeProfiles)
+    }
+
+    @Test
+    fun `uses global spring if current and isolation context do not have it`() {
+        val combined = fixture.getSut()
+        fixture.global.setSpring(Spring().also { it.activeProfiles = listOf("global").toTypedArray() })
+
+        assertContentEquals(listOf("global").toTypedArray(), combined.spring?.activeProfiles)
+    }
+
+    @Test
+    fun `sets spring on default context`() {
+        val combined = fixture.getSut()
+        combined.setSpring(Spring().also { it.activeProfiles = listOf("test").toTypedArray() })
+
+        assertNull(fixture.current.spring)
+        assertContentEquals(listOf("test").toTypedArray(), combined.spring?.activeProfiles)
+        assertNull(fixture.global.spring)
+    }
+
+    @Test
     fun `size combines contexts`() {
         val combined = fixture.getSut()
-        fixture.current.trace = SpanContext("current")
+        fixture.current.setTrace(SpanContext("current"))
         fixture.isolation.setApp(App().also { it.appName = "isolation" })
         fixture.global.setGpu(Gpu().also { it.name = "global" })
 
@@ -424,9 +463,9 @@ class CombinedContextsViewTest {
     @Test
     fun `size considers overrides`() {
         val combined = fixture.getSut()
-        fixture.current.trace = SpanContext("current")
-        fixture.isolation.trace = SpanContext("isolation")
-        fixture.global.trace = SpanContext("global")
+        fixture.current.setTrace(SpanContext("current"))
+        fixture.isolation.setTrace(SpanContext("isolation"))
+        fixture.global.setTrace(SpanContext("global"))
 
         assertEquals(1, combined.size)
     }
@@ -440,7 +479,7 @@ class CombinedContextsViewTest {
     @Test
     fun `isNotEmpty if current has value`() {
         val combined = fixture.getSut()
-        fixture.current.trace = SpanContext("current")
+        fixture.current.setTrace(SpanContext("current"))
 
         assertFalse(combined.isEmpty)
     }
@@ -470,28 +509,28 @@ class CombinedContextsViewTest {
     @Test
     fun `containsKey current`() {
         val combined = fixture.getSut()
-        fixture.current.trace = SpanContext("current")
+        fixture.current.setTrace(SpanContext("current"))
         assertTrue(combined.containsKey("trace"))
     }
 
     @Test
     fun `containsKey isolation`() {
         val combined = fixture.getSut()
-        fixture.isolation.trace = SpanContext("isolation")
+        fixture.isolation.setTrace(SpanContext("isolation"))
         assertTrue(combined.containsKey("trace"))
     }
 
     @Test
     fun `containsKey global`() {
         val combined = fixture.getSut()
-        fixture.global.trace = SpanContext("global")
+        fixture.global.setTrace(SpanContext("global"))
         assertTrue(combined.containsKey("trace"))
     }
 
     @Test
     fun `keys combines contexts`() {
         val combined = fixture.getSut()
-        fixture.current.trace = SpanContext("current")
+        fixture.current.setTrace(SpanContext("current"))
         fixture.isolation.setApp(App().also { it.appName = "isolation" })
         fixture.global.setGpu(Gpu().also { it.name = "global" })
 
@@ -502,7 +541,7 @@ class CombinedContextsViewTest {
     fun `entrySet combines contexts`() {
         val combined = fixture.getSut()
         val trace = SpanContext("current")
-        fixture.current.trace = trace
+        fixture.current.setTrace(trace)
         val app = App().also { it.appName = "isolation" }
         fixture.isolation.setApp(app)
         val gpu = Gpu().also { it.name = "global" }

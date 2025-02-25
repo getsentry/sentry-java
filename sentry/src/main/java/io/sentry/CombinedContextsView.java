@@ -8,6 +8,7 @@ import io.sentry.protocol.Gpu;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.Response;
 import io.sentry.protocol.SentryRuntime;
+import io.sentry.protocol.Spring;
 import io.sentry.util.HintUtils;
 import java.io.IOException;
 import java.util.Enumeration;
@@ -50,7 +51,7 @@ public final class CombinedContextsView extends Contexts {
   }
 
   @Override
-  public void setTrace(@Nullable SpanContext traceContext) {
+  public void setTrace(@NotNull SpanContext traceContext) {
     getDefaultContexts().setTrace(traceContext);
   }
 
@@ -204,6 +205,24 @@ public final class CombinedContextsView extends Contexts {
   @Override
   public void setResponse(@NotNull Response response) {
     getDefaultContexts().setResponse(response);
+  }
+
+  @Override
+  public @Nullable Spring getSpring() {
+    final @Nullable Spring current = currentContexts.getSpring();
+    if (current != null) {
+      return current;
+    }
+    final @Nullable Spring isolation = isolationContexts.getSpring();
+    if (isolation != null) {
+      return isolation;
+    }
+    return globalContexts.getSpring();
+  }
+
+  @Override
+  public void setSpring(@NotNull Spring spring) {
+    getDefaultContexts().setSpring(spring);
   }
 
   @Override

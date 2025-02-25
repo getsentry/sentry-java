@@ -46,7 +46,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
             DEBOUNCE_MAX_EXECUTIONS);
 
     if (options.isAttachScreenshot()) {
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("Screenshot");
     }
   }
 
@@ -89,7 +89,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
 
     final byte[] screenshot =
         takeScreenshot(
-            activity, options.getMainThreadChecker(), options.getLogger(), buildInfoProvider);
+            activity, options.getThreadChecker(), options.getLogger(), buildInfoProvider);
     if (screenshot == null) {
       return event;
     }

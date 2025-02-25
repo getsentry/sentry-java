@@ -55,7 +55,8 @@ class SentryNavigationListenerTest {
             toRoute: String? = "route",
             toId: String? = "destination-id-1",
             enableBreadcrumbs: Boolean = true,
-            enableTracing: Boolean = true,
+            enableNavigationTracing: Boolean = true,
+            enableScreenTracking: Boolean = true,
             tracesSampleRate: Double? = 1.0,
             hasViewIdInRes: Boolean = true,
             transaction: SentryTracer? = null,
@@ -66,6 +67,7 @@ class SentryNavigationListenerTest {
                 setTracesSampleRate(
                     tracesSampleRate
                 )
+                isEnableScreenTracking = enableScreenTracking
             }
             whenever(scopes.options).thenReturn(options)
 
@@ -98,7 +100,7 @@ class SentryNavigationListenerTest {
             return SentryNavigationListener(
                 scopes,
                 enableBreadcrumbs,
-                enableTracing,
+                enableNavigationTracing,
                 traceOriginAppendix
             )
         }
@@ -201,7 +203,7 @@ class SentryNavigationListenerTest {
 
     @Test
     fun `onDestinationChanged does not start tracing when tracing is disabled`() {
-        val sut = fixture.getSut(enableTracing = false)
+        val sut = fixture.getSut(enableNavigationTracing = false)
 
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
@@ -213,7 +215,7 @@ class SentryNavigationListenerTest {
 
     @Test
     fun `onDestinationChanged does not start tracing when tracesSampleRate is not set`() {
-        val sut = fixture.getSut(enableTracing = true, tracesSampleRate = null)
+        val sut = fixture.getSut(enableNavigationTracing = true, tracesSampleRate = null)
 
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
@@ -359,7 +361,7 @@ class SentryNavigationListenerTest {
 
     @Test
     fun `starts new trace if performance is disabled`() {
-        val sut = fixture.getSut(enableTracing = false)
+        val sut = fixture.getSut(enableNavigationTracing = false)
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> =
             ArgumentCaptor.forClass(ScopeCallback::class.java)
@@ -371,7 +373,7 @@ class SentryNavigationListenerTest {
 
         sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
-        verify(fixture.scopes).configureScope(any())
+        verify(fixture.scopes, times(2)).configureScope(any())
         assertNotSame(propagationContextAtStart, scope.propagationContext)
     }
 
@@ -405,5 +407,23 @@ class SentryNavigationListenerTest {
                 assertEquals(TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION, options.deadlineTimeout)
             }
         )
+    }
+
+    @Test
+    fun `onDestinationChanged sets scope screen`() {
+        val sut = fixture.getSut()
+
+        sut.onDestinationChanged(fixture.navController, fixture.destination, null)
+
+        verify(fixture.scope).screen = "/route"
+    }
+
+    @Test
+    fun `onDestinationChanged does not set scope screen when screen tracking is disabled`() {
+        val sut = fixture.getSut(enableScreenTracking = false)
+
+        sut.onDestinationChanged(fixture.navController, fixture.destination, null)
+
+        verify(fixture.scope, never()).screen = "/route"
     }
 }

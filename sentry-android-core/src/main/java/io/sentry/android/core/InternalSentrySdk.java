@@ -110,7 +110,7 @@ public final class InternalSentrySdk {
       if (app == null) {
         app = new App();
       }
-      app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+      app.setAppName(ContextUtils.getApplicationName(context));
 
       final @NotNull TimeSpan appStartTimeSpan =
           AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
@@ -124,7 +124,7 @@ public final class InternalSentrySdk {
           ContextUtils.getPackageInfo(
               context, PackageManager.GET_PERMISSIONS, options.getLogger(), buildInfoProvider);
       if (packageInfo != null) {
-        ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, app);
+        ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, deviceInfoUtil, app);
       }
       scope.getContexts().setApp(app);
 
@@ -196,7 +196,7 @@ public final class InternalSentrySdk {
         deleteCurrentSessionFile(
             options,
             // should be sync if going to crash or already not a main thread
-            !maybeStartNewSession || !scopes.getOptions().getMainThreadChecker().isMainThread());
+            !maybeStartNewSession || !scopes.getOptions().getThreadChecker().isMainThread());
         if (maybeStartNewSession) {
           scopes.startSession();
         }
@@ -215,14 +215,7 @@ public final class InternalSentrySdk {
     final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
     final @NotNull List<Map<String, Object>> spans = new ArrayList<>();
 
-    final @NotNull TimeSpan processInitNativeSpan = new TimeSpan();
-    processInitNativeSpan.setStartedAt(metrics.getAppStartTimeSpan().getStartUptimeMs());
-    processInitNativeSpan.setStartUnixTimeMs(
-        metrics.getAppStartTimeSpan().getStartTimestampMs()); // This has to go after setStartedAt
-    processInitNativeSpan.setStoppedAt(metrics.getClassLoadedUptimeMs());
-    processInitNativeSpan.setDescription("Process Initialization");
-
-    addTimeSpanToSerializedSpans(processInitNativeSpan, spans);
+    addTimeSpanToSerializedSpans(metrics.createProcessInitSpan(), spans);
     addTimeSpanToSerializedSpans(metrics.getApplicationOnCreateTimeSpan(), spans);
 
     for (final TimeSpan span : metrics.getContentProviderOnCreateTimeSpans()) {

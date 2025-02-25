@@ -202,7 +202,9 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     if (!(options.isTracingEnabled() && options.isEnableUserInteractionTracing())) {
       if (isNewInteraction) {
-        TracingUtils.startNewTrace(scopes);
+        if (options.isEnableAutoTraceIdGeneration()) {
+          TracingUtils.startNewTrace(scopes);
+        }
         activeUiElement = target;
         activeEventType = eventType;
       }

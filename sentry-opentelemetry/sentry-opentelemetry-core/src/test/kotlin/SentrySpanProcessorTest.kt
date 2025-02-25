@@ -17,7 +17,8 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.trace.ReadWriteSpan
 import io.opentelemetry.sdk.trace.ReadableSpan
 import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.semconv.SemanticAttributes
+import io.opentelemetry.semconv.HttpAttributes
+import io.opentelemetry.semconv.UrlAttributes
 import io.sentry.Baggage
 import io.sentry.BaggageHeader
 import io.sentry.Hint
@@ -125,7 +126,7 @@ class SentrySpanProcessorTest {
     fun `ignores sentry client request`() {
         fixture.setup()
         givenSpanBuilder(SpanKind.CLIENT)
-            .setAttribute(SemanticAttributes.HTTP_URL, "https://key@sentry.io/proj/some-api")
+            .setAttribute(UrlAttributes.URL_FULL, "https://key@sentry.io/proj/some-api")
             .startSpan()
 
         thenNoTransactionIsStarted()
@@ -135,7 +136,7 @@ class SentrySpanProcessorTest {
     fun `ignores sentry internal request`() {
         fixture.setup()
         givenSpanBuilder(SpanKind.CLIENT)
-            .setAttribute(SemanticAttributes.HTTP_URL, "https://key@sentry.io/proj/some-api")
+            .setAttribute(UrlAttributes.URL_FULL, "https://key@sentry.io/proj/some-api")
             .startSpan()
 
         thenNoTransactionIsStarted()
@@ -304,8 +305,8 @@ class SentrySpanProcessorTest {
         thenChildSpanIsStarted()
 
         otelChildSpan.setStatus(StatusCode.ERROR)
-        otelChildSpan.setAttribute(SemanticAttributes.HTTP_URL, "http://github.com/getsentry/sentry-java")
-        otelChildSpan.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, 404L)
+        otelChildSpan.setAttribute(UrlAttributes.URL_FULL, "http://github.com/getsentry/sentry-java")
+        otelChildSpan.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, 404L)
 
         otelChildSpan.end()
         thenChildSpanIsFinished(SpanStatus.NOT_FOUND)
@@ -408,15 +409,15 @@ class SentrySpanProcessorTest {
                         assertEquals("1", it.baggage?.sampleRate)
                         assertEquals("HTTP GET", it.baggage?.transaction)
                         assertEquals("502f25099c204a2fbf4cb16edc5975d1", it.baggage?.publicKey)
+                        assertFalse(it.baggage!!.isMutable)
                     } else {
                         assertNotNull(it.baggage)
                         assertNull(it.baggage?.traceId)
                         assertNull(it.baggage?.sampleRate)
                         assertNull(it.baggage?.transaction)
                         assertNull(it.baggage?.publicKey)
-                        assertFalse(it.baggage!!.isMutable)
+                        assertTrue(it.baggage!!.isMutable)
                     }
-                    assertFalse(it.baggage!!.isMutable)
                 },
                 check<TransactionOptions> {
                     assertNotNull(it.startTimestamp)
@@ -433,7 +434,7 @@ class SentrySpanProcessorTest {
                     assertEquals(otelSpan.spanContext.traceId, it.traceId.toString())
                     assertNull(it.parentSpanId)
                     assertNull(it.parentSamplingDecision)
-                    assertNull(it.baggage)
+                    assertNotNull(it.baggage)
                 },
                 check<TransactionOptions> {
                     assertNotNull(it.startTimestamp)

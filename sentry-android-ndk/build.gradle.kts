@@ -8,15 +8,12 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
 }
 
-val sentryAndroidSdkName: String by project
-
 android {
     compileSdk = Config.Android.compileSdkVersion
     namespace = "io.sentry.android.ndk"
 
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
-        minSdk = Config.Android.minSdkVersionNdk // NDK requires a higher API level than core.
+        minSdk = Config.Android.minSdkVersion
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 
@@ -29,7 +26,9 @@ android {
     }
 
     buildTypes {
-        getByName("debug")
+        getByName("debug") {
+            consumerProguardFiles("proguard-rules.pro")
+        }
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }
@@ -60,9 +59,22 @@ android {
         resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
+    buildFeatures {
+        buildConfig = true
+    }
+
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    }
+
+    // the default AGP version is too high, we keep this low for compatibility reasons
+    // see https://developer.android.com/build/releases/past-releases/ to find the AGP-NDK mapping
+    ndkVersion = "23.1.7779620"
+
+    @Suppress("UnstableApiUsage")
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 }
@@ -71,12 +83,12 @@ dependencies {
     api(projects.sentry)
     api(projects.sentryAndroidCore)
 
-    implementation("io.sentry:sentry-native-ndk:0.7.5")
+    implementation(Config.Libs.sentryNativeNdk)
 
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
 
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(Config.TestLibs.kotlinTestJunit)
-
     testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(projects.sentryTestSupport)
 }

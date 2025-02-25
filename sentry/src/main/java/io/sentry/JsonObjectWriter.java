@@ -53,6 +53,12 @@ public final class JsonObjectWriter implements ObjectWriter {
   }
 
   @Override
+  public ObjectWriter jsonValue(@Nullable String value) throws IOException {
+    jsonWriter.jsonValue(value);
+    return this;
+  }
+
+  @Override
   public JsonObjectWriter nullValue() throws IOException {
     jsonWriter.nullValue();
     return this;
@@ -101,6 +107,11 @@ public final class JsonObjectWriter implements ObjectWriter {
       throws IOException {
     jsonObjectSerializer.serialize(this, logger, object);
     return this;
+  }
+
+  @Override
+  public void setLenient(final boolean lenient) {
+    jsonWriter.setLenient(lenient);
   }
 
   public void setIndent(final @NotNull String indent) {

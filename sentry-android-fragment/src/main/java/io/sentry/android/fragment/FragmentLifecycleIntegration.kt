@@ -13,7 +13,7 @@ import io.sentry.SentryOptions
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.io.Closeable
 
-class FragmentLifecycleIntegration(
+public class FragmentLifecycleIntegration(
     private val application: Application,
     private val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
     private val enableAutoFragmentLifecycleTracing: Boolean
@@ -22,19 +22,19 @@ class FragmentLifecycleIntegration(
     Integration,
     Closeable {
 
-    constructor(application: Application) : this(
+    public constructor(application: Application) : this(
         application = application,
-        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.values().toSet(),
+        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states,
         enableAutoFragmentLifecycleTracing = false
     )
 
-    constructor(
+    public constructor(
         application: Application,
         enableFragmentLifecycleBreadcrumbs: Boolean,
         enableAutoFragmentLifecycleTracing: Boolean
     ) : this(
         application = application,
-        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.values().toSet()
+        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states
             .takeIf { enableFragmentLifecycleBreadcrumbs }
             .orEmpty(),
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
@@ -49,7 +49,7 @@ class FragmentLifecycleIntegration(
 
         application.registerActivityLifecycleCallbacks(this)
         options.logger.log(DEBUG, "FragmentLifecycleIntegration installed.")
-        addIntegrationToSdkVersion(javaClass)
+        addIntegrationToSdkVersion("FragmentLifecycle")
         SentryIntegrationPackageStorage.getInstance()
             .addPackage("maven:io.sentry:sentry-android-fragment", BuildConfig.VERSION_NAME)
     }

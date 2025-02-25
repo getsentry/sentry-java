@@ -9,8 +9,11 @@ import androidx.test.espresso.idling.CountingIdlingResource
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnitRunner
 import io.sentry.Sentry
+import io.sentry.Sentry.OptionsConfiguration
 import io.sentry.android.core.SentryAndroid
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.test.applyTestOptions
+import io.sentry.test.initForTest
 import io.sentry.uitest.android.mockservers.MockRelay
 import java.io.FileInputStream
 import java.util.concurrent.TimeUnit
@@ -77,13 +80,14 @@ abstract class BaseUiTest {
      */
     protected fun initSentry(
         relayWaitForRequests: Boolean = false,
+        context: Context = this.context,
         optionsConfiguration: ((options: SentryAndroidOptions) -> Unit)? = null
     ) {
         relay.waitForRequests = relayWaitForRequests
         if (relayWaitForRequests) {
             IdlingRegistry.getInstance().register(relayIdlingResource)
         }
-        SentryAndroid.init(context) {
+        initForTest(context) {
             it.dsn = mockDsn
             it.isDebug = true
             // We don't use test orchestrator, due to problems with Saucelabs.
@@ -109,4 +113,11 @@ fun classExists(className: String): Boolean {
         // no-op
     }
     return false
+}
+
+fun initForTest(context: Context, optionsConfiguration: OptionsConfiguration<SentryAndroidOptions>) {
+    SentryAndroid.init(context) {
+        applyTestOptions(it)
+        optionsConfiguration.configure(it)
+    }
 }

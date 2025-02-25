@@ -18,7 +18,8 @@ class ContextsTest {
         contexts.setRuntime(SentryRuntime())
         contexts.setGpu(Gpu())
         contexts.setResponse(Response())
-        contexts.trace = SpanContext("op")
+        contexts.setTrace(SpanContext("op"))
+        contexts.setSpring(Spring())
 
         val clone = Contexts(contexts)
 
@@ -32,13 +33,14 @@ class ContextsTest {
         assertNotSame(contexts.gpu, clone.gpu)
         assertNotSame(contexts.trace, clone.trace)
         assertNotSame(contexts.response, clone.response)
+        assertNotSame(contexts.spring, clone.spring)
     }
 
     @Test
     fun `copying contexts will have the same values`() {
         val contexts = Contexts()
         contexts["some-property"] = "some-value"
-        contexts.trace = SpanContext("op")
+        contexts.setTrace(SpanContext("op"))
         contexts.trace!!.description = "desc"
 
         val clone = Contexts(contexts)

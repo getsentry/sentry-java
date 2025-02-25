@@ -19,30 +19,30 @@ import java.util.WeakHashMap
 private const val TRACE_ORIGIN = "auto.ui.fragment"
 
 @Suppress("TooManyFunctions")
-class SentryFragmentLifecycleCallbacks(
+public class SentryFragmentLifecycleCallbacks(
     private val scopes: IScopes = ScopesAdapter.getInstance(),
-    val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
-    val enableAutoFragmentLifecycleTracing: Boolean
+    internal val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
+    internal val enableAutoFragmentLifecycleTracing: Boolean
 ) : FragmentLifecycleCallbacks() {
 
-    constructor(
+    public constructor(
         scopes: IScopes,
         enableFragmentLifecycleBreadcrumbs: Boolean,
         enableAutoFragmentLifecycleTracing: Boolean
     ) : this(
         scopes = scopes,
-        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.values().toSet()
+        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states
             .takeIf { enableFragmentLifecycleBreadcrumbs }
             .orEmpty(),
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
     )
 
-    constructor(
+    public constructor(
         enableFragmentLifecycleBreadcrumbs: Boolean = true,
         enableAutoFragmentLifecycleTracing: Boolean = false
     ) : this(
         scopes = ScopesAdapter.getInstance(),
-        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.values().toSet()
+        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states
             .takeIf { enableFragmentLifecycleBreadcrumbs }
             .orEmpty(),
         enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
@@ -52,7 +52,7 @@ class SentryFragmentLifecycleCallbacks(
 
     private val fragmentsWithOngoingTransactions = WeakHashMap<Fragment, ISpan>()
 
-    val enableFragmentLifecycleBreadcrumbs: Boolean
+    public val enableFragmentLifecycleBreadcrumbs: Boolean
         get() = filterFragmentLifecycleBreadcrumbs.isNotEmpty()
 
     override fun onFragmentAttached(
@@ -81,6 +81,9 @@ class SentryFragmentLifecycleCallbacks(
         // we only start the tracing for the fragment if the fragment has been added to its activity
         // and not only to the backstack
         if (fragment.isAdded) {
+            if (scopes.options.isEnableScreenTracking) {
+                scopes.configureScope { it.screen = getFragmentName(fragment) }
+            }
             startTracing(fragment)
         }
     }
@@ -187,7 +190,7 @@ class SentryFragmentLifecycleCallbacks(
         }
     }
 
-    companion object {
-        const val FRAGMENT_LOAD_OP = "ui.load"
+    public companion object {
+        public const val FRAGMENT_LOAD_OP: String = "ui.load"
     }
 }

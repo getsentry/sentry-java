@@ -5,26 +5,33 @@ import static io.sentry.SentryLevel.INFO;
 
 import io.sentry.DataCategory;
 import io.sentry.Hint;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
-import io.sentry.util.CollectionUtils;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.StringUtils;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Controls retry limits on different category types sent to Sentry. */
-public final class RateLimiter {
+public final class RateLimiter implements Closeable {
 
   private static final int HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS = 60000;
 
@@ -32,6 +39,9 @@ public final class RateLimiter {
   private final @NotNull SentryOptions options;
   private final @NotNull Map<DataCategory, @NotNull Date> sentryRetryAfterLimit =
       new ConcurrentHashMap<>();
+  private final @NotNull List<IRateLimitObserver> rateLimitObservers = new CopyOnWriteArrayList<>();
+  private @Nullable Timer timer = null;
+  private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
 
   public RateLimiter(
       final @NotNull ICurrentDateProvider currentDateProvider,
@@ -65,7 +75,10 @@ public final class RateLimiter {
     if (dropItems != null) {
       options
           .getLogger()
-          .log(SentryLevel.INFO, "%d items will be dropped due rate limiting.", dropItems.size());
+          .log(
+              SentryLevel.WARNING,
+              "%d envelope items will be dropped due rate limiting.",
+              dropItems.size());
 
       //       Need a new envelope
       List<SentryEnvelopeItem> toSend = new ArrayList<>();
@@ -77,7 +90,9 @@ public final class RateLimiter {
 
       // no reason to continue
       if (toSend.isEmpty()) {
-        options.getLogger().log(SentryLevel.INFO, "Envelope discarded due all items rate limited.");
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Envelope discarded due all items rate limited.");
 
         markHintWhenSendingFailed(hint, false);
         return null;
@@ -136,9 +151,16 @@ public final class RateLimiter {
    * @param hint the Hints
    * @param retry if event should be retried or not
    */
-  private static void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
+  private void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
     HintUtils.runIfHasType(hint, SubmissionResult.class, result -> result.setResult(false));
     HintUtils.runIfHasType(hint, Retryable.class, retryable -> retryable.setRetry(retry));
+    HintUtils.runIfHasType(
+        hint,
+        DiskFlushNotification.class,
+        (diskFlushNotification) -> {
+          diskFlushNotification.markFlushed();
+          options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired due to rate limit");
+        });
   }
 
   /**
@@ -169,14 +191,12 @@ public final class RateLimiter {
         return DataCategory.Attachment;
       case "profile":
         return DataCategory.Profile;
-        // The envelope item type used for metrics is statsd, whereas the client report category is
-        // metric_bucket
-      case "statsd":
-        return DataCategory.MetricBucket;
       case "transaction":
         return DataCategory.Transaction;
       case "check_in":
         return DataCategory.Monitor;
+      case "replay_video":
+        return DataCategory.Replay;
       default:
         return DataCategory.Unknown;
     }
@@ -205,7 +225,7 @@ public final class RateLimiter {
         // These can be ignored by the SDK.
         // final String scope = rateLimit.length > 2 ? rateLimit[2] : null;
         // final String reasonCode = rateLimit.length > 3 ? rateLimit[3] : null;
-        final @Nullable String limitNamespaces = rateLimit.length > 4 ? rateLimit[4] : null;
+        // final @Nullable String limitNamespaces = rateLimit.length > 4 ? rateLimit[4] : null;
 
         if (rateLimit.length > 0) {
           final String retryAfter = rateLimit[0];
@@ -236,17 +256,6 @@ public final class RateLimiter {
                 // we dont apply rate limiting for unknown categories
                 if (DataCategory.Unknown.equals(dataCategory)) {
                   continue;
-                }
-                // SDK doesn't support namespaces, yet. Namespaces can be returned by relay in case
-                // of metric_bucket items. If the namespaces are empty or contain "custom" we apply
-                // the rate limit to all metrics, otherwise to none.
-                if (DataCategory.MetricBucket.equals(dataCategory)
-                    && limitNamespaces != null
-                    && !limitNamespaces.equals("")) {
-                  final String[] namespaces = limitNamespaces.split(";", -1);
-                  if (namespaces.length > 0 && !CollectionUtils.contains(namespaces, "custom")) {
-                    continue;
-                  }
                 }
 
                 applyRetryAfterOnlyIfLonger(dataCategory, date);
@@ -280,6 +289,23 @@ public final class RateLimiter {
     // only overwrite its previous date if the limit is even longer
     if (oldDate == null || date.after(oldDate)) {
       sentryRetryAfterLimit.put(dataCategory, date);
+
+      notifyRateLimitObservers();
+
+      try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
+        if (timer == null) {
+          timer = new Timer(true);
+        }
+
+        timer.schedule(
+            new TimerTask() {
+              @Override
+              public void run() {
+                notifyRateLimitObservers();
+              }
+            },
+            date);
+      }
     }
   }
 
@@ -300,5 +326,42 @@ public final class RateLimiter {
       }
     }
     return retryAfterMillis;
+  }
+
+  private void notifyRateLimitObservers() {
+    for (IRateLimitObserver observer : rateLimitObservers) {
+      observer.onRateLimitChanged(this);
+    }
+  }
+
+  public void addRateLimitObserver(@NotNull final IRateLimitObserver observer) {
+    rateLimitObservers.add(observer);
+  }
+
+  public void removeRateLimitObserver(@NotNull final IRateLimitObserver observer) {
+    rateLimitObservers.remove(observer);
+  }
+
+  @Override
+  public void close() throws IOException {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
+      if (timer != null) {
+        timer.cancel();
+        timer = null;
+      }
+    }
+    rateLimitObservers.clear();
+  }
+
+  public interface IRateLimitObserver {
+    /**
+     * Invoked whenever the rate limit changed. You should use {@link
+     * RateLimiter#isActiveForCategory(DataCategory)} to check whether the category you're
+     * interested in has changed.
+     *
+     * @param rateLimiter this {@link RateLimiter} instance which you can use to check if the rate
+     *     limit is active for a specific category
+     */
+    void onRateLimitChanged(@NotNull RateLimiter rateLimiter);
   }
 }

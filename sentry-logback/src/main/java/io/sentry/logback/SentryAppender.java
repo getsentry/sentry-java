@@ -13,6 +13,7 @@ import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.ITransportFactory;
+import io.sentry.InitPriority;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
@@ -49,24 +50,22 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
   @Override
   public void start() {
-    // NOTE: logback.xml properties will only be applied if the SDK has not yet been initialized
-    if (!Sentry.isEnabled()) {
-      if (options.getDsn() == null || !options.getDsn().endsWith("_IS_UNDEFINED")) {
-        options.setEnableExternalConfiguration(true);
-        options.setSentryClientName(
-            BuildConfig.SENTRY_LOGBACK_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
-        options.setSdkVersion(createSdkVersion(options));
-        Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
-        try {
-          Sentry.init(options);
-        } catch (IllegalArgumentException e) {
-          addWarn("Failed to init Sentry during appender initialization: " + e.getMessage());
-        }
-      } else {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, "DSN is null. SentryAppender is not being initialized");
+    if (options.getDsn() == null || !options.getDsn().endsWith("_IS_UNDEFINED")) {
+      options.setEnableExternalConfiguration(true);
+      options.setInitPriority(InitPriority.LOWEST);
+      options.setSentryClientName(
+          BuildConfig.SENTRY_LOGBACK_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
+      options.setSdkVersion(createSdkVersion(options));
+      Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
+      try {
+        Sentry.init(options);
+      } catch (IllegalArgumentException e) {
+        addWarn("Failed to init Sentry during appender initialization: " + e.getMessage());
       }
+    } else if (!Sentry.isEnabled()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "DSN is null. SentryAppender is not being initialized");
     }
     addPackageAndIntegrationInfo();
     super.start();

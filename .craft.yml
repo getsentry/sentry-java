@@ -1,10 +1,6 @@
 minVersion: 0.29.3
 changelogPolicy: auto
 targets:
-  - name: symbol-collector
-    includeNames: /libsentry(-android)?\.so/
-    batchType: android
-    bundleIdPrefix: sentry-android-ndk-
   - name: maven
     includeNames: /^sentry.*$/
     gradleCliPath: ./gradlew
@@ -43,10 +39,15 @@ targets:
       maven:io.sentry:sentry-openfeign:
       maven:io.sentry:sentry-opentelemetry-agent:
       maven:io.sentry:sentry-opentelemetry-agentcustomization:
+      maven:io.sentry:sentry-opentelemetry-agentless:
+      maven:io.sentry:sentry-opentelemetry-agentless-spring:
+      maven:io.sentry:sentry-opentelemetry-bootstrap:
       maven:io.sentry:sentry-opentelemetry-core:
       maven:io.sentry:sentry-apollo:
       maven:io.sentry:sentry-jdbc:
       maven:io.sentry:sentry-graphql:
+      maven:io.sentry:sentry-graphql-22:
+      maven:io.sentry:sentry-graphql-core:
       maven:io.sentry:sentry-quartz:
       maven:io.sentry:sentry-okhttp:
       maven:io.sentry:sentry-android-navigation:
@@ -55,3 +56,4 @@ targets:
       maven:io.sentry:sentry-compose-desktop:
       maven:io.sentry:sentry-apollo-3:
       maven:io.sentry:sentry-android-sqlite:
+      maven:io.sentry:sentry-android-replay:

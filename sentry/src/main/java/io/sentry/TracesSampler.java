@@ -1,35 +1,27 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
-import java.security.SecureRandom;
+import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class TracesSampler {
-  private static final @NotNull Double DEFAULT_TRACES_SAMPLE_RATE = 1.0;
-
   private final @NotNull SentryOptions options;
-  private final @NotNull SecureRandom random;
 
   public TracesSampler(final @NotNull SentryOptions options) {
-    this(Objects.requireNonNull(options, "options are required"), new SecureRandom());
+    this.options = Objects.requireNonNull(options, "options are required");
   }
 
-  @TestOnly
-  TracesSampler(final @NotNull SentryOptions options, final @NotNull SecureRandom random) {
-    this.options = options;
-    this.random = random;
-  }
-
+  @SuppressWarnings("deprecation")
   @NotNull
   public TracesSamplingDecision sample(final @NotNull SamplingContext samplingContext) {
+    final @NotNull Double sampleRand = samplingContext.getSampleRand();
     final TracesSamplingDecision samplingContextSamplingDecision =
         samplingContext.getTransactionContext().getSamplingDecision();
     if (samplingContextSamplingDecision != null) {
-      return samplingContextSamplingDecision;
+      return SampleRateUtils.backfilledSampleRand(samplingContextSamplingDecision);
     }
 
     Double profilesSampleRate = null;
@@ -45,7 +37,7 @@ public final class TracesSampler {
     if (profilesSampleRate == null) {
       profilesSampleRate = options.getProfilesSampleRate();
     }
-    Boolean profilesSampled = profilesSampleRate != null && sample(profilesSampleRate);
+    Boolean profilesSampled = profilesSampleRate != null && sample(profilesSampleRate, sampleRand);
 
     if (options.getTracesSampler() != null) {
       Double samplerResult = null;
@@ -58,39 +50,39 @@ public final class TracesSampler {
       }
       if (samplerResult != null) {
         return new TracesSamplingDecision(
-            sample(samplerResult), samplerResult, profilesSampled, profilesSampleRate);
+            sample(samplerResult, sampleRand),
+            samplerResult,
+            sampleRand,
+            profilesSampled,
+            profilesSampleRate);
       }
     }
 
     final TracesSamplingDecision parentSamplingDecision =
         samplingContext.getTransactionContext().getParentSamplingDecision();
     if (parentSamplingDecision != null) {
-      return parentSamplingDecision;
+      return SampleRateUtils.backfilledSampleRand(parentSamplingDecision);
     }
 
     final @Nullable Double tracesSampleRateFromOptions = options.getTracesSampleRate();
-    final @Nullable Boolean isEnableTracing = options.getEnableTracing();
-    final @Nullable Double defaultSampleRate =
-        Boolean.TRUE.equals(isEnableTracing) ? DEFAULT_TRACES_SAMPLE_RATE : null;
-    final @Nullable Double tracesSampleRateOrDefault =
-        tracesSampleRateFromOptions == null ? defaultSampleRate : tracesSampleRateFromOptions;
     final @NotNull Double downsampleFactor =
         Math.pow(2, options.getBackpressureMonitor().getDownsampleFactor());
     final @Nullable Double downsampledTracesSampleRate =
-        tracesSampleRateOrDefault == null ? null : tracesSampleRateOrDefault / downsampleFactor;
+        tracesSampleRateFromOptions == null ? null : tracesSampleRateFromOptions / downsampleFactor;
 
     if (downsampledTracesSampleRate != null) {
       return new TracesSamplingDecision(
-          sample(downsampledTracesSampleRate),
+          sample(downsampledTracesSampleRate, sampleRand),
           downsampledTracesSampleRate,
+          sampleRand,
           profilesSampled,
           profilesSampleRate);
     }
 
-    return new TracesSamplingDecision(false, null, false, null);
+    return new TracesSamplingDecision(false, null, sampleRand, false, null);
   }
 
-  private boolean sample(final @NotNull Double aDouble) {
-    return !(aDouble < random.nextDouble());
+  private boolean sample(final @NotNull Double sampleRate, final @NotNull Double sampleRand) {
+    return !(sampleRate < sampleRand);
   }
 }

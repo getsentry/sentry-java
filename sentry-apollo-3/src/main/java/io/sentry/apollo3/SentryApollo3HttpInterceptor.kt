@@ -31,12 +31,12 @@ import io.sentry.util.HttpUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import io.sentry.vendor.Base64
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
-import java.util.Locale
 
 private const val TRACE_ORIGIN = "auto.graphql.apollo3"
 
@@ -120,11 +120,13 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
     private fun maybeAddTracingHeaders(scopes: IScopes, request: HttpRequest, span: ISpan?): HttpRequest {
         var cleanedHeaders = removeSentryInternalHeaders(request.headers).toMutableList()
 
-        TracingUtils.traceIfAllowed(scopes, request.url, request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value }, span)?.let {
-            cleanedHeaders.add(HttpHeader(it.sentryTraceHeader.name, it.sentryTraceHeader.value))
-            it.baggageHeader?.let { baggageHeader ->
-                cleanedHeaders = cleanedHeaders.filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }.toMutableList().apply {
-                    add(HttpHeader(baggageHeader.name, baggageHeader.value))
+        if (!isIgnored()) {
+            TracingUtils.traceIfAllowed(scopes, request.url, request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value }, span)?.let {
+                cleanedHeaders.add(HttpHeader(it.sentryTraceHeader.name, it.sentryTraceHeader.value))
+                it.baggageHeader?.let { baggageHeader ->
+                    cleanedHeaders = cleanedHeaders.filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }.toMutableList().apply {
+                        add(HttpHeader(baggageHeader.name, baggageHeader.value))
+                    }
                 }
             }
         }
@@ -134,6 +136,10 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         }
 
         return requestBuilder.build()
+    }
+
+    private fun isIgnored(): Boolean {
+        return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
     }
 
     private fun removeSentryInternalHeaders(headers: List<HttpHeader>): List<HttpHeader> {
@@ -170,7 +176,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             variables?.let {
                 setData("variables", it)
             }
-            setData(HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT))
+            setData(HTTP_METHOD_KEY, method.uppercase())
         }
     }
 

@@ -3,6 +3,7 @@ package io.sentry
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.createSentryClientMock
+import io.sentry.test.initForTest
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
@@ -19,6 +20,9 @@ class HubAdapterTest {
 
     @BeforeTest
     fun `set up`() {
+        initForTest {
+            it.dsn = "https://key@localhost/proj"
+        }
         Sentry.setCurrentScopes(scopes)
     }
 
@@ -226,11 +230,6 @@ class HubAdapterTest {
 
         HubAdapter.getInstance().startTransaction(transactionContext, transactionOptions)
         verify(scopes).startTransaction(eq(transactionContext), eq(transactionOptions))
-    }
-
-    @Test fun `traceHeaders calls Hub`() {
-        HubAdapter.getInstance().traceHeaders()
-        verify(scopes).traceHeaders()
     }
 
     @Test fun `setSpanContext calls Hub`() {

@@ -23,7 +23,9 @@ class TraceContextSerializationTest {
             "c052c566-6619-45f5-a61f-172802afa39a",
             "0252ec25-cd0a-4230-bd2f-936a4585637e",
             "0.00000021",
-            "true"
+            "true",
+            SentryId("3367f5196c494acaae85bbbd535379aa"),
+            "0.00000012"
         )
     }
     private val fixture = Fixture()
@@ -57,6 +59,7 @@ class TraceContextSerializationTest {
         whenever(scopes.options).thenReturn(SentryOptions())
         baggage.setValuesFromTransaction(
             SentryId(),
+            SentryId(),
             SentryOptions().apply {
                 dsn = dsnString
                 environment = "prod"
@@ -68,15 +71,6 @@ class TraceContextSerializationTest {
             TransactionNameSource.ROUTE
         )
         return baggage.toTraceContext()!!
-    }
-
-    @Test
-    fun `can still parse legacy JSON with non flat user`() {
-        val expectedJson = sanitizedFile("json/trace_state_no_sample_rate.json")
-        val legacyJson = sanitizedFile("json/trace_state_legacy.json")
-        val actual = deserialize(legacyJson)
-        val actualJson = serialize(actual)
-        assertEquals(expectedJson, actualJson)
     }
 
     // Helper

@@ -3,7 +3,7 @@ package io.sentry;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
-import java.util.List;
+import io.sentry.util.TracingUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,60 +18,17 @@ public final class TransactionContext extends SpanContext {
   private @Nullable TracesSamplingDecision parentSamplingDecision;
   private boolean isForNextAppStart = false;
 
-  /**
-   * Creates {@link TransactionContext} from sentry-trace header.
-   *
-   * @param name - the transaction name
-   * @param operation - the operation
-   * @param sentryTrace - the sentry-trace header
-   * @deprecated use {@link Sentry#continueTrace(String, List)} and setters for name and operation
-   *     here instead.
-   * @return the transaction contexts
-   */
-  @Deprecated
-  public static @NotNull TransactionContext fromSentryTrace(
-      final @NotNull String name,
-      final @NotNull String operation,
-      final @NotNull SentryTraceHeader sentryTrace) {
-    @Nullable Boolean parentSampled = sentryTrace.isSampled();
-    TracesSamplingDecision samplingDecision =
-        parentSampled == null ? null : new TracesSamplingDecision(parentSampled);
-
-    TransactionContext transactionContext =
-        new TransactionContext(
-            sentryTrace.getTraceId(),
-            new SpanId(),
-            sentryTrace.getSpanId(),
-            samplingDecision,
-            null);
-
-    transactionContext.setName(name);
-    transactionContext.setTransactionNameSource(TransactionNameSource.CUSTOM);
-    transactionContext.setOperation(operation);
-
-    return transactionContext;
-  }
-
   @ApiStatus.Internal
   public static TransactionContext fromPropagationContext(
       final @NotNull PropagationContext propagationContext) {
-    @Nullable Boolean parentSampled = propagationContext.isSampled();
-    TracesSamplingDecision samplingDecision =
-        parentSampled == null ? null : new TracesSamplingDecision(parentSampled);
-
-    @Nullable Baggage baggage = propagationContext.getBaggage();
-
-    if (baggage != null) {
-      baggage.freeze();
-
-      Double sampleRate = baggage.getSampleRateDouble();
-      Boolean sampled = parentSampled != null ? parentSampled.booleanValue() : false;
-      if (sampleRate != null) {
-        samplingDecision = new TracesSamplingDecision(sampled, sampleRate);
-      } else {
-        samplingDecision = new TracesSamplingDecision(sampled);
-      }
-    }
+    final @Nullable Boolean parentSampled = propagationContext.isSampled();
+    final @NotNull Baggage baggage = propagationContext.getBaggage();
+    final @Nullable Double sampleRate = baggage.getSampleRateDouble();
+    final @Nullable TracesSamplingDecision samplingDecision =
+        parentSampled == null
+            ? null
+            : new TracesSamplingDecision(
+                parentSampled, sampleRate, propagationContext.getSampleRand());
 
     return new TransactionContext(
         propagationContext.getTraceId(),
@@ -124,6 +81,7 @@ public final class TransactionContext extends SpanContext {
     this.name = Objects.requireNonNull(name, "name is required");
     this.transactionNameSource = transactionNameSource;
     this.setSamplingDecision(samplingDecision);
+    this.baggage = TracingUtils.ensureBaggage(null, samplingDecision);
   }
 
   @ApiStatus.Internal
@@ -137,7 +95,7 @@ public final class TransactionContext extends SpanContext {
     this.name = DEFAULT_TRANSACTION_NAME;
     this.parentSamplingDecision = parentSamplingDecision;
     this.transactionNameSource = DEFAULT_NAME_SOURCE;
-    this.baggage = baggage;
+    this.baggage = TracingUtils.ensureBaggage(baggage, parentSamplingDecision);
   }
 
   public @NotNull String getName() {

@@ -9,7 +9,7 @@ import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.opentelemetry.sdk.trace.data.EventData;
-import io.opentelemetry.sdk.trace.internal.data.ExceptionEventData;
+import io.opentelemetry.sdk.trace.data.ExceptionEventData;
 import io.sentry.Baggage;
 import io.sentry.IScopes;
 import io.sentry.PropagationContext;
@@ -52,11 +52,11 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
             ? scopesFromContext.forkedCurrentScope("spanprocessor")
             : Sentry.forkedRootScopes("spanprocessor");
 
-    final @Nullable OtelSpanWrapper sentryParentSpan =
+    final @Nullable IOtelSpanWrapper sentryParentSpan =
         spanStorage.getSentrySpan(otelSpan.getParentSpanContext());
-    @NotNull
+    @Nullable
     TracesSamplingDecision samplingDecision =
-        OtelSamplingUtil.extractSamplingDecisionOrDefault(otelSpan.toSpanData().getAttributes());
+        OtelSamplingUtil.extractSamplingDecision(otelSpan.toSpanData().getAttributes());
     @Nullable Baggage baggage = null;
     @Nullable SpanId sentryParentSpanId = null;
     otelSpan.setAttribute(IS_REMOTE_PARENT, otelSpan.getParentSpanContext().isRemote());
@@ -75,27 +75,20 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
         baggage = baggageFromContext;
       }
 
-      final @Nullable Boolean baggageMutable =
-          otelSpan.getAttribute(InternalSemanticAttributes.BAGGAGE_MUTABLE);
       final @Nullable String baggageString =
           otelSpan.getAttribute(InternalSemanticAttributes.BAGGAGE);
       if (baggageString != null) {
         baggage = Baggage.fromHeader(baggageString);
-        if (baggageMutable == true) {
-          baggage.freeze();
-        }
       }
 
-      final boolean sampled =
-          samplingDecision != null
-              ? samplingDecision.getSampled()
-              : otelSpan.getSpanContext().isSampled();
+      final @Nullable Boolean sampled = isSampled(otelSpan, samplingDecision);
 
       final @NotNull PropagationContext propagationContext =
-          sentryTraceHeader == null
-              ? new PropagationContext(
-                  new SentryId(traceId), sentrySpanId, sentryParentSpanId, baggage, sampled)
-              : PropagationContext.fromHeaders(sentryTraceHeader, baggage, sentrySpanId);
+          new PropagationContext(
+              new SentryId(traceId), sentrySpanId, sentryParentSpanId, baggage, sampled);
+
+      baggage = propagationContext.getBaggage();
+      baggage.setValuesFromSamplingDecision(samplingDecision);
 
       updatePropagationContext(scopes, propagationContext);
     }
@@ -103,7 +96,7 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
     final @NotNull SpanContext spanContext = otelSpan.getSpanContext();
     final @NotNull SentryDate startTimestamp =
         new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos());
-    final @NotNull OtelSpanWrapper sentrySpan =
+    final @NotNull IOtelSpanWrapper sentrySpan =
         new OtelSpanWrapper(
             otelSpan,
             scopes,
@@ -114,6 +107,21 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
             baggage);
     sentrySpan.getSpanContext().setOrigin(SentrySpanExporter.TRACE_ORIGIN);
     spanStorage.storeSentrySpan(spanContext, sentrySpan);
+  }
+
+  private @Nullable Boolean isSampled(
+      final @NotNull ReadWriteSpan otelSpan,
+      final @Nullable TracesSamplingDecision samplingDecision) {
+    if (samplingDecision != null) {
+      return samplingDecision.getSampled();
+    }
+
+    if (otelSpan.getSpanContext().isSampled()) {
+      return true;
+    }
+
+    // tracing without performance
+    return null;
   }
 
   private static void updatePropagationContext(
@@ -134,7 +142,7 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
 
   @Override
   public void onEnd(final @NotNull ReadableSpan spanBeingEnded) {
-    final @Nullable OtelSpanWrapper sentrySpan =
+    final @Nullable IOtelSpanWrapper sentrySpan =
         spanStorage.getSentrySpan(spanBeingEnded.getSpanContext());
     if (sentrySpan != null) {
       final @NotNull SentryDate finishDate =

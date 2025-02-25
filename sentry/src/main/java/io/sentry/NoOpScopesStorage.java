@@ -12,6 +12,9 @@ public final class NoOpScopesStorage implements IScopesStorage {
   }
 
   @Override
+  public void init() {}
+
+  @Override
   public ISentryLifecycleToken set(@Nullable IScopes scopes) {
     return NoOpScopesLifecycleToken.getInstance();
   }

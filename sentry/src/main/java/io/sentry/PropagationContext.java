@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.TracingUtils;
 import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -56,7 +57,7 @@ public final class PropagationContext {
 
   private @Nullable Boolean sampled;
 
-  private @Nullable Baggage baggage;
+  private final @NotNull Baggage baggage;
 
   public PropagationContext() {
     this(new SentryId(), new SpanId(), null, null, null);
@@ -67,16 +68,8 @@ public final class PropagationContext {
         propagationContext.getTraceId(),
         propagationContext.getSpanId(),
         propagationContext.getParentSpanId(),
-        cloneBaggage(propagationContext.getBaggage()),
+        propagationContext.getBaggage(),
         propagationContext.isSampled());
-  }
-
-  private static @Nullable Baggage cloneBaggage(final @Nullable Baggage baggage) {
-    if (baggage != null) {
-      return new Baggage(baggage);
-    }
-
-    return null;
   }
 
   public PropagationContext(
@@ -88,7 +81,7 @@ public final class PropagationContext {
     this.traceId = traceId;
     this.spanId = spanId;
     this.parentSpanId = parentSpanId;
-    this.baggage = baggage;
+    this.baggage = TracingUtils.ensureBaggage(baggage, sampled, null, null);
     this.sampled = sampled;
   }
 
@@ -116,12 +109,8 @@ public final class PropagationContext {
     this.parentSpanId = parentSpanId;
   }
 
-  public @Nullable Baggage getBaggage() {
+  public @NotNull Baggage getBaggage() {
     return baggage;
-  }
-
-  public void setBaggage(final @Nullable Baggage baggage) {
-    this.baggage = baggage;
   }
 
   public @Nullable Boolean isSampled() {
@@ -138,5 +127,17 @@ public final class PropagationContext {
     }
 
     return null;
+  }
+
+  public @NotNull SpanContext toSpanContext() {
+    final SpanContext spanContext = new SpanContext(traceId, spanId, "default", null, null);
+    spanContext.setOrigin("auto");
+    return spanContext;
+  }
+
+  public @NotNull Double getSampleRand() {
+    final @Nullable Double sampleRand = baggage.getSampleRandDouble();
+    // should never be null since we ensure it in ctor
+    return sampleRand == null ? 0.0 : sampleRand;
   }
 }

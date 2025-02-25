@@ -27,6 +27,7 @@ import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.mock.web.MockServletContext
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.web.util.ContentCachingRequestWrapper
 import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -248,7 +249,8 @@ class SentrySpringFilterTest {
             TestParams(maxRequestBodySize = SMALL, body = "x".repeat(1001), expectedToBeCached = false),
             TestParams(maxRequestBodySize = MEDIUM, body = "x".repeat(1001), expectedToBeCached = true),
             TestParams(maxRequestBodySize = MEDIUM, body = "x".repeat(10001), expectedToBeCached = false),
-            TestParams(maxRequestBodySize = ALWAYS, body = "x".repeat(10001), expectedToBeCached = true)
+            TestParams(maxRequestBodySize = ALWAYS, body = "x".repeat(10001), expectedToBeCached = true),
+            TestParams(maxRequestBodySize = SMALL, body = "xxx", contentType = "application/x-www-form-urlencoded", expectedToBeCached = true)
         )
 
         params.forEach { param ->
@@ -272,7 +274,7 @@ class SentrySpringFilterTest {
 
                 verify(fixture.chain).doFilter(
                     check {
-                        assertEquals(param.expectedToBeCached, it is CachedBodyHttpServletRequest)
+                        assertEquals(param.expectedToBeCached, it is ContentCachingRequestWrapper)
                     },
                     any()
                 )

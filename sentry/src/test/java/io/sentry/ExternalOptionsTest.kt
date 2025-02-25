@@ -107,13 +107,6 @@ class ExternalOptionsTest {
     }
 
     @Test
-    fun `creates options with enableTracing using external properties`() {
-        withPropertiesFile("enable-tracing=true") {
-            assertEquals(true, it.enableTracing)
-        }
-    }
-
-    @Test
     fun `creates options with tracesSampleRate using external properties`() {
         withPropertiesFile("traces-sample-rate=0.2") {
             assertEquals(0.2, it.tracesSampleRate)
@@ -217,6 +210,15 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with ignored error patterns using external properties`() {
+        val logger = mock<ILogger>()
+        withPropertiesFile("ignored-errors=Some error,Another .*", logger) { options ->
+            assertTrue(options.ignoredErrors!!.contains("Some error"))
+            assertTrue(options.ignoredErrors!!.contains("Another .*"))
+        }
+    }
+
+    @Test
     fun `creates options with single bundle ID using external properties`() {
         withPropertiesFile("bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411") { options ->
             assertTrue(options.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411")))
@@ -269,6 +271,13 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with ignoredTransactions`() {
+        withPropertiesFile("ignored-transactions=transactionName1,transactionName2") { options ->
+            assertTrue(options.ignoredTransactions!!.containsAll(listOf("transactionName1", "transactionName2")))
+        }
+    }
+
+    @Test
     fun `creates options with enableBackpressureHandling set to false`() {
         withPropertiesFile("enable-backpressure-handling=false") { options ->
             assertTrue(options.isEnableBackpressureHandling == false)
@@ -290,6 +299,41 @@ class ExternalOptionsTest {
     fun `creates options with sendDefaultPii set to true`() {
         withPropertiesFile("send-default-pii=true") { options ->
             assertTrue(options.isSendDefaultPii == true)
+        }
+    }
+
+    @Test
+    fun `creates options with forceInit set to true`() {
+        withPropertiesFile("force-init=true") { options ->
+            assertTrue(options.isForceInit == true)
+        }
+    }
+
+    @Test
+    fun `creates options with enableSpotlight set to true`() {
+        withPropertiesFile("enable-spotlight=true") { options ->
+            assertTrue(options.isEnableSpotlight == true)
+        }
+    }
+
+    @Test
+    fun `creates options with spotlightConnectionUrl set`() {
+        withPropertiesFile("spotlight-connection-url=http://local.sentry.io:1234") { options ->
+            assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
+        }
+    }
+
+    @Test
+    fun `creates options with globalHubMode set to true`() {
+        withPropertiesFile("global-hub-mode=true") { options ->
+            assertTrue(options.isGlobalHubMode == true)
+        }
+    }
+
+    @Test
+    fun `creates options with globalHubMode set to false`() {
+        withPropertiesFile("global-hub-mode=false") { options ->
+            assertTrue(options.isGlobalHubMode == false)
         }
     }
 

@@ -9,6 +9,7 @@ import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ITransportFactory;
+import io.sentry.InitPriority;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
@@ -116,28 +117,27 @@ public class SentryAppender extends AbstractAppender {
 
   @Override
   public void start() {
-    if (!Sentry.isEnabled()) {
-      try {
-        Sentry.init(
-            options -> {
-              options.setEnableExternalConfiguration(true);
-              options.setDsn(dsn);
-              if (debug != null) {
-                options.setDebug(debug);
+    try {
+      Sentry.init(
+          options -> {
+            options.setEnableExternalConfiguration(true);
+            options.setInitPriority(InitPriority.LOWEST);
+            options.setDsn(dsn);
+            if (debug != null) {
+              options.setDebug(debug);
+            }
+            options.setSentryClientName(
+                BuildConfig.SENTRY_LOG4J2_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
+            options.setSdkVersion(createSdkVersion(options));
+            if (contextTags != null) {
+              for (final String contextTag : contextTags) {
+                options.addContextTag(contextTag);
               }
-              options.setSentryClientName(
-                  BuildConfig.SENTRY_LOG4J2_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
-              options.setSdkVersion(createSdkVersion(options));
-              if (contextTags != null) {
-                for (final String contextTag : contextTags) {
-                  options.addContextTag(contextTag);
-                }
-              }
-              Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
-            });
-      } catch (IllegalArgumentException e) {
-        LOGGER.warn("Failed to init Sentry during appender initialization: " + e.getMessage());
-      }
+            }
+            Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
+          });
+    } catch (IllegalArgumentException e) {
+      LOGGER.warn("Failed to init Sentry during appender initialization: " + e.getMessage());
     }
     addPackageAndIntegrationInfo();
     super.start();
