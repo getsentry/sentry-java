@@ -105,6 +105,11 @@ final class ManifestMetadataReader {
 
   static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
 
+  static final String IGNORED_ERRORS = "io.sentry.ignored-errors";
+
+  static final String ENABLE_AUTO_TRACE_ID_GENERATION =
+      "io.sentry.traces.enable-auto-id-generation";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -378,6 +383,13 @@ final class ManifestMetadataReader {
             readBool(
                 metadata, logger, ENABLE_SCOPE_PERSISTENCE, options.isEnableScopePersistence()));
 
+        options.setEnableAutoTraceIdGeneration(
+            readBool(
+                metadata,
+                logger,
+                ENABLE_AUTO_TRACE_ID_GENERATION,
+                options.isEnableAutoTraceIdGeneration()));
+
         if (options.getSessionReplay().getSessionSampleRate() == null) {
           final Double sessionSampleRate =
               readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
@@ -400,6 +412,8 @@ final class ManifestMetadataReader {
         options
             .getSessionReplay()
             .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
+
+        options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
       }
 
       options
