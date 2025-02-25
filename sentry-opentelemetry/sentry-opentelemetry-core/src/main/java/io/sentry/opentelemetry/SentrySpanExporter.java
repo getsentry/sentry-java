@@ -70,7 +70,7 @@ public final class SentrySpanExporter implements SpanExporter {
           );
 
   private final @NotNull List<String> attributeToRemoveByPrefix =
-      Arrays.asList("http.request.header.");
+      Arrays.asList("http.request.header.", "http.response.header.");
   private static final @NotNull Long SPAN_TIMEOUT = DateUtils.secondsToNanos(5 * 60);
 
   public static final String TRACE_ORIGIN = "auto.opentelemetry";
