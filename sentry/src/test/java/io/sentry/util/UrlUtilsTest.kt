@@ -319,4 +319,24 @@ class UrlUtilsTest {
         assertEquals("email=user@sentry.io&b=c", urlDetails.query)
         assertEquals("fragment?q=1&s=2&email=user@sentry.io", urlDetails.fragment)
     }
+
+    @Test
+    fun `extracts path from file url`() {
+        val urlDetails = UrlUtils.parse(
+            "file:///users/sentry/text.txt"
+        )
+        assertEquals("file:///users/sentry/text.txt", urlDetails.url)
+        assertNull(urlDetails.query)
+        assertNull(urlDetails.fragment)
+    }
+
+    @Test
+    fun `does not extract details from websockets url`() {
+        val urlDetails = UrlUtils.parse(
+            "wss://example.com/socket"
+        )
+        assertNull(urlDetails.url)
+        assertNull(urlDetails.query)
+        assertNull(urlDetails.fragment)
+    }
 }
