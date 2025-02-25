@@ -331,7 +331,7 @@ class UrlUtilsTest {
     }
 
     @Test
-    fun `does not extract details from websockets url`() {
+    fun `does not extract details from websockets uri`() {
         val urlDetails = UrlUtils.parse(
             "wss://example.com/socket"
         )
