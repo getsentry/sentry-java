@@ -142,7 +142,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
                   nativeScope.setTrace(
                       spanContext.getTraceId().toString(), spanContext.getSpanId().toString()));
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTraceId failed.");
+      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTrace failed.");
     }
   }
 }

@@ -322,8 +322,12 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
-  public void setTrace(final @NotNull String traceId, final @NotNull String spanId) {
-    Sentry.getCurrentScopes().setTrace(traceId, spanId);
+  public void setTrace(
+      final @NotNull String traceId,
+      final @NotNull String spanId,
+      final @Nullable Double sampleRate,
+      final @Nullable Double sampleRand) {
+    Sentry.getCurrentScopes().setTrace(traceId, spanId, sampleRate, sampleRand);
   }
 
   @Override

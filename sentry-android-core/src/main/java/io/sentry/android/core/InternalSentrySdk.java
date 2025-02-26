@@ -335,9 +335,15 @@ public final class InternalSentrySdk {
    * Continue a trace based on the trace ID and span ID provided
    *
    * @param traceId the trace ID
-   * @param spanId the span ID
+   * @param spanId the trace origin's span ID
+   * @param sampleRate the sample rate used by the origin of the trace
+   * @param sampleRand the random value used to sample with by the origin of the trace
    */
-  public static void setTrace(final @NotNull String traceId, final @NotNull String spanId, final @Nullable String sampleRand) {
-    getCurrentScopes().setTrace(traceId, spanId);
+  public static void setTrace(
+      final @NotNull String traceId,
+      final @NotNull String spanId,
+      final @Nullable Double sampleRate,
+      final @Nullable Double sampleRand) {
+    getCurrentScopes().setTrace(traceId, spanId, sampleRate, sampleRand);
   }
 }
