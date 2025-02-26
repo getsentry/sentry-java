@@ -181,6 +181,118 @@ class OpenTelemetryAttributesExtractorTest {
     }
 
     @Test
+    fun `returns null if no URL in attributes`() {
+        givenAttributes(mapOf())
+
+        val url = whenExtractingUrl()
+
+        assertNull(url)
+    }
+
+    @Test
+    fun `returns full URL if present`() {
+        givenAttributes(
+            mapOf(
+                UrlAttributes.URL_FULL to "https://sentry.io/some/path"
+            )
+        )
+
+        val url = whenExtractingUrl()
+
+        assertEquals("https://sentry.io/some/path", url)
+    }
+
+    @Test
+    fun `returns reconstructed URL if attributes present`() {
+        givenAttributes(
+            mapOf(
+                UrlAttributes.URL_SCHEME to "https",
+                ServerAttributes.SERVER_ADDRESS to "sentry.io",
+                ServerAttributes.SERVER_PORT to 8082L,
+                UrlAttributes.URL_PATH to "/some/path"
+            )
+        )
+
+        val url = whenExtractingUrl()
+
+        assertEquals("https://sentry.io:8082/some/path", url)
+    }
+
+    @Test
+    fun `returns reconstructed URL if attributes present without port`() {
+        givenAttributes(
+            mapOf(
+                UrlAttributes.URL_SCHEME to "https",
+                ServerAttributes.SERVER_ADDRESS to "sentry.io",
+                UrlAttributes.URL_PATH to "/some/path"
+            )
+        )
+
+        val url = whenExtractingUrl()
+
+        assertEquals("https://sentry.io/some/path", url)
+    }
+
+    @Test
+    fun `returns null URL if scheme missing`() {
+        givenAttributes(
+            mapOf(
+                ServerAttributes.SERVER_ADDRESS to "sentry.io",
+                ServerAttributes.SERVER_PORT to 8082L,
+                UrlAttributes.URL_PATH to "/some/path"
+            )
+        )
+
+        val url = whenExtractingUrl()
+
+        assertNull(url)
+    }
+
+    @Test
+    fun `returns null URL if server address missing`() {
+        givenAttributes(
+            mapOf(
+                UrlAttributes.URL_SCHEME to "https",
+                ServerAttributes.SERVER_PORT to 8082L,
+                UrlAttributes.URL_PATH to "/some/path"
+            )
+        )
+
+        val url = whenExtractingUrl()
+
+        assertNull(url)
+    }
+
+    @Test
+    fun `returns reconstructed URL if attributes present without port and path`() {
+        givenAttributes(
+            mapOf(
+                UrlAttributes.URL_SCHEME to "https",
+                ServerAttributes.SERVER_ADDRESS to "sentry.io"
+            )
+        )
+
+        val url = whenExtractingUrl()
+
+        assertEquals("https://sentry.io", url)
+    }
+
+    @Test
+    fun `returns reconstructed URL if attributes present without path`() {
+        givenAttributes(
+            mapOf(
+                UrlAttributes.URL_SCHEME to "https",
+                ServerAttributes.SERVER_ADDRESS to "sentry.io",
+                ServerAttributes.SERVER_PORT to 8082L
+            )
+        )
+
+        val url = whenExtractingUrl()
+
+        assertEquals("https://sentry.io:8082", url)
+    }
+
+    @Test
     fun `sets server request headers based on OTel attributes and merges list of values`() {
         givenAttributes(
             mapOf(
@@ -231,6 +343,10 @@ class OpenTelemetryAttributesExtractorTest {
 
     private fun whenExtractingAttributes() {
         OpenTelemetryAttributesExtractor().extract(fixture.spanData, fixture.scope, fixture.options)
+    }
+
+    private fun whenExtractingUrl(): String? {
+        return OpenTelemetryAttributesExtractor().extractUrl(fixture.attributes, fixture.options)
     }
 
     private fun thenRequestIsSet() {

@@ -50,17 +50,10 @@ public final class OpenTelemetryAttributesExtractor {
       }
 
       if (request.getUrl() == null) {
-        final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
-        if (urlFull != null) {
-          final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(urlFull);
+        final @Nullable String url = extractUrl(attributes, options);
+        if (url != null) {
+          final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(url);
           urlDetails.applyToRequest(request);
-        }
-      }
-
-      if (request.getUrl() == null) {
-        final String urlString = buildUrlString(attributes, options);
-        if (!urlString.isEmpty()) {
-          request.setUrl(urlString);
         }
       }
 
@@ -110,6 +103,21 @@ public final class OpenTelemetryAttributesExtractor {
           }
         });
     return headers;
+  }
+
+  public @Nullable String extractUrl(
+      final @NotNull Attributes attributes, final @NotNull SentryOptions options) {
+    final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
+    if (urlFull != null) {
+      return urlFull;
+    }
+
+    final String urlString = buildUrlString(attributes, options);
+    if (!urlString.isEmpty()) {
+      return urlString;
+    }
+
+    return null;
   }
 
   private static @Nullable String toString(final @Nullable List<String> list) {
