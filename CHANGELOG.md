@@ -20,6 +20,9 @@
 
 ### Fixes
 
+- Filter strings that cannot be parsed as Regex no longer cause an SDK crash ([#4213](https://github.com/getsentry/sentry-java/pull/4213))
+  - This was the case e.g. for `ignoredErrors`, `ignoredTransactions` and `ignoredCheckIns`
+  - We now simply don't use such strings for Regex matching and only use them for String comparison
 - `SentryOptions.setTracePropagationTargets` is no longer marked internal ([#4170](https://github.com/getsentry/sentry-java/pull/4170))
 - Session Replay: Fix crash when a navigation breadcrumb does not have "to" destination ([#4185](https://github.com/getsentry/sentry-java/pull/4185))
 - Session Replay: Cap video segment duration to maximum 5 minutes to prevent endless video encoding in background ([#4185](https://github.com/getsentry/sentry-java/pull/4185))
