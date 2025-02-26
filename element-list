@@ -1,6 +1,7 @@
 io.sentry
 io.sentry.apollo
 io.sentry.apollo3
+io.sentry.apollo4
 io.sentry.backpressure
 io.sentry.cache
 io.sentry.clientreport
@@ -29,6 +30,7 @@ io.sentry.opentelemetry.agent
 io.sentry.profilemeasurements
 io.sentry.protocol
 io.sentry.quartz
+io.sentry.reactor
 io.sentry.rrweb
 io.sentry.servlet
 io.sentry.servlet.jakarta
@@ -47,6 +49,7 @@ io.sentry.spring.jakarta.graphql
 io.sentry.spring.jakarta.opentelemetry
 io.sentry.spring.jakarta.tracing
 io.sentry.spring.jakarta.webflux
+io.sentry.spring.jakarta.webflux.reactor
 io.sentry.spring.opentelemetry
 io.sentry.spring.tracing
 io.sentry.spring.webflux
