@@ -17,6 +17,7 @@ import io.sentry.IScopes;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.util.TracingUtils;
@@ -76,7 +77,7 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       return;
     }
 
-    final @Nullable String url = getUrl(sentrySpan);
+    final @Nullable String url = getUrl(sentrySpan, scopes.getOptions());
     final @Nullable TracingUtils.TracingHeaders tracingHeaders =
         url == null
             ? TracingUtils.trace(scopes, Collections.emptyList(), sentrySpan)
@@ -92,12 +93,13 @@ public final class OtelSentryPropagator implements TextMapPropagator {
     }
   }
 
-  private @Nullable String getUrl(final @NotNull IOtelSpanWrapper sentrySpan) {
+  private @Nullable String getUrl(
+      final @NotNull IOtelSpanWrapper sentrySpan, final @NotNull SentryOptions options) {
     final @Nullable Attributes attributes = sentrySpan.getOpenTelemetrySpanAttributes();
     if (attributes == null) {
       return null;
     }
-    return attributesExtractor.extractUrl(attributes);
+    return attributesExtractor.extractUrl(attributes, options);
   }
 
   @Override
