@@ -14,6 +14,8 @@
 - Added `enableTraceIdGeneration` to the AndroidOptions. This allows Hybrid SDKs to "freeze" and control the trace and connect errors on different layers of the application ([4188](https://github.com/getsentry/sentry-java/pull/4188))
 - Move to a single NetworkCallback listener to reduce number of IPC calls on Android ([#4164](https://github.com/getsentry/sentry-java/pull/4164))
 - Add GraphQL Apollo Kotlin 4 integration ([#4166](https://github.com/getsentry/sentry-java/pull/4166))
+- Add support for async dispatch requests to Spring Boot 2 and 3 ([#3983](https://github.com/getsentry/sentry-java/pull/3983))
+  - To enable it, please set `sentry.keep-transactions-open-for-async-responses=true` in `application.properties` or `sentry.keepTransactionsOpenForAsyncResponses: true` in `application.yml`
 - Add constructor to JUL `SentryHandler` for disabling external config ([#4208](https://github.com/getsentry/sentry-java/pull/4208))
 
 ### Fixes
