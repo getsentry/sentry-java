@@ -36,7 +36,7 @@ class SentryHandlerTest {
             options.setTransportFactory { _, _ -> transport }
             contextTags?.forEach { options.addContextTag(it) }
             logger = Logger.getLogger("jul.SentryHandlerTest")
-            handler = SentryHandler(options, configureWithLogManager)
+            handler = SentryHandler(options, configureWithLogManager, true)
             handler.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
             handler.setMinimumEventLevel(minimumEventLevel)
             handler.level = Level.ALL
