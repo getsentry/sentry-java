@@ -505,4 +505,25 @@ class InternalSentrySdkTest {
         assertEquals(20.toLong(), actualProcessSpan["start_timestamp_ms"])
         assertEquals(100.toLong(), actualProcessSpan["end_timestamp_ms"])
     }
+
+    @Test
+    fun `setTrace sets correct propagation context`() {
+        val fixture = Fixture()
+        fixture.init(context)
+
+        val traceId = "771a43a4192642f0b136d5159a501700"
+        val spanId = "771a43a4192642f0"
+        val sampleRate = 0.5
+        val sampleRand = 0.3
+
+        InternalSentrySdk.setTrace(traceId, spanId, sampleRate, sampleRand)
+
+        Sentry.configureScope { scope ->
+            val propagationContext = scope.propagationContext
+            assertEquals(SentryId(traceId), propagationContext.traceId)
+            assertEquals(SpanId(spanId), propagationContext.parentSpanId)
+            assertEquals(sampleRate, propagationContext.baggage.sampleRateDouble)
+            assertEquals(sampleRand, propagationContext.baggage.sampleRandDouble)
+        }
+    }
 }
