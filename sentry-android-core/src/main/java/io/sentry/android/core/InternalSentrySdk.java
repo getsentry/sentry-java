@@ -332,7 +332,7 @@ public final class InternalSentrySdk {
   }
 
   /**
-   * Continue a trace based on the trace ID and span ID provided
+   * Allows a Hybrid SDK to set the trace on the native layer
    *
    * @param traceId the trace ID
    * @param spanId the trace origin's span ID
