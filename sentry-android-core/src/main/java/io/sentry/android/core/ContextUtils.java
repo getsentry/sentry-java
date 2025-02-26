@@ -14,7 +14,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.provider.Settings;
 import android.util.DisplayMetrics;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
@@ -89,10 +88,6 @@ public final class ContextUtils {
 
   // to avoid doing a bunch of Binder calls we use LazyEvaluator to cache the values that are static
   // during the app process running
-
-  private static final @NotNull AndroidLazyEvaluator<String> deviceName =
-      new AndroidLazyEvaluator<>(
-          (context) -> Settings.Global.getString(context.getContentResolver(), "device_name"));
 
   private static final @NotNull LazyEvaluator<Boolean> isForegroundImportance =
       new LazyEvaluator<>(
@@ -403,10 +398,6 @@ public final class ContextUtils {
     }
   }
 
-  static @Nullable String getDeviceName(final @NotNull Context context) {
-    return deviceName.getValue(context);
-  }
-
   static @NotNull String[] getArchitectures() {
     return Build.SUPPORTED_ABIS;
   }
@@ -521,7 +512,6 @@ public final class ContextUtils {
 
   @TestOnly
   static void resetInstance() {
-    deviceName.resetValue();
     isForegroundImportance.resetValue();
     staticPackageInfo33.resetValue();
     staticPackageInfo.resetValue();
