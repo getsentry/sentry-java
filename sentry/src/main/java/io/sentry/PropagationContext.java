@@ -51,7 +51,7 @@ public final class PropagationContext {
         sentryTraceHeader.isSampled());
   }
 
-  public static @NotNull PropagationContext fromId(
+  public static @NotNull PropagationContext fromExistingTrace(
       final @NotNull String traceId,
       final @NotNull String spanId,
       final @Nullable Double decisionSampleRate,
