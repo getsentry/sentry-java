@@ -625,6 +625,7 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
@@ -689,6 +690,7 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
@@ -916,6 +918,7 @@ public abstract interface class io/sentry/IScopes {
 	public abstract fun setLevel (Lio/sentry/SentryLevel;)V
 	public abstract fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
 	public abstract fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public abstract fun setTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)V
 	public abstract fun setTransaction (Ljava/lang/String;)V
 	public abstract fun setUser (Lio/sentry/protocol/User;)V
 	public abstract fun startSession ()V
@@ -1438,6 +1441,7 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
@@ -1597,6 +1601,7 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
@@ -1952,6 +1957,7 @@ public final class io/sentry/PropagationContext {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/PropagationContext;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SpanId;Lio/sentry/SpanId;Lio/sentry/Baggage;Ljava/lang/Boolean;)V
+	public static fun fromExistingTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)Lio/sentry/PropagationContext;
 	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/PropagationContext;
 	public static fun fromHeaders (Lio/sentry/ILogger;Ljava/lang/String;Ljava/util/List;)Lio/sentry/PropagationContext;
 	public static fun fromHeaders (Lio/sentry/SentryTraceHeader;Lio/sentry/Baggage;Lio/sentry/SpanId;)Lio/sentry/PropagationContext;
@@ -2197,6 +2203,7 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
@@ -2261,6 +2268,7 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setSpanContext (Ljava/lang/Throwable;Lio/sentry/ISpan;Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)V
 	public fun setTransaction (Ljava/lang/String;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 	public fun startSession ()V
