@@ -978,9 +978,9 @@ public final class Scopes implements IScopes {
     configureScope(
         (scope) -> {
           scope.withPropagationContext(
-            oldPropagationContext -> {
-              scope.setPropagationContext(propagationContext);
-            });
+              oldPropagationContext -> {
+                scope.setPropagationContext(propagationContext);
+              });
         });
     if (getOptions().isTracingEnabled()) {
       return TransactionContext.fromPropagationContext(propagationContext);
@@ -995,8 +995,9 @@ public final class Scopes implements IScopes {
       final @NotNull String spanId,
       final @Nullable Double sampleRate,
       final @Nullable Double sampleRand) {
-    @NotNull PropagationContext propagationContext =
-      PropagationContext.fromExistingTrace(traceId, spanId, sampleRate, sampleRand);
+    @NotNull
+    PropagationContext propagationContext =
+        PropagationContext.fromExistingTrace(traceId, spanId, sampleRate, sampleRand);
     configureScope(
         (scope) -> {
           scope.setPropagationContext(propagationContext);

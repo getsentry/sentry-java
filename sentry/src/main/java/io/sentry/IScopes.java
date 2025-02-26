@@ -666,10 +666,10 @@ public interface IScopes {
    * @param sampleRand the random value used to sample with by the origin of the trace
    */
   void setTrace(
-    final @NotNull String traceId,
-    final @NotNull String spanId,
-    final @Nullable Double sampleRate,
-    final @Nullable Double sampleRand);
+      final @NotNull String traceId,
+      final @NotNull String spanId,
+      final @Nullable Double sampleRate,
+      final @Nullable Double sampleRand);
 
   /**
    * Returns the "sentry-trace" header that allows tracing across services. Can also be used in

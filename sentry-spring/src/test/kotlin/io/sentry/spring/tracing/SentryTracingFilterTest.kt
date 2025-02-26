@@ -14,9 +14,11 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.TransactionNameSource
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -27,7 +29,10 @@ import org.mockito.kotlin.whenever
 import org.springframework.http.HttpMethod
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
+import org.springframework.web.context.request.async.AsyncWebRequest
+import org.springframework.web.context.request.async.WebAsyncUtils
 import org.springframework.web.servlet.HandlerMapping
+import javax.servlet.DispatcherType
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
 import kotlin.test.Test
@@ -48,12 +53,13 @@ class SentryTracingFilterTest {
             tracesSampleRate = 1.0
         }
         val logger = mock<ILogger>()
+        val asyncRequest = mock<AsyncWebRequest>()
 
         init {
             whenever(scopes.options).thenReturn(options)
         }
 
-        fun getSut(isEnabled: Boolean = true, status: Int = 200, sentryTraceHeader: String? = null, baggageHeaders: List<String>? = null): SentryTracingFilter {
+        fun getSut(isEnabled: Boolean = true, status: Int = 200, sentryTraceHeader: String? = null, baggageHeaders: List<String>? = null, isAsyncSupportEnabled: Boolean = false): SentryTracingFilter {
             request.requestURI = "/product/12"
             request.method = "POST"
             request.setAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/product/{id}")
@@ -70,7 +76,7 @@ class SentryTracingFilterTest {
             whenever(scopes.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
             whenever(scopes.isEnabled).thenReturn(isEnabled)
             whenever(scopes.continueTrace(any(), any())).thenAnswer { TransactionContext.fromPropagationContext(PropagationContext.fromHeaders(logger, it.arguments[0] as String?, it.arguments[1] as List<String>?)) }
-            return SentryTracingFilter(scopes, transactionNameProvider)
+            return SentryTracingFilter(scopes, transactionNameProvider, isAsyncSupportEnabled)
         }
     }
 
@@ -302,6 +308,103 @@ class SentryTracingFilterTest {
 
         verify(fixture.scopes, never()).captureTransaction(
             anyOrNull<SentryTransaction>(),
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creates transaction around async request`() {
+        val sentryTrace = "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"
+        val baggage = listOf("baggage: sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d")
+        val filter = fixture.getSut(sentryTraceHeader = sentryTrace, baggageHeaders = baggage, isAsyncSupportEnabled = true)
+
+        val asyncChain = mock<FilterChain>()
+        doAnswer {
+            val request = it.arguments.first() as MockHttpServletRequest
+            whenever(fixture.asyncRequest.isAsyncStarted).thenReturn(true)
+            WebAsyncUtils.getAsyncManager(request).setAsyncWebRequest(fixture.asyncRequest)
+        }.whenever(asyncChain).doFilter(any(), any())
+
+        filter.doFilter(fixture.request, fixture.response, asyncChain)
+
+        verify(fixture.scopes).continueTrace(eq(sentryTrace), eq(baggage))
+        verify(fixture.scopes).startTransaction(
+            check<TransactionContext> {
+                assertEquals("POST /product/12", it.name)
+                assertEquals(TransactionNameSource.URL, it.transactionNameSource)
+                assertEquals("http.server", it.operation)
+            },
+            check<TransactionOptions> {
+                assertNotNull(it.customSamplingContext?.get("request"))
+                assertTrue(it.customSamplingContext?.get("request") is HttpServletRequest)
+                assertTrue(it.isBindToScope)
+                assertThat(it.origin).isEqualTo("auto.http.spring.webmvc")
+            }
+        )
+        verify(asyncChain).doFilter(fixture.request, fixture.response)
+        verify(fixture.scopes, never()).captureTransaction(
+            any(),
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+
+        Mockito.clearInvocations(fixture.scopes)
+
+        fixture.request.dispatcherType = DispatcherType.ASYNC
+        whenever(fixture.asyncRequest.isAsyncStarted).thenReturn(false)
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.scopes, never()).startTransaction(anyOrNull(), anyOrNull<TransactionOptions>())
+
+        verify(fixture.chain).doFilter(fixture.request, fixture.response)
+
+        verify(fixture.scopes).captureTransaction(
+            check {
+                assertThat(it.transaction).isEqualTo("POST /product/{id}")
+                assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+                assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+        verify(fixture.scopes, never()).continueTrace(anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `creates and finishes transaction immediately for async request if handling disabled`() {
+        val sentryTrace = "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"
+        val baggage = listOf("baggage: sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d")
+        val filter = fixture.getSut(sentryTraceHeader = sentryTrace, baggageHeaders = baggage, isAsyncSupportEnabled = false)
+
+        filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+        verify(fixture.scopes).startTransaction(
+            check<TransactionContext> {
+                assertEquals("POST /product/12", it.name)
+                assertEquals(TransactionNameSource.URL, it.transactionNameSource)
+                assertEquals("http.server", it.operation)
+            },
+            check<TransactionOptions> {
+                assertNotNull(it.customSamplingContext?.get("request"))
+                assertTrue(it.customSamplingContext?.get("request") is HttpServletRequest)
+                assertTrue(it.isBindToScope)
+                assertThat(it.origin).isEqualTo("auto.http.spring.webmvc")
+            }
+        )
+        verify(fixture.scopes).continueTrace(eq(sentryTrace), eq(baggage))
+        verify(fixture.chain).doFilter(fixture.request, fixture.response)
+
+        verify(fixture.scopes).captureTransaction(
+            check {
+                assertThat(it.transaction).isEqualTo("POST /product/{id}")
+                assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+                assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
+            },
             anyOrNull<TraceContext>(),
             anyOrNull(),
             anyOrNull()

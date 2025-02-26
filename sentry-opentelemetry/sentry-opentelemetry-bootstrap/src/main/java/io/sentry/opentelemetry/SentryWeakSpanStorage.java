@@ -7,6 +7,7 @@ import io.sentry.util.AutoClosableReentrantLock;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * Weakly references wrappers for OpenTelemetry spans meaning they'll be cleaned up when the
@@ -43,5 +44,10 @@ public final class SentryWeakSpanStorage {
   public void storeSentrySpan(
       final @NotNull SpanContext otelSpan, final @NotNull IOtelSpanWrapper sentrySpan) {
     this.sentrySpans.put(otelSpan, sentrySpan);
+  }
+
+  @TestOnly
+  public void clear() {
+    sentrySpans.clear();
   }
 }

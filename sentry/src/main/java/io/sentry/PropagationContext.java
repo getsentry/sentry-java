@@ -57,11 +57,11 @@ public final class PropagationContext {
       final @Nullable Double decisionSampleRate,
       final @Nullable Double decisionSampleRand) {
     return new PropagationContext(
-      new SentryId(traceId),
-      new SpanId(),
-      new SpanId(spanId),
-      TracingUtils.ensureBaggage(null, null, decisionSampleRate, decisionSampleRand),
-      null);
+        new SentryId(traceId),
+        new SpanId(),
+        new SpanId(spanId),
+        TracingUtils.ensureBaggage(null, null, decisionSampleRate, decisionSampleRand),
+        null);
   }
 
   private @NotNull SentryId traceId;
