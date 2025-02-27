@@ -1742,7 +1742,8 @@ public class SentryOptions {
   public boolean isContinuousProfilingEnabled() {
     return profilesSampleRate == null
         && profilesSampler == null
-        && experimental.getContinuousProfilesSampleRate() > 0;
+        && experimental.getProfileSessionSampleRate() != null
+        && experimental.getProfileSessionSampleRate() > 0;
   }
 
   /**
@@ -1790,15 +1791,15 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the continuous profiling sample rate. Default is 1 (100%). ProfilesSampleRate takes
+   * Returns the session sample rate. Default is null (disabled). ProfilesSampleRate takes
    * precedence over this. To enable continuous profiling, don't set profilesSampleRate or
    * profilesSampler, or set them to null.
    *
    * @return the sample rate
    */
   @ApiStatus.Experimental
-  public double getContinuousProfilesSampleRate() {
-    return experimental.getContinuousProfilesSampleRate();
+  public @Nullable Double getProfileSessionSampleRate() {
+    return experimental.getProfileSessionSampleRate();
   }
 
   /**
@@ -2726,9 +2727,6 @@ public class SentryOptions {
     }
     if (options.getProfilesSampleRate() != null) {
       setProfilesSampleRate(options.getProfilesSampleRate());
-    }
-    if (options.getContinuousProfilesSampleRate() != null) {
-      experimental.setContinuousProfilesSampleRate(options.getContinuousProfilesSampleRate());
     }
     if (options.getDebug() != null) {
       setDebug(options.getDebug());

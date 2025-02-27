@@ -64,8 +64,8 @@ final class ManifestMetadataReader {
 
   static final String PROFILES_SAMPLE_RATE = "io.sentry.traces.profiling.sample-rate";
 
-  static final String CONTINUOUS_PROFILES_SAMPLE_RATE =
-      "io.sentry.traces.profiling.continuous-sample-rate";
+  static final String PROFILE_SESSION_SAMPLE_RATE =
+      "io.sentry.traces.profiling.session-sample-rate";
 
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
   static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
@@ -318,11 +318,11 @@ final class ManifestMetadataReader {
           }
         }
 
-        if (options.getContinuousProfilesSampleRate() == 1.0) {
-          final double continuousProfilesSampleRate =
-              readDouble(metadata, logger, CONTINUOUS_PROFILES_SAMPLE_RATE);
-          if (continuousProfilesSampleRate != -1) {
-            options.getExperimental().setContinuousProfilesSampleRate(continuousProfilesSampleRate);
+        if (options.getProfileSessionSampleRate() == null) {
+          final double profileSessionSampleRate =
+              readDouble(metadata, logger, PROFILE_SESSION_SAMPLE_RATE);
+          if (profileSessionSampleRate != -1) {
+            options.getExperimental().setProfileSessionSampleRate(profileSessionSampleRate);
           }
         }
 

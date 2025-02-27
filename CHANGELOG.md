@@ -6,7 +6,7 @@
 
 - Add Continuous Profiling Support ([#3710](https://github.com/getsentry/sentry-java/pull/3710))
 
-  To enable Continuous Profiling use the `Sentry.startProfiler` and `Sentry.stopProfiler` experimental APIs. Sampling rate can be set through `options.continuousProfilesSampleRate` (defaults to 1.0).   
+  To enable Continuous Profiling use the `Sentry.startProfiler` and `Sentry.stopProfiler` experimental APIs. Sampling rate can be set through `options.continuousProfilesSampleRate`, which defaults to null (disabled).   
   Note: Both `options.profilesSampler` and `options.profilesSampleRate` must **not** be set to enable Continuous Profiling.
 
   ```java
@@ -15,7 +15,7 @@
   SentryAndroid.init(context) { options ->
    
     // Currently under experimental options:
-    options.getExperimental().setContinuousProfilesSampleRate(1.0);
+    options.getExperimental().setProfileSessionSampleRate(1.0);
   }
   // Start profiling
   Sentry.startProfiler();
@@ -29,7 +29,7 @@
   SentryAndroid.init(context) { options ->
    
     // Currently under experimental options:
-    options.experimental.continuousProfilesSampleRate = 1.0
+    options.experimental.profileSessionSampleRate = 1.0
   }
   // Start profiling
   Sentry.startProfiler()

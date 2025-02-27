@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Experimental options for new features, these options are going to be promoted to SentryOptions
@@ -14,13 +15,11 @@ public final class ExperimentalOptions {
   private @NotNull SentryReplayOptions sessionReplay;
 
   /**
-   * Configures the continuous profiling sample rate as a percentage of profiles to be sent in the
-   * range of 0.0 to 1.0. if 1.0 is set it means that 100% of profiles will be sent. If set to 0.1
-   * only 10% of profiles will be sent. Profiles are picked randomly. Default is 1 (100%).
-   * ProfilesSampleRate takes precedence over this. To enable continuous profiling, don't set
-   * profilesSampleRate or profilesSampler, or set them to null.
+   * Indicates the percentage in which the profiles for the session will be created. Specifying 0
+   * means never, 1.0 means always. The value needs to be >= 0.0 and <= 1.0 The default is null
+   * (disabled).
    */
-  private double continuousProfilesSampleRate = 1.0;
+  private @Nullable Double profileSessionSampleRate;
 
   public ExperimentalOptions(final boolean empty) {
     this.sessionReplay = new SentryReplayOptions(empty);
@@ -35,18 +34,18 @@ public final class ExperimentalOptions {
     this.sessionReplay = sessionReplayOptions;
   }
 
-  public double getContinuousProfilesSampleRate() {
-    return continuousProfilesSampleRate;
+  public @Nullable Double getProfileSessionSampleRate() {
+    return profileSessionSampleRate;
   }
 
   @ApiStatus.Experimental
-  public void setContinuousProfilesSampleRate(final double continuousProfilesSampleRate) {
-    if (!SampleRateUtils.isValidContinuousProfilesSampleRate(continuousProfilesSampleRate)) {
+  public void setProfileSessionSampleRate(final @Nullable Double profileSessionSampleRate) {
+    if (!SampleRateUtils.isValidContinuousProfilesSampleRate(profileSessionSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
-              + continuousProfilesSampleRate
+              + profileSessionSampleRate
               + " is not valid. Use values between 0.0 and 1.0.");
     }
-    this.continuousProfilesSampleRate = continuousProfilesSampleRate;
+    this.profileSessionSampleRate = profileSessionSampleRate;
   }
 }

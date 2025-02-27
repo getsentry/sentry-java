@@ -22,6 +22,7 @@ import io.sentry.SentryAppStartProfilingOptions;
 import io.sentry.SentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.TracesSampler;
 import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
@@ -180,7 +181,12 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     appStartMetrics.setAppStartProfiler(null);
     appStartMetrics.setAppStartContinuousProfiler(appStartContinuousProfiler);
     logger.log(SentryLevel.DEBUG, "App start continuous profiling started.");
-    appStartContinuousProfiler.start();
+    SentryOptions sentryOptions = SentryOptions.empty();
+    // Let's fake a sampler to accept the sampling decision that was calculated on last run
+    sentryOptions
+        .getExperimental()
+        .setProfileSessionSampleRate(profilingOptions.isContinuousProfileSampled() ? 1.0 : 0.0);
+    appStartContinuousProfiler.start(new TracesSampler(sentryOptions));
   }
 
   private void createAndStartTransactionProfiler(

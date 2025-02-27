@@ -195,17 +195,17 @@ class SentryOptionsTest {
     @Test
     fun `when options is initialized, isProfilingEnabled is false and isContinuousProfilingEnabled is true`() {
         assertFalse(SentryOptions().isProfilingEnabled)
-        assertTrue(SentryOptions().isContinuousProfilingEnabled)
+        assertFalse(SentryOptions().isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampleRate is null and profilesSampler is null, isProfilingEnabled is false and isContinuousProfilingEnabled is true`() {
+    fun `when profilesSampleRate is null and profilesSampler is null, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
             this.profilesSampleRate = null
             this.profilesSampler = null
         }
         assertFalse(options.isProfilingEnabled)
-        assertTrue(options.isContinuousProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
     }
 
     @Test
@@ -237,10 +237,18 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when continuousProfilesSampleRate is set to a 0, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
+    fun `when profileSessionSampleRate is set to 0, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
-            this.experimental.continuousProfilesSampleRate = 0.0
+            this.experimental.profileSessionSampleRate = 0.0
         }
+        assertFalse(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
+    }
+
+    @Test
+    fun `when profileSessionSampleRate is null, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
+        val options = SentryOptions()
+        assertNull(options.experimental.profileSessionSampleRate)
         assertFalse(options.isProfilingEnabled)
         assertFalse(options.isContinuousProfilingEnabled)
     }
@@ -264,21 +272,21 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when setContinuousProfilesSampleRate is set to exactly 0, value is set`() {
+    fun `when profileSessionSampleRate is set to exactly 0, value is set`() {
         val options = SentryOptions().apply {
-            this.experimental.continuousProfilesSampleRate = 0.0
+            this.experimental.profileSessionSampleRate = 0.0
         }
-        assertEquals(0.0, options.continuousProfilesSampleRate)
+        assertEquals(0.0, options.profileSessionSampleRate)
     }
 
     @Test
-    fun `when setContinuousProfilesSampleRate is set to higher than 1_0, setter throws`() {
-        assertFailsWith<IllegalArgumentException> { SentryOptions().experimental.continuousProfilesSampleRate = 1.0000000000001 }
+    fun `when profileSessionSampleRate is set to higher than 1_0, setter throws`() {
+        assertFailsWith<IllegalArgumentException> { SentryOptions().experimental.profileSessionSampleRate = 1.0000000000001 }
     }
 
     @Test
-    fun `when setContinuousProfilesSampleRate is set to lower than 0, setter throws`() {
-        assertFailsWith<IllegalArgumentException> { SentryOptions().experimental.continuousProfilesSampleRate = -0.0000000000001 }
+    fun `when profileSessionSampleRate is set to lower than 0, setter throws`() {
+        assertFailsWith<IllegalArgumentException> { SentryOptions().experimental.profileSessionSampleRate = -0.0000000000001 }
     }
 
     @Test
@@ -349,7 +357,6 @@ class SentryOptionsTest {
         externalOptions.enableUncaughtExceptionHandler = false
         externalOptions.tracesSampleRate = 0.5
         externalOptions.profilesSampleRate = 0.5
-        externalOptions.continuousProfilesSampleRate = 0.3
         externalOptions.addInAppInclude("com.app")
         externalOptions.addInAppExclude("io.off")
         externalOptions.addTracePropagationTarget("localhost")
@@ -396,7 +403,6 @@ class SentryOptionsTest {
         assertFalse(options.isEnableUncaughtExceptionHandler)
         assertEquals(0.5, options.tracesSampleRate)
         assertEquals(0.5, options.profilesSampleRate)
-        assertEquals(0.3, options.continuousProfilesSampleRate)
         assertEquals(listOf("com.app"), options.inAppIncludes)
         assertEquals(listOf("io.off"), options.inAppExcludes)
         assertEquals(listOf("localhost", "api.foo.com"), options.tracePropagationTargets)
@@ -607,7 +613,7 @@ class SentryOptionsTest {
     fun `when profiling is disabled, isEnableAppStartProfiling is always false`() {
         val options = SentryOptions()
         options.isEnableAppStartProfiling = true
-        options.experimental.continuousProfilesSampleRate = 0.0
+        options.experimental.profileSessionSampleRate = 0.0
         assertFalse(options.isEnableAppStartProfiling)
     }
 
@@ -615,7 +621,7 @@ class SentryOptionsTest {
     fun `when setEnableAppStartProfiling is called and continuous profiling is enabled, isEnableAppStartProfiling is true`() {
         val options = SentryOptions()
         options.isEnableAppStartProfiling = true
-        options.experimental.continuousProfilesSampleRate = 1.0
+        options.experimental.profileSessionSampleRate = 1.0
         assertTrue(options.isEnableAppStartProfiling)
     }
 

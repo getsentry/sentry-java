@@ -42,7 +42,8 @@ public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IConti
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun isRunning ()Z
 	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
-	public fun start ()V
+	public fun reevaluateSampling ()V
+	public fun start (Lio/sentry/TracesSampler;)V
 	public fun stop ()V
 }
 

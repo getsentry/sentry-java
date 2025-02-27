@@ -17,6 +17,7 @@ import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryNanotimeDate
 import io.sentry.SentryTracer
+import io.sentry.TracesSampler
 import io.sentry.TransactionContext
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
@@ -58,6 +59,7 @@ class AndroidContinuousProfilerTest {
             whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP_MR1)
         }
         val mockLogger = mock<ILogger>()
+        val mockTracesSampler = mock<TracesSampler>()
 
         val scopes: IScopes = mock()
         val frameMetricsCollector: SentryFrameMetricsCollector = mock()
@@ -71,6 +73,10 @@ class AndroidContinuousProfilerTest {
             profilesSampleRate = 1.0
             isDebug = true
             setLogger(mockLogger)
+        }
+
+        init {
+            whenever(mockTracesSampler.sampleSessionProfile()).thenReturn(true)
         }
 
         fun getSut(buildInfoProvider: BuildInfoProvider = buildInfo, optionConfig: ((options: SentryAndroidOptions) -> Unit) = {}): AndroidContinuousProfiler {
@@ -136,7 +142,7 @@ class AndroidContinuousProfilerTest {
     @Test
     fun `isRunning reflects profiler status`() {
         val profiler = fixture.getSut()
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
         profiler.stop()
         assertFalse(profiler.isRunning)
@@ -145,12 +151,48 @@ class AndroidContinuousProfilerTest {
     @Test
     fun `profiler multiple starts are ignored`() {
         val profiler = fixture.getSut()
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
-        verify(fixture.mockLogger, never()).log(eq(SentryLevel.WARNING), eq("Profiling has already started..."))
-        profiler.start()
-        verify(fixture.mockLogger).log(eq(SentryLevel.WARNING), eq("Profiling has already started..."))
+        verify(fixture.mockLogger, never()).log(eq(SentryLevel.DEBUG), eq("Profiler is already running."))
+        profiler.start(fixture.mockTracesSampler)
+        verify(fixture.mockLogger).log(eq(SentryLevel.DEBUG), eq("Profiler is already running."))
         assertTrue(profiler.isRunning)
+    }
+
+    @Test
+    fun `profiler logs a warning on start if not sampled`() {
+        val profiler = fixture.getSut()
+        whenever(fixture.mockTracesSampler.sampleSessionProfile()).thenReturn(false)
+        profiler.start(fixture.mockTracesSampler)
+        assertFalse(profiler.isRunning)
+        verify(fixture.mockLogger).log(eq(SentryLevel.DEBUG), eq("Profiler was not started due to sampling decision."))
+    }
+
+    @Test
+    fun `profiler evaluates sessionSampleRate only the first time`() {
+        val profiler = fixture.getSut()
+        verify(fixture.mockTracesSampler, never()).sampleSessionProfile()
+        // The first time the profiler is started, the sessionSampleRate is evaluated
+        profiler.start(fixture.mockTracesSampler)
+        verify(fixture.mockTracesSampler, times(1)).sampleSessionProfile()
+        // Then, the sessionSampleRate is not evaluated again
+        profiler.start(fixture.mockTracesSampler)
+        verify(fixture.mockTracesSampler, times(1)).sampleSessionProfile()
+    }
+
+    @Test
+    fun `when reevaluateSampling, profiler evaluates sessionSampleRate on next start`() {
+        val profiler = fixture.getSut()
+        verify(fixture.mockTracesSampler, never()).sampleSessionProfile()
+        // The first time the profiler is started, the sessionSampleRate is evaluated
+        profiler.start(fixture.mockTracesSampler)
+        verify(fixture.mockTracesSampler, times(1)).sampleSessionProfile()
+        // When reevaluateSampling is called, the sessionSampleRate is not evaluated immediately
+        profiler.reevaluateSampling()
+        verify(fixture.mockTracesSampler, times(1)).sampleSessionProfile()
+        // Then, when the profiler starts again, the sessionSampleRate is reevaluated
+        profiler.start(fixture.mockTracesSampler)
+        verify(fixture.mockTracesSampler, times(2)).sampleSessionProfile()
     }
 
     @Test
@@ -159,7 +201,7 @@ class AndroidContinuousProfilerTest {
             whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
         }
         val profiler = fixture.getSut(buildInfo)
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertFalse(profiler.isRunning)
     }
 
@@ -168,7 +210,7 @@ class AndroidContinuousProfilerTest {
         val profiler = fixture.getSut {
             it.profilesSampleRate = 0.0
         }
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
     }
 
@@ -184,8 +226,8 @@ class AndroidContinuousProfilerTest {
         )
 
         // Regardless of how many times the profiler is started, the option is evaluated and logged only once
-        profiler.start()
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
+        profiler.start(fixture.mockTracesSampler)
         verify(fixture.mockLogger, times(1)).log(
             SentryLevel.WARNING,
             "Disabling profiling because no profiling traces dir path is defined in options."
@@ -205,8 +247,8 @@ class AndroidContinuousProfilerTest {
         )
 
         // Regardless of how many times the profiler is started, the option is evaluated and logged only once
-        profiler.start()
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
+        profiler.start(fixture.mockTracesSampler)
         verify(fixture.mockLogger, times(1)).log(
             SentryLevel.WARNING,
             "Disabling profiling because trace rate is set to %d",
@@ -219,7 +261,7 @@ class AndroidContinuousProfilerTest {
         val profiler = fixture.getSut {
             it.cacheDirPath = null
         }
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertFalse(profiler.isRunning)
     }
 
@@ -228,7 +270,7 @@ class AndroidContinuousProfilerTest {
         val profiler = fixture.getSut {
             it.cacheDirPath = ""
         }
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertFalse(profiler.isRunning)
     }
 
@@ -237,7 +279,7 @@ class AndroidContinuousProfilerTest {
         val profiler = fixture.getSut {
             it.profilingTracesHz = 0
         }
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertFalse(profiler.isRunning)
     }
 
@@ -248,7 +290,7 @@ class AndroidContinuousProfilerTest {
             it.executorService = mockExecutorService
         }
         whenever(mockExecutorService.submit(any<Callable<*>>())).thenReturn(mock())
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         verify(mockExecutorService, never()).submit(any<Runnable>())
         profiler.stop()
         verify(mockExecutorService, never()).submit(any<Callable<*>>())
@@ -259,7 +301,7 @@ class AndroidContinuousProfilerTest {
         val profiler = fixture.getSut {
             File(it.profilingTracesDirPath!!).setWritable(false)
         }
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         profiler.stop()
         // We assert that no trace files are written
         assertTrue(
@@ -276,7 +318,7 @@ class AndroidContinuousProfilerTest {
         fixture.options.compositePerformanceCollector = performanceCollector
         val profiler = fixture.getSut()
         verify(performanceCollector, never()).start(any<String>())
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         verify(performanceCollector).start(any<String>())
     }
 
@@ -285,7 +327,7 @@ class AndroidContinuousProfilerTest {
         val performanceCollector = mock<CompositePerformanceCollector>()
         fixture.options.compositePerformanceCollector = performanceCollector
         val profiler = fixture.getSut()
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         verify(performanceCollector, never()).stop(any<String>())
         profiler.stop()
         verify(performanceCollector).stop(any<String>())
@@ -296,7 +338,7 @@ class AndroidContinuousProfilerTest {
         val profiler = fixture.getSut()
         val frameMetricsCollectorId = "id"
         whenever(fixture.frameMetricsCollector.startCollection(any())).thenReturn(frameMetricsCollectorId)
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         verify(fixture.frameMetricsCollector, never()).stopCollection(frameMetricsCollectorId)
         profiler.stop()
         verify(fixture.frameMetricsCollector).stopCollection(frameMetricsCollectorId)
@@ -305,7 +347,7 @@ class AndroidContinuousProfilerTest {
     @Test
     fun `profiler stops profiling and clear scheduled job on close`() {
         val profiler = fixture.getSut()
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
 
         profiler.close()
@@ -327,7 +369,7 @@ class AndroidContinuousProfilerTest {
         val profiler = fixture.getSut {
             it.executorService = executorService
         }
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
 
         executorService.runAll()
@@ -345,7 +387,7 @@ class AndroidContinuousProfilerTest {
         val profiler = fixture.getSut {
             it.executorService = executorService
         }
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
         // We run the executor service to trigger the profiler restart (chunk finish)
         executorService.runAll()
@@ -369,7 +411,7 @@ class AndroidContinuousProfilerTest {
         val profiler = fixture.getSut {
             it.executorService = executorService
         }
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         profiler.stop()
         // We run the executor service to send the profile chunk
         executorService.runAll()
@@ -388,7 +430,7 @@ class AndroidContinuousProfilerTest {
         val profiler = fixture.getSut {
             it.executorService = executorService
         }
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
         // We run the executor service to trigger the profiler restart (chunk finish)
         executorService.runAll()
@@ -406,7 +448,7 @@ class AndroidContinuousProfilerTest {
         val profiler = fixture.getSut {
             it.executorService = executorService
         }
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
 
         // We close the profiler, which should prevent sending additional chunks
@@ -426,7 +468,7 @@ class AndroidContinuousProfilerTest {
         val rateLimiter = mock<RateLimiter>()
         whenever(rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)).thenReturn(true)
 
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
 
         // If the SDK is rate limited, the profiler should stop
@@ -447,7 +489,7 @@ class AndroidContinuousProfilerTest {
         whenever(fixture.scopes.rateLimiter).thenReturn(rateLimiter)
 
         // If the SDK is rate limited, the profiler should never start
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertFalse(profiler.isRunning)
         assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
         verify(fixture.mockLogger).log(eq(SentryLevel.WARNING), eq("SDK is rate limited. Stopping profiler."))
@@ -464,7 +506,7 @@ class AndroidContinuousProfilerTest {
         }
 
         // If the device is offline, the profiler should never start
-        profiler.start()
+        profiler.start(fixture.mockTracesSampler)
         assertFalse(profiler.isRunning)
         assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
         verify(fixture.mockLogger).log(eq(SentryLevel.WARNING), eq("Device is offline. Stopping profiler."))
