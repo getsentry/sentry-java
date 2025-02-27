@@ -237,10 +237,18 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when profileSessionSampleRate is set to a 0, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
+    fun `when profileSessionSampleRate is set to 0, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
             this.experimental.profileSessionSampleRate = 0.0
         }
+        assertFalse(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
+    }
+
+    @Test
+    fun `when profileSessionSampleRate is null, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
+        val options = SentryOptions()
+        assertNull(options.experimental.profileSessionSampleRate)
         assertFalse(options.isProfilingEnabled)
         assertFalse(options.isContinuousProfilingEnabled)
     }

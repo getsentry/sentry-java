@@ -185,7 +185,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     // Let's fake a sampler to accept the sampling decision that was calculated on last run
     sentryOptions
         .getExperimental()
-        .setProfileSessionSampleRate(profilingOptions.isContinuousProfileSampled() ? 1 : 0);
+        .setProfileSessionSampleRate(profilingOptions.isContinuousProfileSampled() ? 1.0 : 0.0);
     appStartContinuousProfiler.startProfileSession(
         profilingOptions.getProfileLifecycle(), new TracesSampler(sentryOptions));
   }

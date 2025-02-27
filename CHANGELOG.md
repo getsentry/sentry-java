@@ -6,7 +6,7 @@
 
 - Add Continuous Profiling Support ([#3710](https://github.com/getsentry/sentry-java/pull/3710))
 
-  To enable Continuous Profiling use the `Sentry.startProfileSession` and `Sentry.stopProfileSession` experimental APIs. Sampling rate can be set through `options.profileSessionSampleRate` (defaults to 0.0).   
+  To enable Continuous Profiling use the `Sentry.startProfileSession` and `Sentry.stopProfileSession` experimental APIs. Sampling rate can be set through `options.profileSessionSampleRate`, which defaults to null (disabled).   
   Note: Both `options.profilesSampler` and `options.profilesSampleRate` must **not** be set to enable Continuous Profiling.
 
   ```java

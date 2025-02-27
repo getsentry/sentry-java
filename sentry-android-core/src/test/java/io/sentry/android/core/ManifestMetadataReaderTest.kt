@@ -831,6 +831,18 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata without specifying profileSessionSampleRate, stays null`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertNull(fixture.options.profileSessionSampleRate)
+    }
+
+    @Test
     fun `applyMetadata without specifying profileLifecycle, stays MANUAL`() {
         // Arrange
         val context = fixture.getContext()
@@ -854,18 +866,6 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertEquals(ProfileLifecycle.TRACE, fixture.options.profileLifecycle)
-    }
-
-    @Test
-    fun `applyMetadata without specifying profileSessionSampleRate, stays 0`() {
-        // Arrange
-        val context = fixture.getContext()
-
-        // Act
-        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-        // Assert
-        assertEquals(0.0, fixture.options.profileSessionSampleRate)
     }
 
     @Test
