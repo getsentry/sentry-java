@@ -142,6 +142,11 @@ class SampleRateUtilTest {
     }
 
     @Test
+    fun `accepts null continuous profiles sample rate`() {
+        assertTrue(SampleRateUtils.isValidProfilesSampleRate(null))
+    }
+
+    @Test
     fun `rejects negative continuous profiles sample rate`() {
         assertFalse(SampleRateUtils.isValidContinuousProfilesSampleRate(-0.5))
     }
