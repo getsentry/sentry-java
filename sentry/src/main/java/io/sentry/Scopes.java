@@ -905,15 +905,27 @@ public final class Scopes implements IScopes {
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it
-      if (samplingDecision.getSampled() && samplingDecision.getProfileSampled()) {
-        final ITransactionProfiler transactionProfiler = getOptions().getTransactionProfiler();
-        // If the profiler is not running, we start and bind it here.
-        if (!transactionProfiler.isRunning()) {
-          transactionProfiler.start();
-          transactionProfiler.bindTransaction(transaction);
-        } else if (transactionOptions.isAppStartTransaction()) {
-          // If the profiler is running and the current transaction is the app start, we bind it.
-          transactionProfiler.bindTransaction(transaction);
+      if (samplingDecision.getSampled()) {
+        // If transaction profiler is sampled, let's start it
+        if (samplingDecision.getProfileSampled()) {
+          final ITransactionProfiler transactionProfiler = getOptions().getTransactionProfiler();
+          // If the profiler is not running, we start and bind it here.
+          if (!transactionProfiler.isRunning()) {
+            transactionProfiler.start();
+            transactionProfiler.bindTransaction(transaction);
+          } else if (transactionOptions.isAppStartTransaction()) {
+            // If the profiler is running and the current transaction is the app start, we bind it.
+            transactionProfiler.bindTransaction(transaction);
+          }
+        }
+
+        // If continuous profiling is enabled in trace mode, let's start it. Profiler will sample on
+        // its own.
+        if (getOptions().isContinuousProfilingEnabled()
+            && getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE) {
+          getOptions()
+              .getContinuousProfiler()
+              .startProfileSession(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
         }
       }
     }
@@ -926,7 +938,18 @@ public final class Scopes implements IScopes {
   @Override
   public void startProfileSession() {
     if (getOptions().isContinuousProfilingEnabled()) {
-      getOptions().getContinuousProfiler().start(getOptions().getInternalTracesSampler());
+      if (getOptions().getProfileLifecycle() != ProfileLifecycle.MANUAL) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Profiling lifecycle is %s. Profiling cannot be started manually.",
+                getOptions().getProfileLifecycle().name());
+        return;
+      }
+      getOptions()
+          .getContinuousProfiler()
+          .startProfileSession(ProfileLifecycle.MANUAL, getOptions().getInternalTracesSampler());
     } else if (getOptions().isProfilingEnabled()) {
       getOptions()
           .getLogger()
@@ -939,8 +962,17 @@ public final class Scopes implements IScopes {
   @Override
   public void stopProfileSession() {
     if (getOptions().isContinuousProfilingEnabled()) {
+      if (getOptions().getProfileLifecycle() != ProfileLifecycle.MANUAL) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Profiling lifecycle is %s. Profiling cannot be stopped manually.",
+                getOptions().getProfileLifecycle().name());
+        return;
+      }
       getOptions().getLogger().log(SentryLevel.DEBUG, "Stopped continuous Profiling.");
-      getOptions().getContinuousProfiler().stop();
+      getOptions().getContinuousProfiler().stopProfileSession(ProfileLifecycle.MANUAL);
     } else {
       getOptions()
           .getLogger()

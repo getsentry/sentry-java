@@ -1315,7 +1315,7 @@ class SentryTest {
             it.experimental.profileSessionSampleRate = 1.0
         }
         Sentry.startProfileSession()
-        verify(profiler).start(any())
+        verify(profiler).startProfileSession(eq(ProfileLifecycle.MANUAL), any())
     }
 
     @Test
@@ -1327,7 +1327,28 @@ class SentryTest {
             it.profilesSampleRate = 1.0
         }
         Sentry.startProfileSession()
-        verify(profiler, never()).start(any())
+        verify(profiler, never()).startProfileSession(eq(ProfileLifecycle.MANUAL), any())
+    }
+
+    @Test
+    fun `startProfileSession is ignored when profile lifecycle is TRACE`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+            it.isDebug = true
+            it.setLogger(logger)
+        }
+        Sentry.startProfileSession()
+        verify(profiler, never()).startProfileSession(any(), any())
+        verify(logger).log(
+            eq(SentryLevel.WARNING),
+            eq("Profiling lifecycle is %s. Profiling cannot be started manually."),
+            eq(ProfileLifecycle.TRACE.name)
+        )
     }
 
     @Test
@@ -1339,7 +1360,7 @@ class SentryTest {
             it.experimental.profileSessionSampleRate = 1.0
         }
         Sentry.stopProfileSession()
-        verify(profiler).stop()
+        verify(profiler).stopProfileSession(eq(ProfileLifecycle.MANUAL))
     }
 
     @Test
@@ -1351,7 +1372,7 @@ class SentryTest {
             it.profilesSampleRate = 1.0
         }
         Sentry.stopProfileSession()
-        verify(profiler, never()).stop()
+        verify(profiler, never()).stopProfileSession(eq(ProfileLifecycle.MANUAL))
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {

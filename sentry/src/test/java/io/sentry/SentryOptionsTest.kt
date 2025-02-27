@@ -290,6 +290,20 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when profileLifecycleSessionSampleRate is set to a value, value is set`() {
+        val options = SentryOptions().apply {
+            this.experimental.profileLifecycle = ProfileLifecycle.TRACE
+        }
+        assertEquals(ProfileLifecycle.TRACE, options.profileLifecycle)
+    }
+
+    @Test
+    fun `profileLifecycleSessionSampleRate defaults to MANUAL`() {
+        val options = SentryOptions()
+        assertEquals(ProfileLifecycle.MANUAL, options.profileLifecycle)
+    }
+
+    @Test
     fun `when options is initialized, compositePerformanceCollector is set`() {
         assertIs<CompositePerformanceCollector>(SentryOptions().compositePerformanceCollector)
     }

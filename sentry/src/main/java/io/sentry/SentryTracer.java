@@ -90,7 +90,7 @@ public final class SentryTracer implements ITransaction {
 
     final @NotNull SentryId continuousProfilerId =
         scopes.getOptions().getContinuousProfiler().getProfilerId();
-    if (!continuousProfilerId.equals(SentryId.EMPTY_ID)) {
+    if (!continuousProfilerId.equals(SentryId.EMPTY_ID) && Boolean.TRUE.equals(isSampled())) {
       this.contexts.setProfile(new ProfileContext(continuousProfilerId));
     }
 
@@ -245,6 +245,10 @@ public final class SentryTracer implements ITransaction {
                 .getOptions()
                 .getTransactionProfiler()
                 .onTransactionFinish(this, performanceCollectionData.get(), scopes.getOptions());
+      }
+      if (scopes.getOptions().isContinuousProfilingEnabled()
+          && scopes.getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE) {
+        scopes.getOptions().getContinuousProfiler().stopProfileSession(ProfileLifecycle.TRACE);
       }
       if (performanceCollectionData.get() != null) {
         performanceCollectionData.get().clear();
@@ -522,7 +526,7 @@ public final class SentryTracer implements ITransaction {
       //      span.setDescription(description);
       final @NotNull IThreadChecker threadChecker = scopes.getOptions().getThreadChecker();
       final SentryId profilerId = scopes.getOptions().getContinuousProfiler().getProfilerId();
-      if (!profilerId.equals(SentryId.EMPTY_ID)) {
+      if (!profilerId.equals(SentryId.EMPTY_ID) && Boolean.TRUE.equals(span.isSampled())) {
         span.setData(SpanDataConvention.PROFILER_ID, profilerId.toString());
       }
       span.setData(

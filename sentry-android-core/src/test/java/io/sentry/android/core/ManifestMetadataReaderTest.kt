@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
+import io.sentry.ProfileLifecycle
 import io.sentry.SentryLevel
 import io.sentry.SentryReplayOptions
 import org.junit.runner.RunWith
@@ -839,6 +840,32 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertNull(fixture.options.profileSessionSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata without specifying profileLifecycle, stays MANUAL`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(ProfileLifecycle.MANUAL, fixture.options.profileLifecycle)
+    }
+
+    @Test
+    fun `applyMetadata reads profileLifecycle from metadata`() {
+        // Arrange
+        val expectedLifecycle = "trace"
+        val bundle = bundleOf(ManifestMetadataReader.PROFILE_LIFECYCLE to expectedLifecycle)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(ProfileLifecycle.TRACE, fixture.options.profileLifecycle)
     }
 
     @Test

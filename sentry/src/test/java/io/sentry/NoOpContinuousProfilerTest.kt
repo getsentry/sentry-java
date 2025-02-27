@@ -11,11 +11,11 @@ class NoOpContinuousProfilerTest {
 
     @Test
     fun `start does not throw`() =
-        profiler.start(mock())
+        profiler.startProfileSession(mock(), mock())
 
     @Test
     fun `stop does not throw`() =
-        profiler.stop()
+        profiler.stopProfileSession(mock())
 
     @Test
     fun `isRunning returns false`() {

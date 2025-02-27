@@ -186,7 +186,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     sentryOptions
         .getExperimental()
         .setProfileSessionSampleRate(profilingOptions.isContinuousProfileSampled() ? 1.0 : 0.0);
-    appStartContinuousProfiler.start(new TracesSampler(sentryOptions));
+    appStartContinuousProfiler.startProfileSession(
+        profilingOptions.getProfileLifecycle(), new TracesSampler(sentryOptions));
   }
 
   private void createAndStartTransactionProfiler(

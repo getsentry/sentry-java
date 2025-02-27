@@ -443,8 +443,10 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> (Z)V
+	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
 	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
+	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
 	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
 	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 }
@@ -725,8 +727,8 @@ public abstract interface class io/sentry/IContinuousProfiler {
 	public abstract fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isRunning ()Z
 	public abstract fun reevaluateSampling ()V
-	public abstract fun start (Lio/sentry/TracesSampler;)V
-	public abstract fun stop ()V
+	public abstract fun startProfileSession (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
+	public abstract fun stopProfileSession (Lio/sentry/ProfileLifecycle;)V
 }
 
 public abstract interface class io/sentry/IEnvelopeReader {
@@ -1409,8 +1411,8 @@ public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfi
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun isRunning ()Z
 	public fun reevaluateSampling ()V
-	public fun start (Lio/sentry/TracesSampler;)V
-	public fun stop ()V
+	public fun startProfileSession (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
+	public fun stopProfileSession (Lio/sentry/ProfileLifecycle;)V
 }
 
 public final class io/sentry/NoOpEnvelopeReader : io/sentry/IEnvelopeReader {
@@ -1918,6 +1920,13 @@ public final class io/sentry/ProfileContext$Deserializer : io/sentry/JsonDeseria
 public final class io/sentry/ProfileContext$JsonKeys {
 	public static final field PROFILER_ID Ljava/lang/String;
 	public fun <init> ()V
+}
+
+public final class io/sentry/ProfileLifecycle : java/lang/Enum {
+	public static final field MANUAL Lio/sentry/ProfileLifecycle;
+	public static final field TRACE Lio/sentry/ProfileLifecycle;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/ProfileLifecycle;
+	public static fun values ()[Lio/sentry/ProfileLifecycle;
 }
 
 public final class io/sentry/ProfilingTraceData : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -2489,6 +2498,7 @@ public abstract interface class io/sentry/Sentry$OptionsConfiguration {
 
 public final class io/sentry/SentryAppStartProfilingOptions : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
+	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
 	public fun getProfileSampleRate ()Ljava/lang/Double;
 	public fun getProfilingTracesDirPath ()Ljava/lang/String;
 	public fun getProfilingTracesHz ()I
@@ -2502,6 +2512,7 @@ public final class io/sentry/SentryAppStartProfilingOptions : io/sentry/JsonSeri
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setContinuousProfileSampled (Z)V
 	public fun setContinuousProfilingEnabled (Z)V
+	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
 	public fun setProfileSampleRate (Ljava/lang/Double;)V
 	public fun setProfileSampled (Z)V
 	public fun setProfilingEnabled (Z)V
@@ -2522,6 +2533,7 @@ public final class io/sentry/SentryAppStartProfilingOptions$JsonKeys {
 	public static final field CONTINUOUS_PROFILE_SAMPLED Ljava/lang/String;
 	public static final field IS_CONTINUOUS_PROFILING_ENABLED Ljava/lang/String;
 	public static final field IS_PROFILING_ENABLED Ljava/lang/String;
+	public static final field PROFILE_LIFECYCLE Ljava/lang/String;
 	public static final field PROFILE_SAMPLED Ljava/lang/String;
 	public static final field PROFILE_SAMPLE_RATE Ljava/lang/String;
 	public static final field PROFILING_TRACES_DIR_PATH Ljava/lang/String;
@@ -2994,6 +3006,7 @@ public class io/sentry/SentryOptions {
 	public fun getOptionsObservers ()Ljava/util/List;
 	public fun getOutboxPath ()Ljava/lang/String;
 	public fun getPerformanceCollectors ()Ljava/util/List;
+	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
 	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampler ()Lio/sentry/SentryOptions$ProfilesSamplerCallback;
