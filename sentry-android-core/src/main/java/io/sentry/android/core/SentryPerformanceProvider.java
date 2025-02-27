@@ -263,6 +263,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
             final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
             if (timeSpan != null) {
               timeSpan.getOnStart().setStoppedAt(SystemClock.uptimeMillis());
+              timeSpan.getOnStart().setDescription(activity.getClass().getName() + ".onStop");
               AppStartMetrics.getInstance().addActivityLifecycleTimeSpans(timeSpan);
             }
 

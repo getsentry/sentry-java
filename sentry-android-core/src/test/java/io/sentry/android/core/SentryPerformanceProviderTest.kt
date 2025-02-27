@@ -262,9 +262,11 @@ class SentryPerformanceProviderTest {
         val timeSpan = AppStartMetrics.getInstance().activityLifecycleTimeSpans[0]
         assertTrue(timeSpan.onCreate.hasStarted())
         assertTrue(timeSpan.onCreate.hasStopped())
+        assertNotNull(timeSpan.onCreate.description)
 
         assertTrue(timeSpan.onStart.hasStarted())
         assertTrue(timeSpan.onStart.hasStopped())
+        assertNotNull(timeSpan.onCreate.description)
     }
 
     private fun writeConfig(
