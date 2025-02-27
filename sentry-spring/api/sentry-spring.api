@@ -255,7 +255,9 @@ public class io/sentry/spring/tracing/SentryTracingFilter : org/springframework/
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun <init> (Lio/sentry/IScopes;Lio/sentry/spring/tracing/TransactionNameProvider;)V
+	public fun <init> (Lio/sentry/IScopes;Lio/sentry/spring/tracing/TransactionNameProvider;Z)V
 	protected fun doFilterInternal (Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;Ljavax/servlet/FilterChain;)V
+	protected fun shouldNotFilterAsyncDispatch ()Z
 }
 
 public abstract interface annotation class io/sentry/spring/tracing/SentryTransaction : java/lang/annotation/Annotation {
