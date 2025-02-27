@@ -242,6 +242,48 @@ class SentryPerformanceProviderTest {
     }
 
     @Test
+    fun `Sets app launch type to cold`() {
+        val provider = fixture.getSut()
+        val activity = mock<Activity>()
+        provider.onCreate()
+
+        assertEquals(AppStartMetrics.AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
+
+        // when the first activity has no bundle
+        fixture.activityLifecycleCallback!!.onActivityCreated(activity, null)
+
+        // then the app start is considered cold
+        assertEquals(AppStartMetrics.AppStartType.COLD, AppStartMetrics.getInstance().appStartType)
+
+        // when any subsequent activity launches
+        fixture.activityLifecycleCallback!!.onActivityCreated(activity, mock<Bundle>())
+
+        // then the app start is still considered cold
+        assertEquals(AppStartMetrics.AppStartType.COLD, AppStartMetrics.getInstance().appStartType)
+    }
+
+    @Test
+    fun `Sets app launch type to warm`() {
+        val provider = fixture.getSut()
+        val activity = mock<Activity>()
+        provider.onCreate()
+
+        assertEquals(AppStartMetrics.AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
+
+        // when the first activity has a bundle
+        fixture.activityLifecycleCallback!!.onActivityCreated(activity, mock<Bundle>())
+
+        // then the app start is considered WARM
+        assertEquals(AppStartMetrics.AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
+
+        // when any subsequent activity launches
+        fixture.activityLifecycleCallback!!.onActivityCreated(activity, null)
+
+        // then the app start is still considered warm
+        assertEquals(AppStartMetrics.AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
+    }
+
+    @Test
     fun `Creates activity lifecycle spans`() {
         val provider = fixture.getSut()
 

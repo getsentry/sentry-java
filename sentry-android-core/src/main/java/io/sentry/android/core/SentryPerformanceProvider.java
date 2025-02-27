@@ -223,7 +223,10 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
               @NonNull Activity activity, @androidx.annotation.Nullable Bundle savedInstanceState) {
             super.onActivityCreated(activity, savedInstanceState);
             if (appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.UNKNOWN) {
-              appStartMetrics.setAppStartType(AppStartMetrics.AppStartType.COLD);
+              appStartMetrics.setAppStartType(
+                  savedInstanceState == null
+                      ? AppStartMetrics.AppStartType.COLD
+                      : AppStartMetrics.AppStartType.WARM);
             }
           }
 
