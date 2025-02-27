@@ -318,7 +318,7 @@ final class ManifestMetadataReader {
           }
         }
 
-        if (options.getProfileSessionSampleRate() == 0.0) {
+        if (options.getProfileSessionSampleRate() == null) {
           final double profileSessionSampleRate =
               readDouble(metadata, logger, PROFILE_SESSION_SAMPLE_RATE);
           if (profileSessionSampleRate != -1) {
