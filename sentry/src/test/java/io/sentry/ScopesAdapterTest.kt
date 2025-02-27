@@ -266,13 +266,13 @@ class ScopesAdapterTest {
         verify(scopes).reportFullyDisplayed()
     }
 
-    @Test fun `startProfiler calls Scopes`() {
-        ScopesAdapter.getInstance().startProfiler()
-        verify(scopes).startProfiler()
+    @Test fun `startProfileSession calls Scopes`() {
+        ScopesAdapter.getInstance().startProfileSession()
+        verify(scopes).startProfileSession()
     }
 
-    @Test fun `stopProfiler calls Scopes`() {
-        ScopesAdapter.getInstance().stopProfiler()
-        verify(scopes).stopProfiler()
+    @Test fun `stopProfileSession calls Scopes`() {
+        ScopesAdapter.getInstance().stopProfileSession()
+        verify(scopes).stopProfileSession()
     }
 }

@@ -592,9 +592,9 @@ public interface IScopes {
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions);
 
-  void startProfiler();
+  void startProfileSession();
 
-  void stopProfiler();
+  void stopProfileSession();
 
   /**
    * Associates {@link ISpan} and the transaction name with the {@link Throwable}. Used to determine

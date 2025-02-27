@@ -924,7 +924,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void startProfiler() {
+  public void startProfileSession() {
     if (getOptions().isContinuousProfilingEnabled()) {
       getOptions().getContinuousProfiler().start(getOptions().getInternalTracesSampler());
     } else if (getOptions().isProfilingEnabled()) {
@@ -937,7 +937,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void stopProfiler() {
+  public void stopProfileSession() {
     if (getOptions().isContinuousProfilingEnabled()) {
       getOptions().getLogger().log(SentryLevel.DEBUG, "Stopped continuous Profiling.");
       getOptions().getContinuousProfiler().stop();

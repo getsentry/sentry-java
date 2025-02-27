@@ -244,10 +244,10 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public void startProfiler() {}
+  public void startProfileSession() {}
 
   @Override
-  public void stopProfiler() {}
+  public void stopProfileSession() {}
 
   @Override
   public void setSpanContext(
