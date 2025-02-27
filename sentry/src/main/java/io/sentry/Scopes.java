@@ -990,21 +990,6 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void setTrace(
-      final @NotNull String traceId,
-      final @NotNull String spanId,
-      final @Nullable Double sampleRate,
-      final @Nullable Double sampleRand) {
-    @NotNull
-    PropagationContext propagationContext =
-        PropagationContext.fromExistingTrace(traceId, spanId, sampleRate, sampleRand);
-    configureScope(
-        (scope) -> {
-          scope.setPropagationContext(propagationContext);
-        });
-  }
-
-  @Override
   public @Nullable SentryTraceHeader getTraceparent() {
     if (!isEnabled()) {
       getOptions()

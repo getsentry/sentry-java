@@ -658,20 +658,6 @@ public interface IScopes {
       final @Nullable String sentryTrace, final @Nullable List<String> baggageHeaders);
 
   /**
-   * Set a trace. This is primarily used by other SDKs in a Hybrid SDK context
-   *
-   * @param traceId the trace ID
-   * @param spanId the trace origin's span ID
-   * @param sampleRate the sample rate used by the origin of the trace
-   * @param sampleRand the random value used to sample with by the origin of the trace
-   */
-  void setTrace(
-      final @NotNull String traceId,
-      final @NotNull String spanId,
-      final @Nullable Double sampleRate,
-      final @Nullable Double sampleRand);
-
-  /**
    * Returns the "sentry-trace" header that allows tracing across services. Can also be used in
    * &lt;meta&gt; HTML tags. Also see {@link IScopes#getBaggage()}.
    *

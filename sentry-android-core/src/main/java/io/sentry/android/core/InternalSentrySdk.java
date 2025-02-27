@@ -14,6 +14,7 @@ import io.sentry.IScope;
 import io.sentry.IScopes;
 import io.sentry.ISerializer;
 import io.sentry.ObjectWriter;
+import io.sentry.PropagationContext;
 import io.sentry.ScopeType;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryEnvelope;
@@ -31,6 +32,7 @@ import io.sentry.protocol.Device;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.MapObjectWriter;
+import io.sentry.util.TracingUtils;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -344,6 +346,8 @@ public final class InternalSentrySdk {
       final @NotNull String spanId,
       final @Nullable Double sampleRate,
       final @Nullable Double sampleRand) {
-    getCurrentScopes().setTrace(traceId, spanId, sampleRate, sampleRand);
+    TracingUtils.setTrace(
+        getCurrentScopes(),
+        PropagationContext.fromExistingTrace(traceId, spanId, sampleRate, sampleRand));
   }
 }

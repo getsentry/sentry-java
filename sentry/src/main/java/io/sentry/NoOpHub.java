@@ -277,13 +277,6 @@ public final class NoOpHub implements IHub {
   }
 
   @Override
-  public void setTrace(
-      final @NotNull String traceId,
-      final @NotNull String spanId,
-      final @Nullable Double sampleRate,
-      final @Nullable Double sampleRand) {}
-
-  @Override
   public @Nullable SentryTraceHeader getTraceparent() {
     return null;
   }

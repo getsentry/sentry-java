@@ -19,6 +19,7 @@ import io.sentry.SentryExceptionFactory
 import io.sentry.SentryItemType
 import io.sentry.SentryOptions
 import io.sentry.Session
+import io.sentry.SpanId
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.exception.ExceptionMechanismException
