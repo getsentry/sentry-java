@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
@@ -25,6 +26,7 @@ import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.ActivityLifecycleCallbacksAdapter;
+import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import java.io.BufferedReader;
@@ -33,6 +35,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -200,10 +203,48 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
     appStartMetrics.registerApplicationForegroundCheck(app);
 
-    final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
+    final @NotNull AtomicBoolean firstDrawDone = new AtomicBoolean(false);
+    final @NotNull WeakHashMap<Activity, ActivityLifecycleTimeSpan> activityLifecycleMap =
+        new WeakHashMap<>();
 
     activityCallback =
         new ActivityLifecycleCallbacksAdapter() {
+
+          @Override
+          public void onActivityPreCreated(
+              @NonNull Activity activity, @androidx.annotation.Nullable Bundle savedInstanceState) {
+            final @Nullable ActivityLifecycleTimeSpan timeSpan = new ActivityLifecycleTimeSpan();
+            timeSpan.getOnCreate().start();
+            activityLifecycleMap.put(activity, timeSpan);
+          }
+
+          @Override
+          public void onActivityCreated(
+              @NonNull Activity activity, @androidx.annotation.Nullable Bundle savedInstanceState) {
+            super.onActivityCreated(activity, savedInstanceState);
+            if (appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.UNKNOWN) {
+              appStartMetrics.setAppStartType(AppStartMetrics.AppStartType.COLD);
+            }
+          }
+
+          @Override
+          public void onActivityPostCreated(
+              @NonNull Activity activity, @androidx.annotation.Nullable Bundle savedInstanceState) {
+            final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
+            if (timeSpan != null) {
+              timeSpan.getOnCreate().stop();
+              timeSpan.getOnCreate().setDescription(activity.getClass().getName() + ".onCreate");
+            }
+          }
+
+          @Override
+          public void onActivityPreStarted(@NonNull Activity activity) {
+            final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
+            if (timeSpan != null) {
+              timeSpan.getOnStart().setStartedAt(SystemClock.uptimeMillis());
+            }
+          }
+
           @Override
           public void onActivityStarted(@NonNull Activity activity) {
             if (firstDrawDone.get()) {
@@ -215,6 +256,28 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
             } else {
               new Handler(Looper.getMainLooper()).post(() -> onAppStartDone());
             }
+          }
+
+          @Override
+          public void onActivityPostStarted(@NonNull Activity activity) {
+            final @Nullable ActivityLifecycleTimeSpan timeSpan = activityLifecycleMap.get(activity);
+            if (timeSpan != null) {
+              timeSpan.getOnStart().setStoppedAt(SystemClock.uptimeMillis());
+              AppStartMetrics.getInstance().addActivityLifecycleTimeSpans(timeSpan);
+            }
+
+            // once start is over, we don't need to reference the activity anymore
+            activityLifecycleMap.remove(activity);
+          }
+
+          @Override
+          public void onActivityPreResumed(@NonNull Activity activity) {
+            // empty override, required to avoid api-level breaking calls
+          }
+
+          @Override
+          public void onActivityPostResumed(@NonNull Activity activity) {
+            // empty override, required to avoid api-level breaking calls
           }
         };
 

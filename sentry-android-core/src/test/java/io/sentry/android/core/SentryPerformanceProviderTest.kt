@@ -1,8 +1,11 @@
 package io.sentry.android.core
 
+import android.app.Activity
 import android.app.Application
+import android.app.Application.ActivityLifecycleCallbacks
 import android.content.pm.ProviderInfo
 import android.os.Build
+import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.JsonSerializer
@@ -26,6 +29,7 @@ import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -34,7 +38,7 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 @Config(
-    sdk = [Build.VERSION_CODES.N],
+    sdk = [Build.VERSION_CODES.Q],
     shadows = [SentryShadowProcess::class]
 )
 class SentryPerformanceProviderTest {
@@ -48,6 +52,7 @@ class SentryPerformanceProviderTest {
         val providerInfo = ProviderInfo()
         val logger = mock<ILogger>()
         lateinit var configFile: File
+        var activityLifecycleCallback: ActivityLifecycleCallbacks? = null
 
         fun getSut(sdkVersion: Int = Build.VERSION_CODES.S, authority: String = AUTHORITY, handleFile: ((config: File) -> Unit)? = null): SentryPerformanceProvider {
             val buildInfoProvider: BuildInfoProvider = mock()
@@ -57,6 +62,10 @@ class SentryPerformanceProviderTest {
             configFile = File(sentryCache, Sentry.APP_START_PROFILING_CONFIG_FILE_NAME)
             handleFile?.invoke(configFile)
 
+            whenever(mockContext.registerActivityLifecycleCallbacks(any())).then {
+                activityLifecycleCallback = it.arguments[0] as ActivityLifecycleCallbacks
+                return@then Unit
+            }
             providerInfo.authority = authority
             return SentryPerformanceProvider(logger, buildInfoProvider).apply {
                 attachInfo(mockContext, providerInfo)
@@ -230,6 +239,32 @@ class SentryPerformanceProviderTest {
         provider.shutdown()
         assertNotNull(AppStartMetrics.getInstance().appStartProfiler)
         assertFalse(AppStartMetrics.getInstance().appStartProfiler!!.isRunning)
+    }
+
+    @Test
+    fun `Creates activity lifecycle spans`() {
+        val provider = fixture.getSut()
+
+        val activity = mock<Activity>()
+        val bundle: Bundle? = null
+
+        provider.onCreate()
+        assertTrue(AppStartMetrics.getInstance().activityLifecycleTimeSpans.isEmpty())
+
+        fixture.activityLifecycleCallback!!.onActivityPreCreated(activity, bundle)
+        fixture.activityLifecycleCallback!!.onActivityPostCreated(activity, bundle)
+
+        fixture.activityLifecycleCallback!!.onActivityPreStarted(activity)
+        fixture.activityLifecycleCallback!!.onActivityPostStarted(activity)
+
+        assertEquals(1, AppStartMetrics.getInstance().activityLifecycleTimeSpans.size)
+
+        val timeSpan = AppStartMetrics.getInstance().activityLifecycleTimeSpans[0]
+        assertTrue(timeSpan.onCreate.hasStarted())
+        assertTrue(timeSpan.onCreate.hasStopped())
+
+        assertTrue(timeSpan.onStart.hasStarted())
+        assertTrue(timeSpan.onStart.hasStopped())
     }
 
     private fun writeConfig(
