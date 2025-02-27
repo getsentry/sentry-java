@@ -47,8 +47,7 @@ public final class ExperimentalOptions {
    * @return the profile lifecycle
    */
   @ApiStatus.Experimental
-  @NotNull
-  public ProfileLifecycle getProfileLifecycle() {
+  public @NotNull ProfileLifecycle getProfileLifecycle() {
     return profileLifecycle;
   }
 

@@ -444,10 +444,10 @@ public abstract interface class io/sentry/EventProcessor {
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> (Z)V
 	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
-	public fun getProfileSessionSampleRate ()D
+	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
 	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
-	public fun setProfileSessionSampleRate (D)V
+	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
 	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 }
 
@@ -3007,7 +3007,7 @@ public class io/sentry/SentryOptions {
 	public fun getOutboxPath ()Ljava/lang/String;
 	public fun getPerformanceCollectors ()Ljava/util/List;
 	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
-	public fun getProfileSessionSampleRate ()D
+	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampler ()Lio/sentry/SentryOptions$ProfilesSamplerCallback;
 	public fun getProfilingTracesDirPath ()Ljava/lang/String;
@@ -6340,7 +6340,7 @@ public final class io/sentry/util/Random : java/io/Serializable {
 
 public final class io/sentry/util/SampleRateUtils {
 	public fun <init> ()V
-	public static fun isValidContinuousProfilesSampleRate (D)Z
+	public static fun isValidContinuousProfilesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidProfilesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;)Z
