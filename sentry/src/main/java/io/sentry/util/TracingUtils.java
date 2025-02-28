@@ -28,6 +28,17 @@ public final class TracingUtils {
         });
   }
 
+  public static void setTrace(
+      final @NotNull IScopes scopes, final @NotNull PropagationContext propagationContext) {
+    scopes.configureScope(
+        scope -> {
+          scope.withPropagationContext(
+              oldPropagationContext -> {
+                scope.setPropagationContext(propagationContext);
+              });
+        });
+  }
+
   public static @Nullable TracingHeaders traceIfAllowed(
       final @NotNull IScopes scopes,
       final @NotNull String requestUrl,

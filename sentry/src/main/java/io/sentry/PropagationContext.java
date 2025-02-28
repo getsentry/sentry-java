@@ -51,6 +51,19 @@ public final class PropagationContext {
         sentryTraceHeader.isSampled());
   }
 
+  public static @NotNull PropagationContext fromExistingTrace(
+      final @NotNull String traceId,
+      final @NotNull String spanId,
+      final @Nullable Double decisionSampleRate,
+      final @Nullable Double decisionSampleRand) {
+    return new PropagationContext(
+        new SentryId(traceId),
+        new SpanId(),
+        new SpanId(spanId),
+        TracingUtils.ensureBaggage(null, null, decisionSampleRate, decisionSampleRand),
+        null);
+  }
+
   private @NotNull SentryId traceId;
   private @NotNull SpanId spanId;
   private @Nullable SpanId parentSpanId;
