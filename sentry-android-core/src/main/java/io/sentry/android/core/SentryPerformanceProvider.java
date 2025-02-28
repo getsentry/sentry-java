@@ -9,11 +9,11 @@ import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
 import android.os.SystemClock;
-import androidx.annotation.NonNull;
 import io.sentry.ILogger;
 import io.sentry.ITransactionProfiler;
 import io.sentry.JsonSerializer;
@@ -33,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -204,8 +205,32 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
     activityCallback =
         new ActivityLifecycleCallbacksAdapter() {
+
           @Override
-          public void onActivityStarted(@NonNull Activity activity) {
+          public void onActivityCreated(
+              @NotNull Activity activity, @Nullable Bundle savedInstanceState) {
+            if (appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.UNKNOWN) {
+              // We consider pre-loaded application loads as warm starts
+              // This usually happens e.g. due to BroadcastReceivers triggering
+              // Application.onCreate only, but no Activity.onCreate
+              final long now = SystemClock.uptimeMillis();
+              final long durationMs =
+                  now - appStartMetrics.getAppStartTimeSpan().getStartUptimeMs();
+              if (durationMs > TimeUnit.SECONDS.toMillis(1)) {
+                appStartMetrics.restartAppStart(now);
+                appStartMetrics.setAppStartType(AppStartMetrics.AppStartType.WARM);
+              } else {
+                // Otherwise a non-null bundle determines the behavior
+                appStartMetrics.setAppStartType(
+                    savedInstanceState == null
+                        ? AppStartMetrics.AppStartType.COLD
+                        : AppStartMetrics.AppStartType.WARM);
+              }
+            }
+          }
+
+          @Override
+          public void onActivityStarted(@NotNull Activity activity) {
             if (firstDrawDone.get()) {
               return;
             }
