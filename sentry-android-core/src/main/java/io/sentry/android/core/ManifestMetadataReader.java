@@ -70,6 +70,8 @@ final class ManifestMetadataReader {
 
   static final String PROFILE_LIFECYCLE = "io.sentry.traces.profiling.lifecycle";
 
+  static final String PROFILER_START_ON_APP_START = "io.sentry.traces.profiling.start-on-app-start";
+
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
   static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
 
@@ -341,6 +343,10 @@ final class ManifestMetadataReader {
               .setProfileLifecycle(
                   ProfileLifecycle.valueOf(profileLifecycle.toUpperCase(Locale.ROOT)));
         }
+
+        options.getExperimental().setStartProfilerOnAppStart(
+          readBool(
+            metadata, logger, PROFILER_START_ON_APP_START, options.isStartProfilerOnAppStart()));
 
         options.setEnableUserInteractionTracing(
             readBool(metadata, logger, TRACES_UI_ENABLE, options.isEnableUserInteractionTracing()));
