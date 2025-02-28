@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Capture OpenTelemetry span events ([#3564](https://github.com/getsentry/sentry-java/pull/3564))
+  - OpenTelemetry spans may have exceptions attached to them (`openTelemetrySpan.recordException`). We can now send those to Sentry as errors.
+  - Set `capture-open-telemetry-events=true` in `sentry.properties` to enable it
+  - Set `sentry.capture-open-telemetry-events=true` in Springs `application.properties` to enable it
+  - Set `sentry.captureOpenTelemetryEvents: true` in Springs `application.yml` to enable it
+
 ## 8.3.0
 
 ### Features
