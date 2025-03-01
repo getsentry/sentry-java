@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Dependencies
+
+- Bump Native SDK from v0.7.20 to v0.8.1 ([#4217](https://github.com/getsentry/sentry-java/pull/4217))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#081)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.20...0.8.1)
+
 ## 8.3.0
 
 ### Features
