@@ -152,7 +152,7 @@ public final class SentryAndroid {
               }
             }
             if (context.getApplicationContext() instanceof Application) {
-              appStartMetrics.registerApplicationForegroundCheck(
+              appStartMetrics.registerLifecycleCallbacks(
                   (Application) context.getApplicationContext());
             }
             final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();

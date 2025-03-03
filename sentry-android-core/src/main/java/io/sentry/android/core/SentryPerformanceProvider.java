@@ -3,19 +3,13 @@ package io.sentry.android.core;
 import static io.sentry.Sentry.APP_START_PROFILING_CONFIG_FILE_NAME;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.Process;
 import android.os.SystemClock;
-import android.util.Log;
-import androidx.annotation.NonNull;
 import io.sentry.ILogger;
 import io.sentry.ITransactionProfiler;
 import io.sentry.JsonSerializer;
@@ -24,9 +18,7 @@ import io.sentry.SentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.TracesSamplingDecision;
-import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
-import io.sentry.android.core.performance.ActivityLifecycleCallbacksAdapter;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import java.io.BufferedReader;
@@ -35,8 +27,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,8 +44,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
   private final @NotNull ILogger logger;
   private final @NotNull BuildInfoProvider buildInfoProvider;
-  private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
-  private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
 
   @TestOnly
   SentryPerformanceProvider(
@@ -190,8 +178,9 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
     // performance v2: Uses Process.getStartUptimeMillis()
     // requires API level 24+
-    if (buildInfoProvider.getSdkInfoVersion() < android.os.Build.VERSION_CODES.N) {
-      return;
+    if (buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
+      final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
+      appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
     }
 
     if (context instanceof Application) {
@@ -201,61 +190,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       return;
     }
 
-    final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
-    appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
-    appStartMetrics.registerApplicationForegroundCheck(app);
-
-    activityCallback =
-        new ActivityLifecycleCallbacksAdapter() {
-
-          @Override
-          public void onActivityCreated(
-              @NotNull Activity activity, @Nullable Bundle savedInstanceState) {
-            Log.d("TAG", "onActivityCreated");
-            activeActivitiesCounter.incrementAndGet();
-
-            // In case the SDK gets initialized async or the
-            // ActivityLifecycleIntegration is not enabled (e.g on RN due to Context not being
-            // instanceof Application)
-            // the app start type never gets set
-            if (!firstDrawDone.get()) {
-              final long now = SystemClock.uptimeMillis();
-              AppStartMetrics.getInstance().updateAppStartType(savedInstanceState != null, now);
-            }
-          }
-
-          @Override
-          public void onActivityStarted(@NotNull Activity activity) {
-            if (firstDrawDone.get()) {
-              return;
-            }
-            if (activity.getWindow() != null) {
-              FirstDrawDoneListener.registerForNextDraw(
-                  activity, () -> onAppStartDone(), buildInfoProvider);
-            } else {
-              new Handler(Looper.getMainLooper()).post(() -> onAppStartDone());
-            }
-          }
-
-          @Override
-          public void onActivityDestroyed(@NonNull Activity activity) {
-            final int remainingActivities = activeActivitiesCounter.decrementAndGet();
-            // if the app is moving into background, reset firstDrawDone
-            // as the next Activity is considered like a new app start
-            if (remainingActivities == 0 && !activity.isChangingConfigurations()) {
-              firstDrawDone.set(false);
-            }
-          }
-        };
-
-    app.registerActivityLifecycleCallbacks(activityCallback);
-  }
-
-  synchronized void onAppStartDone() {
-    if (!firstDrawDone.getAndSet(true)) {
-      final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-      appStartMetrics.getSdkInitTimeSpan().stop();
-      appStartMetrics.getAppStartTimeSpan().stop();
-    }
+    appStartMetrics.registerLifecycleCallbacks(app);
   }
 }

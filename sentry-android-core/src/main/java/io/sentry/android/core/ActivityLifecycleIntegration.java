@@ -397,7 +397,6 @@ public final class ActivityLifecycleIntegration
     if (!isAllActivityCallbacksAvailable) {
       onActivityPreCreated(activity, savedInstanceState);
     }
-    setColdStart(savedInstanceState != null);
     if (hub != null && options != null && options.isEnableScreenTracking()) {
       final @Nullable String activityClassName = ClassUtil.getClassName(activity);
       hub.configureScope(scope -> scope.setScreen(activityClassName));
@@ -553,17 +552,6 @@ public final class ActivityLifecycleIntegration
     // activity stack still.
     // if the activity is opened again and not in memory, transactions will be created normally.
     activitiesWithOngoingTransactions.remove(activity);
-
-    if (activitiesWithOngoingTransactions.isEmpty()) {
-      clear();
-    }
-  }
-
-  private void clear() {
-    firstActivityCreated = false;
-    lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
-    lastPausedUptimeMillis = 0;
-    activityLifecycleMap.clear();
   }
 
   private void finishSpan(final @Nullable ISpan span) {
@@ -703,12 +691,6 @@ public final class ActivityLifecycleIntegration
   @NotNull
   WeakHashMap<Activity, ISpan> getTtfdSpanMap() {
     return ttfdSpanMap;
-  }
-
-  private void setColdStart(final boolean hasBundle) {
-    if (!firstActivityCreated) {
-      AppStartMetrics.getInstance().updateAppStartType(hasBundle, lastPausedUptimeMillis);
-    }
   }
 
   private @NotNull String getTtidDesc(final @NotNull String activityName) {

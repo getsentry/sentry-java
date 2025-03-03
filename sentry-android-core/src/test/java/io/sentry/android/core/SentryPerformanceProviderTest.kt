@@ -1,11 +1,9 @@
 package io.sentry.android.core
 
-import android.app.Activity
 import android.app.Application
 import android.app.Application.ActivityLifecycleCallbacks
 import android.content.pm.ProviderInfo
 import android.os.Build
-import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.JsonSerializer
@@ -19,7 +17,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
@@ -29,7 +26,6 @@ import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -52,7 +48,7 @@ class SentryPerformanceProviderTest {
         val providerInfo = ProviderInfo()
         val logger = mock<ILogger>()
         lateinit var configFile: File
-        var activityLifecycleCallback: ActivityLifecycleCallbacks? = null
+        var activityLifecycleCallbacks: MutableList<ActivityLifecycleCallbacks> = mutableListOf()
 
         fun getSut(sdkVersion: Int = Build.VERSION_CODES.S, authority: String = AUTHORITY, handleFile: ((config: File) -> Unit)? = null): SentryPerformanceProvider {
             val buildInfoProvider: BuildInfoProvider = mock()
@@ -62,7 +58,11 @@ class SentryPerformanceProviderTest {
             configFile = File(sentryCache, Sentry.APP_START_PROFILING_CONFIG_FILE_NAME)
             handleFile?.invoke(configFile)
             whenever(mockContext.registerActivityLifecycleCallbacks(any())).then {
-                activityLifecycleCallback = it.arguments[0] as ActivityLifecycleCallbacks
+                activityLifecycleCallbacks.add(it.arguments[0] as ActivityLifecycleCallbacks)
+                return@then Unit
+            }
+            whenever(mockContext.unregisterActivityLifecycleCallbacks(any())).then {
+                activityLifecycleCallbacks.remove(it.arguments[0] as ActivityLifecycleCallbacks)
                 return@then Unit
             }
             providerInfo.authority = authority
@@ -112,24 +112,11 @@ class SentryPerformanceProviderTest {
     @Test
     fun `provider sets both appstart and sdk init start + end times`() {
         val provider = fixture.getSut()
-        provider.onAppStartDone()
+        provider.onCreate()
 
         val metrics = AppStartMetrics.getInstance()
         assertTrue(metrics.appStartTimeSpan.hasStarted())
-        assertTrue(metrics.appStartTimeSpan.hasStopped())
-
         assertTrue(metrics.sdkInitTimeSpan.hasStarted())
-        assertTrue(metrics.sdkInitTimeSpan.hasStopped())
-    }
-
-    @Test
-    fun `provider properly registers and unregisters ActivityLifecycleCallbacks`() {
-        val provider = fixture.getSut()
-
-        // It register once for the provider itself and once for the appStartMetrics
-        verify(fixture.mockContext, times(2)).registerActivityLifecycleCallbacks(any())
-        provider.onAppStartDone()
-        verify(fixture.mockContext).unregisterActivityLifecycleCallbacks(any())
     }
 
     //region app start profiling
@@ -238,73 +225,6 @@ class SentryPerformanceProviderTest {
         provider.shutdown()
         assertNotNull(AppStartMetrics.getInstance().appStartProfiler)
         assertFalse(AppStartMetrics.getInstance().appStartProfiler!!.isRunning)
-    }
-
-    @Test
-    fun `Sets app launch type to cold`() {
-        val provider = fixture.getSut()
-        val activity = mock<Activity>()
-        provider.onCreate()
-
-        assertEquals(AppStartMetrics.AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
-
-        // when the first activity has no bundle
-        fixture.activityLifecycleCallback!!.onActivityCreated(activity, null)
-
-        // then the app start is considered cold
-        assertEquals(AppStartMetrics.AppStartType.COLD, AppStartMetrics.getInstance().appStartType)
-
-        // when any subsequent activity launches
-        fixture.activityLifecycleCallback!!.onActivityCreated(activity, mock<Bundle>())
-
-        // then the app start is still considered cold
-        assertEquals(AppStartMetrics.AppStartType.COLD, AppStartMetrics.getInstance().appStartType)
-    }
-
-    @Test
-    fun `Sets app launch type to warm if process init is too old`() {
-        val provider = fixture.getSut()
-        val activity = mock<Activity>()
-        provider.onCreate()
-
-        assertEquals(AppStartMetrics.AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
-
-        AppStartMetrics.getInstance().appStartTimeSpan.setStartedAt(
-            AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs - 20000
-        )
-
-        // when the first activity has no bundle
-        fixture.activityLifecycleCallback!!.onActivityCreated(activity, null)
-
-        // then the app start is considered warm
-        assertEquals(AppStartMetrics.AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
-
-        // when any subsequent activity launches
-        fixture.activityLifecycleCallback!!.onActivityCreated(activity, mock<Bundle>())
-
-        // then the app start is still considered warm
-        assertEquals(AppStartMetrics.AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
-    }
-
-    @Test
-    fun `Sets app launch type to warm`() {
-        val provider = fixture.getSut()
-        val activity = mock<Activity>()
-        provider.onCreate()
-
-        assertEquals(AppStartMetrics.AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
-
-        // when the first activity has a bundle
-        fixture.activityLifecycleCallback!!.onActivityCreated(activity, mock<Bundle>())
-
-        // then the app start is considered WARM
-        assertEquals(AppStartMetrics.AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
-
-        // when any subsequent activity launches
-        fixture.activityLifecycleCallback!!.onActivityCreated(activity, null)
-
-        // then the app start is still considered warm
-        assertEquals(AppStartMetrics.AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
     }
 
     private fun writeConfig(

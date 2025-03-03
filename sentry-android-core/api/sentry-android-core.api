@@ -447,14 +447,15 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
 	public fun getSdkInitTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun isAppLaunchedInForeground ()Z
-	public fun isColdStartValid ()Z
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityDestroyed (Landroid/app/Activity;)V
+	public fun onActivityStarted (Landroid/app/Activity;)V
 	public fun onAppStartSpansSent ()V
 	public static fun onApplicationCreate (Landroid/app/Application;)V
 	public static fun onApplicationPostCreate (Landroid/app/Application;)V
 	public static fun onContentProviderCreate (Landroid/content/ContentProvider;)V
 	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
-	public fun registerApplicationForegroundCheck (Landroid/app/Application;)V
+	public fun registerLifecycleCallbacks (Landroid/app/Application;)V
 	public fun restartAppStart (J)V
 	public fun setAppLaunchedInForeground (Z)V
 	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
@@ -462,7 +463,6 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V
 	public fun setClassLoadedUptimeMs (J)V
 	public fun shouldSendStartMeasurements ()Z
-	public fun updateAppStartType (ZJ)V
 }
 
 public final class io/sentry/android/core/performance/AppStartMetrics$AppStartType : java/lang/Enum {
