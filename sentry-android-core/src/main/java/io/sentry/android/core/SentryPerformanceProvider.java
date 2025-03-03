@@ -14,6 +14,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
 import android.os.SystemClock;
+import android.util.Log;
+import androidx.annotation.NonNull;
 import io.sentry.ILogger;
 import io.sentry.ITransactionProfiler;
 import io.sentry.JsonSerializer;
@@ -33,8 +35,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,6 +54,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
   private final @NotNull ILogger logger;
   private final @NotNull BuildInfoProvider buildInfoProvider;
+  private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
+  private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
 
   @TestOnly
   SentryPerformanceProvider(
@@ -201,35 +205,22 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
     appStartMetrics.registerApplicationForegroundCheck(app);
 
-    final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
-
     activityCallback =
         new ActivityLifecycleCallbacksAdapter() {
 
           @Override
           public void onActivityCreated(
               @NotNull Activity activity, @Nullable Bundle savedInstanceState) {
+            Log.d("TAG", "onActivityCreated");
+            activeActivitiesCounter.incrementAndGet();
+
             // In case the SDK gets initialized async or the
             // ActivityLifecycleIntegration is not enabled (e.g on RN due to Context not being
             // instanceof Application)
             // the app start type never gets set
-            if (appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.UNKNOWN) {
-              // We consider pre-loaded application loads as warm starts
-              // This usually happens e.g. due to BroadcastReceivers triggering
-              // Application.onCreate only, but no Activity.onCreate
+            if (!firstDrawDone.get()) {
               final long now = SystemClock.uptimeMillis();
-              final long durationMs =
-                  now - appStartMetrics.getAppStartTimeSpan().getStartUptimeMs();
-              if (durationMs > TimeUnit.SECONDS.toMillis(1)) {
-                appStartMetrics.restartAppStart(now);
-                appStartMetrics.setAppStartType(AppStartMetrics.AppStartType.WARM);
-              } else {
-                // Otherwise a non-null bundle determines the behavior
-                appStartMetrics.setAppStartType(
-                    savedInstanceState == null
-                        ? AppStartMetrics.AppStartType.COLD
-                        : AppStartMetrics.AppStartType.WARM);
-              }
+              AppStartMetrics.getInstance().updateAppStartType(savedInstanceState != null, now);
             }
           }
 
@@ -245,20 +236,26 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
               new Handler(Looper.getMainLooper()).post(() -> onAppStartDone());
             }
           }
+
+          @Override
+          public void onActivityDestroyed(@NonNull Activity activity) {
+            final int remainingActivities = activeActivitiesCounter.decrementAndGet();
+            // if the app is moving into background, reset firstDrawDone
+            // as the next Activity is considered like a new app start
+            if (remainingActivities == 0 && !activity.isChangingConfigurations()) {
+              firstDrawDone.set(false);
+            }
+          }
         };
 
     app.registerActivityLifecycleCallbacks(activityCallback);
   }
 
   synchronized void onAppStartDone() {
-    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-    appStartMetrics.getSdkInitTimeSpan().stop();
-    appStartMetrics.getAppStartTimeSpan().stop();
-
-    if (app != null) {
-      if (activityCallback != null) {
-        app.unregisterActivityLifecycleCallbacks(activityCallback);
-      }
+    if (!firstDrawDone.getAndSet(true)) {
+      final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+      appStartMetrics.getSdkInitTimeSpan().stop();
+      appStartMetrics.getAppStartTimeSpan().stop();
     }
   }
 }

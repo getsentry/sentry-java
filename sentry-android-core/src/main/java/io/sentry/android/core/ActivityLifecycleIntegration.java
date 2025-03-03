@@ -397,7 +397,7 @@ public final class ActivityLifecycleIntegration
     if (!isAllActivityCallbacksAvailable) {
       onActivityPreCreated(activity, savedInstanceState);
     }
-    setColdStart(savedInstanceState);
+    setColdStart(savedInstanceState != null);
     if (hub != null && options != null && options.isEnableScreenTracking()) {
       final @Nullable String activityClassName = ClassUtil.getClassName(activity);
       hub.configureScope(scope -> scope.setScreen(activityClassName));
@@ -705,24 +705,9 @@ public final class ActivityLifecycleIntegration
     return ttfdSpanMap;
   }
 
-  private void setColdStart(final @Nullable Bundle savedInstanceState) {
+  private void setColdStart(final boolean hasBundle) {
     if (!firstActivityCreated) {
-      final @NotNull TimeSpan appStartSpan = AppStartMetrics.getInstance().getAppStartTimeSpan();
-      // If the app start span already started and stopped, it means the app restarted without
-      //  killing the process, so we are in a warm start
-      // If the app has an invalid cold start, it means it was started in the background, like
-      //  via BroadcastReceiver, so we consider it a warm start
-      if ((appStartSpan.hasStarted() && appStartSpan.hasStopped())
-          || (!AppStartMetrics.getInstance().isColdStartValid())) {
-        AppStartMetrics.getInstance().restartAppStart(lastPausedUptimeMillis);
-        AppStartMetrics.getInstance().setAppStartType(AppStartMetrics.AppStartType.WARM);
-      } else {
-        AppStartMetrics.getInstance()
-            .setAppStartType(
-                savedInstanceState == null
-                    ? AppStartMetrics.AppStartType.COLD
-                    : AppStartMetrics.AppStartType.WARM);
-      }
+      AppStartMetrics.getInstance().updateAppStartType(hasBundle, lastPausedUptimeMillis);
     }
   }
 
