@@ -209,6 +209,10 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
           @Override
           public void onActivityCreated(
               @NotNull Activity activity, @Nullable Bundle savedInstanceState) {
+            // In case the SDK gets initialized async or the
+            // ActivityLifecycleIntegration is not enabled (e.g on RN due to Context not being
+            // instanceof Application)
+            // the app start type never gets set
             if (appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.UNKNOWN) {
               // We consider pre-loaded application loads as warm starts
               // This usually happens e.g. due to BroadcastReceivers triggering
