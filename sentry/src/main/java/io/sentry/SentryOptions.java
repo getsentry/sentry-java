@@ -1813,7 +1813,9 @@ public class SentryOptions {
     return experimental.getProfileLifecycle();
   }
 
-  /** Whether profiling can automatically be started as early as possible during the app lifecycle. */
+  /**
+   * Whether profiling can automatically be started as early as possible during the app lifecycle.
+   */
   @ApiStatus.Experimental
   public boolean isStartProfilerOnAppStart() {
     return experimental.isStartProfilerOnAppStart();

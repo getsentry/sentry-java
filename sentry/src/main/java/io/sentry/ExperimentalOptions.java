@@ -28,9 +28,13 @@ public final class ExperimentalOptions {
   private @NotNull ProfileLifecycle profileLifecycle = ProfileLifecycle.MANUAL;
 
   /**
-   * Whether profiling can automatically be started as early as possible during the app lifecycle, to capture more of app startup.
-   * If {@link ExperimentalOptions#profileLifecycle} is {@link ProfileLifecycle#MANUAL} Profiling is started automatically on startup and stopProfileSession must be called manually whenever the app startup is completed
-   * If {@link ExperimentalOptions#profileLifecycle} is {@link ProfileLifecycle#TRACE} Profiling is started automatically on startup, and will automatically be stopped when the root span that is associated with app startup ends
+   * Whether profiling can automatically be started as early as possible during the app lifecycle,
+   * to capture more of app startup. If {@link ExperimentalOptions#profileLifecycle} is {@link
+   * ProfileLifecycle#MANUAL} Profiling is started automatically on startup and stopProfileSession
+   * must be called manually whenever the app startup is completed If {@link
+   * ExperimentalOptions#profileLifecycle} is {@link ProfileLifecycle#TRACE} Profiling is started
+   * automatically on startup, and will automatically be stopped when the root span that is
+   * associated with app startup ends
    */
   private boolean startProfilerOnAppStart = false;
 

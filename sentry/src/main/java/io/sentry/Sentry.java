@@ -373,8 +373,9 @@ public final class Sentry {
                 if (!options.isEnableAppStartProfiling() && !options.isStartProfilerOnAppStart()) {
                   return;
                 }
-                todo isStartProfilerOnAppStart doesn't need tracing! - SentryTest takes hours to run!
-                if (!options.isTracingEnabled()) {
+                // isStartProfilerOnAppStart doesn't need tracing, as it can be started/stopped
+                // manually
+                if (!options.isStartProfilerOnAppStart() && !options.isTracingEnabled()) {
                   options
                       .getLogger()
                       .log(
@@ -383,8 +384,13 @@ public final class Sentry {
                   return;
                 }
                 if (appStartProfilingConfigFile.createNewFile()) {
-                  // If old app start profiling is false, it means the transaction will not be sampled, but we create the file anyway to allow continuous profiling on app start
-                  final @NotNull TracesSamplingDecision appStartSamplingDecision = options.isEnableAppStartProfiling() ? sampleAppStartProfiling(options) : new TracesSamplingDecision(false);
+                  // If old app start profiling is false, it means the transaction will not be
+                  // sampled, but we create the file anyway to allow continuous profiling on app
+                  // start
+                  final @NotNull TracesSamplingDecision appStartSamplingDecision =
+                      options.isEnableAppStartProfiling()
+                          ? sampleAppStartProfiling(options)
+                          : new TracesSamplingDecision(false);
                   final @NotNull SentryAppStartProfilingOptions appStartProfilingOptions =
                       new SentryAppStartProfilingOptions(options, appStartSamplingDecision);
                   try (final OutputStream outputStream =

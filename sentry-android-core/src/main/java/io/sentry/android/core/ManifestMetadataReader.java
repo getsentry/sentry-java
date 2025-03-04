@@ -344,9 +344,14 @@ final class ManifestMetadataReader {
                   ProfileLifecycle.valueOf(profileLifecycle.toUpperCase(Locale.ROOT)));
         }
 
-        options.getExperimental().setStartProfilerOnAppStart(
-          readBool(
-            metadata, logger, PROFILER_START_ON_APP_START, options.isStartProfilerOnAppStart()));
+        options
+            .getExperimental()
+            .setStartProfilerOnAppStart(
+                readBool(
+                    metadata,
+                    logger,
+                    PROFILER_START_ON_APP_START,
+                    options.isStartProfilerOnAppStart()));
 
         options.setEnableUserInteractionTracing(
             readBool(metadata, logger, TRACES_UI_ENABLE, options.isEnableUserInteractionTracing()));
