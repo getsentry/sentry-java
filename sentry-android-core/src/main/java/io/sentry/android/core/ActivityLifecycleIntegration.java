@@ -560,18 +560,6 @@ public final class ActivityLifecycleIntegration
 
   private void clear() {
     firstActivityCreated = false;
-    lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
-    lastPausedUptimeMillis = 0;
-    activityLifecycleMap.clear();
-  }
-
-    if (activitiesWithOngoingTransactions.isEmpty() && !activity.isChangingConfigurations()) {
-      clear();
-    }
-  }
-
-  private void clear() {
-    firstActivityCreated = false;
     activityLifecycleMap.clear();
   }
   private void finishSpan(final @Nullable ISpan span) {
