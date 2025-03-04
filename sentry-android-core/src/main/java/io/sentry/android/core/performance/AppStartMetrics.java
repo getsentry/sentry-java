@@ -155,7 +155,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   public boolean shouldSendStartMeasurements() {
-    return shouldSendStartMeasurements;
+    return shouldSendStartMeasurements && appLaunchedInForeground;
   }
 
   public void restartAppStart(final long uptimeMillis) {
@@ -344,7 +344,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     // as the next Activity is considered like a new app start
     if (remainingActivities == 0 && !activity.isChangingConfigurations()) {
       appLaunchedInForeground = false;
-      shouldSendStartMeasurements = true;
+      shouldSendStartMeasurements = false;
       firstDrawDone.set(false);
     }
   }

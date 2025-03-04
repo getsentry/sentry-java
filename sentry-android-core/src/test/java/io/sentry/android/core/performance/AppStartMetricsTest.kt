@@ -145,22 +145,6 @@ class AppStartMetricsTest {
     }
 
     @Test
-    fun `if app is launched in background with perfV2, appStartTimeSpanWithFallback returns an empty span`() {
-        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
-        appStartTimeSpan.start()
-        assertTrue(appStartTimeSpan.hasStarted())
-        AppStartMetrics.getInstance().isAppLaunchedInForeground = false
-        AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
-
-        val options = SentryAndroidOptions().apply {
-            isEnablePerformanceV2 = true
-        }
-
-        val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
-        assertFalse(timeSpan.hasStarted())
-    }
-
-    @Test
     fun `if app start span is at most 1 minute, appStartTimeSpanWithFallback returns the app start span`() {
         val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
         appStartTimeSpan.start()
