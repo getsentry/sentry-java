@@ -456,7 +456,6 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public static fun onContentProviderCreate (Landroid/content/ContentProvider;)V
 	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
 	public fun registerLifecycleCallbacks (Landroid/app/Application;)V
-	public fun restartAppStart (J)V
 	public fun setAppLaunchedInForeground (Z)V
 	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V

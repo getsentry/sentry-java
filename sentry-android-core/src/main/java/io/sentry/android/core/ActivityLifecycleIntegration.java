@@ -552,6 +552,17 @@ public final class ActivityLifecycleIntegration
     // activity stack still.
     // if the activity is opened again and not in memory, transactions will be created normally.
     activitiesWithOngoingTransactions.remove(activity);
+
+    if (activitiesWithOngoingTransactions.isEmpty() && !activity.isChangingConfigurations()) {
+      clear();
+    }
+  }
+
+  private void clear() {
+    firstActivityCreated = false;
+    lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
+    lastPausedUptimeMillis = 0;
+    activityLifecycleMap.clear();
   }
 
   private void finishSpan(final @Nullable ISpan span) {

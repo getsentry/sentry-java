@@ -158,15 +158,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     return shouldSendStartMeasurements && appLaunchedInForeground;
   }
 
-  public void restartAppStart(final long uptimeMillis) {
-    shouldSendStartMeasurements = true;
-    appLaunchedInForeground = true;
-    appStartSpan.reset();
-    appStartSpan.start();
-    appStartSpan.setStartedAt(uptimeMillis);
-    CLASS_LOADED_UPTIME_MS = appStartSpan.getStartUptimeMs();
-  }
-
   public long getClassLoadedUptimeMs() {
     return CLASS_LOADED_UPTIME_MS;
   }
@@ -177,22 +168,27 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    */
   public @NotNull TimeSpan getAppStartTimeSpanWithFallback(
       final @NotNull SentryAndroidOptions options) {
-    // If the app launch took too long or it was launched in the background we return an empty span
-    if (appStartType == AppStartType.UNKNOWN) {
-      return new TimeSpan();
-    }
+    // If the app start type was never determined or app wasn't launched in foreground,
+    // the app start is considered invalid
+    if (appStartType != AppStartType.UNKNOWN && appLaunchedInForeground) {
+      if (options.isEnablePerformanceV2()) {
+        // Only started when sdk version is >= N
+        final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
+        if (appStartSpan.hasStarted()
+            && appStartSpan.getDurationMs() <= TimeUnit.MINUTES.toMillis(1)) {
+          return appStartSpan;
+        }
+      }
 
-    if (options.isEnablePerformanceV2()) {
-      // Only started when sdk version is >= N
-      final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
-      if (appStartSpan.hasStarted()
-          && appStartSpan.getDurationMs() <= TimeUnit.MINUTES.toMillis(1)) {
-        return appStartSpan;
+      // fallback: use sdk init time span, as it will always have a start time set
+      final @NotNull TimeSpan sdkInitTimeSpan = getSdkInitTimeSpan();
+      if (sdkInitTimeSpan.hasStarted()
+          && sdkInitTimeSpan.getDurationMs() <= TimeUnit.MINUTES.toMillis(1)) {
+        return sdkInitTimeSpan;
       }
     }
 
-    // fallback: use sdk init time span, as it will always have a start time set
-    return getSdkInitTimeSpan();
+    return new TimeSpan();
   }
 
   @TestOnly
@@ -344,7 +340,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     // as the next Activity is considered like a new app start
     if (remainingActivities == 0 && !activity.isChangingConfigurations()) {
       appLaunchedInForeground = false;
-      shouldSendStartMeasurements = false;
+      shouldSendStartMeasurements = true;
       firstDrawDone.set(false);
     }
   }

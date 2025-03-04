@@ -93,8 +93,11 @@ class AppStartMetricsTest {
     fun `if perf-2 is disabled but app start time span has started, appStartTimeSpanWithFallback returns the sdk init span instead`() {
         val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
         AppStartMetrics.getInstance().appStartType = AppStartMetrics.AppStartType.COLD
-
-        appStartTimeSpan.start()
+        AppStartMetrics.getInstance().sdkInitTimeSpan.apply {
+            setStartedAt(123)
+            setStoppedAt(456)
+        }
+        appStartTimeSpan.setStartedAt(123)
 
         val options = SentryAndroidOptions().apply {
             isEnablePerformanceV2 = false
@@ -107,9 +110,11 @@ class AppStartMetricsTest {
 
     @Test
     fun `if perf-2 is enabled but app start time span has not started, appStartTimeSpanWithFallback returns the sdk init span instead`() {
-        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
         AppStartMetrics.getInstance().appStartType = AppStartMetrics.AppStartType.COLD
-        assertTrue(appStartTimeSpan.hasNotStarted())
+        AppStartMetrics.getInstance().sdkInitTimeSpan.apply {
+            setStartedAt(123)
+            setStoppedAt(456)
+        }
 
         val options = SentryAndroidOptions().apply {
             isEnablePerformanceV2 = true
@@ -287,18 +292,28 @@ class AppStartMetricsTest {
     }
 
     @Test
-    fun `restartAppStart set measurement flag and clear internal lists`() {
+    fun `a warm start gets reported after a cold start`() {
         val appStartMetrics = AppStartMetrics.getInstance()
+
+        // when the first activity launches and gets destroyed
+        val activity0 = mock<Activity>()
+        whenever(activity0.isChangingConfigurations).thenReturn(false)
+        appStartMetrics.onActivityCreated(activity0, null)
+
+        // then the app start type should be cold and measurements should be sent
+        assertEquals(AppStartMetrics.AppStartType.COLD, appStartMetrics.appStartType)
+        assertTrue(appStartMetrics.shouldSendStartMeasurements())
+
+        // when the activity gets destroyed
         appStartMetrics.onAppStartSpansSent()
-        appStartMetrics.isAppLaunchedInForeground = false
         assertFalse(appStartMetrics.shouldSendStartMeasurements())
 
-        appStartMetrics.restartAppStart(10)
+        appStartMetrics.onActivityDestroyed(activity0)
 
+        // then it should reset sending the measurements for the next warm activity
+        appStartMetrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+        assertEquals(AppStartMetrics.AppStartType.WARM, appStartMetrics.appStartType)
         assertTrue(appStartMetrics.shouldSendStartMeasurements())
-        assertTrue(appStartMetrics.appStartTimeSpan.hasStarted())
-        assertTrue(appStartMetrics.appStartTimeSpan.hasNotStopped())
-        assertEquals(10, appStartMetrics.appStartTimeSpan.startUptimeMs)
     }
 
     @Test
