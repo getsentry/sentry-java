@@ -554,6 +554,15 @@ public final class ActivityLifecycleIntegration
     activitiesWithOngoingTransactions.remove(activity);
   }
 
+    if (activitiesWithOngoingTransactions.isEmpty() && !activity.isChangingConfigurations()) {
+      clear();
+    }
+  }
+
+  private void clear() {
+    firstActivityCreated = false;
+    activityLifecycleMap.clear();
+  }
   private void finishSpan(final @Nullable ISpan span) {
     if (span != null && !span.isFinished()) {
       span.finish();
