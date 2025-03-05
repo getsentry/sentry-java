@@ -306,18 +306,18 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
     final long nowUptimeMs = SystemClock.uptimeMillis();
     activeActivitiesCounter.incrementAndGet();
-    appLaunchedInForeground = true;
 
-    // the first undrawn activity determines the app start type
+    // the first activity determines the app start type
     if (activeActivitiesCounter.get() == 1 && !firstDrawDone.get()) {
       // If the app (process) was launched more than 1 minute ago, it's likely wrong
       final long durationSinceAppStartMillis = nowUptimeMs - appStartSpan.getStartUptimeMs();
-      if (durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1)) {
+      if (!appLaunchedInForeground || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1)) {
         appStartType = AppStartType.WARM;
       } else {
         appStartType = savedInstanceState == null ? AppStartType.COLD : AppStartType.WARM;
       }
     }
+    appLaunchedInForeground = true;
   }
 
   @Override

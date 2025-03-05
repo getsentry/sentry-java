@@ -562,6 +562,7 @@ public final class ActivityLifecycleIntegration
     firstActivityCreated = false;
     activityLifecycleMap.clear();
   }
+
   private void finishSpan(final @Nullable ISpan span) {
     if (span != null && !span.isFinished()) {
       span.finish();

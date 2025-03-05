@@ -150,6 +150,27 @@ class AppStartMetricsTest {
     }
 
     @Test
+    fun `if app is launched in background, the first created activity assumes a warm start`() {
+        val metrics = AppStartMetrics.getInstance()
+        metrics.appStartTimeSpan.start()
+        metrics.sdkInitTimeSpan.start()
+        metrics.registerLifecycleCallbacks(mock<Application>())
+
+        // when the handler callback is executed and no activity was launched
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        // isAppLaunchedInForeground should be false
+        assertFalse(metrics.isAppLaunchedInForeground)
+
+        // but when the first activity launches
+        metrics.onActivityCreated(mock<Activity>(), null)
+
+        // then a warm start should be set
+        assertTrue(metrics.isAppLaunchedInForeground)
+        assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+    }
+
+    @Test
     fun `if app start span is at most 1 minute, appStartTimeSpanWithFallback returns the app start span`() {
         val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
         appStartTimeSpan.start()
