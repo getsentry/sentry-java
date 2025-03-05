@@ -23,7 +23,7 @@ class PersonSystemTest {
         restClient.getPerson(1L)
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, restClient.lastKnownStatusCode)
 
-        testHelper.ensureTransactionReceived { transaction ->
+        testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
             testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughOtelApi") &&
                 testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughSentryApi")
         }
@@ -39,7 +39,7 @@ class PersonSystemTest {
         assertEquals(person.firstName, returnedPerson!!.firstName)
         assertEquals(person.lastName, returnedPerson!!.lastName)
 
-        testHelper.ensureTransactionReceived { transaction ->
+        testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
             testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughOtelApi") &&
                 testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughSentryApi")
         }
