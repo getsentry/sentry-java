@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
@@ -80,6 +82,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
     try {
       observer.startWatching();
       options.getLogger().log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
+      addIntegrationToSdkVersion("UserInteraction");
     } catch (Throwable e) {
       // it could throw eg NoSuchFileException or NullPointerException
       options

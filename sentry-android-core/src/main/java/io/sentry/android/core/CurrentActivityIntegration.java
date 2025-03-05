@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
@@ -27,6 +29,8 @@ public final class CurrentActivityIntegration
   @Override
   public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     application.registerActivityLifecycleCallbacks(this);
+    options.getLogger().log(SentryLevel.DEBUG, "CurrentActivityIntegration installed.");
+    addIntegrationToSdkVersion("CurrentActivity");
   }
 
   @Override
