@@ -3,6 +3,7 @@ package io.sentry.systemtest.util
 import com.apollographql.apollo3.api.ApolloResponse
 import com.apollographql.apollo3.api.Operation
 import io.sentry.JsonSerializer
+import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEvent
 import io.sentry.SentryItemType
 import io.sentry.SentryOptions
@@ -54,27 +55,55 @@ class TestHelper(backendUrl: String) {
         throw RuntimeException("Unable to find matching envelope received by relay")
     }
 
-    fun ensureTransactionReceived(callback: ((SentryTransaction) -> Boolean)) {
-        ensureEnvelopeReceived { envelopeString ->
-            val deserializeEnvelope =
-                jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
-            if (deserializeEnvelope == null) {
-                return@ensureEnvelopeReceived false
-            }
+    fun ensureNoEnvelopeReceived(callback: ((String) -> Boolean)) {
+        Thread.sleep(10000)
+        val envelopes = sentryClient.getEnvelopes()
 
-            val transactionItem =
-                deserializeEnvelope.items.firstOrNull { it.header.type == SentryItemType.Transaction }
-            if (transactionItem == null) {
-                return@ensureEnvelopeReceived false
-            }
-
-            val transaction = transactionItem.getTransaction(jsonSerializer)
-            if (transaction == null) {
-                return@ensureEnvelopeReceived false
-            }
-
-            callback(transaction)
+        if (envelopes.envelopes.isNullOrEmpty()) {
+            return
         }
+
+        envelopes.envelopes.forEach { envelopeString ->
+            val didMatch = callback(envelopeString)
+            if (didMatch) {
+                throw RuntimeException("Found unexpected matching envelope received by relay")
+            }
+        }
+    }
+
+    fun ensureTransactionReceived(callback: ((SentryTransaction, SentryEnvelopeHeader) -> Boolean)) {
+        ensureEnvelopeReceived { envelopeString ->
+            checkIfTransactionMatches(envelopeString, callback)
+        }
+    }
+
+    fun ensureNoTransactionReceived(callback: ((SentryTransaction, SentryEnvelopeHeader) -> Boolean)) {
+        ensureNoEnvelopeReceived { envelopeString ->
+            checkIfTransactionMatches(envelopeString, callback)
+        }
+    }
+
+    private fun checkIfTransactionMatches(envelopeString: String, callback: ((SentryTransaction, SentryEnvelopeHeader) -> Boolean)): Boolean {
+        val deserializeEnvelope =
+            jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
+        if (deserializeEnvelope == null) {
+            return false
+        }
+
+        val envelopeHeader = deserializeEnvelope.header
+
+        val transactionItem =
+            deserializeEnvelope.items.firstOrNull { it.header.type == SentryItemType.Transaction }
+        if (transactionItem == null) {
+            return false
+        }
+
+        val transaction = transactionItem.getTransaction(jsonSerializer)
+        if (transaction == null) {
+            return false
+        }
+
+        return callback(transaction, envelopeHeader)
     }
 
     fun ensureErrorReceived(callback: ((SentryEvent) -> Boolean)) {
@@ -106,7 +135,7 @@ class TestHelper(backendUrl: String) {
     }
 
     fun ensureTransactionWithSpanReceived(callback: ((SentrySpan) -> Boolean)) {
-        ensureTransactionReceived { transaction ->
+        ensureTransactionReceived { transaction, envelopeHeader ->
             transaction.spans.forEach { span ->
                 val callbackResult = callback(span)
                 if (callbackResult) {
@@ -126,6 +155,7 @@ class TestHelper(backendUrl: String) {
         PrintWriter(System.out).use {
             jsonSerializer.serialize(obj, it)
         }
+        println()
     }
 
     fun <T : Operation.Data> ensureNoErrors(response: ApolloResponse<T>?) {
@@ -153,6 +183,17 @@ class TestHelper(backendUrl: String) {
         val span = transaction.spans.firstOrNull { span -> span.description == description }
         if (span == null) {
             println("Unable to find span with description $description in transaction:")
+            logObject(transaction)
+            return false
+        }
+
+        return true
+    }
+
+    fun doesTransactionHaveTraceId(transaction: SentryTransaction, traceId: String): Boolean {
+        val spanContext = transaction.contexts.trace
+        if (spanContext?.traceId?.toString() != traceId) {
+            println("Unable to find trace ID $traceId in transaction:")
             logObject(transaction)
             return false
         }

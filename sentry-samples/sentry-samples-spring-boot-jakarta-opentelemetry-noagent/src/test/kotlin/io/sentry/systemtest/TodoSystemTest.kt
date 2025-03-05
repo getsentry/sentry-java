@@ -22,7 +22,7 @@ class TodoSystemTest {
         restClient.getTodo(1L)
         assertEquals(HttpStatus.OK, restClient.lastKnownStatusCode)
 
-        testHelper.ensureTransactionReceived { transaction ->
+        testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
             testHelper.doesTransactionContainSpanWithOp(transaction, "todoSpanOtelApi") &&
                 testHelper.doesTransactionContainSpanWithOp(transaction, "todoSpanSentryApi") &&
                 testHelper.doesTransactionContainSpanWithOp(transaction, "http.client")
@@ -35,7 +35,7 @@ class TodoSystemTest {
         restClient.getTodoWebclient(1L)
         assertEquals(HttpStatus.OK, restClient.lastKnownStatusCode)
 
-        testHelper.ensureTransactionReceived { transaction ->
+        testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
             testHelper.doesTransactionContainSpanWithOp(transaction, "http.client")
         }
     }
@@ -46,7 +46,7 @@ class TodoSystemTest {
         restClient.getTodoRestClient(1L)
         assertEquals(HttpStatus.OK, restClient.lastKnownStatusCode)
 
-        testHelper.ensureTransactionReceived { transaction ->
+        testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
             testHelper.doesTransactionContainSpanWithOp(transaction, "todoRestClientSpanOtelApi") &&
                 testHelper.doesTransactionContainSpanWithOp(transaction, "todoRestClientSpanSentryApi") &&
                 testHelper.doesTransactionContainSpanWithOp(transaction, "http.client")
