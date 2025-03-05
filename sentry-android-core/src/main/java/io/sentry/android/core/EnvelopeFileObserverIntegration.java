@@ -82,7 +82,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
     try {
       observer.startWatching();
       options.getLogger().log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
-      addIntegrationToSdkVersion("UserInteraction");
+      addIntegrationToSdkVersion("EnvelopeFileObserver");
     } catch (Throwable e) {
       // it could throw eg NoSuchFileException or NullPointerException
       options
