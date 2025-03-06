@@ -1,18 +1,38 @@
 # Changelog
 
-## Unreleased
+### Features
+
+- The SDK now automatically propagates the trace-context to the native layer. This allows to connect errors on different layers of the application. ([#4137](https://github.com/getsentry/sentry-java/pull/4137))
+
+### Dependencies
+
+- Bump Native SDK from v0.7.20 to v0.8.1 ([#4137](https://github.com/getsentry/sentry-java/pull/4137))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0810)
+  - [diff](https://github.com/getsentry/sentry-native/compare/v0.7.20...0.8.1)
+
+## 8.3.0
 
 ### Features
 
+- Add HTTP server request headers from OpenTelemetry span attributes to sentry `request` in payload ([#4102](https://github.com/getsentry/sentry-java/pull/4102))
+  - You have to explicitly enable each header by adding it to the [OpenTelemetry config](https://opentelemetry.io/docs/zero-code/java/agent/instrumentation/http/#capturing-http-request-and-response-headers)
+  - Please only enable headers you actually want to send to Sentry. Some may contain sensitive data like PII, cookies, tokens etc.
+  - We are no longer adding request/response headers to `contexts/otel/attributes` of the event.
 - The `ignoredErrors` option is now configurable via the manifest property `io.sentry.traces.ignored-errors` ([#4178](https://github.com/getsentry/sentry-java/pull/4178))
 - A list of active Spring profiles is attached to payloads sent to Sentry (errors, traces, etc.) and displayed in the UI when using our Spring or Spring Boot integrations ([#4147](https://github.com/getsentry/sentry-java/pull/4147))
   - This consists of an empty list when only the default profile is active
 - Added `enableTraceIdGeneration` to the AndroidOptions. This allows Hybrid SDKs to "freeze" and control the trace and connect errors on different layers of the application ([4188](https://github.com/getsentry/sentry-java/pull/4188))
 - Move to a single NetworkCallback listener to reduce number of IPC calls on Android ([#4164](https://github.com/getsentry/sentry-java/pull/4164))
 - Add GraphQL Apollo Kotlin 4 integration ([#4166](https://github.com/getsentry/sentry-java/pull/4166))
+- Add support for async dispatch requests to Spring Boot 2 and 3 ([#3983](https://github.com/getsentry/sentry-java/pull/3983))
+  - To enable it, please set `sentry.keep-transactions-open-for-async-responses=true` in `application.properties` or `sentry.keepTransactionsOpenForAsyncResponses: true` in `application.yml`
+- Add constructor to JUL `SentryHandler` for disabling external config ([#4208](https://github.com/getsentry/sentry-java/pull/4208))
 
 ### Fixes
 
+- Filter strings that cannot be parsed as Regex no longer cause an SDK crash ([#4213](https://github.com/getsentry/sentry-java/pull/4213))
+  - This was the case e.g. for `ignoredErrors`, `ignoredTransactions` and `ignoredCheckIns`
+  - We now simply don't use such strings for Regex matching and only use them for String comparison
 - `SentryOptions.setTracePropagationTargets` is no longer marked internal ([#4170](https://github.com/getsentry/sentry-java/pull/4170))
 - Session Replay: Fix crash when a navigation breadcrumb does not have "to" destination ([#4185](https://github.com/getsentry/sentry-java/pull/4185))
 - Session Replay: Cap video segment duration to maximum 5 minutes to prevent endless video encoding in background ([#4185](https://github.com/getsentry/sentry-java/pull/4185))

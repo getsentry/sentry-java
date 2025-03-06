@@ -221,6 +221,7 @@ public final class io/sentry/android/core/InternalSentrySdk {
 	public static fun getAppStartMeasurement ()Ljava/util/Map;
 	public static fun getCurrentScope ()Lio/sentry/IScope;
 	public static fun serializeScope (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/IScope;)Ljava/util/Map;
+	public static fun setTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)V
 }
 
 public final class io/sentry/android/core/LoadClass : io/sentry/util/LoadClass {

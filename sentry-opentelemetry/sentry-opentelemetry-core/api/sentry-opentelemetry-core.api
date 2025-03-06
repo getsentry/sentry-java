@@ -1,7 +1,7 @@
 public final class io/sentry/opentelemetry/OpenTelemetryAttributesExtractor {
 	public fun <init> ()V
-	public fun extract (Lio/opentelemetry/sdk/trace/data/SpanData;Lio/sentry/ISpan;Lio/sentry/IScope;)V
-	public fun extractUrl (Lio/opentelemetry/api/common/Attributes;)Ljava/lang/String;
+	public fun extract (Lio/opentelemetry/sdk/trace/data/SpanData;Lio/sentry/IScope;Lio/sentry/SentryOptions;)V
+	public fun extractUrl (Lio/opentelemetry/api/common/Attributes;Lio/sentry/SentryOptions;)Ljava/lang/String;
 }
 
 public final class io/sentry/opentelemetry/OpenTelemetryLinkErrorEventProcessor : io/sentry/EventProcessor {
