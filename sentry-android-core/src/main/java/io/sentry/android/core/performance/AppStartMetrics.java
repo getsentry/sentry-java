@@ -11,17 +11,20 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.sentry.ITransactionProfiler;
-import io.sentry.SentryDate;
-import io.sentry.SentryNanotimeDate;
+import io.sentry.NoOpLogger;
 import io.sentry.TracesSamplingDecision;
+import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
@@ -30,6 +33,9 @@ import org.jetbrains.annotations.TestOnly;
  * An in-memory representation for app-metrics during app start. As the SDK can't be initialized
  * that early, we can't use transactions or spans directly. Thus simple TimeSpans are used and later
  * transformed into SDK specific txn/span data structures.
+ *
+ * <p>This class is also responsible for - determining the app start type (cold, warm) - determining
+ * if the app was launched in foreground
  */
 @ApiStatus.Internal
 public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
@@ -45,7 +51,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private static volatile @Nullable AppStartMetrics instance;
 
   private @NotNull AppStartType appStartType = AppStartType.UNKNOWN;
-  private boolean appLaunchedInForeground = false;
+  private boolean appLaunchedInForeground;
 
   private final @NotNull TimeSpan appStartSpan;
   private final @NotNull TimeSpan sdkInitTimeSpan;
@@ -54,10 +60,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycles;
   private @Nullable ITransactionProfiler appStartProfiler = null;
   private @Nullable TracesSamplingDecision appStartSamplingDecision = null;
-  private @Nullable SentryDate onCreateTime = null;
-  private boolean appLaunchTooLong = false;
   private boolean isCallbackRegistered = false;
   private boolean shouldSendStartMeasurements = true;
+  private final AtomicInteger activeActivitiesCounter = new AtomicInteger();
+  private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
 
   public static @NotNull AppStartMetrics getInstance() {
 
@@ -116,10 +122,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     return appLaunchedInForeground;
   }
 
-  public boolean isColdStartValid() {
-    return appLaunchedInForeground && !appLaunchTooLong;
-  }
-
   @VisibleForTesting
   public void setAppLaunchedInForeground(final boolean appLaunchedInForeground) {
     this.appLaunchedInForeground = appLaunchedInForeground;
@@ -153,17 +155,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   public boolean shouldSendStartMeasurements() {
-    return shouldSendStartMeasurements;
-  }
-
-  public void restartAppStart(final long uptimeMillis) {
-    shouldSendStartMeasurements = true;
-    appLaunchTooLong = false;
-    appLaunchedInForeground = true;
-    appStartSpan.reset();
-    appStartSpan.start();
-    appStartSpan.setStartedAt(uptimeMillis);
-    CLASS_LOADED_UPTIME_MS = appStartSpan.getStartUptimeMs();
+    return shouldSendStartMeasurements && appLaunchedInForeground;
   }
 
   public long getClassLoadedUptimeMs() {
@@ -176,20 +168,27 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    */
   public @NotNull TimeSpan getAppStartTimeSpanWithFallback(
       final @NotNull SentryAndroidOptions options) {
-    // If the app launch took too long or it was launched in the background we return an empty span
-    if (!isColdStartValid()) {
-      return new TimeSpan();
-    }
-    if (options.isEnablePerformanceV2()) {
-      // Only started when sdk version is >= N
-      final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
-      if (appStartSpan.hasStarted()) {
-        return appStartSpan;
+    // If the app start type was never determined or app wasn't launched in foreground,
+    // the app start is considered invalid
+    if (appStartType != AppStartType.UNKNOWN && appLaunchedInForeground) {
+      if (options.isEnablePerformanceV2()) {
+        // Only started when sdk version is >= N
+        final @NotNull TimeSpan appStartSpan = getAppStartTimeSpan();
+        if (appStartSpan.hasStarted()
+            && appStartSpan.getDurationMs() <= TimeUnit.MINUTES.toMillis(1)) {
+          return appStartSpan;
+        }
+      }
+
+      // fallback: use sdk init time span, as it will always have a start time set
+      final @NotNull TimeSpan sdkInitTimeSpan = getSdkInitTimeSpan();
+      if (sdkInitTimeSpan.hasStarted()
+          && sdkInitTimeSpan.getDurationMs() <= TimeUnit.MINUTES.toMillis(1)) {
+        return sdkInitTimeSpan;
       }
     }
 
-    // fallback: use sdk init time span, as it will always have a start time set
-    return getSdkInitTimeSpan();
+    return new TimeSpan();
   }
 
   @TestOnly
@@ -205,11 +204,11 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
     appStartProfiler = null;
     appStartSamplingDecision = null;
-    appLaunchTooLong = false;
     appLaunchedInForeground = false;
-    onCreateTime = null;
     isCallbackRegistered = false;
     shouldSendStartMeasurements = true;
+    firstDrawDone.set(false);
+    activeActivitiesCounter.set(0);
   }
 
   public @Nullable ITransactionProfiler getAppStartProfiler() {
@@ -247,64 +246,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     final @NotNull AppStartMetrics instance = getInstance();
     if (instance.applicationOnCreate.hasNotStarted()) {
       instance.applicationOnCreate.setStartedAt(now);
-      instance.registerApplicationForegroundCheck(application);
-    }
-  }
-
-  /**
-   * Register a callback to check if an activity was started after the application was created
-   *
-   * @param application The application object to register the callback to
-   */
-  public void registerApplicationForegroundCheck(final @NotNull Application application) {
-    if (isCallbackRegistered) {
-      return;
-    }
-    isCallbackRegistered = true;
-    appLaunchedInForeground = appLaunchedInForeground || ContextUtils.isForegroundImportance();
-    application.registerActivityLifecycleCallbacks(instance);
-    // We post on the main thread a task to post a check on the main thread. On Pixel devices
-    // (possibly others) the first task posted on the main thread is called before the
-    // Activity.onCreate callback. This is a workaround for that, so that the Activity.onCreate
-    // callback is called before the application one.
-    new Handler(Looper.getMainLooper()).post(() -> checkCreateTimeOnMain(application));
-  }
-
-  private void checkCreateTimeOnMain(final @NotNull Application application) {
-    new Handler(Looper.getMainLooper())
-        .post(
-            () -> {
-              // if no activity has ever been created, app was launched in background
-              if (onCreateTime == null) {
-                appLaunchedInForeground = false;
-
-                // we stop the app start profiler, as it's useless and likely to timeout
-                if (appStartProfiler != null && appStartProfiler.isRunning()) {
-                  appStartProfiler.close();
-                  appStartProfiler = null;
-                }
-              }
-              application.unregisterActivityLifecycleCallbacks(instance);
-            });
-  }
-
-  @Override
-  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-    // An activity already called onCreate()
-    if (!appLaunchedInForeground || onCreateTime != null) {
-      return;
-    }
-    onCreateTime = new SentryNanotimeDate();
-
-    final long spanStartMillis = appStartSpan.getStartTimestampMs();
-    final long spanEndMillis =
-        appStartSpan.hasStopped()
-            ? appStartSpan.getProjectedStopTimestampMs()
-            : System.currentTimeMillis();
-    final long durationMillis = spanEndMillis - spanStartMillis;
-    // If the app was launched more than 1 minute ago, it's likely wrong
-    if (durationMillis > TimeUnit.MINUTES.toMillis(1)) {
-      appLaunchTooLong = true;
+      instance.registerLifecycleCallbacks(application);
     }
   }
 
@@ -321,6 +263,90 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (instance.applicationOnCreate.hasNotStopped()) {
       instance.applicationOnCreate.setDescription(application.getClass().getName() + ".onCreate");
       instance.applicationOnCreate.setStoppedAt(now);
+    }
+  }
+
+  /**
+   * Register a callback to check if an activity was started after the application was created
+   *
+   * @param application The application object to register the callback to
+   */
+  public void registerLifecycleCallbacks(final @NotNull Application application) {
+    if (isCallbackRegistered) {
+      return;
+    }
+    isCallbackRegistered = true;
+    appLaunchedInForeground = appLaunchedInForeground || ContextUtils.isForegroundImportance();
+    application.registerActivityLifecycleCallbacks(instance);
+    // We post on the main thread a task to post a check on the main thread. On Pixel devices
+    // (possibly others) the first task posted on the main thread is called before the
+    // Activity.onCreate callback. This is a workaround for that, so that the Activity.onCreate
+    // callback is called before the application one.
+    new Handler(Looper.getMainLooper()).post(() -> checkCreateTimeOnMain());
+  }
+
+  private void checkCreateTimeOnMain() {
+    new Handler(Looper.getMainLooper())
+        .post(
+            () -> {
+              // if no activity has ever been created, app was launched in background
+              if (activeActivitiesCounter.get() == 0) {
+                appLaunchedInForeground = false;
+
+                // we stop the app start profiler, as it's useless and likely to timeout
+                if (appStartProfiler != null && appStartProfiler.isRunning()) {
+                  appStartProfiler.close();
+                  appStartProfiler = null;
+                }
+              }
+            });
+  }
+
+  @Override
+  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+    final long nowUptimeMs = SystemClock.uptimeMillis();
+
+    // the first activity determines the app start type
+    if (activeActivitiesCounter.incrementAndGet() == 1 && !firstDrawDone.get()) {
+      // If the app (process) was launched more than 1 minute ago, it's likely wrong
+      final long durationSinceAppStartMillis = nowUptimeMs - appStartSpan.getStartUptimeMs();
+      if (!appLaunchedInForeground || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1)) {
+        appStartType = AppStartType.WARM;
+
+        shouldSendStartMeasurements = true;
+        appStartSpan.reset();
+        appStartSpan.start();
+        appStartSpan.setStartedAt(nowUptimeMs);
+        CLASS_LOADED_UPTIME_MS = nowUptimeMs;
+      } else {
+        appStartType = savedInstanceState == null ? AppStartType.COLD : AppStartType.WARM;
+      }
+    }
+    appLaunchedInForeground = true;
+  }
+
+  @Override
+  public void onActivityStarted(@NonNull Activity activity) {
+    if (firstDrawDone.get()) {
+      return;
+    }
+    if (activity.getWindow() != null) {
+      FirstDrawDoneListener.registerForNextDraw(
+          activity, () -> onFirstFrameDrawn(), new BuildInfoProvider(NoOpLogger.getInstance()));
+    } else {
+      new Handler(Looper.getMainLooper()).post(() -> onFirstFrameDrawn());
+    }
+  }
+
+  @Override
+  public void onActivityDestroyed(@NonNull Activity activity) {
+    final int remainingActivities = activeActivitiesCounter.decrementAndGet();
+    // if the app is moving into background
+    // as the next Activity is considered like a new app start
+    if (remainingActivities == 0 && !activity.isChangingConfigurations()) {
+      appLaunchedInForeground = false;
+      shouldSendStartMeasurements = true;
+      firstDrawDone.set(false);
     }
   }
 
@@ -352,6 +378,14 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (measurement != null && measurement.hasNotStopped()) {
       measurement.setDescription(contentProvider.getClass().getName() + ".onCreate");
       measurement.setStoppedAt(now);
+    }
+  }
+
+  synchronized void onFirstFrameDrawn() {
+    if (!firstDrawDone.getAndSet(true)) {
+      final @NotNull AppStartMetrics appStartMetrics = getInstance();
+      appStartMetrics.getSdkInitTimeSpan().stop();
+      appStartMetrics.getAppStartTimeSpan().stop();
     }
   }
 }

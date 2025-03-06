@@ -75,7 +75,7 @@ class PerformanceAndroidEventProcessorTest {
         null,
         null
     ).also {
-        AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
+        AppStartMetrics.getInstance().onActivityCreated(mock(), if (coldStart) null else mock())
     }
 
     @BeforeTest
@@ -225,6 +225,7 @@ class PerformanceAndroidEventProcessorTest {
     fun `adds app start metrics to app start txn`() {
         // given some app start metrics
         val appStartMetrics = AppStartMetrics.getInstance()
+        appStartMetrics.isAppLaunchedInForeground = true
         appStartMetrics.appStartType = AppStartType.COLD
         appStartMetrics.appStartTimeSpan.setStartedAt(123)
         appStartMetrics.appStartTimeSpan.setStoppedAt(456)
