@@ -3,12 +3,6 @@ package io.sentry.systemtest.util
 import io.sentry.systemtest.Person
 import io.sentry.systemtest.Todo
 import okhttp3.Request
-import okhttp3.RequestBody
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.ResponseEntity
-import org.springframework.web.client.HttpStatusCodeException
 
 class RestTestClient(private val backendBaseUrl: String) : LoggingInsecureRestClient() {
 

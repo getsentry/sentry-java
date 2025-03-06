@@ -1,10 +1,6 @@
 package io.sentry.systemtest.util
 
-import io.sentry.systemtest.Person
 import okhttp3.Request
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
 
 class SentryMockServerClient(private val baseUrl: String) : LoggingInsecureRestClient() {
 
