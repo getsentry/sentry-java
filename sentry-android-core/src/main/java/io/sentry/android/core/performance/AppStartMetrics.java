@@ -307,7 +307,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     final long nowUptimeMs = SystemClock.uptimeMillis();
 
     // the first activity determines the app start type
-    if (activeActivitiesCounter.get() == 1 && !firstDrawDone.get()) {
+    if (activeActivitiesCounter.incrementAndGet() == 1 && !firstDrawDone.get()) {
       // If the app (process) was launched more than 1 minute ago, it's likely wrong
       final long durationSinceAppStartMillis = nowUptimeMs - appStartSpan.getStartUptimeMs();
       if (!appLaunchedInForeground || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1)) {
