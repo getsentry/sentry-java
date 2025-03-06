@@ -119,6 +119,8 @@ object Config {
 
         val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1"
 
+        val coroutinesAndroid = "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1"
+
         val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 
         val reactorCore = "io.projectreactor:reactor-core:3.5.3"
