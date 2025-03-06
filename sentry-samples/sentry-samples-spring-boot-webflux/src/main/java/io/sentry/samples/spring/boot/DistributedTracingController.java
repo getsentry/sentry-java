@@ -44,7 +44,7 @@ public class DistributedTracingController {
         .header(
             HttpHeaders.AUTHORIZATION,
             "Basic " + HttpHeaders.encodeBasicAuth("user", "password", Charset.defaultCharset()))
-        .body(person, Person.class)
+        .body(Mono.just(person), Person.class)
         .retrieve()
         .bodyToMono(Person.class)
         .map(response -> response);
