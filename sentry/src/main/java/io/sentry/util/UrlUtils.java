@@ -55,7 +55,7 @@ public final class UrlUtils {
     if (url.startsWith("@")) {
       return SENSITIVE_DATA_SUBSTITUTE + url;
     }
-    final @NotNull String userInfo = url.substring(0, url.indexOf('@') - 1);
+    final @NotNull String userInfo = url.substring(0, url.indexOf('@'));
     final @NotNull String filteredUserInfo =
         userInfo.contains(":")
             ? (SENSITIVE_DATA_SUBSTITUTE + ":" + SENSITIVE_DATA_SUBSTITUTE)
