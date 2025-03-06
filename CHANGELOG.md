@@ -4,6 +4,11 @@
 
 - The SDK now automatically propagates the trace-context to the native layer. This allows to connect errors on different layers of the application. ([#4137](https://github.com/getsentry/sentry-java/pull/4137))
 
+### Behavioural Changes
+
+- Use `java.net.URI` for parsing URLs in `UrlUtils` ([#4210](https://github.com/getsentry/sentry-java/pull/4210))
+  - This could affect grouping for issues with messages containing URLs that fall in known corner cases that were handled incorrectly previously (e.g. email in URL path)
+
 ### Dependencies
 
 - Bump Native SDK from v0.7.20 to v0.8.1 ([#4137](https://github.com/getsentry/sentry-java/pull/4137))
