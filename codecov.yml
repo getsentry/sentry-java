@@ -16,5 +16,6 @@ coverage:
 ignore:
   - "**/src/test/*"
   - "sentry-android-integration-tests/*"
+  - "sentry-system-test-support/*"
   - "sentry-test-support/*"
   - "sentry-samples/*"

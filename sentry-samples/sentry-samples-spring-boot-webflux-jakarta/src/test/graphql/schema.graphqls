@@ -1,3 +1,0 @@
-type Query {
-    greeting(name: String! = "Spring"): String!
-}

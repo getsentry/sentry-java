@@ -6,7 +6,6 @@ plugins {
     id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
     kotlin("jvm")
     kotlin("plugin.spring") version Config.kotlinVersion
-    id("com.apollographql.apollo3") version "3.8.2"
 }
 
 group = "io.sentry.sample.spring-boot-jakarta"
@@ -57,6 +56,7 @@ dependencies {
     // database query tracing
     implementation(projects.sentryJdbc)
     runtimeOnly(Config.TestLibs.hsqldb)
+    testImplementation(projects.sentrySystemTestSupport)
     testImplementation(Config.Libs.springBoot3StarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
@@ -101,15 +101,5 @@ tasks.named("test").configure {
 
     filter {
         excludeTestsMatching("io.sentry.systemtest.*")
-    }
-}
-
-apollo {
-    service("service") {
-        srcDir("src/test/graphql")
-        packageName.set("io.sentry.samples.graphql")
-        outputDirConnection {
-            connectToKotlinSourceSet("test")
-        }
     }
 }
