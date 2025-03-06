@@ -2,7 +2,6 @@ package io.sentry.systemtest
 
 import io.sentry.systemtest.util.TestHelper
 import org.junit.Before
-import org.springframework.http.HttpStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -20,9 +19,9 @@ class TodoSystemTest {
     fun `get todo works`() {
         val restClient = testHelper.restClient
         restClient.getTodo(1L)
-        assertEquals(HttpStatus.OK, restClient.lastKnownStatusCode)
+        assertEquals(200, restClient.lastKnownStatusCode)
 
-        testHelper.ensureTransactionReceived { transaction ->
+        testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
             testHelper.doesTransactionContainSpanWithOp(transaction, "todoSpanOtelApi") &&
                 testHelper.doesTransactionContainSpanWithOp(transaction, "todoSpanSentryApi") &&
                 testHelper.doesTransactionContainSpanWithOp(transaction, "http.client")
@@ -33,9 +32,9 @@ class TodoSystemTest {
     fun `get todo webclient works`() {
         val restClient = testHelper.restClient
         restClient.getTodoWebclient(1L)
-        assertEquals(HttpStatus.OK, restClient.lastKnownStatusCode)
+        assertEquals(200, restClient.lastKnownStatusCode)
 
-        testHelper.ensureTransactionReceived { transaction ->
+        testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
             testHelper.doesTransactionContainSpanWithOp(transaction, "http.client")
         }
     }
@@ -44,9 +43,9 @@ class TodoSystemTest {
     fun `get todo restclient works`() {
         val restClient = testHelper.restClient
         restClient.getTodoRestClient(1L)
-        assertEquals(HttpStatus.OK, restClient.lastKnownStatusCode)
+        assertEquals(200, restClient.lastKnownStatusCode)
 
-        testHelper.ensureTransactionReceived { transaction ->
+        testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
             testHelper.doesTransactionContainSpanWithOp(transaction, "todoRestClientSpanOtelApi") &&
                 testHelper.doesTransactionContainSpanWithOp(transaction, "todoRestClientSpanSentryApi") &&
                 testHelper.doesTransactionContainSpanWithOp(transaction, "http.client")

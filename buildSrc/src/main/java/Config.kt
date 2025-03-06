@@ -75,6 +75,7 @@ object Config {
         val log4j2Core = "org.apache.logging.log4j:log4j-core:$log4j2Version"
 
         val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind"
+        val jacksonKotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3"
 
         val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
         val springBootStarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBootVersion"
