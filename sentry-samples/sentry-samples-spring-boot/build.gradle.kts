@@ -61,7 +61,8 @@ dependencies {
     }
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.Libs.logbackClassic)
+    testImplementation("ch.qos.logback:logback-classic:1.5.16")
+    testImplementation("ch.qos.logback:logback-core:1.5.16")
     testImplementation(Config.Libs.slf4jApi2)
     testImplementation(Config.Libs.apolloKotlin)
     testImplementation("org.apache.httpcomponents:httpclient")

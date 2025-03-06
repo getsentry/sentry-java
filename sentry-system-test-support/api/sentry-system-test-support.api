@@ -488,10 +488,10 @@ public final class io/sentry/systemtest/Todo {
 	public final fun copy (JLjava/lang/String;Z)Lio/sentry/systemtest/Todo;
 	public static synthetic fun copy$default (Lio/sentry/systemtest/Todo;JLjava/lang/String;ZILjava/lang/Object;)Lio/sentry/systemtest/Todo;
 	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCompleted ()Z
 	public final fun getId ()J
 	public final fun getTitle ()Ljava/lang/String;
 	public fun hashCode ()I
-	public final fun isCompleted ()Z
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -518,7 +518,14 @@ public final class io/sentry/systemtest/util/EnvelopesReceived {
 
 public class io/sentry/systemtest/util/LoggingInsecureRestClient {
 	public fun <init> ()V
-	protected final fun restTemplate ()Lorg/springframework/web/client/RestTemplate;
+	protected final fun call (Lokhttp3/Request$Builder;ZLjava/util/Map;)Lokhttp3/Response;
+	public static synthetic fun call$default (Lio/sentry/systemtest/util/LoggingInsecureRestClient;Lokhttp3/Request$Builder;ZLjava/util/Map;ILjava/lang/Object;)Lokhttp3/Response;
+	protected final fun client ()Lokhttp3/OkHttpClient;
+	public final fun getLastKnownStatusCode ()Ljava/lang/Integer;
+	public final fun getLogger ()Lorg/slf4j/Logger;
+	protected final fun objectMapper ()Lcom/fasterxml/jackson/databind/ObjectMapper;
+	public final fun setLastKnownStatusCode (Ljava/lang/Integer;)V
+	protected final fun toRequestBody (Ljava/lang/Object;)Lokhttp3/RequestBody;
 }
 
 public final class io/sentry/systemtest/util/RestTestClient : io/sentry/systemtest/util/LoggingInsecureRestClient {
@@ -527,14 +534,12 @@ public final class io/sentry/systemtest/util/RestTestClient : io/sentry/systemte
 	public static synthetic fun createPerson$default (Lio/sentry/systemtest/util/RestTestClient;Lio/sentry/systemtest/Person;Ljava/util/Map;ILjava/lang/Object;)Lio/sentry/systemtest/Person;
 	public final fun createPersonDistributedTracing (Lio/sentry/systemtest/Person;Ljava/util/Map;)Lio/sentry/systemtest/Person;
 	public static synthetic fun createPersonDistributedTracing$default (Lio/sentry/systemtest/util/RestTestClient;Lio/sentry/systemtest/Person;Ljava/util/Map;ILjava/lang/Object;)Lio/sentry/systemtest/Person;
-	public final fun getLastKnownStatusCode ()Ljava/lang/Integer;
 	public final fun getPerson (J)Lio/sentry/systemtest/Person;
 	public final fun getPersonDistributedTracing (JLjava/util/Map;)Lio/sentry/systemtest/Person;
 	public static synthetic fun getPersonDistributedTracing$default (Lio/sentry/systemtest/util/RestTestClient;JLjava/util/Map;ILjava/lang/Object;)Lio/sentry/systemtest/Person;
 	public final fun getTodo (J)Lio/sentry/systemtest/Todo;
 	public final fun getTodoRestClient (J)Lio/sentry/systemtest/Todo;
 	public final fun getTodoWebclient (J)Lio/sentry/systemtest/Todo;
-	public final fun setLastKnownStatusCode (Ljava/lang/Integer;)V
 }
 
 public final class io/sentry/systemtest/util/SentryMockServerClient : io/sentry/systemtest/util/LoggingInsecureRestClient {
