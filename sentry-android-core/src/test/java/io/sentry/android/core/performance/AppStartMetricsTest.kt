@@ -150,6 +150,32 @@ class AppStartMetricsTest {
     }
 
     @Test
+    fun `if app is launched in background, but an activity launches later, a new warm start is reported with correct timings`() {
+        val metrics = AppStartMetrics.getInstance()
+        metrics.registerLifecycleCallbacks(mock<Application>())
+
+        // when the looper runs
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        // but no activity creation happened
+        // then the app wasn't launched in foreground and nothing should be sent
+        assertFalse(metrics.isAppLaunchedInForeground)
+        assertFalse(metrics.shouldSendStartMeasurements())
+
+        val now = TimeUnit.MINUTES.toMillis(2) + 1234567
+        SystemClock.setCurrentTimeMillis(now)
+
+        // once an activity launches
+        AppStartMetrics.getInstance().onActivityCreated(mock(), null)
+
+        // then it should restart the timespan
+        assertTrue(metrics.isAppLaunchedInForeground)
+        assertTrue(metrics.shouldSendStartMeasurements())
+        assertTrue(metrics.appStartTimeSpan.hasStarted())
+        assertEquals(now, metrics.appStartTimeSpan.startUptimeMs)
+    }
+
+    @Test
     fun `if app is launched in background, the first created activity assumes a warm start`() {
         val metrics = AppStartMetrics.getInstance()
         metrics.appStartTimeSpan.start()

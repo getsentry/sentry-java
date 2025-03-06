@@ -305,7 +305,6 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
     final long nowUptimeMs = SystemClock.uptimeMillis();
-    activeActivitiesCounter.incrementAndGet();
 
     // the first activity determines the app start type
     if (activeActivitiesCounter.get() == 1 && !firstDrawDone.get()) {
@@ -313,6 +312,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       final long durationSinceAppStartMillis = nowUptimeMs - appStartSpan.getStartUptimeMs();
       if (!appLaunchedInForeground || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1)) {
         appStartType = AppStartType.WARM;
+
+        shouldSendStartMeasurements = true;
+        appStartSpan.reset();
+        appStartSpan.start();
+        appStartSpan.setStartedAt(nowUptimeMs);
+        CLASS_LOADED_UPTIME_MS = nowUptimeMs;
       } else {
         appStartType = savedInstanceState == null ? AppStartType.COLD : AppStartType.WARM;
       }
