@@ -148,7 +148,7 @@ public final class ExternalOptions {
     options.setGlobalHubMode(propertiesProvider.getBooleanProperty("global-hub-mode"));
 
     options.setCaptureOpenTelemetryEvents(
-        propertiesProvider.getBooleanProperty("capture-opentelemetry-events"));
+        propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
