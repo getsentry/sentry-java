@@ -81,6 +81,10 @@ public open class SentryOkHttpInterceptor(
             val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
             span = parentSpan?.startChild("http.client", "$method $url")
         }
+
+        // interceptors may change the request details, so let's update it here
+        // this only works correctly if SentryOkHttpInterceptor is the last one in the chain
+        okHttpEvent?.setRequest(request)
         val startTimestamp = CurrentDateProvider.getInstance().currentTimeMillis
 
         span?.spanContext?.origin = TRACE_ORIGIN

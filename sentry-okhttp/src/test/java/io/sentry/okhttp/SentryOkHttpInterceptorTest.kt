@@ -21,12 +21,14 @@ import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.mockServerRequestTimeoutMillis
+import okhttp3.EventListener
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -75,6 +77,8 @@ class SentryOkHttpInterceptorTest {
                 )
             ),
             sendDefaultPii: Boolean = false,
+            eventListener: EventListener? = null,
+            additionalInterceptors: List<Interceptor> = emptyList(),
             optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null
         ): OkHttpClient {
             options = SentryOptions().also {
@@ -120,7 +124,15 @@ class SentryOkHttpInterceptorTest {
                     failedRequestStatusCodes = failedRequestStatusCodes
                 )
             }
-            return OkHttpClient.Builder().addInterceptor(interceptor).build()
+            return OkHttpClient.Builder().apply {
+                if (eventListener != null) {
+                    eventListener(eventListener)
+                }
+                for (additionalInterceptor in additionalInterceptors) {
+                    addInterceptor(additionalInterceptor)
+                }
+                addInterceptor(interceptor)
+            }.build()
         }
     }
 
@@ -612,5 +624,30 @@ class SentryOkHttpInterceptorTest {
         SentryOkHttpEventListener.eventMap[call] = event
         call.execute()
         verify(event).finish()
+    }
+
+    @Test
+    fun `when an interceptor changes the request, the event is updated correctly`() {
+        val client = fixture.getSut(
+            eventListener = SentryOkHttpEventListener(fixture.scopes),
+            additionalInterceptors = listOf(
+                object : Interceptor {
+                    override fun intercept(chain: Interceptor.Chain): Response {
+                        return chain.proceed(
+                            chain.request().newBuilder()
+                                .url(chain.request().url.newBuilder().addPathSegment("v1").build())
+                                .build()
+                        )
+                    }
+                }
+            )
+        )
+
+        val request = getRequest("/hello/")
+        val call = client.newCall(request)
+        call.execute()
+
+        val okHttpEvent = SentryOkHttpEventListener.eventMap[call]!!
+        assertEquals(fixture.server.url("/hello/v1").toUrl().toString(), okHttpEvent.callSpan!!.getData("url"))
     }
 }
