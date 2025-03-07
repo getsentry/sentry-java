@@ -304,6 +304,20 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when isStartProfilerOnAppStart is set to a value, value is set`() {
+        val options = SentryOptions().apply {
+            this.experimental.isStartProfilerOnAppStart = true
+        }
+        assertTrue(options.isStartProfilerOnAppStart)
+    }
+
+    @Test
+    fun `isStartProfilerOnAppStart defaults to false`() {
+        val options = SentryOptions()
+        assertFalse(options.isStartProfilerOnAppStart)
+    }
+
+    @Test
     fun `when options is initialized, compositePerformanceCollector is set`() {
         assertIs<CompositePerformanceCollector>(SentryOptions().compositePerformanceCollector)
     }

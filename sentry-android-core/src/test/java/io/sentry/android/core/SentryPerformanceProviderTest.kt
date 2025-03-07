@@ -327,6 +327,22 @@ class SentryPerformanceProviderTest {
     }
 
     @Test
+    fun `when isEnableAppStartProfiling is false, transaction profiler is not started`() {
+        fixture.getSut { config ->
+            writeConfig(config, profilingEnabled = true, continuousProfilingEnabled = false, isEnableAppStartProfiling = false)
+        }
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+    }
+
+    @Test
+    fun `when isStartProfilerOnAppStart is false, continuous profiler is not started`() {
+        fixture.getSut { config ->
+            writeConfig(config, profilingEnabled = false, continuousProfilingEnabled = true, isStartProfilerOnAppStart = false)
+        }
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+    }
+
+    @Test
     fun `when provider is closed, continuous profiler is stopped`() {
         val provider = fixture.getSut { config ->
             writeConfig(config, profilingEnabled = false)
@@ -345,6 +361,8 @@ class SentryPerformanceProviderTest {
         profileSampled: Boolean = true,
         profileSampleRate: Double = 1.0,
         continuousProfileSampled: Boolean = true,
+        isEnableAppStartProfiling: Boolean = true,
+        isStartProfilerOnAppStart: Boolean = true,
         profilingTracesDirPath: String = traceDir.absolutePath
     ) {
         val appStartProfilingOptions = SentryAppStartProfilingOptions()
@@ -357,6 +375,8 @@ class SentryPerformanceProviderTest {
         appStartProfilingOptions.isContinuousProfileSampled = continuousProfileSampled
         appStartProfilingOptions.profilingTracesDirPath = profilingTracesDirPath
         appStartProfilingOptions.profilingTracesHz = 101
+        appStartProfilingOptions.isEnableAppStartProfiling = isEnableAppStartProfiling
+        appStartProfilingOptions.isStartProfilerOnAppStart = isStartProfilerOnAppStart
         JsonSerializer(SentryOptions.empty()).serialize(appStartProfilingOptions, FileWriter(configFile))
     }
     //endregion

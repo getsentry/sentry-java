@@ -869,6 +869,31 @@ class ManifestMetadataReaderTest {
     }
 
     @Test
+    fun `applyMetadata without specifying isStartProfilerOnAppStart, stays false`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isStartProfilerOnAppStart)
+    }
+
+    @Test
+    fun `applyMetadata reads isStartProfilerOnAppStart from metadata`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.PROFILER_START_ON_APP_START to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isStartProfilerOnAppStart)
+    }
+
+    @Test
     fun `applyMetadata reads tracePropagationTargets to options`() {
         // Arrange
         val bundle = bundleOf(ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to """localhost,^(http|https)://api\..*$""")

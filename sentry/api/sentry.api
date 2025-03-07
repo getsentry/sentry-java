@@ -446,9 +446,11 @@ public final class io/sentry/ExperimentalOptions {
 	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
 	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
+	public fun isStartProfilerOnAppStart ()Z
 	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
 	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
 	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
+	public fun setStartProfilerOnAppStart (Z)V
 }
 
 public final class io/sentry/ExternalOptions {
@@ -2506,18 +2508,22 @@ public final class io/sentry/SentryAppStartProfilingOptions : io/sentry/JsonSeri
 	public fun getUnknown ()Ljava/util/Map;
 	public fun isContinuousProfileSampled ()Z
 	public fun isContinuousProfilingEnabled ()Z
+	public fun isEnableAppStartProfiling ()Z
 	public fun isProfileSampled ()Z
 	public fun isProfilingEnabled ()Z
+	public fun isStartProfilerOnAppStart ()Z
 	public fun isTraceSampled ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setContinuousProfileSampled (Z)V
 	public fun setContinuousProfilingEnabled (Z)V
+	public fun setEnableAppStartProfiling (Z)V
 	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
 	public fun setProfileSampleRate (Ljava/lang/Double;)V
 	public fun setProfileSampled (Z)V
 	public fun setProfilingEnabled (Z)V
 	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
 	public fun setProfilingTracesHz (I)V
+	public fun setStartProfilerOnAppStart (Z)V
 	public fun setTraceSampleRate (Ljava/lang/Double;)V
 	public fun setTraceSampled (Z)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -2532,7 +2538,9 @@ public final class io/sentry/SentryAppStartProfilingOptions$Deserializer : io/se
 public final class io/sentry/SentryAppStartProfilingOptions$JsonKeys {
 	public static final field CONTINUOUS_PROFILE_SAMPLED Ljava/lang/String;
 	public static final field IS_CONTINUOUS_PROFILING_ENABLED Ljava/lang/String;
+	public static final field IS_ENABLE_APP_START_PROFILING Ljava/lang/String;
 	public static final field IS_PROFILING_ENABLED Ljava/lang/String;
+	public static final field IS_START_PROFILER_ON_APP_START Ljava/lang/String;
 	public static final field PROFILE_LIFECYCLE Ljava/lang/String;
 	public static final field PROFILE_SAMPLED Ljava/lang/String;
 	public static final field PROFILE_SAMPLE_RATE Ljava/lang/String;
@@ -3065,6 +3073,7 @@ public class io/sentry/SentryOptions {
 	public fun isSendClientReports ()Z
 	public fun isSendDefaultPii ()Z
 	public fun isSendModules ()Z
+	public fun isStartProfilerOnAppStart ()Z
 	public fun isTraceOptionsRequests ()Z
 	public fun isTraceSampling ()Z
 	public fun isTracingEnabled ()Z
