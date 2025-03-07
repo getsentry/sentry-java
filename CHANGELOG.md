@@ -8,6 +8,21 @@
   - For our OpenTelemetry integration we check if a span is for a request to Sentry
   - We now also consider the port when performing this check
 
+### Features
+
+- The SDK now automatically propagates the trace-context to the native layer. This allows to connect errors on different layers of the application. ([#4137](https://github.com/getsentry/sentry-java/pull/4137))
+
+### Behavioural Changes
+
+- Use `java.net.URI` for parsing URLs in `UrlUtils` ([#4210](https://github.com/getsentry/sentry-java/pull/4210))
+  - This could affect grouping for issues with messages containing URLs that fall in known corner cases that were handled incorrectly previously (e.g. email in URL path)
+
+### Dependencies
+
+- Bump Native SDK from v0.7.20 to v0.8.1 ([#4137](https://github.com/getsentry/sentry-java/pull/4137))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0810)
+  - [diff](https://github.com/getsentry/sentry-native/compare/v0.7.20...0.8.1)
+
 ## 8.3.0
 
 ### Features
