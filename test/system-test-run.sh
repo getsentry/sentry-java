@@ -3,6 +3,12 @@
 readonly SAMPLE_MODULE=$1
 readonly JAVA_AGENT=$2
 readonly JAVA_AGENT_AUTO_INIT=$3
+readonly BUILD_BEFORE_RUN=$4
+
+if [[ "$BUILD_BEFORE_RUN" == "1" ]]; then
+  echo "Building before Test run"
+  ./gradlew :sentry-samples:${SAMPLE_MODULE}:assemble
+fi
 
 test/system-test-sentry-server-start.sh
 MOCK_SERVER_PID=$(cat sentry-mock-server.pid)
