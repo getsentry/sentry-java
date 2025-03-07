@@ -8,18 +8,25 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.SpanProcessor;
+import io.opentelemetry.sdk.trace.data.EventData;
+import io.opentelemetry.sdk.trace.data.ExceptionEventData;
 import io.sentry.Baggage;
+import io.sentry.DateUtils;
 import io.sentry.IScopes;
 import io.sentry.PropagationContext;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryDate;
+import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanId;
 import io.sentry.TracesSamplingDecision;
+import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryId;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -143,7 +150,44 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
       final @NotNull SentryDate finishDate =
           new SentryLongDate(spanBeingEnded.toSpanData().getEndEpochNanos());
       sentrySpan.updateEndDate(finishDate);
+
+      maybeCaptureSpanEventsAsExceptions(spanBeingEnded, sentrySpan);
     }
+  }
+
+  private void maybeCaptureSpanEventsAsExceptions(
+      final @NotNull ReadableSpan spanBeingEnded, final @NotNull IOtelSpanWrapper sentrySpan) {
+    final @NotNull IScopes spanScopes = sentrySpan.getScopes();
+    if (spanScopes.getOptions().isCaptureOpenTelemetryEvents()) {
+      final @NotNull List<EventData> events = spanBeingEnded.toSpanData().getEvents();
+      for (EventData event : events) {
+        if (event instanceof ExceptionEventData) {
+          final @NotNull ExceptionEventData exceptionEvent = (ExceptionEventData) event;
+          captureException(spanScopes, exceptionEvent, sentrySpan);
+        }
+      }
+    }
+  }
+
+  private void captureException(
+      final @NotNull IScopes scopes,
+      final @NotNull ExceptionEventData exceptionEvent,
+      final @NotNull IOtelSpanWrapper sentrySpan) {
+    final @NotNull Throwable exception = exceptionEvent.getException();
+    final Mechanism mechanism = new Mechanism();
+    mechanism.setType("OpenTelemetrySpanEvent");
+    mechanism.setHandled(true);
+    // This is potentially the wrong Thread as it's the current thread meaning the thread where
+    // the span is being ended on. This may not match the thread where the exception occurred.
+    final Throwable mechanismException =
+        new ExceptionMechanismException(mechanism, exception, Thread.currentThread());
+
+    final SentryEvent event = new SentryEvent(mechanismException);
+    event.setTimestamp(DateUtils.nanosToDate(exceptionEvent.getEpochNanos()));
+    event.setLevel(SentryLevel.ERROR);
+    event.getContexts().setTrace(sentrySpan.getSpanContext());
+
+    scopes.captureEvent(event);
   }
 
   @Override
