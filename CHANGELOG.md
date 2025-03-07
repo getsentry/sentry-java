@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Add support for setting in-app-includes/in-app-excludes via AndroidManifest.xml ([#4240](https://github.com/getsentry/sentry-java/pull/4240))
+
 ### Features
 
 - The SDK now automatically propagates the trace-context to the native layer. This allows to connect errors on different layers of the application. ([#4137](https://github.com/getsentry/sentry-java/pull/4137))
