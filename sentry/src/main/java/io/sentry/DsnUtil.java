@@ -31,6 +31,13 @@ public final class DsnUtil {
       return false;
     }
 
-    return url.toLowerCase(Locale.ROOT).contains(dsnHost.toLowerCase(Locale.ROOT));
+    final @NotNull String lowerCaseHost = dsnHost.toLowerCase(Locale.ROOT);
+    final int dsnPort = sentryUri.getPort();
+
+    if (dsnPort > 0) {
+      return url.toLowerCase(Locale.ROOT).contains(lowerCaseHost + ":" + dsnPort);
+    } else {
+      return url.toLowerCase(Locale.ROOT).contains(lowerCaseHost);
+    }
   }
 }

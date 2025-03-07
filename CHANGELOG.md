@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Also use port when checking if a request is made to Sentry DSN ([#4231](https://github.com/getsentry/sentry-java/pull/4231))
+  - For our OpenTelemetry integration we check if a span is for a request to Sentry
+  - We now also consider the port when performing this check
+
 ### Features
 
 - The SDK now automatically propagates the trace-context to the native layer. This allows to connect errors on different layers of the application. ([#4137](https://github.com/getsentry/sentry-java/pull/4137))

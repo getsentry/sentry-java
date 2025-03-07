@@ -40,6 +40,16 @@ class DsnUtilTest {
         assertFalse(DsnUtil.urlContainsDsnHost(optionsWithDsn(DSN), null))
     }
 
+    @Test
+    fun `returns false for same host but different port`() {
+        assertFalse(DsnUtil.urlContainsDsnHost(optionsWithDsn("http://publicKey:secretKey@localhost:8080/path/id?sample.rate=0.1"), "localhost:8081"))
+    }
+
+    @Test
+    fun `returns true for same host and port`() {
+        assertTrue(DsnUtil.urlContainsDsnHost(optionsWithDsn("http://publicKey:secretKey@localhost:8080/path/id?sample.rate=0.1"), "localhost:8080"))
+    }
+
     private fun optionsWithDsn(dsn: String?): SentryOptions {
         return SentryOptions().also {
             it.dsn = dsn
