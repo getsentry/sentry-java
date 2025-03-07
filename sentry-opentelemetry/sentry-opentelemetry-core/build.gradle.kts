@@ -23,7 +23,6 @@ dependencies {
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
     implementation(Config.Libs.OpenTelemetry.otelSdk)
-    implementation(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(Config.Libs.OpenTelemetry.otelSemconv)
     compileOnly(Config.Libs.OpenTelemetry.otelSemconvIncubating)
 
