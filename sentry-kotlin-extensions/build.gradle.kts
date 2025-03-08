@@ -30,6 +30,7 @@ dependencies {
     testImplementation(Config.TestLibs.kotlinTestJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.Libs.coroutinesCore)
+    testImplementation(Config.TestLibs.coroutinesTest)
 }
 
 configure<SourceSetContainer> {
