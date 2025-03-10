@@ -318,6 +318,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
         appStartSpan.start();
         appStartSpan.setStartedAt(nowUptimeMs);
         CLASS_LOADED_UPTIME_MS = nowUptimeMs;
+        contentProviderOnCreates.clear();
+        applicationOnCreate.reset();
       } else {
         appStartType = savedInstanceState == null ? AppStartType.COLD : AppStartType.WARM;
       }

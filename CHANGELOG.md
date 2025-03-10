@@ -5,6 +5,7 @@
 ### Fixes
 
 - Fix Ensure app start type is set, even when ActivityLifecycleIntegration is not running ([#4216](https://github.com/getsentry/sentry-java/pull/4216))
+- Fix properly reset application/content-provider timespans for warm app starts ([#4244](https://github.com/getsentry/sentry-java/pull/4244))
 
 ## 7.22.0
 
