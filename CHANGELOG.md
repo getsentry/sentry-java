@@ -1,5 +1,14 @@
 # Changelog
 
+### Fixes
+
+- The SDK now handles `null` on many APIs instead of expecting a non `null` value ([#4245](https://github.com/getsentry/sentry-java/pull/4245))
+  - Certain APIs like `setTag`, `setData`, `setExtra`, `setContext` previously caused a `NullPointerException` when invoked with either `null` key or value.
+  - The SDK now tries to have a sane fallback when `null` is passed and no longer throws `NullPointerException`
+  - If `null` is passed, the SDK will
+    - do nothing if a `null` key is passed, returning `null` for non void methods
+    - replace any previous value if the new value is set to `null`
+
 ### Features
 
 - The SDK now automatically propagates the trace-context to the native layer. This allows to connect errors on different layers of the application. ([#4137](https://github.com/getsentry/sentry-java/pull/4137))
