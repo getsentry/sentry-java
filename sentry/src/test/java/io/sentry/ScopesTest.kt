@@ -2141,6 +2141,30 @@ class ScopesTest {
         assertEquals("other.span.origin", transaction.spanContext.origin)
     }
 
+    @Test
+    fun `null tags do not cause NPE`() {
+        val scopes = generateScopes()
+        scopes.setTag(null, null)
+        scopes.setTag("k", null)
+        scopes.setTag(null, "v")
+        scopes.removeTag(null)
+        assertTrue(scopes.scope.tags.isEmpty())
+        assertTrue(scopes.isolationScope.tags.isEmpty())
+        assertTrue(scopes.globalScope.tags.isEmpty())
+    }
+
+    @Test
+    fun `null extras do not cause NPE`() {
+        val scopes = generateScopes()
+        scopes.setExtra(null, null)
+        scopes.setExtra("k", null)
+        scopes.setExtra(null, "v")
+        scopes.removeExtra(null)
+        assertTrue(scopes.scope.extras.isEmpty())
+        assertTrue(scopes.isolationScope.extras.isEmpty())
+        assertTrue(scopes.globalScope.extras.isEmpty())
+    }
+
     private val dsnTest = "https://key@sentry.io/proj"
 
     private fun generateScopes(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): IScopes {

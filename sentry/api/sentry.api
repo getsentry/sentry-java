@@ -238,8 +238,11 @@ public final class io/sentry/CombinedContextsView : io/sentry/protocol/Contexts 
 	public fun isEmpty ()Z
 	public fun keys ()Ljava/util/Enumeration;
 	public fun put (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+	public fun putAll (Lio/sentry/protocol/Contexts;)V
+	public fun putAll (Ljava/util/Map;)V
 	public fun remove (Ljava/lang/Object;)Ljava/lang/Object;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun set (Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
 	public fun setApp (Lio/sentry/protocol/App;)V
 	public fun setBrowser (Lio/sentry/protocol/Browser;)V
 	public fun setDevice (Lio/sentry/protocol/Device;)V
