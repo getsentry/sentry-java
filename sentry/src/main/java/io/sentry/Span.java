@@ -268,12 +268,15 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public void setTag(final @NotNull String key, final @NotNull String value) {
+  public void setTag(final @Nullable String key, final @Nullable String value) {
     this.context.setTag(key, value);
   }
 
   @Override
-  public @Nullable String getTag(@NotNull String key) {
+  public @Nullable String getTag(@Nullable String key) {
+    if (key == null) {
+      return null;
+    }
     return context.getTags().get(key);
   }
 
@@ -328,12 +331,22 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public void setData(final @NotNull String key, final @NotNull Object value) {
-    data.put(key, value);
+  public void setData(final @Nullable String key, final @Nullable Object value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      data.remove(key);
+    } else {
+      data.put(key, value);
+    }
   }
 
   @Override
-  public @Nullable Object getData(final @NotNull String key) {
+  public @Nullable Object getData(final @Nullable String key) {
+    if (key == null) {
+      return null;
+    }
     return data.get(key);
   }
 
@@ -400,7 +413,7 @@ public final class Span implements ISpan {
   }
 
   @Override
-  public void setContext(@NotNull String key, @NotNull Object context) {
+  public void setContext(@Nullable String key, @Nullable Object context) {
     this.contexts.put(key, context);
   }
 

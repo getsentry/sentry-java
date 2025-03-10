@@ -319,7 +319,7 @@ class InternalSentrySdkTest {
     fun `serializeScope provides fallback app data if none is set`() {
         val options = SentryAndroidOptions()
         val scope = Scope(options)
-        scope.setContexts("app", null)
+        scope.setContexts("app", null as Any?)
 
         val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
         assertTrue(((serializedScope["contexts"] as Map<*, *>)["app"] as Map<*, *>).containsKey("app_name"))

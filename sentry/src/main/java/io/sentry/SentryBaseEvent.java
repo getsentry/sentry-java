@@ -198,24 +198,31 @@ public abstract class SentryBaseEvent {
     this.tags = CollectionUtils.newHashMap(tags);
   }
 
-  public void removeTag(@NotNull String key) {
-    if (tags != null) {
+  public void removeTag(@Nullable String key) {
+    if (tags != null && key != null) {
       tags.remove(key);
     }
   }
 
-  public @Nullable String getTag(final @NotNull String key) {
-    if (tags != null) {
+  public @Nullable String getTag(final @Nullable String key) {
+    if (tags != null && key != null) {
       return tags.get(key);
     }
     return null;
   }
 
-  public void setTag(final @NotNull String key, final @NotNull String value) {
+  public void setTag(final @Nullable String key, final @Nullable String value) {
     if (tags == null) {
       tags = new HashMap<>();
     }
-    tags.put(key, value);
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      removeTag(key);
+    } else {
+      tags.put(key, value);
+    }
   }
 
   public @Nullable String getRelease() {
@@ -298,21 +305,28 @@ public abstract class SentryBaseEvent {
     this.extra = CollectionUtils.newHashMap(extra);
   }
 
-  public void setExtra(final @NotNull String key, final @NotNull Object value) {
+  public void setExtra(final @Nullable String key, final @Nullable Object value) {
     if (extra == null) {
       extra = new HashMap<>();
     }
-    extra.put(key, value);
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      removeExtra(key);
+    } else {
+      extra.put(key, value);
+    }
   }
 
-  public void removeExtra(final @NotNull String key) {
-    if (extra != null) {
+  public void removeExtra(final @Nullable String key) {
+    if (extra != null && key != null) {
       extra.remove(key);
     }
   }
 
-  public @Nullable Object getExtra(final @NotNull String key) {
-    if (extra != null) {
+  public @Nullable Object getExtra(final @Nullable String key) {
+    if (extra != null && key != null) {
       return extra.get(key);
     }
     return null;

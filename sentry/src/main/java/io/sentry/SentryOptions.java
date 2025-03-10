@@ -1503,8 +1503,15 @@ public class SentryOptions {
    * @param key the key
    * @param value the value
    */
-  public void setTag(final @NotNull String key, final @NotNull String value) {
-    this.tags.put(key, value);
+  public void setTag(final @Nullable String key, final @Nullable String value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      this.tags.remove(key);
+    } else {
+      this.tags.put(key, value);
+    }
   }
 
   /**

@@ -1141,6 +1141,63 @@ class CombinedScopeViewTest {
         assertEquals(SentryId.EMPTY_ID, fixture.globalScope.replayId)
     }
 
+    @Test
+    fun `null tags do not cause NPE`() {
+        val scope = fixture.getSut()
+        scope.setTag("k", "oldvalue")
+        scope.setTag(null, null)
+        scope.setTag("k", null)
+        scope.setTag(null, "v")
+        scope.removeTag(null)
+        kotlin.test.assertTrue(scope.tags.isEmpty())
+    }
+
+    @Test
+    fun `null extras do not cause NPE`() {
+        val scope = fixture.getSut()
+        scope.setExtra("k", "oldvalue")
+        scope.setExtra(null, null)
+        scope.setExtra("k", null)
+        scope.setExtra(null, "v")
+        scope.removeExtra(null)
+        kotlin.test.assertTrue(scope.extras.isEmpty())
+    }
+
+    @Test
+    fun `null contexts do not cause NPE`() {
+        val scope = fixture.getSut()
+
+        scope.setContexts("obj", null as Any?)
+        scope.setContexts("bool", true)
+        scope.setContexts("string", "hello")
+        scope.setContexts("num", 100)
+        scope.setContexts("list", listOf("a", "b"))
+        scope.setContexts("array", arrayOf("c", "d"))
+        scope.setContexts("char", 'z')
+
+        kotlin.test.assertFalse(scope.contexts.isEmpty)
+
+        scope.setContexts(null, null as Any?)
+        scope.setContexts(null, null as Boolean?)
+        scope.setContexts(null, null as String?)
+        scope.setContexts(null, null as Number?)
+        scope.setContexts(null, null as List<Any>?)
+        scope.setContexts(null, null as Array<Any>?)
+        scope.setContexts(null, null as Character?)
+
+        scope.setContexts("obj", null as Any?)
+        scope.setContexts("bool", null as Boolean?)
+        scope.setContexts("string", null as String?)
+        scope.setContexts("num", null as Number?)
+        scope.setContexts("list", null as List<Any>?)
+        scope.setContexts("array", null as Array<Any>?)
+        scope.setContexts("char", null as Character?)
+
+        scope.removeContexts(null)
+
+        kotlin.test.assertTrue(scope.contexts.isEmpty)
+    }
+
     private fun createTransaction(name: String, scopes: Scopes? = null): ITransaction {
         val scopesToUse = scopes ?: fixture.scopes
         return SentryTracer(TransactionContext(name, "op", TracesSamplingDecision(true)), scopesToUse).also {

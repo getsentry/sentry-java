@@ -1410,4 +1410,27 @@ class SentryTracerTest {
         assertNull(transaction.finishDate)
         transaction.finish()
     }
+
+    @Test
+    fun `setting null data does not cause NPE`() {
+        val transaction = fixture.getSut()
+        transaction.setData("k", "oldvalue")
+        transaction.setData(null, null)
+        transaction.setData("k", null)
+        transaction.setData(null, "v")
+        assertNull(transaction.getData(null))
+        assertNull(transaction.getData("k"))
+        assertFalse(transaction.data!!.containsKey("k"))
+    }
+
+    @Test
+    fun `setting null tag does not cause NPE`() {
+        val transaction = fixture.getSut()
+        transaction.setTag("k", "oldvalue")
+        transaction.setTag(null, null)
+        transaction.setTag("k", null)
+        transaction.setTag(null, "v")
+        assertNull(transaction.getTag(null))
+        assertNull(transaction.getTag("k"))
+    }
 }

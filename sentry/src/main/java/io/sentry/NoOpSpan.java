@@ -120,10 +120,10 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {}
+  public void setTag(@Nullable String key, @Nullable String value) {}
 
   @Override
-  public @Nullable String getTag(@NotNull String key) {
+  public @Nullable String getTag(@Nullable String key) {
     return null;
   }
 
@@ -133,10 +133,10 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public void setData(@NotNull String key, @NotNull Object value) {}
+  public void setData(@Nullable String key, @Nullable Object value) {}
 
   @Override
-  public @Nullable Object getData(@NotNull String key) {
+  public @Nullable Object getData(@Nullable String key) {
     return null;
   }
 
@@ -168,7 +168,7 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public void setContext(@NotNull String key, @NotNull Object context) {}
+  public void setContext(@Nullable String key, @Nullable Object context) {}
 
   @Override
   public @NotNull Contexts getContexts() {

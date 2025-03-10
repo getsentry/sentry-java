@@ -616,7 +616,10 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
    * @return the value or null
    */
   @Nullable
-  public Object getData(final @NotNull String key) {
+  public Object getData(final @Nullable String key) {
+    if (key == null) {
+      return null;
+    }
     return data.get(key);
   }
 
@@ -626,8 +629,15 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
    * @param key the key
    * @param value the value
    */
-  public void setData(@NotNull String key, @NotNull Object value) {
-    data.put(key, value);
+  public void setData(@Nullable String key, @Nullable Object value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      removeData(key);
+    } else {
+      data.put(key, value);
+    }
   }
 
   /**
@@ -635,7 +645,10 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
    *
    * @param key the key
    */
-  public void removeData(@NotNull String key) {
+  public void removeData(@Nullable String key) {
+    if (key == null) {
+      return;
+    }
     data.remove(key);
   }
 

@@ -330,12 +330,15 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {
+  public void setTag(@Nullable String key, @Nullable String value) {
     context.setTag(key, value);
   }
 
   @Override
-  public @Nullable String getTag(@NotNull String key) {
+  public @Nullable String getTag(@Nullable String key) {
+    if (key == null) {
+      return null;
+    }
     return context.getTags().get(key);
   }
 
@@ -357,12 +360,22 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   }
 
   @Override
-  public void setData(@NotNull String key, @NotNull Object value) {
-    data.put(key, value);
+  public void setData(@Nullable String key, @Nullable Object value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      data.remove(key);
+    } else {
+      data.put(key, value);
+    }
   }
 
   @Override
-  public @Nullable Object getData(@NotNull String key) {
+  public @Nullable Object getData(@Nullable String key) {
+    if (key == null) {
+      return null;
+    }
     return data.get(key);
   }
 
@@ -422,7 +435,7 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   }
 
   @Override
-  public void setContext(@NotNull String key, @NotNull Object context) {
+  public void setContext(@Nullable String key, @Nullable Object context) {
     contexts.put(key, context);
   }
 

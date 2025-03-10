@@ -604,4 +604,31 @@ class CombinedContextsViewTest {
         assertNull(fixture.isolation.get("test"))
         assertEquals("global", fixture.global.get("test"))
     }
+
+    @Test
+    fun `set null value on context does not cause exception`() {
+        val combined = fixture.getSut()
+        combined.set("k", null)
+        assertFalse(combined.containsKey("k"))
+    }
+
+    @Test
+    fun `set null key on context does not cause exception`() {
+        val combined = fixture.getSut()
+        combined.set(null, "v")
+        assertFalse(combined.containsKey(null))
+    }
+
+    @Test
+    fun `set null key and value on context does not cause exception`() {
+        val combined = fixture.getSut()
+        combined.set(null, null)
+        assertFalse(combined.containsKey(null))
+    }
+
+    @Test
+    fun `remove null key from context does not cause exception`() {
+        val combined = fixture.getSut()
+        combined.remove(null)
+    }
 }

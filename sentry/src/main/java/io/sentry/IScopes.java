@@ -271,14 +271,14 @@ public interface IScopes {
    * @param key the key
    * @param value the value
    */
-  void setTag(@NotNull String key, @NotNull String value);
+  void setTag(@Nullable String key, @Nullable String value);
 
   /**
    * Removes the tag to a string value to the current Scope
    *
    * @param key the key
    */
-  void removeTag(@NotNull String key);
+  void removeTag(@Nullable String key);
 
   /**
    * Sets the extra key to an arbitrary value to the current Scope, overwriting a potential previous
@@ -287,14 +287,14 @@ public interface IScopes {
    * @param key the key
    * @param value the value
    */
-  void setExtra(@NotNull String key, @NotNull String value);
+  void setExtra(@Nullable String key, @Nullable String value);
 
   /**
    * Removes the extra key to an arbitrary value to the current Scope
    *
    * @param key the key
    */
-  void removeExtra(@NotNull String key);
+  void removeExtra(@Nullable String key);
 
   /**
    * Last event id recorded in the current scope

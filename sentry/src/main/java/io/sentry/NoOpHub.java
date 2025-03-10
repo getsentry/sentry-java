@@ -106,16 +106,16 @@ public final class NoOpHub implements IHub {
   public void clearBreadcrumbs() {}
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {}
+  public void setTag(@Nullable String key, @Nullable String value) {}
 
   @Override
-  public void removeTag(@NotNull String key) {}
+  public void removeTag(@Nullable String key) {}
 
   @Override
-  public void setExtra(@NotNull String key, @NotNull String value) {}
+  public void setExtra(@Nullable String key, @Nullable String value) {}
 
   @Override
-  public void removeExtra(@NotNull String key) {}
+  public void removeExtra(@Nullable String key) {}
 
   @Override
   public @NotNull SentryId getLastEventId() {
