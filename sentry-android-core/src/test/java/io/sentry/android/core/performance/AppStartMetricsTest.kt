@@ -157,6 +157,19 @@ class AppStartMetricsTest {
         val metrics = AppStartMetrics.getInstance()
         metrics.registerLifecycleCallbacks(mock<Application>())
 
+        metrics.contentProviderOnCreateTimeSpans.add(
+            TimeSpan().apply {
+                description = "ExampleContentProvider"
+                setStartedAt(1)
+                setStoppedAt(2)
+            }
+        )
+
+        metrics.applicationOnCreateTimeSpan.apply {
+            setStartedAt(3)
+            setStoppedAt(4)
+        }
+
         // when the looper runs
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
@@ -176,6 +189,8 @@ class AppStartMetricsTest {
         assertTrue(metrics.shouldSendStartMeasurements())
         assertTrue(metrics.appStartTimeSpan.hasStarted())
         assertEquals(now, metrics.appStartTimeSpan.startUptimeMs)
+        assertFalse(metrics.applicationOnCreateTimeSpan.hasStarted())
+        assertTrue(metrics.contentProviderOnCreateTimeSpans.isEmpty())
     }
 
     @Test
