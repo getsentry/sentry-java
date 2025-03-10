@@ -5,6 +5,8 @@
 ### Fixes
 
 - Add support for setting in-app-includes/in-app-excludes via AndroidManifest.xml ([#4240](https://github.com/getsentry/sentry-java/pull/4240))
+- Avoid unnecessary copies and ensure thread-safety when using `CopyOnWriteArrayList` ([#4247](https://github.com/getsentry/sentry-java/pull/4247))
+  - This affects in particular `SentryTracer.getLatestActiveSpan` which would have previously unnecessarily copied all children spans, with high impact on memory usage
 
 ### Features
 
