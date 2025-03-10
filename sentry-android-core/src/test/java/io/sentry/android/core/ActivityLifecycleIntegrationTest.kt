@@ -54,7 +54,6 @@ import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import java.util.Date
 import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -94,7 +93,10 @@ class ActivityLifecycleIntegrationTest {
 
             whenever(hub.options).thenReturn(options)
 
-            AppStartMetrics.getInstance().isAppLaunchedInForeground = true
+            val metrics = AppStartMetrics.getInstance()
+            metrics.isAppLaunchedInForeground = true
+            metrics.appStartTimeSpan.start()
+
             // We let the ActivityLifecycleIntegration create the proper transaction here
             val optionCaptor = argumentCaptor<TransactionOptions>()
             val contextCaptor = argumentCaptor<TransactionContext>()
@@ -595,45 +597,6 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `App start is Cold when savedInstanceState is null`() {
-        val sut = fixture.getSut()
-        fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        sut.onActivityCreated(activity, null)
-
-        assertEquals(AppStartType.COLD, AppStartMetrics.getInstance().appStartType)
-    }
-
-    @Test
-    fun `App start is Warm when savedInstanceState is not null`() {
-        val sut = fixture.getSut()
-        fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        val bundle = Bundle()
-        sut.onActivityCreated(activity, bundle)
-
-        assertEquals(AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
-    }
-
-    @Test
-    fun `Do not overwrite App start type after set`() {
-        val sut = fixture.getSut()
-        fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
-
-        val activity = mock<Activity>()
-        val bundle = Bundle()
-        sut.onActivityCreated(activity, bundle)
-        sut.onActivityCreated(activity, null)
-
-        assertEquals(AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
-    }
-
-    @Test
     fun `When firstActivityCreated is false, start transaction with given appStartTime`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
@@ -881,86 +844,6 @@ class ActivityLifecycleIntegrationTest {
             firstAppStartEndTime!!.nanoTimestamp(),
             AppStartMetrics.getInstance().sdkInitTimeSpan.projectedStopTimestamp!!.nanoTimestamp()
         )
-    }
-
-    @Test
-    fun `When firstActivityCreated is false and bundle is not null, start app start warm span with given appStartTime`() {
-        val sut = fixture.getSut()
-        fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
-        sut.setFirstActivityCreated(false)
-
-        val date = SentryNanotimeDate(Date(1), 0)
-        setAppStartTime(date)
-
-        val activity = mock<Activity>()
-        sut.onActivityCreated(activity, fixture.bundle)
-
-        val span = fixture.transaction.children.first()
-        assertEquals(span.operation, "app.start.warm")
-        assertEquals(span.description, "Warm Start")
-        assertEquals(span.startDate.nanoTimestamp(), date.nanoTimestamp())
-    }
-
-    @Test
-    fun `When firstActivityCreated is false and bundle is not null, start app start cold span with given appStartTime`() {
-        val sut = fixture.getSut()
-        fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
-        sut.setFirstActivityCreated(false)
-
-        val date = SentryNanotimeDate(Date(1), 0)
-        setAppStartTime(date)
-
-        val activity = mock<Activity>()
-        sut.onActivityCreated(activity, null)
-
-        val span = fixture.transaction.children.first()
-        assertEquals(span.operation, "app.start.cold")
-        assertEquals(span.description, "Cold Start")
-        assertEquals(span.startDate.nanoTimestamp(), date.nanoTimestamp())
-    }
-
-    @Test
-    fun `When firstActivityCreated is false and app started more than 1 minute ago, start app with Warm start`() {
-        val sut = fixture.getSut()
-        fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
-        sut.setFirstActivityCreated(false)
-
-        val date = SentryNanotimeDate(Date(1), 0)
-        val duration = TimeUnit.MINUTES.toMillis(1) + 2
-        val durationNanos = TimeUnit.MILLISECONDS.toNanos(duration)
-        val stopDate = SentryNanotimeDate(Date(duration), durationNanos)
-        setAppStartTime(date, stopDate)
-
-        val activity = mock<Activity>()
-        sut.onActivityCreated(activity, null)
-
-        val span = fixture.transaction.children.first()
-        assertEquals(span.operation, "app.start.warm")
-        assertEquals(span.description, "Warm Start")
-        assertEquals(span.startDate.nanoTimestamp(), date.nanoTimestamp())
-    }
-
-    @Test
-    fun `When firstActivityCreated is false and app started in background, start app with Warm start`() {
-        val sut = fixture.getSut()
-        AppStartMetrics.getInstance().isAppLaunchedInForeground = false
-        fixture.options.tracesSampleRate = 1.0
-        sut.register(fixture.hub, fixture.options)
-        sut.setFirstActivityCreated(false)
-
-        val date = SentryNanotimeDate(Date(1), 0)
-        setAppStartTime(date)
-
-        val activity = mock<Activity>()
-        sut.onActivityCreated(activity, null)
-
-        val span = fixture.transaction.children.first()
-        assertEquals(span.operation, "app.start.warm")
-        assertEquals(span.description, "Warm Start")
-        assertEquals(span.startDate.nanoTimestamp(), date.nanoTimestamp())
     }
 
     @Test
@@ -1467,7 +1350,6 @@ class ActivityLifecycleIntegrationTest {
         assertEquals(startDate.nanoTimestamp(), sut.getProperty<SentryDate>("lastPausedTime").nanoTimestamp())
 
         sut.onActivityCreated(activity, null)
-        assertNotNull(sut.appStartSpan)
 
         sut.onActivityPostCreated(activity, null)
         assertTrue(activityLifecycleSpan.onCreate.hasStopped())
@@ -1556,15 +1438,6 @@ class ActivityLifecycleIntegrationTest {
         // lastPausedUptimeMillis is set to current SystemClock.uptimeMillis()
         val lastUptimeMillis = sut.getProperty<Long>("lastPausedUptimeMillis")
         assertNotEquals(0, lastUptimeMillis)
-
-        sut.onActivityCreated(activity, null)
-        // AppStartMetrics app start time is set to Activity preCreated timestamp
-        assertEquals(lastUptimeMillis, appStartMetrics.appStartTimeSpan.startUptimeMs)
-        // AppStart type is considered warm
-        assertEquals(AppStartType.WARM, appStartMetrics.appStartType)
-
-        // Activity appStart span timestamp is the same of AppStartMetrics.appStart timestamp
-        assertEquals(sut.appStartSpan!!.startDate.nanoTimestamp(), appStartMetrics.getAppStartTimeSpanWithFallback(fixture.options).startTimestamp!!.nanoTimestamp())
     }
 
     private fun SentryTracer.isFinishing() = getProperty<Any>("finishStatus").getProperty<Boolean>("isFinishing")
@@ -1578,6 +1451,9 @@ class ActivityLifecycleIntegrationTest {
 
     private fun setAppStartTime(date: SentryDate = SentryNanotimeDate(Date(1), 0), stopDate: SentryDate? = null) {
         // set by SentryPerformanceProvider so forcing it here
+        AppStartMetrics.getInstance().appStartType = AppStartType.COLD
+        AppStartMetrics.getInstance().isAppLaunchedInForeground = true
+
         val sdkAppStartTimeSpan = AppStartMetrics.getInstance().sdkInitTimeSpan
         val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
         val millis = DateUtils.nanosToMillis(date.nanoTimestamp().toDouble()).toLong()

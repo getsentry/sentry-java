@@ -3,17 +3,13 @@ package io.sentry.android.core;
 import static io.sentry.Sentry.APP_START_PROFILING_CONFIG_FILE_NAME;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.Process;
 import android.os.SystemClock;
-import androidx.annotation.NonNull;
 import io.sentry.ILogger;
 import io.sentry.ITransactionProfiler;
 import io.sentry.JsonSerializer;
@@ -22,9 +18,7 @@ import io.sentry.SentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.TracesSamplingDecision;
-import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
-import io.sentry.android.core.performance.ActivityLifecycleCallbacksAdapter;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import java.io.BufferedReader;
@@ -33,7 +27,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -185,8 +178,9 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
     // performance v2: Uses Process.getStartUptimeMillis()
     // requires API level 24+
-    if (buildInfoProvider.getSdkInfoVersion() < android.os.Build.VERSION_CODES.N) {
-      return;
+    if (buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
+      final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
+      appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
     }
 
     if (context instanceof Application) {
@@ -196,40 +190,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       return;
     }
 
-    final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
-    appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
-    appStartMetrics.registerApplicationForegroundCheck(app);
-
-    final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
-
-    activityCallback =
-        new ActivityLifecycleCallbacksAdapter() {
-          @Override
-          public void onActivityStarted(@NonNull Activity activity) {
-            if (firstDrawDone.get()) {
-              return;
-            }
-            if (activity.getWindow() != null) {
-              FirstDrawDoneListener.registerForNextDraw(
-                  activity, () -> onAppStartDone(), buildInfoProvider);
-            } else {
-              new Handler(Looper.getMainLooper()).post(() -> onAppStartDone());
-            }
-          }
-        };
-
-    app.registerActivityLifecycleCallbacks(activityCallback);
-  }
-
-  synchronized void onAppStartDone() {
-    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-    appStartMetrics.getSdkInitTimeSpan().stop();
-    appStartMetrics.getAppStartTimeSpan().stop();
-
-    if (app != null) {
-      if (activityCallback != null) {
-        app.unregisterActivityLifecycleCallbacks(activityCallback);
-      }
-    }
+    appStartMetrics.registerLifecycleCallbacks(app);
   }
 }
