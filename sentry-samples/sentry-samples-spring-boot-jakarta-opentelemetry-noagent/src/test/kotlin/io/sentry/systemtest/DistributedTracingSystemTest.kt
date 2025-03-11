@@ -1,10 +1,8 @@
 package io.sentry.systemtest
 
 import io.sentry.protocol.SentryId
-import io.sentry.samples.spring.boot.jakarta.Person
 import io.sentry.systemtest.util.TestHelper
 import org.junit.Before
-import org.springframework.http.HttpStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -25,10 +23,12 @@ class DistributedTracingSystemTest {
         val restClient = testHelper.restClient
         restClient.getPersonDistributedTracing(
             1L,
-            "$traceId-424cffc8f94feeee-1",
-            "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+            mapOf(
+                "sentry-trace" to "$traceId-424cffc8f94feeee-1",
+                "baggage" to "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+            )
         )
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, restClient.lastKnownStatusCode)
+        assertEquals(500, restClient.lastKnownStatusCode)
 
         testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
             transaction.transaction == "GET /tracing/{id}" &&
@@ -47,10 +47,12 @@ class DistributedTracingSystemTest {
         val restClient = testHelper.restClient
         restClient.getPersonDistributedTracing(
             1L,
-            "$traceId-424cffc8f94feeee-0",
-            "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=false,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+            mapOf(
+                "sentry-trace" to "$traceId-424cffc8f94feeee-0",
+                "baggage" to "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=false,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+            )
         )
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, restClient.lastKnownStatusCode)
+        assertEquals(500, restClient.lastKnownStatusCode)
 
         testHelper.ensureNoTransactionReceived { transaction, envelopeHeader ->
             transaction.transaction == "GET /tracing/{id}"
@@ -67,10 +69,12 @@ class DistributedTracingSystemTest {
         val restClient = testHelper.restClient
         restClient.getPersonDistributedTracing(
             1L,
-            "$traceId-424cffc8f94feeee-1",
-            "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+            mapOf(
+                "sentry-trace" to "$traceId-424cffc8f94feeee-1",
+                "baggage" to "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+            )
         )
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, restClient.lastKnownStatusCode)
+        assertEquals(500, restClient.lastKnownStatusCode)
 
         var sampleRand1: String? = null
         var sampleRand2: String? = null
@@ -113,10 +117,12 @@ class DistributedTracingSystemTest {
         val restClient = testHelper.restClient
         restClient.getPersonDistributedTracing(
             1L,
-            "$traceId-424cffc8f94feeee",
-            "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=0.5,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+            mapOf(
+                "sentry-trace" to "$traceId-424cffc8f94feeee",
+                "baggage" to "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=0.5,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+            )
         )
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, restClient.lastKnownStatusCode)
+        assertEquals(500, restClient.lastKnownStatusCode)
 
         var sampleRate1: String? = null
         var sampleRate2: String? = null
@@ -161,10 +167,12 @@ class DistributedTracingSystemTest {
         val person = Person("firstA", "lastB")
         val returnedPerson = restClient.createPersonDistributedTracing(
             person,
-            "$traceId-424cffc8f94feeee-1",
-            "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+            mapOf(
+                "sentry-trace" to "$traceId-424cffc8f94feeee-1",
+                "baggage" to "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"
+            )
         )
-        assertEquals(HttpStatus.OK, restClient.lastKnownStatusCode)
+        assertEquals(200, restClient.lastKnownStatusCode)
 
         assertEquals(person.firstName, returnedPerson!!.firstName)
         assertEquals(person.lastName, returnedPerson!!.lastName)
