@@ -677,11 +677,14 @@ public final class SentryTracer implements ITransaction {
   }
 
   private boolean hasAllChildrenFinished() {
-    for (final Span span : this.children) {
-      // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
-      // date
-      if (!span.isFinished() && span.getFinishDate() == null) {
-        return false;
+    final List<Span> spans = new ArrayList<>(this.children);
+    if (!spans.isEmpty()) {
+      for (final Span span : spans) {
+        // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
+        // date
+        if (!span.isFinished() && span.getFinishDate() == null) {
+          return false;
+        }
       }
     }
     return true;
