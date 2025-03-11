@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Behavioural Changes
+
+- Use `java.net.URI` for parsing URLs in `UrlUtils` ([#4210](https://github.com/getsentry/sentry-java/pull/4210))
+  - This could affect grouping for issues with messages containing URLs that fall in known corner cases that were handled incorrectly previously (e.g. email in URL path)
+
 ### Fixes
 
 - Add support for setting in-app-includes/in-app-excludes via AndroidManifest.xml ([#4240](https://github.com/getsentry/sentry-java/pull/4240))
@@ -15,10 +20,11 @@
   - Set `sentry.capture-open-telemetry-events=true` in Springs `application.properties` to enable it
   - Set `sentry.captureOpenTelemetryEvents: true` in Springs `application.yml` to enable it
 
-### Behavioural Changes
+### Internal
 
-- Use `java.net.URI` for parsing URLs in `UrlUtils` ([#4210](https://github.com/getsentry/sentry-java/pull/4210))
-  - This could affect grouping for issues with messages containing URLs that fall in known corner cases that were handled incorrectly previously (e.g. email in URL path)
+- Also use port when checking if a request is made to Sentry DSN ([#4231](https://github.com/getsentry/sentry-java/pull/4231))
+  - For our OpenTelemetry integration we check if a span is for a request to Sentry
+  - We now also consider the port when performing this check
 
 ### Dependencies
 
