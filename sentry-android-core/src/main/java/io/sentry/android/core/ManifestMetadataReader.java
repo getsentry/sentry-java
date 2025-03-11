@@ -107,6 +107,10 @@ final class ManifestMetadataReader {
 
   static final String IGNORED_ERRORS = "io.sentry.ignored-errors";
 
+  static final String IN_APP_INCLUDES = "io.sentry.in-app-includes";
+
+  static final String IN_APP_EXCLUDES = "io.sentry.in-app-excludes";
+
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
 
@@ -414,8 +418,21 @@ final class ManifestMetadataReader {
             .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
 
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
-      }
 
+        final @Nullable List<String> includes = readList(metadata, logger, IN_APP_INCLUDES);
+        if (includes != null && !includes.isEmpty()) {
+          for (final @NotNull String include : includes) {
+            options.addInAppInclude(include);
+          }
+        }
+
+        final @Nullable List<String> excludes = readList(metadata, logger, IN_APP_EXCLUDES);
+        if (excludes != null && !excludes.isEmpty()) {
+          for (final @NotNull String exclude : excludes) {
+            options.addInAppExclude(exclude);
+          }
+        }
+      }
       options
           .getLogger()
           .log(SentryLevel.INFO, "Retrieving configuration from AndroidManifest.xml");
