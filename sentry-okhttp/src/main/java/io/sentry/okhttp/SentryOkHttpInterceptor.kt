@@ -81,6 +81,7 @@ public open class SentryOkHttpInterceptor(
             val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
             span = parentSpan?.startChild("http.client", "$method $url")
         }
+
         val startTimestamp = CurrentDateProvider.getInstance().currentTimeMillis
 
         span?.spanContext?.origin = TRACE_ORIGIN
@@ -141,6 +142,10 @@ public open class SentryOkHttpInterceptor(
             }
             throw e
         } finally {
+            // interceptors may change the request details, so let's update it here
+            // this only works correctly if SentryOkHttpInterceptor is the last one in the chain
+            okHttpEvent?.setRequest(request)
+
             finishSpan(span, request, response, isFromEventListener, okHttpEvent)
 
             // The SentryOkHttpEventListener will send the breadcrumb itself if used for this call

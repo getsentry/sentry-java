@@ -1447,4 +1447,54 @@ class ManifestMetadataReaderTest {
         // Assert
         assertEquals(listOf(FilterString("Some error"), FilterString("Another .*")), fixture.options.ignoredErrors)
     }
+
+    @Test
+    fun `applyMetadata reads inAppIncludes to options and sets the value if found`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.IN_APP_INCLUDES to "com.example.package1,com.example.package2")
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(listOf("com.example.package1", "com.example.package2"), fixture.options.inAppIncludes)
+    }
+
+    @Test
+    fun `applyMetadata reads inAppIncludes to options and keeps empty if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.inAppIncludes.isEmpty())
+    }
+
+    @Test
+    fun `applyMetadata reads inAppExcludes to options and sets the value if found`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.IN_APP_EXCLUDES to "com.example.excluded1,com.example.excluded2")
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(listOf("com.example.excluded1", "com.example.excluded2"), fixture.options.inAppExcludes)
+    }
+
+    @Test
+    fun `applyMetadata reads inAppExcludes to options and keeps empty if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.inAppExcludes.isEmpty())
+    }
 }

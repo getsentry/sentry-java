@@ -53,6 +53,7 @@ public final class ExternalOptions {
   private @Nullable Boolean enableBackpressureHandling;
   private @Nullable Boolean globalHubMode;
   private @Nullable Boolean forceInit;
+  private @Nullable Boolean captureOpenTelemetryEvents;
 
   private @Nullable SentryOptions.Cron cron;
 
@@ -145,6 +146,9 @@ public final class ExternalOptions {
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
 
     options.setGlobalHubMode(propertiesProvider.getBooleanProperty("global-hub-mode"));
+
+    options.setCaptureOpenTelemetryEvents(
+        propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -503,5 +507,15 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public void setSpotlightConnectionUrl(final @Nullable String spotlightConnectionUrl) {
     this.spotlightConnectionUrl = spotlightConnectionUrl;
+  }
+
+  @ApiStatus.Experimental
+  public void setCaptureOpenTelemetryEvents(final @Nullable Boolean captureOpenTelemetryEvents) {
+    this.captureOpenTelemetryEvents = captureOpenTelemetryEvents;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Boolean isCaptureOpenTelemetryEvents() {
+    return captureOpenTelemetryEvents;
   }
 }
