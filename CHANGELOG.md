@@ -9,7 +9,7 @@
   - The SDK now tries to have a sane fallback when `null` is passed and no longer throws `NullPointerException`
   - If `null` is passed, the SDK will
     - do nothing if a `null` key is passed, returning `null` for non void methods
-    - replace any previous value if the new value is set to `null`
+    - remove any previous value if the new value is set to `null`
 - Add support for setting in-app-includes/in-app-excludes via AndroidManifest.xml ([#4240](https://github.com/getsentry/sentry-java/pull/4240))
 - Modifications to OkHttp requests are now properly propagated to the affected span / breadcrumbs ([#4238](https://github.com/getsentry/sentry-java/pull/4238))
   - Please ensure the SentryOkHttpInterceptor is added last to your OkHttpClient, as otherwise changes to the `Request`  by subsequent interceptors won't be considered
