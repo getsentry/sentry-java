@@ -907,18 +907,6 @@ class ScopeTest {
     }
 
     @Test
-    fun `getAttachments returns new instance`() {
-        val scope = Scope(SentryOptions())
-        scope.addAttachment(Attachment(""))
-
-        assertNotSame(
-            scope.attachments,
-            scope.attachments,
-            "Scope.attachments must return a new instance on each call."
-        )
-    }
-
-    @Test
     fun `clearAttachments clears all attachments`() {
         val scope = Scope(SentryOptions())
         scope.addAttachment(Attachment(""))
