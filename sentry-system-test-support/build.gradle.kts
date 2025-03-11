@@ -24,7 +24,9 @@ dependencies {
     compileOnly(Config.Libs.springBoot3StarterWeb)
     api(Config.Libs.apolloKotlin)
     implementation(Config.Libs.jacksonKotlin)
+    implementation(Config.Libs.jacksonDatabind)
     api(projects.sentryTestSupport)
+    implementation(Config.Libs.okhttp)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
