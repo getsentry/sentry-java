@@ -482,6 +482,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getTags ()Ljava/util/Map;
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
+	public fun isCaptureOpenTelemetryEvents ()Ljava/lang/Boolean;
 	public fun isEnableBackpressureHandling ()Ljava/lang/Boolean;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnableSpotlight ()Ljava/lang/Boolean;
@@ -490,6 +491,7 @@ public final class io/sentry/ExternalOptions {
 	public fun isGlobalHubMode ()Ljava/lang/Boolean;
 	public fun isSendDefaultPii ()Ljava/lang/Boolean;
 	public fun isSendModules ()Ljava/lang/Boolean;
+	public fun setCaptureOpenTelemetryEvents (Ljava/lang/Boolean;)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
 	public fun setDebug (Ljava/lang/Boolean;)V
 	public fun setDist (Ljava/lang/String;)V
@@ -2933,6 +2935,7 @@ public class io/sentry/SentryOptions {
 	public fun isAttachServerName ()Z
 	public fun isAttachStacktrace ()Z
 	public fun isAttachThreads ()Z
+	public fun isCaptureOpenTelemetryEvents ()Z
 	public fun isDebug ()Z
 	public fun isEnableAppStartProfiling ()Z
 	public fun isEnableAutoSessionTracking ()Z
@@ -2970,6 +2973,7 @@ public class io/sentry/SentryOptions {
 	public fun setBeforeSendReplay (Lio/sentry/SentryOptions$BeforeSendReplayCallback;)V
 	public fun setBeforeSendTransaction (Lio/sentry/SentryOptions$BeforeSendTransactionCallback;)V
 	public fun setCacheDirPath (Ljava/lang/String;)V
+	public fun setCaptureOpenTelemetryEvents (Z)V
 	public fun setConnectionStatusProvider (Lio/sentry/IConnectionStatusProvider;)V
 	public fun setConnectionTimeoutMillis (I)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
