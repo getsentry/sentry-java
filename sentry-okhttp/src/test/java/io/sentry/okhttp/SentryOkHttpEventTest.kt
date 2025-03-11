@@ -17,6 +17,7 @@ import io.sentry.exception.SentryHttpClientException
 import io.sentry.test.getProperty
 import okhttp3.Protocol
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.mockwebserver.MockWebServer
 import org.mockito.kotlin.any
@@ -232,6 +233,35 @@ class SentryOkHttpEventTest {
                 assertEquals(fixture.mockRequest, it[TypeCheckHint.OKHTTP_REQUEST])
             }
         )
+    }
+
+    @Test
+    fun `setRequest updates both breadcrumb and span data`() {
+        val sut = fixture.getSut()
+
+        sut.setRequest(
+            Request.Builder()
+                .post("".toRequestBody())
+                .url("https://foo.bar/updated")
+                .build()
+        )
+        sut.finish()
+
+        verify(fixture.scopes).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("https://foo.bar/updated", it.data["url"])
+                assertEquals("foo.bar", it.data["host"])
+                assertEquals("/updated", it.data["path"])
+                assertEquals("POST", it.data["method"])
+            },
+            any()
+        )
+
+        assertNotNull(sut.callSpan)
+        assertEquals("/updated", sut.callSpan.getData("path"))
+        assertEquals("POST", sut.callSpan.getData("http.request.method"))
+        assertEquals("foo.bar", sut.callSpan.getData("host"))
+        assertEquals("https://foo.bar/updated", sut.callSpan.getData("url"))
     }
 
     @Test
