@@ -2,13 +2,14 @@
 
 ## Unreleased
 
-### Behavioural Changes
-
-- Use `java.net.URI` for parsing URLs in `UrlUtils` ([#4210](https://github.com/getsentry/sentry-java/pull/4210))
-  - This could affect grouping for issues with messages containing URLs that fall in known corner cases that were handled incorrectly previously (e.g. email in URL path)
-
 ### Fixes
 
+- The SDK now handles `null` on many APIs instead of expecting a non `null` value ([#4245](https://github.com/getsentry/sentry-java/pull/4245))
+  - Certain APIs like `setTag`, `setData`, `setExtra`, `setContext` previously caused a `NullPointerException` when invoked with either `null` key or value.
+  - The SDK now tries to have a sane fallback when `null` is passed and no longer throws `NullPointerException`
+  - If `null` is passed, the SDK will
+    - do nothing if a `null` key is passed, returning `null` for non void methods
+    - remove any previous value if the new value is set to `null`
 - Add support for setting in-app-includes/in-app-excludes via AndroidManifest.xml ([#4240](https://github.com/getsentry/sentry-java/pull/4240))
 - Modifications to OkHttp requests are now properly propagated to the affected span / breadcrumbs ([#4238](https://github.com/getsentry/sentry-java/pull/4238))
   - Please ensure the SentryOkHttpInterceptor is added last to your OkHttpClient, as otherwise changes to the `Request`  by subsequent interceptors won't be considered
@@ -21,6 +22,11 @@
   - Set `capture-open-telemetry-events=true` in `sentry.properties` to enable it
   - Set `sentry.capture-open-telemetry-events=true` in Springs `application.properties` to enable it
   - Set `sentry.captureOpenTelemetryEvents: true` in Springs `application.yml` to enable it
+
+### Behavioural Changes
+
+- Use `java.net.URI` for parsing URLs in `UrlUtils` ([#4210](https://github.com/getsentry/sentry-java/pull/4210))
+  - This could affect grouping for issues with messages containing URLs that fall in known corner cases that were handled incorrectly previously (e.g. email in URL path)
 
 ### Internal
 

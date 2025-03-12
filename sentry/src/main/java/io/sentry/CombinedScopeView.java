@@ -229,12 +229,12 @@ public final class CombinedScopeView implements IScope {
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {
+  public void setTag(@Nullable String key, @Nullable String value) {
     getDefaultWriteScope().setTag(key, value);
   }
 
   @Override
-  public void removeTag(@NotNull String key) {
+  public void removeTag(@Nullable String key) {
     getDefaultWriteScope().removeTag(key);
   }
 
@@ -248,12 +248,12 @@ public final class CombinedScopeView implements IScope {
   }
 
   @Override
-  public void setExtra(@NotNull String key, @NotNull String value) {
+  public void setExtra(@Nullable String key, @Nullable String value) {
     getDefaultWriteScope().setExtra(key, value);
   }
 
   @Override
-  public void removeExtra(@NotNull String key) {
+  public void removeExtra(@Nullable String key) {
     getDefaultWriteScope().removeExtra(key);
   }
 
@@ -267,42 +267,42 @@ public final class CombinedScopeView implements IScope {
   }
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull Object value) {
+  public void setContexts(@Nullable String key, @Nullable Object value) {
     getDefaultWriteScope().setContexts(key, value);
   }
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull Boolean value) {
+  public void setContexts(@Nullable String key, @Nullable Boolean value) {
     getDefaultWriteScope().setContexts(key, value);
   }
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull String value) {
+  public void setContexts(@Nullable String key, @Nullable String value) {
     getDefaultWriteScope().setContexts(key, value);
   }
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull Number value) {
+  public void setContexts(@Nullable String key, @Nullable Number value) {
     getDefaultWriteScope().setContexts(key, value);
   }
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull Collection<?> value) {
+  public void setContexts(@Nullable String key, @Nullable Collection<?> value) {
     getDefaultWriteScope().setContexts(key, value);
   }
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull Object[] value) {
+  public void setContexts(@Nullable String key, @Nullable Object[] value) {
     getDefaultWriteScope().setContexts(key, value);
   }
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull Character value) {
+  public void setContexts(@Nullable String key, @Nullable Character value) {
     getDefaultWriteScope().setContexts(key, value);
   }
 
   @Override
-  public void removeContexts(@NotNull String key) {
+  public void removeContexts(@Nullable String key) {
     getDefaultWriteScope().removeContexts(key);
   }
 

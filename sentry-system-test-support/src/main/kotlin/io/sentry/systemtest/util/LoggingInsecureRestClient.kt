@@ -10,6 +10,7 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 
 open class LoggingInsecureRestClient {
     val logger = LoggerFactory.getLogger(LoggingInsecureRestClient::class.java)
@@ -55,6 +56,10 @@ open class LoggingInsecureRestClient {
 
     protected fun client(): OkHttpClient {
         return OkHttpClient.Builder()
+            .callTimeout(60, TimeUnit.SECONDS)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 

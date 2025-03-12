@@ -241,14 +241,14 @@ public final class CombinedContextsView extends Contexts {
   }
 
   @Override
-  public boolean containsKey(final @NotNull Object key) {
+  public boolean containsKey(final @Nullable Object key) {
     return globalContexts.containsKey(key)
         || isolationContexts.containsKey(key)
         || currentContexts.containsKey(key);
   }
 
   @Override
-  public @Nullable Object get(final @NotNull Object key) {
+  public @Nullable Object get(final @Nullable Object key) {
     final @Nullable Object current = currentContexts.get(key);
     if (current != null) {
       return current;
@@ -261,12 +261,12 @@ public final class CombinedContextsView extends Contexts {
   }
 
   @Override
-  public @Nullable Object put(final @NotNull String key, final @Nullable Object value) {
+  public @Nullable Object put(final @Nullable String key, final @Nullable Object value) {
     return getDefaultContexts().put(key, value);
   }
 
   @Override
-  public @Nullable Object remove(final @NotNull Object key) {
+  public @Nullable Object remove(final @Nullable Object key) {
     return getDefaultContexts().remove(key);
   }
 
@@ -281,8 +281,24 @@ public final class CombinedContextsView extends Contexts {
   }
 
   @Override
-  public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
+  public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
+      throws IOException {
     mergeContexts().serialize(writer, logger);
+  }
+
+  @Override
+  public @Nullable Object set(@Nullable String key, @Nullable Object value) {
+    return put(key, value);
+  }
+
+  @Override
+  public void putAll(@Nullable Map<? extends String, ?> m) {
+    getDefaultContexts().putAll(m);
+  }
+
+  @Override
+  public void putAll(@Nullable Contexts contexts) {
+    getDefaultContexts().putAll(contexts);
   }
 
   private @NotNull Contexts mergeContexts() {
