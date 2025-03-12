@@ -1040,6 +1040,63 @@ class ScopeTest {
         // previously was crashing, see https://github.com/getsentry/sentry-java/issues/3313
     }
 
+    @Test
+    fun `null tags do not cause NPE`() {
+        val scope = Scope(SentryOptions.empty())
+        scope.setTag("k", "oldvalue")
+        scope.setTag(null, null)
+        scope.setTag("k", null)
+        scope.setTag(null, "v")
+        scope.removeTag(null)
+        assertTrue(scope.tags.isEmpty())
+    }
+
+    @Test
+    fun `null extras do not cause NPE`() {
+        val scope = Scope(SentryOptions.empty())
+        scope.setExtra("k", "oldvalue")
+        scope.setExtra(null, null)
+        scope.setExtra("k", null)
+        scope.setExtra(null, "v")
+        scope.removeExtra(null)
+        assertTrue(scope.extras.isEmpty())
+    }
+
+    @Test
+    fun `null contexts do not cause NPE`() {
+        val scope = Scope(SentryOptions.empty())
+
+        scope.setContexts("obj", null as Any?)
+        scope.setContexts("bool", true)
+        scope.setContexts("string", "hello")
+        scope.setContexts("num", 100)
+        scope.setContexts("list", listOf("a", "b"))
+        scope.setContexts("array", arrayOf("c", "d"))
+        scope.setContexts("char", 'z')
+
+        assertFalse(scope.contexts.isEmpty)
+
+        scope.setContexts(null, null as Any?)
+        scope.setContexts(null, null as Boolean?)
+        scope.setContexts(null, null as String?)
+        scope.setContexts(null, null as Number?)
+        scope.setContexts(null, null as List<Any>?)
+        scope.setContexts(null, null as Array<Any>?)
+        scope.setContexts(null, null as Character?)
+
+        scope.setContexts("obj", null as Any?)
+        scope.setContexts("bool", null as Boolean?)
+        scope.setContexts("string", null as String?)
+        scope.setContexts("num", null as Number?)
+        scope.setContexts("list", null as List<Any>?)
+        scope.setContexts("array", null as Array<Any>?)
+        scope.setContexts("char", null as Character?)
+
+        scope.removeContexts(null)
+
+        assertTrue(scope.contexts.isEmpty)
+    }
+
     private fun eventProcessor(): EventProcessor {
         return object : EventProcessor {
             override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
