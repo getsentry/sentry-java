@@ -227,55 +227,55 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
         final String nextName = reader.nextName();
         switch (nextName) {
           case JsonKeys.PROFILE_SAMPLED:
-            Boolean profileSampled = reader.nextBooleanOrNull();
+            @Nullable Boolean profileSampled = reader.nextBooleanOrNull();
             if (profileSampled != null) {
               options.profileSampled = profileSampled;
             }
             break;
           case JsonKeys.PROFILE_SAMPLE_RATE:
-            Double profileSampleRate = reader.nextDoubleOrNull();
+            @Nullable Double profileSampleRate = reader.nextDoubleOrNull();
             if (profileSampleRate != null) {
               options.profileSampleRate = profileSampleRate;
             }
             break;
           case JsonKeys.CONTINUOUS_PROFILE_SAMPLED:
-            Boolean continuousProfileSampled = reader.nextBooleanOrNull();
+            @Nullable Boolean continuousProfileSampled = reader.nextBooleanOrNull();
             if (continuousProfileSampled != null) {
               options.continuousProfileSampled = continuousProfileSampled;
             }
             break;
           case JsonKeys.TRACE_SAMPLED:
-            Boolean traceSampled = reader.nextBooleanOrNull();
+            @Nullable Boolean traceSampled = reader.nextBooleanOrNull();
             if (traceSampled != null) {
               options.traceSampled = traceSampled;
             }
             break;
           case JsonKeys.TRACE_SAMPLE_RATE:
-            Double traceSampleRate = reader.nextDoubleOrNull();
+            @Nullable Double traceSampleRate = reader.nextDoubleOrNull();
             if (traceSampleRate != null) {
               options.traceSampleRate = traceSampleRate;
             }
             break;
           case JsonKeys.PROFILING_TRACES_DIR_PATH:
-            String profilingTracesDirPath = reader.nextStringOrNull();
+            @Nullable String profilingTracesDirPath = reader.nextStringOrNull();
             if (profilingTracesDirPath != null) {
               options.profilingTracesDirPath = profilingTracesDirPath;
             }
             break;
           case JsonKeys.IS_PROFILING_ENABLED:
-            Boolean isProfilingEnabled = reader.nextBooleanOrNull();
+            @Nullable Boolean isProfilingEnabled = reader.nextBooleanOrNull();
             if (isProfilingEnabled != null) {
               options.isProfilingEnabled = isProfilingEnabled;
             }
             break;
           case JsonKeys.IS_CONTINUOUS_PROFILING_ENABLED:
-            Boolean isContinuousProfilingEnabled = reader.nextBooleanOrNull();
+            @Nullable Boolean isContinuousProfilingEnabled = reader.nextBooleanOrNull();
             if (isContinuousProfilingEnabled != null) {
               options.isContinuousProfilingEnabled = isContinuousProfilingEnabled;
             }
             break;
           case JsonKeys.PROFILE_LIFECYCLE:
-            String profileLifecycle = reader.nextStringOrNull();
+            @Nullable String profileLifecycle = reader.nextStringOrNull();
             if (profileLifecycle != null) {
               try {
                 options.profileLifecycle = ProfileLifecycle.valueOf(profileLifecycle);
@@ -287,19 +287,19 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
             }
             break;
           case JsonKeys.PROFILING_TRACES_HZ:
-            Integer profilingTracesHz = reader.nextIntegerOrNull();
+            @Nullable Integer profilingTracesHz = reader.nextIntegerOrNull();
             if (profilingTracesHz != null) {
               options.profilingTracesHz = profilingTracesHz;
             }
             break;
           case JsonKeys.IS_ENABLE_APP_START_PROFILING:
-            Boolean isEnableAppStartProfiling = reader.nextBooleanOrNull();
+            @Nullable Boolean isEnableAppStartProfiling = reader.nextBooleanOrNull();
             if (isEnableAppStartProfiling != null) {
               options.isEnableAppStartProfiling = isEnableAppStartProfiling;
             }
             break;
           case JsonKeys.IS_START_PROFILER_ON_APP_START:
-            Boolean isStartProfilerOnAppStart = reader.nextBooleanOrNull();
+            @Nullable Boolean isStartProfilerOnAppStart = reader.nextBooleanOrNull();
             if (isStartProfilerOnAppStart != null) {
               options.isStartProfilerOnAppStart = isStartProfilerOnAppStart;
             }
