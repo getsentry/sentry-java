@@ -13,6 +13,7 @@
 - Add support for setting in-app-includes/in-app-excludes via AndroidManifest.xml ([#4240](https://github.com/getsentry/sentry-java/pull/4240))
 - Modifications to OkHttp requests are now properly propagated to the affected span / breadcrumbs ([#4238](https://github.com/getsentry/sentry-java/pull/4238))
   - Please ensure the SentryOkHttpInterceptor is added last to your OkHttpClient, as otherwise changes to the `Request`  by subsequent interceptors won't be considered
+- Ensure app start type is set, even when ActivityLifecycleIntegration is not running ([#4250](https://github.com/getsentry/sentry-java/pull/4250))
 
 ### Features
 
