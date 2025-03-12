@@ -460,7 +460,7 @@ public final class Sentry {
     TransactionContext appStartTransactionContext = new TransactionContext("app.launch", "profile");
     appStartTransactionContext.setForNextAppStart(true);
     SamplingContext appStartSamplingContext =
-        new SamplingContext(appStartTransactionContext, null, SentryRandom.current().nextDouble());
+        new SamplingContext(appStartTransactionContext, null, SentryRandom.current().nextDouble(), null);
     return options.getInternalTracesSampler().sample(appStartSamplingContext);
   }
 

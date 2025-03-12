@@ -23,7 +23,11 @@ import io.sentry.TracesSamplingDecision;
 import io.sentry.TransactionContext;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.protocol.SentryId;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -64,13 +68,13 @@ public final class SentrySampler implements Sampler {
       if (samplingDecision != null) {
         return new SentrySamplingResult(samplingDecision);
       } else {
-        return handleRootOtelSpan(traceId, parentContext);
+        return handleRootOtelSpan(traceId, parentContext, attributes);
       }
     }
   }
 
   private @NotNull SamplingResult handleRootOtelSpan(
-      final @NotNull String traceId, final @NotNull Context parentContext) {
+      final @NotNull String traceId, final @NotNull Context parentContext, final @NotNull Attributes attributes) {
     if (!scopes.getOptions().isTracingEnabled()) {
       return SamplingResult.create(SamplingDecision.RECORD_ONLY);
     }
@@ -96,7 +100,7 @@ public final class SentrySampler implements Sampler {
             .getOptions()
             .getInternalTracesSampler()
             .sample(
-                new SamplingContext(transactionContext, null, propagationContext.getSampleRand()));
+                new SamplingContext(transactionContext, null, propagationContext.getSampleRand(), toMapWithStringKeys(attributes)));
 
     if (!sentryDecision.getSampled()) {
       scopes
@@ -133,6 +137,22 @@ public final class SentrySampler implements Sampler {
               "Encountered a missing parent sampling decision where one was expected.");
       return new SentrySamplingResult(new TracesSamplingDecision(true));
     }
+  }
+
+  private @NotNull Map<String, Object> toMapWithStringKeys(final @NotNull Attributes attributes) {
+    final @NotNull Map<String, Object> mapWithStringKeys = new HashMap<>(attributes.size());
+
+    if (attributes != null) {
+      attributes.forEach(
+        (key, value) -> {
+          if (key != null) {
+            final @NotNull String stringKey = key.getKey();
+              mapWithStringKeys.put(stringKey, value);
+            }
+        });
+    }
+
+    return mapWithStringKeys;
   }
 
   @Override
