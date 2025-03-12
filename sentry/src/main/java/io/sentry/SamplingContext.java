@@ -2,12 +2,11 @@ package io.sentry;
 
 import io.sentry.util.Objects;
 import io.sentry.util.SentryRandom;
+import java.util.Collections;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * Context used by {@link io.sentry.SentryOptions.TracesSamplerCallback} to determine if transaction

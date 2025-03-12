@@ -23,11 +23,9 @@ import io.sentry.TracesSamplingDecision;
 import io.sentry.TransactionContext;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.protocol.SentryId;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -74,7 +72,9 @@ public final class SentrySampler implements Sampler {
   }
 
   private @NotNull SamplingResult handleRootOtelSpan(
-      final @NotNull String traceId, final @NotNull Context parentContext, final @NotNull Attributes attributes) {
+      final @NotNull String traceId,
+      final @NotNull Context parentContext,
+      final @NotNull Attributes attributes) {
     if (!scopes.getOptions().isTracingEnabled()) {
       return SamplingResult.create(SamplingDecision.RECORD_ONLY);
     }
@@ -100,7 +100,11 @@ public final class SentrySampler implements Sampler {
             .getOptions()
             .getInternalTracesSampler()
             .sample(
-                new SamplingContext(transactionContext, null, propagationContext.getSampleRand(), toMapWithStringKeys(attributes)));
+                new SamplingContext(
+                    transactionContext,
+                    null,
+                    propagationContext.getSampleRand(),
+                    toMapWithStringKeys(attributes)));
 
     if (!sentryDecision.getSampled()) {
       scopes
@@ -144,12 +148,12 @@ public final class SentrySampler implements Sampler {
 
     if (attributes != null) {
       attributes.forEach(
-        (key, value) -> {
-          if (key != null) {
-            final @NotNull String stringKey = key.getKey();
+          (key, value) -> {
+            if (key != null) {
+              final @NotNull String stringKey = key.getKey();
               mapWithStringKeys.put(stringKey, value);
             }
-        });
+          });
     }
 
     return mapWithStringKeys;
