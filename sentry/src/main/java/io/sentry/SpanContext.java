@@ -120,10 +120,15 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.op = Objects.requireNonNull(operation, "operation is required");
   }
 
-  public void setTag(final @NotNull String name, final @NotNull String value) {
-    Objects.requireNonNull(name, "name is required");
-    Objects.requireNonNull(value, "value is required");
-    this.tags.put(name, value);
+  public void setTag(final @Nullable String name, final @Nullable String value) {
+    if (name == null) {
+      return;
+    }
+    if (value == null) {
+      this.tags.remove(name);
+    } else {
+      this.tags.put(name, value);
+    }
   }
 
   public void setDescription(final @Nullable String description) {
@@ -238,8 +243,15 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     return data;
   }
 
-  public void setData(final @NotNull String key, final @NotNull Object value) {
-    data.put(key, value);
+  public void setData(final @Nullable String key, final @Nullable Object value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      data.remove(key);
+    } else {
+      data.put(key, value);
+    }
   }
 
   @ApiStatus.Internal

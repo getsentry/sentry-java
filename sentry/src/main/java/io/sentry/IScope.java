@@ -196,14 +196,14 @@ public interface IScope {
    * @param key the key
    * @param value the value
    */
-  void setTag(final @NotNull String key, final @NotNull String value);
+  void setTag(final @Nullable String key, final @Nullable String value);
 
   /**
    * Removes a tag from the Scope's tags
    *
    * @param key the key
    */
-  void removeTag(final @NotNull String key);
+  void removeTag(final @Nullable String key);
 
   /**
    * Returns the Scope's extra map
@@ -220,14 +220,14 @@ public interface IScope {
    * @param key the key
    * @param value the value
    */
-  void setExtra(final @NotNull String key, final @NotNull String value);
+  void setExtra(final @Nullable String key, final @Nullable String value);
 
   /**
    * Removes an extra from the Scope's extras
    *
    * @param key the key
    */
-  void removeExtra(final @NotNull String key);
+  void removeExtra(final @Nullable String key);
 
   /**
    * Returns the Scope's contexts
@@ -243,7 +243,7 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull Object value);
+  void setContexts(final @Nullable String key, final @Nullable Object value);
 
   /**
    * Sets the Scope's contexts
@@ -251,7 +251,7 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull Boolean value);
+  void setContexts(final @Nullable String key, final @Nullable Boolean value);
 
   /**
    * Sets the Scope's contexts
@@ -259,7 +259,7 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull String value);
+  void setContexts(final @Nullable String key, final @Nullable String value);
 
   /**
    * Sets the Scope's contexts
@@ -267,7 +267,7 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull Number value);
+  void setContexts(final @Nullable String key, final @Nullable Number value);
 
   /**
    * Sets the Scope's contexts
@@ -275,7 +275,7 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull Collection<?> value);
+  void setContexts(final @Nullable String key, final @Nullable Collection<?> value);
 
   /**
    * Sets the Scope's contexts
@@ -283,7 +283,7 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull Object[] value);
+  void setContexts(final @Nullable String key, final @Nullable Object[] value);
 
   /**
    * Sets the Scope's contexts
@@ -291,14 +291,14 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull Character value);
+  void setContexts(final @Nullable String key, final @Nullable Character value);
 
   /**
    * Removes a value from the Scope's contexts
    *
    * @param key the Key
    */
-  void removeContexts(final @NotNull String key);
+  void removeContexts(final @Nullable String key);
 
   /**
    * Returns the Scopes's attachments

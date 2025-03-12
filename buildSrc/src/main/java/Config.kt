@@ -69,12 +69,14 @@ object Config {
         val slf4jJdk14 = "org.slf4j:slf4j-jdk14:1.7.30"
         val logbackVersion = "1.2.9"
         val logbackClassic = "ch.qos.logback:logback-classic:$logbackVersion"
+        val logbackCore = "ch.qos.logback:logback-core:$logbackVersion"
 
         val log4j2Version = "2.20.0"
         val log4j2Api = "org.apache.logging.log4j:log4j-api:$log4j2Version"
         val log4j2Core = "org.apache.logging.log4j:log4j-core:$log4j2Version"
 
-        val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind"
+        val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind:2.18.3"
+        val jacksonKotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3"
 
         val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
         val springBootStarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBootVersion"
@@ -159,7 +161,7 @@ object Config {
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
         val apolloKotlin4 = "com.apollographql.apollo:apollo-runtime:4.1.1"
 
-        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.7.20"
+        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.8.1"
 
         object OpenTelemetry {
             val otelVersion = "1.44.1"

@@ -3,10 +3,7 @@ package io.sentry.util;
 import io.sentry.ISpan;
 import io.sentry.SpanDataConvention;
 import io.sentry.protocol.Request;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.net.URI;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,123 +12,55 @@ import org.jetbrains.annotations.Nullable;
 public final class UrlUtils {
 
   public static final @NotNull String SENSITIVE_DATA_SUBSTITUTE = "[Filtered]";
-  private static final @NotNull Pattern AUTH_REGEX = Pattern.compile("(.+://)(.*@)(.*)");
 
   public static @Nullable UrlDetails parseNullable(final @Nullable String url) {
-    if (url == null) {
-      return null;
-    }
-
-    return parse(url);
+    return url == null ? null : parse(url);
   }
 
   public static @NotNull UrlDetails parse(final @NotNull String url) {
-    if (isAbsoluteUrl(url)) {
-      return splitAbsoluteUrl(url);
-    } else {
-      return splitRelativeUrl(url);
-    }
-  }
-
-  private static boolean isAbsoluteUrl(@NotNull String url) {
-    return url.contains("://");
-  }
-
-  private static @NotNull UrlDetails splitRelativeUrl(final @NotNull String url) {
-    final int queryParamSeparatorIndex = url.indexOf("?");
-    final int fragmentSeparatorIndex = url.indexOf("#");
-
-    final @Nullable String baseUrl =
-        extractBaseUrl(url, queryParamSeparatorIndex, fragmentSeparatorIndex);
-    final @Nullable String query =
-        extractQuery(url, queryParamSeparatorIndex, fragmentSeparatorIndex);
-    final @Nullable String fragment = extractFragment(url, fragmentSeparatorIndex);
-
-    return new UrlDetails(baseUrl, query, fragment);
-  }
-
-  private static @Nullable String extractBaseUrl(
-      final @NotNull String url,
-      final int queryParamSeparatorIndex,
-      final int fragmentSeparatorIndex) {
-    if (queryParamSeparatorIndex >= 0) {
-      return url.substring(0, queryParamSeparatorIndex).trim();
-    } else if (fragmentSeparatorIndex >= 0) {
-      return url.substring(0, fragmentSeparatorIndex).trim();
-    } else {
-      return url;
-    }
-  }
-
-  private static @Nullable String extractQuery(
-      final @NotNull String url,
-      final int queryParamSeparatorIndex,
-      final int fragmentSeparatorIndex) {
-    if (queryParamSeparatorIndex > 0) {
-      if (fragmentSeparatorIndex > 0 && fragmentSeparatorIndex > queryParamSeparatorIndex) {
-        return url.substring(queryParamSeparatorIndex + 1, fragmentSeparatorIndex).trim();
-      } else {
-        return url.substring(queryParamSeparatorIndex + 1).trim();
-      }
-    } else {
-      return null;
-    }
-  }
-
-  private static @Nullable String extractFragment(
-      final @NotNull String url, final int fragmentSeparatorIndex) {
-    if (fragmentSeparatorIndex > 0) {
-      return url.substring(fragmentSeparatorIndex + 1).trim();
-    } else {
-      return null;
-    }
-  }
-
-  private static @NotNull UrlDetails splitAbsoluteUrl(final @NotNull String url) {
     try {
-      final @NotNull String filteredUrl = urlWithAuthRemoved(url);
-      final @NotNull URL urlObj = new URL(url);
-      final @NotNull String baseUrl = baseUrlOnly(filteredUrl);
-      if (baseUrl.contains("#")) {
-        // url considered malformed because it has fragment
+      URI uri = new URI(url);
+      if (uri.isAbsolute() && !isValidAbsoluteUrl(uri)) {
         return new UrlDetails(null, null, null);
-      } else {
-        final @Nullable String query = urlObj.getQuery();
-        final @Nullable String fragment = urlObj.getRef();
-        return new UrlDetails(baseUrl, query, fragment);
       }
-    } catch (MalformedURLException e) {
+
+      final @NotNull String schemeAndSeparator =
+          uri.getScheme() == null ? "" : (uri.getScheme() + "://");
+      final @NotNull String authority = uri.getRawAuthority() == null ? "" : uri.getRawAuthority();
+      final @NotNull String path = uri.getRawPath() == null ? "" : uri.getRawPath();
+      final @Nullable String query = uri.getRawQuery();
+      final @Nullable String fragment = uri.getRawFragment();
+
+      final @NotNull String filteredUrl = schemeAndSeparator + filterUserInfo(authority) + path;
+
+      return new UrlDetails(filteredUrl, query, fragment);
+    } catch (Exception e) {
       return new UrlDetails(null, null, null);
     }
   }
 
-  private static @NotNull String urlWithAuthRemoved(final @NotNull String url) {
-    final @NotNull Matcher userInfoMatcher = AUTH_REGEX.matcher(url);
-    if (userInfoMatcher.matches() && userInfoMatcher.groupCount() == 3) {
-      final @NotNull String userInfoString = userInfoMatcher.group(2);
-      final @NotNull String replacementString =
-          userInfoString.contains(":")
-              ? (SENSITIVE_DATA_SUBSTITUTE + ":" + SENSITIVE_DATA_SUBSTITUTE + "@")
-              : (SENSITIVE_DATA_SUBSTITUTE + "@");
-      return userInfoMatcher.group(1) + replacementString + userInfoMatcher.group(3);
-    } else {
-      return url;
+  private static boolean isValidAbsoluteUrl(final @NotNull URI uri) {
+    try {
+      uri.toURL();
+    } catch (Exception e) {
+      return false;
     }
+    return true;
   }
 
-  private static @NotNull String baseUrlOnly(final @NotNull String url) {
-    final int queryParamSeparatorIndex = url.indexOf("?");
-
-    if (queryParamSeparatorIndex >= 0) {
-      return url.substring(0, queryParamSeparatorIndex).trim();
-    } else {
-      final int fragmentSeparatorIndex = url.indexOf("#");
-      if (fragmentSeparatorIndex >= 0) {
-        return url.substring(0, fragmentSeparatorIndex).trim();
-      } else {
-        return url;
-      }
+  private static @NotNull String filterUserInfo(final @NotNull String url) {
+    if (!url.contains("@")) {
+      return url;
     }
+    if (url.startsWith("@")) {
+      return SENSITIVE_DATA_SUBSTITUTE + url;
+    }
+    final @NotNull String userInfo = url.substring(0, url.indexOf('@'));
+    final @NotNull String filteredUserInfo =
+        userInfo.contains(":")
+            ? (SENSITIVE_DATA_SUBSTITUTE + ":" + SENSITIVE_DATA_SUBSTITUTE)
+            : SENSITIVE_DATA_SUBSTITUTE;
+    return filteredUserInfo + url.substring(url.indexOf('@'));
   }
 
   public static final class UrlDetails {

@@ -2,15 +2,18 @@ package io.sentry.openfeign;
 
 import static io.sentry.TypeCheckHint.OPEN_FEIGN_REQUEST;
 import static io.sentry.TypeCheckHint.OPEN_FEIGN_RESPONSE;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import feign.Client;
 import feign.Request;
 import feign.Response;
 import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
+import io.sentry.BuildConfig;
 import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
@@ -42,6 +45,13 @@ public final class SentryFeignClient implements Client {
     this.delegate = Objects.requireNonNull(delegate, "delegate is required");
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.beforeSpan = beforeSpan;
+    addPackageAndIntegrationInfo();
+  }
+
+  private void addPackageAndIntegrationInfo() {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-openfeign", BuildConfig.VERSION_NAME);
+    addIntegrationToSdkVersion("OpenFeign");
   }
 
   @Override

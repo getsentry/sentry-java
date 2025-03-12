@@ -2,6 +2,7 @@ package io.sentry.opentelemetry;
 
 import static io.sentry.opentelemetry.SentryOtelKeys.SENTRY_SCOPES_KEY;
 
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.TraceFlags;
@@ -16,6 +17,7 @@ import io.sentry.IScopes;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.util.TracingUtils;
@@ -32,6 +34,8 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       Arrays.asList(SentryTraceHeader.SENTRY_TRACE_HEADER, BaggageHeader.BAGGAGE_HEADER);
   private final @NotNull SentryWeakSpanStorage spanStorage = SentryWeakSpanStorage.getInstance();
   private final @NotNull IScopes scopes;
+  private final @NotNull OpenTelemetryAttributesExtractor attributesExtractor =
+      new OpenTelemetryAttributesExtractor();
 
   public OtelSentryPropagator() {
     this(ScopesAdapter.getInstance());
@@ -73,9 +77,11 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       return;
     }
 
-    // TODO can we use traceIfAllowed? do we have the URL here? need to access span attrs
+    final @Nullable String url = getUrl(sentrySpan, scopes.getOptions());
     final @Nullable TracingUtils.TracingHeaders tracingHeaders =
-        TracingUtils.trace(scopes, Collections.emptyList(), sentrySpan);
+        url == null
+            ? TracingUtils.trace(scopes, Collections.emptyList(), sentrySpan)
+            : TracingUtils.traceIfAllowed(scopes, url, Collections.emptyList(), sentrySpan);
 
     if (tracingHeaders != null) {
       final @NotNull SentryTraceHeader sentryTraceHeader = tracingHeaders.getSentryTraceHeader();
@@ -85,6 +91,15 @@ public final class OtelSentryPropagator implements TextMapPropagator {
         setter.set(carrier, baggageHeader.getName(), baggageHeader.getValue());
       }
     }
+  }
+
+  private @Nullable String getUrl(
+      final @NotNull IOtelSpanWrapper sentrySpan, final @NotNull SentryOptions options) {
+    final @Nullable Attributes attributes = sentrySpan.getOpenTelemetrySpanAttributes();
+    if (attributes == null) {
+      return null;
+    }
+    return attributesExtractor.extractUrl(attributes, options);
   }
 
   @Override
