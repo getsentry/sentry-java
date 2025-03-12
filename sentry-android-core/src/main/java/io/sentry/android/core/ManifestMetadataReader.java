@@ -139,7 +139,7 @@ final class ManifestMetadataReader {
         options.setDebug(readBool(metadata, logger, DEBUG, options.isDebug()));
 
         if (options.isDebug()) {
-          final String level =
+          final @Nullable String level =
               readString(
                   metadata,
                   logger,
@@ -161,7 +161,7 @@ final class ManifestMetadataReader {
                 options.isEnableAutoSessionTracking()));
 
         if (options.getSampleRate() == null) {
-          final Double sampleRate = readDouble(metadata, logger, SAMPLE_RATE);
+          final double sampleRate = readDouble(metadata, logger, SAMPLE_RATE);
           if (sampleRate != -1) {
             options.setSampleRate(sampleRate);
           }
@@ -180,7 +180,7 @@ final class ManifestMetadataReader {
         options.setAttachAnrThreadDump(
             readBool(metadata, logger, ANR_ATTACH_THREAD_DUMPS, options.isAttachAnrThreadDump()));
 
-        final String dsn = readString(metadata, logger, DSN, options.getDsn());
+        final @Nullable String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
 
         if (!enabled || (dsn != null && dsn.isEmpty())) {
@@ -293,7 +293,7 @@ final class ManifestMetadataReader {
                 options.isCollectAdditionalContext()));
 
         if (options.getTracesSampleRate() == null) {
-          final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
+          final double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
           if (tracesSampleRate != -1) {
             options.setTracesSampleRate(tracesSampleRate);
           }
@@ -317,7 +317,7 @@ final class ManifestMetadataReader {
                 options.isEnableActivityLifecycleTracingAutoFinish()));
 
         if (options.getProfilesSampleRate() == null) {
-          final Double profilesSampleRate = readDouble(metadata, logger, PROFILES_SAMPLE_RATE);
+          final double profilesSampleRate = readDouble(metadata, logger, PROFILES_SAMPLE_RATE);
           if (profilesSampleRate != -1) {
             options.setProfilesSampleRate(profilesSampleRate);
           }
@@ -331,7 +331,7 @@ final class ManifestMetadataReader {
           }
         }
 
-        final String profileLifecycle =
+        final @Nullable String profileLifecycle =
             readString(
                 metadata,
                 logger,
@@ -393,6 +393,7 @@ final class ManifestMetadataReader {
 
         // sdkInfo.addIntegration();
 
+        @Nullable
         List<String> integrationsFromGradlePlugin =
             readList(metadata, logger, SENTRY_GRADLE_PLUGIN_INTEGRATIONS);
         if (integrationsFromGradlePlugin != null) {
@@ -418,7 +419,7 @@ final class ManifestMetadataReader {
                 metadata, logger, ENABLE_SCOPE_PERSISTENCE, options.isEnableScopePersistence()));
 
         if (options.getExperimental().getSessionReplay().getSessionSampleRate() == null) {
-          final Double sessionSampleRate =
+          final double sessionSampleRate =
               readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
           if (sessionSampleRate != -1) {
             options.getExperimental().getSessionReplay().setSessionSampleRate(sessionSampleRate);
@@ -426,7 +427,7 @@ final class ManifestMetadataReader {
         }
 
         if (options.getExperimental().getSessionReplay().getOnErrorSampleRate() == null) {
-          final Double onErrorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
+          final double onErrorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
           if (onErrorSampleRate != -1) {
             options.getExperimental().getSessionReplay().setOnErrorSampleRate(onErrorSampleRate);
           }
@@ -512,10 +513,10 @@ final class ManifestMetadataReader {
     }
   }
 
-  private static @NotNull Double readDouble(
+  private static double readDouble(
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     // manifest meta-data only reads float
-    final Double value = ((Number) metadata.getFloat(key, metadata.getInt(key, -1))).doubleValue();
+    final double value = ((Number) metadata.getFloat(key, metadata.getInt(key, -1))).doubleValue();
     logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
