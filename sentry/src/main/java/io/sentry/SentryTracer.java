@@ -1,12 +1,11 @@
 package io.sentry;
 
-import static io.sentry.util.CollectionUtils.reverseListIterator;
-
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import java.util.List;
@@ -158,7 +157,7 @@ public final class SentryTracer implements ITransaction {
     // iterate in reverse order to ensure leaf spans are processed before their parents
     @NotNull
     final ListIterator<Span> iterator =
-        reverseListIterator((CopyOnWriteArrayList<Span>) this.children);
+        CollectionUtils.reverseListIterator((CopyOnWriteArrayList<Span>) this.children);
     while (iterator.hasPrevious()) {
       @NotNull final Span span = iterator.previous();
       span.setSpanFinishedCallback(null);
@@ -913,7 +912,7 @@ public final class SentryTracer implements ITransaction {
   public @Nullable ISpan getLatestActiveSpan() {
     @NotNull
     final ListIterator<Span> iterator =
-        reverseListIterator((CopyOnWriteArrayList<Span>) this.children);
+        CollectionUtils.reverseListIterator((CopyOnWriteArrayList<Span>) this.children);
     while (iterator.hasPrevious()) {
       @NotNull final Span span = iterator.previous();
       if (!span.isFinished()) {
