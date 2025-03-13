@@ -860,7 +860,7 @@ public final class Scopes implements IScopes {
       final Double sampleRand = getSampleRand(transactionContext);
       final SamplingContext samplingContext =
           new SamplingContext(
-              transactionContext, transactionOptions.getCustomSamplingContext(), sampleRand);
+              transactionContext, transactionOptions.getCustomSamplingContext(), sampleRand, null);
       final @NotNull TracesSampler tracesSampler = getOptions().getInternalTracesSampler();
       @NotNull TracesSamplingDecision samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSamplingDecision(samplingDecision);
