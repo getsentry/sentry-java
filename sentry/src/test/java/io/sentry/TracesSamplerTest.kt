@@ -422,7 +422,6 @@ class TracesSamplerTest {
 
     @Test
     fun `attributes can be accessed in callback`() {
-        val exception = Exception("faulty TracesSamplerCallback")
         var attributeValue: Any? = null
         val sampler = fixture.getSut(
             tracesSamplerCallback = { samplingContext ->
@@ -439,7 +438,6 @@ class TracesSamplerTest {
 
     @Test
     fun `non existing attribute returns null in callback`() {
-        val exception = Exception("faulty TracesSamplerCallback")
         var attributeValue: Any? = null
         val sampler = fixture.getSut(
             tracesSamplerCallback = { samplingContext ->
@@ -456,7 +454,6 @@ class TracesSamplerTest {
 
     @Test
     fun `null attributes return null`() {
-        val exception = Exception("faulty TracesSamplerCallback")
         var attributeValue: Any? = null
         val sampler = fixture.getSut(
             tracesSamplerCallback = { samplingContext ->
