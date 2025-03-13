@@ -461,7 +461,8 @@ public final class Sentry {
     TransactionContext appStartTransactionContext = new TransactionContext("app.launch", "profile");
     appStartTransactionContext.setForNextAppStart(true);
     SamplingContext appStartSamplingContext =
-        new SamplingContext(appStartTransactionContext, null, SentryRandom.current().nextDouble());
+        new SamplingContext(
+            appStartTransactionContext, null, SentryRandom.current().nextDouble(), null);
     return options.getInternalTracesSampler().sample(appStartSamplingContext);
   }
 
@@ -888,7 +889,7 @@ public final class Sentry {
    * @param key the key
    * @param value the value
    */
-  public static void setTag(final @NotNull String key, final @NotNull String value) {
+  public static void setTag(final @Nullable String key, final @Nullable String value) {
     getCurrentScopes().setTag(key, value);
   }
 
@@ -897,7 +898,7 @@ public final class Sentry {
    *
    * @param key the key
    */
-  public static void removeTag(final @NotNull String key) {
+  public static void removeTag(final @Nullable String key) {
     getCurrentScopes().removeTag(key);
   }
 
@@ -908,7 +909,7 @@ public final class Sentry {
    * @param key the key
    * @param value the value
    */
-  public static void setExtra(final @NotNull String key, final @NotNull String value) {
+  public static void setExtra(final @Nullable String key, final @Nullable String value) {
     getCurrentScopes().setExtra(key, value);
   }
 
@@ -917,7 +918,7 @@ public final class Sentry {
    *
    * @param key the key
    */
-  public static void removeExtra(final @NotNull String key) {
+  public static void removeExtra(final @Nullable String key) {
     getCurrentScopes().removeExtra(key);
   }
 

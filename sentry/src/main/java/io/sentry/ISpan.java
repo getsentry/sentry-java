@@ -171,10 +171,10 @@ public interface ISpan {
    * @param key the tag key
    * @param value the tag value
    */
-  void setTag(@NotNull String key, @NotNull String value);
+  void setTag(@Nullable String key, @Nullable String value);
 
   @Nullable
-  String getTag(@NotNull String key);
+  String getTag(@Nullable String key);
 
   /**
    * Returns if span has finished.
@@ -189,7 +189,7 @@ public interface ISpan {
    * @param key the data key
    * @param value the data value
    */
-  void setData(@NotNull String key, @NotNull Object value);
+  void setData(@Nullable String key, @Nullable Object value);
 
   /**
    * Returns extra data from span or transaction.
@@ -197,7 +197,7 @@ public interface ISpan {
    * @return the data
    */
   @Nullable
-  Object getData(@NotNull String key);
+  Object getData(@Nullable String key);
 
   /**
    * Set a measurement without unit. When setting the measurement without the unit, no formatting
@@ -260,7 +260,7 @@ public interface ISpan {
   @ApiStatus.Internal
   boolean isNoOp();
 
-  void setContext(@NotNull String key, @NotNull Object context);
+  void setContext(@Nullable String key, @Nullable Object context);
 
   @NotNull
   Contexts getContexts();

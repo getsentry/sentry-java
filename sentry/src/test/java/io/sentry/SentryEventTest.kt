@@ -12,6 +12,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryEventTest {
@@ -156,5 +157,33 @@ class SentryEventTest {
         assertNotNull(event.modules) {
             assertEquals(mapOf("key1" to "value1", "key2" to "value2", "key3" to "value3"), it)
         }
+    }
+
+    @Test
+    fun `null tag does not cause NPE`() {
+        val event = SentryEvent()
+
+        event.setTag("k", "oldvalue")
+        event.setTag(null, null)
+        event.setTag("k", null)
+        event.setTag(null, "v")
+
+        assertNull(event.getTag(null))
+        assertNull(event.getTag("k"))
+        assertFalse(event.tags!!.containsKey("k"))
+    }
+
+    @Test
+    fun `null extra does not cause NPE`() {
+        val event = SentryEvent()
+
+        event.setExtra("k", "oldvalue")
+        event.setExtra(null, null)
+        event.setExtra("k", null)
+        event.setExtra(null, "v")
+
+        assertNull(event.getExtra(null))
+        assertNull(event.getExtra("k"))
+        assertFalse(event.extras!!.containsKey("k"))
     }
 }

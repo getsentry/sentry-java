@@ -531,6 +531,7 @@ public class SentryOptions {
 
   private @NotNull SentryReplayOptions sessionReplay;
 
+  @ApiStatus.Experimental private boolean captureOpenTelemetryEvents = false;
   /**
    * Adds an event processor
    *
@@ -1515,8 +1516,15 @@ public class SentryOptions {
    * @param key the key
    * @param value the value
    */
-  public void setTag(final @NotNull String key, final @NotNull String value) {
-    this.tags.put(key, value);
+  public void setTag(final @Nullable String key, final @Nullable String value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      this.tags.remove(key);
+    } else {
+      this.tags.put(key, value);
+    }
   }
 
   /**
@@ -2646,6 +2654,16 @@ public class SentryOptions {
     this.sessionReplay = sessionReplayOptions;
   }
 
+  @ApiStatus.Experimental
+  public void setCaptureOpenTelemetryEvents(final boolean captureOpenTelemetryEvents) {
+    this.captureOpenTelemetryEvents = captureOpenTelemetryEvents;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isCaptureOpenTelemetryEvents() {
+    return captureOpenTelemetryEvents;
+  }
+
   /**
    * Load the lazy fields. Useful to load in the background, so that results are already cached. DO
    * NOT CALL THIS METHOD ON THE MAIN THREAD.
@@ -2939,7 +2957,9 @@ public class SentryOptions {
     if (options.isSendDefaultPii() != null) {
       setSendDefaultPii(options.isSendDefaultPii());
     }
-
+    if (options.isCaptureOpenTelemetryEvents() != null) {
+      setCaptureOpenTelemetryEvents(options.isCaptureOpenTelemetryEvents());
+    }
     if (options.isEnableSpotlight() != null) {
       setEnableSpotlight(options.isEnableSpotlight());
     }

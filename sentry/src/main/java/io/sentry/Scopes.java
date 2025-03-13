@@ -514,7 +514,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void setTag(final @NotNull String key, final @NotNull String value) {
+  public void setTag(final @Nullable String key, final @Nullable String value) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -527,7 +527,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void removeTag(final @NotNull String key) {
+  public void removeTag(final @Nullable String key) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -540,7 +540,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void setExtra(final @NotNull String key, final @NotNull String value) {
+  public void setExtra(final @Nullable String key, final @Nullable String value) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -553,7 +553,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void removeExtra(final @NotNull String key) {
+  public void removeExtra(final @Nullable String key) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -860,7 +860,7 @@ public final class Scopes implements IScopes {
       final Double sampleRand = getSampleRand(transactionContext);
       final SamplingContext samplingContext =
           new SamplingContext(
-              transactionContext, transactionOptions.getCustomSamplingContext(), sampleRand);
+              transactionContext, transactionOptions.getCustomSamplingContext(), sampleRand, null);
       final @NotNull TracesSampler tracesSampler = getOptions().getInternalTracesSampler();
       @NotNull TracesSamplingDecision samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSamplingDecision(samplingDecision);

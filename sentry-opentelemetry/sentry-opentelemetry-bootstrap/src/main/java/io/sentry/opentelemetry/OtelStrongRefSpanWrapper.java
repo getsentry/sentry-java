@@ -1,5 +1,6 @@
 package io.sentry.opentelemetry;
 
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Context;
 import io.sentry.BaggageHeader;
@@ -224,12 +225,12 @@ public final class OtelStrongRefSpanWrapper implements IOtelSpanWrapper {
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {
+  public void setTag(@Nullable String key, @Nullable String value) {
     delegate.setTag(key, value);
   }
 
   @Override
-  public @Nullable String getTag(@NotNull String key) {
+  public @Nullable String getTag(@Nullable String key) {
     return delegate.getTag(key);
   }
 
@@ -239,12 +240,12 @@ public final class OtelStrongRefSpanWrapper implements IOtelSpanWrapper {
   }
 
   @Override
-  public void setData(@NotNull String key, @NotNull Object value) {
+  public void setData(@Nullable String key, @Nullable Object value) {
     delegate.setData(key, value);
   }
 
   @Override
-  public @Nullable Object getData(@NotNull String key) {
+  public @Nullable Object getData(@Nullable String key) {
     return delegate.getData(key);
   }
 
@@ -280,7 +281,7 @@ public final class OtelStrongRefSpanWrapper implements IOtelSpanWrapper {
   }
 
   @Override
-  public void setContext(@NotNull String key, @NotNull Object context) {
+  public void setContext(@Nullable String key, @Nullable Object context) {
     delegate.setContext(key, context);
   }
 
@@ -302,5 +303,11 @@ public final class OtelStrongRefSpanWrapper implements IOtelSpanWrapper {
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return delegate.makeCurrent();
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @Nullable Attributes getOpenTelemetrySpanAttributes() {
+    return delegate.getOpenTelemetrySpanAttributes();
   }
 }

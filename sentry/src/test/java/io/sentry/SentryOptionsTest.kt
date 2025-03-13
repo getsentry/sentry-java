@@ -668,4 +668,40 @@ class SentryOptionsTest {
     fun `when options is initialized, InitPriority is set to MEDIUM by default`() {
         assertEquals(SentryOptions().initPriority, InitPriority.MEDIUM)
     }
+
+    @Test
+    fun `merging options when ignoredErrors is not set preserves the previous value`() {
+        val externalOptions = ExternalOptions()
+        val options = SentryOptions()
+        options.setIgnoredErrors(listOf("error1", "error2"))
+        options.merge(externalOptions)
+        assertEquals(listOf(FilterString("error1"), FilterString("error2")), options.ignoredErrors)
+    }
+
+    @Test
+    fun `merging options when ignoredTransactions is not set preserves the previous value`() {
+        val externalOptions = ExternalOptions()
+        val options = SentryOptions()
+        options.setIgnoredTransactions(listOf("transaction1", "transaction2"))
+        options.merge(externalOptions)
+        assertEquals(listOf(FilterString("transaction1"), FilterString("transaction2")), options.ignoredTransactions)
+    }
+
+    @Test
+    fun `merging options when ignoredCheckIns is not set preserves the previous value`() {
+        val externalOptions = ExternalOptions()
+        val options = SentryOptions()
+        options.setIgnoredCheckIns(listOf("checkin1", "checkin2"))
+        options.merge(externalOptions)
+        assertEquals(listOf(FilterString("checkin1"), FilterString("checkin2")), options.ignoredCheckIns)
+    }
+
+    @Test
+    fun `null tag`() {
+        val options = SentryOptions.empty()
+        options.setTag("k", "v")
+        options.setTag("k", null)
+        options.setTag(null, null)
+        assertTrue(options.tags.isEmpty())
+    }
 }

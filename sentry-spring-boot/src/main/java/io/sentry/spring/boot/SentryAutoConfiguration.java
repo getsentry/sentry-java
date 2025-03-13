@@ -22,6 +22,7 @@ import io.sentry.spring.SentrySpringFilter;
 import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryWebConfiguration;
+import io.sentry.spring.SpringProfilesEventProcessor;
 import io.sentry.spring.SpringSecuritySentryUserProvider;
 import io.sentry.spring.boot.graphql.SentryGraphqlAutoConfiguration;
 import io.sentry.spring.checkin.SentryCheckInAdviceConfiguration;
@@ -67,6 +68,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -295,9 +297,14 @@ public class SentryAutoConfiguration {
       @ConditionalOnMissingBean(name = "sentryTracingFilter")
       public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
           final @NotNull IScopes scopes,
-          final @NotNull TransactionNameProvider transactionNameProvider) {
+          final @NotNull TransactionNameProvider transactionNameProvider,
+          final @NotNull SentryProperties sentryProperties) {
         FilterRegistrationBean<SentryTracingFilter> filter =
-            new FilterRegistrationBean<>(new SentryTracingFilter(scopes, transactionNameProvider));
+            new FilterRegistrationBean<>(
+                new SentryTracingFilter(
+                    scopes,
+                    transactionNameProvider,
+                    sentryProperties.isKeepTransactionsOpenForAsyncResponses()));
         filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE + 1); // must run after SentrySpringFilter
         return filter;
       }
@@ -438,5 +445,15 @@ public class SentryAutoConfiguration {
     @ConditionalOnBean(SentryOptions.TracesSamplerCallback.class)
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryTracesSamplerBeanCondition {}
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @Open
+  static class SpringProfilesEventProcessorConfiguration {
+    @Bean
+    public @NotNull SpringProfilesEventProcessor springProfilesEventProcessor(
+        final Environment environment) {
+      return new SpringProfilesEventProcessor(environment);
+    }
   }
 }
