@@ -2,7 +2,6 @@ package io.sentry.opentelemetry;
 
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.semconv.UrlAttributes;
 import io.sentry.DsnUtil;
 import io.sentry.IScopes;
 import java.util.Arrays;
@@ -17,6 +16,8 @@ public final class OtelInternalSpanDetectionUtil {
 
   private static final @NotNull List<SpanKind> spanKindsConsideredForSentryRequests =
       Arrays.asList(SpanKind.CLIENT, SpanKind.INTERNAL);
+  private static final @NotNull OpenTelemetryAttributesExtractor attributesExtractor =
+      new OpenTelemetryAttributesExtractor();
 
   @SuppressWarnings("deprecation")
   public static boolean isSentryRequest(
@@ -27,14 +28,8 @@ public final class OtelInternalSpanDetectionUtil {
       return false;
     }
 
-    final @Nullable String httpUrl =
-        attributes.get(io.opentelemetry.semconv.SemanticAttributes.HTTP_URL);
-    if (DsnUtil.urlContainsDsnHost(scopes.getOptions(), httpUrl)) {
-      return true;
-    }
-
-    final @Nullable String fullUrl = attributes.get(UrlAttributes.URL_FULL);
-    if (DsnUtil.urlContainsDsnHost(scopes.getOptions(), fullUrl)) {
+    String url = attributesExtractor.extractUrl(attributes, scopes.getOptions());
+    if (DsnUtil.urlContainsDsnHost(scopes.getOptions(), url)) {
       return true;
     }
 
@@ -43,10 +38,7 @@ public final class OtelInternalSpanDetectionUtil {
       final @NotNull String spotlightUrl =
           optionsSpotlightUrl != null ? optionsSpotlightUrl : "http://localhost:8969/stream";
 
-      if (containsSpotlightUrl(fullUrl, spotlightUrl)) {
-        return true;
-      }
-      if (containsSpotlightUrl(httpUrl, spotlightUrl)) {
+      if (containsSpotlightUrl(url, spotlightUrl)) {
         return true;
       }
     }

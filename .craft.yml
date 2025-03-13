@@ -57,3 +57,5 @@ targets:
       maven:io.sentry:sentry-apollo-3:
       maven:io.sentry:sentry-android-sqlite:
       maven:io.sentry:sentry-android-replay:
+      maven:io.sentry:sentry-apollo-4:
+      maven:io.sentry:sentry-reactor:
