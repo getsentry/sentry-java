@@ -778,7 +778,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public void setTag(final @NotNull String key, final @NotNull String value) {
+  public void setTag(final @Nullable String key, final @Nullable String value) {
     if (root.isFinished()) {
       scopes
           .getOptions()
@@ -791,7 +791,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @Nullable String getTag(final @NotNull String key) {
+  public @Nullable String getTag(final @Nullable String key) {
     return this.root.getTag(key);
   }
 
@@ -801,7 +801,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public void setData(@NotNull String key, @NotNull Object value) {
+  public void setData(@Nullable String key, @Nullable Object value) {
     if (root.isFinished()) {
       scopes
           .getOptions()
@@ -815,7 +815,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @Nullable Object getData(@NotNull String key) {
+  public @Nullable Object getData(@Nullable String key) {
     return this.root.getData(key);
   }
 
@@ -975,7 +975,7 @@ public final class SentryTracer implements ITransaction {
 
   @ApiStatus.Internal
   @Override
-  public void setContext(final @NotNull String key, final @NotNull Object context) {
+  public void setContext(final @Nullable String key, final @Nullable Object context) {
     contexts.put(key, context);
   }
 

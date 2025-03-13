@@ -51,6 +51,12 @@ public object SentryModifier {
         Modifier.Node(),
         SemanticsModifierNode {
 
+        override val shouldClearDescendantSemantics: Boolean
+            get() = false
+
+        override val shouldMergeDescendantSemantics: Boolean
+            get() = false
+
         override fun SemanticsPropertyReceiver.applySemantics() {
             this[SentryTag] = tag
         }
