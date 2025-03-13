@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix AbstractMethodError when using SentryTraced for Jetpack Compose ([#4256](https://github.com/getsentry/sentry-java/pull/4256))
+
 ## 7.22.1
 
 ### Fixes
