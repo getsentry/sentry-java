@@ -1565,13 +1565,13 @@ class ActivityLifecycleIntegrationTest {
         appStartMetrics.appStartTimeSpan.stop()
         sut.register(fixture.scopes, fixture.options)
 
-        assertEquals(0, sut.getProperty<Long>("lastPausedUptimeMillis"))
+        assertEquals(0, sut.getProperty<SentryDate>("lastPausedTime").nanoTimestamp())
 
         // An Activity (the first) is created after app start has finished
         sut.onActivityPreCreated(activity, null)
         // lastPausedUptimeMillis is set to current SystemClock.uptimeMillis()
-        val lastUptimeMillis = sut.getProperty<Long>("lastPausedUptimeMillis")
-        assertNotEquals(0, lastUptimeMillis)
+        val lastUptimeMillis = sut.getProperty<SentryDate>("lastPausedTime")
+        assertNotEquals(0, lastUptimeMillis.nanoTimestamp())
     }
 
     private fun SentryTracer.isFinishing() = getProperty<Any>("finishStatus").getProperty<Boolean>("isFinishing")
