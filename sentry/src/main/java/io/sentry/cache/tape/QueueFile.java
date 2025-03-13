@@ -20,6 +20,7 @@ package io.sentry.cache.tape;
 import static java.lang.Math.min;
 
 import java.io.Closeable;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -93,13 +94,13 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
    *   ...              Data
    * </pre>
    */
-  final RandomAccessFile raf;
+  RandomAccessFile raf;
 
   /** Keep file around for error reporting. */
   final File file;
 
   /** The header length in bytes: 16 or 32. */
-  final int headerLength;
+  final int headerLength = 32;
 
   /** Cached file length. Always a power of 2. */
   long fileLength;
@@ -165,12 +166,15 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     this.zero = zero;
     this.maxElements = maxElements;
 
+    readInitialData();
+  }
+
+  private void readInitialData() throws IOException {
     raf.seek(0);
     raf.readFully(buffer);
 
     long firstOffset;
     long lastOffset;
-    headerLength = 32;
 
     fileLength = readLong(buffer, 4);
     elementCount = readInt(buffer, 12);
@@ -187,6 +191,13 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
 
     first = readElement(firstOffset);
     last = readElement(lastOffset);
+  }
+
+  private void resetFile() throws IOException {
+    raf.close();
+    file.delete();
+    raf = initializeFromFile(file);
+    readInitialData();
   }
 
   /**
@@ -255,7 +266,10 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
 
   Element readElement(long position) throws IOException {
     if (position == 0) return Element.NULL;
-    ringRead(position, buffer, 0, Element.HEADER_LENGTH);
+    boolean success = ringRead(position, buffer, 0, Element.HEADER_LENGTH);
+    if (!success) {
+      return Element.NULL;
+    }
     int length = readInt(buffer, 0);
     return new Element(position, length);
   }
@@ -304,21 +318,35 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
    * @param position in file to read from
    * @param buffer to read into
    * @param count # of bytes to read
+   * @return true if the read was successful, false if the file is corrupt
    */
-  void ringRead(long position, byte[] buffer, int offset, int count) throws IOException {
-    position = wrapPosition(position);
-    if (position + count <= fileLength) {
-      raf.seek(position);
-      raf.readFully(buffer, offset, count);
-    } else {
-      // The read overlaps the EOF.
-      // # of bytes to read before the EOF. Guaranteed to be less than Integer.MAX_VALUE.
-      int beforeEof = (int) (fileLength - position);
-      raf.seek(position);
-      raf.readFully(buffer, offset, beforeEof);
-      raf.seek(headerLength);
-      raf.readFully(buffer, offset + beforeEof, count - beforeEof);
+  boolean ringRead(long position, byte[] buffer, int offset, int count) throws IOException {
+    try {
+      position = wrapPosition(position);
+      if (position + count <= fileLength) {
+        raf.seek(position);
+        raf.readFully(buffer, offset, count);
+      } else {
+        // The read overlaps the EOF.
+        // # of bytes to read before the EOF. Guaranteed to be less than Integer.MAX_VALUE.
+        int beforeEof = (int) (fileLength - position);
+        raf.seek(position);
+        raf.readFully(buffer, offset, beforeEof);
+        raf.seek(headerLength);
+        raf.readFully(buffer, offset + beforeEof, count - beforeEof);
+      }
+      return true;
+    } catch (EOFException e) {
+      // since EOFException inherits from IOException, we need to catch it explicitly
+      // and reset the file
+      resetFile();
+    } catch (IOException e) {
+      throw e;
+    } catch (Throwable e) {
+      // most likely the file is corrupt, so we delete it and recreate, accepting data loss
+      resetFile();
     }
+    return false;
   }
 
   /**
@@ -469,8 +497,8 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     if (isEmpty()) return null;
     int length = first.length;
     byte[] data = new byte[length];
-    ringRead(first.position + Element.HEADER_LENGTH, data, 0, length);
-    return data;
+    boolean success = ringRead(first.position + Element.HEADER_LENGTH, data, 0, length);
+    return success ? data : null;
   }
 
   /**
@@ -526,7 +554,12 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
         Element current = readElement(nextElementPosition);
         byte[] buffer = new byte[current.length];
         nextElementPosition = wrapPosition(current.position + Element.HEADER_LENGTH);
-        ringRead(nextElementPosition, buffer, 0, current.length);
+        boolean success = ringRead(nextElementPosition, buffer, 0, current.length);
+        if (!success) {
+          // make it run out of bounds immediately
+          nextElementIndex = elementCount;
+          return ZEROES;
+        }
 
         // Update the pointer to the next element.
         nextElementPosition =
@@ -537,6 +570,16 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
         return buffer;
       } catch (IOException e) {
         throw QueueFile.<Error>getSneakyThrowable(e);
+      } catch (OutOfMemoryError e) {
+        // most likely the file is corrupted, so we delete it and recreate, accepting data loss
+        try {
+          resetFile();
+          // make it run out of bounds immediately
+          nextElementIndex = elementCount;
+        } catch (IOException ex) {
+          throw QueueFile.<Error>getSneakyThrowable(ex);
+        }
+        return ZEROES;
       }
     }
 
@@ -607,7 +650,10 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     for (int i = 0; i < n; i++) {
       eraseTotalLength += Element.HEADER_LENGTH + newFirstLength;
       newFirstPosition = wrapPosition(newFirstPosition + Element.HEADER_LENGTH + newFirstLength);
-      ringRead(newFirstPosition, buffer, 0, Element.HEADER_LENGTH);
+      boolean success = ringRead(newFirstPosition, buffer, 0, Element.HEADER_LENGTH);
+      if (!success) {
+        return;
+      }
       newFirstLength = readInt(buffer, 0);
     }
 
