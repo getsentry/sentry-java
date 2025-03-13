@@ -759,7 +759,7 @@ public final class Scope implements IScope {
   @NotNull
   @Override
   public List<Attachment> getAttachments() {
-    return attachments;
+    return new CopyOnWriteArrayList<>(attachments);
   }
 
   /**
