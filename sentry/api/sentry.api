@@ -2023,7 +2023,8 @@ public final class io/sentry/RequestDetails {
 
 public final class io/sentry/SamplingContext {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;)V
-	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Ljava/lang/Double;)V
+	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Ljava/lang/Double;Ljava/util/Map;)V
+	public fun getAttribute (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getCustomSamplingContext ()Lio/sentry/CustomSamplingContext;
 	public fun getSampleRand ()Ljava/lang/Double;
 	public fun getTransactionContext ()Lio/sentry/TransactionContext;

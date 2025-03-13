@@ -16,6 +16,8 @@
 - Fix "class ch.qos.logback.classic.spi.ThrowableProxyVO cannot be cast to class ch.qos.logback.classic.spi.ThrowableProxy" ([#4206](https://github.com/getsentry/sentry-java/pull/4206))
   - In this case we cannot report the `Throwable` to Sentry as it's not available
   - If you are using OpenTelemetry v1 `OpenTelemetryAppender`, please consider upgrading to v2
+- Pass OpenTelemetry span attributes into TracesSampler callback ([#4253](https://github.com/getsentry/sentry-java/pull/4253))
+  - `SamplingContext` now has a `getAttribute` method that grants access to OpenTelemetry span attributes via their String key (e.g. `http.request.method`)
 
 ### Features
 
