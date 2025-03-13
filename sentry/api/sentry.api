@@ -6087,6 +6087,7 @@ public final class io/sentry/util/CollectionUtils {
 	public static fun newArrayList (Ljava/util/List;)Ljava/util/List;
 	public static fun newConcurrentHashMap (Ljava/util/Map;)Ljava/util/Map;
 	public static fun newHashMap (Ljava/util/Map;)Ljava/util/Map;
+	public static fun reverseListIterator (Ljava/util/concurrent/CopyOnWriteArrayList;)Ljava/util/ListIterator;
 	public static fun size (Ljava/lang/Iterable;)I
 }
 
