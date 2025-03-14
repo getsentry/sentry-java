@@ -51,6 +51,8 @@ public class Contexts implements JsonSerializable {
           this.setOperatingSystem(new OperatingSystem((OperatingSystem) value));
         } else if (SentryRuntime.TYPE.equals(entry.getKey()) && value instanceof SentryRuntime) {
           this.setRuntime(new SentryRuntime((SentryRuntime) value));
+        } else if (Feedback.TYPE.equals(entry.getKey()) && value instanceof Feedback) {
+          this.setFeedback(new Feedback((Feedback) value));
         } else if (Gpu.TYPE.equals(entry.getKey()) && value instanceof Gpu) {
           this.setGpu(new Gpu((Gpu) value));
         } else if (SpanContext.TYPE.equals(entry.getKey()) && value instanceof SpanContext) {
@@ -118,6 +120,14 @@ public class Contexts implements JsonSerializable {
 
   public void setRuntime(final @NotNull SentryRuntime runtime) {
     this.put(SentryRuntime.TYPE, runtime);
+  }
+
+  public @Nullable Feedback getFeedback() {
+    return toContextType(Feedback.TYPE, Feedback.class);
+  }
+
+  public void setFeedback(final @NotNull Feedback feedback) {
+    this.put(Feedback.TYPE, feedback);
   }
 
   public @Nullable Gpu getGpu() {
@@ -301,6 +311,9 @@ public class Contexts implements JsonSerializable {
             break;
           case SentryRuntime.TYPE:
             contexts.setRuntime(new SentryRuntime.Deserializer().deserialize(reader, logger));
+            break;
+          case Feedback.TYPE:
+            contexts.setFeedback(new Feedback.Deserializer().deserialize(reader, logger));
             break;
           case SpanContext.TYPE:
             contexts.setTrace(new SpanContext.Deserializer().deserialize(reader, logger));
