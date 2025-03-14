@@ -1814,6 +1814,14 @@ public class SentryOptions {
   }
 
   /**
+   * Whether profiling can automatically be started as early as possible during the app lifecycle.
+   */
+  @ApiStatus.Experimental
+  public boolean isStartProfilerOnAppStart() {
+    return experimental.isStartProfilerOnAppStart();
+  }
+
+  /**
    * Returns the profiling traces dir. path if set
    *
    * @return the profiling traces dir. path or null if not set

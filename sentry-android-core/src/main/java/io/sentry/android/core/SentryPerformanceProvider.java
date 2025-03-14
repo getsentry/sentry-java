@@ -139,7 +139,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
         return;
       }
 
-      if (profilingOptions.isContinuousProfilingEnabled()) {
+      if (profilingOptions.isContinuousProfilingEnabled()
+          && profilingOptions.isStartProfilerOnAppStart()) {
         createAndStartContinuousProfiler(context, profilingOptions, appStartMetrics);
         return;
       }
@@ -150,8 +151,9 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
         return;
       }
 
-      createAndStartTransactionProfiler(context, profilingOptions, appStartMetrics);
-
+      if (profilingOptions.isEnableAppStartProfiling()) {
+        createAndStartTransactionProfiler(context, profilingOptions, appStartMetrics);
+      }
     } catch (FileNotFoundException e) {
       logger.log(SentryLevel.ERROR, "App start profiling config file not found. ", e);
     } catch (Throwable e) {

@@ -1131,6 +1131,25 @@ class SentryTest {
     }
 
     @Test
+    fun `init calls samplers if isStartProfilerOnAppStart is true`() {
+        val mockSampleTracer = mock<TracesSamplerCallback>()
+        val mockProfilesSampler = mock<ProfilesSamplerCallback>()
+        Sentry.init {
+            it.dsn = dsn
+            it.tracesSampleRate = 1.0
+            it.experimental.isStartProfilerOnAppStart = true
+            it.profilesSampleRate = 1.0
+            it.tracesSampler = mockSampleTracer
+            it.profilesSampler = mockProfilesSampler
+            it.executorService = ImmediateExecutorService()
+            it.cacheDirPath = getTempPath()
+        }
+        // Samplers are not called
+        verify(mockSampleTracer, never()).sample(any())
+        verify(mockProfilesSampler, never()).sample(any())
+    }
+
+    @Test
     fun `init calls app start profiling samplers in the background`() {
         val mockSampleTracer = mock<TracesSamplerCallback>()
         val mockProfilesSampler = mock<ProfilesSamplerCallback>()
@@ -1221,15 +1240,33 @@ class SentryTest {
     }
 
     @Test
+    fun `init creates app start profiling config if isStartProfilerOnAppStart, even with performance disabled`() {
+        val path = getTempPath()
+        File(path).mkdirs()
+        val appStartProfilingConfigFile = File(path, "app_start_profiling_config")
+        appStartProfilingConfigFile.createNewFile()
+        assertTrue(appStartProfilingConfigFile.exists())
+        Sentry.init {
+            it.dsn = dsn
+            it.cacheDirPath = path
+            it.isEnableAppStartProfiling = false
+            it.experimental.isStartProfilerOnAppStart = true
+            it.tracesSampleRate = 0.0
+            it.executorService = ImmediateExecutorService()
+        }
+        assertTrue(appStartProfilingConfigFile.exists())
+    }
+
+    @Test
     fun `init saves SentryAppStartProfilingOptions to disk`() {
         var options = SentryOptions()
         val path = getTempPath()
         Sentry.init {
             it.dsn = dsn
             it.cacheDirPath = path
-            it.tracesSampleRate = 1.0
             it.tracesSampleRate = 0.5
             it.isEnableAppStartProfiling = true
+            it.experimental.isStartProfilerOnAppStart = true
             it.profilesSampleRate = 0.2
             it.executorService = ImmediateExecutorService()
             options = it
@@ -1242,6 +1279,8 @@ class SentryTest {
         assertEquals(0.5, appStartOption.traceSampleRate)
         assertEquals(0.2, appStartOption.profileSampleRate)
         assertTrue(appStartOption.isProfilingEnabled)
+        assertTrue(appStartOption.isEnableAppStartProfiling)
+        assertTrue(appStartOption.isStartProfilerOnAppStart)
     }
 
     @Test
