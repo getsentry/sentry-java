@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.InitPriority;
+import io.sentry.ProfileLifecycle;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SdkVersion;
@@ -66,6 +67,8 @@ final class ManifestMetadataReader {
 
   static final String PROFILE_SESSION_SAMPLE_RATE =
       "io.sentry.traces.profiling.session-sample-rate";
+
+  static final String PROFILE_LIFECYCLE = "io.sentry.traces.profiling.lifecycle";
 
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
   static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
@@ -324,6 +327,19 @@ final class ManifestMetadataReader {
           if (profileSessionSampleRate != -1) {
             options.getExperimental().setProfileSessionSampleRate(profileSessionSampleRate);
           }
+        }
+
+        final String profileLifecycle =
+            readString(
+                metadata,
+                logger,
+                PROFILE_LIFECYCLE,
+                options.getProfileLifecycle().name().toLowerCase(Locale.ROOT));
+        if (profileLifecycle != null) {
+          options
+              .getExperimental()
+              .setProfileLifecycle(
+                  ProfileLifecycle.valueOf(profileLifecycle.toUpperCase(Locale.ROOT)));
         }
 
         options.setEnableUserInteractionTracing(

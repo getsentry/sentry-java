@@ -14,7 +14,7 @@ public final class NoOpContinuousProfiler implements IContinuousProfiler {
   }
 
   @Override
-  public void stop() {}
+  public void stopProfileSession(final @NotNull ProfileLifecycle profileLifecycle) {}
 
   @Override
   public boolean isRunning() {
@@ -22,7 +22,9 @@ public final class NoOpContinuousProfiler implements IContinuousProfiler {
   }
 
   @Override
-  public void start(final @NotNull TracesSampler tracesSampler) {}
+  public void startProfileSession(
+      final @NotNull ProfileLifecycle profileLifecycle,
+      final @NotNull TracesSampler tracesSampler) {}
 
   @Override
   public void close() {}

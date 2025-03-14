@@ -40,11 +40,12 @@ public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IConti
 	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
 	public fun close ()V
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
+	public fun getRootSpanCounter ()I
 	public fun isRunning ()Z
 	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 	public fun reevaluateSampling ()V
-	public fun start (Lio/sentry/TracesSampler;)V
-	public fun stop ()V
+	public fun startProfileSession (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
+	public fun stopProfileSession (Lio/sentry/ProfileLifecycle;)V
 }
 
 public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/IPerformanceSnapshotCollector {

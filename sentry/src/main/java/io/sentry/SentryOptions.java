@@ -1803,6 +1803,17 @@ public class SentryOptions {
   }
 
   /**
+   * Returns whether the profiling lifecycle is controlled manually or based on the trace lifecycle.
+   * Defaults to {@link ProfileLifecycle#MANUAL}.
+   *
+   * @return the profile lifecycle
+   */
+  @ApiStatus.Experimental
+  public @NotNull ProfileLifecycle getProfileLifecycle() {
+    return experimental.getProfileLifecycle();
+  }
+
+  /**
    * Returns the profiling traces dir. path if set
    *
    * @return the profiling traces dir. path or null if not set

@@ -220,7 +220,7 @@ class SentryTracerTest {
         whenever(continuousProfiler.profilerId).thenReturn(profilerId)
         val tracer = fixture.getSut(optionsConfiguration = {
             it.setContinuousProfiler(continuousProfiler)
-        })
+        }, samplingDecision = TracesSamplingDecision(true))
         tracer.finish()
         verify(fixture.scopes).captureTransaction(
             check {
@@ -232,6 +232,42 @@ class SentryTracerTest {
             anyOrNull(),
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `when transaction is not sampled, profile context is not set`() {
+        val continuousProfiler = mock<IContinuousProfiler>()
+        val profilerId = SentryId()
+        whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.setContinuousProfiler(continuousProfiler)
+        }, samplingDecision = TracesSamplingDecision(false))
+        tracer.finish()
+        // profiler is never stopped, as it was never started
+        verify(continuousProfiler, never()).stopProfileSession(any())
+        // profile context is not set
+        verify(fixture.scopes).captureTransaction(
+            check {
+                assertNull(it.contexts.profile)
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when continuous profiler is running in MANUAL mode, profiler is not stopped on transaction finish`() {
+        val continuousProfiler = mock<IContinuousProfiler>()
+        val profilerId = SentryId()
+        whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.setContinuousProfiler(continuousProfiler)
+            it.experimental.profileLifecycle = ProfileLifecycle.MANUAL
+        }, samplingDecision = TracesSamplingDecision(true))
+        tracer.finish()
+        // profiler is never stopped, as it should be stopped manually
+        verify(continuousProfiler, never()).stopProfileSession(any())
     }
 
     @Test
@@ -258,9 +294,22 @@ class SentryTracerTest {
 
         val tracer = fixture.getSut(optionsConfiguration = { options ->
             options.setContinuousProfiler(profiler)
-        })
+        }, samplingDecision = TracesSamplingDecision(true))
         val span = tracer.startChild("span.op")
         assertEquals(profilerId.toString(), span.getData(SpanDataConvention.PROFILER_ID))
+    }
+
+    @Test
+    fun `when transaction is not sampled, profiler id is NOT set in span data`() {
+        val profilerId = SentryId()
+        val profiler = mock<IContinuousProfiler>()
+        whenever(profiler.profilerId).thenReturn(profilerId)
+
+        val tracer = fixture.getSut(optionsConfiguration = { options ->
+            options.setContinuousProfiler(profiler)
+        }, samplingDecision = TracesSamplingDecision(false))
+        val span = tracer.startChild("span.op")
+        assertNull(span.getData(SpanDataConvention.PROFILER_ID))
     }
 
     @Test

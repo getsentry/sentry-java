@@ -4,7 +4,6 @@ import static io.sentry.DataCategory.All;
 import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import android.annotation.SuppressLint;
 import android.os.Build;
 import io.sentry.CompositePerformanceCollector;
 import io.sentry.DataCategory;
@@ -15,6 +14,7 @@ import io.sentry.ISentryExecutorService;
 import io.sentry.NoOpScopes;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.ProfileChunk;
+import io.sentry.ProfileLifecycle;
 import io.sentry.Sentry;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
@@ -58,6 +58,7 @@ public class AndroidContinuousProfiler
   private @NotNull SentryDate startProfileChunkTimestamp = new SentryNanotimeDate();
   private boolean shouldSample = true;
   private boolean isSampled = false;
+  private int rootSpanCounter = 0;
 
   public AndroidContinuousProfiler(
       final @NotNull BuildInfoProvider buildInfoProvider,
@@ -103,7 +104,10 @@ public class AndroidContinuousProfiler
             logger);
   }
 
-  public synchronized void start(final @NotNull TracesSampler tracesSampler) {
+  @Override
+  public synchronized void startProfileSession(
+      final @NotNull ProfileLifecycle profileLifecycle,
+      final @NotNull TracesSampler tracesSampler) {
     if (shouldSample) {
       isSampled = tracesSampler.sampleSessionProfile();
       shouldSample = false;
@@ -112,15 +116,31 @@ public class AndroidContinuousProfiler
       logger.log(SentryLevel.DEBUG, "Profiler was not started due to sampling decision.");
       return;
     }
-    if (isRunning()) {
-      logger.log(SentryLevel.DEBUG, "Profiler is already running.");
-      return;
+    switch (profileLifecycle) {
+      case TRACE:
+        // rootSpanCounter should never be negative, unless the user changed profile lifecycle while
+        // the profiler is running or close() is called. This is just a safety check.
+        if (rootSpanCounter < 0) {
+          rootSpanCounter = 0;
+        }
+        rootSpanCounter++;
+        break;
+      case MANUAL:
+        // We check if the profiler is already running and log a message only in manual mode, since
+        // in trace mode we can have multiple concurrent traces
+        if (isRunning()) {
+          logger.log(SentryLevel.DEBUG, "Profiler is already running.");
+          return;
+        }
+        break;
     }
-    logger.log(SentryLevel.DEBUG, "Started Profiler.");
-    startProfile();
+    if (!isRunning()) {
+      logger.log(SentryLevel.DEBUG, "Started Profiler.");
+      start();
+    }
   }
 
-  private synchronized void startProfile() {
+  private synchronized void start() {
     if ((scopes == null || scopes == NoOpScopes.getInstance())
         && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
       this.scopes = Sentry.getCurrentScopes();
@@ -150,7 +170,7 @@ public class AndroidContinuousProfiler
               || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk))) {
         logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
         // Let's stop and reset profiler id, as the profile is now broken anyway
-        stop();
+        stop(false);
         return;
       }
 
@@ -158,7 +178,7 @@ public class AndroidContinuousProfiler
       if (scopes.getOptions().getConnectionStatusProvider().getConnectionStatus() == DISCONNECTED) {
         logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
         // Let's stop and reset profiler id, as the profile is now broken anyway
-        stop();
+        stop(false);
         return;
       }
       startProfileChunkTimestamp = scopes.getOptions().getDateProvider().now();
@@ -195,11 +215,28 @@ public class AndroidContinuousProfiler
     }
   }
 
-  public synchronized void stop() {
-    stop(false);
+  @Override
+  public synchronized void stopProfileSession(final @NotNull ProfileLifecycle profileLifecycle) {
+    switch (profileLifecycle) {
+      case TRACE:
+        rootSpanCounter--;
+        // If there are active spans, and profile lifecycle is trace, we don't stop the profiler
+        if (rootSpanCounter > 0) {
+          return;
+        }
+        // rootSpanCounter should never be negative, unless the user changed profile lifecycle while
+        // the profiler is running or close() is called. This is just a safety check.
+        if (rootSpanCounter < 0) {
+          rootSpanCounter = 0;
+        }
+        stop(false);
+        break;
+      case MANUAL:
+        stop(false);
+        break;
+    }
   }
 
-  @SuppressLint("NewApi")
   private synchronized void stop(final boolean restartProfiler) {
     if (stopFuture != null) {
       stopFuture.cancel(true);
@@ -256,7 +293,7 @@ public class AndroidContinuousProfiler
 
     if (restartProfiler) {
       logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
-      startProfile();
+      start();
     } else {
       // When the profiler is stopped manually, we have to reset its id
       profilerId = SentryId.EMPTY_ID;
@@ -269,7 +306,8 @@ public class AndroidContinuousProfiler
   }
 
   public synchronized void close() {
-    stop();
+    rootSpanCounter = 0;
+    stop(false);
     isClosed.set(true);
   }
 
@@ -315,13 +353,18 @@ public class AndroidContinuousProfiler
     return stopFuture;
   }
 
+  @VisibleForTesting
+  public int getRootSpanCounter() {
+    return rootSpanCounter;
+  }
+
   @Override
   public void onRateLimitChanged(@NotNull RateLimiter rateLimiter) {
     // We stop the profiler as soon as we are rate limited, to avoid the performance overhead
     if (rateLimiter.isActiveForCategory(All)
         || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)) {
       logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
-      stop();
+      stop(false);
     }
     // If we are not rate limited anymore, we don't do anything: the profile is broken, so it's
     // useless to restart it automatically
