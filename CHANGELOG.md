@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))
+
 ## 8.4.0
 
 ### Fixes
@@ -22,7 +28,6 @@
 - Assume `http.client` for span `op` if not a root span ([#4257](https://github.com/getsentry/sentry-java/pull/4257))
 - Avoid unnecessary copies when using `CopyOnWriteArrayList` ([#4247](https://github.com/getsentry/sentry-java/pull/4247))
   - This affects in particular `SentryTracer.getLatestActiveSpan` which would have previously copied all child span references. This may have caused `OutOfMemoryError` on certain devices due to high frequency of calling the method.
- - Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))
 
 ### Features
 
