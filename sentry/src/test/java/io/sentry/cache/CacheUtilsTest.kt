@@ -34,6 +34,16 @@ internal class CacheUtilsTest {
         )
 
         assertEquals("\"Hallo!\"", file.readText())
+
+        // test overwrite
+        CacheUtils.store(
+            SentryOptions().apply { cacheDirPath = cacheDir },
+            "Hallo 2!",
+            "stuff",
+            "test.json"
+        )
+
+        assertEquals("\"Hallo 2!\"", file.readText())
     }
 
     @Test
