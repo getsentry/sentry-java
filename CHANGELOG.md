@@ -7,6 +7,145 @@
 - Add native stack frame address information and debug image metadata to ANR events ([#4061](https://github.com/getsentry/sentry-java/pull/4061))
   - This enables symbolication for stripped native code in ANRs
 
+### Fixes
+
+- Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))
+
+### Dependencies
+
+- Bump Gradle from v8.12.1 to v8.13.0 ([#4209](https://github.com/getsentry/sentry-java/pull/4209))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8130)
+  - [diff](https://github.com/gradle/gradle/compare/v8.12.1...v8.13.0)
+
+## 8.4.0
+
+### Fixes
+
+- The SDK now handles `null` on many APIs instead of expecting a non `null` value ([#4245](https://github.com/getsentry/sentry-java/pull/4245))
+  - Certain APIs like `setTag`, `setData`, `setExtra`, `setContext` previously caused a `NullPointerException` when invoked with either `null` key or value.
+  - The SDK now tries to have a sane fallback when `null` is passed and no longer throws `NullPointerException`
+  - If `null` is passed, the SDK will
+    - do nothing if a `null` key is passed, returning `null` for non void methods
+    - remove any previous value if the new value is set to `null`
+- Add support for setting in-app-includes/in-app-excludes via AndroidManifest.xml ([#4240](https://github.com/getsentry/sentry-java/pull/4240))
+- Modifications to OkHttp requests are now properly propagated to the affected span / breadcrumbs ([#4238](https://github.com/getsentry/sentry-java/pull/4238))
+  - Please ensure the SentryOkHttpInterceptor is added last to your OkHttpClient, as otherwise changes to the `Request`  by subsequent interceptors won't be considered
+- Fix "class ch.qos.logback.classic.spi.ThrowableProxyVO cannot be cast to class ch.qos.logback.classic.spi.ThrowableProxy" ([#4206](https://github.com/getsentry/sentry-java/pull/4206))
+  - In this case we cannot report the `Throwable` to Sentry as it's not available
+  - If you are using OpenTelemetry v1 `OpenTelemetryAppender`, please consider upgrading to v2
+- Pass OpenTelemetry span attributes into TracesSampler callback ([#4253](https://github.com/getsentry/sentry-java/pull/4253))
+  - `SamplingContext` now has a `getAttribute` method that grants access to OpenTelemetry span attributes via their String key (e.g. `http.request.method`)
+- Fix AbstractMethodError when using SentryTraced for Jetpack Compose ([#4255](https://github.com/getsentry/sentry-java/pull/4255))
+- Assume `http.client` for span `op` if not a root span ([#4257](https://github.com/getsentry/sentry-java/pull/4257))
+- Avoid unnecessary copies when using `CopyOnWriteArrayList` ([#4247](https://github.com/getsentry/sentry-java/pull/4247))
+  - This affects in particular `SentryTracer.getLatestActiveSpan` which would have previously copied all child span references. This may have caused `OutOfMemoryError` on certain devices due to high frequency of calling the method.
+
+### Features
+
+- The SDK now automatically propagates the trace-context to the native layer. This allows to connect errors on different layers of the application. ([#4137](https://github.com/getsentry/sentry-java/pull/4137))
+- Capture OpenTelemetry span events ([#3564](https://github.com/getsentry/sentry-java/pull/3564))
+  - OpenTelemetry spans may have exceptions attached to them (`openTelemetrySpan.recordException`). We can now send those to Sentry as errors.
+  - Set `capture-open-telemetry-events=true` in `sentry.properties` to enable it
+  - Set `sentry.capture-open-telemetry-events=true` in Springs `application.properties` to enable it
+  - Set `sentry.captureOpenTelemetryEvents: true` in Springs `application.yml` to enable it
+
+### Behavioural Changes
+
+- Use `java.net.URI` for parsing URLs in `UrlUtils` ([#4210](https://github.com/getsentry/sentry-java/pull/4210))
+  - This could affect grouping for issues with messages containing URLs that fall in known corner cases that were handled incorrectly previously (e.g. email in URL path)
+
+### Internal
+
+- Also use port when checking if a request is made to Sentry DSN ([#4231](https://github.com/getsentry/sentry-java/pull/4231))
+  - For our OpenTelemetry integration we check if a span is for a request to Sentry
+  - We now also consider the port when performing this check
+
+### Dependencies
+
+- Bump Native SDK from v0.7.20 to v0.8.1 ([#4137](https://github.com/getsentry/sentry-java/pull/4137))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0810)
+  - [diff](https://github.com/getsentry/sentry-native/compare/v0.7.20...0.8.1)
+
+## 8.3.0
+
+### Features
+
+- Add HTTP server request headers from OpenTelemetry span attributes to sentry `request` in payload ([#4102](https://github.com/getsentry/sentry-java/pull/4102))
+  - You have to explicitly enable each header by adding it to the [OpenTelemetry config](https://opentelemetry.io/docs/zero-code/java/agent/instrumentation/http/#capturing-http-request-and-response-headers)
+  - Please only enable headers you actually want to send to Sentry. Some may contain sensitive data like PII, cookies, tokens etc.
+  - We are no longer adding request/response headers to `contexts/otel/attributes` of the event.
+- The `ignoredErrors` option is now configurable via the manifest property `io.sentry.traces.ignored-errors` ([#4178](https://github.com/getsentry/sentry-java/pull/4178))
+- A list of active Spring profiles is attached to payloads sent to Sentry (errors, traces, etc.) and displayed in the UI when using our Spring or Spring Boot integrations ([#4147](https://github.com/getsentry/sentry-java/pull/4147))
+  - This consists of an empty list when only the default profile is active
+- Added `enableTraceIdGeneration` to the AndroidOptions. This allows Hybrid SDKs to "freeze" and control the trace and connect errors on different layers of the application ([4188](https://github.com/getsentry/sentry-java/pull/4188))
+- Move to a single NetworkCallback listener to reduce number of IPC calls on Android ([#4164](https://github.com/getsentry/sentry-java/pull/4164))
+- Add GraphQL Apollo Kotlin 4 integration ([#4166](https://github.com/getsentry/sentry-java/pull/4166))
+- Add support for async dispatch requests to Spring Boot 2 and 3 ([#3983](https://github.com/getsentry/sentry-java/pull/3983))
+  - To enable it, please set `sentry.keep-transactions-open-for-async-responses=true` in `application.properties` or `sentry.keepTransactionsOpenForAsyncResponses: true` in `application.yml`
+- Add constructor to JUL `SentryHandler` for disabling external config ([#4208](https://github.com/getsentry/sentry-java/pull/4208))
+
+### Fixes
+
+- Filter strings that cannot be parsed as Regex no longer cause an SDK crash ([#4213](https://github.com/getsentry/sentry-java/pull/4213))
+  - This was the case e.g. for `ignoredErrors`, `ignoredTransactions` and `ignoredCheckIns`
+  - We now simply don't use such strings for Regex matching and only use them for String comparison
+- `SentryOptions.setTracePropagationTargets` is no longer marked internal ([#4170](https://github.com/getsentry/sentry-java/pull/4170))
+- Session Replay: Fix crash when a navigation breadcrumb does not have "to" destination ([#4185](https://github.com/getsentry/sentry-java/pull/4185))
+- Session Replay: Cap video segment duration to maximum 5 minutes to prevent endless video encoding in background ([#4185](https://github.com/getsentry/sentry-java/pull/4185))
+- Check `tracePropagationTargets` in OpenTelemetry propagator ([#4191](https://github.com/getsentry/sentry-java/pull/4191))
+  - If a URL can be retrieved from OpenTelemetry span attributes, we check it against `tracePropagationTargets` before attaching `sentry-trace` and `baggage` headers to outgoing requests
+  - If no URL can be retrieved we always attach the headers
+- Fix `ignoredErrors`, `ignoredTransactions` and `ignoredCheckIns` being unset by external options like `sentry.properties` or ENV vars ([#4207](https://github.com/getsentry/sentry-java/pull/4207))
+  - Whenever parsing of external options was enabled (`enableExternalConfiguration`), which is the default for many integrations, the values set on `SentryOptions` passed to `Sentry.init` would be lost
+  - Even if the value was not set in any external configuration it would still be set to an empty list
+
+### Behavioural Changes
+
+- The class `io.sentry.spring.jakarta.webflux.ReactorUtils` is now deprecated, please use `io.sentry.reactor.SentryReactorUtils` in the new `sentry-reactor` module instead ([#4155](https://github.com/getsentry/sentry-java/pull/4155))
+  - The new module will be exposed as an `api` dependency when using `sentry-spring-boot-jakarta` (Spring Boot 3) or `sentry-spring-jakarta` (Spring 6). 
+    Therefore, if you're using one of those modules, changing your imports will suffice.
+
+## 8.2.0
+
+### Breaking Changes
+
+- The Kotlin Language version is now set to 1.6 ([#3936](https://github.com/getsentry/sentry-java/pull/3936))
+
+### Features
+
+- Create onCreate and onStart spans for all Activities ([#4025](https://github.com/getsentry/sentry-java/pull/4025))
+- Add split apks info to the `App` context ([#3193](https://github.com/getsentry/sentry-java/pull/3193))
+- Expose new `withSentryObservableEffect` method overload that accepts `SentryNavigationListener` as a parameter ([#4143](https://github.com/getsentry/sentry-java/pull/4143))
+  - This allows sharing the same `SentryNavigationListener` instance across fragments and composables to preserve the trace 
+- (Internal) Add API to filter native debug images based on stacktrace addresses ([#4089](https://github.com/getsentry/sentry-java/pull/4089))
+- Propagate sampling random value ([#4153](https://github.com/getsentry/sentry-java/pull/4153))
+  - The random value used for sampling traces is now sent to Sentry and attached to the `baggage` header on outgoing requests
+- Update `sampleRate` that is sent to Sentry and attached to the `baggage` header on outgoing requests ([#4158](https://github.com/getsentry/sentry-java/pull/4158))
+  - If the SDK uses its `sampleRate` or `tracesSampler` callback, it now updates the `sampleRate` in Dynamic Sampling Context.
+
+### Fixes
+
+- Log a warning when envelope or items are dropped due to rate limiting ([#4148](https://github.com/getsentry/sentry-java/pull/4148))
+- Do not log if `OtelContextScopesStorage` cannot be found ([#4127](https://github.com/getsentry/sentry-java/pull/4127))
+  - Previously `java.lang.ClassNotFoundException: io.sentry.opentelemetry.OtelContextScopesStorage` was shown in the log if the class could not be found.
+  - This is just a lookup the SDK performs to configure itself. The SDK also works without OpenTelemetry.
+- Session Replay: Fix various crashes and issues ([#4135](https://github.com/getsentry/sentry-java/pull/4135))
+  - Fix `FileNotFoundException` when trying to read/write `.ongoing_segment` file
+  - Fix `IllegalStateException` when registering `onDrawListener`
+  - Fix SIGABRT native crashes on Motorola devices when encoding a video
+- Mention javadoc and sources for published artifacts in Gradle `.module` metadata ([#3936](https://github.com/getsentry/sentry-java/pull/3936))
+- (Jetpack Compose) Modifier.sentryTag now uses Modifier.Node ([#4029](https://github.com/getsentry/sentry-java/pull/4029))
+  - This allows Composables that use this modifier to be skippable
+
+### Dependencies
+
+- Bump Native SDK from v0.7.19 to v0.7.20 ([#4128](https://github.com/getsentry/sentry-java/pull/4128))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0720)
+  - [diff](https://github.com/getsentry/sentry-native/compare/v0.7.19...0.7.20)
+- Bump Gradle from v8.9.0 to v8.12.1 ([#4106](https://github.com/getsentry/sentry-java/pull/4106))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8121)
+  - [diff](https://github.com/gradle/gradle/compare/v8.9.0...v8.12.1)
+
 ## 8.1.0
 
 ### Features
@@ -68,7 +207,11 @@ Version 8 of the Sentry Android/Java SDK brings a variety of features and fixes.
 - New `Scope` types have been introduced, see "Behavioural Changes" for more details.
 - Lifecycle tokens have been introduced to manage `Scope` lifecycle, see "Behavioural Changes" for more details.
 - Bumping `minSdk` level to 21 (Android 5.0)
-- Our `sentry-opentelemetry-agent` has been improved and now works in combination with the rest of Sentry. You may now mix and match OpenTelemetry and Sentry API for instrumenting your application.
+- Our `sentry-opentelemetry-agent` has been improved and now works in combination with the rest of Sentry. You may now combine OpenTelemetry and Sentry for instrumenting your application.
+    - You may now use both OpenTelemetry SDK and Sentry SDK to capture transactions and spans. They can also be mixed and end up on the same transaction.
+    - OpenTelemetry extends the Sentry SDK by adding spans for numerous integrations, like Ktor, Vert.x and MongoDB. Please check [the OpenTelemetry GitHub repository](https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/instrumentation) for a full list.
+    - OpenTelemetry allows propagating trace information from and to additional libraries, that Sentry did not support before, for example gRPC.
+    - OpenTelemetry also has broader support for propagating the Sentry `Scopes` through reactive libraries like RxJava.
 - The SDK is now compatible with Spring Boot 3.4
 - We now support GraphQL v22 (`sentry-graphql-22`)
 - Metrics have been removed
@@ -359,6 +502,24 @@ If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that
     - We are planning to improve this in the future but opted for this fix first.
 - Fix swallow NDK loadLibrary errors ([#4082](https://github.com/getsentry/sentry-java/pull/4082))
 
+## 7.22.1
+
+### Fixes
+
+- Fix Ensure app start type is set, even when ActivityLifecycleIntegration is not running ([#4216](https://github.com/getsentry/sentry-java/pull/4216))
+- Fix properly reset application/content-provider timespans for warm app starts ([#4244](https://github.com/getsentry/sentry-java/pull/4244))
+
+## 7.22.0
+
+### Fixes
+
+- Session Replay: Fix various crashes and issues ([#4135](https://github.com/getsentry/sentry-java/pull/4135))
+    - Fix `FileNotFoundException` when trying to read/write `.ongoing_segment` file
+    - Fix `IllegalStateException` when registering `onDrawListener`
+    - Fix SIGABRT native crashes on Motorola devices when encoding a video
+- (Jetpack Compose) Modifier.sentryTag now uses Modifier.Node ([#4029](https://github.com/getsentry/sentry-java/pull/4029))
+    - This allows Composables that use this modifier to be skippable
+
 ## 7.21.0
 
 ### Fixes
@@ -370,6 +531,8 @@ If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that
 
 ### Behavioural Changes
 
+- (changed in [7.20.1](https://github.com/getsentry/sentry-java/releases/tag/7.20.1)) The user ip-address is now only set to `"{{auto}}"` if sendDefaultPii is enabled ([#4071](https://github.com/getsentry/sentry-java/pull/4071))
+    - This change gives you control over IP address collection directly on the client
 - Reduce the number of broadcasts the SDK is subscribed for ([#4052](https://github.com/getsentry/sentry-java/pull/4052))
   - Drop `TempSensorBreadcrumbsIntegration`
   - Drop `PhoneStateBreadcrumbsIntegration`
@@ -419,7 +582,6 @@ If you would like to keep some of the default broadcast events as breadcrumbs, c
 
 - The user ip-address is now only set to `"{{auto}}"` if sendDefaultPii is enabled ([#4071](https://github.com/getsentry/sentry-java/pull/4071))
     - This change gives you control over IP address collection directly on the client
-
 
 ## 7.20.0
 

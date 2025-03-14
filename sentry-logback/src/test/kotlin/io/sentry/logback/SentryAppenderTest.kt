@@ -4,6 +4,9 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder
 import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.classic.spi.LoggingEvent
+import ch.qos.logback.classic.spi.LoggingEventVO
+import ch.qos.logback.classic.spi.ThrowableProxy
 import ch.qos.logback.core.encoder.Encoder
 import ch.qos.logback.core.encoder.EncoderBase
 import ch.qos.logback.core.status.Status
@@ -535,5 +538,25 @@ class SentryAppenderTest {
 
         assertTrue(Sentry.isEnabled())
         System.clearProperty("sentry.dsn")
+    }
+
+    @Test
+    fun `does not crash on ThrowableProxyVO`() {
+        fixture = Fixture()
+        val throwableProxy = ThrowableProxy(RuntimeException("hello proxy throwable"))
+        val loggingEvent = LoggingEvent()
+        loggingEvent.level = Level.ERROR
+        loggingEvent.setThrowableProxy(throwableProxy)
+        val loggingEventVO = LoggingEventVO.build(loggingEvent)
+
+        fixture.appender.append(loggingEventVO)
+
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(SentryLevel.ERROR, event.level)
+                assertNull(event.exceptions)
+            },
+            anyOrNull()
+        )
     }
 }

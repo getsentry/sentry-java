@@ -32,10 +32,12 @@ public class io/sentry/spring/boot/jakarta/SentryProperties : io/sentry/SentryOp
 	public fun getReactive ()Lio/sentry/spring/boot/jakarta/SentryProperties$Reactive;
 	public fun getUserFilterOrder ()Ljava/lang/Integer;
 	public fun isEnableAotCompatibility ()Z
+	public fun isKeepTransactionsOpenForAsyncResponses ()Z
 	public fun isUseGitCommitIdAsRelease ()Z
 	public fun setEnableAotCompatibility (Z)V
 	public fun setExceptionResolverOrder (I)V
 	public fun setGraphql (Lio/sentry/spring/boot/jakarta/SentryProperties$Graphql;)V
+	public fun setKeepTransactionsOpenForAsyncResponses (Z)V
 	public fun setLogging (Lio/sentry/spring/boot/jakarta/SentryProperties$Logging;)V
 	public fun setReactive (Lio/sentry/spring/boot/jakarta/SentryProperties$Reactive;)V
 	public fun setUseGitCommitIdAsRelease (Z)V

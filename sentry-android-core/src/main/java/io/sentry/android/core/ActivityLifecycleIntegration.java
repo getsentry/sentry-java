@@ -161,7 +161,9 @@ public final class ActivityLifecycleIntegration
     if (scopes != null && !isRunningTransactionOrTrace(activity)) {
       if (!performanceEnabled) {
         activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
-        TracingUtils.startNewTrace(scopes);
+        if (options.isEnableAutoTraceIdGeneration()) {
+          TracingUtils.startNewTrace(scopes);
+        }
       } else {
         // as we allow a single transaction running on the bound Scope, we finish the previous ones
         stopPreviousTransactions();
@@ -430,7 +432,8 @@ public final class ActivityLifecycleIntegration
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
     final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
     if (helper != null) {
-      helper.createAndStopOnCreateSpan(appStartSpan);
+      helper.createAndStopOnCreateSpan(
+          appStartSpan != null ? appStartSpan : activitiesWithOngoingTransactions.get(activity));
     }
   }
 
@@ -468,7 +471,8 @@ public final class ActivityLifecycleIntegration
   public void onActivityPostStarted(final @NotNull Activity activity) {
     final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
     if (helper != null) {
-      helper.createAndStopOnStartSpan(appStartSpan);
+      helper.createAndStopOnStartSpan(
+          appStartSpan != null ? appStartSpan : activitiesWithOngoingTransactions.get(activity));
       // Needed to handle hybrid SDKs
       helper.saveSpanToAppStartMetrics();
     }

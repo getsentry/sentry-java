@@ -1,6 +1,7 @@
 name: 🐞 Bug Report - Java
 description: Tell us about something that's not working the way we (probably) intend.
 labels: ["Platform: Java", "Type: Bug"]
+type: Bug
 body:
   - type: dropdown
     id: integration
@@ -34,6 +35,7 @@ body:
         - sentry-openfeign
         - sentry-apache-http-client-5
         - sentry-okhttp
+        - sentry-reactor
         - other
     validations:
       required: true

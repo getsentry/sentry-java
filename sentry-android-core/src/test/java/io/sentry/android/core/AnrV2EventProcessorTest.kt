@@ -35,6 +35,7 @@ import io.sentry.cache.PersistingScopeObserver.TAGS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.TRACE_FILENAME
 import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
 import io.sentry.cache.PersistingScopeObserver.USER_FILENAME
+import io.sentry.cache.tape.QueueFile
 import io.sentry.hints.AbnormalExit
 import io.sentry.hints.Backfillable
 import io.sentry.protocol.Browser
@@ -61,6 +62,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowBuild
+import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -98,6 +100,7 @@ class AnrV2EventProcessorTest {
             options.cacheDirPath = dir.newFolder().absolutePath
             options.environment = "release"
             options.isSendDefaultPii = isSendDefaultPii
+            options.addScopeObserver(PersistingScopeObserver(options))
 
             whenever(buildInfo.sdkInfoVersion).thenReturn(currentSdk)
             whenever(buildInfo.isEmulator).thenReturn(true)
@@ -147,7 +150,16 @@ class AnrV2EventProcessorTest {
         fun <T : Any> persistScope(filename: String, entity: T) {
             val dir = File(options.cacheDirPath, SCOPE_CACHE).also { it.mkdirs() }
             val file = File(dir, filename)
-            options.serializer.serialize(entity, file.writer())
+            if (filename == BREADCRUMBS_FILENAME) {
+                val queueFile = QueueFile.Builder(file).build()
+                (entity as List<Breadcrumb>).forEach { crumb ->
+                    val baos = ByteArrayOutputStream()
+                    options.serializer.serialize(crumb, baos.writer())
+                    queueFile.add(baos.toByteArray())
+                }
+            } else {
+                options.serializer.serialize(entity, file.writer())
+            }
         }
 
         fun <T : Any> persistOptions(filename: String, entity: T) {
@@ -621,7 +633,7 @@ class AnrV2EventProcessorTest {
         val processed = processor.process(SentryEvent(), hint)!!
 
         assertEquals(replayId1.toString(), processed.contexts[Contexts.REPLAY_ID].toString())
-        assertEquals(replayId1.toString(), PersistingScopeObserver.read(fixture.options, REPLAY_FILENAME, String::class.java))
+        assertEquals(replayId1.toString(), fixture.options.findPersistingScopeObserver()?.read(fixture.options, REPLAY_FILENAME, String::class.java))
     }
 
     private fun processEvent(

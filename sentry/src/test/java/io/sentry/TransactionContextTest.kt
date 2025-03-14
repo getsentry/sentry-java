@@ -1,10 +1,12 @@
 package io.sentry
 
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.TransactionNameSource
 import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -90,5 +92,33 @@ class TransactionContextTest {
         val context = TransactionContext("name", "op")
         context.isForNextAppStart = true
         assertTrue(context.isForNextAppStart)
+    }
+
+    @Test
+    fun `when passing null baggage creates a new one`() {
+        val context = TransactionContext(SentryId(), SpanId(), null, null, null)
+        assertNotNull(context.baggage)
+        assertNotNull(context.baggage?.sampleRand)
+    }
+
+    @Test
+    fun `when passing null baggage creates a new one and uses parent sampling decision`() {
+        val context = TransactionContext(SentryId(), SpanId(), null, TracesSamplingDecision(true, 0.1, 0.2), null)
+        assertNotNull(context.baggage)
+        assertEquals("0.2", context.baggage?.sampleRand)
+    }
+
+    @Test
+    fun `when using few param ctor creates a new baggage`() {
+        val context = TransactionContext("name", "op")
+        assertNotNull(context.baggage)
+        assertNotNull(context.baggage?.sampleRand)
+    }
+
+    @Test
+    fun `when using few param ctor creates a new baggage and uses sampling decision`() {
+        val context = TransactionContext("name", TransactionNameSource.CUSTOM, "op", TracesSamplingDecision(true, 0.1, 0.2))
+        assertNotNull(context.baggage)
+        assertEquals("0.2", context.baggage?.sampleRand)
     }
 }

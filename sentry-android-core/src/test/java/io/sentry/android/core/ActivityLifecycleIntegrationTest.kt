@@ -1385,10 +1385,11 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
-    fun `starts new trace if performance is disabled`() {
+    fun `starts new trace if performance is disabled and trace ID generation is enabled`() {
         val sut = fixture.getSut()
         val activity = mock<Activity>()
         fixture.options.tracesSampleRate = null
+        fixture.options.isEnableAutoTraceIdGeneration = true
 
         val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
         val scope = Scope(fixture.options)
@@ -1403,6 +1404,28 @@ class ActivityLifecycleIntegrationTest {
         // once for the screen, and once for the tracing propagation context
         verify(fixture.scopes, times(2)).configureScope(any())
         assertNotSame(propagationContextAtStart, scope.propagationContext)
+    }
+
+    @Test
+    fun `does not start a new trace if performance is disabled and trace ID generation is disabled`() {
+        val sut = fixture.getSut()
+        val activity = mock<Activity>()
+        fixture.options.tracesSampleRate = null
+        fixture.options.isEnableAutoTraceIdGeneration = false
+
+        val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
+        val scope = Scope(fixture.options)
+        val propagationContextAtStart = scope.propagationContext
+        whenever(fixture.scopes.configureScope(argumentCaptor.capture())).thenAnswer {
+            argumentCaptor.value.run(scope)
+        }
+
+        sut.register(fixture.scopes, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+
+        // once for the screen
+        verify(fixture.scopes).configureScope(any())
+        assertSame(propagationContextAtStart, scope.propagationContext)
     }
 
     @Test
@@ -1546,6 +1569,43 @@ class ActivityLifecycleIntegrationTest {
 
         sut.onActivityCreated(activity, null)
         assertNotNull(sut.appStartSpan)
+
+        sut.onActivityPostCreated(activity, null)
+        assertTrue(helper.onCreateSpan!!.isFinished)
+
+        sut.onActivityPreStarted(activity)
+        assertNotNull(helper.onStartStartTimestamp)
+
+        sut.onActivityStarted(activity)
+        assertTrue(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
+
+        sut.onActivityPostStarted(activity)
+        assertTrue(helper.onStartSpan!!.isFinished)
+        assertFalse(appStartMetrics.activityLifecycleTimeSpans.isEmpty())
+    }
+
+    @Test
+    fun `Creates activity lifecycle spans even when no app start span is available`() {
+        val sut = fixture.getSut()
+        fixture.options.tracesSampleRate = 1.0
+        val startDate = SentryNanotimeDate(Date(2), 0)
+        val appStartMetrics = AppStartMetrics.getInstance()
+        val activity = mock<Activity>()
+        fixture.options.dateProvider = SentryDateProvider { startDate }
+        // Don't set app start time, so there's no app start span
+        // setAppStartTime(appStartDate)
+
+        sut.register(fixture.scopes, fixture.options)
+        assertTrue(sut.activitySpanHelpers.isEmpty())
+
+        sut.onActivityPreCreated(activity, null)
+
+        assertFalse(sut.activitySpanHelpers.isEmpty())
+        val helper = sut.activitySpanHelpers.values.first()
+        assertNotNull(helper.onCreateStartTimestamp)
+
+        sut.onActivityCreated(activity, null)
+        assertNull(sut.appStartSpan)
 
         sut.onActivityPostCreated(activity, null)
         assertTrue(helper.onCreateSpan!!.isFinished)

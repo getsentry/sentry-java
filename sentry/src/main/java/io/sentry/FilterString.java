@@ -3,14 +3,27 @@ package io.sentry;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class FilterString {
   private final @NotNull String filterString;
-  private final @NotNull Pattern pattern;
+  private final @Nullable Pattern pattern;
 
   public FilterString(@NotNull String filterString) {
     this.filterString = filterString;
-    this.pattern = Pattern.compile(filterString);
+    @Nullable Pattern pattern = null;
+    try {
+      pattern = Pattern.compile(filterString);
+    } catch (Throwable t) {
+      Sentry.getCurrentScopes()
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Only using filter string for String comparison as it could not be parsed as regex: %s",
+              filterString);
+    }
+    this.pattern = pattern;
   }
 
   public @NotNull String getFilterString() {
@@ -18,6 +31,9 @@ public final class FilterString {
   }
 
   public boolean matches(String input) {
+    if (pattern == null) {
+      return false;
+    }
     return pattern.matcher(input).matches();
   }
 

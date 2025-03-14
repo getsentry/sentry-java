@@ -12,7 +12,6 @@ import io.sentry.util.Platform
 import io.sentry.util.UrlUtils
 import okhttp3.Request
 import okhttp3.Response
-import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -29,34 +28,65 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
     private var response: Response? = null
     private var clientErrorResponse: Response? = null
     private val isEventFinished = AtomicBoolean(false)
-    private val url: String
-    private val method: String
+    private var url: String
+    private var method: String
 
     init {
         val urlDetails = UrlUtils.parse(request.url.toString())
         url = urlDetails.urlOrFallback
-        val host: String = request.url.host
-        val encodedPath: String = request.url.encodedPath
         method = request.method
 
         // We start the call span that will contain all the others
         val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
-        callSpan = parentSpan?.startChild("http.client", "$method $url")
+        callSpan = parentSpan?.startChild("http.client")
         callSpan?.spanContext?.origin = TRACE_ORIGIN
+
+        breadcrumb = Breadcrumb().apply {
+            type = "http"
+            category = "http"
+            // needs this as unix timestamp for rrweb
+            setData(
+                SpanDataConvention.HTTP_START_TIMESTAMP,
+                CurrentDateProvider.getInstance().currentTimeMillis
+            )
+        }
+
+        setRequest(request)
+    }
+
+    /**
+     * Sets the request.
+     * This function may be called multiple times in case the request changes e.g. due to interceptors.
+     */
+    fun setRequest(request: Request) {
+        val urlDetails = UrlUtils.parse(request.url.toString())
+        url = urlDetails.urlOrFallback
+
+        val host: String = request.url.host
+        val encodedPath: String = request.url.encodedPath
+        method = request.method
+
+        callSpan?.description = "$method $url"
         urlDetails.applyToSpan(callSpan)
 
-        // We setup a breadcrumb with all meaningful data
-        breadcrumb = Breadcrumb.http(url, method)
         breadcrumb.setData("host", host)
         breadcrumb.setData("path", encodedPath)
-        // needs this as unix timestamp for rrweb
-        breadcrumb.setData(SpanDataConvention.HTTP_START_TIMESTAMP, CurrentDateProvider.getInstance().currentTimeMillis)
+        if (urlDetails.url != null) {
+            breadcrumb.setData("url", urlDetails.url!!)
+        }
+        breadcrumb.setData("method", method.uppercase())
+        if (urlDetails.query != null) {
+            breadcrumb.setData("http.query", urlDetails.query!!)
+        }
+        if (urlDetails.fragment != null) {
+            breadcrumb.setData("http.fragment", urlDetails.fragment!!)
+        }
 
         // We add the same data to the call span
         callSpan?.setData("url", url)
         callSpan?.setData("host", host)
         callSpan?.setData("path", encodedPath)
-        callSpan?.setData(SpanDataConvention.HTTP_METHOD_KEY, method.uppercase(Locale.ROOT))
+        callSpan?.setData(SpanDataConvention.HTTP_METHOD_KEY, method.uppercase())
     }
 
     /**

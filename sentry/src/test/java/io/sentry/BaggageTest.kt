@@ -8,7 +8,9 @@ import java.util.UUID
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class BaggageTest {
@@ -340,8 +342,9 @@ class BaggageTest {
     }
 
     @Test
-    fun `setting values if header contains sentry values has no effect`() {
+    fun `setting values on frozen baggage has no effect`() {
         val baggage = Baggage.fromHeader("sentry-trace_id=a,sentry-transaction=sentryTransaction", logger)
+        baggage.freeze()
 
         baggage.traceId = "b"
         baggage.traceId = "c"
@@ -350,6 +353,18 @@ class BaggageTest {
         baggage.environment = "production"
 
         assertEquals("sentry-trace_id=a,sentry-transaction=sentryTransaction", baggage.toHeaderString(null))
+    }
+
+    @Test
+    fun `if header contains sentry values baggage is marked as shouldFreeze`() {
+        val baggage = Baggage.fromHeader("sentry-trace_id=a,sentry-transaction=sentryTransaction", logger)
+        assertTrue(baggage.isShouldFreeze)
+    }
+
+    @Test
+    fun `if header does not contain sentry values baggage is not marked as shouldFreeze`() {
+        val baggage = Baggage.fromHeader("a=b", logger)
+        assertFalse(baggage.isShouldFreeze)
     }
 
     @Test
@@ -533,6 +548,100 @@ class BaggageTest {
         val traceContext = baggage.toTraceContext()!!
         assertEquals(1, traceContext.unknown!!.size)
         assertEquals("abc", traceContext.unknown!!["anewkey"])
+    }
+
+    @Test
+    fun `header with sentry values is marked for freezing`() {
+        val baggage =
+            Baggage.fromHeader("sentry-trace_id=a,sentry-transaction=sentryTransaction")
+        assertTrue(baggage.isShouldFreeze)
+    }
+
+    @Test
+    fun `header with sentry sample rand only is not marked for freezing`() {
+        val baggage =
+            Baggage.fromHeader("sentry-sample_rand=0.3")
+        assertFalse(baggage.isShouldFreeze)
+    }
+
+    @Test
+    fun `header without sentry values is not marked for freezing`() {
+        val baggage =
+            Baggage.fromHeader("a=b,c=d")
+        assertFalse(baggage.isShouldFreeze)
+    }
+
+    @Test
+    fun `sets values from traces sampling decision`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.setValuesFromSamplingDecision(TracesSamplingDecision(true, 0.021, 0.025))
+
+        assertEquals("true", baggage.sampled)
+        assertEquals("0.021", baggage.sampleRate)
+        assertEquals("0.025", baggage.sampleRand)
+    }
+
+    @Test
+    fun `handles null traces sampling decision`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.setValuesFromSamplingDecision(null)
+    }
+
+    @Test
+    fun `sets values from traces sampling decision only if non null`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.setValuesFromSamplingDecision(TracesSamplingDecision(true, 0.021, 0.025))
+        baggage.setValuesFromSamplingDecision(TracesSamplingDecision(false, null, null))
+
+        assertEquals("false", baggage.sampled)
+        assertEquals("0.021", baggage.sampleRate)
+        assertEquals("0.025", baggage.sampleRand)
+    }
+
+    @Test
+    fun `replaces only sample rate if already frozen`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.setValuesFromSamplingDecision(TracesSamplingDecision(true, 0.021, 0.025))
+        baggage.freeze()
+        baggage.setValuesFromSamplingDecision(TracesSamplingDecision(false, 0.121, 0.125))
+
+        assertEquals("true", baggage.sampled)
+        assertEquals("0.121", baggage.sampleRate)
+        assertEquals("0.025", baggage.sampleRand)
+    }
+
+    fun `sample rate can be retrieved as double`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.sampleRate = "0.1"
+        assertEquals(0.1, baggage.sampleRateDouble)
+    }
+
+    @Test
+    fun `sample rand can be retrieved as double`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.sampleRand = "0.1"
+        assertEquals(0.1, baggage.sampleRandDouble)
+    }
+
+    @Test
+    fun `sample rand can be set as double`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.sampleRandDouble = 0.1
+        assertEquals("0.1", baggage.sampleRand)
+    }
+
+    @Test
+    fun `broken sample rand returns null double`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.sampleRand = "a0.1"
+        assertNull(baggage.sampleRandDouble)
+    }
+
+    @Test
+    fun `broken sample rate returns null double`() {
+        val baggage = Baggage.fromHeader("a=b,c=d")
+        baggage.sampleRate = "a0.1"
+        assertNull(baggage.sampleRateDouble)
     }
 
     /**

@@ -195,6 +195,7 @@ public final class io/sentry/android/core/DeviceInfoUtil {
 	public static fun getInstance (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/DeviceInfoUtil;
 	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
 	public fun getSideLoadedInfo ()Lio/sentry/android/core/ContextUtils$SideLoadedInfo;
+	public fun getSplitApksInfo ()Lio/sentry/android/core/ContextUtils$SplitApksInfo;
 	public fun getTotalMemory ()Ljava/lang/Long;
 	public static fun isCharging (Landroid/content/Intent;Lio/sentry/SentryOptions;)Ljava/lang/Boolean;
 	public static fun resetInstance ()V
@@ -211,6 +212,7 @@ public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : i
 public abstract interface class io/sentry/android/core/IDebugImagesLoader {
 	public abstract fun clearDebugImages ()V
 	public abstract fun loadDebugImages ()Ljava/util/List;
+	public abstract fun loadDebugImagesForAddresses (Ljava/util/Set;)Ljava/util/Set;
 }
 
 public final class io/sentry/android/core/InternalSentrySdk {
@@ -219,6 +221,7 @@ public final class io/sentry/android/core/InternalSentrySdk {
 	public static fun getAppStartMeasurement ()Ljava/util/Map;
 	public static fun getCurrentScope ()Lio/sentry/IScope;
 	public static fun serializeScope (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/IScope;)Ljava/util/Map;
+	public static fun setTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)V
 }
 
 public final class io/sentry/android/core/LoadClass : io/sentry/util/LoadClass {
@@ -290,6 +293,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAppComponentBreadcrumbs ()Z
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
+	public fun isEnableAutoTraceIdGeneration ()Z
 	public fun isEnableFramesTracking ()Z
 	public fun isEnableNdk ()Z
 	public fun isEnableNetworkEventBreadcrumbs ()Z
@@ -313,6 +317,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAppComponentBreadcrumbs (Z)V
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
+	public fun setEnableAutoTraceIdGeneration (Z)V
 	public fun setEnableFramesTracking (Z)V
 	public fun setEnableNdk (Z)V
 	public fun setEnableNetworkEventBreadcrumbs (Z)V

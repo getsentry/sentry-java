@@ -1,7 +1,10 @@
 package io.sentry.util
 
+import io.sentry.TracesSamplingDecision
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SampleRateUtilTest {
@@ -129,5 +132,63 @@ class SampleRateUtilTest {
     @Test
     fun `accepts null profiles sample rate`() {
         assertTrue(SampleRateUtils.isValidProfilesSampleRate(null))
+    }
+
+    @Test
+    fun `fills sample rand on decision if missing`() {
+        val decision = SampleRateUtils.backfilledSampleRand(TracesSamplingDecision(true))
+        assertNotNull(decision.sampleRand)
+    }
+
+    @Test
+    fun `keeps sample rand on decision if present`() {
+        val decision = SampleRateUtils.backfilledSampleRand(TracesSamplingDecision(true, 0.1, 0.5))
+        assertEquals(0.5, decision.sampleRand)
+    }
+
+    @Test
+    fun `uses sampleRand and does not backfill`() {
+        val sampleRand = SampleRateUtils.backfilledSampleRand(0.3, null, null)
+        assertEquals(0.3, sampleRand)
+    }
+
+    @Test
+    fun `backfills sampleRand if missing`() {
+        val sampleRand = SampleRateUtils.backfilledSampleRand(null, null, null)
+        assertNotNull(sampleRand)
+        assertTrue(sampleRand >= 0)
+        assertTrue(sampleRand < 1)
+    }
+
+    @Test
+    fun `backfills sampleRand if missing with sampled true`() {
+        val sampleRand = SampleRateUtils.backfilledSampleRand(null, null, true)
+        assertNotNull(sampleRand)
+        assertTrue(sampleRand >= 0)
+        assertTrue(sampleRand < 1)
+    }
+
+    @Test
+    fun `backfills sampleRand if missing with sampled false`() {
+        val sampleRand = SampleRateUtils.backfilledSampleRand(null, null, false)
+        assertNotNull(sampleRand)
+        assertTrue(sampleRand >= 0)
+        assertTrue(sampleRand < 1)
+    }
+
+    @Test
+    fun `backfills sampleRand if missing with sampled true below sample rate`() {
+        val sampleRand = SampleRateUtils.backfilledSampleRand(null, 0.0001, true)
+        assertNotNull(sampleRand)
+        assertTrue(sampleRand >= 0)
+        assertTrue(sampleRand < 0.0001)
+    }
+
+    @Test
+    fun `backfills sampleRand if missing with sampled false above sample rate`() {
+        val sampleRand = SampleRateUtils.backfilledSampleRand(null, 0.9999, false)
+        assertNotNull(sampleRand)
+        assertTrue(sampleRand >= 0.9999)
+        assertTrue(sampleRand < 1)
     }
 }

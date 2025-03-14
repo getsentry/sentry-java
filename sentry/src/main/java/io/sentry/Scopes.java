@@ -514,7 +514,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void setTag(final @NotNull String key, final @NotNull String value) {
+  public void setTag(final @Nullable String key, final @Nullable String value) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -527,7 +527,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void removeTag(final @NotNull String key) {
+  public void removeTag(final @Nullable String key) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -540,7 +540,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void setExtra(final @NotNull String key, final @NotNull String value) {
+  public void setExtra(final @Nullable String key, final @Nullable String value) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -553,7 +553,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void removeExtra(final @NotNull String key) {
+  public void removeExtra(final @Nullable String key) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -857,8 +857,10 @@ public final class Scopes implements IScopes {
               SentryLevel.INFO, "Tracing is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
     } else {
+      final Double sampleRand = getSampleRand(transactionContext);
       final SamplingContext samplingContext =
-          new SamplingContext(transactionContext, transactionOptions.getCustomSamplingContext());
+          new SamplingContext(
+              transactionContext, transactionOptions.getCustomSamplingContext(), sampleRand, null);
       final @NotNull TracesSampler tracesSampler = getOptions().getInternalTracesSampler();
       @NotNull TracesSamplingDecision samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSamplingDecision(samplingDecision);
@@ -892,6 +894,18 @@ public final class Scopes implements IScopes {
       transaction.makeCurrent();
     }
     return transaction;
+  }
+
+  private @NotNull Double getSampleRand(final @NotNull TransactionContext transactionContext) {
+    final @Nullable Baggage baggage = transactionContext.getBaggage();
+    if (baggage != null) {
+      final @Nullable Double sampleRandFromBaggageMaybe = baggage.getSampleRandDouble();
+      if (sampleRandFromBaggageMaybe != null) {
+        return sampleRandFromBaggageMaybe;
+      }
+    }
+
+    return getCombinedScopeView().getPropagationContext().getSampleRand();
   }
 
   @Override
@@ -963,7 +977,10 @@ public final class Scopes implements IScopes {
         PropagationContext.fromHeaders(getOptions().getLogger(), sentryTrace, baggageHeaders);
     configureScope(
         (scope) -> {
-          scope.setPropagationContext(propagationContext);
+          scope.withPropagationContext(
+              oldPropagationContext -> {
+                scope.setPropagationContext(propagationContext);
+              });
         });
     if (getOptions().isTracingEnabled()) {
       return TransactionContext.fromPropagationContext(propagationContext);

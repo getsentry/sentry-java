@@ -27,7 +27,6 @@ import io.sentry.TypeCheckHint.APOLLO_RESPONSE
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
-import java.util.Locale
 import java.util.concurrent.Executor
 
 private const val TRACE_ORIGIN = "auto.graphql.apollo"
@@ -77,7 +76,7 @@ class SentryApolloInterceptor(
                         response.httpResponse.map { it.request().method() }.orNull()?.let {
                             span.setData(
                                 SpanDataConvention.HTTP_METHOD_KEY,
-                                it.toUpperCase(Locale.ROOT)
+                                it.uppercase()
                             )
                         }
 

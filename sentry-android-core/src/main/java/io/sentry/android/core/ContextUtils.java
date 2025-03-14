@@ -26,6 +26,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -60,6 +61,27 @@ public final class ContextUtils {
         data.put("installerStore", installerStore);
       }
       return data;
+    }
+  }
+
+  static class SplitApksInfo {
+    // https://github.com/google/bundletool/blob/master/src/main/java/com/android/tools/build/bundletool/model/AndroidManifest.java#L257-L263
+    static final String SPLITS_REQUIRED = "com.android.vending.splits.required";
+
+    private final boolean isSplitApks;
+    private final String[] splitNames;
+
+    public SplitApksInfo(final boolean isSplitApks, final String[] splitNames) {
+      this.isSplitApks = isSplitApks;
+      this.splitNames = splitNames;
+    }
+
+    public boolean isSplitApks() {
+      return isSplitApks;
+    }
+
+    public @Nullable String[] getSplitNames() {
+      return splitNames;
     }
   }
 
@@ -322,6 +344,26 @@ public final class ContextUtils {
     return null;
   }
 
+  @SuppressWarnings({"deprecation"})
+  static @Nullable SplitApksInfo retrieveSplitApksInfo(
+      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
+    String[] splitNames = null;
+    final ApplicationInfo applicationInfo = getApplicationInfo(context, buildInfoProvider);
+    final PackageInfo packageInfo = getPackageInfo(context, buildInfoProvider);
+
+    if (packageInfo != null) {
+      splitNames = packageInfo.splitNames;
+      boolean isSplitApks = false;
+      if (applicationInfo != null && applicationInfo.metaData != null) {
+        isSplitApks = applicationInfo.metaData.getBoolean(SplitApksInfo.SPLITS_REQUIRED);
+      }
+
+      return new SplitApksInfo(isSplitApks, splitNames);
+    }
+
+    return null;
+  }
+
   /**
    * Get the human-facing Application name.
    *
@@ -422,6 +464,7 @@ public final class ContextUtils {
   static void setAppPackageInfo(
       final @NotNull PackageInfo packageInfo,
       final @NotNull BuildInfoProvider buildInfoProvider,
+      final @Nullable DeviceInfoUtil deviceInfoUtil,
       final @NotNull App app) {
     app.setAppIdentifier(packageInfo.packageName);
     app.setAppVersion(packageInfo.versionName);
@@ -446,6 +489,19 @@ public final class ContextUtils {
       }
     }
     app.setPermissions(permissions);
+
+    if (deviceInfoUtil != null) {
+      try {
+        final ContextUtils.SplitApksInfo splitApksInfo = deviceInfoUtil.getSplitApksInfo();
+        if (splitApksInfo != null) {
+          app.setSplitApks(splitApksInfo.isSplitApks());
+          if (splitApksInfo.getSplitNames() != null) {
+            app.setSplitNames(Arrays.asList(splitApksInfo.getSplitNames()));
+          }
+        }
+      } catch (Throwable e) {
+      }
+    }
   }
 
   /**

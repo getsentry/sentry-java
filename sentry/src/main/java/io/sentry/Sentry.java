@@ -4,6 +4,7 @@ import io.sentry.backpressure.BackpressureMonitor;
 import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.config.PropertiesProviderFactory;
 import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader;
@@ -22,6 +23,7 @@ import io.sentry.util.FileUtils;
 import io.sentry.util.InitUtil;
 import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
+import io.sentry.util.SentryRandom;
 import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
 import io.sentry.util.thread.ThreadChecker;
@@ -395,7 +397,7 @@ public final class Sentry {
     if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
       scopesStorage = new DefaultScopesStorage();
     } else {
-      scopesStorage = ScopesStorageFactory.create(new LoadClass(), options.getLogger());
+      scopesStorage = ScopesStorageFactory.create(new LoadClass(), NoOpLogger.getInstance());
     }
   }
 
@@ -458,7 +460,9 @@ public final class Sentry {
       final @NotNull SentryOptions options) {
     TransactionContext appStartTransactionContext = new TransactionContext("app.launch", "profile");
     appStartTransactionContext.setForNextAppStart(true);
-    SamplingContext appStartSamplingContext = new SamplingContext(appStartTransactionContext, null);
+    SamplingContext appStartSamplingContext =
+        new SamplingContext(
+            appStartTransactionContext, null, SentryRandom.current().nextDouble(), null);
     return options.getInternalTracesSampler().sample(appStartSamplingContext);
   }
 
@@ -495,6 +499,16 @@ public final class Sentry {
                   observer.setTags(options.getTags());
                   observer.setReplayErrorSampleRate(
                       options.getSessionReplay().getOnErrorSampleRate());
+                }
+
+                // since it's a new SDK init we clean up persisted scope values before serializing
+                // new ones, so they are not making it to the new events if they were e.g. disabled
+                // (e.g. replayId) or are simply irrelevant (e.g. breadcrumbs). NOTE: this happens
+                // after the integrations relying on those values are done with processing them.
+                final @Nullable PersistingScopeObserver scopeCache =
+                    options.findPersistingScopeObserver();
+                if (scopeCache != null) {
+                  scopeCache.resetCache();
                 }
               });
     } catch (Throwable e) {
@@ -875,7 +889,7 @@ public final class Sentry {
    * @param key the key
    * @param value the value
    */
-  public static void setTag(final @NotNull String key, final @NotNull String value) {
+  public static void setTag(final @Nullable String key, final @Nullable String value) {
     getCurrentScopes().setTag(key, value);
   }
 
@@ -884,7 +898,7 @@ public final class Sentry {
    *
    * @param key the key
    */
-  public static void removeTag(final @NotNull String key) {
+  public static void removeTag(final @Nullable String key) {
     getCurrentScopes().removeTag(key);
   }
 
@@ -895,7 +909,7 @@ public final class Sentry {
    * @param key the key
    * @param value the value
    */
-  public static void setExtra(final @NotNull String key, final @NotNull String value) {
+  public static void setExtra(final @Nullable String key, final @Nullable String value) {
     getCurrentScopes().setExtra(key, value);
   }
 
@@ -904,7 +918,7 @@ public final class Sentry {
    *
    * @param key the key
    */
-  public static void removeExtra(final @NotNull String key) {
+  public static void removeExtra(final @Nullable String key) {
     getCurrentScopes().removeExtra(key);
   }
 
