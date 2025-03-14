@@ -695,4 +695,13 @@ class SentryOptionsTest {
         options.merge(externalOptions)
         assertEquals(listOf(FilterString("checkin1"), FilterString("checkin2")), options.ignoredCheckIns)
     }
+
+    @Test
+    fun `null tag`() {
+        val options = SentryOptions.empty()
+        options.setTag("k", "v")
+        options.setTag("k", null)
+        options.setTag(null, null)
+        assertTrue(options.tags.isEmpty())
+    }
 }

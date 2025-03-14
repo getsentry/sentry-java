@@ -69,12 +69,14 @@ object Config {
         val slf4jJdk14 = "org.slf4j:slf4j-jdk14:1.7.30"
         val logbackVersion = "1.2.9"
         val logbackClassic = "ch.qos.logback:logback-classic:$logbackVersion"
+        val logbackCore = "ch.qos.logback:logback-core:$logbackVersion"
 
         val log4j2Version = "2.20.0"
         val log4j2Api = "org.apache.logging.log4j:log4j-api:$log4j2Version"
         val log4j2Core = "org.apache.logging.log4j:log4j-core:$log4j2Version"
 
-        val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind"
+        val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind:2.18.3"
+        val jacksonKotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3"
 
         val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
         val springBootStarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBootVersion"
@@ -211,6 +213,7 @@ object Config {
         val msgpack = "org.msgpack:msgpack-core:0.9.8"
         val leakCanaryInstrumentation = "com.squareup.leakcanary:leakcanary-android-instrumentation:2.14"
         val composeUiTestJunit4 = "androidx.compose.ui:ui-test-junit4:1.6.8"
+        val okio = "com.squareup.okio:okio:1.13.0"
     }
 
     object QualityPlugins {

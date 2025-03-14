@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.backpressure.IBackpressureMonitor;
 import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
@@ -1451,6 +1452,17 @@ public class SentryOptions {
     return observers;
   }
 
+  @ApiStatus.Internal
+  @Nullable
+  public PersistingScopeObserver findPersistingScopeObserver() {
+    for (final @NotNull IScopeObserver observer : observers) {
+      if (observer instanceof PersistingScopeObserver) {
+        return (PersistingScopeObserver) observer;
+      }
+    }
+    return null;
+  }
+
   /**
    * Adds a SentryOptions observer
    *
@@ -1504,8 +1516,15 @@ public class SentryOptions {
    * @param key the key
    * @param value the value
    */
-  public void setTag(final @NotNull String key, final @NotNull String value) {
-    this.tags.put(key, value);
+  public void setTag(final @Nullable String key, final @Nullable String value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      this.tags.remove(key);
+    } else {
+      this.tags.put(key, value);
+    }
   }
 
   /**

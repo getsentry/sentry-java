@@ -28,6 +28,7 @@ dependencies {
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.TestLibs.javaFaker)
     testImplementation(Config.TestLibs.msgpack)
+    testImplementation(Config.TestLibs.okio)
     testImplementation(projects.sentryTestSupport)
 }
 
