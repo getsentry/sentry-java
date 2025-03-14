@@ -1455,7 +1455,7 @@ public class SentryOptions {
   @ApiStatus.Internal
   @Nullable
   public PersistingScopeObserver findPersistingScopeObserver() {
-    for (IScopeObserver observer : observers) {
+    for (final @NotNull IScopeObserver observer : observers) {
       if (observer instanceof PersistingScopeObserver) {
         return (PersistingScopeObserver) observer;
       }
