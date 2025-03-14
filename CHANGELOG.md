@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Features
+
+- Add native stack frame address information and debug image metadata to ANR events ([#4061](https://github.com/getsentry/sentry-java/pull/4061))
+  - This enables symbolication for stripped native code in ANRs
+
 ### Fixes
 
 - Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))
