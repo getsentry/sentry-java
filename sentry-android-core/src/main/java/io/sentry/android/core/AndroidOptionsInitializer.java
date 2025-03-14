@@ -143,6 +143,11 @@ final class AndroidOptionsInitializer {
           new AndroidConnectionStatusProvider(context, options.getLogger(), buildInfoProvider));
     }
 
+    if (options.getCacheDirPath() != null) {
+      options.addScopeObserver(new PersistingScopeObserver(options));
+      options.addOptionsObserver(new PersistingOptionsObserver(options));
+    }
+
     options.addEventProcessor(new DeduplicateMultithreadedEventProcessor(options));
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
@@ -221,13 +226,6 @@ final class AndroidOptionsInitializer {
       }
     }
     options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
-
-    if (options.getCacheDirPath() != null) {
-      if (options.isEnableScopePersistence()) {
-        options.addScopeObserver(new PersistingScopeObserver(options));
-      }
-      options.addOptionsObserver(new PersistingOptionsObserver(options));
-    }
   }
 
   static void installDefaultIntegrations(
@@ -273,6 +271,8 @@ final class AndroidOptionsInitializer {
     // AppLifecycleIntegration has to be installed before AnrIntegration, because AnrIntegration
     // relies on AppState set by it
     options.addIntegration(new AppLifecycleIntegration());
+    // AnrIntegration must be installed before ReplayIntegration, as ReplayIntegration relies on
+    // it to set the replayId in case of an ANR
     options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
