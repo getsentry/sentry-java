@@ -57,7 +57,7 @@ public class ThreadDumpParser {
   // 5:mapoffset
   // 6:function
   // 7:fnoffset
-  // 7:buildid
+  // 8:buildid
   private static final Pattern NATIVE_RE =
       Pattern.compile(
           // "  native: #12 pc 0xabcd1234"
