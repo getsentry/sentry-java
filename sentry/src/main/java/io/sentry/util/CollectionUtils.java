@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -178,5 +180,24 @@ public final class CollectionUtils {
    */
   public interface Mapper<T, R> {
     R map(T t);
+  }
+
+  /**
+   * Returns a reverse iterator, where the first (resp. last) valid call to `prev` returns the last
+   * (resp. first) element that would be returned when iterating forwards. Note that this differs
+   * from the behavior of e.g. `org.apache.commons.collections4.iterators.ReverseListIterator`,
+   * where you need to iterate using `next` instead. We use the concrete type `CopyOnWriteArrayList`
+   * here as we are relying on the fact that its copy constructor only copies the reference to an
+   * internal array. We don't want to use this for other `List` implementations, as it could lead to
+   * an unnecessary copy of the elements instead.
+   *
+   * @param list the `CopyOnWriteArrayList` to get the reverse iterator for
+   * @param <T> the type
+   * @return a reverse iterator over `list`
+   */
+  public static @NotNull <T> ListIterator<T> reverseListIterator(
+      final @NotNull CopyOnWriteArrayList<T> list) {
+    final @NotNull CopyOnWriteArrayList<T> copy = new CopyOnWriteArrayList<>(list);
+    return copy.listIterator(copy.size());
   }
 }
