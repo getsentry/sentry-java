@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.4.0
 
 ### Fixes
 
