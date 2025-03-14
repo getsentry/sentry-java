@@ -6,6 +6,12 @@
 
 - Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))
 
+### Dependencies
+
+- Bump Gradle from v8.12.1 to v8.13.0 ([#4209](https://github.com/getsentry/sentry-java/pull/4209))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8130)
+  - [diff](https://github.com/gradle/gradle/compare/v8.12.1...v8.13.0)
+
 ## 8.4.0
 
 ### Fixes
