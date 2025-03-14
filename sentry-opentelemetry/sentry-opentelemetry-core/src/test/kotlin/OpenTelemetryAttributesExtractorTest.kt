@@ -4,6 +4,7 @@ import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.sdk.internal.AttributesMap
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.semconv.HttpAttributes
+import io.opentelemetry.semconv.SemanticAttributes
 import io.opentelemetry.semconv.ServerAttributes
 import io.opentelemetry.semconv.UrlAttributes
 import io.sentry.Scope
@@ -194,6 +195,19 @@ class OpenTelemetryAttributesExtractorTest {
         givenAttributes(
             mapOf(
                 UrlAttributes.URL_FULL to "https://sentry.io/some/path"
+            )
+        )
+
+        val url = whenExtractingUrl()
+
+        assertEquals("https://sentry.io/some/path", url)
+    }
+
+    @Test
+    fun `returns deprecated URL if present`() {
+        givenAttributes(
+            mapOf(
+                SemanticAttributes.HTTP_URL to "https://sentry.io/some/path"
             )
         )
 

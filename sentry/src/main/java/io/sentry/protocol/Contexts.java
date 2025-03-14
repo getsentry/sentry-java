@@ -15,6 +15,7 @@ import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -172,23 +173,39 @@ public class Contexts implements JsonSerializable {
     return internalStorage.isEmpty();
   }
 
-  public boolean containsKey(final @NotNull Object key) {
+  public boolean containsKey(final @Nullable Object key) {
+    if (key == null) {
+      return false;
+    }
     return internalStorage.containsKey(key);
   }
 
-  public @Nullable Object get(final @NotNull Object key) {
+  public @Nullable Object get(final @Nullable Object key) {
+    if (key == null) {
+      return null;
+    }
     return internalStorage.get(key);
   }
 
-  public @Nullable Object put(final @NotNull String key, final @Nullable Object value) {
-    return internalStorage.put(key, value);
+  public @Nullable Object put(final @Nullable String key, final @Nullable Object value) {
+    if (key == null) {
+      return null;
+    }
+    if (value == null) {
+      return internalStorage.remove(key);
+    } else {
+      return internalStorage.put(key, value);
+    }
   }
 
-  public @Nullable Object set(final @NotNull String key, final @Nullable Object value) {
+  public @Nullable Object set(final @Nullable String key, final @Nullable Object value) {
     return put(key, value);
   }
 
-  public @Nullable Object remove(final @NotNull Object key) {
+  public @Nullable Object remove(final @Nullable Object key) {
+    if (key == null) {
+      return null;
+    }
     return internalStorage.remove(key);
   }
 
@@ -200,16 +217,31 @@ public class Contexts implements JsonSerializable {
     return internalStorage.entrySet();
   }
 
-  public void putAll(Map<? extends String, ? extends Object> m) {
-    internalStorage.putAll(m);
+  public void putAll(final @Nullable Map<? extends String, ? extends Object> m) {
+    if (m == null) {
+      return;
+    }
+
+    final @NotNull Map<String, Object> tmpMap = new HashMap<>();
+
+    for (final @NotNull Map.Entry<? extends String, ?> entry : m.entrySet()) {
+      if (entry.getKey() != null && entry.getValue() != null) {
+        tmpMap.put(entry.getKey(), entry.getValue());
+      }
+    }
+
+    internalStorage.putAll(tmpMap);
   }
 
-  public void putAll(final @NotNull Contexts contexts) {
+  public void putAll(final @Nullable Contexts contexts) {
+    if (contexts == null) {
+      return;
+    }
     internalStorage.putAll(contexts.internalStorage);
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(final @Nullable Object obj) {
     if (obj != null && obj instanceof Contexts) {
       final @NotNull Contexts otherContexts = (Contexts) obj;
       return internalStorage.equals(otherContexts.internalStorage);
