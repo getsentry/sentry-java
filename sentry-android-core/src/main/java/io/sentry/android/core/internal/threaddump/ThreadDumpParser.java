@@ -131,7 +131,7 @@ public class ThreadDumpParser {
   }
 
   @Nullable
-  private static String buildIdToDebugId(String buildId) {
+  private static String buildIdToDebugId(final @NotNull String buildId) {
     try {
       // Abuse BigInteger as a hex string parser. Extra byte needed to handle leading zeros.
       final ByteBuffer buf = ByteBuffer.wrap(new BigInteger("10" + buildId, 16).toByteArray());
