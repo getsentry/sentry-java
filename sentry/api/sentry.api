@@ -2023,7 +2023,8 @@ public final class io/sentry/RequestDetails {
 
 public final class io/sentry/SamplingContext {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;)V
-	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Ljava/lang/Double;)V
+	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Ljava/lang/Double;Ljava/util/Map;)V
+	public fun getAttribute (Ljava/lang/String;)Ljava/lang/Object;
 	public fun getCustomSamplingContext ()Lio/sentry/CustomSamplingContext;
 	public fun getSampleRand ()Ljava/lang/Double;
 	public fun getTransactionContext ()Lio/sentry/TransactionContext;
@@ -6094,6 +6095,7 @@ public final class io/sentry/util/CollectionUtils {
 	public static fun newArrayList (Ljava/util/List;)Ljava/util/List;
 	public static fun newConcurrentHashMap (Ljava/util/Map;)Ljava/util/Map;
 	public static fun newHashMap (Ljava/util/Map;)Ljava/util/Map;
+	public static fun reverseListIterator (Ljava/util/concurrent/CopyOnWriteArrayList;)Ljava/util/ListIterator;
 	public static fun size (Ljava/lang/Iterable;)I
 }
 

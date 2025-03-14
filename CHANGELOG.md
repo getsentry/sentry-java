@@ -4,6 +4,12 @@
 
 ### Fixes
 
+- Ensure app start type is set, even when ActivityLifecycleIntegration is not running ([#4250](https://github.com/getsentry/sentry-java/pull/4250))
+
+## 8.4.0
+
+### Fixes
+
 - The SDK now handles `null` on many APIs instead of expecting a non `null` value ([#4245](https://github.com/getsentry/sentry-java/pull/4245))
   - Certain APIs like `setTag`, `setData`, `setExtra`, `setContext` previously caused a `NullPointerException` when invoked with either `null` key or value.
   - The SDK now tries to have a sane fallback when `null` is passed and no longer throws `NullPointerException`
@@ -13,7 +19,15 @@
 - Add support for setting in-app-includes/in-app-excludes via AndroidManifest.xml ([#4240](https://github.com/getsentry/sentry-java/pull/4240))
 - Modifications to OkHttp requests are now properly propagated to the affected span / breadcrumbs ([#4238](https://github.com/getsentry/sentry-java/pull/4238))
   - Please ensure the SentryOkHttpInterceptor is added last to your OkHttpClient, as otherwise changes to the `Request`  by subsequent interceptors won't be considered
-- Ensure app start type is set, even when ActivityLifecycleIntegration is not running ([#4250](https://github.com/getsentry/sentry-java/pull/4250))
+- Fix "class ch.qos.logback.classic.spi.ThrowableProxyVO cannot be cast to class ch.qos.logback.classic.spi.ThrowableProxy" ([#4206](https://github.com/getsentry/sentry-java/pull/4206))
+  - In this case we cannot report the `Throwable` to Sentry as it's not available
+  - If you are using OpenTelemetry v1 `OpenTelemetryAppender`, please consider upgrading to v2
+- Pass OpenTelemetry span attributes into TracesSampler callback ([#4253](https://github.com/getsentry/sentry-java/pull/4253))
+  - `SamplingContext` now has a `getAttribute` method that grants access to OpenTelemetry span attributes via their String key (e.g. `http.request.method`)
+- Fix AbstractMethodError when using SentryTraced for Jetpack Compose ([#4255](https://github.com/getsentry/sentry-java/pull/4255))
+- Assume `http.client` for span `op` if not a root span ([#4257](https://github.com/getsentry/sentry-java/pull/4257))
+- Avoid unnecessary copies when using `CopyOnWriteArrayList` ([#4247](https://github.com/getsentry/sentry-java/pull/4247))
+  - This affects in particular `SentryTracer.getLatestActiveSpan` which would have previously copied all child span references. This may have caused `OutOfMemoryError` on certain devices due to high frequency of calling the method.
 
 ### Features
 
@@ -476,6 +490,24 @@ If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that
     - As a consequence the list of exceptions in the group on top of an issue is no longer shown in Sentry UI.
     - We are planning to improve this in the future but opted for this fix first.
 - Fix swallow NDK loadLibrary errors ([#4082](https://github.com/getsentry/sentry-java/pull/4082))
+
+## 7.22.1
+
+### Fixes
+
+- Fix Ensure app start type is set, even when ActivityLifecycleIntegration is not running ([#4216](https://github.com/getsentry/sentry-java/pull/4216))
+- Fix properly reset application/content-provider timespans for warm app starts ([#4244](https://github.com/getsentry/sentry-java/pull/4244))
+
+## 7.22.0
+
+### Fixes
+
+- Session Replay: Fix various crashes and issues ([#4135](https://github.com/getsentry/sentry-java/pull/4135))
+    - Fix `FileNotFoundException` when trying to read/write `.ongoing_segment` file
+    - Fix `IllegalStateException` when registering `onDrawListener`
+    - Fix SIGABRT native crashes on Motorola devices when encoding a video
+- (Jetpack Compose) Modifier.sentryTag now uses Modifier.Node ([#4029](https://github.com/getsentry/sentry-java/pull/4029))
+    - This allows Composables that use this modifier to be skippable
 
 ## 7.21.0
 
