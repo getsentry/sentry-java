@@ -174,8 +174,9 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
     // performance v2: Uses Process.getStartUptimeMillis()
     // requires API level 24+
-    if (buildInfoProvider.getSdkInfoVersion() < android.os.Build.VERSION_CODES.N) {
-      return;
+    if (buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
+      final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
+      appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
     }
 
     if (context instanceof Application) {
@@ -185,8 +186,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       return;
     }
 
-    final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
-    appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
-    appStartMetrics.registerApplicationForegroundCheck(app);
+    appStartMetrics.registerLifecycleCallbacks(app);
   }
 }
