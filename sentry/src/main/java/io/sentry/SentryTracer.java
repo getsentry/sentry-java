@@ -5,9 +5,9 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -155,7 +155,9 @@ public final class SentryTracer implements ITransaction {
     // abort all child-spans first, this ensures the transaction can be finished,
     // even if waitForChildren is true
     // iterate in reverse order to ensure leaf spans are processed before their parents
-    @NotNull final ListIterator<Span> iterator = children.listIterator(children.size());
+    @NotNull
+    final ListIterator<Span> iterator =
+        CollectionUtils.reverseListIterator((CopyOnWriteArrayList<Span>) this.children);
     while (iterator.hasPrevious()) {
       @NotNull final Span span = iterator.previous();
       span.setSpanFinishedCallback(null);
@@ -677,14 +679,13 @@ public final class SentryTracer implements ITransaction {
   }
 
   private boolean hasAllChildrenFinished() {
-    final List<Span> spans = new ArrayList<>(this.children);
-    if (!spans.isEmpty()) {
-      for (final Span span : spans) {
-        // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
-        // date
-        if (!span.isFinished() && span.getFinishDate() == null) {
-          return false;
-        }
+    @NotNull final ListIterator<Span> iterator = this.children.listIterator();
+    while (iterator.hasNext()) {
+      @NotNull final Span span = iterator.next();
+      // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
+      // date
+      if (!span.isFinished() && span.getFinishDate() == null) {
+        return false;
       }
     }
     return true;
@@ -777,7 +778,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public void setTag(final @NotNull String key, final @NotNull String value) {
+  public void setTag(final @Nullable String key, final @Nullable String value) {
     if (root.isFinished()) {
       scopes
           .getOptions()
@@ -790,7 +791,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @Nullable String getTag(final @NotNull String key) {
+  public @Nullable String getTag(final @Nullable String key) {
     return this.root.getTag(key);
   }
 
@@ -800,7 +801,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public void setData(@NotNull String key, @NotNull Object value) {
+  public void setData(@Nullable String key, @Nullable Object value) {
     if (root.isFinished()) {
       scopes
           .getOptions()
@@ -814,7 +815,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @Nullable Object getData(@NotNull String key) {
+  public @Nullable Object getData(@Nullable String key) {
     return this.root.getData(key);
   }
 
@@ -909,12 +910,13 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @Nullable ISpan getLatestActiveSpan() {
-    final List<Span> spans = new ArrayList<>(this.children);
-    if (!spans.isEmpty()) {
-      for (int i = spans.size() - 1; i >= 0; i--) {
-        if (!spans.get(i).isFinished()) {
-          return spans.get(i);
-        }
+    @NotNull
+    final ListIterator<Span> iterator =
+        CollectionUtils.reverseListIterator((CopyOnWriteArrayList<Span>) this.children);
+    while (iterator.hasPrevious()) {
+      @NotNull final Span span = iterator.previous();
+      if (!span.isFinished()) {
+        return span;
       }
     }
     return null;
@@ -973,7 +975,7 @@ public final class SentryTracer implements ITransaction {
 
   @ApiStatus.Internal
   @Override
-  public void setContext(final @NotNull String key, final @NotNull Object context) {
+  public void setContext(final @Nullable String key, final @Nullable Object context) {
     contexts.put(key, context);
   }
 

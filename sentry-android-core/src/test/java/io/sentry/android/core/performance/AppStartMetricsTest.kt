@@ -1,9 +1,12 @@
 package io.sentry.android.core.performance
 
+import android.app.Activity
 import android.app.Application
 import android.content.ContentProvider
 import android.os.Build
+import android.os.Bundle
 import android.os.Looper
+import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.DateUtils
 import io.sentry.ITransactionProfiler
@@ -78,6 +81,7 @@ class AppStartMetricsTest {
     @Test
     fun `if perf-2 is enabled and app start time span is started, appStartTimeSpanWithFallback returns it`() {
         val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
+        AppStartMetrics.getInstance().appStartType = AppStartMetrics.AppStartType.WARM
         appStartTimeSpan.start()
 
         val options = SentryAndroidOptions().apply {
@@ -91,7 +95,12 @@ class AppStartMetricsTest {
     @Test
     fun `if perf-2 is disabled but app start time span has started, appStartTimeSpanWithFallback returns the sdk init span instead`() {
         val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
-        appStartTimeSpan.start()
+        AppStartMetrics.getInstance().appStartType = AppStartMetrics.AppStartType.COLD
+        AppStartMetrics.getInstance().sdkInitTimeSpan.apply {
+            setStartedAt(123)
+            setStoppedAt(456)
+        }
+        appStartTimeSpan.setStartedAt(123)
 
         val options = SentryAndroidOptions().apply {
             isEnablePerformanceV2 = false
@@ -104,8 +113,11 @@ class AppStartMetricsTest {
 
     @Test
     fun `if perf-2 is enabled but app start time span has not started, appStartTimeSpanWithFallback returns the sdk init span instead`() {
-        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
-        assertTrue(appStartTimeSpan.hasNotStarted())
+        AppStartMetrics.getInstance().appStartType = AppStartMetrics.AppStartType.COLD
+        AppStartMetrics.getInstance().sdkInitTimeSpan.apply {
+            setStartedAt(123)
+            setStoppedAt(456)
+        }
 
         val options = SentryAndroidOptions().apply {
             isEnablePerformanceV2 = true
@@ -124,6 +136,8 @@ class AppStartMetricsTest {
     @Test
     fun `if app is launched in background, appStartTimeSpanWithFallback returns an empty span`() {
         AppStartMetrics.getInstance().isAppLaunchedInForeground = false
+        AppStartMetrics.getInstance().appStartType = AppStartMetrics.AppStartType.COLD
+
         val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
         appStartTimeSpan.start()
         assertTrue(appStartTimeSpan.hasStarted())
@@ -139,19 +153,65 @@ class AppStartMetricsTest {
     }
 
     @Test
-    fun `if app is launched in background with perfV2, appStartTimeSpanWithFallback returns an empty span`() {
-        val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
-        appStartTimeSpan.start()
-        assertTrue(appStartTimeSpan.hasStarted())
-        AppStartMetrics.getInstance().isAppLaunchedInForeground = false
-        AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
+    fun `if app is launched in background, but an activity launches later, a new warm start is reported with correct timings`() {
+        val metrics = AppStartMetrics.getInstance()
+        metrics.registerLifecycleCallbacks(mock<Application>())
 
-        val options = SentryAndroidOptions().apply {
-            isEnablePerformanceV2 = true
+        metrics.contentProviderOnCreateTimeSpans.add(
+            TimeSpan().apply {
+                description = "ExampleContentProvider"
+                setStartedAt(1)
+                setStoppedAt(2)
+            }
+        )
+
+        metrics.applicationOnCreateTimeSpan.apply {
+            setStartedAt(3)
+            setStoppedAt(4)
         }
 
-        val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
-        assertFalse(timeSpan.hasStarted())
+        // when the looper runs
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        // but no activity creation happened
+        // then the app wasn't launched in foreground and nothing should be sent
+        assertFalse(metrics.isAppLaunchedInForeground)
+        assertFalse(metrics.shouldSendStartMeasurements())
+
+        val now = TimeUnit.MINUTES.toMillis(2) + 1234567
+        SystemClock.setCurrentTimeMillis(now)
+
+        // once an activity launches
+        AppStartMetrics.getInstance().onActivityCreated(mock(), null)
+
+        // then it should restart the timespan
+        assertTrue(metrics.isAppLaunchedInForeground)
+        assertTrue(metrics.shouldSendStartMeasurements())
+        assertTrue(metrics.appStartTimeSpan.hasStarted())
+        assertEquals(now, metrics.appStartTimeSpan.startUptimeMs)
+        assertFalse(metrics.applicationOnCreateTimeSpan.hasStarted())
+        assertTrue(metrics.contentProviderOnCreateTimeSpans.isEmpty())
+    }
+
+    @Test
+    fun `if app is launched in background, the first created activity assumes a warm start`() {
+        val metrics = AppStartMetrics.getInstance()
+        metrics.appStartTimeSpan.start()
+        metrics.sdkInitTimeSpan.start()
+        metrics.registerLifecycleCallbacks(mock<Application>())
+
+        // when the handler callback is executed and no activity was launched
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        // isAppLaunchedInForeground should be false
+        assertFalse(metrics.isAppLaunchedInForeground)
+
+        // but when the first activity launches
+        metrics.onActivityCreated(mock<Activity>(), null)
+
+        // then a warm start should be set
+        assertTrue(metrics.isAppLaunchedInForeground)
+        assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
     }
 
     @Test
@@ -175,14 +235,15 @@ class AppStartMetricsTest {
 
     @Test
     fun `if activity is never started, returns an empty span`() {
-        AppStartMetrics.getInstance().registerApplicationForegroundCheck(mock())
+        AppStartMetrics.getInstance().registerLifecycleCallbacks(mock())
         val appStartTimeSpan = AppStartMetrics.getInstance().appStartTimeSpan
         appStartTimeSpan.setStartedAt(1)
         assertTrue(appStartTimeSpan.hasStarted())
         // Job on main thread checks if activity was launched
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-        val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(SentryAndroidOptions())
+        val timeSpan =
+            AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(SentryAndroidOptions())
         assertFalse(timeSpan.hasStarted())
     }
 
@@ -192,7 +253,7 @@ class AppStartMetricsTest {
         whenever(profiler.isRunning).thenReturn(true)
         AppStartMetrics.getInstance().appStartProfiler = profiler
 
-        AppStartMetrics.getInstance().registerApplicationForegroundCheck(mock())
+        AppStartMetrics.getInstance().registerLifecycleCallbacks(mock())
         // Job on main thread checks if activity was launched
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
@@ -206,7 +267,7 @@ class AppStartMetricsTest {
         AppStartMetrics.getInstance().appStartProfiler = profiler
         AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
 
-        AppStartMetrics.getInstance().registerApplicationForegroundCheck(mock())
+        AppStartMetrics.getInstance().registerLifecycleCallbacks(mock())
         // Job on main thread checks if activity was launched
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
@@ -234,33 +295,26 @@ class AppStartMetricsTest {
     @Test
     fun `when multiple registerApplicationForegroundCheck, only one callback is registered to application`() {
         val application = mock<Application>()
-        AppStartMetrics.getInstance().registerApplicationForegroundCheck(application)
-        AppStartMetrics.getInstance().registerApplicationForegroundCheck(application)
-        verify(application, times(1)).registerActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
+        AppStartMetrics.getInstance().registerLifecycleCallbacks(application)
+        AppStartMetrics.getInstance().registerLifecycleCallbacks(application)
+        verify(
+            application,
+            times(1)
+        ).registerActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
     }
 
     @Test
     fun `when registerApplicationForegroundCheck, a callback is registered to application`() {
         val application = mock<Application>()
-        AppStartMetrics.getInstance().registerApplicationForegroundCheck(application)
+        AppStartMetrics.getInstance().registerLifecycleCallbacks(application)
         verify(application).registerActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
-    }
-
-    @Test
-    fun `when registerApplicationForegroundCheck, a job is posted on main thread to unregistered the callback`() {
-        val application = mock<Application>()
-        AppStartMetrics.getInstance().registerApplicationForegroundCheck(application)
-        verify(application).registerActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
-        verify(application, never()).unregisterActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
-        Shadows.shadowOf(Looper.getMainLooper()).idle()
-        verify(application).unregisterActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
     }
 
     @Test
     fun `registerApplicationForegroundCheck set foreground state to false if no activity is running`() {
         val application = mock<Application>()
         AppStartMetrics.getInstance().isAppLaunchedInForeground = true
-        AppStartMetrics.getInstance().registerApplicationForegroundCheck(application)
+        AppStartMetrics.getInstance().registerLifecycleCallbacks(application)
         assertTrue(AppStartMetrics.getInstance().isAppLaunchedInForeground)
         // Main thread performs the check and sets the flag to false if no activity was created
         Shadows.shadowOf(Looper.getMainLooper()).idle()
@@ -271,19 +325,13 @@ class AppStartMetricsTest {
     fun `registerApplicationForegroundCheck keeps foreground state to true if an activity is running`() {
         val application = mock<Application>()
         AppStartMetrics.getInstance().isAppLaunchedInForeground = true
-        AppStartMetrics.getInstance().registerApplicationForegroundCheck(application)
+        AppStartMetrics.getInstance().registerLifecycleCallbacks(application)
         assertTrue(AppStartMetrics.getInstance().isAppLaunchedInForeground)
         // An activity was created
         AppStartMetrics.getInstance().onActivityCreated(mock(), null)
         // Main thread performs the check and keeps the flag to true
         Shadows.shadowOf(Looper.getMainLooper()).idle()
         assertTrue(AppStartMetrics.getInstance().isAppLaunchedInForeground)
-    }
-
-    @Test
-    fun `isColdStartValid is false if app was launched in background`() {
-        AppStartMetrics.getInstance().isAppLaunchedInForeground = false
-        assertFalse(AppStartMetrics.getInstance().isColdStartValid)
     }
 
     @Test
@@ -294,7 +342,6 @@ class AppStartMetricsTest {
         appStartTimeSpan.setStartedAt(1)
         appStartTimeSpan.setStoppedAt(TimeUnit.MINUTES.toMillis(1) + 2)
         AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
-        assertFalse(AppStartMetrics.getInstance().isColdStartValid)
     }
 
     @Test
@@ -310,20 +357,105 @@ class AppStartMetricsTest {
     }
 
     @Test
-    fun `restartAppStart set measurement flag and clear internal lists`() {
+    fun `a warm start gets reported after a cold start`() {
         val appStartMetrics = AppStartMetrics.getInstance()
-        appStartMetrics.onAppStartSpansSent()
-        appStartMetrics.isAppLaunchedInForeground = false
-        assertFalse(appStartMetrics.shouldSendStartMeasurements())
-        assertFalse(appStartMetrics.isColdStartValid)
 
-        appStartMetrics.restartAppStart(10)
+        // when the first activity launches and gets destroyed
+        val activity0 = mock<Activity>()
+        whenever(activity0.isChangingConfigurations).thenReturn(false)
+        appStartMetrics.onActivityCreated(activity0, null)
 
+        // then the app start type should be cold and measurements should be sent
+        assertEquals(AppStartMetrics.AppStartType.COLD, appStartMetrics.appStartType)
         assertTrue(appStartMetrics.shouldSendStartMeasurements())
-        assertTrue(appStartMetrics.isColdStartValid)
-        assertTrue(appStartMetrics.appStartTimeSpan.hasStarted())
-        assertTrue(appStartMetrics.appStartTimeSpan.hasNotStopped())
-        assertEquals(10, appStartMetrics.appStartTimeSpan.startUptimeMs)
+
+        // when the activity gets destroyed
+        appStartMetrics.onAppStartSpansSent()
+        assertFalse(appStartMetrics.shouldSendStartMeasurements())
+
+        appStartMetrics.onActivityDestroyed(activity0)
+
+        // then it should reset sending the measurements for the next warm activity
+        appStartMetrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+        assertEquals(AppStartMetrics.AppStartType.WARM, appStartMetrics.appStartType)
+        assertTrue(appStartMetrics.shouldSendStartMeasurements())
+    }
+
+    @Test
+    fun `provider sets both appstart and sdk init start + end times`() {
+        val metrics = AppStartMetrics.getInstance()
+        metrics.appStartTimeSpan.start()
+        metrics.sdkInitTimeSpan.start()
+
+        assertFalse(metrics.appStartTimeSpan.hasStopped())
+        assertFalse(metrics.sdkInitTimeSpan.hasStopped())
+
+        metrics.onFirstFrameDrawn()
+
+        assertTrue(metrics.appStartTimeSpan.hasStopped())
+        assertTrue(metrics.sdkInitTimeSpan.hasStopped())
+    }
+
+    @Test
+    fun `Sets app launch type to cold`() {
+        val metrics = AppStartMetrics.getInstance()
+        assertEquals(
+            AppStartMetrics.AppStartType.UNKNOWN,
+            AppStartMetrics.getInstance().appStartType
+        )
+
+        val app = mock<Application>()
+        metrics.registerLifecycleCallbacks(app)
+        metrics.onActivityCreated(mock<Activity>(), null)
+
+        // then the app start is considered cold
+        assertEquals(AppStartMetrics.AppStartType.COLD, AppStartMetrics.getInstance().appStartType)
+
+        // when any subsequent activity launches
+        metrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+
+        // then the app start is still considered cold
+        assertEquals(AppStartMetrics.AppStartType.COLD, AppStartMetrics.getInstance().appStartType)
+    }
+
+    @Test
+    fun `Sets app launch type to warm if process init was too long ago`() {
+        val metrics = AppStartMetrics.getInstance()
+        assertEquals(
+            AppStartMetrics.AppStartType.UNKNOWN,
+            AppStartMetrics.getInstance().appStartType
+        )
+        val app = mock<Application>()
+        metrics.registerLifecycleCallbacks(app)
+
+        // when an activity is created later with a null bundle
+        SystemClock.setCurrentTimeMillis(TimeUnit.MINUTES.toMillis(2))
+        metrics.onActivityCreated(mock<Activity>(), null)
+
+        // then the app start is considered warm
+        assertEquals(AppStartMetrics.AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
+    }
+
+    @Test
+    fun `Sets app launch type to warm`() {
+        val metrics = AppStartMetrics.getInstance()
+        assertEquals(
+            AppStartMetrics.AppStartType.UNKNOWN,
+            AppStartMetrics.getInstance().appStartType
+        )
+
+        val app = mock<Application>()
+        metrics.registerLifecycleCallbacks(app)
+        metrics.onActivityCreated(mock<Activity>(), mock<Bundle>())
+
+        // then the app start is considered warm
+        assertEquals(AppStartMetrics.AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
+
+        // when any subsequent activity launches
+        metrics.onActivityCreated(mock<Activity>(), null)
+
+        // then the app start is still considered warm
+        assertEquals(AppStartMetrics.AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
     }
 
     @Test

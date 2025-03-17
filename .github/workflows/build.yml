@@ -37,7 +37,7 @@ jobs:
           key: build-logic-${{ hashFiles('buildSrc/src/**', 'buildSrc/build.gradle.kts','buildSrc/settings.gradle.kts') }}
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@aa23778d2dc6f6556fcc7164e99babbd8c3134e4 # pin@v3
+        uses: gradle/actions/setup-gradle@4a417b5b1a01db0b076987546b67f8de18e7d340 # pin@v3
         with:
           gradle-home-cache-cleanup: true
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
@@ -46,7 +46,7 @@ jobs:
         run: make preMerge
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # pin@v4
+        uses: codecov/codecov-action@0565863a31f2c772f9f0395002a31e3f06189574 # pin@v4
         with:
           name: sentry-java
           fail_ci_if_error: false

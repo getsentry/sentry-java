@@ -9,7 +9,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
 import io.sentry.FullyDisplayedReporter;
 import io.sentry.IScope;
 import io.sentry.IScopes;
@@ -83,7 +82,6 @@ public final class ActivityLifecycleIntegration
   private final @NotNull WeakHashMap<Activity, ActivityLifecycleSpanHelper> activitySpanHelpers =
       new WeakHashMap<>();
   private @NotNull SentryDate lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
-  private long lastPausedUptimeMillis = 0;
   private @Nullable Future<?> ttfdAutoCloseFuture = null;
 
   // WeakHashMap isn't thread safe but ActivityLifecycleCallbacks is only called from the
@@ -161,7 +159,9 @@ public final class ActivityLifecycleIntegration
     if (scopes != null && !isRunningTransactionOrTrace(activity)) {
       if (!performanceEnabled) {
         activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
-        TracingUtils.startNewTrace(scopes);
+        if (options.isEnableAutoTraceIdGeneration()) {
+          TracingUtils.startNewTrace(scopes);
+        }
       } else {
         // as we allow a single transaction running on the bound Scope, we finish the previous ones
         stopPreviousTransactions();
@@ -398,7 +398,6 @@ public final class ActivityLifecycleIntegration
         scopes != null
             ? scopes.getOptions().getDateProvider().now()
             : AndroidDateUtils.getCurrentSentryDateTime();
-    lastPausedUptimeMillis = SystemClock.uptimeMillis();
     helper.setOnCreateStartTimestamp(lastPausedTime);
   }
 
@@ -409,7 +408,6 @@ public final class ActivityLifecycleIntegration
       onActivityPreCreated(activity, savedInstanceState);
     }
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      setColdStart(savedInstanceState);
       if (scopes != null && options != null && options.isEnableScreenTracking()) {
         final @Nullable String activityClassName = ClassUtil.getClassName(activity);
         scopes.configureScope(scope -> scope.setScreen(activityClassName));
@@ -514,7 +512,6 @@ public final class ActivityLifecycleIntegration
         scopes != null
             ? scopes.getOptions().getDateProvider().now()
             : AndroidDateUtils.getCurrentSentryDateTime();
-    lastPausedUptimeMillis = SystemClock.uptimeMillis();
   }
 
   @Override
@@ -575,7 +572,7 @@ public final class ActivityLifecycleIntegration
       // if the activity is opened again and not in memory, transactions will be created normally.
       activitiesWithOngoingTransactions.remove(activity);
 
-      if (activitiesWithOngoingTransactions.isEmpty()) {
+      if (activitiesWithOngoingTransactions.isEmpty() && !activity.isChangingConfigurations()) {
         clear();
       }
     }
@@ -584,7 +581,6 @@ public final class ActivityLifecycleIntegration
   private void clear() {
     firstActivityCreated = false;
     lastPausedTime = new SentryNanotimeDate(new Date(0), 0);
-    lastPausedUptimeMillis = 0;
     activitySpanHelpers.clear();
   }
 
@@ -724,27 +720,6 @@ public final class ActivityLifecycleIntegration
   @NotNull
   WeakHashMap<Activity, ISpan> getTtfdSpanMap() {
     return ttfdSpanMap;
-  }
-
-  private void setColdStart(final @Nullable Bundle savedInstanceState) {
-    if (!firstActivityCreated) {
-      final @NotNull TimeSpan appStartSpan = AppStartMetrics.getInstance().getAppStartTimeSpan();
-      // If the app start span already started and stopped, it means the app restarted without
-      //  killing the process, so we are in a warm start
-      // If the app has an invalid cold start, it means it was started in the background, like
-      //  via BroadcastReceiver, so we consider it a warm start
-      if ((appStartSpan.hasStarted() && appStartSpan.hasStopped())
-          || (!AppStartMetrics.getInstance().isColdStartValid())) {
-        AppStartMetrics.getInstance().restartAppStart(lastPausedUptimeMillis);
-        AppStartMetrics.getInstance().setAppStartType(AppStartMetrics.AppStartType.WARM);
-      } else {
-        AppStartMetrics.getInstance()
-            .setAppStartType(
-                savedInstanceState == null
-                    ? AppStartMetrics.AppStartType.COLD
-                    : AppStartMetrics.AppStartType.WARM);
-      }
-    }
   }
 
   private @NotNull String getTtidDesc(final @NotNull String activityName) {
