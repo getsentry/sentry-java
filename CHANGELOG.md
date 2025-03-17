@@ -4,6 +4,23 @@
 
 ### Fixes
 
+- Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))
+- Ensure app start type is set, even when ActivityLifecycleIntegration is not running ([#4250](https://github.com/getsentry/sentry-java/pull/4250))
+
+### Behavioral Changes
+
+- The user's `device.name` is not reported anymore via the device context, even if `options.isSendDefaultPii` is enabled ([#4179](https://github.com/getsentry/sentry-java/pull/4179))
+
+### Dependencies
+
+- Bump Gradle from v8.12.1 to v8.13.0 ([#4209](https://github.com/getsentry/sentry-java/pull/4209))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8130)
+  - [diff](https://github.com/gradle/gradle/compare/v8.12.1...v8.13.0)
+
+## 8.4.0
+
+### Fixes
+
 - The SDK now handles `null` on many APIs instead of expecting a non `null` value ([#4245](https://github.com/getsentry/sentry-java/pull/4245))
   - Certain APIs like `setTag`, `setData`, `setExtra`, `setContext` previously caused a `NullPointerException` when invoked with either `null` key or value.
   - The SDK now tries to have a sane fallback when `null` is passed and no longer throws `NullPointerException`
@@ -20,6 +37,8 @@
   - `SamplingContext` now has a `getAttribute` method that grants access to OpenTelemetry span attributes via their String key (e.g. `http.request.method`)
 - Fix AbstractMethodError when using SentryTraced for Jetpack Compose ([#4255](https://github.com/getsentry/sentry-java/pull/4255))
 - Assume `http.client` for span `op` if not a root span ([#4257](https://github.com/getsentry/sentry-java/pull/4257))
+- Avoid unnecessary copies when using `CopyOnWriteArrayList` ([#4247](https://github.com/getsentry/sentry-java/pull/4247))
+  - This affects in particular `SentryTracer.getLatestActiveSpan` which would have previously copied all child span references. This may have caused `OutOfMemoryError` on certain devices due to high frequency of calling the method.
 
 ### Features
 

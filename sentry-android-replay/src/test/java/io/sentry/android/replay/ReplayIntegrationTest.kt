@@ -32,6 +32,7 @@ import io.sentry.android.replay.capture.SessionCaptureStrategy
 import io.sentry.android.replay.capture.SessionCaptureStrategyTest.Fixture.Companion.VIDEO_DURATION
 import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.cache.PersistingScopeObserver
+import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
@@ -59,6 +60,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
+import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -456,6 +458,7 @@ class ReplayIntegrationTest {
         val oldReplayId = SentryId()
 
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+        fixture.options.addScopeObserver(PersistingScopeObserver(fixture.options))
         val oldReplay =
             File(fixture.options.cacheDirPath, "replay_$oldReplayId").also { it.mkdirs() }
         val screenshot = File(oldReplay, "1720693523997.jpg").also { it.createNewFile() }
@@ -472,17 +475,18 @@ class ReplayIntegrationTest {
             it.writeText("\"$oldReplayId\"")
         }
         val breadcrumbsFile = File(scopeCache, PersistingScopeObserver.BREADCRUMBS_FILENAME)
+        val queueFile = QueueFile.Builder(breadcrumbsFile).build()
+        val baos = ByteArrayOutputStream()
         fixture.options.serializer.serialize(
-            listOf(
-                Breadcrumb(DateUtils.getDateTime("2024-07-11T10:25:23.454Z")).apply {
-                    category = "navigation"
-                    type = "navigation"
-                    setData("from", "from")
-                    setData("to", "to")
-                }
-            ),
-            breadcrumbsFile.writer()
+            Breadcrumb(DateUtils.getDateTime("2024-07-11T10:25:23.454Z")).apply {
+                category = "navigation"
+                type = "navigation"
+                setData("from", "from")
+                setData("to", "to")
+            },
+            baos.writer()
         )
+        queueFile.add(baos.toByteArray())
         File(oldReplay, ONGOING_SEGMENT).also {
             it.writeText(
                 """
