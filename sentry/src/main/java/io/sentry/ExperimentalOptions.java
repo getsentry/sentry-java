@@ -1,5 +1,7 @@
 package io.sentry;
 
+import io.sentry.protocol.SdkVersion;
+import org.jetbrains.annotations.Nullable;
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -38,18 +40,7 @@ public final class ExperimentalOptions {
    */
   private boolean startProfilerOnAppStart = false;
 
-  public ExperimentalOptions(final boolean empty) {
-    this.sessionReplay = new SentryReplayOptions(empty);
-  }
-
-  @NotNull
-  public SentryReplayOptions getSessionReplay() {
-    return sessionReplay;
-  }
-
-  public void setSessionReplay(final @NotNull SentryReplayOptions sessionReplayOptions) {
-    this.sessionReplay = sessionReplayOptions;
-  }
+  public ExperimentalOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {}
 
   /**
    * Returns whether the profiling cycle is controlled manually or based on the trace lifecycle.

@@ -14,6 +14,7 @@ import io.sentry.test.DeferredExecutorService
 import io.sentry.test.callMethod
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.createTestScopes
+import io.sentry.test.initForTest
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
 import junit.framework.TestCase.assertSame
@@ -27,6 +28,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -79,7 +81,13 @@ class ScopesTest {
 
     @Test
     fun `when no dsn available, ctor throws illegal arg`() {
-        val ex = assertFailsWith<IllegalArgumentException> { createScopes(SentryOptions()) }
+        val ex = assertFailsWith<IllegalArgumentException> {
+            val options = SentryOptions()
+            val scopeToUse = Scope(options)
+            val isolationScopeToUse = Scope(options)
+            val globalScopeToUse = Scope(options)
+            Scopes(scopeToUse, isolationScopeToUse, globalScopeToUse, "test")
+        }
         assertEquals("Scopes requires a DSN to be instantiated. Considering using the NoOpScopes if no DSN is available.", ex.message)
     }
 
@@ -92,6 +100,7 @@ class ScopesTest {
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
         val scopes = createScopes(options)
+        reset(integrationMock)
         scopes.forkedScopes("test")
         verifyNoMoreInteractions(integrationMock)
     }
@@ -105,6 +114,7 @@ class ScopesTest {
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
         val scopes = createScopes(options)
+        reset(integrationMock)
         scopes.forkedCurrentScope("test")
         verifyNoMoreInteractions(integrationMock)
     }
@@ -967,7 +977,7 @@ class ScopesTest {
 
         var options: SentryOptions? = null
         // init main scopes and make it enabled
-        Sentry.init {
+        initForTest {
             it.addIntegration(mock)
             it.dsn = "https://key@sentry.io/proj"
             it.cacheDirPath = file.absolutePath
@@ -1798,6 +1808,7 @@ class ScopesTest {
     fun `Scopes should close the sentry executor processor, profiler and performance collector on close call`() {
         val executor = mock<ISentryExecutorService>()
         val profiler = mock<ITransactionProfiler>()
+        val backpressureMonitorMock = mock<IBackpressureMonitor>()
         val continuousProfiler = mock<IContinuousProfiler>()
         val performanceCollector = mock<CompositePerformanceCollector>()
         val options = SentryOptions().apply {
@@ -1808,9 +1819,11 @@ class ScopesTest {
             compositePerformanceCollector = performanceCollector
             setContinuousProfiler(continuousProfiler)
             experimental.profileSessionSampleRate = 1.0
+            backpressureMonitor = backpressureMonitorMock
         }
         val sut = createScopes(options)
         sut.close()
+        verify(backpressureMonitorMock).close()
         verify(executor).close(any())
         verify(profiler).close()
         verify(continuousProfiler).close()
@@ -2065,6 +2078,23 @@ class ScopesTest {
     }
 
     @Test
+    fun `continueTrace creates propagation context from headers and returns transaction context if performance enabled no sampled value`() {
+        val scopes = generateScopes()
+        val traceId = SentryId()
+        val parentSpanId = SpanId()
+        val transactionContext = scopes.continueTrace("$traceId-$parentSpanId", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
+
+        scopes.configureScope { scope ->
+            assertEquals(traceId, scope.propagationContext.traceId)
+            assertEquals(parentSpanId, scope.propagationContext.parentSpanId)
+        }
+
+        assertEquals(traceId, transactionContext!!.traceId)
+        assertEquals(parentSpanId, transactionContext!!.parentSpanId)
+        assertEquals(null, transactionContext!!.parentSamplingDecision)
+    }
+
+    @Test
     fun `continueTrace creates new propagation context if header invalid and returns transaction context if performance enabled`() {
         val scopes = generateScopes()
         val traceId = SentryId()
@@ -2163,7 +2193,7 @@ class ScopesTest {
     @Test
     fun `creating a transaction with an ignored origin noops`() {
         val scopes = generateScopes {
-            it.ignoredSpanOrigins = listOf("ignored.span.origin")
+            it.setIgnoredSpanOrigins(listOf("ignored.span.origin"))
         }
 
         val transactionContext = TransactionContext("transaction-name", "transaction-op")
@@ -2180,7 +2210,7 @@ class ScopesTest {
     @Test
     fun `creating a transaction with a non ignored origin creates the transaction`() {
         val scopes = generateScopes {
-            it.ignoredSpanOrigins = listOf("ignored.span.origin")
+            it.setIgnoredSpanOrigins(listOf("ignored.span.origin"))
         }
 
         val transactionContext = TransactionContext("transaction-name", "transaction-op")
@@ -2296,6 +2326,30 @@ class ScopesTest {
     }
 
     //endregion
+
+    @Test
+    fun `null tags do not cause NPE`() {
+        val scopes = generateScopes()
+        scopes.setTag(null, null)
+        scopes.setTag("k", null)
+        scopes.setTag(null, "v")
+        scopes.removeTag(null)
+        assertTrue(scopes.scope.tags.isEmpty())
+        assertTrue(scopes.isolationScope.tags.isEmpty())
+        assertTrue(scopes.globalScope.tags.isEmpty())
+    }
+
+    @Test
+    fun `null extras do not cause NPE`() {
+        val scopes = generateScopes()
+        scopes.setExtra(null, null)
+        scopes.setExtra("k", null)
+        scopes.setExtra(null, "v")
+        scopes.removeExtra(null)
+        assertTrue(scopes.scope.extras.isEmpty())
+        assertTrue(scopes.isolationScope.extras.isEmpty())
+        assertTrue(scopes.globalScope.extras.isEmpty())
+    }
 
     private val dsnTest = "https://key@sentry.io/proj"
 

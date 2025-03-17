@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.backpressure.IBackpressureMonitor;
 import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.clientreport.ClientReportRecorder;
 import io.sentry.clientreport.IClientReportRecorder;
 import io.sentry.clientreport.NoOpClientReportRecorder;
@@ -68,6 +69,12 @@ public class SentryOptions {
   /** Exceptions that once captured will not be sent to Sentry as {@link SentryEvent}. */
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
+
+  /**
+   * Strings or regex patterns that possible error messages for an event will be tested against. If
+   * there is a match, the captured event will not be sent to Sentry.
+   */
+  private @Nullable List<FilterString> ignoredErrors = null;
 
   /**
    * Code that provides middlewares, bindings or hooks into certain frameworks or environments,
@@ -468,13 +475,20 @@ public class SentryOptions {
   /** Whether to enable scope persistence so the scope values are preserved if the process dies */
   private boolean enableScopePersistence = true;
 
-  /** Contains a list of monitor slugs for which check-ins should not be sent. */
-  @ApiStatus.Experimental private @Nullable List<String> ignoredCheckIns = null;
+  /** The monitor slugs for which captured check-ins should not be sent to Sentry. */
+  @ApiStatus.Experimental private @Nullable List<FilterString> ignoredCheckIns = null;
 
-  /** Contains a list of span origins for which spans / transactions should not be created. */
-  @ApiStatus.Experimental private @Nullable List<String> ignoredSpanOrigins = null;
+  /**
+   * Strings or regex patterns that the origin of a new span/transaction will be tested against. If
+   * there is a match, the span/transaction will not be created.
+   */
+  @ApiStatus.Experimental private @Nullable List<FilterString> ignoredSpanOrigins = null;
 
-  private @Nullable List<String> ignoredTransactions = null;
+  /**
+   * Strings or regex patterns that captured transaction names will be tested against. If there is a
+   * match, the transaction will not be sent to Sentry.
+   */
+  private @Nullable List<FilterString> ignoredTransactions = null;
 
   @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
@@ -519,6 +533,11 @@ public class SentryOptions {
 
   protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
+  private @NotNull SentryOpenTelemetryMode openTelemetryMode = SentryOpenTelemetryMode.AUTO;
+
+  private @NotNull SentryReplayOptions sessionReplay;
+
+  @ApiStatus.Experimental private boolean captureOpenTelemetryEvents = false;
   /**
    * Adds an event processor
    *
@@ -1402,6 +1421,13 @@ public class SentryOptions {
    */
   @ApiStatus.Internal
   public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
+    final @Nullable SdkVersion replaySdkVersion = getSessionReplay().getSdkVersion();
+    if (this.sdkVersion != null
+        && replaySdkVersion != null
+        && this.sdkVersion.equals(replaySdkVersion)) {
+      // if sdkVersion = sessionReplay.sdkVersion we override it, as it means no one else set it
+      getSessionReplay().setSdkVersion(sdkVersion);
+    }
     this.sdkVersion = sdkVersion;
   }
 
@@ -1430,6 +1456,17 @@ public class SentryOptions {
   @NotNull
   public List<IScopeObserver> getScopeObservers() {
     return observers;
+  }
+
+  @ApiStatus.Internal
+  @Nullable
+  public PersistingScopeObserver findPersistingScopeObserver() {
+    for (final @NotNull IScopeObserver observer : observers) {
+      if (observer instanceof PersistingScopeObserver) {
+        return (PersistingScopeObserver) observer;
+      }
+    }
+    return null;
   }
 
   /**
@@ -1485,8 +1522,15 @@ public class SentryOptions {
    * @param key the key
    * @param value the value
    */
-  public void setTag(final @NotNull String key, final @NotNull String value) {
-    this.tags.put(key, value);
+  public void setTag(final @Nullable String key, final @Nullable String value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      this.tags.remove(key);
+    } else {
+      this.tags.put(key, value);
+    }
   }
 
   /**
@@ -1565,6 +1609,55 @@ public class SentryOptions {
    */
   boolean containsIgnoredExceptionForType(final @NotNull Throwable throwable) {
     return this.ignoredExceptionsForType.contains(throwable.getClass());
+  }
+
+  /**
+   * Returns the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
+   * an event shall be sent to Sentry or ignored.
+   *
+   * @return the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   *     `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine
+   *     if an event shall be sent to Sentry or ignored
+   */
+  public @Nullable List<FilterString> getIgnoredErrors() {
+    return ignoredErrors;
+  }
+
+  /**
+   * Sets the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
+   * an event shall be sent to Sentry or ignored.
+   *
+   * @param ignoredErrors the list of strings/regex patterns
+   */
+  public void setIgnoredErrors(final @Nullable List<String> ignoredErrors) {
+    if (ignoredErrors == null) {
+      this.ignoredErrors = null;
+    } else {
+      @NotNull final List<FilterString> patterns = new ArrayList<>();
+      for (String pattern : ignoredErrors) {
+        if (pattern != null && !pattern.isEmpty()) {
+          patterns.add(new FilterString(pattern));
+        }
+      }
+
+      this.ignoredErrors = patterns;
+    }
+  }
+
+  /**
+   * Adds an item to the list of strings/regex patterns that `event.message`, `event.formatted`, and
+   * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
+   * an event shall be sent to Sentry or ignored.
+   *
+   * @param pattern the string/regex pattern
+   */
+  public void addIgnoredError(final @NotNull String pattern) {
+    if (ignoredErrors == null) {
+      ignoredErrors = new ArrayList<>();
+    }
+    ignoredErrors.add(new FilterString(pattern));
   }
 
   /**
@@ -1846,7 +1939,6 @@ public class SentryOptions {
     return tracePropagationTargets;
   }
 
-  @ApiStatus.Internal
   public void setTracePropagationTargets(final @Nullable List<String> tracePropagationTargets) {
     if (tracePropagationTargets == null) {
       this.tracePropagationTargets = null;
@@ -2248,36 +2340,46 @@ public class SentryOptions {
     this.sendModules = sendModules;
   }
 
+  /**
+   * Returns the list of strings/regex patterns the origin of a new span/transaction will be tested
+   * against to determine whether the span/transaction shall be created.
+   *
+   * @return the list of strings or regex patterns
+   */
   @ApiStatus.Experimental
-  public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
-    if (ignoredCheckIns == null) {
-      this.ignoredCheckIns = null;
-    } else {
-      @NotNull final List<String> filteredIgnoredCheckIns = new ArrayList<>();
-      for (String slug : ignoredCheckIns) {
-        if (!slug.isEmpty()) {
-          filteredIgnoredCheckIns.add(slug);
-        }
-      }
-
-      this.ignoredCheckIns = filteredIgnoredCheckIns;
-    }
-  }
-
-  @ApiStatus.Experimental
-  public @Nullable List<String> getIgnoredSpanOrigins() {
+  public @Nullable List<FilterString> getIgnoredSpanOrigins() {
     return ignoredSpanOrigins;
   }
 
+  /**
+   * Adds an item to the list of strings/regex patterns the origin of a new span/transaction will be
+   * tested against to determine whether the span/transaction shall be created.
+   *
+   * @param ignoredSpanOrigin the string/regex pattern
+   */
+  @ApiStatus.Experimental
+  public void addIgnoredSpanOrigin(String ignoredSpanOrigin) {
+    if (ignoredSpanOrigins == null) {
+      ignoredSpanOrigins = new ArrayList<>();
+    }
+    ignoredSpanOrigins.add(new FilterString(ignoredSpanOrigin));
+  }
+
+  /**
+   * Sets the list of strings/regex patterns the origin of a new span/transaction will be tested
+   * against to determine whether the span/transaction shall be created.
+   *
+   * @param ignoredSpanOrigins the list of strings/regex patterns
+   */
   @ApiStatus.Experimental
   public void setIgnoredSpanOrigins(final @Nullable List<String> ignoredSpanOrigins) {
     if (ignoredSpanOrigins == null) {
       this.ignoredSpanOrigins = null;
     } else {
-      @NotNull final List<String> filtered = new ArrayList<>();
+      @NotNull final List<FilterString> filtered = new ArrayList<>();
       for (String origin : ignoredSpanOrigins) {
         if (origin != null && !origin.isEmpty()) {
-          filtered.add(origin);
+          filtered.add(new FilterString(origin));
         }
       }
 
@@ -2285,24 +2387,90 @@ public class SentryOptions {
     }
   }
 
+  /**
+   * Returns the list of monitor slugs for which captured check-ins should not be sent to Sentry.
+   *
+   * @return the list of monitor slugs
+   */
   @ApiStatus.Experimental
-  public @Nullable List<String> getIgnoredCheckIns() {
+  public @Nullable List<FilterString> getIgnoredCheckIns() {
     return ignoredCheckIns;
   }
 
-  public @Nullable List<String> getIgnoredTransactions() {
+  /**
+   * Adds a monitor slug to the list of slugs for which captured check-ins should not be sent to
+   * Sentry.
+   *
+   * @param ignoredCheckIn the monitor slug
+   */
+  @ApiStatus.Experimental
+  public void addIgnoredCheckIn(String ignoredCheckIn) {
+    if (ignoredCheckIns == null) {
+      ignoredCheckIns = new ArrayList<>();
+    }
+    ignoredCheckIns.add(new FilterString(ignoredCheckIn));
+  }
+
+  /**
+   * Sets the list of monitor slugs for which captured check-ins should not be sent to Sentry.
+   *
+   * @param ignoredCheckIns the list of monitor slugs for which check-ins should not be sent
+   */
+  @ApiStatus.Experimental
+  public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
+    if (ignoredCheckIns == null) {
+      this.ignoredCheckIns = null;
+    } else {
+      @NotNull final List<FilterString> filteredIgnoredCheckIns = new ArrayList<>();
+      for (String slug : ignoredCheckIns) {
+        if (!slug.isEmpty()) {
+          filteredIgnoredCheckIns.add(new FilterString(slug));
+        }
+      }
+
+      this.ignoredCheckIns = filteredIgnoredCheckIns;
+    }
+  }
+
+  /**
+   * Returns the list of strings/regex patterns that captured transaction names are checked against
+   * to determine if a transaction shall be sent to Sentry or ignored.
+   *
+   * @return the list of strings/regex patterns
+   */
+  public @Nullable List<FilterString> getIgnoredTransactions() {
     return ignoredTransactions;
   }
 
+  /**
+   * Adds an element the list of strings/regex patterns that captured transaction names are checked
+   * against to determine if a transaction shall be sent to Sentry or ignored.
+   *
+   * @param ignoredTransaction the string/regex pattern
+   */
+  @ApiStatus.Experimental
+  public void addIgnoredTransaction(String ignoredTransaction) {
+    if (ignoredTransactions == null) {
+      ignoredTransactions = new ArrayList<>();
+    }
+    ignoredTransactions.add(new FilterString(ignoredTransaction));
+  }
+
+  /**
+   * Sets the list of strings/regex patterns that captured transaction names are checked against to
+   * determine if a transaction shall be sent to Sentry or ignored.
+   *
+   * @param ignoredTransactions the list of string/regex patterns
+   */
   @ApiStatus.Experimental
   public void setIgnoredTransactions(final @Nullable List<String> ignoredTransactions) {
     if (ignoredTransactions == null) {
       this.ignoredTransactions = null;
     } else {
-      @NotNull final List<String> filtered = new ArrayList<>();
+      @NotNull final List<FilterString> filtered = new ArrayList<>();
       for (String transactionName : ignoredTransactions) {
         if (transactionName != null && !transactionName.isEmpty()) {
-          filtered.add(transactionName);
+          filtered.add(new FilterString(transactionName));
         }
       }
 
@@ -2535,6 +2703,44 @@ public class SentryOptions {
   }
 
   /**
+   * Configures the SDK to either automatically determine if OpenTelemetry is available, whether to
+   * use it and what way to use it in.
+   *
+   * <p>See {@link SentryOpenTelemetryMode}
+   *
+   * <p>By default the SDK will use OpenTelemetry if available, preferring the agent. On Android
+   * OpenTelemetry is not used.
+   *
+   * @param openTelemetryMode the mode
+   */
+  public void setOpenTelemetryMode(final @NotNull SentryOpenTelemetryMode openTelemetryMode) {
+    this.openTelemetryMode = openTelemetryMode;
+  }
+
+  public @NotNull SentryOpenTelemetryMode getOpenTelemetryMode() {
+    return openTelemetryMode;
+  }
+
+  @NotNull
+  public SentryReplayOptions getSessionReplay() {
+    return sessionReplay;
+  }
+
+  public void setSessionReplay(final @NotNull SentryReplayOptions sessionReplayOptions) {
+    this.sessionReplay = sessionReplayOptions;
+  }
+
+  @ApiStatus.Experimental
+  public void setCaptureOpenTelemetryEvents(final boolean captureOpenTelemetryEvents) {
+    this.captureOpenTelemetryEvents = captureOpenTelemetryEvents;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isCaptureOpenTelemetryEvents() {
+    return captureOpenTelemetryEvents;
+  }
+
+  /**
    * Load the lazy fields. Useful to load in the background, so that results are already cached. DO
    * NOT CALL THIS METHOD ON THE MAIN THREAD.
    */
@@ -2683,7 +2889,9 @@ public class SentryOptions {
    * @param empty if options should be empty.
    */
   private SentryOptions(final boolean empty) {
-    experimental = new ExperimentalOptions(empty);
+    final @NotNull SdkVersion sdkVersion = createSdkVersion();
+    experimental = new ExperimentalOptions(empty, sdkVersion);
+    sessionReplay = new SentryReplayOptions(empty, sdkVersion);
     if (!empty) {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
       // SentryExecutorService should be initialized before any
@@ -2705,7 +2913,7 @@ public class SentryOptions {
       }
 
       setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
-      setSdkVersion(createSdkVersion());
+      setSdkVersion(sdkVersion);
       addPackageInfo();
     }
   }
@@ -2812,6 +3020,10 @@ public class SentryOptions {
       final List<String> ignoredTransactions = new ArrayList<>(options.getIgnoredTransactions());
       setIgnoredTransactions(ignoredTransactions);
     }
+    if (options.getIgnoredErrors() != null) {
+      final List<String> ignoredExceptions = new ArrayList<>(options.getIgnoredErrors());
+      setIgnoredErrors(ignoredExceptions);
+    }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
     }
@@ -2821,7 +3033,9 @@ public class SentryOptions {
     if (options.isSendDefaultPii() != null) {
       setSendDefaultPii(options.isSendDefaultPii());
     }
-
+    if (options.isCaptureOpenTelemetryEvents() != null) {
+      setCaptureOpenTelemetryEvents(options.isCaptureOpenTelemetryEvents());
+    }
     if (options.isEnableSpotlight() != null) {
       setEnableSpotlight(options.isEnableSpotlight());
     }

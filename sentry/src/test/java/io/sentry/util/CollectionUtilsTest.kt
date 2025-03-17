@@ -2,6 +2,7 @@ package io.sentry.util
 
 import io.sentry.JsonObjectReader
 import java.io.StringReader
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -78,5 +79,27 @@ class CollectionUtilsTest {
     @Test
     fun `contains returns false if element is not present`() {
         assertFalse(CollectionUtils.contains(arrayOf("one", "two", "three"), "four"))
+    }
+
+    @Test
+    fun `reverseListIterator returns empty iterator if list is empty`() {
+        val list = CopyOnWriteArrayList<String>()
+        val iterator = CollectionUtils.reverseListIterator(list)
+        assertFalse(iterator.hasNext())
+        assertFalse(iterator.hasPrevious())
+    }
+
+    @Test
+    fun `reverseListIterator returns reversed iterator if list is not empty`() {
+        val elements = listOf("one", "two", "three")
+        val list = CopyOnWriteArrayList(elements)
+        val iterator = CollectionUtils.reverseListIterator(list)
+        assertFalse(iterator.hasNext())
+        assertTrue(iterator.hasPrevious())
+        val reversedElements = mutableListOf<String>()
+        while (iterator.hasPrevious()) {
+            reversedElements.add(iterator.previous())
+        }
+        assertEquals(elements.reversed(), reversedElements)
     }
 }

@@ -16,6 +16,7 @@ import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SystemOutLogger
 import io.sentry.android.core.SentryAndroid
+import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.replay.ReplayCache.Companion.ONGOING_SEGMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
@@ -32,6 +33,7 @@ import io.sentry.protocol.Contexts
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
+import io.sentry.test.applyTestOptions
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withAlias
 import org.junit.Rule
@@ -146,12 +148,12 @@ class AnrWithReplayIntegrationTest {
         val replayId1 = SentryId()
         val replayId2 = SentryId()
 
-        SentryAndroid.init(context) {
+        initForTest(context) {
             it.dsn = "https://key@sentry.io/123"
             it.cacheDirPath = cacheDir
             it.isDebug = true
             it.setLogger(SystemOutLogger())
-            it.experimental.sessionReplay.onErrorSampleRate = 1.0
+            it.sessionReplay.onErrorSampleRate = 1.0
             // beforeSend is called after event processors are applied, so we can assert here
             // against the enriched ANR event
             it.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
@@ -214,5 +216,12 @@ class AnrWithReplayIntegrationTest {
 
         await.withAlias("Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout")
             .untilTrue(asserted)
+    }
+}
+
+fun initForTest(context: Context, optionsConfiguration: Sentry.OptionsConfiguration<SentryAndroidOptions>) {
+    SentryAndroid.init(context) {
+        applyTestOptions(it)
+        optionsConfiguration.configure(it)
     }
 }

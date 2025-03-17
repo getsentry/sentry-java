@@ -86,6 +86,13 @@ public class io/sentry/spring/SentryWebConfiguration {
 	public fun httpServletRequestSentryUserProvider (Lio/sentry/SentryOptions;)Lio/sentry/spring/HttpServletRequestSentryUserProvider;
 }
 
+public final class io/sentry/spring/SpringProfilesEventProcessor : io/sentry/EventProcessor {
+	public fun <init> (Lorg/springframework/core/env/Environment;)V
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
+	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
+}
+
 public final class io/sentry/spring/SpringSecuritySentryUserProvider : io/sentry/spring/SentryUserProvider {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun provideUser ()Lio/sentry/protocol/User;
@@ -248,7 +255,9 @@ public class io/sentry/spring/tracing/SentryTracingFilter : org/springframework/
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun <init> (Lio/sentry/IScopes;Lio/sentry/spring/tracing/TransactionNameProvider;)V
+	public fun <init> (Lio/sentry/IScopes;Lio/sentry/spring/tracing/TransactionNameProvider;Z)V
 	protected fun doFilterInternal (Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;Ljavax/servlet/FilterChain;)V
+	protected fun shouldNotFilterAsyncDispatch ()Z
 }
 
 public abstract interface annotation class io/sentry/spring/tracing/SentryTransaction : java/lang/annotation/Annotation {

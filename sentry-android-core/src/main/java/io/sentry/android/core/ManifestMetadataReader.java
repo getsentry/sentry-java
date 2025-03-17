@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.InitPriority;
@@ -113,6 +112,15 @@ final class ManifestMetadataReader {
   static final String FORCE_INIT = "io.sentry.force-init";
 
   static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
+
+  static final String IGNORED_ERRORS = "io.sentry.ignored-errors";
+
+  static final String IN_APP_INCLUDES = "io.sentry.in-app-includes";
+
+  static final String IN_APP_EXCLUDES = "io.sentry.in-app-excludes";
+
+  static final String ENABLE_AUTO_TRACE_ID_GENERATION =
+      "io.sentry.traces.enable-auto-id-generation";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -418,32 +426,52 @@ final class ManifestMetadataReader {
             readBool(
                 metadata, logger, ENABLE_SCOPE_PERSISTENCE, options.isEnableScopePersistence()));
 
-        if (options.getExperimental().getSessionReplay().getSessionSampleRate() == null) {
+        options.setEnableAutoTraceIdGeneration(
+            readBool(
+                metadata,
+                logger,
+                ENABLE_AUTO_TRACE_ID_GENERATION,
+                options.isEnableAutoTraceIdGeneration()));
+
+        if (options.getSessionReplay().getSessionSampleRate() == null) {
           final double sessionSampleRate =
               readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
           if (sessionSampleRate != -1) {
-            options.getExperimental().getSessionReplay().setSessionSampleRate(sessionSampleRate);
+            options.getSessionReplay().setSessionSampleRate(sessionSampleRate);
           }
         }
 
-        if (options.getExperimental().getSessionReplay().getOnErrorSampleRate() == null) {
+        if (options.getSessionReplay().getOnErrorSampleRate() == null) {
           final double onErrorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
           if (onErrorSampleRate != -1) {
-            options.getExperimental().getSessionReplay().setOnErrorSampleRate(onErrorSampleRate);
+            options.getSessionReplay().setOnErrorSampleRate(onErrorSampleRate);
           }
         }
 
         options
-            .getExperimental()
             .getSessionReplay()
             .setMaskAllText(readBool(metadata, logger, REPLAYS_MASK_ALL_TEXT, true));
 
         options
-            .getExperimental()
             .getSessionReplay()
             .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
-      }
 
+        options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
+
+        final @Nullable List<String> includes = readList(metadata, logger, IN_APP_INCLUDES);
+        if (includes != null && !includes.isEmpty()) {
+          for (final @NotNull String include : includes) {
+            options.addInAppInclude(include);
+          }
+        }
+
+        final @Nullable List<String> excludes = readList(metadata, logger, IN_APP_EXCLUDES);
+        if (excludes != null && !excludes.isEmpty()) {
+          for (final @NotNull String exclude : excludes) {
+            options.addInAppExclude(exclude);
+          }
+        }
+      }
       options
           .getLogger()
           .log(SentryLevel.INFO, "Retrieving configuration from AndroidManifest.xml");
@@ -516,7 +544,10 @@ final class ManifestMetadataReader {
   private static double readDouble(
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     // manifest meta-data only reads float
-    final double value = ((Number) metadata.getFloat(key, metadata.getInt(key, -1))).doubleValue();
+    double value = ((Float) metadata.getFloat(key, -1)).doubleValue();
+    if (value == -1) {
+      value = ((Integer) metadata.getInt(key, -1)).doubleValue();
+    }
     logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
@@ -559,18 +590,14 @@ final class ManifestMetadataReader {
    *
    * @param context the application context
    * @return the Bundle attached to the PackageManager
-   * @throws PackageManager.NameNotFoundException if the package name is non-existent
    */
   private static @Nullable Bundle getMetadata(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @Nullable BuildInfoProvider buildInfoProvider)
-      throws PackageManager.NameNotFoundException {
+      final @Nullable BuildInfoProvider buildInfoProvider) {
     final ApplicationInfo app =
         ContextUtils.getApplicationInfo(
-            context,
-            PackageManager.GET_META_DATA,
-            buildInfoProvider != null ? buildInfoProvider : new BuildInfoProvider(logger));
-    return app.metaData;
+            context, buildInfoProvider != null ? buildInfoProvider : new BuildInfoProvider(logger));
+    return app != null ? app.metaData : null;
   }
 }

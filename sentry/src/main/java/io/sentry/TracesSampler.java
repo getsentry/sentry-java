@@ -1,35 +1,27 @@
 package io.sentry;
 
 import io.sentry.util.Objects;
-import io.sentry.util.Random;
-import io.sentry.util.SentryRandom;
+import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class TracesSampler {
   private final @NotNull SentryOptions options;
-  private final @Nullable Random random;
 
   public TracesSampler(final @NotNull SentryOptions options) {
-    this(Objects.requireNonNull(options, "options are required"), null);
-  }
-
-  @TestOnly
-  TracesSampler(final @NotNull SentryOptions options, final @Nullable Random random) {
-    this.options = options;
-    this.random = random;
+    this.options = Objects.requireNonNull(options, "options are required");
   }
 
   @SuppressWarnings("deprecation")
   @NotNull
   public TracesSamplingDecision sample(final @NotNull SamplingContext samplingContext) {
+    final @NotNull Double sampleRand = samplingContext.getSampleRand();
     final TracesSamplingDecision samplingContextSamplingDecision =
         samplingContext.getTransactionContext().getSamplingDecision();
     if (samplingContextSamplingDecision != null) {
-      return samplingContextSamplingDecision;
+      return SampleRateUtils.backfilledSampleRand(samplingContextSamplingDecision);
     }
 
     Double profilesSampleRate = null;
@@ -45,7 +37,7 @@ public final class TracesSampler {
     if (profilesSampleRate == null) {
       profilesSampleRate = options.getProfilesSampleRate();
     }
-    Boolean profilesSampled = profilesSampleRate != null && sample(profilesSampleRate);
+    Boolean profilesSampled = profilesSampleRate != null && sample(profilesSampleRate, sampleRand);
 
     if (options.getTracesSampler() != null) {
       Double samplerResult = null;
@@ -58,14 +50,18 @@ public final class TracesSampler {
       }
       if (samplerResult != null) {
         return new TracesSamplingDecision(
-            sample(samplerResult), samplerResult, profilesSampled, profilesSampleRate);
+            sample(samplerResult, sampleRand),
+            samplerResult,
+            sampleRand,
+            profilesSampled,
+            profilesSampleRate);
       }
     }
 
     final TracesSamplingDecision parentSamplingDecision =
         samplingContext.getTransactionContext().getParentSamplingDecision();
     if (parentSamplingDecision != null) {
-      return parentSamplingDecision;
+      return SampleRateUtils.backfilledSampleRand(parentSamplingDecision);
     }
 
     final @Nullable Double tracesSampleRateFromOptions = options.getTracesSampleRate();
@@ -76,28 +72,23 @@ public final class TracesSampler {
 
     if (downsampledTracesSampleRate != null) {
       return new TracesSamplingDecision(
-          sample(downsampledTracesSampleRate),
+          sample(downsampledTracesSampleRate, sampleRand),
           downsampledTracesSampleRate,
+          sampleRand,
           profilesSampled,
           profilesSampleRate);
     }
 
-    return new TracesSamplingDecision(false, null, false, null);
+    return new TracesSamplingDecision(false, null, sampleRand, false, null);
   }
 
   public boolean sampleSessionProfile() {
     final @Nullable Double sampling = options.getProfileSessionSampleRate();
     return sampling != null && sample(sampling);
-  }
-
-  private boolean sample(final @NotNull Double aDouble) {
     return !(aDouble < getRandom().nextDouble());
   }
 
-  private Random getRandom() {
-    if (random == null) {
-      return SentryRandom.current();
-    }
-    return random;
+  private boolean sample(final @NotNull Double sampleRate, final @NotNull Double sampleRand) {
+    return !(sampleRate < sampleRand);
   }
 }

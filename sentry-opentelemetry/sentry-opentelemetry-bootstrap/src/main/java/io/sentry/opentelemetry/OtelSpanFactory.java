@@ -137,6 +137,8 @@ public final class OtelSpanFactory implements ISpanFactory {
       spanBuilder.setAttribute(
           InternalSemanticAttributes.SAMPLE_RATE, samplingDecision.getSampleRate());
       spanBuilder.setAttribute(
+          InternalSemanticAttributes.SAMPLE_RAND, samplingDecision.getSampleRand());
+      spanBuilder.setAttribute(
           InternalSemanticAttributes.PROFILE_SAMPLED, samplingDecision.getProfileSampled());
       spanBuilder.setAttribute(
           InternalSemanticAttributes.PROFILE_SAMPLE_RATE, samplingDecision.getProfileSampleRate());
@@ -158,7 +160,11 @@ public final class OtelSpanFactory implements ISpanFactory {
       sentrySpan.getSpanContext().setOrigin(spanOptions.getOrigin());
     }
 
-    return sentrySpan;
+    if (sentrySpan == null) {
+      return null;
+    } else {
+      return new OtelStrongRefSpanWrapper(otelSpan, sentrySpan);
+    }
   }
 
   private @NotNull Tracer getTracer() {

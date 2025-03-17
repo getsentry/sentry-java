@@ -1,9 +1,11 @@
 package io.sentry.android.replay.capture
 
+import android.annotation.TargetApi
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.IScopes
+import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
@@ -14,25 +16,22 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_ID
-import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_RECORDING
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_SCREEN_AT_START
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.Companion.createSegment
-import io.sentry.android.replay.capture.CaptureStrategy.Companion.currentEventsLock
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.gestures.ReplayGestureConverter
-import io.sentry.android.replay.util.PersistableLinkedList
-import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
 import java.util.Date
-import java.util.LinkedList
+import java.util.Deque
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ThreadFactory
@@ -42,12 +41,13 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
+@TargetApi(26)
 internal abstract class BaseCaptureStrategy(
     private val options: SentryOptions,
     private val scopes: IScopes?,
     private val dateProvider: ICurrentDateProvider,
-    executor: ScheduledExecutorService? = null,
-    private val replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
+    protected val replayExecutor: ScheduledExecutorService,
+    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
 ) : CaptureStrategy {
 
     internal companion object {
@@ -81,16 +81,8 @@ internal abstract class BaseCaptureStrategy(
     override val replayCacheDir: File? get() = cache?.replayCacheDir
 
     override var replayType by persistableAtomic<ReplayType>(propertyName = SEGMENT_KEY_REPLAY_TYPE)
-    protected val currentEvents: LinkedList<RRWebEvent> = PersistableLinkedList(
-        propertyName = SEGMENT_KEY_REPLAY_RECORDING,
-        options,
-        persistingExecutor,
-        cacheProvider = { cache }
-    )
 
-    protected val replayExecutor: ScheduledExecutorService by lazy {
-        executor ?: Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
-    }
+    protected val currentEvents: Deque<RRWebEvent> = ConcurrentLinkedDeque()
 
     override fun start(
         recorderConfig: ScreenshotRecorderConfig,
@@ -98,7 +90,7 @@ internal abstract class BaseCaptureStrategy(
         replayId: SentryId,
         replayType: ReplayType?
     ) {
-        cache = replayCacheProvider?.invoke(replayId, recorderConfig) ?: ReplayCache(options, replayId, recorderConfig)
+        cache = replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId)
 
         this.currentReplayId = replayId
         this.currentSegment = segmentId
@@ -133,9 +125,10 @@ internal abstract class BaseCaptureStrategy(
         replayType: ReplayType = this.replayType,
         cache: ReplayCache? = this.cache,
         frameRate: Int = recorderConfig.frameRate,
+        bitRate: Int = recorderConfig.bitRate,
         screenAtStart: String? = this.screenAtStart,
         breadcrumbs: List<Breadcrumb>? = null,
-        events: LinkedList<RRWebEvent> = this.currentEvents
+        events: Deque<RRWebEvent> = this.currentEvents
     ): ReplaySegment =
         createSegment(
             scopes,
@@ -149,6 +142,7 @@ internal abstract class BaseCaptureStrategy(
             replayType,
             cache,
             frameRate,
+            bitRate,
             screenAtStart,
             breadcrumbs,
             events
@@ -161,22 +155,7 @@ internal abstract class BaseCaptureStrategy(
     override fun onTouchEvent(event: MotionEvent) {
         val rrwebEvents = gestureConverter.convert(event, recorderConfig)
         if (rrwebEvents != null) {
-            currentEventsLock.acquire().use {
-                currentEvents += rrwebEvents
-            }
-        }
-    }
-
-    override fun close() {
-        replayExecutor.gracefullyShutdown(options)
-    }
-
-    private class ReplayExecutorServiceThreadFactory : ThreadFactory {
-        private var cnt = 0
-        override fun newThread(r: Runnable): Thread {
-            val ret = Thread(r, "SentryReplayIntegration-" + cnt++)
-            ret.setDaemon(true)
-            return ret
+            currentEvents += rrwebEvents
         }
     }
 
@@ -205,12 +184,12 @@ internal abstract class BaseCaptureStrategy(
                         task()
                     }
                 } else {
-                    task()
+                    try {
+                        task()
+                    } catch (e: Throwable) {
+                        options.logger.log(ERROR, "Failed to execute task $TAG.runInBackground", e)
+                    }
                 }
-            }
-
-            init {
-                runInBackground { onChange(propertyName, initialValue, initialValue) }
             }
 
             override fun getValue(thisRef: Any?, property: KProperty<*>): T? = value.get()

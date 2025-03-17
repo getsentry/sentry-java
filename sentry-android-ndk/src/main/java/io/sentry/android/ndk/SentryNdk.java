@@ -1,5 +1,6 @@
 package io.sentry.android.ndk;
 
+import io.sentry.android.core.NdkHandlerStrategy;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.ndk.NativeModuleListLoader;
 import io.sentry.ndk.NdkOptions;
@@ -22,6 +23,9 @@ public final class SentryNdk {
               try {
                 //noinspection UnstableApiUsage
                 io.sentry.ndk.SentryNdk.loadNativeLibraries();
+              } catch (Throwable t) {
+                // ignored
+                // if loadLibrary() fails, the later init() will throw an exception anyway
               } finally {
                 loadLibraryLatch.countDown();
               }
@@ -50,6 +54,16 @@ public final class SentryNdk {
                 options.getDist(),
                 options.getMaxBreadcrumbs(),
                 options.getNativeSdkName());
+
+        final int handlerStrategy = options.getNdkHandlerStrategy();
+        if (handlerStrategy == NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_DEFAULT.getValue()) {
+          ndkOptions.setNdkHandlerStrategy(
+              io.sentry.ndk.NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_DEFAULT);
+        } else if (handlerStrategy
+            == NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START.getValue()) {
+          ndkOptions.setNdkHandlerStrategy(
+              io.sentry.ndk.NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START);
+        }
 
         //noinspection UnstableApiUsage
         io.sentry.ndk.SentryNdk.init(ndkOptions);

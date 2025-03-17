@@ -157,11 +157,20 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Turns NDK on or off. Default is enabled. */
   private boolean enableNdk = true;
 
+  @NotNull
+  private NdkHandlerStrategy ndkHandlerStrategy =
+      NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_DEFAULT;
   /**
    * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
    * for sentry-android.
    */
   private boolean enableScopeSync = true;
+
+  /**
+   * Whether to enable automatic trace ID generation. This is mainly used by the Hybrid SDKs to
+   * control the trace ID generation from the outside.
+   */
+  private boolean enableAutoTraceIdGeneration = true;
 
   public interface BeforeCaptureCallback {
 
@@ -451,6 +460,16 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.nativeSdkName = nativeSdkName;
   }
 
+  @ApiStatus.Internal
+  public void setNativeHandlerStrategy(final @NotNull NdkHandlerStrategy ndkHandlerStrategy) {
+    this.ndkHandlerStrategy = ndkHandlerStrategy;
+  }
+
+  @ApiStatus.Internal
+  public int getNdkHandlerStrategy() {
+    return ndkHandlerStrategy.getValue();
+  }
+
   /**
    * Returns the sdk name for the sentry native ndk module.
    *
@@ -580,5 +599,13 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setFrameMetricsCollector(
       final @Nullable SentryFrameMetricsCollector frameMetricsCollector) {
     this.frameMetricsCollector = frameMetricsCollector;
+  }
+
+  public boolean isEnableAutoTraceIdGeneration() {
+    return enableAutoTraceIdGeneration;
+  }
+
+  public void setEnableAutoTraceIdGeneration(final boolean enableAutoTraceIdGeneration) {
+    this.enableAutoTraceIdGeneration = enableAutoTraceIdGeneration;
   }
 }

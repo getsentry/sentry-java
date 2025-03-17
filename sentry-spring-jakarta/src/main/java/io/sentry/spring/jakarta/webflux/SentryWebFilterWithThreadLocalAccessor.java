@@ -4,6 +4,7 @@ import io.sentry.IScope;
 import io.sentry.IScopes;
 import io.sentry.ITransaction;
 import io.sentry.Sentry;
+import io.sentry.reactor.SentryReactorUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +27,7 @@ public final class SentryWebFilterWithThreadLocalAccessor extends AbstractSentry
       final @NotNull ServerWebExchange serverWebExchange,
       final @NotNull WebFilterChain webFilterChain) {
     final @NotNull TransactionContainer transactionContainer = new TransactionContainer();
-    return ReactorUtils.withSentryForkedRoots(
+    return SentryReactorUtils.withSentryForkedRoots(
         webFilterChain
             .filter(serverWebExchange)
             .doFinally(

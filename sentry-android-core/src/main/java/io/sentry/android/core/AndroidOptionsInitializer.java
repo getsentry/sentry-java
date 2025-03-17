@@ -18,6 +18,7 @@ import io.sentry.ScopeType;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOpenTelemetryMode;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
@@ -104,7 +105,7 @@ final class AndroidOptionsInitializer {
     options.setLogger(logger);
 
     options.setDefaultScopeType(ScopeType.CURRENT);
-
+    options.setOpenTelemetryMode(SentryOpenTelemetryMode.OFF);
     options.setDateProvider(new SentryAndroidDateProvider());
 
     // set a lower flush timeout on Android to avoid ANRs
@@ -148,6 +149,11 @@ final class AndroidOptionsInitializer {
     if (options.getConnectionStatusProvider() instanceof NoOpConnectionStatusProvider) {
       options.setConnectionStatusProvider(
           new AndroidConnectionStatusProvider(context, options.getLogger(), buildInfoProvider));
+    }
+
+    if (options.getCacheDirPath() != null) {
+      options.addScopeObserver(new PersistingScopeObserver(options));
+      options.addOptionsObserver(new PersistingOptionsObserver(options));
     }
 
     options.addEventProcessor(new DeduplicateMultithreadedEventProcessor(options));
@@ -227,13 +233,6 @@ final class AndroidOptionsInitializer {
       }
     }
     options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
-
-    if (options.getCacheDirPath() != null) {
-      if (options.isEnableScopePersistence()) {
-        options.addScopeObserver(new PersistingScopeObserver(options));
-      }
-      options.addOptionsObserver(new PersistingOptionsObserver(options));
-    }
   }
 
   /** Setup the correct profiler (transaction or continuous) based on the options. */
@@ -329,6 +328,8 @@ final class AndroidOptionsInitializer {
     // AppLifecycleIntegration has to be installed before AnrIntegration, because AnrIntegration
     // relies on AppState set by it
     options.addIntegration(new AppLifecycleIntegration());
+    // AnrIntegration must be installed before ReplayIntegration, as ReplayIntegration relies on
+    // it to set the replayId in case of an ANR
     options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
@@ -357,8 +358,6 @@ final class AndroidOptionsInitializer {
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
     options.addIntegration(
         new NetworkBreadcrumbsIntegration(context, buildInfoProvider, options.getLogger()));
-    options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
-    options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());
@@ -378,8 +377,8 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    final PackageInfo packageInfo =
-        ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
+    final @Nullable PackageInfo packageInfo =
+        ContextUtils.getPackageInfo(context, buildInfoProvider);
     if (packageInfo != null) {
       // Sets App's release if not set by Manifest
       if (options.getRelease() == null) {

@@ -5,6 +5,7 @@ public final class io/sentry/AssertionsKt {
 	public static synthetic fun assertEnvelopeTransaction$default (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
 	public static final fun checkEvent (Lkotlin/jvm/functions/Function1;)Lio/sentry/SentryEnvelope;
 	public static final fun checkTransaction (Lkotlin/jvm/functions/Function1;)Lio/sentry/SentryEnvelope;
+	public static final fun getMockServerRequestTimeoutMillis ()J
 }
 
 public final class io/sentry/SkipError : java/lang/Error {
@@ -29,6 +30,15 @@ public final class io/sentry/test/ImmediateExecutorService : io/sentry/ISentryEx
 	public fun schedule (Ljava/lang/Runnable;J)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/lang/Runnable;)Ljava/util/concurrent/Future;
 	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
+}
+
+public final class io/sentry/test/InitKt {
+	public static final fun applyTestOptions (Lio/sentry/SentryOptions;)V
+	public static final fun initForTest ()V
+	public static final fun initForTest (Lio/sentry/Sentry$OptionsConfiguration;)V
+	public static final fun initForTest (Lio/sentry/Sentry$OptionsConfiguration;Z)V
+	public static final fun initForTest (Lio/sentry/SentryOptions;)V
+	public static final fun initForTest (Ljava/lang/String;)V
 }
 
 public final class io/sentry/test/MocksKt {

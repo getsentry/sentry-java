@@ -25,6 +25,7 @@ import io.sentry.android.timber.SentryTimberIntegration
 import io.sentry.cache.PersistingOptionsObserver
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.compose.gestures.ComposeGestureTargetLocator
+import io.sentry.test.ImmediateExecutorService
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -61,6 +62,7 @@ class AndroidOptionsInitializerTest {
             configureContext: Context.() -> Unit = {},
             assets: AssetManager? = null
         ) {
+            sentryOptions.executorService = ImmediateExecutorService()
             mockContext = if (metadata != null) {
                 ContextUtilsTestHelper.mockMetaData(
                     mockContext = ContextUtilsTestHelper.createMockContext(hasAppContext),
@@ -169,6 +171,7 @@ class AndroidOptionsInitializerTest {
 
     @BeforeTest
     fun `set up`() {
+        ContextUtils.resetInstance()
         val appContext = ApplicationProvider.getApplicationContext<Context>()
         fixture = Fixture(appContext, appContext.cacheDir)
     }
@@ -831,9 +834,10 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `PersistingScopeObserver is not set to options, if scope persistence is disabled`() {
+    fun `PersistingScopeObserver is no-op, if scope persistence is disabled`() {
         fixture.initSut(configureOptions = { isEnableScopePersistence = false })
 
-        assertTrue { fixture.sentryOptions.scopeObservers.none { it is PersistingScopeObserver } }
+        fixture.sentryOptions.findPersistingScopeObserver()?.setTags(mapOf("key" to "value"))
+        assertFalse(File(AndroidOptionsInitializer.getCacheDir(fixture.context), PersistingScopeObserver.SCOPE_CACHE).exists())
     }
 }

@@ -399,6 +399,7 @@ class SentryOptionsTest {
         externalOptions.isSendModules = false
         externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
         externalOptions.ignoredTransactions = listOf("transactionName1", "transaction-name-B")
+        externalOptions.ignoredErrors = listOf("Some error", "Another .*")
         externalOptions.isEnableBackpressureHandling = false
         externalOptions.maxRequestBodySize = SentryOptions.RequestSize.MEDIUM
         externalOptions.isSendDefaultPii = true
@@ -441,8 +442,9 @@ class SentryOptionsTest {
         assertFalse(options.isEnabled)
         assertFalse(options.isEnablePrettySerializationOutput)
         assertFalse(options.isSendModules)
-        assertEquals(listOf("slug1", "slug-B"), options.ignoredCheckIns)
-        assertEquals(listOf("transactionName1", "transaction-name-B"), options.ignoredTransactions)
+        assertEquals(listOf(FilterString("slug1"), FilterString("slug-B")), options.ignoredCheckIns)
+        assertEquals(listOf(FilterString("transactionName1"), FilterString("transaction-name-B")), options.ignoredTransactions)
+        assertEquals(listOf(FilterString("Some error"), FilterString("Another .*")), options.ignoredErrors)
         assertFalse(options.isEnableBackpressureHandling)
         assertTrue(options.isForceInit)
         assertNotNull(options.cron)
@@ -746,5 +748,41 @@ class SentryOptionsTest {
     @Test
     fun `when options is initialized, InitPriority is set to MEDIUM by default`() {
         assertEquals(SentryOptions().initPriority, InitPriority.MEDIUM)
+    }
+
+    @Test
+    fun `merging options when ignoredErrors is not set preserves the previous value`() {
+        val externalOptions = ExternalOptions()
+        val options = SentryOptions()
+        options.setIgnoredErrors(listOf("error1", "error2"))
+        options.merge(externalOptions)
+        assertEquals(listOf(FilterString("error1"), FilterString("error2")), options.ignoredErrors)
+    }
+
+    @Test
+    fun `merging options when ignoredTransactions is not set preserves the previous value`() {
+        val externalOptions = ExternalOptions()
+        val options = SentryOptions()
+        options.setIgnoredTransactions(listOf("transaction1", "transaction2"))
+        options.merge(externalOptions)
+        assertEquals(listOf(FilterString("transaction1"), FilterString("transaction2")), options.ignoredTransactions)
+    }
+
+    @Test
+    fun `merging options when ignoredCheckIns is not set preserves the previous value`() {
+        val externalOptions = ExternalOptions()
+        val options = SentryOptions()
+        options.setIgnoredCheckIns(listOf("checkin1", "checkin2"))
+        options.merge(externalOptions)
+        assertEquals(listOf(FilterString("checkin1"), FilterString("checkin2")), options.ignoredCheckIns)
+    }
+
+    @Test
+    fun `null tag`() {
+        val options = SentryOptions.empty()
+        options.setTag("k", "v")
+        options.setTag("k", null)
+        options.setTag(null, null)
+        assertTrue(options.tags.isEmpty())
     }
 }

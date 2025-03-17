@@ -92,10 +92,10 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.spanId = Objects.requireNonNull(spanId, "spanId is required");
     this.op = Objects.requireNonNull(operation, "operation is required");
     this.parentSpanId = parentSpanId;
-    this.samplingDecision = samplingDecision;
     this.description = description;
     this.status = status;
     this.origin = origin;
+    setSamplingDecision(samplingDecision);
     final IThreadChecker threadChecker =
         ScopesAdapter.getInstance().getOptions().getThreadChecker();
     this.data.put(
@@ -112,11 +112,10 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.traceId = spanContext.traceId;
     this.spanId = spanContext.spanId;
     this.parentSpanId = spanContext.parentSpanId;
-    this.samplingDecision = spanContext.samplingDecision;
+    setSamplingDecision(spanContext.samplingDecision);
     this.op = spanContext.op;
     this.description = spanContext.description;
     this.status = spanContext.status;
-    this.origin = spanContext.origin;
     final Map<String, String> copiedTags = CollectionUtils.newConcurrentHashMap(spanContext.tags);
     if (copiedTags != null) {
       this.tags = copiedTags;
@@ -137,10 +136,15 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.op = Objects.requireNonNull(operation, "operation is required");
   }
 
-  public void setTag(final @NotNull String name, final @NotNull String value) {
-    Objects.requireNonNull(name, "name is required");
-    Objects.requireNonNull(value, "value is required");
-    this.tags.put(name, value);
+  public void setTag(final @Nullable String name, final @Nullable String value) {
+    if (name == null) {
+      return;
+    }
+    if (value == null) {
+      this.tags.remove(name);
+    } else {
+      this.tags.put(name, value);
+    }
   }
 
   public void setDescription(final @Nullable String description) {
@@ -226,6 +230,9 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   @ApiStatus.Internal
   public void setSamplingDecision(final @Nullable TracesSamplingDecision samplingDecision) {
     this.samplingDecision = samplingDecision;
+    if (this.baggage != null) {
+      this.baggage.setValuesFromSamplingDecision(this.samplingDecision);
+    }
   }
 
   public @Nullable String getOrigin() {
@@ -252,8 +259,15 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     return data;
   }
 
-  public void setData(final @NotNull String key, final @NotNull Object value) {
-    data.put(key, value);
+  public void setData(final @Nullable String key, final @Nullable Object value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      data.remove(key);
+    } else {
+      data.put(key, value);
+    }
   }
 
   @ApiStatus.Internal

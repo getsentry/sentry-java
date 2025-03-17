@@ -91,7 +91,7 @@ class SentryTracerTest {
         val tracer = fixture.getSut({
             it.setDebug(true)
             it.setLogger(SystemOutLogger())
-            it.ignoredSpanOrigins = listOf("ignored")
+            it.setIgnoredSpanOrigins(listOf("ignored"))
         })
         tracer.startChild("child1", null, SpanOptions().also { it.origin = "ignored" })
         tracer.startChild("child2")
@@ -1525,5 +1525,28 @@ class SentryTracerTest {
         assertFalse(transaction.isFinished)
         assertNull(transaction.finishDate)
         transaction.finish()
+    }
+
+    @Test
+    fun `setting null data does not cause NPE`() {
+        val transaction = fixture.getSut()
+        transaction.setData("k", "oldvalue")
+        transaction.setData(null, null)
+        transaction.setData("k", null)
+        transaction.setData(null, "v")
+        assertNull(transaction.getData(null))
+        assertNull(transaction.getData("k"))
+        assertFalse(transaction.data!!.containsKey("k"))
+    }
+
+    @Test
+    fun `setting null tag does not cause NPE`() {
+        val transaction = fixture.getSut()
+        transaction.setTag("k", "oldvalue")
+        transaction.setTag(null, null)
+        transaction.setTag("k", null)
+        transaction.setTag(null, "v")
+        assertNull(transaction.getTag(null))
+        assertNull(transaction.getTag("k"))
     }
 }

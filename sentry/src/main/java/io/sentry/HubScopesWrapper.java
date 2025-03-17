@@ -123,22 +123,22 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {
+  public void setTag(@Nullable String key, @Nullable String value) {
     scopes.setTag(key, value);
   }
 
   @Override
-  public void removeTag(@NotNull String key) {
+  public void removeTag(@Nullable String key) {
     scopes.removeTag(key);
   }
 
   @Override
-  public void setExtra(@NotNull String key, @NotNull String value) {
+  public void setExtra(@Nullable String key, @Nullable String value) {
     scopes.setExtra(key, value);
   }
 
   @Override
-  public void removeExtra(@NotNull String key) {
+  public void removeExtra(@Nullable String key) {
     scopes.removeExtra(key);
   }
 

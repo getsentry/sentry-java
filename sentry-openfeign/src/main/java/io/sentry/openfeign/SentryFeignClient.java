@@ -2,19 +2,23 @@ package io.sentry.openfeign;
 
 import static io.sentry.TypeCheckHint.OPEN_FEIGN_REQUEST;
 import static io.sentry.TypeCheckHint.OPEN_FEIGN_RESPONSE;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import feign.Client;
 import feign.Request;
 import feign.Response;
 import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
+import io.sentry.BuildConfig;
 import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.util.Objects;
+import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
 import io.sentry.util.UrlUtils;
 import java.io.IOException;
@@ -41,6 +45,13 @@ public final class SentryFeignClient implements Client {
     this.delegate = Objects.requireNonNull(delegate, "delegate is required");
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.beforeSpan = beforeSpan;
+    addPackageAndIntegrationInfo();
+  }
+
+  private void addPackageAndIntegrationInfo() {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-openfeign", BuildConfig.VERSION_NAME);
+    addIntegrationToSdkVersion("OpenFeign");
   }
 
   @Override
@@ -98,6 +109,10 @@ public final class SentryFeignClient implements Client {
 
   private @NotNull Request maybeAddTracingHeaders(
       final @NotNull Request request, final @Nullable ISpan span) {
+    if (isIgnored()) {
+      return request;
+    }
+
     final @NotNull RequestWrapper requestWrapper = new RequestWrapper(request);
     final @Nullable Collection<String> requestBaggageHeaders =
         request.headers().get(BaggageHeader.BAGGAGE_HEADER);
@@ -122,6 +137,10 @@ public final class SentryFeignClient implements Client {
     }
 
     return requestWrapper.build();
+  }
+
+  private boolean isIgnored() {
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
   }
 
   private void addBreadcrumb(final @NotNull Request request, final @Nullable Response response) {

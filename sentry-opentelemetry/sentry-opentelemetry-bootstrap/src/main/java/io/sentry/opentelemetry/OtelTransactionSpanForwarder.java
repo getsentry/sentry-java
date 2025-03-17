@@ -152,12 +152,12 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {
+  public void setTag(@Nullable String key, @Nullable String value) {
     rootSpan.setTag(key, value);
   }
 
   @Override
-  public @Nullable String getTag(@NotNull String key) {
+  public @Nullable String getTag(@Nullable String key) {
     return rootSpan.getTag(key);
   }
 
@@ -167,12 +167,12 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
   }
 
   @Override
-  public void setData(@NotNull String key, @NotNull Object value) {
+  public void setData(@Nullable String key, @Nullable Object value) {
     rootSpan.setData(key, value);
   }
 
   @Override
-  public @Nullable Object getData(@NotNull String key) {
+  public @Nullable Object getData(@Nullable String key) {
     return rootSpan.getData(key);
   }
 
@@ -277,7 +277,7 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
   }
 
   @Override
-  public void setContext(@NotNull String key, @NotNull Object context) {
+  public void setContext(@Nullable String key, @Nullable Object context) {
     // thoughts:
     // - span would have to save it on global storage too since we can't add complex data to otel
     // span

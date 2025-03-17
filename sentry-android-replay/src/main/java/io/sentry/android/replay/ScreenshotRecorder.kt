@@ -3,7 +3,6 @@ package io.sentry.android.replay
 import android.annotation.TargetApi
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Bitmap.Config.ARGB_8888
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
@@ -15,7 +14,6 @@ import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.view.PixelCopy
 import android.view.View
-import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.WindowManager
 import io.sentry.SentryLevel.DEBUG
@@ -24,8 +22,9 @@ import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.util.MainLooperHandler
+import io.sentry.android.replay.util.addOnDrawListenerSafe
 import io.sentry.android.replay.util.getVisibleRects
-import io.sentry.android.replay.util.gracefullyShutdown
+import io.sentry.android.replay.util.removeOnDrawListenerSafe
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode
@@ -33,8 +32,7 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarc
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import java.io.File
 import java.lang.ref.WeakReference
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
 import kotlin.math.roundToInt
@@ -43,22 +41,25 @@ import kotlin.math.roundToInt
 internal class ScreenshotRecorder(
     val config: ScreenshotRecorderConfig,
     val options: SentryOptions,
-    val mainLooperHandler: MainLooperHandler,
+    private val mainLooperHandler: MainLooperHandler,
+    private val recorder: ScheduledExecutorService,
     private val screenshotRecorderCallback: ScreenshotRecorderCallback?
 ) : ViewTreeObserver.OnDrawListener {
 
-    private val recorder by lazy {
-        Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
-    }
     private var rootView: WeakReference<View>? = null
     private val maskingPaint by lazy(NONE) { Paint() }
     private val singlePixelBitmap: Bitmap by lazy(NONE) {
         Bitmap.createBitmap(
             1,
             1,
-            Bitmap.Config.ARGB_8888
+            Bitmap.Config.RGB_565
         )
     }
+    private val screenshot = Bitmap.createBitmap(
+        config.recordingWidth,
+        config.recordingHeight,
+        Bitmap.Config.RGB_565
+    )
     private val singlePixelBitmapCanvas: Canvas by lazy(NONE) { Canvas(singlePixelBitmap) }
     private val prescaledMatrix by lazy(NONE) {
         Matrix().apply {
@@ -67,7 +68,7 @@ internal class ScreenshotRecorder(
     }
     private val contentChanged = AtomicBoolean(false)
     private val isCapturing = AtomicBoolean(true)
-    private var lastScreenshot: Bitmap? = null
+    private val lastCaptureSuccessful = AtomicBoolean(false)
 
     fun capture() {
         if (!isCapturing.get()) {
@@ -75,14 +76,10 @@ internal class ScreenshotRecorder(
             return
         }
 
-        if (!contentChanged.get() && lastScreenshot != null && !lastScreenshot!!.isRecycled) {
+        if (!contentChanged.get() && lastCaptureSuccessful.get()) {
             options.logger.log(DEBUG, "Content hasn't changed, repeating last known frame")
 
-            lastScreenshot?.let {
-                screenshotRecorderCallback?.onScreenshotRecorded(
-                    it.copy(ARGB_8888, false)
-                )
-            }
+            screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
             return
         }
 
@@ -98,38 +95,33 @@ internal class ScreenshotRecorder(
             return
         }
 
-        val bitmap = Bitmap.createBitmap(
-            config.recordingWidth,
-            config.recordingHeight,
-            Bitmap.Config.ARGB_8888
-        )
-
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
         mainLooperHandler.post {
             try {
                 contentChanged.set(false)
                 PixelCopy.request(
                     window,
-                    bitmap,
+                    screenshot,
                     { copyResult: Int ->
                         if (copyResult != PixelCopy.SUCCESS) {
                             options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
-                            bitmap.recycle()
+                            lastCaptureSuccessful.set(false)
                             return@request
                         }
 
                         // TODO: handle animations with heuristics (e.g. if we fall under this condition 2 times in a row, we should capture)
                         if (contentChanged.get()) {
                             options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
-                            bitmap.recycle()
+                            lastCaptureSuccessful.set(false)
                             return@request
                         }
 
+                        // TODO: disableAllMasking here and dont traverse?
                         val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
                         root.traverse(viewHierarchy, options)
 
                         recorder.submitSafely(options, "screenshot_recorder.mask") {
-                            val canvas = Canvas(bitmap)
+                            val canvas = Canvas(screenshot)
                             canvas.setMatrix(prescaledMatrix)
                             viewHierarchy.traverse { node ->
                                 if (node.shouldMask && (node.width > 0 && node.height > 0)) {
@@ -143,7 +135,7 @@ internal class ScreenshotRecorder(
                                     val (visibleRects, color) = when (node) {
                                         is ImageViewHierarchyNode -> {
                                             listOf(node.visibleRect) to
-                                                bitmap.dominantColorForRect(node.visibleRect)
+                                                screenshot.dominantColorForRect(node.visibleRect)
                                         }
 
                                         is TextViewHierarchyNode -> {
@@ -170,20 +162,16 @@ internal class ScreenshotRecorder(
                                 return@traverse true
                             }
 
-                            val screenshot = bitmap.copy(ARGB_8888, false)
                             screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
-                            lastScreenshot?.recycle()
-                            lastScreenshot = screenshot
+                            lastCaptureSuccessful.set(true)
                             contentChanged.set(false)
-
-                            bitmap.recycle()
                         }
                     },
                     mainLooperHandler.handler
                 )
             } catch (e: Throwable) {
                 options.logger.log(WARNING, "Failed to capture replay recording", e)
-                bitmap.recycle()
+                lastCaptureSuccessful.set(false)
             }
         }
     }
@@ -205,13 +193,13 @@ internal class ScreenshotRecorder(
 
         // next bind the new root
         rootView = WeakReference(root)
-        root.viewTreeObserver?.addOnDrawListener(this)
+        root.addOnDrawListenerSafe(this)
         // invalidate the flag to capture the first frame after new window is attached
         contentChanged.set(true)
     }
 
     fun unbind(root: View?) {
-        root?.viewTreeObserver?.removeOnDrawListener(this)
+        root?.removeOnDrawListenerSafe(this)
     }
 
     fun pause() {
@@ -221,16 +209,15 @@ internal class ScreenshotRecorder(
 
     fun resume() {
         // can't use bind() as it will invalidate the weakref
-        rootView?.get()?.viewTreeObserver?.addOnDrawListener(this)
+        rootView?.get()?.addOnDrawListenerSafe(this)
         isCapturing.set(true)
     }
 
     fun close() {
         unbind(rootView?.get())
         rootView?.clear()
-        lastScreenshot?.recycle()
+        screenshot.recycle()
         isCapturing.set(false)
-        recorder.gracefullyShutdown(options)
     }
 
     private fun Bitmap.dominantColorForRect(rect: Rect): Int {
@@ -255,37 +242,6 @@ internal class ScreenshotRecorder(
         // get the pixel color (= dominant color)
         return singlePixelBitmap.getPixel(0, 0)
     }
-
-    private fun View.traverse(parentNode: ViewHierarchyNode) {
-        if (this !is ViewGroup) {
-            return
-        }
-
-        if (this.childCount == 0) {
-            return
-        }
-
-        val childNodes = ArrayList<ViewHierarchyNode>(this.childCount)
-        for (i in 0 until childCount) {
-            val child = getChildAt(i)
-            if (child != null) {
-                val childNode =
-                    ViewHierarchyNode.fromView(child, parentNode, indexOfChild(child), options)
-                childNodes.add(childNode)
-                child.traverse(childNode)
-            }
-        }
-        parentNode.children = childNodes
-    }
-
-    private class RecorderExecutorServiceThreadFactory : ThreadFactory {
-        private var cnt = 0
-        override fun newThread(r: Runnable): Thread {
-            val ret = Thread(r, "SentryReplayRecorder-" + cnt++)
-            ret.setDaemon(true)
-            return ret
-        }
-    }
 }
 
 public data class ScreenshotRecorderConfig(
@@ -308,7 +264,7 @@ public data class ScreenshotRecorderConfig(
         bitRate = 0
     )
 
-    companion object {
+    internal companion object {
         /**
          * Since codec block size is 16, so we have to adjust the width and height to it, otherwise
          * the codec might fail to configure on some devices, see https://cs.android.com/android/platform/superproject/+/master:frameworks/base/media/java/android/media/MediaCodecInfo.java;l=1999-2001
@@ -369,7 +325,7 @@ public interface ScreenshotRecorderCallback {
      *
      * @param bitmap a screenshot taken in the form of [android.graphics.Bitmap]
      */
-    fun onScreenshotRecorded(bitmap: Bitmap)
+    public fun onScreenshotRecorded(bitmap: Bitmap)
 
     /**
      * Called whenever a new frame screenshot is available.
@@ -377,5 +333,5 @@ public interface ScreenshotRecorderCallback {
      * @param screenshot file containing the frame screenshot
      * @param frameTimestamp the timestamp when the frame screenshot was taken
      */
-    fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
+    public fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
 }

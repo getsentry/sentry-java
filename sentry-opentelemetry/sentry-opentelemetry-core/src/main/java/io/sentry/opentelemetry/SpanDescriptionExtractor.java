@@ -18,23 +18,16 @@ public final class SpanDescriptionExtractor {
   @SuppressWarnings("deprecation")
   public @NotNull OtelSpanInfo extractSpanInfo(
       final @NotNull SpanData otelSpan, final @Nullable IOtelSpanWrapper sentrySpan) {
-    if (!isInternalSpanKind(otelSpan)) {
-      final @NotNull Attributes attributes = otelSpan.getAttributes();
+    final @NotNull Attributes attributes = otelSpan.getAttributes();
 
-      final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
-      if (httpMethod != null) {
-        return descriptionForHttpMethod(otelSpan, httpMethod);
-      }
+    final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
+    if (httpMethod != null) {
+      return descriptionForHttpMethod(otelSpan, httpMethod);
+    }
 
-      final @Nullable String httpRequestMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
-      if (httpRequestMethod != null) {
-        return descriptionForHttpMethod(otelSpan, httpRequestMethod);
-      }
-
-      final @Nullable String dbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
-      if (dbSystem != null) {
-        return descriptionForDbSystem(otelSpan);
-      }
+    final @Nullable String dbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
+    if (dbSystem != null) {
+      return descriptionForDbSystem(otelSpan);
     }
 
     final @NotNull String name = otelSpan.getName();
@@ -42,10 +35,6 @@ public final class SpanDescriptionExtractor {
         sentrySpan != null ? sentrySpan.getDescription() : name;
     final @NotNull String description = maybeDescription != null ? maybeDescription : name;
     return new OtelSpanInfo(name, description, TransactionNameSource.CUSTOM);
-  }
-
-  private boolean isInternalSpanKind(final @NotNull SpanData otelSpan) {
-    return SpanKind.INTERNAL.equals(otelSpan.getKind());
   }
 
   @SuppressWarnings("deprecation")
@@ -60,6 +49,12 @@ public final class SpanDescriptionExtractor {
       opBuilder.append(".client");
     } else if (SpanKind.SERVER.equals(kind)) {
       opBuilder.append(".server");
+    } else {
+      // we cannot be certain that a root span is a server span as it might simply be a client span
+      // without parent
+      if (!isRootSpan(otelSpan)) {
+        opBuilder.append(".client");
+      }
     }
     final @Nullable String httpTarget = attributes.get(HttpIncubatingAttributes.HTTP_TARGET);
     final @Nullable String httpRoute = attributes.get(HttpAttributes.HTTP_ROUTE);
@@ -68,11 +63,17 @@ public final class SpanDescriptionExtractor {
       httpPath = httpTarget;
     }
     final @NotNull String op = opBuilder.toString();
+
     final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
     if (urlFull != null) {
       if (httpPath == null) {
         httpPath = urlFull;
       }
+    }
+
+    final @Nullable String urlPath = attributes.get(UrlAttributes.URL_PATH);
+    if (httpPath == null && urlPath != null) {
+      httpPath = urlPath;
     }
 
     if (httpPath == null) {
@@ -86,11 +87,22 @@ public final class SpanDescriptionExtractor {
     return new OtelSpanInfo(op, description, transactionNameSource);
   }
 
+  private static boolean isRootSpan(SpanData otelSpan) {
+    return !otelSpan.getParentSpanContext().isValid() || otelSpan.getParentSpanContext().isRemote();
+  }
+
   @SuppressWarnings("deprecation")
   private OtelSpanInfo descriptionForDbSystem(final @NotNull SpanData otelSpan) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
     @Nullable String dbStatement = attributes.get(DbIncubatingAttributes.DB_STATEMENT);
-    @NotNull String description = dbStatement != null ? dbStatement : otelSpan.getName();
-    return new OtelSpanInfo("db", description, TransactionNameSource.TASK);
+    if (dbStatement != null) {
+      return new OtelSpanInfo("db", dbStatement, TransactionNameSource.TASK);
+    }
+    @Nullable String dbQueryText = attributes.get(DbIncubatingAttributes.DB_QUERY_TEXT);
+    if (dbQueryText != null) {
+      return new OtelSpanInfo("db", dbQueryText, TransactionNameSource.TASK);
+    }
+
+    return new OtelSpanInfo("db", otelSpan.getName(), TransactionNameSource.TASK);
   }
 }

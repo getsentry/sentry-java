@@ -6,12 +6,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- add extra permission (optional) -->
-    <!-- extra recommended permission, we'd be able to collect device ringing breadcrumbs (PhoneStateBreadcrumbsIntegration) -->
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <!-- Just some random permissions to showcase the permission context sent to Sentry -->
     <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <!-- Needed by leakcanary.NotificationEventListener -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
@@ -19,9 +16,12 @@
     <uses-sdk
         tools:overrideLibrary="io.sentry.android"/>
 
-    <application
+  <uses-feature
+    android:name="android.hardware.camera"
+    android:required="false" />
+
+  <application
         android:name=".MyApplication"
-        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"

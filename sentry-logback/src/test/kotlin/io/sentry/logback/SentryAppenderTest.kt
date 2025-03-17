@@ -4,6 +4,9 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder
 import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.classic.spi.LoggingEvent
+import ch.qos.logback.classic.spi.LoggingEventVO
+import ch.qos.logback.classic.spi.ThrowableProxy
 import ch.qos.logback.core.encoder.Encoder
 import ch.qos.logback.core.encoder.EncoderBase
 import ch.qos.logback.core.status.Status
@@ -13,6 +16,7 @@ import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -96,7 +100,7 @@ class SentryAppenderTest {
                 it.setTag("only-present-if-logger-init-was-run", "another-value")
             }
         )
-        Sentry.init {
+        initForTest {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
             it.setTransportFactory(fixture.transportFactory)
@@ -534,5 +538,25 @@ class SentryAppenderTest {
 
         assertTrue(Sentry.isEnabled())
         System.clearProperty("sentry.dsn")
+    }
+
+    @Test
+    fun `does not crash on ThrowableProxyVO`() {
+        fixture = Fixture()
+        val throwableProxy = ThrowableProxy(RuntimeException("hello proxy throwable"))
+        val loggingEvent = LoggingEvent()
+        loggingEvent.level = Level.ERROR
+        loggingEvent.setThrowableProxy(throwableProxy)
+        val loggingEventVO = LoggingEventVO.build(loggingEvent)
+
+        fixture.appender.append(loggingEventVO)
+
+        verify(fixture.transport).send(
+            checkEvent { event ->
+                assertEquals(SentryLevel.ERROR, event.level)
+                assertNull(event.exceptions)
+            },
+            anyOrNull()
+        )
     }
 }

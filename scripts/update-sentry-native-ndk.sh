@@ -6,20 +6,13 @@ GRADLE_NDK_FILEPATH=buildSrc/src/main/java/Config.kt
 
 case $1 in
 get-version)
-    version=$(perl -ne 'print "$1\n" if ( m/io\.sentry:sentry-native-ndk:([0-9.]+)+/ )' $GRADLE_NDK_FILEPATH)
-
-    echo "v$version"
+    perl -ne 'print "$1\n" if ( m/io\.sentry:sentry-native-ndk:([0-9.]+)+/ )' $GRADLE_NDK_FILEPATH
     ;;
 get-repo)
     echo "https://github.com/getsentry/sentry-native.git"
     ;;
 set-version)
     version=$2
-
-    # Remove leading "v"
-    if [[ "$version" == v* ]]; then
-        version="${version:1}"
-    fi
 
     echo "Setting sentry-native-ndk version to '$version'"
 
