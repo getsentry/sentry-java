@@ -10,6 +10,11 @@
 ### Fixes
 
 - Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))
+- Ensure app start type is set, even when ActivityLifecycleIntegration is not running ([#4250](https://github.com/getsentry/sentry-java/pull/4250))
+
+### Behavioral Changes
+
+- The user's `device.name` is not reported anymore via the device context, even if `options.isSendDefaultPii` is enabled ([#4179](https://github.com/getsentry/sentry-java/pull/4179))
 
 ### Dependencies
 
