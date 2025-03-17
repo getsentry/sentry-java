@@ -11,6 +11,7 @@ import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpConnectionStatusProvider;
+import io.sentry.NoOpTransactionPerformanceCollector;
 import io.sentry.ScopeType;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
@@ -32,12 +33,16 @@ import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.compose.gestures.ComposeGestureTargetLocator;
 import io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter;
+import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.gestures.GestureTargetLocator;
+import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.NoOpEnvelopeCache;
+import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
+import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -160,7 +165,9 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
     options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
-    options.setTransportGate(new AndroidTransportGate(options));
+    if (options.getTransportGate() instanceof NoOpTransportGate) {
+      options.setTransportGate(new AndroidTransportGate(options));
+    }
 
     // Check if the profiler was already instantiated in the app start.
     // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
@@ -182,8 +189,12 @@ final class AndroidOptionsInitializer {
                     "options.getFrameMetricsCollector is required")));
       }
     }
-    options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
-    options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
+    if (options.getModulesLoader() instanceof NoOpModulesLoader) {
+      options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
+    }
+    if (options.getDebugMetaLoader() instanceof NoOpDebugMetaLoader) {
+      options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
+    }
 
     final boolean isAndroidXScrollViewAvailable =
         loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
@@ -215,7 +226,9 @@ final class AndroidOptionsInitializer {
       options.setViewHierarchyExporters(viewHierarchyExporters);
     }
 
-    options.setThreadChecker(AndroidThreadChecker.getInstance());
+    if (options.getThreadChecker() instanceof NoOpThreadChecker) {
+      options.setThreadChecker(AndroidThreadChecker.getInstance());
+    }
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
       options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
@@ -229,7 +242,11 @@ final class AndroidOptionsInitializer {
                     "options.getFrameMetricsCollector is required")));
       }
     }
-    options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
+    if (options.getTransactionPerformanceCollector()
+        instanceof NoOpTransactionPerformanceCollector) {
+      options.setTransactionPerformanceCollector(
+          new DefaultTransactionPerformanceCollector(options));
+    }
   }
 
   static void installDefaultIntegrations(

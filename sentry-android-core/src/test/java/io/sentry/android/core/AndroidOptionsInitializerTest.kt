@@ -7,20 +7,29 @@ import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.DefaultTransactionPerformanceCollector
+import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
 import io.sentry.MainEventProcessor
 import io.sentry.SentryOptions
+import io.sentry.TransactionPerformanceCollector
 import io.sentry.android.core.cache.AndroidEnvelopeCache
+import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
 import io.sentry.android.core.internal.modules.AssetsModulesLoader
+import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider
 import io.sentry.android.core.internal.util.AndroidThreadChecker
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.replay.ReplayIntegration
 import io.sentry.android.timber.SentryTimberIntegration
+import io.sentry.cache.IEnvelopeCache
 import io.sentry.cache.PersistingOptionsObserver
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.compose.gestures.ComposeGestureTargetLocator
+import io.sentry.internal.debugmeta.IDebugMetaLoader
+import io.sentry.internal.modules.IModulesLoader
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.transport.ITransportGate
+import io.sentry.util.thread.IThreadChecker
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -731,5 +740,26 @@ class AndroidOptionsInitializerTest {
 
         fixture.sentryOptions.findPersistingScopeObserver()?.setTags(mapOf("key" to "value"))
         assertFalse(File(AndroidOptionsInitializer.getCacheDir(fixture.context), PersistingScopeObserver.SCOPE_CACHE).exists())
+    }
+
+    @Test
+    fun `user options have precedence over defaults`() {
+        fixture.initSut(configureOptions = {
+            setTransportGate(mock<ITransportGate>())
+            setEnvelopeDiskCache(mock<IEnvelopeCache>())
+            connectionStatusProvider = mock<IConnectionStatusProvider>()
+            setModulesLoader(mock<IModulesLoader>())
+            setDebugMetaLoader(mock<IDebugMetaLoader>())
+            threadChecker = mock<IThreadChecker>()
+            transactionPerformanceCollector = mock<TransactionPerformanceCollector>()
+        })
+
+        assertFalse { fixture.sentryOptions.transportGate is AndroidTransportGate }
+        assertFalse { fixture.sentryOptions.envelopeDiskCache is AndroidEnvelopeCache }
+        assertFalse { fixture.sentryOptions.connectionStatusProvider is AndroidConnectionStatusProvider }
+        assertFalse { fixture.sentryOptions.modulesLoader is AssetsModulesLoader }
+        assertFalse { fixture.sentryOptions.debugMetaLoader is AssetsDebugMetaLoader }
+        assertFalse { fixture.sentryOptions.threadChecker is AndroidThreadChecker }
+        assertFalse { fixture.sentryOptions.transactionPerformanceCollector is DefaultTransactionPerformanceCollector }
     }
 }
