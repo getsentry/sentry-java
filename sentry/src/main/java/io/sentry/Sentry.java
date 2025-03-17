@@ -4,6 +4,7 @@ import io.sentry.backpressure.BackpressureMonitor;
 import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.config.PropertiesProviderFactory;
 import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader;
@@ -498,6 +499,16 @@ public final class Sentry {
                   observer.setTags(options.getTags());
                   observer.setReplayErrorSampleRate(
                       options.getSessionReplay().getOnErrorSampleRate());
+                }
+
+                // since it's a new SDK init we clean up persisted scope values before serializing
+                // new ones, so they are not making it to the new events if they were e.g. disabled
+                // (e.g. replayId) or are simply irrelevant (e.g. breadcrumbs). NOTE: this happens
+                // after the integrations relying on those values are done with processing them.
+                final @Nullable PersistingScopeObserver scopeCache =
+                    options.findPersistingScopeObserver();
+                if (scopeCache != null) {
+                  scopeCache.resetCache();
                 }
               });
     } catch (Throwable e) {

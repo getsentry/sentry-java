@@ -84,9 +84,7 @@ tasks.register<BootRun>("bootRunWithAgent").configure {
     classpath = mainBootRunTask.classpath
 
     val versionName = project.properties["versionName"] as String
-    val agentProjectId = projects.sentryOpentelemetry.sentryOpentelemetryAgent.identityPath.toString()
-    val agentProjectPath = project(agentProjectId).projectDir.absolutePath
-    val agentJarPath = "$agentProjectPath/build/libs/sentry-opentelemetry-agent-$versionName.jar"
+    val agentJarPath = "$rootDir/sentry-opentelemetry/sentry-opentelemetry-agent/build/libs/sentry-opentelemetry-agent-$versionName.jar"
 
     val dsn = System.getenv("SENTRY_DSN") ?: "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563"
     val tracesSampleRate = System.getenv("SENTRY_TRACES_SAMPLE_RATE") ?: "1"

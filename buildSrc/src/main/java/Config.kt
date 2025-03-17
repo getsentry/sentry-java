@@ -215,6 +215,7 @@ object Config {
         val msgpack = "org.msgpack:msgpack-core:0.9.8"
         val leakCanaryInstrumentation = "com.squareup.leakcanary:leakcanary-android-instrumentation:2.14"
         val composeUiTestJunit4 = "androidx.compose.ui:ui-test-junit4:1.6.8"
+        val okio = "com.squareup.okio:okio:1.13.0"
         val coroutinesTest = "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.1"
     }
 

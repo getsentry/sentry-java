@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.app.Application
+import android.app.Application.ActivityLifecycleCallbacks
 import android.content.pm.ProviderInfo
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -16,7 +17,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
@@ -48,6 +48,7 @@ class SentryPerformanceProviderTest {
         val providerInfo = ProviderInfo()
         val logger = mock<ILogger>()
         lateinit var configFile: File
+        var activityLifecycleCallbacks: MutableList<ActivityLifecycleCallbacks> = mutableListOf()
 
         fun getSut(sdkVersion: Int = Build.VERSION_CODES.S, authority: String = AUTHORITY, handleFile: ((config: File) -> Unit)? = null): SentryPerformanceProvider {
             val buildInfoProvider: BuildInfoProvider = mock()
@@ -56,7 +57,14 @@ class SentryPerformanceProviderTest {
             whenever(mockContext.applicationContext).thenReturn(mockContext)
             configFile = File(sentryCache, Sentry.APP_START_PROFILING_CONFIG_FILE_NAME)
             handleFile?.invoke(configFile)
-
+            whenever(mockContext.registerActivityLifecycleCallbacks(any())).then {
+                activityLifecycleCallbacks.add(it.arguments[0] as ActivityLifecycleCallbacks)
+                return@then Unit
+            }
+            whenever(mockContext.unregisterActivityLifecycleCallbacks(any())).then {
+                activityLifecycleCallbacks.remove(it.arguments[0] as ActivityLifecycleCallbacks)
+                return@then Unit
+            }
             providerInfo.authority = authority
             return SentryPerformanceProvider(logger, buildInfoProvider).apply {
                 attachInfo(mockContext, providerInfo)
@@ -99,6 +107,16 @@ class SentryPerformanceProviderTest {
         fixture.getSut()
         assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasStarted())
         assertTrue(AppStartMetrics.getInstance().appStartTimeSpan.hasStarted())
+    }
+
+    @Test
+    fun `provider sets both appstart and sdk init start + end times`() {
+        val provider = fixture.getSut()
+        provider.onCreate()
+
+        val metrics = AppStartMetrics.getInstance()
+        assertTrue(metrics.appStartTimeSpan.hasStarted())
+        assertTrue(metrics.sdkInitTimeSpan.hasStarted())
     }
 
     //region app start profiling

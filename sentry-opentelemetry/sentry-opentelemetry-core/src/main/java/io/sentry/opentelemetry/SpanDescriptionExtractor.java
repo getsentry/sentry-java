@@ -18,23 +18,16 @@ public final class SpanDescriptionExtractor {
   @SuppressWarnings("deprecation")
   public @NotNull OtelSpanInfo extractSpanInfo(
       final @NotNull SpanData otelSpan, final @Nullable IOtelSpanWrapper sentrySpan) {
-    if (!isInternalSpanKind(otelSpan)) {
-      final @NotNull Attributes attributes = otelSpan.getAttributes();
+    final @NotNull Attributes attributes = otelSpan.getAttributes();
 
-      final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
-      if (httpMethod != null) {
-        return descriptionForHttpMethod(otelSpan, httpMethod);
-      }
+    final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
+    if (httpMethod != null) {
+      return descriptionForHttpMethod(otelSpan, httpMethod);
+    }
 
-      final @Nullable String httpRequestMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
-      if (httpRequestMethod != null) {
-        return descriptionForHttpMethod(otelSpan, httpRequestMethod);
-      }
-
-      final @Nullable String dbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
-      if (dbSystem != null) {
-        return descriptionForDbSystem(otelSpan);
-      }
+    final @Nullable String dbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
+    if (dbSystem != null) {
+      return descriptionForDbSystem(otelSpan);
     }
 
     final @NotNull String name = otelSpan.getName();
@@ -42,10 +35,6 @@ public final class SpanDescriptionExtractor {
         sentrySpan != null ? sentrySpan.getDescription() : name;
     final @NotNull String description = maybeDescription != null ? maybeDescription : name;
     return new OtelSpanInfo(name, description, TransactionNameSource.CUSTOM);
-  }
-
-  private boolean isInternalSpanKind(final @NotNull SpanData otelSpan) {
-    return SpanKind.INTERNAL.equals(otelSpan.getKind());
   }
 
   @SuppressWarnings("deprecation")
@@ -60,6 +49,12 @@ public final class SpanDescriptionExtractor {
       opBuilder.append(".client");
     } else if (SpanKind.SERVER.equals(kind)) {
       opBuilder.append(".server");
+    } else {
+      // we cannot be certain that a root span is a server span as it might simply be a client span
+      // without parent
+      if (!isRootSpan(otelSpan)) {
+        opBuilder.append(".client");
+      }
     }
     final @Nullable String httpTarget = attributes.get(HttpIncubatingAttributes.HTTP_TARGET);
     final @Nullable String httpRoute = attributes.get(HttpAttributes.HTTP_ROUTE);
@@ -90,6 +85,10 @@ public final class SpanDescriptionExtractor {
         httpRoute != null ? TransactionNameSource.ROUTE : TransactionNameSource.URL;
 
     return new OtelSpanInfo(op, description, transactionNameSource);
+  }
+
+  private static boolean isRootSpan(SpanData otelSpan) {
+    return !otelSpan.getParentSpanContext().isValid() || otelSpan.getParentSpanContext().isRemote();
   }
 
   @SuppressWarnings("deprecation")

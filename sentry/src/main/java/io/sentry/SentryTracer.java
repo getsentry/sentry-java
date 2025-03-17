@@ -5,9 +5,9 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -155,7 +155,9 @@ public final class SentryTracer implements ITransaction {
     // abort all child-spans first, this ensures the transaction can be finished,
     // even if waitForChildren is true
     // iterate in reverse order to ensure leaf spans are processed before their parents
-    @NotNull final ListIterator<Span> iterator = children.listIterator(children.size());
+    @NotNull
+    final ListIterator<Span> iterator =
+        CollectionUtils.reverseListIterator((CopyOnWriteArrayList<Span>) this.children);
     while (iterator.hasPrevious()) {
       @NotNull final Span span = iterator.previous();
       span.setSpanFinishedCallback(null);
@@ -677,14 +679,13 @@ public final class SentryTracer implements ITransaction {
   }
 
   private boolean hasAllChildrenFinished() {
-    final List<Span> spans = new ArrayList<>(this.children);
-    if (!spans.isEmpty()) {
-      for (final Span span : spans) {
-        // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
-        // date
-        if (!span.isFinished() && span.getFinishDate() == null) {
-          return false;
-        }
+    @NotNull final ListIterator<Span> iterator = this.children.listIterator();
+    while (iterator.hasNext()) {
+      @NotNull final Span span = iterator.next();
+      // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
+      // date
+      if (!span.isFinished() && span.getFinishDate() == null) {
+        return false;
       }
     }
     return true;
@@ -909,12 +910,13 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @Nullable ISpan getLatestActiveSpan() {
-    final List<Span> spans = new ArrayList<>(this.children);
-    if (!spans.isEmpty()) {
-      for (int i = spans.size() - 1; i >= 0; i--) {
-        if (!spans.get(i).isFinished()) {
-          return spans.get(i);
-        }
+    @NotNull
+    final ListIterator<Span> iterator =
+        CollectionUtils.reverseListIterator((CopyOnWriteArrayList<Span>) this.children);
+    while (iterator.hasPrevious()) {
+      @NotNull final Span span = iterator.previous();
+      if (!span.isFinished()) {
+        return span;
       }
     }
     return null;
