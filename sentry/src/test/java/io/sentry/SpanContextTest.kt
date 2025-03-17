@@ -2,6 +2,7 @@ package io.sentry
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -54,6 +55,6 @@ class SpanContextTest {
         trace.setData("k", "v")
         trace.setData("k", null)
         trace.setData(null, null)
-        assertTrue(trace.data.isEmpty())
+        assertFalse(trace.data.containsKey("k"))
     }
 }

@@ -27,6 +27,8 @@ import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getProperty
 import io.sentry.transport.RateLimiter
 import org.junit.runner.RunWith
+import org.mockito.Mockito
+import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
@@ -59,6 +61,7 @@ class AndroidContinuousProfilerTest {
         val buildInfo = mock<BuildInfoProvider> {
             whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP_MR1)
         }
+        val mockedSentry = mockStatic(Sentry::class.java)
         val mockLogger = mock<ILogger>()
         val mockTracesSampler = mock<TracesSampler>()
 
@@ -77,7 +80,7 @@ class AndroidContinuousProfilerTest {
         }
 
         init {
-            whenever(mockTracesSampler.sampleSessionProfile()).thenReturn(true)
+            whenever(mockTracesSampler.sampleSessionProfile(any())).thenReturn(true)
         }
 
         fun getSut(buildInfoProvider: BuildInfoProvider = buildInfo, optionConfig: ((options: SentryAndroidOptions) -> Unit) = {}): AndroidContinuousProfiler {
@@ -133,11 +136,14 @@ class AndroidContinuousProfilerTest {
         File(fixture.options.profilingTracesDirPath!!).mkdirs()
 
         Sentry.setCurrentScopes(fixture.scopes)
+
+        fixture.mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
     }
 
     @AfterTest
     fun clear() {
         context.cacheDir.deleteRecursively()
+        fixture.mockedSentry.close()
     }
 
     @Test
@@ -189,7 +195,7 @@ class AndroidContinuousProfilerTest {
     @Test
     fun `profiler logs a warning on start if not sampled`() {
         val profiler = fixture.getSut()
-        whenever(fixture.mockTracesSampler.sampleSessionProfile()).thenReturn(false)
+        whenever(fixture.mockTracesSampler.sampleSessionProfile(any())).thenReturn(false)
         profiler.startProfileSession(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
         assertFalse(profiler.isRunning)
         verify(fixture.mockLogger).log(eq(SentryLevel.DEBUG), eq("Profiler was not started due to sampling decision."))
@@ -198,28 +204,28 @@ class AndroidContinuousProfilerTest {
     @Test
     fun `profiler evaluates sessionSampleRate only the first time`() {
         val profiler = fixture.getSut()
-        verify(fixture.mockTracesSampler, never()).sampleSessionProfile()
+        verify(fixture.mockTracesSampler, never()).sampleSessionProfile(any())
         // The first time the profiler is started, the sessionSampleRate is evaluated
         profiler.startProfileSession(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
-        verify(fixture.mockTracesSampler, times(1)).sampleSessionProfile()
+        verify(fixture.mockTracesSampler, times(1)).sampleSessionProfile(any())
         // Then, the sessionSampleRate is not evaluated again
         profiler.startProfileSession(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
-        verify(fixture.mockTracesSampler, times(1)).sampleSessionProfile()
+        verify(fixture.mockTracesSampler, times(1)).sampleSessionProfile(any())
     }
 
     @Test
     fun `when reevaluateSampling, profiler evaluates sessionSampleRate on next start`() {
         val profiler = fixture.getSut()
-        verify(fixture.mockTracesSampler, never()).sampleSessionProfile()
+        verify(fixture.mockTracesSampler, never()).sampleSessionProfile(any())
         // The first time the profiler is started, the sessionSampleRate is evaluated
         profiler.startProfileSession(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
-        verify(fixture.mockTracesSampler, times(1)).sampleSessionProfile()
+        verify(fixture.mockTracesSampler, times(1)).sampleSessionProfile(any())
         // When reevaluateSampling is called, the sessionSampleRate is not evaluated immediately
         profiler.reevaluateSampling()
-        verify(fixture.mockTracesSampler, times(1)).sampleSessionProfile()
+        verify(fixture.mockTracesSampler, times(1)).sampleSessionProfile(any())
         // Then, when the profiler starts again, the sessionSampleRate is reevaluated
         profiler.startProfileSession(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
-        verify(fixture.mockTracesSampler, times(2)).sampleSessionProfile()
+        verify(fixture.mockTracesSampler, times(2)).sampleSessionProfile(any())
     }
 
     @Test
@@ -537,5 +543,10 @@ class AndroidContinuousProfilerTest {
         assertFalse(profiler.isRunning)
         assertEquals(SentryId.EMPTY_ID, profiler.profilerId)
         verify(fixture.mockLogger).log(eq(SentryLevel.WARNING), eq("Device is offline. Stopping profiler."))
+    }
+
+    fun withMockScopes(closure: () -> Unit) = Mockito.mockStatic(Sentry::class.java).use {
+        it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
+        closure.invoke()
     }
 }

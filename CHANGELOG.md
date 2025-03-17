@@ -10,12 +10,16 @@
   Note: Both `options.profilesSampler` and `options.profilesSampleRate` must **not** be set to enable Continuous Profiling.
 
   ```java
+  import io.sentry.ProfileLifecycle;
   import io.sentry.android.core.SentryAndroid;
 
   SentryAndroid.init(context) { options ->
    
     // Currently under experimental options:
     options.getExperimental().setProfileSessionSampleRate(1.0);
+    // In manual mode, you need to start and stop the profiler manually using Sentry.startProfileSession and Sentry.stopProfileSession
+    // In trace mode, the profiler will start and stop automatically whenever a sampled trace starts and finishes
+    options.getExperimental().setProfileLifecycle(ProfileLifecycle.MANUAL);
   }
   // Start profiling
   Sentry.startProfileSession();
@@ -24,12 +28,16 @@
   Sentry.stopProfileSession();
   ```
   ```kotlin
+  import io.sentry.ProfileLifecycle
   import io.sentry.android.core.SentryAndroid
 
   SentryAndroid.init(context) { options ->
    
     // Currently under experimental options:
     options.experimental.profileSessionSampleRate = 1.0
+    // In manual mode, you need to start and stop the profiler manually using Sentry.startProfileSession and Sentry.stopProfileSession
+    // In trace mode, the profiler will start and stop automatically whenever a sampled trace starts and finishes
+    options.experimental.profileLifecycle = ProfileLifecycle.MANUAL
   }
   // Start profiling
   Sentry.startProfileSession()

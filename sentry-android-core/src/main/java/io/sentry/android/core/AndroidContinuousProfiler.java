@@ -24,6 +24,7 @@ import io.sentry.TracesSampler;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.RateLimiter;
+import io.sentry.util.SentryRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -109,7 +110,7 @@ public class AndroidContinuousProfiler
       final @NotNull ProfileLifecycle profileLifecycle,
       final @NotNull TracesSampler tracesSampler) {
     if (shouldSample) {
-      isSampled = tracesSampler.sampleSessionProfile();
+      isSampled = tracesSampler.sampleSessionProfile(SentryRandom.current().nextDouble());
       shouldSample = false;
     }
     if (!isSampled) {

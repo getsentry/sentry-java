@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.SentryRandom;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
@@ -50,7 +51,10 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
     traceSampleRate = samplingDecision.getSampleRate();
     profileSampled = samplingDecision.getProfileSampled();
     profileSampleRate = samplingDecision.getProfileSampleRate();
-    continuousProfileSampled = options.getInternalTracesSampler().sampleSessionProfile();
+    continuousProfileSampled =
+        options
+            .getInternalTracesSampler()
+            .sampleSessionProfile(SentryRandom.current().nextDouble());
     profilingTracesDirPath = options.getProfilingTracesDirPath();
     isProfilingEnabled = options.isProfilingEnabled();
     isContinuousProfilingEnabled = options.isContinuousProfilingEnabled();

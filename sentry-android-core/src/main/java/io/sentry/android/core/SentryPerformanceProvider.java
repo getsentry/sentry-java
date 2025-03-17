@@ -9,7 +9,6 @@ import android.content.pm.ProviderInfo;
 import android.net.Uri;
 import android.os.Process;
 import android.os.SystemClock;
-import androidx.annotation.NonNull;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;

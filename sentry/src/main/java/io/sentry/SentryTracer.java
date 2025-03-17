@@ -9,7 +9,6 @@ import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.thread.IThreadChecker;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;

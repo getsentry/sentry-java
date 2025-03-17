@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.util.SentryRandom
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -165,23 +166,24 @@ class TracesSamplerTest {
     }
 
     @Test
-    fun `when profileSessionSampleRate is not set returns true`() {
-        val sampler = fixture.getSut(randomResult = 1.0)
-        val sampled = sampler.sampleSessionProfile()
+    fun `when profileSessionSampleRate is not set returns false`() {
+        val sampler = fixture.getSut()
+        val sampled = sampler.sampleSessionProfile(1.0)
         assertFalse(sampled)
     }
 
     @Test
     fun `when profileSessionSampleRate is set and random returns lower number returns true`() {
-        val sampler = fixture.getSut(randomResult = 0.1, profileSessionSampleRate = 0.2)
-        val sampled = sampler.sampleSessionProfile()
+        SentryRandom.current().nextDouble()
+        val sampler = fixture.getSut(profileSessionSampleRate = 0.2)
+        val sampled = sampler.sampleSessionProfile(0.1)
         assertTrue(sampled)
     }
 
     @Test
     fun `when profileSessionSampleRate is set and random returns greater number returns false`() {
-        val sampler = fixture.getSut(randomResult = 0.9, profileSessionSampleRate = 0.2)
-        val sampled = sampler.sampleSessionProfile()
+        val sampler = fixture.getSut(profileSessionSampleRate = 0.2)
+        val sampled = sampler.sampleSessionProfile(0.9)
         assertFalse(sampled)
     }
 

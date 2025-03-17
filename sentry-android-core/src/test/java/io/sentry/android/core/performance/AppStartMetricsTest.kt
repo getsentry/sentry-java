@@ -269,7 +269,7 @@ class AppStartMetricsTest {
         whenever(profiler.isRunning).thenReturn(true)
         AppStartMetrics.getInstance().appStartContinuousProfiler = profiler
 
-        AppStartMetrics.getInstance().registerApplicationForegroundCheck(mock())
+        AppStartMetrics.getInstance().registerLifecycleCallbacks(mock())
         // Job on main thread checks if activity was launched
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 

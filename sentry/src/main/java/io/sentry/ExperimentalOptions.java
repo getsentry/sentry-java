@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.protocol.SdkVersion;
-import org.jetbrains.annotations.Nullable;
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +13,6 @@ import org.jetbrains.annotations.Nullable;
  * <p>Beware that experimental options can change at any time.
  */
 public final class ExperimentalOptions {
-  private @NotNull SentryReplayOptions sessionReplay;
 
   /**
    * Indicates the percentage in which the profiles for the session will be created. Specifying 0
