@@ -14,6 +14,7 @@
   <string name="crash_from_native">Crash from native (segfault)</string>
   <string name="capture_from_native">Capture event from native</string>
   <string name="anr">ANR</string>
+  <string name="native_anr">ANR (native)</string>
   <string name="do_request">Do Request</string>
   <string name="open_second_activity">Open Second Activity</string>
   <string name="open_sample_fragment">Open Sample Fragment</string>
