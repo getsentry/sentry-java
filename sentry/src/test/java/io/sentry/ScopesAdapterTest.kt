@@ -219,6 +219,12 @@ class ScopesAdapterTest {
         verify(scopes).captureTransaction(eq(transaction), eq(traceContext), eq(hint), eq(profilingTraceData))
     }
 
+    @Test fun `captureProfileChunk calls Scopes`() {
+        val profileChunk = mock<ProfileChunk>()
+        ScopesAdapter.getInstance().captureProfileChunk(profileChunk)
+        verify(scopes).captureProfileChunk(eq(profileChunk))
+    }
+
     @Test fun `startTransaction calls Scopes`() {
         val transactionContext = mock<TransactionContext>()
         val samplingContext = mock<CustomSamplingContext>()
@@ -262,5 +268,15 @@ class ScopesAdapterTest {
     @Test fun `reportFullyDisplayed calls Scopes`() {
         ScopesAdapter.getInstance().reportFullyDisplayed()
         verify(scopes).reportFullyDisplayed()
+    }
+
+    @Test fun `startProfileSession calls Scopes`() {
+        ScopesAdapter.getInstance().startProfileSession()
+        verify(scopes).startProfileSession()
+    }
+
+    @Test fun `stopProfileSession calls Scopes`() {
+        ScopesAdapter.getInstance().stopProfileSession()
+        verify(scopes).stopProfileSession()
     }
 }

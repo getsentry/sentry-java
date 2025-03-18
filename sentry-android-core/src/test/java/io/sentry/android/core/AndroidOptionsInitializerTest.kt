@@ -6,14 +6,19 @@ import android.os.Build
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.DefaultTransactionPerformanceCollector
+import io.sentry.DefaultCompositePerformanceCollector
+import io.sentry.IContinuousProfiler
 import io.sentry.ILogger
+import io.sentry.ITransactionProfiler
 import io.sentry.MainEventProcessor
+import io.sentry.NoOpContinuousProfiler
+import io.sentry.NoOpTransactionProfiler
 import io.sentry.SentryOptions
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
 import io.sentry.android.core.internal.modules.AssetsModulesLoader
 import io.sentry.android.core.internal.util.AndroidThreadChecker
+import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
 import io.sentry.android.replay.ReplayIntegration
 import io.sentry.android.timber.SentryTimberIntegration
@@ -36,6 +41,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -347,11 +353,113 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `init should set Android transaction profiler`() {
+    fun `init should set Android continuous profiler`() {
         fixture.initSut()
 
         assertNotNull(fixture.sentryOptions.transactionProfiler)
+        assertEquals(fixture.sentryOptions.transactionProfiler, NoOpTransactionProfiler.getInstance())
+        assertTrue(fixture.sentryOptions.continuousProfiler is AndroidContinuousProfiler)
+    }
+
+    @Test
+    fun `init with profilesSampleRate should set Android transaction profiler`() {
+        fixture.initSut(configureOptions = {
+            profilesSampleRate = 1.0
+        })
+
+        assertNotNull(fixture.sentryOptions.transactionProfiler)
         assertTrue(fixture.sentryOptions.transactionProfiler is AndroidTransactionProfiler)
+        assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+    }
+
+    @Test
+    fun `init with profilesSampleRate 0 should set Android transaction profiler`() {
+        fixture.initSut(configureOptions = {
+            profilesSampleRate = 0.0
+        })
+
+        assertNotNull(fixture.sentryOptions.transactionProfiler)
+        assertTrue(fixture.sentryOptions.transactionProfiler is AndroidTransactionProfiler)
+        assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+    }
+
+    @Test
+    fun `init with profilesSampler should set Android transaction profiler`() {
+        fixture.initSut(configureOptions = {
+            profilesSampler = mock()
+        })
+
+        assertNotNull(fixture.sentryOptions.transactionProfiler)
+        assertTrue(fixture.sentryOptions.transactionProfiler is AndroidTransactionProfiler)
+        assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+    }
+
+    @Test
+    fun `init reuses transaction profiler of appStartMetrics, if exists`() {
+        val appStartProfiler = mock<ITransactionProfiler>()
+        AppStartMetrics.getInstance().appStartProfiler = appStartProfiler
+        fixture.initSut(configureOptions = {
+            profilesSampler = mock()
+        })
+
+        assertEquals(appStartProfiler, fixture.sentryOptions.transactionProfiler)
+        assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+
+        // AppStartMetrics should be cleared
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+    }
+
+    @Test
+    fun `init reuses continuous profiler of appStartMetrics, if exists`() {
+        val appStartContinuousProfiler = mock<IContinuousProfiler>()
+        AppStartMetrics.getInstance().appStartContinuousProfiler = appStartContinuousProfiler
+        fixture.initSut()
+
+        assertEquals(fixture.sentryOptions.transactionProfiler, NoOpTransactionProfiler.getInstance())
+        assertEquals(appStartContinuousProfiler, fixture.sentryOptions.continuousProfiler)
+
+        // AppStartMetrics should be cleared
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+    }
+
+    @Test
+    fun `init with transaction profiling closes continuous profiler of appStartMetrics`() {
+        val appStartContinuousProfiler = mock<IContinuousProfiler>()
+        AppStartMetrics.getInstance().appStartContinuousProfiler = appStartContinuousProfiler
+        fixture.initSut(configureOptions = {
+            profilesSampler = mock()
+        })
+
+        assertNotNull(fixture.sentryOptions.transactionProfiler)
+        assertNotEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+        assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+
+        // app start profiler is closed, because it will never be used
+        verify(appStartContinuousProfiler).close()
+
+        // AppStartMetrics should be cleared
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+    }
+
+    @Test
+    fun `init with continuous profiling closes transaction profiler of appStartMetrics`() {
+        val appStartProfiler = mock<ITransactionProfiler>()
+        AppStartMetrics.getInstance().appStartProfiler = appStartProfiler
+        fixture.initSut()
+
+        assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+        assertNotNull(fixture.sentryOptions.continuousProfiler)
+        assertNotEquals(NoOpContinuousProfiler.getInstance(), fixture.sentryOptions.continuousProfiler)
+
+        // app start profiler is closed, because it will never be used
+        verify(appStartProfiler).close()
+
+        // AppStartMetrics should be cleared
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
     }
 
     @Test
@@ -666,10 +774,10 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `DefaultTransactionPerformanceCollector is set to options`() {
+    fun `DefaultCompositePerformanceCollector is set to options`() {
         fixture.initSut()
 
-        assertIs<DefaultTransactionPerformanceCollector>(fixture.sentryOptions.transactionPerformanceCollector)
+        assertIs<DefaultCompositePerformanceCollector>(fixture.sentryOptions.compositePerformanceCollector)
     }
 
     @Test

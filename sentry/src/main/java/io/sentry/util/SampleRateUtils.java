@@ -25,6 +25,10 @@ public final class SampleRateUtils {
     return isValidRate(profilesSampleRate, true);
   }
 
+  public static boolean isValidContinuousProfilesSampleRate(@Nullable Double profilesSampleRate) {
+    return isValidRate(profilesSampleRate, true);
+  }
+
   public static @NotNull Double backfilledSampleRand(
       final @Nullable Double sampleRand,
       final @Nullable Double sampleRate,

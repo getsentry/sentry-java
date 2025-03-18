@@ -946,6 +946,8 @@ public final class Scope implements IScope {
       if (session != null) {
         // Assumes session will NOT flush itself (Not passing any scopes to it)
         session.end();
+        // Continuous profiler sample rate is reevaluated every time a session ends
+        options.getContinuousProfiler().reevaluateSampling();
       }
       previousSession = session;
 
@@ -1019,6 +1021,8 @@ public final class Scope implements IScope {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       if (session != null) {
         session.end();
+        // Continuous profiler sample rate is reevaluated every time a session ends
+        options.getContinuousProfiler().reevaluateSampling();
         previousSession = session.clone();
         session = null;
       }

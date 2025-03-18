@@ -219,6 +219,12 @@ class HubAdapterTest {
         verify(scopes).captureTransaction(eq(transaction), eq(traceContext), eq(hint), eq(profilingTraceData))
     }
 
+    @Test fun `captureProfileChunk calls Hub`() {
+        val profileChunk = mock<ProfileChunk>()
+        HubAdapter.getInstance().captureProfileChunk(profileChunk)
+        verify(scopes).captureProfileChunk(eq(profileChunk))
+    }
+
     @Test fun `startTransaction calls Hub`() {
         val transactionContext = mock<TransactionContext>()
         val samplingContext = mock<CustomSamplingContext>()
@@ -262,5 +268,15 @@ class HubAdapterTest {
     @Test fun `reportFullyDisplayed calls Hub`() {
         HubAdapter.getInstance().reportFullyDisplayed()
         verify(scopes).reportFullyDisplayed()
+    }
+
+    @Test fun `startProfileSession calls Hub`() {
+        HubAdapter.getInstance().startProfileSession()
+        verify(scopes).startProfileSession()
+    }
+
+    @Test fun `stopProfileSession calls Hub`() {
+        HubAdapter.getInstance().stopProfileSession()
+        verify(scopes).stopProfileSession()
     }
 }

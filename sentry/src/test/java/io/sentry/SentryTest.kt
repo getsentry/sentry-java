@@ -402,6 +402,35 @@ class SentryTest {
     }
 
     @Test
+    fun `profilingTracesDirPath should be created and cleared at initialization when continuous profiling is enabled`() {
+        val tempPath = getTempPath()
+        var sentryOptions: SentryOptions? = null
+        Sentry.init {
+            it.dsn = dsn
+            it.experimental.profileSessionSampleRate = 1.0
+            it.cacheDirPath = tempPath
+            sentryOptions = it
+        }
+
+        assertTrue(File(sentryOptions?.profilingTracesDirPath!!).exists())
+        assertTrue(File(sentryOptions?.profilingTracesDirPath!!).list()!!.isEmpty())
+    }
+
+    @Test
+    fun `profilingTracesDirPath should not be created when no profiling is enabled`() {
+        val tempPath = getTempPath()
+        var sentryOptions: SentryOptions? = null
+        Sentry.init {
+            it.dsn = dsn
+            it.experimental.profileSessionSampleRate = 0.0
+            it.cacheDirPath = tempPath
+            sentryOptions = it
+        }
+
+        assertFalse(File(sentryOptions?.profilingTracesDirPath!!).exists())
+    }
+
+    @Test
     fun `only old profiles in profilingTracesDirPath should be cleared when profiling is enabled`() {
         val tempPath = getTempPath()
         val options = SentryOptions().also {
@@ -1103,6 +1132,25 @@ class SentryTest {
     }
 
     @Test
+    fun `init calls samplers if isStartProfilerOnAppStart is true`() {
+        val mockSampleTracer = mock<TracesSamplerCallback>()
+        val mockProfilesSampler = mock<ProfilesSamplerCallback>()
+        Sentry.init {
+            it.dsn = dsn
+            it.tracesSampleRate = 1.0
+            it.experimental.isStartProfilerOnAppStart = true
+            it.profilesSampleRate = 1.0
+            it.tracesSampler = mockSampleTracer
+            it.profilesSampler = mockProfilesSampler
+            it.executorService = ImmediateExecutorService()
+            it.cacheDirPath = getTempPath()
+        }
+        // Samplers are not called
+        verify(mockSampleTracer, never()).sample(any())
+        verify(mockProfilesSampler, never()).sample(any())
+    }
+
+    @Test
     fun `init calls app start profiling samplers in the background`() {
         val mockSampleTracer = mock<TracesSamplerCallback>()
         val mockProfilesSampler = mock<ProfilesSamplerCallback>()
@@ -1193,15 +1241,33 @@ class SentryTest {
     }
 
     @Test
+    fun `init creates app start profiling config if isStartProfilerOnAppStart, even with performance disabled`() {
+        val path = getTempPath()
+        File(path).mkdirs()
+        val appStartProfilingConfigFile = File(path, "app_start_profiling_config")
+        appStartProfilingConfigFile.createNewFile()
+        assertTrue(appStartProfilingConfigFile.exists())
+        Sentry.init {
+            it.dsn = dsn
+            it.cacheDirPath = path
+            it.isEnableAppStartProfiling = false
+            it.experimental.isStartProfilerOnAppStart = true
+            it.tracesSampleRate = 0.0
+            it.executorService = ImmediateExecutorService()
+        }
+        assertTrue(appStartProfilingConfigFile.exists())
+    }
+
+    @Test
     fun `init saves SentryAppStartProfilingOptions to disk`() {
         var options = SentryOptions()
         val path = getTempPath()
         initForTest {
             it.dsn = dsn
             it.cacheDirPath = path
-            it.tracesSampleRate = 1.0
             it.tracesSampleRate = 0.5
             it.isEnableAppStartProfiling = true
+            it.experimental.isStartProfilerOnAppStart = true
             it.profilesSampleRate = 0.2
             it.executorService = ImmediateExecutorService()
             options = it
@@ -1214,6 +1280,8 @@ class SentryTest {
         assertEquals(0.5, appStartOption.traceSampleRate)
         assertEquals(0.2, appStartOption.profileSampleRate)
         assertTrue(appStartOption.isProfilingEnabled)
+        assertTrue(appStartOption.isEnableAppStartProfiling)
+        assertTrue(appStartOption.isStartProfilerOnAppStart)
     }
 
     @Test
@@ -1278,6 +1346,75 @@ class SentryTest {
         assertNotSame(s1, s2)
     }
 
+    @Test
+    fun `startProfileSession starts the continuous profiler`() {
+        val profiler = mock<IContinuousProfiler>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+        }
+        Sentry.startProfileSession()
+        verify(profiler).startProfileSession(eq(ProfileLifecycle.MANUAL), any())
+    }
+
+    @Test
+    fun `startProfileSession is ignored when continuous profiling is disabled`() {
+        val profiler = mock<IContinuousProfiler>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setContinuousProfiler(profiler)
+            it.profilesSampleRate = 1.0
+        }
+        Sentry.startProfileSession()
+        verify(profiler, never()).startProfileSession(eq(ProfileLifecycle.MANUAL), any())
+    }
+
+    @Test
+    fun `startProfileSession is ignored when profile lifecycle is TRACE`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+            it.isDebug = true
+            it.setLogger(logger)
+        }
+        Sentry.startProfileSession()
+        verify(profiler, never()).startProfileSession(any(), any())
+        verify(logger).log(
+            eq(SentryLevel.WARNING),
+            eq("Profiling lifecycle is %s. Profiling cannot be started manually."),
+            eq(ProfileLifecycle.TRACE.name)
+        )
+    }
+
+    @Test
+    fun `stopProfileSession stops the continuous profiler`() {
+        val profiler = mock<IContinuousProfiler>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+        }
+        Sentry.stopProfileSession()
+        verify(profiler).stopProfileSession(eq(ProfileLifecycle.MANUAL))
+    }
+
+    @Test
+    fun `stopProfileSession is ignored when continuous profiling is disabled`() {
+        val profiler = mock<IContinuousProfiler>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setContinuousProfiler(profiler)
+            it.profilesSampleRate = 1.0
+        }
+        Sentry.stopProfileSession()
+        verify(profiler, never()).stopProfileSession(eq(ProfileLifecycle.MANUAL))
+    }
+
     private class InMemoryOptionsObserver : IOptionsObserver {
         var release: String? = null
             private set
@@ -1329,6 +1466,7 @@ class SentryTest {
         override fun isMainThread(): Boolean = false
         override fun isMainThread(sentryThread: SentryThread): Boolean = false
         override fun currentThreadSystemId(): Long = 0
+        override fun getCurrentThreadName(): String = ""
     }
 
     private class CustomMemoryCollector :

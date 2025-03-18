@@ -205,6 +205,7 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
 
       // onTransactionStart() is only available since Lollipop_MR1
       // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
+      // and SUPPORTED_ABIS since KITKAT
       if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) return null;
 
       // Transaction finished, but it's not in the current profile

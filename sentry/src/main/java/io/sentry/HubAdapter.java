@@ -278,6 +278,22 @@ public final class HubAdapter implements IHub {
   }
 
   @Override
+  public void startProfileSession() {
+    Sentry.startProfileSession();
+  }
+
+  @Override
+  public void stopProfileSession() {
+    Sentry.stopProfileSession();
+  }
+
+  @Override
+  public @NotNull SentryId captureProfileChunk(
+      final @NotNull ProfileChunk profilingContinuousData) {
+    return Sentry.getCurrentScopes().captureProfileChunk(profilingContinuousData);
+  }
+
+  @Override
   public void setSpanContext(
       final @NotNull Throwable throwable,
       final @NotNull ISpan span,

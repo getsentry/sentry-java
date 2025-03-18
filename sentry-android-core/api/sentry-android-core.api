@@ -40,6 +40,18 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
+public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
+	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
+	public fun close ()V
+	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
+	public fun getRootSpanCounter ()I
+	public fun isRunning ()Z
+	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
+	public fun reevaluateSampling ()V
+	public fun startProfileSession (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
+	public fun stopProfileSession (Lio/sentry/ProfileLifecycle;)V
+}
+
 public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/IPerformanceSnapshotCollector {
 	public fun <init> (Lio/sentry/ILogger;)V
 	public fun collect (Lio/sentry/PerformanceCollectionData;)V
@@ -460,6 +472,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun clear ()V
 	public fun createProcessInitSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
+	public fun getAppStartContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
@@ -481,6 +494,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
 	public fun registerLifecycleCallbacks (Landroid/app/Application;)V
 	public fun setAppLaunchedInForeground (Z)V
+	public fun setAppStartContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
 	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V

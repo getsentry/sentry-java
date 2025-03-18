@@ -55,6 +55,7 @@ class ScopesTest {
 
     private lateinit var file: File
     private lateinit var profilingTraceFile: File
+    private val mockProfiler = spy(NoOpContinuousProfiler.getInstance())
 
     @BeforeTest
     fun `set up`() {
@@ -781,6 +782,8 @@ class ScopesTest {
             comments = "comment"
         }
     }
+
+    //endregion
 
     //region captureCheckIn tests
 
@@ -1586,6 +1589,52 @@ class ScopesTest {
     }
     //endregion
 
+    //region captureProfileChunk tests
+    @Test
+    fun `when captureProfileChunk is called on disabled client, do nothing`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = createScopes(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        sut.close()
+
+        sut.captureProfileChunk(mock())
+        verify(mockClient, never()).captureProfileChunk(any(), any())
+        verify(mockClient, never()).captureProfileChunk(any(), any())
+    }
+
+    @Test
+    fun `when captureProfileChunk, captureProfileChunk on the client should be called`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
+        sut.bindClient(mockClient)
+
+        val profileChunk = mock<ProfileChunk>()
+        sut.captureProfileChunk(profileChunk)
+        verify(mockClient).captureProfileChunk(eq(profileChunk), any())
+    }
+
+    @Test
+    fun `when profileChunk is called, lastEventId is not set`() {
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            setSerializer(mock())
+        }
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
+        sut.bindClient(mockClient)
+        sut.captureProfileChunk(mock())
+        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
+    }
+    //endregion
+
     //region profiling tests
 
     @Test
@@ -1759,14 +1808,17 @@ class ScopesTest {
     fun `Scopes should close the sentry executor processor, profiler and performance collector on close call`() {
         val executor = mock<ISentryExecutorService>()
         val profiler = mock<ITransactionProfiler>()
-        val performanceCollector = mock<TransactionPerformanceCollector>()
         val backpressureMonitorMock = mock<IBackpressureMonitor>()
+        val continuousProfiler = mock<IContinuousProfiler>()
+        val performanceCollector = mock<CompositePerformanceCollector>()
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
             cacheDirPath = file.absolutePath
             executorService = executor
             setTransactionProfiler(profiler)
-            transactionPerformanceCollector = performanceCollector
+            compositePerformanceCollector = performanceCollector
+            setContinuousProfiler(continuousProfiler)
+            experimental.profileSessionSampleRate = 1.0
             backpressureMonitor = backpressureMonitorMock
         }
         val sut = createScopes(options)
@@ -1774,6 +1826,7 @@ class ScopesTest {
         verify(backpressureMonitorMock).close()
         verify(executor).close(any())
         verify(profiler).close()
+        verify(continuousProfiler).close()
         verify(performanceCollector).close()
     }
 
@@ -1832,6 +1885,49 @@ class ScopesTest {
         }
         val transaction = scopes.startTransaction(TransactionContext("name", "op", TracesSamplingDecision(true)))
         assertTrue(transaction is NoOpTransaction)
+    }
+
+    @Test
+    fun `when startTransaction, trace profile session is started`() {
+        val scopes = generateScopes {
+            it.tracesSampleRate = 1.0
+            it.setContinuousProfiler(mockProfiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+        }
+
+        val transaction = scopes.startTransaction("name", "op")
+        assertTrue(transaction.isSampled!!)
+        verify(mockProfiler).startProfileSession(eq(ProfileLifecycle.TRACE), any())
+    }
+
+    @Test
+    fun `when startTransaction, manual profile session is not started`() {
+        val scopes = generateScopes {
+            it.tracesSampleRate = 1.0
+            it.setContinuousProfiler(mockProfiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.experimental.profileLifecycle = ProfileLifecycle.MANUAL
+        }
+
+        val transaction = scopes.startTransaction("name", "op")
+        assertTrue(transaction.isSampled!!)
+        verify(mockProfiler, never()).startProfileSession(any(), any())
+    }
+
+    @Test
+    fun `when startTransaction not sampled, trace profile session is not started`() {
+        val scopes = generateScopes {
+            // If transaction is not sampled, profiler should not start
+            it.tracesSampleRate = 0.0
+            it.setContinuousProfiler(mockProfiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+        }
+        val transaction = scopes.startTransaction("name", "op")
+        transaction.spanContext.setSampled(false, false)
+        assertFalse(transaction.isSampled!!)
+        verify(mockProfiler, never()).startProfileSession(any(), any())
     }
     //endregion
 
@@ -2140,6 +2236,96 @@ class ScopesTest {
         val transaction = scopes.startTransaction(transactionContext, transactionOptions)
         assertEquals("other.span.origin", transaction.spanContext.origin)
     }
+
+    //region profileSession
+
+    @Test
+    fun `startProfileSession starts the continuous profiler`() {
+        val profiler = mock<IContinuousProfiler>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+        }
+        scopes.startProfileSession()
+        verify(profiler).startProfileSession(eq(ProfileLifecycle.MANUAL), any())
+    }
+
+    @Test
+    fun `startProfileSession logs instructions if continuous profiling is disabled`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.profilesSampleRate = 1.0
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        scopes.startProfileSession()
+        verify(profiler, never()).startProfileSession(eq(ProfileLifecycle.MANUAL), any())
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."))
+    }
+
+    @Test
+    fun `startProfileSession is ignored on trace lifecycle`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        scopes.startProfileSession()
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Profiling lifecycle is %s. Profiling cannot be started manually."), eq(ProfileLifecycle.TRACE.name))
+        verify(profiler, never()).startProfileSession(any(), any())
+    }
+
+    @Test
+    fun `stopProfileSession stops the continuous profiler`() {
+        val profiler = mock<IContinuousProfiler>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+        }
+        scopes.stopProfileSession()
+        verify(profiler).stopProfileSession(eq(ProfileLifecycle.MANUAL))
+    }
+
+    @Test
+    fun `stopProfileSession logs instructions if continuous profiling is disabled`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.profilesSampleRate = 1.0
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        scopes.stopProfileSession()
+        verify(profiler, never()).stopProfileSession(eq(ProfileLifecycle.MANUAL))
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."))
+    }
+
+    @Test
+    fun `stopProfileSession is ignored on trace lifecycle`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        scopes.stopProfileSession()
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Profiling lifecycle is %s. Profiling cannot be stopped manually."), eq(ProfileLifecycle.TRACE.name))
+        verify(profiler, never()).stopProfileSession(any())
+    }
+
+    //endregion
 
     @Test
     fun `null tags do not cause NPE`() {

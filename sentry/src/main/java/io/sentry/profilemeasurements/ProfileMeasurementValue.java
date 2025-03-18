@@ -1,14 +1,20 @@
 package io.sentry.profilemeasurements;
 
+import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.SentryDate;
+import io.sentry.SentryNanotimeDate;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -19,16 +25,26 @@ import org.jetbrains.annotations.Nullable;
 public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializable {
 
   private @Nullable Map<String, Object> unknown;
+  private @Nullable Double timestamp;
   private @NotNull String relativeStartNs; // timestamp in nanoseconds this frame was started
   private double value; // frame duration in nanoseconds
 
+  @SuppressWarnings("JavaUtilDate")
   public ProfileMeasurementValue() {
-    this(0L, 0);
+    this(0L, 0, new SentryNanotimeDate(new Date(0), 0));
   }
 
-  public ProfileMeasurementValue(final @NotNull Long relativeStartNs, final @NotNull Number value) {
+  public ProfileMeasurementValue(
+      final @NotNull Long relativeStartNs,
+      final @NotNull Number value,
+      final @NotNull SentryDate timestamp) {
     this.relativeStartNs = relativeStartNs.toString();
     this.value = value.doubleValue();
+    this.timestamp = DateUtils.nanosToSeconds(timestamp.nanoTimestamp());
+  }
+
+  public @Nullable Double getTimestamp() {
+    return timestamp;
   }
 
   public double getValue() {
@@ -46,7 +62,8 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
     ProfileMeasurementValue that = (ProfileMeasurementValue) o;
     return Objects.equals(unknown, that.unknown)
         && relativeStartNs.equals(that.relativeStartNs)
-        && value == that.value;
+        && value == that.value
+        && Objects.equals(timestamp, that.timestamp);
   }
 
   @Override
@@ -59,6 +76,7 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
   public static final class JsonKeys {
     public static final String VALUE = "value";
     public static final String START_NS = "elapsed_since_start_ns";
+    public static final String TIMESTAMP = "timestamp";
   }
 
   @Override
@@ -67,6 +85,9 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
     writer.beginObject();
     writer.name(JsonKeys.VALUE).value(logger, value);
     writer.name(JsonKeys.START_NS).value(logger, relativeStartNs);
+    if (timestamp != null) {
+      writer.name(JsonKeys.TIMESTAMP).value(logger, doubleToBigDecimal(timestamp));
+    }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -75,6 +96,10 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
       }
     }
     writer.endObject();
+  }
+
+  private @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
+    return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 
   @Nullable
@@ -110,6 +135,18 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
             String startNs = reader.nextStringOrNull();
             if (startNs != null) {
               data.relativeStartNs = startNs;
+            }
+            break;
+          case JsonKeys.TIMESTAMP:
+            Double timestamp;
+            try {
+              timestamp = reader.nextDoubleOrNull();
+            } catch (NumberFormatException e) {
+              final Date date = reader.nextDateOrNull(logger);
+              timestamp = date != null ? DateUtils.dateToSeconds(date) : null;
+            }
+            if (timestamp != null) {
+              data.timestamp = timestamp;
             }
             break;
           default:
