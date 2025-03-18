@@ -8,17 +8,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Resolves transaction name using {@link HttpServletRequest#getMethod()} and templated route that
- * handled the request. To return correct transaction name, it must be used after request is
- * processed by {@link org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping}
- * where {@link org.springframework.web.servlet.HandlerMapping#BEST_MATCHING_PATTERN_ATTRIBUTE} is
- * set.
+ * Resolves transaction name using other transaction name providers by invoking them in order.
+ * If a provider returns no transaction name, the next one is invoked.
  */
 @ApiStatus.Internal
 public final class CombinedTransactionNameProvider implements TransactionNameProvider {
 
   private final @NotNull List<TransactionNameProvider> providers;
-  private @Nullable TransactionNameSource source = null;
 
   public CombinedTransactionNameProvider(final @NotNull List<TransactionNameProvider> providers) {
     this.providers = providers;
@@ -29,7 +25,6 @@ public final class CombinedTransactionNameProvider implements TransactionNamePro
     for (TransactionNameProvider provider : providers) {
       String transactionName = provider.provideTransactionName(request);
       if (transactionName != null) {
-        source = provider.provideTransactionSource();
         return transactionName;
       }
     }
@@ -40,8 +35,7 @@ public final class CombinedTransactionNameProvider implements TransactionNamePro
   @Override
   @ApiStatus.Internal
   public @NotNull TransactionNameSource provideTransactionSource() {
-    final @Nullable TransactionNameSource tmpSource = source;
-    return tmpSource == null ? TransactionNameSource.CUSTOM : tmpSource;
+    return TransactionNameSource.CUSTOM;
   }
 
   @ApiStatus.Internal

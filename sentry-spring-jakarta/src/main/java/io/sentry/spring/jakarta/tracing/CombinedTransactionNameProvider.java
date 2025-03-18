@@ -8,11 +8,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Resolves transaction name using {@link HttpServletRequest#getMethod()} and templated route that
- * handled the request. To return correct transaction name, it must be used after request is
- * processed by {@link org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping}
- * where {@link org.springframework.web.servlet.HandlerMapping#BEST_MATCHING_PATTERN_ATTRIBUTE} is
- * set.
+ * Resolves transaction name using other transaction name providers by invoking them in order.
+ * If a provider returns no transaction name, the next one is invoked.
  */
 @ApiStatus.Internal
 public final class CombinedTransactionNameProvider implements TransactionNameProvider {
