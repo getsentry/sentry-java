@@ -243,7 +243,7 @@ public final class SentryTracer implements ITransaction {
       }
       if (scopes.getOptions().isContinuousProfilingEnabled()
           && scopes.getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE) {
-        scopes.getOptions().getContinuousProfiler().stopProfileSession(ProfileLifecycle.TRACE);
+        scopes.getOptions().getContinuousProfiler().stopProfiler(ProfileLifecycle.TRACE);
       }
       if (performanceCollectionData.get() != null) {
         performanceCollectionData.get().clear();

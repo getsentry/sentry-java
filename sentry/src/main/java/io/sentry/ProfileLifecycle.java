@@ -6,8 +6,8 @@ package io.sentry;
  */
 public enum ProfileLifecycle {
   /**
-   * Profiling is controlled manually. You must use the {@link Sentry#startProfileSession()} and
-   * {@link Sentry#stopProfileSession()} APIs to control the lifecycle of the profiler.
+   * Profiling is controlled manually. You must use the {@link Sentry#startProfiler()} and {@link
+   * Sentry#stopProfiler()} APIs to control the lifecycle of the profiler.
    */
   MANUAL,
   /**

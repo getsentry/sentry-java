@@ -48,8 +48,8 @@ public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IConti
 	public fun isRunning ()Z
 	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 	public fun reevaluateSampling ()V
-	public fun startProfileSession (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
-	public fun stopProfileSession (Lio/sentry/ProfileLifecycle;)V
+	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
+	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
 }
 
 public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/IPerformanceSnapshotCollector {

@@ -239,10 +239,10 @@ public final class NoOpScopes implements IScopes {
   }
 
   @Override
-  public void startProfileSession() {}
+  public void startProfiler() {}
 
   @Override
-  public void stopProfileSession() {}
+  public void stopProfiler() {}
 
   @Override
   public void setSpanContext(

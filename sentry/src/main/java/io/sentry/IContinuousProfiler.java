@@ -9,10 +9,10 @@ import org.jetbrains.annotations.NotNull;
 public interface IContinuousProfiler {
   boolean isRunning();
 
-  void startProfileSession(
+  void startProfiler(
       final @NotNull ProfileLifecycle profileLifecycle, final @NotNull TracesSampler tracesSampler);
 
-  void stopProfileSession(final @NotNull ProfileLifecycle profileLifecycle);
+  void stopProfiler(final @NotNull ProfileLifecycle profileLifecycle);
 
   /** Cancel the profiler and stops it. Used on SDK close. */
   void close();

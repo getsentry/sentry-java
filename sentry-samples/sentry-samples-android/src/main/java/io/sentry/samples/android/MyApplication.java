@@ -9,7 +9,7 @@ public class MyApplication extends Application {
 
   @Override
   public void onCreate() {
-    Sentry.startProfileSession();
+    Sentry.startProfiler();
     strictMode();
     super.onCreate();
 

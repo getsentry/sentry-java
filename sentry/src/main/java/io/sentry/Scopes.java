@@ -928,7 +928,7 @@ public final class Scopes implements IScopes {
             && getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE) {
           getOptions()
               .getContinuousProfiler()
-              .startProfileSession(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
+              .startProfiler(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
         }
       }
     }
@@ -951,7 +951,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void startProfileSession() {
+  public void startProfiler() {
     if (getOptions().isContinuousProfilingEnabled()) {
       if (getOptions().getProfileLifecycle() != ProfileLifecycle.MANUAL) {
         getOptions()
@@ -964,7 +964,7 @@ public final class Scopes implements IScopes {
       }
       getOptions()
           .getContinuousProfiler()
-          .startProfileSession(ProfileLifecycle.MANUAL, getOptions().getInternalTracesSampler());
+          .startProfiler(ProfileLifecycle.MANUAL, getOptions().getInternalTracesSampler());
     } else if (getOptions().isProfilingEnabled()) {
       getOptions()
           .getLogger()
@@ -975,7 +975,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void stopProfileSession() {
+  public void stopProfiler() {
     if (getOptions().isContinuousProfilingEnabled()) {
       if (getOptions().getProfileLifecycle() != ProfileLifecycle.MANUAL) {
         getOptions()
@@ -987,7 +987,7 @@ public final class Scopes implements IScopes {
         return;
       }
       getOptions().getLogger().log(SentryLevel.DEBUG, "Stopped continuous Profiling.");
-      getOptions().getContinuousProfiler().stopProfileSession(ProfileLifecycle.MANUAL);
+      getOptions().getContinuousProfiler().stopProfiler(ProfileLifecycle.MANUAL);
     } else {
       getOptions()
           .getLogger()
