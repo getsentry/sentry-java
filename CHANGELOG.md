@@ -11,6 +11,10 @@
 
 - Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))
 - Ensure app start type is set, even when ActivityLifecycleIntegration is not running ([#4250](https://github.com/getsentry/sentry-java/pull/4250))
+- Use `SpringServletTransactionNameProvider` as fallback for Spring WebMVC ([#4263](https://github.com/getsentry/sentry-java/pull/4263))
+  - In certain cases the SDK was not able to provide a transaction name automatically and thus did not finish the transaction for the request.
+  - We now first try `SpringMvcTransactionNameProvider` which would provide the route as transaction name.
+  - If that does not return anything, we try `SpringServletTransactionNameProvider` next, which returns the URL of the request.
 
 ### Behavioral Changes
 
