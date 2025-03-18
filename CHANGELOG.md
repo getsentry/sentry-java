@@ -4,6 +4,8 @@
 
 ### Features
 
+- Add native stack frame address information and debug image metadata to ANR events ([#4061](https://github.com/getsentry/sentry-java/pull/4061))
+    - This enables symbolication for stripped native code in ANRs
 - Add Continuous Profiling Support ([#3710](https://github.com/getsentry/sentry-java/pull/3710))
 
   To enable Continuous Profiling use the `Sentry.startProfileSession` and `Sentry.stopProfileSession` experimental APIs. Sampling rate can be set through `options.profileSessionSampleRate`, which defaults to null (disabled).   
