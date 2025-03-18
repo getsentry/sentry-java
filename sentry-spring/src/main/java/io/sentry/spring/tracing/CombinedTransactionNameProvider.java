@@ -8,8 +8,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Resolves transaction name using other transaction name providers by invoking them in order.
- * If a provider returns no transaction name, the next one is invoked.
+ * Resolves transaction name using other transaction name providers by invoking them in order. If a
+ * provider returns no transaction name, the next one is invoked.
  */
 @ApiStatus.Internal
 public final class CombinedTransactionNameProvider implements TransactionNameProvider {
