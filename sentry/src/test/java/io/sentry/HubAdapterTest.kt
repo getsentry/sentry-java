@@ -270,13 +270,13 @@ class HubAdapterTest {
         verify(scopes).reportFullyDisplayed()
     }
 
-    @Test fun `startProfileSession calls Hub`() {
-        HubAdapter.getInstance().startProfileSession()
-        verify(scopes).startProfileSession()
+    @Test fun `startProfiler calls Hub`() {
+        HubAdapter.getInstance().startProfiler()
+        verify(scopes).startProfiler()
     }
 
-    @Test fun `stopProfileSession calls Hub`() {
-        HubAdapter.getInstance().stopProfileSession()
-        verify(scopes).stopProfileSession()
+    @Test fun `stopProfiler calls Hub`() {
+        HubAdapter.getInstance().stopProfiler()
+        verify(scopes).stopProfiler()
     }
 }

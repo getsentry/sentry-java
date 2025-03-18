@@ -1347,31 +1347,31 @@ class SentryTest {
     }
 
     @Test
-    fun `startProfileSession starts the continuous profiler`() {
+    fun `startProfiler starts the continuous profiler`() {
         val profiler = mock<IContinuousProfiler>()
         Sentry.init {
             it.dsn = dsn
             it.setContinuousProfiler(profiler)
             it.experimental.profileSessionSampleRate = 1.0
         }
-        Sentry.startProfileSession()
-        verify(profiler).startProfileSession(eq(ProfileLifecycle.MANUAL), any())
+        Sentry.startProfiler()
+        verify(profiler).startProfiler(eq(ProfileLifecycle.MANUAL), any())
     }
 
     @Test
-    fun `startProfileSession is ignored when continuous profiling is disabled`() {
+    fun `startProfiler is ignored when continuous profiling is disabled`() {
         val profiler = mock<IContinuousProfiler>()
         Sentry.init {
             it.dsn = dsn
             it.setContinuousProfiler(profiler)
             it.profilesSampleRate = 1.0
         }
-        Sentry.startProfileSession()
-        verify(profiler, never()).startProfileSession(eq(ProfileLifecycle.MANUAL), any())
+        Sentry.startProfiler()
+        verify(profiler, never()).startProfiler(eq(ProfileLifecycle.MANUAL), any())
     }
 
     @Test
-    fun `startProfileSession is ignored when profile lifecycle is TRACE`() {
+    fun `startProfiler is ignored when profile lifecycle is TRACE`() {
         val profiler = mock<IContinuousProfiler>()
         val logger = mock<ILogger>()
         Sentry.init {
@@ -1382,8 +1382,8 @@ class SentryTest {
             it.isDebug = true
             it.setLogger(logger)
         }
-        Sentry.startProfileSession()
-        verify(profiler, never()).startProfileSession(any(), any())
+        Sentry.startProfiler()
+        verify(profiler, never()).startProfiler(any(), any())
         verify(logger).log(
             eq(SentryLevel.WARNING),
             eq("Profiling lifecycle is %s. Profiling cannot be started manually."),
@@ -1392,27 +1392,27 @@ class SentryTest {
     }
 
     @Test
-    fun `stopProfileSession stops the continuous profiler`() {
+    fun `stopProfiler stops the continuous profiler`() {
         val profiler = mock<IContinuousProfiler>()
         Sentry.init {
             it.dsn = dsn
             it.setContinuousProfiler(profiler)
             it.experimental.profileSessionSampleRate = 1.0
         }
-        Sentry.stopProfileSession()
-        verify(profiler).stopProfileSession(eq(ProfileLifecycle.MANUAL))
+        Sentry.stopProfiler()
+        verify(profiler).stopProfiler(eq(ProfileLifecycle.MANUAL))
     }
 
     @Test
-    fun `stopProfileSession is ignored when continuous profiling is disabled`() {
+    fun `stopProfiler is ignored when continuous profiling is disabled`() {
         val profiler = mock<IContinuousProfiler>()
         Sentry.init {
             it.dsn = dsn
             it.setContinuousProfiler(profiler)
             it.profilesSampleRate = 1.0
         }
-        Sentry.stopProfileSession()
-        verify(profiler, never()).stopProfileSession(eq(ProfileLifecycle.MANUAL))
+        Sentry.stopProfiler()
+        verify(profiler, never()).stopProfiler(eq(ProfileLifecycle.MANUAL))
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {

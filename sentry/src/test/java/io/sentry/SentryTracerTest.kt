@@ -244,7 +244,7 @@ class SentryTracerTest {
         }, samplingDecision = TracesSamplingDecision(false))
         tracer.finish()
         // profiler is never stopped, as it was never started
-        verify(continuousProfiler, never()).stopProfileSession(any())
+        verify(continuousProfiler, never()).stopProfiler(any())
         // profile context is not set
         verify(fixture.scopes).captureTransaction(
             check {
@@ -267,7 +267,7 @@ class SentryTracerTest {
         }, samplingDecision = TracesSamplingDecision(true))
         tracer.finish()
         // profiler is never stopped, as it should be stopped manually
-        verify(continuousProfiler, never()).stopProfileSession(any())
+        verify(continuousProfiler, never()).stopProfiler(any())
     }
 
     @Test

@@ -117,8 +117,8 @@ class NoOpHubTest {
     }
 
     @Test
-    fun `startProfileSession doesnt throw`() = sut.startProfileSession()
+    fun `startProfiler doesnt throw`() = sut.startProfiler()
 
     @Test
-    fun `stopProfileSession doesnt throw`() = sut.stopProfileSession()
+    fun `stopProfiler doesnt throw`() = sut.stopProfiler()
 }

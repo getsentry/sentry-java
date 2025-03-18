@@ -1898,7 +1898,7 @@ class ScopesTest {
 
         val transaction = scopes.startTransaction("name", "op")
         assertTrue(transaction.isSampled!!)
-        verify(mockProfiler).startProfileSession(eq(ProfileLifecycle.TRACE), any())
+        verify(mockProfiler).startProfiler(eq(ProfileLifecycle.TRACE), any())
     }
 
     @Test
@@ -1912,7 +1912,7 @@ class ScopesTest {
 
         val transaction = scopes.startTransaction("name", "op")
         assertTrue(transaction.isSampled!!)
-        verify(mockProfiler, never()).startProfileSession(any(), any())
+        verify(mockProfiler, never()).startProfiler(any(), any())
     }
 
     @Test
@@ -1927,7 +1927,7 @@ class ScopesTest {
         val transaction = scopes.startTransaction("name", "op")
         transaction.spanContext.setSampled(false, false)
         assertFalse(transaction.isSampled!!)
-        verify(mockProfiler, never()).startProfileSession(any(), any())
+        verify(mockProfiler, never()).startProfiler(any(), any())
     }
     //endregion
 
@@ -2240,18 +2240,18 @@ class ScopesTest {
     //region profileSession
 
     @Test
-    fun `startProfileSession starts the continuous profiler`() {
+    fun `startProfiler starts the continuous profiler`() {
         val profiler = mock<IContinuousProfiler>()
         val scopes = generateScopes {
             it.setContinuousProfiler(profiler)
             it.experimental.profileSessionSampleRate = 1.0
         }
-        scopes.startProfileSession()
-        verify(profiler).startProfileSession(eq(ProfileLifecycle.MANUAL), any())
+        scopes.startProfiler()
+        verify(profiler).startProfiler(eq(ProfileLifecycle.MANUAL), any())
     }
 
     @Test
-    fun `startProfileSession logs instructions if continuous profiling is disabled`() {
+    fun `startProfiler logs instructions if continuous profiling is disabled`() {
         val profiler = mock<IContinuousProfiler>()
         val logger = mock<ILogger>()
         val scopes = generateScopes {
@@ -2261,13 +2261,13 @@ class ScopesTest {
             it.setLogger(logger)
             it.isDebug = true
         }
-        scopes.startProfileSession()
-        verify(profiler, never()).startProfileSession(eq(ProfileLifecycle.MANUAL), any())
+        scopes.startProfiler()
+        verify(profiler, never()).startProfiler(eq(ProfileLifecycle.MANUAL), any())
         verify(logger).log(eq(SentryLevel.WARNING), eq("Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."))
     }
 
     @Test
-    fun `startProfileSession is ignored on trace lifecycle`() {
+    fun `startProfiler is ignored on trace lifecycle`() {
         val profiler = mock<IContinuousProfiler>()
         val logger = mock<ILogger>()
         val scopes = generateScopes {
@@ -2277,24 +2277,24 @@ class ScopesTest {
             it.setLogger(logger)
             it.isDebug = true
         }
-        scopes.startProfileSession()
+        scopes.startProfiler()
         verify(logger).log(eq(SentryLevel.WARNING), eq("Profiling lifecycle is %s. Profiling cannot be started manually."), eq(ProfileLifecycle.TRACE.name))
-        verify(profiler, never()).startProfileSession(any(), any())
+        verify(profiler, never()).startProfiler(any(), any())
     }
 
     @Test
-    fun `stopProfileSession stops the continuous profiler`() {
+    fun `stopProfiler stops the continuous profiler`() {
         val profiler = mock<IContinuousProfiler>()
         val scopes = generateScopes {
             it.setContinuousProfiler(profiler)
             it.experimental.profileSessionSampleRate = 1.0
         }
-        scopes.stopProfileSession()
-        verify(profiler).stopProfileSession(eq(ProfileLifecycle.MANUAL))
+        scopes.stopProfiler()
+        verify(profiler).stopProfiler(eq(ProfileLifecycle.MANUAL))
     }
 
     @Test
-    fun `stopProfileSession logs instructions if continuous profiling is disabled`() {
+    fun `stopProfiler logs instructions if continuous profiling is disabled`() {
         val profiler = mock<IContinuousProfiler>()
         val logger = mock<ILogger>()
         val scopes = generateScopes {
@@ -2304,13 +2304,13 @@ class ScopesTest {
             it.setLogger(logger)
             it.isDebug = true
         }
-        scopes.stopProfileSession()
-        verify(profiler, never()).stopProfileSession(eq(ProfileLifecycle.MANUAL))
+        scopes.stopProfiler()
+        verify(profiler, never()).stopProfiler(eq(ProfileLifecycle.MANUAL))
         verify(logger).log(eq(SentryLevel.WARNING), eq("Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."))
     }
 
     @Test
-    fun `stopProfileSession is ignored on trace lifecycle`() {
+    fun `stopProfiler is ignored on trace lifecycle`() {
         val profiler = mock<IContinuousProfiler>()
         val logger = mock<ILogger>()
         val scopes = generateScopes {
@@ -2320,9 +2320,9 @@ class ScopesTest {
             it.setLogger(logger)
             it.isDebug = true
         }
-        scopes.stopProfileSession()
+        scopes.stopProfiler()
         verify(logger).log(eq(SentryLevel.WARNING), eq("Profiling lifecycle is %s. Profiling cannot be stopped manually."), eq(ProfileLifecycle.TRACE.name))
-        verify(profiler, never()).stopProfileSession(any())
+        verify(profiler, never()).stopProfiler(any())
     }
 
     //endregion

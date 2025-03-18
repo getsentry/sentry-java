@@ -8,7 +8,7 @@
     - This enables symbolication for stripped native code in ANRs
 - Add Continuous Profiling Support ([#3710](https://github.com/getsentry/sentry-java/pull/3710))
 
-  To enable Continuous Profiling use the `Sentry.startProfileSession` and `Sentry.stopProfileSession` experimental APIs. Sampling rate can be set through `options.profileSessionSampleRate`, which defaults to null (disabled).   
+  To enable Continuous Profiling use the `Sentry.startProfiler` and `Sentry.stopProfiler` experimental APIs. Sampling rate can be set through `options.profileSessionSampleRate`, which defaults to null (disabled).   
   Note: Both `options.profilesSampler` and `options.profilesSampleRate` must **not** be set to enable Continuous Profiling.
 
   ```java
@@ -19,15 +19,15 @@
    
     // Currently under experimental options:
     options.getExperimental().setProfileSessionSampleRate(1.0);
-    // In manual mode, you need to start and stop the profiler manually using Sentry.startProfileSession and Sentry.stopProfileSession
+    // In manual mode, you need to start and stop the profiler manually using Sentry.startProfiler and Sentry.stopProfiler
     // In trace mode, the profiler will start and stop automatically whenever a sampled trace starts and finishes
     options.getExperimental().setProfileLifecycle(ProfileLifecycle.MANUAL);
   }
   // Start profiling
-  Sentry.startProfileSession();
+  Sentry.startProfiler();
   
   // After all profiling is done, stop the profiler. Profiles can last indefinitely if not stopped.
-  Sentry.stopProfileSession();
+  Sentry.stopProfiler();
   ```
   ```kotlin
   import io.sentry.ProfileLifecycle
@@ -37,15 +37,15 @@
    
     // Currently under experimental options:
     options.experimental.profileSessionSampleRate = 1.0
-    // In manual mode, you need to start and stop the profiler manually using Sentry.startProfileSession and Sentry.stopProfileSession
+    // In manual mode, you need to start and stop the profiler manually using Sentry.startProfiler and Sentry.stopProfiler
     // In trace mode, the profiler will start and stop automatically whenever a sampled trace starts and finishes
     options.experimental.profileLifecycle = ProfileLifecycle.MANUAL
   }
   // Start profiling
-  Sentry.startProfileSession()
+  Sentry.startProfiler()
   
   // After all profiling is done, stop the profiler. Profiles can last indefinitely if not stopped.
-  Sentry.stopProfileSession()
+  Sentry.stopProfiler()
   ```
 
   To learn more visit [Sentry's Continuous Profiling](https://docs.sentry.io/product/explore/profiling/transaction-vs-continuous-profiling/#continuous-profiling-mode) documentation page.

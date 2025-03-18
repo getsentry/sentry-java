@@ -106,7 +106,7 @@ public class AndroidContinuousProfiler
   }
 
   @Override
-  public synchronized void startProfileSession(
+  public synchronized void startProfiler(
       final @NotNull ProfileLifecycle profileLifecycle,
       final @NotNull TracesSampler tracesSampler) {
     if (shouldSample) {
@@ -217,7 +217,7 @@ public class AndroidContinuousProfiler
   }
 
   @Override
-  public synchronized void stopProfileSession(final @NotNull ProfileLifecycle profileLifecycle) {
+  public synchronized void stopProfiler(final @NotNull ProfileLifecycle profileLifecycle) {
     switch (profileLifecycle) {
       case TRACE:
         rootSpanCounter--;
