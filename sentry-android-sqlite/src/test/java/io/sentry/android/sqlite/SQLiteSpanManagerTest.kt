@@ -100,6 +100,7 @@ class SQLiteSpanManagerTest {
 
         fixture.options.threadChecker = mock<IThreadChecker>()
         whenever(fixture.options.threadChecker.isMainThread).thenReturn(false)
+        whenever(fixture.options.threadChecker.currentThreadName).thenReturn("test")
 
         sut.performSql("sql") {}
         val span = fixture.sentryTracer.children.first()
@@ -114,6 +115,7 @@ class SQLiteSpanManagerTest {
 
         fixture.options.threadChecker = mock<IThreadChecker>()
         whenever(fixture.options.threadChecker.isMainThread).thenReturn(true)
+        whenever(fixture.options.threadChecker.currentThreadName).thenReturn("test")
 
         sut.performSql("sql") {}
         val span = fixture.sentryTracer.children.first()

@@ -4,9 +4,66 @@
 
 ### Fixes
 
+- Do not override user-defined `SentryOptions` ([#4262](https://github.com/getsentry/sentry-java/pull/4262))
+
+## 8.5.0
+
+### Features
+
+- Add native stack frame address information and debug image metadata to ANR events ([#4061](https://github.com/getsentry/sentry-java/pull/4061))
+    - This enables symbolication for stripped native code in ANRs
+- Add Continuous Profiling Support ([#3710](https://github.com/getsentry/sentry-java/pull/3710))
+
+  To enable Continuous Profiling use the `Sentry.startProfiler` and `Sentry.stopProfiler` experimental APIs. Sampling rate can be set through `options.profileSessionSampleRate`, which defaults to null (disabled).   
+  Note: Both `options.profilesSampler` and `options.profilesSampleRate` must **not** be set to enable Continuous Profiling.
+
+  ```java
+  import io.sentry.ProfileLifecycle;
+  import io.sentry.android.core.SentryAndroid;
+
+  SentryAndroid.init(context) { options ->
+   
+    // Currently under experimental options:
+    options.getExperimental().setProfileSessionSampleRate(1.0);
+    // In manual mode, you need to start and stop the profiler manually using Sentry.startProfiler and Sentry.stopProfiler
+    // In trace mode, the profiler will start and stop automatically whenever a sampled trace starts and finishes
+    options.getExperimental().setProfileLifecycle(ProfileLifecycle.MANUAL);
+  }
+  // Start profiling
+  Sentry.startProfiler();
+  
+  // After all profiling is done, stop the profiler. Profiles can last indefinitely if not stopped.
+  Sentry.stopProfiler();
+  ```
+  ```kotlin
+  import io.sentry.ProfileLifecycle
+  import io.sentry.android.core.SentryAndroid
+
+  SentryAndroid.init(context) { options ->
+   
+    // Currently under experimental options:
+    options.experimental.profileSessionSampleRate = 1.0
+    // In manual mode, you need to start and stop the profiler manually using Sentry.startProfiler and Sentry.stopProfiler
+    // In trace mode, the profiler will start and stop automatically whenever a sampled trace starts and finishes
+    options.experimental.profileLifecycle = ProfileLifecycle.MANUAL
+  }
+  // Start profiling
+  Sentry.startProfiler()
+  
+  // After all profiling is done, stop the profiler. Profiles can last indefinitely if not stopped.
+  Sentry.stopProfiler()
+  ```
+
+  To learn more visit [Sentry's Continuous Profiling](https://docs.sentry.io/product/explore/profiling/transaction-vs-continuous-profiling/#continuous-profiling-mode) documentation page.
+
+### Fixes
+
 - Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))
 - Ensure app start type is set, even when ActivityLifecycleIntegration is not running ([#4250](https://github.com/getsentry/sentry-java/pull/4250))
-- Do not override user-defined `SentryOptions` ([#4262](https://github.com/getsentry/sentry-java/pull/4262))
+- Use `SpringServletTransactionNameProvider` as fallback for Spring WebMVC ([#4263](https://github.com/getsentry/sentry-java/pull/4263))
+  - In certain cases the SDK was not able to provide a transaction name automatically and thus did not finish the transaction for the request.
+  - We now first try `SpringMvcTransactionNameProvider` which would provide the route as transaction name.
+  - If that does not return anything, we try `SpringServletTransactionNameProvider` next, which returns the URL of the request.
 
 ### Behavioral Changes
 

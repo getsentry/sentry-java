@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.InitPriority;
+import io.sentry.ProfileLifecycle;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SdkVersion;
@@ -62,6 +63,13 @@ final class ManifestMetadataReader {
   static final String TTFD_ENABLE = "io.sentry.traces.time-to-full-display.enable";
 
   static final String PROFILES_SAMPLE_RATE = "io.sentry.traces.profiling.sample-rate";
+
+  static final String PROFILE_SESSION_SAMPLE_RATE =
+      "io.sentry.traces.profiling.session-sample-rate";
+
+  static final String PROFILE_LIFECYCLE = "io.sentry.traces.profiling.lifecycle";
+
+  static final String PROFILER_START_ON_APP_START = "io.sentry.traces.profiling.start-on-app-start";
 
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
   static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
@@ -139,7 +147,7 @@ final class ManifestMetadataReader {
         options.setDebug(readBool(metadata, logger, DEBUG, options.isDebug()));
 
         if (options.isDebug()) {
-          final String level =
+          final @Nullable String level =
               readString(
                   metadata,
                   logger,
@@ -161,7 +169,7 @@ final class ManifestMetadataReader {
                 options.isEnableAutoSessionTracking()));
 
         if (options.getSampleRate() == null) {
-          final Double sampleRate = readDouble(metadata, logger, SAMPLE_RATE);
+          final double sampleRate = readDouble(metadata, logger, SAMPLE_RATE);
           if (sampleRate != -1) {
             options.setSampleRate(sampleRate);
           }
@@ -180,7 +188,7 @@ final class ManifestMetadataReader {
         options.setAttachAnrThreadDump(
             readBool(metadata, logger, ANR_ATTACH_THREAD_DUMPS, options.isAttachAnrThreadDump()));
 
-        final String dsn = readString(metadata, logger, DSN, options.getDsn());
+        final @Nullable String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
 
         if (!enabled || (dsn != null && dsn.isEmpty())) {
@@ -293,7 +301,7 @@ final class ManifestMetadataReader {
                 options.isCollectAdditionalContext()));
 
         if (options.getTracesSampleRate() == null) {
-          final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
+          final double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
           if (tracesSampleRate != -1) {
             options.setTracesSampleRate(tracesSampleRate);
           }
@@ -317,11 +325,41 @@ final class ManifestMetadataReader {
                 options.isEnableActivityLifecycleTracingAutoFinish()));
 
         if (options.getProfilesSampleRate() == null) {
-          final Double profilesSampleRate = readDouble(metadata, logger, PROFILES_SAMPLE_RATE);
+          final double profilesSampleRate = readDouble(metadata, logger, PROFILES_SAMPLE_RATE);
           if (profilesSampleRate != -1) {
             options.setProfilesSampleRate(profilesSampleRate);
           }
         }
+
+        if (options.getProfileSessionSampleRate() == null) {
+          final double profileSessionSampleRate =
+              readDouble(metadata, logger, PROFILE_SESSION_SAMPLE_RATE);
+          if (profileSessionSampleRate != -1) {
+            options.getExperimental().setProfileSessionSampleRate(profileSessionSampleRate);
+          }
+        }
+
+        final @Nullable String profileLifecycle =
+            readString(
+                metadata,
+                logger,
+                PROFILE_LIFECYCLE,
+                options.getProfileLifecycle().name().toLowerCase(Locale.ROOT));
+        if (profileLifecycle != null) {
+          options
+              .getExperimental()
+              .setProfileLifecycle(
+                  ProfileLifecycle.valueOf(profileLifecycle.toUpperCase(Locale.ROOT)));
+        }
+
+        options
+            .getExperimental()
+            .setStartProfilerOnAppStart(
+                readBool(
+                    metadata,
+                    logger,
+                    PROFILER_START_ON_APP_START,
+                    options.isStartProfilerOnAppStart()));
 
         options.setEnableUserInteractionTracing(
             readBool(metadata, logger, TRACES_UI_ENABLE, options.isEnableUserInteractionTracing()));
@@ -363,6 +401,7 @@ final class ManifestMetadataReader {
 
         // sdkInfo.addIntegration();
 
+        @Nullable
         List<String> integrationsFromGradlePlugin =
             readList(metadata, logger, SENTRY_GRADLE_PLUGIN_INTEGRATIONS);
         if (integrationsFromGradlePlugin != null) {
@@ -395,7 +434,7 @@ final class ManifestMetadataReader {
                 options.isEnableAutoTraceIdGeneration()));
 
         if (options.getSessionReplay().getSessionSampleRate() == null) {
-          final Double sessionSampleRate =
+          final double sessionSampleRate =
               readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
           if (sessionSampleRate != -1) {
             options.getSessionReplay().setSessionSampleRate(sessionSampleRate);
@@ -403,7 +442,7 @@ final class ManifestMetadataReader {
         }
 
         if (options.getSessionReplay().getOnErrorSampleRate() == null) {
-          final Double onErrorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
+          final double onErrorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
           if (onErrorSampleRate != -1) {
             options.getSessionReplay().setOnErrorSampleRate(onErrorSampleRate);
           }
@@ -502,7 +541,7 @@ final class ManifestMetadataReader {
     }
   }
 
-  private static @NotNull Double readDouble(
+  private static double readDouble(
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     // manifest meta-data only reads float
     double value = ((Float) metadata.getFloat(key, -1)).doubleValue();

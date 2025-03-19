@@ -23,6 +23,8 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
+import io.sentry.protocol.DebugImage;
+import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
@@ -267,6 +269,11 @@ public class AnrV2Integration implements Integration, Closeable {
         event.setMessage(sentryMessage);
       } else if (result.type == ParseResult.Type.DUMP) {
         event.setThreads(result.threads);
+        if (result.debugImages != null) {
+          final DebugMeta debugMeta = new DebugMeta();
+          debugMeta.setImages(result.debugImages);
+          event.setDebugMeta(debugMeta);
+        }
       }
       event.setLevel(SentryLevel.FATAL);
       event.setTimestamp(DateUtils.getDateTime(anrTimestamp));
@@ -311,7 +318,11 @@ public class AnrV2Integration implements Integration, Closeable {
         final Lines lines = Lines.readLines(reader);
 
         final ThreadDumpParser threadDumpParser = new ThreadDumpParser(options, isBackground);
-        final List<SentryThread> threads = threadDumpParser.parse(lines);
+        threadDumpParser.parse(lines);
+
+        final @NotNull List<SentryThread> threads = threadDumpParser.getThreads();
+        final @NotNull List<DebugImage> debugImages = threadDumpParser.getDebugImages();
+
         if (threads.isEmpty()) {
           // if the list is empty this means the system failed to capture a proper thread dump of
           // the android threads, and only contains kernel-level threads and statuses, those ANRs
@@ -319,7 +330,7 @@ public class AnrV2Integration implements Integration, Closeable {
           // fall back to not reporting them
           return new ParseResult(ParseResult.Type.NO_DUMP);
         }
-        return new ParseResult(ParseResult.Type.DUMP, dump, threads);
+        return new ParseResult(ParseResult.Type.DUMP, dump, threads, debugImages);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
         return new ParseResult(ParseResult.Type.ERROR, dump);
@@ -403,24 +414,31 @@ public class AnrV2Integration implements Integration, Closeable {
     final Type type;
     final byte[] dump;
     final @Nullable List<SentryThread> threads;
+    final @Nullable List<DebugImage> debugImages;
 
     ParseResult(final @NotNull Type type) {
       this.type = type;
       this.dump = null;
       this.threads = null;
+      this.debugImages = null;
     }
 
     ParseResult(final @NotNull Type type, final byte[] dump) {
       this.type = type;
       this.dump = dump;
       this.threads = null;
+      this.debugImages = null;
     }
 
     ParseResult(
-        final @NotNull Type type, final byte[] dump, final @Nullable List<SentryThread> threads) {
+        final @NotNull Type type,
+        final byte[] dump,
+        final @Nullable List<SentryThread> threads,
+        final @Nullable List<DebugImage> debugImages) {
       this.type = type;
       this.dump = dump;
       this.threads = threads;
+      this.debugImages = debugImages;
     }
   }
 }

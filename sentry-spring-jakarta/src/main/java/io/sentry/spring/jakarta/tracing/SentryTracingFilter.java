@@ -145,9 +145,11 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     } finally {
       if (shouldFinishTransaction(httpRequest) && transaction != null) {
         // after all filters run, templated path pattern is available in request attribute
-        final String transactionName = transactionNameProvider.provideTransactionName(httpRequest);
-        final TransactionNameSource transactionNameSource =
-            transactionNameProvider.provideTransactionSource();
+        final @NotNull TransactionNameWithSource transactionNameWithSource =
+            transactionNameProvider.provideTransactionNameAndSource(httpRequest);
+        final @Nullable String transactionName = transactionNameWithSource.getTransactionName();
+        final @NotNull TransactionNameSource transactionNameSource =
+            transactionNameWithSource.getTransactionNameSource();
         // if transaction name is not resolved, the request has not been processed by a controller
         // and we should not report it to Sentry
         if (transactionName != null) {
