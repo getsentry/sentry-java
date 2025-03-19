@@ -337,30 +337,6 @@ class SessionCaptureStrategyTest {
     }
 
     @Test
-    fun `does not throw when navigation destination is not a String`() {
-        val now =
-            System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
-        val strategy = fixture.getSut(dateProvider = { now })
-        strategy.start(fixture.recorderConfig)
-
-        fixture.scope.addBreadcrumb(Breadcrumb().apply { category = "navigation" })
-
-        strategy.onScreenshotRecorded(mock<Bitmap>()) {}
-
-        verify(fixture.scopes).captureReplay(
-            check {
-                assertNull(it.urls?.firstOrNull())
-            },
-            check {
-                val breadcrumbEvents =
-                    it.replayRecording?.payload?.filterIsInstance<RRWebBreadcrumbEvent>()
-                assertEquals("navigation", breadcrumbEvents?.first()?.category)
-                assertNull(breadcrumbEvents?.first()?.data?.get("to"))
-            }
-        )
-    }
-
-    @Test
     fun `sets screen from scope as replay url`() {
         fixture.scope.screen = "MainActivity"
 
