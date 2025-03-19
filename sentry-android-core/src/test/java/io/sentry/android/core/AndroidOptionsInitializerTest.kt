@@ -8,8 +8,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.CompositePerformanceCollector
 import io.sentry.DefaultCompositePerformanceCollector
-import io.sentry.IContinuousProfiler
 import io.sentry.IConnectionStatusProvider
+import io.sentry.IContinuousProfiler
 import io.sentry.ILogger
 import io.sentry.ITransactionProfiler
 import io.sentry.MainEventProcessor
