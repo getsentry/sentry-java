@@ -347,7 +347,7 @@ class SessionCaptureStrategyTest {
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) {}
 
-        verify(fixture.scopes).captureReplay(
+        verify(fixture.hub).captureReplay(
             check {
                 assertNull(it.urls?.firstOrNull())
             },
