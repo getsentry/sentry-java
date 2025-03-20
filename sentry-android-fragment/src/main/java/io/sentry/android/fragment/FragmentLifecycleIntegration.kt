@@ -22,6 +22,13 @@ public class FragmentLifecycleIntegration(
     Integration,
     Closeable {
 
+    private companion object {
+        init {
+            SentryIntegrationPackageStorage.getInstance()
+                .addPackage("maven:io.sentry:sentry-android-fragment", BuildConfig.VERSION_NAME)
+        }
+    }
+
     public constructor(application: Application) : this(
         application = application,
         filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states,

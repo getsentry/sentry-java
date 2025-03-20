@@ -33,6 +33,11 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
   private volatile @Nullable SentryComposeHelper composeHelper;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME);
+  }
+
   public ComposeGestureTargetLocator(final @NotNull ILogger logger) {
     this.logger = logger;
     SentryIntegrationPackageStorage.getInstance().addIntegration("ComposeUserInteraction");

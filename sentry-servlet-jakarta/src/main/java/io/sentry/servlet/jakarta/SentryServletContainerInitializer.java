@@ -15,6 +15,12 @@ import org.jetbrains.annotations.Nullable;
  */
 @Open
 public class SentryServletContainerInitializer implements ServletContainerInitializer {
+
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-servlet-jakarta", BuildConfig.VERSION_NAME);
+  }
+
   @Override
   public void onStartup(@Nullable Set<Class<?>> c, @NotNull ServletContext ctx)
       throws ServletException {

@@ -31,6 +31,11 @@ public class SentryJdbcEventListener extends SimpleJdbcEventListener {
   protected final @NotNull AutoClosableReentrantLock databaseDetailsLock =
       new AutoClosableReentrantLock();
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-jdbc", BuildConfig.VERSION_NAME);
+  }
+
   public SentryJdbcEventListener(final @NotNull IScopes scopes) {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     addPackageAndIntegrationInfo();

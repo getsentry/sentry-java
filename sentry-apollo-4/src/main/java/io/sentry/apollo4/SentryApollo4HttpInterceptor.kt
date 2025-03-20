@@ -449,5 +449,10 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
 
     companion object {
         const val DEFAULT_CAPTURE_FAILED_REQUESTS = true
+
+        init {
+            SentryIntegrationPackageStorage.getInstance()
+                .addPackage("maven:io.sentry:sentry-apollo-4", BuildConfig.VERSION_NAME)
+        }
     }
 }

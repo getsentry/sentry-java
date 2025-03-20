@@ -195,5 +195,10 @@ public class SentryNavigationListener @JvmOverloads constructor(
 
     public companion object {
         public const val NAVIGATION_OP: String = "navigation"
+
+        init {
+            SentryIntegrationPackageStorage.getInstance()
+                .addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
+        }
     }
 }

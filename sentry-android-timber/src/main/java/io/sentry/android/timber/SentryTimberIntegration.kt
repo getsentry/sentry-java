@@ -21,6 +21,13 @@ public class SentryTimberIntegration(
     private lateinit var tree: SentryTimberTree
     private lateinit var logger: ILogger
 
+    private companion object {
+        init {
+            SentryIntegrationPackageStorage.getInstance()
+                .addPackage("maven:io.sentry:sentry-android-timber", VERSION_NAME)
+        }
+    }
+
     override fun register(scopes: IScopes, options: SentryOptions) {
         logger = options.logger
 
