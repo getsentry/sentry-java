@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Features
+
+- Add `CoroutineExceptionHandler` for reporting uncaught exceptions in coroutines to Sentry ([#4259](https://github.com/getsentry/sentry-java/pull/4259))
+  - This is now part of `sentry-kotlin-extensions` and can be used together with `SentryContext` when launching a coroutine
+
 ### Fixes
 
 - Do not override user-defined `SentryOptions` ([#4262](https://github.com/getsentry/sentry-java/pull/4262))
