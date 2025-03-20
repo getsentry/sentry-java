@@ -50,6 +50,13 @@ public open class SentryOkHttpInterceptor(
     private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
 ) : Interceptor {
 
+    private companion object {
+        init {
+            SentryIntegrationPackageStorage.getInstance()
+                .addPackage("maven:io.sentry:sentry-okhttp", BuildConfig.VERSION_NAME)
+        }
+    }
+
     public constructor() : this(ScopesAdapter.getInstance())
     public constructor(scopes: IScopes) : this(scopes, null)
     public constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)

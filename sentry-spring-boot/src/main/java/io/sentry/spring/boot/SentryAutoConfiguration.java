@@ -83,6 +83,11 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 @Open
 public class SentryAutoConfiguration {
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-spring-boot-starter", BuildConfig.VERSION_NAME);
+  }
+
   /** Registers general purpose Sentry related beans. */
   @Configuration(proxyBeanMethods = false)
   @EnableConfigurationProperties(SentryProperties.class)
