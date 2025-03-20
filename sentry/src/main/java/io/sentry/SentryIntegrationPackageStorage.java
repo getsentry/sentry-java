@@ -5,7 +5,6 @@ import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,7 +16,8 @@ public final class SentryIntegrationPackageStorage {
   private static final @NotNull AutoClosableReentrantLock staticLock =
       new AutoClosableReentrantLock();
   private static volatile @Nullable Boolean mixedVersionsDetected = null;
-  private static final @NotNull AutoClosableReentrantLock mixedVersionsLock = new AutoClosableReentrantLock();
+  private static final @NotNull AutoClosableReentrantLock mixedVersionsLock =
+      new AutoClosableReentrantLock();
 
   public static @NotNull SentryIntegrationPackageStorage getInstance() {
     if (INSTANCE == null) {
@@ -86,8 +86,14 @@ public final class SentryIntegrationPackageStorage {
       boolean mixedVersionsDetectedThisCheck = false;
 
       for (SentryPackage pkg : packages) {
-        if (pkg.getName().startsWith("maven:io.sentry:") && !sdkVersion.equalsIgnoreCase(pkg.getVersion())) {
-          logger.log(SentryLevel.ERROR, "The Sentry SDK has been configured with mixed versions. Expected %s to match core SDK version %s but was %s", pkg.getName(), sdkVersion, pkg.getVersion());
+        if (pkg.getName().startsWith("maven:io.sentry:")
+            && !sdkVersion.equalsIgnoreCase(pkg.getVersion())) {
+          logger.log(
+              SentryLevel.ERROR,
+              "The Sentry SDK has been configured with mixed versions. Expected %s to match core SDK version %s but was %s",
+              pkg.getName(),
+              sdkVersion,
+              pkg.getVersion());
           mixedVersionsDetectedThisCheck = true;
         }
       }
