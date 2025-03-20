@@ -30,6 +30,7 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,6 +52,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   public static final String REPLAY_FILENAME = "replay.json";
 
   private @NotNull SentryOptions options;
+  private final Thread workerThread;
+  private final Object lock = new Object();
+
   private final @NotNull LazyEvaluator<ObjectQueue<Breadcrumb>> breadcrumbsQueue =
       new LazyEvaluator<>(
           () -> {
@@ -107,6 +111,34 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
 
   public PersistingScopeObserver(final @NotNull SentryOptions options) {
     this.options = options;
+
+    this.workerThread =
+        new Thread(
+            () -> {
+              while (true) { // todo proper shutdown signal
+
+                try {
+                  synchronized (lock) {
+                    // wait until item gets added
+                    lock.wait();
+                  }
+                } catch (InterruptedException e) {
+                  // ignored
+                }
+
+                // write any pending items
+                while (!pendingBreadcrumbs.isEmpty()) {
+                  final @NotNull Breadcrumb breadcrumb = pendingBreadcrumbs.poll();
+                  try {
+                    breadcrumbsQueue.getValue().add(breadcrumb);
+                  } catch (Throwable t) {
+                    options.getLogger().log(ERROR, "Error while adding breadcrumb", t);
+                  }
+                }
+              }
+            },
+            "PersistingScopeObserverThread");
+    this.workerThread.start();
   }
 
   @Override
@@ -121,6 +153,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
         });
   }
 
+  private final ConcurrentLinkedQueue<Breadcrumb> pendingBreadcrumbs =
+      new ConcurrentLinkedQueue<>();
+
   @Override
   public void addBreadcrumb(@NotNull Breadcrumb crumb) {
     serializeToDisk(
@@ -131,6 +166,13 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
             options.getLogger().log(ERROR, "Failed to add breadcrumb to file queue", e);
           }
         });
+  }
+
+  public void addBreadcrumbNew(@NotNull Breadcrumb crumb) {
+    pendingBreadcrumbs.add(crumb);
+    synchronized (lock) {
+      lock.notify();
+    }
   }
 
   @Override
