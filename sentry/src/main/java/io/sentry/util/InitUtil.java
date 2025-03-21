@@ -1,5 +1,7 @@
 package io.sentry.util;
 
+import io.sentry.ManifestVersionDetector;
+import io.sentry.NoopVersionDetector;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -13,14 +15,19 @@ public final class InitUtil {
       final @Nullable SentryOptions previousOptions,
       final @NotNull SentryOptions newOptions,
       final boolean isEnabled) {
-    if (SentryIntegrationPackageStorage.getInstance()
-        .checkForMixedVersions(newOptions.getLogger())) {
+    if (Platform.isJvm() && newOptions.getVersionDetector() instanceof NoopVersionDetector) {
+      newOptions.setVersionDetector(new ManifestVersionDetector(newOptions));
+    }
+    if (newOptions.getVersionDetector().checkForMixedVersions()) {
       newOptions
           .getLogger()
           .log(
               SentryLevel.ERROR,
               "Not initializing Sentry because mixed SDK versions have been detected.");
-      return false;
+      final @NotNull String docsUrl = Platform.isAndroid() ?
+        "https://docs.sentry.io/platforms/android/troubleshooting/mixed-versions" :
+        "https://docs.sentry.io/platforms/java/troubleshooting/mixed-versions";
+      throw new IllegalStateException("Sentry SDK has detected a mix of versions. This is not supported and likely leads to crashes. Please always use the same version of all Java SDK modules (dependencies). See " + docsUrl + " for more details.");
     }
     if (!isEnabled) {
       return true;
