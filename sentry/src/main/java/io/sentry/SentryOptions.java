@@ -291,10 +291,10 @@ public class SentryOptions {
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
 
   /** connection timeout in milliseconds. */
-  private int connectionTimeoutMillis = 5000;
+  private int connectionTimeoutMillis = 30_000;
 
   /** read timeout in milliseconds */
-  private int readTimeoutMillis = 5000;
+  private int readTimeoutMillis = 30_000;
 
   /** Reads and caches envelope files in the disk */
   private @NotNull IEnvelopeCache envelopeDiskCache = NoOpEnvelopeCache.getInstance();
