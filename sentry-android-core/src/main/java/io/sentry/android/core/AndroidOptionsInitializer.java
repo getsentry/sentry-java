@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultTransactionPerformanceCollector;
+import io.sentry.DefaultVersionDetector;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
@@ -184,6 +185,7 @@ final class AndroidOptionsInitializer {
     }
     options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
     options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
+    options.setVersionDetector(new DefaultVersionDetector(options));
 
     final boolean isAndroidXScrollViewAvailable =
         loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);

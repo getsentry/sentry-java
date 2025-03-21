@@ -9,17 +9,11 @@ import io.sentry.InitPriority;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
+import io.sentry.internal.ManifestVersionReader;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryPackage;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,7 +25,8 @@ public final class SentryAutoConfigurationCustomizerProvider
   @Override
   public void customize(AutoConfigurationCustomizer autoConfiguration) {
     ensureSentryOtelStorageIsInitialized();
-    final @Nullable VersionInfoHolder versionInfoHolder = createVersionInfo();
+    final @Nullable ManifestVersionReader.VersionInfoHolder versionInfoHolder =
+        ManifestVersionReader.getInstance().readOpenTelemetryVersion();
 
     if (isSentryAutoInitEnabled()) {
       Sentry.init(
@@ -46,10 +41,10 @@ public final class SentryAutoConfigurationCustomizerProvider
     }
 
     if (versionInfoHolder != null) {
-      for (SentryPackage pkg : versionInfoHolder.packages) {
+      for (SentryPackage pkg : versionInfoHolder.getPackages()) {
         SentryIntegrationPackageStorage.getInstance().addPackage(pkg.getName(), pkg.getVersion());
       }
-      for (String integration : versionInfoHolder.integrations) {
+      for (String integration : versionInfoHolder.getIntegrations()) {
         SentryIntegrationPackageStorage.getInstance().addIntegration(integration);
       }
     }
@@ -84,74 +79,19 @@ public final class SentryAutoConfigurationCustomizerProvider
     }
   }
 
-  private @Nullable VersionInfoHolder createVersionInfo() {
-    VersionInfoHolder infoHolder = null;
-    try {
-      final @NotNull Enumeration<URL> resources =
-          ClassLoader.getSystemClassLoader().getResources("META-INF/MANIFEST.MF");
-      while (resources.hasMoreElements()) {
-        try {
-          final @NotNull Manifest manifest = new Manifest(resources.nextElement().openStream());
-          final @Nullable Attributes mainAttributes = manifest.getMainAttributes();
-          if (mainAttributes != null) {
-            final @Nullable String name = mainAttributes.getValue("Sentry-Opentelemetry-SDK-Name");
-            final @Nullable String version = mainAttributes.getValue("Sentry-Version-Name");
-
-            if (name != null && version != null) {
-              infoHolder = new VersionInfoHolder();
-              infoHolder.sdkName = name;
-              infoHolder.sdkVersion = version;
-              infoHolder.packages.add(
-                  new SentryPackage("maven:io.sentry:sentry-opentelemetry-agent", version));
-              final @Nullable String otelVersion =
-                  mainAttributes.getValue("Sentry-Opentelemetry-Version-Name");
-              if (otelVersion != null) {
-                infoHolder.packages.add(
-                    new SentryPackage("maven:io.opentelemetry:opentelemetry-sdk", otelVersion));
-                infoHolder.integrations.add("OpenTelemetry");
-              }
-              final @Nullable String otelJavaagentVersion =
-                  mainAttributes.getValue("Sentry-Opentelemetry-Javaagent-Version-Name");
-              if (otelJavaagentVersion != null) {
-                infoHolder.packages.add(
-                    new SentryPackage(
-                        "maven:io.opentelemetry.javaagent:opentelemetry-javaagent",
-                        otelJavaagentVersion));
-                infoHolder.integrations.add("OpenTelemetry-Agent");
-              }
-              break;
-            }
-          }
-        } catch (Exception e) {
-          // ignore
-        }
-      }
-    } catch (IOException e) {
-      // ignore
-    }
-    return infoHolder;
-  }
-
   private @Nullable SdkVersion createSdkVersion(
       final @NotNull SentryOptions sentryOptions,
-      final @Nullable VersionInfoHolder versionInfoHolder) {
+      final @Nullable ManifestVersionReader.VersionInfoHolder versionInfoHolder) {
     SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
     if (versionInfoHolder != null
-        && versionInfoHolder.sdkName != null
-        && versionInfoHolder.sdkVersion != null) {
+        && versionInfoHolder.getSdkName() != null
+        && versionInfoHolder.getSdkVersion() != null) {
       sdkVersion =
           SdkVersion.updateSdkVersion(
-              sdkVersion, versionInfoHolder.sdkName, versionInfoHolder.sdkVersion);
+              sdkVersion, versionInfoHolder.getSdkName(), versionInfoHolder.getSdkVersion());
     }
     return sdkVersion;
-  }
-
-  private static class VersionInfoHolder {
-    private @Nullable String sdkName;
-    private @Nullable String sdkVersion;
-    private List<SentryPackage> packages = new ArrayList<>();
-    private List<String> integrations = new ArrayList<>();
   }
 
   private SdkTracerProviderBuilder configureSdkTracerProvider(
