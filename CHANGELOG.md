@@ -5,6 +5,7 @@
 ### Fixes
 
 - Do not override user-defined `SentryOptions` ([#4262](https://github.com/getsentry/sentry-java/pull/4262))
+- Fix tags missing for compose view hierarchies ([#4275](https://github.com/getsentry/sentry-java/pull/4275))
 
 ## 8.5.0
 
