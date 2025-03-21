@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.internal.ManifestVersionReader;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 

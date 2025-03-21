@@ -109,7 +109,7 @@ public final class ManifestVersionReader {
     }
   }
 
-  public final static class VersionInfoHolder {
+  public static final class VersionInfoHolder {
     private @Nullable String sdkName;
     private @Nullable String sdkVersion;
     private List<SentryPackage> packages = new ArrayList<>();
