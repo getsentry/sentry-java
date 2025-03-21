@@ -75,6 +75,7 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
         boolean isClickable = false;
         boolean isScrollable = false;
 
+        // needs to be in-sync with ComposeGestureTargetLocator
         final List<ModifierInfo> modifiers = node.getModifierInfo();
         for (ModifierInfo modifierInfo : modifiers) {
           if (modifierInfo.getModifier() instanceof SemanticsModifier) {
@@ -103,7 +104,8 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
               isClickable = true;
             } else if ("androidx.compose.foundation.ScrollingLayoutElement".equals(type)) {
               isScrollable = true;
-            } else if ("androidx.compose.ui.platform.TestTagElement".equals(type)) {
+            } else if ("androidx.compose.ui.platform.TestTagElement".equals(type)
+                || "io.sentry.compose.SentryModifier.SentryTagModifierNodeElement".equals(type)) {
               // Newer Jetpack Compose uses TestTagElement as node elements
               // See
               // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/platform/TestTag.kt;l=34;drc=dcaa116fbfda77e64a319e1668056ce3b032469f

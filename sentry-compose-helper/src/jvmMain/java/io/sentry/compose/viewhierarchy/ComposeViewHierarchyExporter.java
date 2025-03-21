@@ -1,6 +1,7 @@
 package io.sentry.compose.viewhierarchy;
 
 import androidx.compose.runtime.collection.MutableVector;
+import androidx.compose.ui.Modifier;
 import androidx.compose.ui.geometry.Rect;
 import androidx.compose.ui.layout.ModifierInfo;
 import androidx.compose.ui.node.LayoutNode;
@@ -14,6 +15,7 @@ import io.sentry.compose.SentryComposeHelper;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.ViewHierarchyNode;
 import io.sentry.util.AutoClosableReentrantLock;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -84,9 +86,13 @@ public final class ComposeViewHierarchyExporter implements ViewHierarchyExporter
 
   private static void setTag(
       final @NotNull LayoutNode node, final @NotNull ViewHierarchyNode vhNode) {
+    // needs to be in-sync with ComposeGestureTargetLocator
     final List<ModifierInfo> modifiers = node.getModifierInfo();
     for (ModifierInfo modifierInfo : modifiers) {
-      if (modifierInfo.getModifier() instanceof SemanticsModifier) {
+      final @NotNull Modifier modifier = modifierInfo.getModifier();
+      // Newer Jetpack Compose 1.5 uses Node modifier elements
+      final @Nullable String type = modifier.getClass().getCanonicalName();
+      if (modifier instanceof SemanticsModifier) {
         final SemanticsModifier semanticsModifierCore =
             (SemanticsModifier) modifierInfo.getModifier();
         final SemanticsConfiguration semanticsConfiguration =
@@ -98,6 +104,21 @@ public final class ComposeViewHierarchyExporter implements ViewHierarchyExporter
               vhNode.setTag((String) entry.getValue());
             }
           }
+        }
+      } else if ("androidx.compose.ui.platform.TestTagElement".equals(type)
+          || "io.sentry.compose.SentryModifier.SentryTagModifierNodeElement".equals(type)) {
+        // Newer Jetpack Compose uses TestTagElement as node elements
+        // See
+        // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/platform/TestTag.kt;l=34;drc=dcaa116fbfda77e64a319e1668056ce3b032469f
+        try {
+          final Field tagField = modifier.getClass().getDeclaredField("tag");
+          tagField.setAccessible(true);
+          final @Nullable Object value = tagField.get(modifier);
+          if (value instanceof String) {
+            vhNode.setTag((String) value);
+          }
+        } catch (Throwable e) {
+          // ignored
         }
       }
     }
