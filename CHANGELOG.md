@@ -7,6 +7,12 @@
 - Do not override user-defined `SentryOptions` ([#4262](https://github.com/getsentry/sentry-java/pull/4262))
 - Fix tags missing for compose view hierarchies ([#4275](https://github.com/getsentry/sentry-java/pull/4275))
 
+### Dependencies
+
+- Bump Native SDK from v0.8.1 to v0.8.2 ([#4267](https://github.com/getsentry/sentry-java/pull/4267))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#082)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.1...0.8.2)
+
 ## 8.5.0
 
 ### Features
@@ -560,6 +566,26 @@ If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that
     - As a consequence the list of exceptions in the group on top of an issue is no longer shown in Sentry UI.
     - We are planning to improve this in the future but opted for this fix first.
 - Fix swallow NDK loadLibrary errors ([#4082](https://github.com/getsentry/sentry-java/pull/4082))
+
+## 7.22.4
+
+### Fixes
+
+- Session Replay: Fix crash when a navigation breadcrumb does not have "to" destination ([#4185](https://github.com/getsentry/sentry-java/pull/4185))
+- Session Replay: Cap video segment duration to maximum 5 minutes to prevent endless video encoding in background ([#4185](https://github.com/getsentry/sentry-java/pull/4185))
+- Avoid logging an error when a float is passed in the manifest ([#4266](https://github.com/getsentry/sentry-java/pull/4266))
+
+## 7.22.3
+
+### Fixes
+
+- Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))
+
+## 7.22.2
+
+### Fixes
+
+- Fix AbstractMethodError when using SentryTraced for Jetpack Compose ([#4256](https://github.com/getsentry/sentry-java/pull/4256))
 
 ## 7.22.1
 
