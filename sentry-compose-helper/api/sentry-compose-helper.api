@@ -1,5 +1,6 @@
 public class io/sentry/compose/SentryComposeHelper {
 	public fun <init> (Lio/sentry/ILogger;)V
+	public static fun extractTag (Landroidx/compose/ui/Modifier;)Ljava/lang/String;
 	public fun getLayoutNodeBoundsInWindow (Landroidx/compose/ui/node/LayoutNode;)Landroidx/compose/ui/geometry/Rect;
 }
 
