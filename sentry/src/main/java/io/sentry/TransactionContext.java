@@ -23,7 +23,7 @@ public final class TransactionContext extends SpanContext {
       final @NotNull PropagationContext propagationContext) {
     final @Nullable Boolean parentSampled = propagationContext.isSampled();
     final @NotNull Baggage baggage = propagationContext.getBaggage();
-    final @Nullable Double sampleRate = baggage.getSampleRateDouble();
+    final @Nullable Double sampleRate = baggage.getSampleRate();
     final @Nullable TracesSamplingDecision samplingDecision =
         parentSampled == null
             ? null

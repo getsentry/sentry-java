@@ -274,13 +274,13 @@ class TracingUtilsTest {
     @Test
     fun `keeps sampleRand on passed in baggage if present`() {
         val incomingBaggage = Baggage(NoOpLogger.getInstance())
-        incomingBaggage.sampleRand = "0.3"
+        incomingBaggage.sampleRand = 0.3
         val baggage = TracingUtils.ensureBaggage(
             incomingBaggage,
             null as? TracesSamplingDecision?
         )
         assertSame(incomingBaggage, baggage)
-        assertEquals("0.3", baggage.sampleRand)
+        assertEquals(0.3, baggage.sampleRand!!, 0.0001)
         assertTrue(baggage.isMutable)
     }
 
@@ -331,7 +331,7 @@ class TracingUtilsTest {
             TracesSamplingDecision(true, null, 0.123)
         )
         assertSame(incomingBaggage, baggage)
-        assertEquals("0.123", baggage.sampleRand)
+        assertEquals(0.123, baggage.sampleRand!!, 0.0001)
     }
 
     @Test
@@ -342,7 +342,7 @@ class TracingUtilsTest {
             TracesSamplingDecision(true, 0.0001, null)
         )
         assertSame(incomingBaggage, baggage)
-        val sampleRand = baggage.sampleRandDouble
+        val sampleRand = baggage.sampleRand
         assertNotNull(sampleRand)
         assertTrue(sampleRand < 0.0001)
         assertTrue(sampleRand >= 0.0)
@@ -356,7 +356,7 @@ class TracingUtilsTest {
             TracesSamplingDecision(false, 0.9999, null)
         )
         assertSame(incomingBaggage, baggage)
-        val sampleRand = baggage.sampleRandDouble
+        val sampleRand = baggage.sampleRand
         assertNotNull(sampleRand)
         assertTrue(sampleRand < 1.0)
         assertTrue(sampleRand >= 0.9999)

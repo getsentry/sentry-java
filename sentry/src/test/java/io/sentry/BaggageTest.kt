@@ -318,7 +318,7 @@ class BaggageTest {
         baggage.setEnvironment("production")
         baggage.setTransaction("TX")
         baggage.setUserId(userId)
-        baggage.setSampleRate((1.0 / 3.0).toString())
+        baggage.setSampleRate((1.0 / 3.0))
         baggage.setSampled("true")
 
         assertEquals("sentry-environment=production,sentry-public_key=$publicKey,sentry-release=1.0-rc.1,sentry-sample_rate=0.3333333333333333,sentry-sampled=true,sentry-trace_id=$traceId,sentry-transaction=TX,sentry-user_id=$userId", baggage.toHeaderString(null))
@@ -577,8 +577,8 @@ class BaggageTest {
         baggage.setValuesFromSamplingDecision(TracesSamplingDecision(true, 0.021, 0.025))
 
         assertEquals("true", baggage.sampled)
-        assertEquals("0.021", baggage.sampleRate)
-        assertEquals("0.025", baggage.sampleRand)
+        assertEquals(0.021, baggage.sampleRate!!, 0.0001)
+        assertEquals(0.025, baggage.sampleRand!!, 0.0001)
     }
 
     @Test
@@ -594,8 +594,8 @@ class BaggageTest {
         baggage.setValuesFromSamplingDecision(TracesSamplingDecision(false, null, null))
 
         assertEquals("false", baggage.sampled)
-        assertEquals("0.021", baggage.sampleRate)
-        assertEquals("0.025", baggage.sampleRand)
+        assertEquals(0.021, baggage.sampleRate!!, 0.0001)
+        assertEquals(0.025, baggage.sampleRand!!, 0.0001)
     }
 
     @Test
@@ -606,42 +606,36 @@ class BaggageTest {
         baggage.setValuesFromSamplingDecision(TracesSamplingDecision(false, 0.121, 0.125))
 
         assertEquals("true", baggage.sampled)
-        assertEquals("0.121", baggage.sampleRate)
-        assertEquals("0.025", baggage.sampleRand)
+        assertEquals(0.121, baggage.sampleRate!!, 0.0001)
+        assertEquals(0.025, baggage.sampleRand!!, 0.0001)
     }
 
+    @Test
     fun `sample rate can be retrieved as double`() {
         val baggage = Baggage.fromHeader("a=b,c=d")
-        baggage.sampleRate = "0.1"
-        assertEquals(0.1, baggage.sampleRateDouble)
+        baggage.sampleRate = 0.1
+        assertEquals(0.1, baggage.sampleRate!!, 0.0001)
     }
 
     @Test
     fun `sample rand can be retrieved as double`() {
         val baggage = Baggage.fromHeader("a=b,c=d")
-        baggage.sampleRand = "0.1"
-        assertEquals(0.1, baggage.sampleRandDouble)
+        baggage.sampleRand = 0.1
+        assertEquals(0.1, baggage.sampleRand!!, 0.0001)
     }
 
     @Test
-    fun `sample rand can be set as double`() {
+    fun `null sample rand returns null double`() {
         val baggage = Baggage.fromHeader("a=b,c=d")
-        baggage.sampleRandDouble = 0.1
-        assertEquals("0.1", baggage.sampleRand)
+        baggage.sampleRand = null
+        assertNull(baggage.sampleRand)
     }
 
     @Test
-    fun `broken sample rand returns null double`() {
+    fun `null sample rate returns null double`() {
         val baggage = Baggage.fromHeader("a=b,c=d")
-        baggage.sampleRand = "a0.1"
-        assertNull(baggage.sampleRandDouble)
-    }
-
-    @Test
-    fun `broken sample rate returns null double`() {
-        val baggage = Baggage.fromHeader("a=b,c=d")
-        baggage.sampleRate = "a0.1"
-        assertNull(baggage.sampleRateDouble)
+        baggage.sampleRate = null
+        assertNull(baggage.sampleRate)
     }
 
     /**

@@ -32,8 +32,8 @@ public abstract interface class io/sentry/BackfillingEventProcessor : io/sentry/
 public final class io/sentry/Baggage {
 	public fun <init> (Lio/sentry/Baggage;)V
 	public fun <init> (Lio/sentry/ILogger;)V
-	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZZLio/sentry/ILogger;)V
-	public fun forceSetSampleRate (Ljava/lang/String;)V
+	public fun <init> (Ljava/util/Map;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/String;ZZLio/sentry/ILogger;)V
+	public fun forceSetSampleRate (Ljava/lang/Double;)V
 	public fun freeze ()V
 	public static fun fromEvent (Lio/sentry/SentryEvent;Lio/sentry/SentryOptions;)Lio/sentry/Baggage;
 	public static fun fromHeader (Ljava/lang/String;)Lio/sentry/Baggage;
@@ -47,10 +47,8 @@ public final class io/sentry/Baggage {
 	public fun getPublicKey ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getReplayId ()Ljava/lang/String;
-	public fun getSampleRand ()Ljava/lang/String;
-	public fun getSampleRandDouble ()Ljava/lang/Double;
-	public fun getSampleRate ()Ljava/lang/String;
-	public fun getSampleRateDouble ()Ljava/lang/Double;
+	public fun getSampleRand ()Ljava/lang/Double;
+	public fun getSampleRate ()Ljava/lang/Double;
 	public fun getSampled ()Ljava/lang/String;
 	public fun getThirdPartyHeader ()Ljava/lang/String;
 	public fun getTraceId ()Ljava/lang/String;
@@ -64,9 +62,8 @@ public final class io/sentry/Baggage {
 	public fun setPublicKey (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setReplayId (Ljava/lang/String;)V
-	public fun setSampleRand (Ljava/lang/String;)V
-	public fun setSampleRandDouble (Ljava/lang/Double;)V
-	public fun setSampleRate (Ljava/lang/String;)V
+	public fun setSampleRand (Ljava/lang/Double;)V
+	public fun setSampleRate (Ljava/lang/Double;)V
 	public fun setSampled (Ljava/lang/String;)V
 	public fun setTraceId (Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V

@@ -204,13 +204,13 @@ public final class TracingUtils {
         incomingBaggage == null ? new Baggage(NoOpLogger.getInstance()) : incomingBaggage;
 
     if (baggage.getSampleRand() == null) {
-      final @Nullable Double baggageSampleRate = baggage.getSampleRateDouble();
+      final @Nullable Double baggageSampleRate = baggage.getSampleRate();
       final @Nullable Double sampleRateMaybe =
           baggageSampleRate == null ? decisionSampleRate : baggageSampleRate;
       final @NotNull Double sampleRand =
           SampleRateUtils.backfilledSampleRand(
               decisionSampleRand, sampleRateMaybe, decisionSampled);
-      baggage.setSampleRandDouble(sampleRand);
+      baggage.setSampleRand(sampleRand);
     }
     if (baggage.isMutable()) {
       if (baggage.isShouldFreeze()) {
