@@ -767,6 +767,9 @@ public final class SentryClient implements ISentryClient {
             .log(SentryLevel.ERROR, "The BeforeEnvelope callback threw an exception.", e);
       }
     }
+
+    SentryIntegrationPackageStorage.getInstance().checkForMixedVersions(options.getLogger());
+
     if (hint == null) {
       transport.send(envelope);
     } else {
