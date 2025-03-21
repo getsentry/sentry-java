@@ -32,7 +32,22 @@ public final class Baggage {
   static final @NotNull Integer MAX_BAGGAGE_LIST_MEMBER_COUNT = 64;
   static final @NotNull String SENTRY_BAGGAGE_PREFIX = "sentry-";
 
+  // DecimalFormat is not thread safe
+  private static class DecimalFormatterThreadLocal extends ThreadLocal<DecimalFormat> {
+
+    @Override
+    protected DecimalFormat initialValue() {
+      return new DecimalFormat("#.################", DecimalFormatSymbols.getInstance(Locale.ROOT));
+    }
+  }
+
+  private static final DecimalFormatterThreadLocal decimalFormatter =
+      new DecimalFormatterThreadLocal();
+
   final @NotNull Map<String, String> keyValues;
+  @Nullable Double sampleRate;
+  @Nullable Double sampleRand;
+
   final @Nullable String thirdPartyHeader;
   private boolean mutable;
   private boolean shouldFreeze;
@@ -88,6 +103,9 @@ public final class Baggage {
     final @NotNull List<String> thirdPartyKeyValueStrings = new ArrayList<>();
     boolean shouldFreeze = false;
 
+    @Nullable Double sampleRate = null;
+    @Nullable Double sampleRand = null;
+
     if (headerValue != null) {
       try {
         // see https://errorprone.info/bugpattern/StringSplitter for why limit is passed
@@ -103,8 +121,13 @@ public final class Baggage {
               final String value = keyValueString.substring(separatorIndex + 1).trim();
               final String valueDecoded = decode(value);
 
-              keyValues.put(keyDecoded, valueDecoded);
-
+              if (DSCKeys.SAMPLE_RATE.equals(keyDecoded)) {
+                sampleRate = toDouble(valueDecoded);
+              } else if (DSCKeys.SAMPLE_RAND.equals(keyDecoded)) {
+                sampleRand = toDouble(valueDecoded);
+              } else {
+                keyValues.put(keyDecoded, valueDecoded);
+              }
               // Without ignoring SAMPLE_RAND here, we'd be freezing baggage that we're transporting
               // via OTel span attributes.
               // This is done when a transaction is created via Sentry API.
@@ -142,7 +165,8 @@ public final class Baggage {
      also we don't receive sentry-trace header here or in ctor so we can't
      backfill then freeze here unless we pass sentry-trace header.
     */
-    return new Baggage(keyValues, thirdPartyHeader, true, shouldFreeze, logger);
+    return new Baggage(
+        keyValues, sampleRate, sampleRand, thirdPartyHeader, true, shouldFreeze, logger);
   }
 
   @ApiStatus.Internal
@@ -172,13 +196,15 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public Baggage(final @NotNull ILogger logger) {
-    this(new HashMap<>(), null, true, false, logger);
+    this(new HashMap<>(), null, null, null, true, false, logger);
   }
 
   @ApiStatus.Internal
   public Baggage(final @NotNull Baggage baggage) {
     this(
         baggage.keyValues,
+        baggage.sampleRate,
+        baggage.sampleRand,
         baggage.thirdPartyHeader,
         baggage.mutable,
         baggage.shouldFreeze,
@@ -188,11 +214,15 @@ public final class Baggage {
   @ApiStatus.Internal
   public Baggage(
       final @NotNull Map<String, String> keyValues,
+      final @Nullable Double sampleRate,
+      final @Nullable Double sampleRand,
       final @Nullable String thirdPartyHeader,
       boolean isMutable,
       boolean shouldFreeze,
       final @NotNull ILogger logger) {
     this.keyValues = keyValues;
+    this.sampleRate = sampleRate;
+    this.sampleRand = sampleRand;
     this.logger = logger;
     this.thirdPartyHeader = thirdPartyHeader;
     this.mutable = isMutable;
@@ -231,8 +261,18 @@ public final class Baggage {
     }
 
     final Set<String> keys = new TreeSet<>(keyValues.keySet());
+    keys.add(DSCKeys.SAMPLE_RATE);
+    keys.add(DSCKeys.SAMPLE_RAND);
+
     for (final String key : keys) {
-      final @Nullable String value = keyValues.get(key);
+      final @Nullable String value;
+      if (DSCKeys.SAMPLE_RATE.equals(key)) {
+        value = sampleRateToString(sampleRate);
+      } else if (DSCKeys.SAMPLE_RAND.equals(key)) {
+        value = sampleRateToString(sampleRand);
+      } else {
+        value = keyValues.get(key);
+      }
 
       if (value != null) {
         if (listMemberCount >= MAX_BAGGAGE_LIST_MEMBER_COUNT) {
@@ -271,7 +311,6 @@ public final class Baggage {
         }
       }
     }
-
     return sb.toString();
   }
 
@@ -353,8 +392,8 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
-  public @Nullable String getSampleRate() {
-    return get(DSCKeys.SAMPLE_RATE);
+  public @Nullable Double getSampleRate() {
+    return sampleRate;
   }
 
   @ApiStatus.Internal
@@ -363,28 +402,27 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
-  public void setSampleRate(final @Nullable String sampleRate) {
-    set(DSCKeys.SAMPLE_RATE, sampleRate);
+  public void setSampleRate(final @Nullable Double sampleRate) {
+    if (isMutable()) {
+      this.sampleRate = sampleRate;
+    }
   }
 
   @ApiStatus.Internal
-  public void forceSetSampleRate(final @Nullable String sampleRate) {
-    set(DSCKeys.SAMPLE_RATE, sampleRate, true);
+  public void forceSetSampleRate(final @Nullable Double sampleRate) {
+    this.sampleRate = sampleRate;
   }
 
   @ApiStatus.Internal
-  public @Nullable String getSampleRand() {
-    return get(DSCKeys.SAMPLE_RAND);
+  public @Nullable Double getSampleRand() {
+    return sampleRand;
   }
 
   @ApiStatus.Internal
-  public void setSampleRand(final @Nullable String sampleRand) {
-    set(DSCKeys.SAMPLE_RAND, sampleRand);
-  }
-
-  @ApiStatus.Internal
-  public void setSampleRandDouble(final @Nullable Double sampleRand) {
-    setSampleRand(sampleRateToString(sampleRand));
+  public void setSampleRand(final @Nullable Double sampleRand) {
+    if (isMutable()) {
+      this.sampleRand = sampleRand;
+    }
   }
 
   @ApiStatus.Internal
@@ -453,9 +491,9 @@ public final class Baggage {
     if (replayId != null && !SentryId.EMPTY_ID.equals(replayId)) {
       setReplayId(replayId.toString());
     }
-    setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
+    setSampleRate(sampleRate(samplingDecision));
     setSampled(StringUtils.toString(sampled(samplingDecision)));
-    setSampleRand(sampleRateToString(sampleRand(samplingDecision))); // TODO check
+    setSampleRand(sampleRand(samplingDecision)); // TODO check
   }
 
   @ApiStatus.Internal
@@ -468,11 +506,11 @@ public final class Baggage {
     setSampled(StringUtils.toString(sampled(samplingDecision)));
 
     if (samplingDecision.getSampleRand() != null) {
-      setSampleRand(sampleRateToString(sampleRand(samplingDecision)));
+      setSampleRand(sampleRand(samplingDecision));
     }
 
     if (samplingDecision.getSampleRate() != null) {
-      forceSetSampleRate(sampleRateToString(sampleRate(samplingDecision)));
+      forceSetSampleRate(sampleRate(samplingDecision));
     }
   }
 
@@ -513,10 +551,7 @@ public final class Baggage {
     if (!SampleRateUtils.isValidTracesSampleRate(sampleRateAsDouble, false)) {
       return null;
     }
-
-    DecimalFormat df =
-        new DecimalFormat("#.################", DecimalFormatSymbols.getInstance(Locale.ROOT));
-    return df.format(sampleRateAsDouble);
+    return decimalFormatter.get().format(sampleRateAsDouble);
   }
 
   private static @Nullable Boolean sampled(@Nullable TracesSamplingDecision samplingDecision) {
@@ -533,17 +568,8 @@ public final class Baggage {
         && !TransactionNameSource.URL.equals(transactionNameSource);
   }
 
-  @ApiStatus.Internal
-  public @Nullable Double getSampleRateDouble() {
-    return toDouble(getSampleRate());
-  }
-
-  @ApiStatus.Internal
-  public @Nullable Double getSampleRandDouble() {
-    return toDouble(getSampleRand());
-  }
-
-  private @Nullable Double toDouble(final @Nullable String stringValue) {
+  @Nullable
+  private static Double toDouble(final @Nullable String stringValue) {
     if (stringValue != null) {
       try {
         double doubleValue = Double.parseDouble(stringValue);
@@ -573,10 +599,10 @@ public final class Baggage {
               getEnvironment(),
               getUserId(),
               getTransaction(),
-              getSampleRate(),
+              sampleRateToString(getSampleRate()),
               getSampled(),
               replayIdString == null ? null : new SentryId(replayIdString),
-              getSampleRand());
+              sampleRateToString(getSampleRand()));
       traceContext.setUnknown(getUnknown());
       return traceContext;
     } else {
