@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
@@ -17,13 +18,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Series of application events */
-public final class Breadcrumb implements JsonUnknown, JsonSerializable {
+public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparable<Breadcrumb> {
 
   /** A timestamp representing when the breadcrumb occurred in milliseconds. */
   private @Nullable final Long timestampMs;
 
   /** A timestamp representing when the breadcrumb occurred as java.util.Date. */
   private @Nullable Date timestamp;
+
+  private final @NotNull Long nanos;
 
   /** If a message is provided, its rendered as text and the whitespace is preserved. */
   private @Nullable String message;
@@ -56,16 +59,19 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    */
   @SuppressWarnings("JavaUtilDate")
   public Breadcrumb(final @NotNull Date timestamp) {
+    this.nanos = System.nanoTime();
     this.timestamp = timestamp;
     this.timestampMs = null;
   }
 
   public Breadcrumb(final long timestamp) {
+    this.nanos = System.nanoTime();
     this.timestampMs = timestamp;
     this.timestamp = null;
   }
 
   Breadcrumb(final @NotNull Breadcrumb breadcrumb) {
+    this.nanos = System.nanoTime();
     this.timestamp = breadcrumb.timestamp;
     this.timestampMs = breadcrumb.timestampMs;
     this.message = breadcrumb.message;
@@ -208,6 +214,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
     final Breadcrumb breadcrumb = http(url, method);
     if (code != null) {
       breadcrumb.setData("status_code", code);
+      breadcrumb.setLevel(levelFromHttpStatusCode(code));
     }
     return breadcrumb;
   }
@@ -513,6 +520,16 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
     return userInteraction(subCategory, viewId, viewClass, null, additionalData);
   }
 
+  private static @Nullable SentryLevel levelFromHttpStatusCode(final @NotNull Integer code) {
+    if (HttpUtils.isHttpClientError(code)) {
+      return SentryLevel.WARNING;
+    } else if (HttpUtils.isHttpServerError(code)) {
+      return SentryLevel.ERROR;
+    } else {
+      return null;
+    }
+  }
+
   /** Breadcrumb ctor */
   public Breadcrumb() {
     this(System.currentTimeMillis());
@@ -599,7 +616,10 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    * @return the value or null
    */
   @Nullable
-  public Object getData(final @NotNull String key) {
+  public Object getData(final @Nullable String key) {
+    if (key == null) {
+      return null;
+    }
     return data.get(key);
   }
 
@@ -609,8 +629,15 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    * @param key the key
    * @param value the value
    */
-  public void setData(@NotNull String key, @NotNull Object value) {
-    data.put(key, value);
+  public void setData(@Nullable String key, @Nullable Object value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      removeData(key);
+    } else {
+      data.put(key, value);
+    }
   }
 
   /**
@@ -618,7 +645,10 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
    *
    * @param key the key
    */
-  public void removeData(@NotNull String key) {
+  public void removeData(@Nullable String key) {
+    if (key == null) {
+      return;
+    }
     data.remove(key);
   }
 
@@ -706,6 +736,12 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable {
   @Override
   public void setUnknown(@Nullable Map<String, Object> unknown) {
     this.unknown = unknown;
+  }
+
+  @Override
+  @SuppressWarnings("JavaUtilDate")
+  public int compareTo(@NotNull Breadcrumb o) {
+    return nanos.compareTo(o.nanos);
   }
 
   public static final class JsonKeys {

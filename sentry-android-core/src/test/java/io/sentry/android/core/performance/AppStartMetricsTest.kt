@@ -8,7 +8,10 @@ import android.os.Bundle
 import android.os.Looper
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.sentry.DateUtils
+import io.sentry.IContinuousProfiler
 import io.sentry.ITransactionProfiler
+import io.sentry.SentryNanotimeDate
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
 import org.junit.Before
@@ -21,6 +24,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows
 import org.robolectric.annotation.Config
+import java.util.Date
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -59,7 +63,8 @@ class AppStartMetricsTest {
         metrics.addActivityLifecycleTimeSpans(ActivityLifecycleTimeSpan())
         AppStartMetrics.onApplicationCreate(mock<Application>())
         AppStartMetrics.onContentProviderCreate(mock<ContentProvider>())
-        metrics.setAppStartProfiler(mock())
+        metrics.appStartProfiler = mock()
+        metrics.appStartContinuousProfiler = mock()
         metrics.appStartSamplingDecision = mock()
 
         metrics.clear()
@@ -72,6 +77,7 @@ class AppStartMetricsTest {
         assertTrue(metrics.activityLifecycleTimeSpans.isEmpty())
         assertTrue(metrics.contentProviderOnCreateTimeSpans.isEmpty())
         assertNull(metrics.appStartProfiler)
+        assertNull(metrics.appStartContinuousProfiler)
         assertNull(metrics.appStartSamplingDecision)
     }
 
@@ -258,10 +264,37 @@ class AppStartMetricsTest {
     }
 
     @Test
+    fun `if activity is never started, stops app start continuous profiler if running`() {
+        val profiler = mock<IContinuousProfiler>()
+        whenever(profiler.isRunning).thenReturn(true)
+        AppStartMetrics.getInstance().appStartContinuousProfiler = profiler
+
+        AppStartMetrics.getInstance().registerLifecycleCallbacks(mock())
+        // Job on main thread checks if activity was launched
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        verify(profiler).close()
+    }
+
+    @Test
     fun `if activity is started, does not stop app start profiler if running`() {
         val profiler = mock<ITransactionProfiler>()
         whenever(profiler.isRunning).thenReturn(true)
         AppStartMetrics.getInstance().appStartProfiler = profiler
+        AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
+
+        AppStartMetrics.getInstance().registerLifecycleCallbacks(mock())
+        // Job on main thread checks if activity was launched
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+        verify(profiler, never()).close()
+    }
+
+    @Test
+    fun `if activity is started, does not stop app start continuous profiler if running`() {
+        val profiler = mock<IContinuousProfiler>()
+        whenever(profiler.isRunning).thenReturn(true)
+        AppStartMetrics.getInstance().appStartContinuousProfiler = profiler
         AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
 
         AppStartMetrics.getInstance().registerLifecycleCallbacks(mock())
@@ -453,5 +486,24 @@ class AppStartMetricsTest {
 
         // then the app start is still considered warm
         assertEquals(AppStartMetrics.AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
+    }
+
+    @Test
+    fun `createProcessInitSpan creates a span`() {
+        val appStartMetrics = AppStartMetrics.getInstance()
+        val startDate = SentryNanotimeDate(Date(1), 1000000)
+        appStartMetrics.classLoadedUptimeMs = 10
+        val startMillis = DateUtils.nanosToMillis(startDate.nanoTimestamp().toDouble()).toLong()
+        appStartMetrics.appStartTimeSpan.setStartedAt(1)
+        appStartMetrics.appStartTimeSpan.setStartUnixTimeMs(startMillis)
+        val span = appStartMetrics.createProcessInitSpan()
+
+        assertEquals("Process Initialization", span.description)
+        // Start timestampMs is taken by appStartSpan
+        assertEquals(startMillis, span.startTimestampMs)
+        // Start uptime is taken by appStartSpan and stop uptime is class loaded uptime: 10 - 1
+        assertEquals(9, span.durationMs)
+        // Class loaded uptimeMs is 10 ms, and process init span should finish at the same ms
+        assertEquals(10, span.projectedStopTimestampMs)
     }
 }

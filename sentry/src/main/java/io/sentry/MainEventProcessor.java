@@ -2,12 +2,12 @@ package io.sentry;
 
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Cached;
-import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -28,6 +28,8 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   private final @NotNull SentryThreadFactory sentryThreadFactory;
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
   private volatile @Nullable HostnameCache hostnameCache = null;
+  private final @NotNull AutoClosableReentrantLock hostnameCacheLock =
+      new AutoClosableReentrantLock();
 
   public MainEventProcessor(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The SentryOptions is required.");
@@ -66,34 +68,8 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   }
 
   private void setDebugMeta(final @NotNull SentryBaseEvent event) {
-    final @NotNull List<DebugImage> debugImages = new ArrayList<>();
-
-    if (options.getProguardUuid() != null) {
-      final DebugImage proguardMappingImage = new DebugImage();
-      proguardMappingImage.setType(DebugImage.PROGUARD);
-      proguardMappingImage.setUuid(options.getProguardUuid());
-      debugImages.add(proguardMappingImage);
-    }
-
-    for (final @NotNull String bundleId : options.getBundleIds()) {
-      final DebugImage sourceBundleImage = new DebugImage();
-      sourceBundleImage.setType(DebugImage.JVM);
-      sourceBundleImage.setDebugId(bundleId);
-      debugImages.add(sourceBundleImage);
-    }
-
-    if (!debugImages.isEmpty()) {
-      DebugMeta debugMeta = event.getDebugMeta();
-
-      if (debugMeta == null) {
-        debugMeta = new DebugMeta();
-      }
-      if (debugMeta.getImages() == null) {
-        debugMeta.setImages(debugImages);
-      } else {
-        debugMeta.getImages().addAll(debugImages);
-      }
-
+    final DebugMeta debugMeta = DebugMeta.buildDebugMeta(event.getDebugMeta(), options);
+    if (debugMeta != null) {
       event.setDebugMeta(debugMeta);
     }
   }
@@ -207,7 +183,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
 
   private void ensureHostnameCache() {
     if (hostnameCache == null) {
-      synchronized (this) {
+      try (final @NotNull ISentryLifecycleToken ignored = hostnameCacheLock.acquire()) {
         if (hostnameCache == null) {
           hostnameCache = HostnameCache.getInstance();
         }
@@ -326,5 +302,10 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   @Nullable
   HostnameCache getHostnameCache() {
     return hostnameCache;
+  }
+
+  @Override
+  public @Nullable Long getOrder() {
+    return 0L;
   }
 }

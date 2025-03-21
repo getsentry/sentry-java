@@ -277,6 +277,17 @@ public interface ISentryClient {
     return captureTransaction(transaction, null, null, null);
   }
 
+  /**
+   * Captures the profile chunk and enqueues it for sending to Sentry server.
+   *
+   * @param profilingContinuousData the continuous profiling payload
+   * @return the profile chunk id
+   */
+  @ApiStatus.Internal
+  @NotNull
+  SentryId captureProfileChunk(
+      final @NotNull ProfileChunk profilingContinuousData, final @Nullable IScope scope);
+
   @NotNull
   @ApiStatus.Experimental
   SentryId captureCheckIn(@NotNull CheckIn checkIn, @Nullable IScope scope, @Nullable Hint hint);
@@ -289,8 +300,4 @@ public interface ISentryClient {
   default boolean isHealthy() {
     return true;
   }
-
-  @ApiStatus.Internal
-  @NotNull
-  IMetricsAggregator getMetricsAggregator();
 }

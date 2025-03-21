@@ -18,6 +18,7 @@ public final class io/sentry/compose/SentryModifier {
 }
 
 public final class io/sentry/compose/SentryNavigationIntegrationKt {
+	public static final fun withSentryObservableEffect (Landroidx/navigation/NavHostController;Lio/sentry/android/navigation/SentryNavigationListener;Landroidx/compose/runtime/Composer;I)Landroidx/navigation/NavHostController;
 	public static final fun withSentryObservableEffect (Landroidx/navigation/NavHostController;ZZLandroidx/compose/runtime/Composer;II)Landroidx/navigation/NavHostController;
 }
 

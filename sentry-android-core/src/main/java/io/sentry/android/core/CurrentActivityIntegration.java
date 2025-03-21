@@ -1,11 +1,14 @@
 package io.sentry.android.core;
 
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.Integration;
+import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -25,8 +28,10 @@ public final class CurrentActivityIntegration
   }
 
   @Override
-  public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
+  public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     application.registerActivityLifecycleCallbacks(this);
+    options.getLogger().log(SentryLevel.DEBUG, "CurrentActivityIntegration installed.");
+    addIntegrationToSdkVersion("CurrentActivity");
   }
 
   @Override

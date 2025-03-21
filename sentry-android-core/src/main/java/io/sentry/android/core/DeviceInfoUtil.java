@@ -14,6 +14,7 @@ import android.os.StatFs;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
@@ -21,6 +22,7 @@ import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.OperatingSystem;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.io.File;
 import java.util.Calendar;
 import java.util.Collections;
@@ -39,11 +41,15 @@ public final class DeviceInfoUtil {
   @SuppressLint("StaticFieldLeak")
   private static volatile DeviceInfoUtil instance;
 
+  private static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
+
   private final @NotNull Context context;
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @Nullable Boolean isEmulator;
   private final @Nullable ContextUtils.SideLoadedInfo sideLoadedInfo;
+  private final @Nullable ContextUtils.SplitApksInfo splitApksInfo;
   private final @NotNull OperatingSystem os;
 
   private final @Nullable Long totalMem;
@@ -60,6 +66,7 @@ public final class DeviceInfoUtil {
     isEmulator = buildInfoProvider.isEmulator();
     sideLoadedInfo =
         ContextUtils.retrieveSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
+    splitApksInfo = ContextUtils.retrieveSplitApksInfo(context, buildInfoProvider);
     final @Nullable ActivityManager.MemoryInfo memInfo =
         ContextUtils.getMemInfo(context, options.getLogger());
     if (memInfo != null) {
@@ -73,7 +80,7 @@ public final class DeviceInfoUtil {
   public static DeviceInfoUtil getInstance(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     if (instance == null) {
-      synchronized (DeviceInfoUtil.class) {
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (instance == null) {
           instance = new DeviceInfoUtil(ContextUtils.getApplicationContext(context), options);
         }
@@ -94,16 +101,12 @@ public final class DeviceInfoUtil {
       final boolean collectDeviceIO, final boolean collectDynamicData) {
     // TODO: missing usable memory
     final @NotNull Device device = new Device();
-
-    if (options.isSendDefaultPii()) {
-      device.setName(ContextUtils.getDeviceName(context));
-    }
     device.setManufacturer(Build.MANUFACTURER);
     device.setBrand(Build.BRAND);
     device.setFamily(ContextUtils.getFamily(options.getLogger()));
     device.setModel(Build.MODEL);
     device.setModelId(Build.ID);
-    device.setArchs(ContextUtils.getArchitectures(buildInfoProvider));
+    device.setArchs(ContextUtils.getArchitectures());
 
     device.setOrientation(getOrientation());
     if (isEmulator != null) {
@@ -127,9 +130,6 @@ public final class DeviceInfoUtil {
     }
 
     final @NotNull Locale locale = Locale.getDefault();
-    if (device.getLanguage() == null) {
-      device.setLanguage(locale.getLanguage());
-    }
     if (device.getLocale() == null) {
       device.setLocale(locale.toString()); // eg en_US
     }
@@ -184,6 +184,11 @@ public final class DeviceInfoUtil {
   @Nullable
   public ContextUtils.SideLoadedInfo getSideLoadedInfo() {
     return sideLoadedInfo;
+  }
+
+  @Nullable
+  public ContextUtils.SplitApksInfo getSplitApksInfo() {
+    return splitApksInfo;
   }
 
   private void setDeviceIO(final @NotNull Device device, final boolean includeDynamicData) {

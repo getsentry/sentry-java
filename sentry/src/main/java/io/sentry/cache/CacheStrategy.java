@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -242,7 +241,7 @@ abstract class CacheStrategy {
       return false;
     }
 
-    final UUID sessionId = session.getSessionId();
+    final String sessionId = session.getSessionId();
 
     return sessionId != null;
   }

@@ -1,6 +1,6 @@
 package io.sentry.instrumentation.file
 
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.ITransaction
 import io.sentry.util.PlatformTestManipulator
@@ -20,25 +20,25 @@ class FileIOSpanManagerTest {
 
     @Test
     fun `startSpan uses transaction on Android platform`() {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val transaction = mock<ITransaction>()
-        whenever(hub.transaction).thenReturn(transaction)
+        whenever(scopes.transaction).thenReturn(transaction)
 
         PlatformTestManipulator.pretendIsAndroid(true)
 
-        FileIOSpanManager.startSpan(hub, "op.read")
+        FileIOSpanManager.startSpan(scopes, "op.read")
         verify(transaction).startChild(any())
     }
 
     @Test
     fun `startSpan uses last span on non-Android platforms`() {
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val span = mock<ISpan>()
-        whenever(hub.span).thenReturn(span)
+        whenever(scopes.span).thenReturn(span)
 
         PlatformTestManipulator.pretendIsAndroid(false)
 
-        FileIOSpanManager.startSpan(hub, "op.read")
+        FileIOSpanManager.startSpan(scopes, "op.read")
         verify(span).startChild(any())
     }
 }

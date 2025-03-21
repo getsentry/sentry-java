@@ -411,6 +411,19 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       }
     }
 
+    try {
+      final ContextUtils.SplitApksInfo splitApksInfo =
+          DeviceInfoUtil.getInstance(context, options).getSplitApksInfo();
+      if (splitApksInfo != null) {
+        app.setSplitApks(splitApksInfo.isSplitApks());
+        if (splitApksInfo.getSplitNames() != null) {
+          app.setSplitNames(Arrays.asList(splitApksInfo.getSplitNames()));
+        }
+      }
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Error getting split apks info.", e);
+    }
+
     event.getContexts().setApp(app);
   }
 
@@ -504,6 +517,11 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     }
   }
   // endregion
+
+  @Override
+  public @Nullable Long getOrder() {
+    return 12000L;
+  }
 
   // region static values
   private void setStaticValues(final @NotNull SentryEvent event) {
@@ -621,15 +639,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   @SuppressLint("NewApi")
   private @NotNull Device getDevice() {
     Device device = new Device();
-    if (options.isSendDefaultPii()) {
-      device.setName(ContextUtils.getDeviceName(context));
-    }
     device.setManufacturer(Build.MANUFACTURER);
     device.setBrand(Build.BRAND);
     device.setFamily(ContextUtils.getFamily(options.getLogger()));
     device.setModel(Build.MODEL);
     device.setModelId(Build.ID);
-    device.setArchs(ContextUtils.getArchitectures(buildInfoProvider));
+    device.setArchs(ContextUtils.getArchitectures());
 
     final ActivityManager.MemoryInfo memInfo =
         ContextUtils.getMemInfo(context, options.getLogger());

@@ -15,12 +15,12 @@ public enum SentryItemType implements JsonSerializable {
   Attachment("attachment"),
   Transaction("transaction"),
   Profile("profile"),
+  ProfileChunk("profile_chunk"),
   ClientReport("client_report"),
   ReplayEvent("replay_event"),
   ReplayRecording("replay_recording"),
   ReplayVideo("replay_video"),
   CheckIn("check_in"),
-  Statsd("statsd"),
   Feedback("feedback"),
   Unknown("__unknown__"); // DataCategory.Unknown
 

@@ -30,8 +30,8 @@ class SentryLogcatAdapterTest {
             }
             val mockContext = ContextUtilsTestHelper.mockMetaData(metaData = metadata)
             when {
-                options != null -> SentryAndroid.init(mockContext, options)
-                else -> SentryAndroid.init(mockContext)
+                options != null -> initForTest(mockContext, options)
+                else -> initForTest(mockContext)
             }
         }
     }

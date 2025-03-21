@@ -7,7 +7,7 @@ public final class io/sentry/android/ndk/BuildConfig {
 }
 
 public final class io/sentry/android/ndk/DebugImagesLoader : io/sentry/android/core/IDebugImagesLoader {
-	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/ndk/NativeModuleListLoader;)V
+	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/ndk/NativeModuleListLoader;)V
 	public fun clearDebugImages ()V
 	public fun loadDebugImages ()Ljava/util/List;
 	public fun loadDebugImagesForAddresses (Ljava/util/Set;)Ljava/util/Set;
@@ -20,6 +20,7 @@ public final class io/sentry/android/ndk/NdkScopeObserver : io/sentry/ScopeObser
 	public fun removeTag (Ljava/lang/String;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTrace (Lio/sentry/SpanContext;Lio/sentry/IScope;)V
 	public fun setUser (Lio/sentry/protocol/User;)V
 }
 

@@ -36,20 +36,20 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
   private final @NotNull IEnvelopeReader envelopeReader;
   private final @NotNull ISerializer serializer;
   private final @NotNull ILogger logger;
 
   public OutboxSender(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @NotNull IEnvelopeReader envelopeReader,
       final @NotNull ISerializer serializer,
       final @NotNull ILogger logger,
       final long flushTimeoutMillis,
       final int maxQueueSize) {
-    super(hub, logger, flushTimeoutMillis, maxQueueSize);
-    this.hub = Objects.requireNonNull(hub, "Hub is required.");
+    super(scopes, logger, flushTimeoutMillis, maxQueueSize);
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required.");
     this.envelopeReader = Objects.requireNonNull(envelopeReader, "Envelope reader is required.");
     this.serializer = Objects.requireNonNull(serializer, "Serializer is required.");
     this.logger = Objects.requireNonNull(logger, "Logger is required.");
@@ -144,7 +144,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
               logUnexpectedEventId(envelope, event.getEventId(), currentItem);
               continue;
             }
-            hub.captureEvent(event, hint);
+            scopes.captureEvent(event, hint);
             logItemCaptured(currentItem);
 
             if (!waitFlush(hint)) {
@@ -181,7 +181,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
                   .getTrace()
                   .setSamplingDecision(extractSamplingDecision(traceContext));
             }
-            hub.captureTransaction(transaction, traceContext, hint);
+            scopes.captureTransaction(transaction, traceContext, hint);
             logItemCaptured(currentItem);
 
             if (!waitFlush(hint)) {
@@ -197,7 +197,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         final SentryEnvelope newEnvelope =
             new SentryEnvelope(
                 envelope.getHeader().getEventId(), envelope.getHeader().getSdkVersion(), item);
-        hub.captureEnvelope(newEnvelope, hint);
+        scopes.captureEnvelope(newEnvelope, hint);
         logger.log(
             SentryLevel.DEBUG,
             "%s item %d is being captured.",
@@ -244,7 +244,16 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
                 "Invalid sample rate parsed from TraceContext: %s",
                 sampleRateString);
           } else {
-            return new TracesSamplingDecision(true, sampleRate);
+            final @Nullable String sampleRandString = traceContext.getSampleRand();
+            if (sampleRandString != null) {
+              final Double sampleRand = Double.parseDouble(sampleRandString);
+              if (SampleRateUtils.isValidTracesSampleRate(sampleRand, false)) {
+                return new TracesSamplingDecision(true, sampleRate, sampleRand);
+              }
+            }
+
+            return SampleRateUtils.backfilledSampleRand(
+                new TracesSamplingDecision(true, sampleRate));
           }
         } catch (Exception e) {
           logger.log(

@@ -7,6 +7,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class BreadcrumbTest {
 
@@ -145,6 +146,38 @@ class BreadcrumbTest {
     }
 
     @Test
+    fun `creates HTTP breadcrumb with WARNING level if status code is 4xx`() {
+        val breadcrumb = Breadcrumb.http("http://example.com", "POST", 417)
+        assertEquals("http://example.com", breadcrumb.data["url"])
+        assertEquals("POST", breadcrumb.data["method"])
+        assertEquals("http", breadcrumb.type)
+        assertEquals("http", breadcrumb.category)
+        assertEquals(SentryLevel.WARNING, breadcrumb.level)
+    }
+
+    @Test
+    fun `creates HTTP breadcrumb with error level if status code is 5xx`() {
+        val breadcrumb = Breadcrumb.http("http://example.com", "POST", 502)
+        assertEquals("http://example.com", breadcrumb.data["url"])
+        assertEquals("POST", breadcrumb.data["method"])
+        assertEquals("http", breadcrumb.type)
+        assertEquals("http", breadcrumb.category)
+        assertEquals(502, breadcrumb.data["status_code"])
+        assertEquals(SentryLevel.ERROR, breadcrumb.level)
+    }
+
+    @Test
+    fun `creates HTTP breadcrumb with null level if status code is not 5xx or 4xx`() {
+        val breadcrumb = Breadcrumb.http("http://example.com", "POST", 200)
+        assertEquals("http://example.com", breadcrumb.data["url"])
+        assertEquals("POST", breadcrumb.data["method"])
+        assertEquals("http", breadcrumb.type)
+        assertEquals("http", breadcrumb.category)
+        assertEquals(200, breadcrumb.data["status_code"])
+        assertEquals(null, breadcrumb.level)
+    }
+
+    @Test
     fun `creates navigation breadcrumb`() {
         val breadcrumb = Breadcrumb.navigation("from", "to")
         assertEquals("from", breadcrumb.data["from"])
@@ -239,6 +272,44 @@ class BreadcrumbTest {
         assertEquals("io.sentry.BreadcrumbTest\$TestKey", breadcrumb.data["key_type"])
         assertEquals("java.lang.Throwable", breadcrumb.data["value_type"])
         assertNull(breadcrumb.data["name"])
+    }
+
+    @Test
+    fun `null key data does not throw`() {
+        val breadcrumb = Breadcrumb()
+        breadcrumb.setData(null, "v")
+        assertNull(breadcrumb.getData(null))
+    }
+
+    @Test
+    fun `null key and value data does not throw`() {
+        val breadcrumb = Breadcrumb()
+        breadcrumb.setData(null, null)
+        assertNull(breadcrumb.getData(null))
+        assertTrue(breadcrumb.data.isEmpty())
+    }
+
+    @Test
+    fun `null value data does not throw`() {
+        val breadcrumb = Breadcrumb()
+        breadcrumb.setData("k", null)
+        assertNull(breadcrumb.getData("k"))
+        assertTrue(breadcrumb.data.isEmpty())
+    }
+
+    @Test
+    fun `set null value data removes previous entry`() {
+        val breadcrumb = Breadcrumb()
+        breadcrumb.setData("k", "v")
+        breadcrumb.setData("k", null)
+        assertNull(breadcrumb.getData("k"))
+        assertTrue(breadcrumb.data.isEmpty())
+    }
+
+    @Test
+    fun `remove null key data does not throw`() {
+        val breadcrumb = Breadcrumb()
+        breadcrumb.removeData(null)
     }
 
     class TestKey(val id: Long) {

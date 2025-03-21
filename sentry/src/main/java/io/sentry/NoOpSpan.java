@@ -1,6 +1,6 @@
 package io.sentry;
 
-import io.sentry.metrics.LocalMetricsAggregator;
+import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -24,6 +24,12 @@ public final class NoOpSpan implements ISpan {
   @Override
   public @NotNull ISpan startChild(
       @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions) {
+    return NoOpSpan.getInstance();
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
     return NoOpSpan.getInstance();
   }
 
@@ -114,10 +120,10 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {}
+  public void setTag(@Nullable String key, @Nullable String value) {}
 
   @Override
-  public @Nullable String getTag(@NotNull String key) {
+  public @Nullable String getTag(@Nullable String key) {
     return null;
   }
 
@@ -127,10 +133,10 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public void setData(@NotNull String key, @NotNull Object value) {}
+  public void setData(@Nullable String key, @Nullable Object value) {}
 
   @Override
-  public @Nullable Object getData(@NotNull String key) {
+  public @Nullable Object getData(@Nullable String key) {
     return null;
   }
 
@@ -162,7 +168,25 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
-  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
+  public void setContext(@Nullable String key, @Nullable Object context) {}
+
+  @Override
+  public @NotNull Contexts getContexts() {
+    return new Contexts();
+  }
+
+  @Override
+  public @Nullable Boolean isSampled() {
     return null;
+  }
+
+  @Override
+  public @Nullable TracesSamplingDecision getSamplingDecision() {
+    return null;
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    return NoOpScopesLifecycleToken.getInstance();
   }
 }

@@ -16,6 +16,7 @@ import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.ISentryClient
 import io.sentry.Sentry
+import io.sentry.Sentry.OptionsConfiguration
 import io.sentry.SentryEnvelope
 import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
@@ -44,6 +45,8 @@ import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
 import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.SentryId
+import io.sentry.test.applyTestOptions
+import io.sentry.test.initForTest
 import io.sentry.transport.NoOpEnvelopeCache
 import io.sentry.util.StringUtils
 import org.awaitility.kotlin.await
@@ -105,9 +108,9 @@ class SentryAndroidTest {
             }
             val mockContext = context ?: ContextUtilsTestHelper.mockMetaData(metaData = metadata)
             when {
-                logger != null -> SentryAndroid.init(mockContext, logger)
-                options != null -> SentryAndroid.init(mockContext, options)
-                else -> SentryAndroid.init(mockContext)
+                logger != null -> initForTest(mockContext, logger)
+                options != null -> initForTest(mockContext, options)
+                else -> initForTest(mockContext)
             }
         }
 
@@ -295,7 +298,7 @@ class SentryAndroidTest {
 
         val mockContext = ContextUtilsTestHelper.createMockContext(true)
         val cacheDirPath = Files.createTempDirectory("new_cache").absolutePathString()
-        SentryAndroid.init(mockContext) {
+        initForTest(mockContext) {
             it.dsn = "https://key@sentry.io/123"
             it.cacheDirPath = cacheDirPath
             options = it
@@ -327,12 +330,13 @@ class SentryAndroidTest {
     @Test
     fun `init does not start a session if one is already running`() {
         val client = mock<ISentryClient>()
+        whenever(client.isEnabled).thenReturn(true)
 
         initSentryWithForegroundImportance(true, { options ->
-            options.addIntegration { hub, _ ->
-                hub.bindClient(client)
+            options.addIntegration { scopes, _ ->
+                scopes.bindClient(client)
                 // usually done by LifecycleWatcher
-                hub.startSession()
+                scopes.startSession()
             }
         }) {}
 
@@ -358,7 +362,7 @@ class SentryAndroidTest {
     @Test
     fun `When initializing Sentry a callback is added to application by appStartMetrics`() {
         val mockContext = ContextUtilsTestHelper.createMockContext(true)
-        SentryAndroid.init(mockContext) {
+        initForTest(mockContext) {
             it.dsn = "https://key@sentry.io/123"
         }
         verify(mockContext.applicationContext as Application).registerActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
@@ -372,7 +376,7 @@ class SentryAndroidTest {
         Mockito.mockStatic(ContextUtils::class.java, Mockito.CALLS_REAL_METHODS).use { mockedContextUtils ->
             mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance() }
                 .thenReturn(inForeground)
-            SentryAndroid.init(context) { options ->
+            initForTest(context) { options ->
                 options.release = "prod"
                 options.dsn = "https://key@sentry.io/123"
                 options.isEnableAutoSessionTracking = true
@@ -381,7 +385,7 @@ class SentryAndroidTest {
             }
 
             var session: Session? = null
-            Sentry.getCurrentHub().configureScope { scope ->
+            Sentry.getCurrentScopes().configureScope { scope ->
                 session = scope.session
             }
             callback(session)
@@ -393,7 +397,7 @@ class SentryAndroidTest {
         fixture.initSut { options ->
             options.isEnableAutoSessionTracking = false
         }
-        Sentry.getCurrentHub().withScope { scope ->
+        Sentry.getCurrentScopes().withScope { scope ->
             assertNull(scope.session)
         }
     }
@@ -566,4 +570,19 @@ class SentryAndroidTest {
         override fun store(envelope: SentryEnvelope, hint: Hint) = Unit
         override fun discard(envelope: SentryEnvelope) = Unit
     }
+}
+
+fun initForTest(context: Context, optionsConfiguration: OptionsConfiguration<SentryAndroidOptions>) {
+    SentryAndroid.init(context) {
+        applyTestOptions(it)
+        optionsConfiguration.configure(it)
+    }
+}
+
+fun initForTest(context: Context, logger: ILogger) {
+    SentryAndroid.init(context, logger)
+}
+
+fun initForTest(context: Context) {
+    SentryAndroid.init(context)
 }

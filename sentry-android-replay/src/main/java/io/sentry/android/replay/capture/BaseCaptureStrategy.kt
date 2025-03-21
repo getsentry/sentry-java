@@ -4,7 +4,7 @@ import android.annotation.TargetApi
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
@@ -44,7 +44,7 @@ import kotlin.reflect.KProperty
 @TargetApi(26)
 internal abstract class BaseCaptureStrategy(
     private val options: SentryOptions,
-    private val hub: IHub?,
+    private val scopes: IScopes?,
     private val dateProvider: ICurrentDateProvider,
     protected val replayExecutor: ScheduledExecutorService,
     private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
@@ -131,7 +131,7 @@ internal abstract class BaseCaptureStrategy(
         events: Deque<RRWebEvent> = this.currentEvents
     ): ReplaySegment =
         createSegment(
-            hub,
+            scopes,
             options,
             duration,
             currentSegmentTimestamp,
@@ -179,7 +179,7 @@ internal abstract class BaseCaptureStrategy(
             private val value = AtomicReference(initialValue)
 
             private fun runInBackground(task: () -> Unit) {
-                if (options.mainThreadChecker.isMainThread) {
+                if (options.threadChecker.isMainThread) {
                     persistingExecutor.submitSafely(options, "$TAG.runInBackground") {
                         task()
                     }

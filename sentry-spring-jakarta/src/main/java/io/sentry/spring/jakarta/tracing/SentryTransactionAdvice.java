@@ -1,9 +1,10 @@
 package io.sentry.spring.jakarta.tracing;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransaction;
+import io.sentry.ScopesAdapter;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
@@ -28,14 +29,14 @@ import org.springframework.util.StringUtils;
 public class SentryTransactionAdvice implements MethodInterceptor {
   private static final String TRACE_ORIGIN = "auto.function.spring_jakarta.advice";
 
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopesBeforeForking;
 
   public SentryTransactionAdvice() {
-    this(HubAdapter.getInstance());
+    this(ScopesAdapter.getInstance());
   }
 
-  public SentryTransactionAdvice(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
+  public SentryTransactionAdvice(final @NotNull IScopes scopes) {
+    this.scopesBeforeForking = Objects.requireNonNull(scopes, "scopes are required");
   }
 
   @SuppressWarnings("deprecation")
@@ -56,7 +57,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
     final TransactionNameAndSource nameAndSource =
         resolveTransactionName(invocation, sentryTransaction);
 
-    final boolean isTransactionActive = isTransactionActive();
+    final boolean isTransactionActive = isTransactionActive(scopesBeforeForking);
 
     if (isTransactionActive) {
       // transaction is already active, we do not start new transaction
@@ -68,25 +69,27 @@ public class SentryTransactionAdvice implements MethodInterceptor {
       } else {
         operation = "bean";
       }
-      hub.pushScope();
-      final TransactionOptions transactionOptions = new TransactionOptions();
-      transactionOptions.setBindToScope(true);
-      final ITransaction transaction =
-          hub.startTransaction(
-              new TransactionContext(nameAndSource.name, nameAndSource.source, operation),
-              transactionOptions);
-      transaction.getSpanContext().setOrigin(TRACE_ORIGIN);
-      try {
-        final Object result = invocation.proceed();
-        transaction.setStatus(SpanStatus.OK);
-        return result;
-      } catch (Throwable e) {
-        transaction.setStatus(SpanStatus.INTERNAL_ERROR);
-        transaction.setThrowable(e);
-        throw e;
-      } finally {
-        transaction.finish();
-        hub.popScope();
+      final @NotNull IScopes forkedScopes =
+          scopesBeforeForking.forkedScopes("SentryTransactionAdvice");
+      try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
+        final TransactionOptions transactionOptions = new TransactionOptions();
+        transactionOptions.setBindToScope(true);
+        transactionOptions.setOrigin(TRACE_ORIGIN);
+        final ITransaction transaction =
+            forkedScopes.startTransaction(
+                new TransactionContext(nameAndSource.name, nameAndSource.source, operation),
+                transactionOptions);
+        try {
+          final Object result = invocation.proceed();
+          transaction.setStatus(SpanStatus.OK);
+          return result;
+        } catch (Throwable e) {
+          transaction.setStatus(SpanStatus.INTERNAL_ERROR);
+          transaction.setThrowable(e);
+          throw e;
+        } finally {
+          transaction.finish();
+        }
       }
     }
   }
@@ -105,8 +108,8 @@ public class SentryTransactionAdvice implements MethodInterceptor {
     }
   }
 
-  private boolean isTransactionActive() {
-    return hub.getSpan() != null;
+  private boolean isTransactionActive(final @NotNull IScopes scopes) {
+    return scopes.getSpan() != null;
   }
 
   private static class TransactionNameAndSource {

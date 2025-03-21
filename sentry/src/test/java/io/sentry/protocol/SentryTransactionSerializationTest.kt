@@ -31,17 +31,6 @@ class SentryTransactionSerializationTest {
                 "386384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut(),
                 "186384cb-1162-49e7-aea1-db913d4fca63" to MeasurementValueSerializationTest.Fixture().getSut(0.4000000059604645, "test2")
             ),
-            mapOf(
-                "d:custom/background_operation@second" to listOf(
-                    MetricSummary(
-                        5.0,
-                        6.0,
-                        11.0,
-                        3,
-                        mapOf("environment" to "production")
-                    )
-                )
-            ),
             TransactionInfo(TransactionNameSource.CUSTOM.apiName())
         ).apply {
             SentryBaseEventSerializationTest.Fixture().update(this)

@@ -27,12 +27,14 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import io.sentry.util.StringUtils;
 import java.io.Closeable;
@@ -55,7 +57,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   private final @NotNull List<String> actions;
   private boolean isClosed = false;
-  private final @NotNull Object startLock = new Object();
+  private final @NotNull AutoClosableReentrantLock startLock = new AutoClosableReentrantLock();
 
   public SystemEventsBreadcrumbsIntegration(final @NotNull Context context) {
     this(context, getDefaultActions());
@@ -69,8 +71,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(hub, "Hub is required");
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(scopes, "Scopes are required");
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -90,9 +92,9 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
             .getExecutorService()
             .submit(
                 () -> {
-                  synchronized (startLock) {
+                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
                     if (!isClosed) {
-                      startSystemEventsReceiver(hub, (SentryAndroidOptions) options);
+                      startSystemEventsReceiver(scopes, (SentryAndroidOptions) options);
                     }
                   }
                 });
@@ -108,8 +110,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   }
 
   private void startSystemEventsReceiver(
-      final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
-    receiver = new SystemEventsBroadcastReceiver(hub, options);
+      final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
+    receiver = new SystemEventsBroadcastReceiver(scopes, options);
     final IntentFilter filter = new IntentFilter();
     for (String item : actions) {
       filter.addAction(item);
@@ -154,7 +156,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   @Override
   public void close() throws IOException {
-    synchronized (startLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
       isClosed = true;
     }
     if (receiver != null) {
@@ -170,14 +172,14 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   static final class SystemEventsBroadcastReceiver extends BroadcastReceiver {
 
     private static final long DEBOUNCE_WAIT_TIME_MS = 60 * 1000;
-    private final @NotNull IHub hub;
+    private final @NotNull IScopes scopes;
     private final @NotNull SentryAndroidOptions options;
     private final @NotNull Debouncer batteryChangedDebouncer =
         new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
 
     SystemEventsBroadcastReceiver(
-        final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
-      this.hub = hub;
+        final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
+      this.scopes = scopes;
       this.options = options;
     }
 
@@ -201,7 +203,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
                       createBreadcrumb(now, intent, action, isBatteryChanged);
                   final Hint hint = new Hint();
                   hint.set(ANDROID_INTENT, intent);
-                  hub.addBreadcrumb(breadcrumb, hint);
+                  scopes.addBreadcrumb(breadcrumb, hint);
                 });
       } catch (Throwable t) {
         options

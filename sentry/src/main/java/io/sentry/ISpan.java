@@ -1,6 +1,6 @@
 package io.sentry;
 
-import io.sentry.metrics.LocalMetricsAggregator;
+import io.sentry.protocol.Contexts;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +21,10 @@ public interface ISpan {
   @NotNull
   ISpan startChild(
       @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions);
+
+  @ApiStatus.Internal
+  @NotNull
+  ISpan startChild(@NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions);
 
   @ApiStatus.Internal
   @NotNull
@@ -167,10 +171,10 @@ public interface ISpan {
    * @param key the tag key
    * @param value the tag value
    */
-  void setTag(@NotNull String key, @NotNull String value);
+  void setTag(@Nullable String key, @Nullable String value);
 
   @Nullable
-  String getTag(@NotNull String key);
+  String getTag(@Nullable String key);
 
   /**
    * Returns if span has finished.
@@ -185,7 +189,7 @@ public interface ISpan {
    * @param key the data key
    * @param value the data value
    */
-  void setData(@NotNull String key, @NotNull Object value);
+  void setData(@Nullable String key, @Nullable Object value);
 
   /**
    * Returns extra data from span or transaction.
@@ -193,7 +197,7 @@ public interface ISpan {
    * @return the data
    */
   @Nullable
-  Object getData(@NotNull String key);
+  Object getData(@Nullable String key);
 
   /**
    * Set a measurement without unit. When setting the measurement without the unit, no formatting
@@ -256,11 +260,18 @@ public interface ISpan {
   @ApiStatus.Internal
   boolean isNoOp();
 
-  /**
-   * Returns the metrics aggregator for this span.
-   *
-   * @return the metrics aggregator
-   */
+  void setContext(@Nullable String key, @Nullable Object context);
+
+  @NotNull
+  Contexts getContexts();
+
   @Nullable
-  LocalMetricsAggregator getLocalMetricsAggregator();
+  Boolean isSampled();
+
+  @Nullable
+  TracesSamplingDecision getSamplingDecision();
+
+  @ApiStatus.Internal
+  @NotNull
+  ISentryLifecycleToken makeCurrent();
 }

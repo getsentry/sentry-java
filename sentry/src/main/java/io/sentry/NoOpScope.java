@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
@@ -47,6 +48,9 @@ public final class NoOpScope implements IScope {
   public @Nullable ISpan getSpan() {
     return null;
   }
+
+  @Override
+  public void setActiveSpan(final @Nullable ISpan span) {}
 
   @Override
   public void setTransaction(@Nullable ITransaction transaction) {}
@@ -127,10 +131,10 @@ public final class NoOpScope implements IScope {
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {}
+  public void setTag(@Nullable String key, @Nullable String value) {}
 
   @Override
-  public void removeTag(@NotNull String key) {}
+  public void removeTag(@Nullable String key) {}
 
   @ApiStatus.Internal
   @Override
@@ -139,10 +143,10 @@ public final class NoOpScope implements IScope {
   }
 
   @Override
-  public void setExtra(@NotNull String key, @NotNull String value) {}
+  public void setExtra(@Nullable String key, @Nullable String value) {}
 
   @Override
-  public void removeExtra(@NotNull String key) {}
+  public void removeExtra(@Nullable String key) {}
 
   @Override
   public @NotNull Contexts getContexts() {
@@ -150,28 +154,28 @@ public final class NoOpScope implements IScope {
   }
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull Object value) {}
+  public void setContexts(@Nullable String key, @Nullable Object value) {}
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull Boolean value) {}
+  public void setContexts(@Nullable String key, @Nullable Boolean value) {}
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull String value) {}
+  public void setContexts(@Nullable String key, @Nullable String value) {}
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull Number value) {}
+  public void setContexts(@Nullable String key, @Nullable Number value) {}
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull Collection<?> value) {}
+  public void setContexts(@Nullable String key, @Nullable Collection<?> value) {}
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull Object[] value) {}
+  public void setContexts(@Nullable String key, @Nullable Object[] value) {}
 
   @Override
-  public void setContexts(@NotNull String key, @NotNull Character value) {}
+  public void setContexts(@Nullable String key, @Nullable Character value) {}
 
   @Override
-  public void removeContexts(@NotNull String key) {}
+  public void removeContexts(@Nullable String key) {}
 
   @ApiStatus.Internal
   @Override
@@ -188,6 +192,12 @@ public final class NoOpScope implements IScope {
   @ApiStatus.Internal
   @Override
   public @NotNull List<EventProcessor> getEventProcessors() {
+    return new ArrayList<>();
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull List<EventProcessorAndOrder> getEventProcessorsWithOrder() {
     return new ArrayList<>();
   }
 
@@ -249,6 +259,9 @@ public final class NoOpScope implements IScope {
     return new PropagationContext();
   }
 
+  @Override
+  public void setLastEventId(@NotNull SentryId lastEventId) {}
+
   /**
    * Clones the Scope
    *
@@ -258,4 +271,27 @@ public final class NoOpScope implements IScope {
   public @NotNull IScope clone() {
     return NoOpScope.getInstance();
   }
+
+  @Override
+  public @NotNull SentryId getLastEventId() {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public void bindClient(@NotNull ISentryClient client) {}
+
+  @Override
+  public @NotNull ISentryClient getClient() {
+    return NoOpSentryClient.getInstance();
+  }
+
+  @Override
+  public void assignTraceContext(@NotNull SentryEvent event) {}
+
+  @Override
+  public void setSpanContext(
+      @NotNull Throwable throwable, @NotNull ISpan span, @NotNull String transactionName) {}
+
+  @Override
+  public void replaceOptions(@NotNull SentryOptions options) {}
 }

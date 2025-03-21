@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.cache.EnvelopeCache;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.io.File;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +16,8 @@ public final class SentryCrashLastRunState {
   private boolean readCrashedLastRun;
   private @Nullable Boolean crashedLastRun;
 
-  private final @NotNull Object crashedLastRunLock = new Object();
+  private final @NotNull AutoClosableReentrantLock crashedLastRunLock =
+      new AutoClosableReentrantLock();
 
   private SentryCrashLastRunState() {}
 
@@ -25,7 +27,7 @@ public final class SentryCrashLastRunState {
 
   public @Nullable Boolean isCrashedLastRun(
       final @Nullable String cacheDirPath, final boolean deleteFile) {
-    synchronized (crashedLastRunLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = crashedLastRunLock.acquire()) {
       if (readCrashedLastRun) {
         return crashedLastRun;
       }
@@ -63,7 +65,7 @@ public final class SentryCrashLastRunState {
   }
 
   public void setCrashedLastRun(final boolean crashedLastRun) {
-    synchronized (crashedLastRunLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = crashedLastRunLock.acquire()) {
       if (!readCrashedLastRun) {
         this.crashedLastRun = crashedLastRun;
         // mark readCrashedLastRun as true since its being set directly
@@ -74,7 +76,7 @@ public final class SentryCrashLastRunState {
 
   @TestOnly
   public void reset() {
-    synchronized (crashedLastRunLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = crashedLastRunLock.acquire()) {
       readCrashedLastRun = false;
       crashedLastRun = null;
     }

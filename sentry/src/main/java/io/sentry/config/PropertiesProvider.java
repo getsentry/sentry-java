@@ -39,6 +39,18 @@ public interface PropertiesProvider {
   }
 
   /**
+   * Resolves a list of values for a property given by it's name.
+   *
+   * @param property - the property name
+   * @return the list or null if not found
+   */
+  @Nullable
+  default List<String> getListOrNull(final @NotNull String property) {
+    final String value = getProperty(property);
+    return value != null ? Arrays.asList(value.split(",")) : null;
+  }
+
+  /**
    * Resolves property given by it's name.
    *
    * @param property - the property name

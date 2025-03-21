@@ -5,7 +5,7 @@ import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ReplayRecording
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
@@ -63,7 +63,7 @@ internal interface CaptureStrategy {
         private const val MAX_SEGMENT_DURATION = 1000L * 60 * 5
 
         fun createSegment(
-            hub: IHub?,
+            scopes: IScopes?,
             options: SentryOptions,
             duration: Long,
             currentSegmentTimestamp: Date,
@@ -93,7 +93,7 @@ internal interface CaptureStrategy {
 
             val replayBreadcrumbs: List<Breadcrumb> = if (breadcrumbs == null) {
                 var crumbs = emptyList<Breadcrumb>()
-                hub?.configureScope { scope ->
+                scopes?.configureScope { scope ->
                     crumbs = ArrayList(scope.breadcrumbs)
                 }
                 crumbs
@@ -240,8 +240,8 @@ internal interface CaptureStrategy {
             val replay: SentryReplayEvent,
             val recording: ReplayRecording
         ) : ReplaySegment() {
-            fun capture(hub: IHub?, hint: Hint = Hint()) {
-                hub?.captureReplay(replay, hint.apply { replayRecording = recording })
+            fun capture(scopes: IScopes?, hint: Hint = Hint()) {
+                scopes?.captureReplay(replay, hint.apply { replayRecording = recording })
             }
 
             fun setSegmentId(segmentId: Int) {

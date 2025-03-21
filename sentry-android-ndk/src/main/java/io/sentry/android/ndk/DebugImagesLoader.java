@@ -1,12 +1,15 @@
 package io.sentry.android.ndk;
 
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.IDebugImagesLoader;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.ndk.NativeModuleListLoader;
 import io.sentry.protocol.DebugImage;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,7 +30,8 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
   private static volatile @Nullable List<DebugImage> debugImages;
 
   /** we need to lock it because it could be called from different threads */
-  private static final @NotNull Object debugImagesLock = new Object();
+  protected static final @NotNull AutoClosableReentrantLock debugImagesLock =
+      new AutoClosableReentrantLock();
 
   public DebugImagesLoader(
       final @NotNull SentryAndroidOptions options,
@@ -44,12 +48,25 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
    */
   @Override
   public @Nullable List<DebugImage> loadDebugImages() {
-    synchronized (debugImagesLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = debugImagesLock.acquire()) {
       if (debugImages == null) {
         try {
-          final DebugImage[] debugImagesArr = moduleListLoader.loadModuleList();
+          final io.sentry.ndk.DebugImage[] debugImagesArr = moduleListLoader.loadModuleList();
           if (debugImagesArr != null) {
-            debugImages = Arrays.asList(debugImagesArr);
+            debugImages = new ArrayList<>(debugImagesArr.length);
+            for (io.sentry.ndk.DebugImage d : debugImagesArr) {
+              final DebugImage debugImage = new DebugImage();
+              debugImage.setCodeFile(d.getCodeFile());
+              debugImage.setDebugFile(d.getDebugFile());
+              debugImage.setUuid(d.getUuid());
+              debugImage.setType(d.getType());
+              debugImage.setDebugId(d.getDebugId());
+              debugImage.setCodeId(d.getCodeId());
+              debugImage.setImageAddr(d.getImageAddr());
+              debugImage.setImageSize(d.getImageSize());
+              debugImage.setArch(d.getArch());
+              debugImages.add(debugImage);
+            }
             options
                 .getLogger()
                 .log(SentryLevel.DEBUG, "Debug images loaded: %d", debugImages.size());
@@ -70,7 +87,7 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
    */
   public @Nullable Set<DebugImage> loadDebugImagesForAddresses(
       final @NotNull Set<String> addresses) {
-    synchronized (debugImagesLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = debugImagesLock.acquire()) {
       final @Nullable List<DebugImage> allDebugImages = loadDebugImages();
       if (allDebugImages == null) {
         return null;
@@ -150,7 +167,7 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
 
   @Override
   public void clearDebugImages() {
-    synchronized (debugImagesLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = debugImagesLock.acquire()) {
       try {
         moduleListLoader.clearModuleList();
 

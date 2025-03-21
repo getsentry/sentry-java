@@ -6,7 +6,8 @@ import static io.sentry.TypeCheckHint.SENTRY_SYNTHETIC_EXCEPTION;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.HubAdapter;
+import io.sentry.InitPriority;
+import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryIntegrationPackageStorage;
@@ -50,7 +51,7 @@ public class SentryHandler extends Handler {
 
   /** Creates an instance of SentryHandler. */
   public SentryHandler() {
-    this(new SentryOptions(), true);
+    this(new SentryOptions());
   }
 
   /**
@@ -59,21 +60,35 @@ public class SentryHandler extends Handler {
    * @param options the SentryOptions
    */
   public SentryHandler(final @NotNull SentryOptions options) {
-    this(options, true);
+    this(options, true, true);
+  }
+
+  /**
+   * Creates an instance of SentryHandler.
+   *
+   * @param options the SentryOptions
+   * @param enableExternalConfiguration whether external options like sentry.properties and ENV vars
+   *     should be parsed
+   */
+  public SentryHandler(
+      final @NotNull SentryOptions options, final boolean enableExternalConfiguration) {
+    this(options, true, enableExternalConfiguration);
   }
 
   /** Creates an instance of SentryHandler. */
   @TestOnly
-  SentryHandler(final @NotNull SentryOptions options, final boolean configureFromLogManager) {
+  SentryHandler(
+      final @NotNull SentryOptions options,
+      final boolean configureFromLogManager,
+      final boolean enableExternalConfiguration) {
     setFilter(new DropSentryFilter());
     if (configureFromLogManager) {
       retrieveProperties();
     }
-    if (!Sentry.isEnabled()) {
-      options.setEnableExternalConfiguration(true);
-      options.setSdkVersion(createSdkVersion(options));
-      Sentry.init(options);
-    }
+    options.setEnableExternalConfiguration(enableExternalConfiguration);
+    options.setInitPriority(InitPriority.LOWEST);
+    options.setSdkVersion(createSdkVersion(options));
+    Sentry.init(options);
     addPackageAndIntegrationInfo();
   }
 
@@ -210,9 +225,9 @@ public class SentryHandler extends Handler {
       mdcProperties =
           CollectionUtils.filterMapEntries(mdcProperties, entry -> entry.getValue() != null);
       if (!mdcProperties.isEmpty()) {
-        // get tags from HubAdapter options to allow getting the correct tags if Sentry has been
+        // get tags from ScopesAdapter options to allow getting the correct tags if Sentry has been
         // initialized somewhere else
-        final List<String> contextTags = HubAdapter.getInstance().getOptions().getContextTags();
+        final List<String> contextTags = ScopesAdapter.getInstance().getOptions().getContextTags();
         if (!contextTags.isEmpty()) {
           for (final String contextTag : contextTags) {
             // if mdc tag is listed in SentryOptions, apply as event tag

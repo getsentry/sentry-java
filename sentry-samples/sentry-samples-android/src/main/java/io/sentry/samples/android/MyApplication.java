@@ -9,6 +9,7 @@ public class MyApplication extends Application {
 
   @Override
   public void onCreate() {
+    Sentry.startProfiler();
     strictMode();
     super.onCreate();
 
@@ -25,8 +26,6 @@ public class MyApplication extends Application {
     //      });
     //       */
     //    });
-
-    Sentry.metrics().increment("app.start.cold");
   }
 
   private void strictMode() {

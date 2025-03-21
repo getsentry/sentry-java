@@ -1,11 +1,15 @@
 package io.sentry.android.core;
 
-import io.sentry.IHub;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
+
 import io.sentry.ILogger;
+import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.OutboxSender;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import org.jetbrains.annotations.NotNull;
@@ -17,15 +21,15 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
   private @Nullable EnvelopeFileObserver observer;
   private @Nullable ILogger logger;
   private boolean isClosed = false;
-  private final @NotNull Object startLock = new Object();
+  protected final @NotNull AutoClosableReentrantLock startLock = new AutoClosableReentrantLock();
 
   public static @NotNull EnvelopeFileObserverIntegration getOutboxFileObserver() {
     return new OutboxEnvelopeFileObserverIntegration();
   }
 
   @Override
-  public final void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    Objects.requireNonNull(hub, "Hub is required");
+  public final void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    Objects.requireNonNull(scopes, "Scopes are required");
     Objects.requireNonNull(options, "SentryOptions is required");
 
     logger = options.getLogger();
@@ -44,9 +48,9 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
             .getExecutorService()
             .submit(
                 () -> {
-                  synchronized (startLock) {
+                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
                     if (!isClosed) {
-                      startOutboxSender(hub, options, path);
+                      startOutboxSender(scopes, options, path);
                     }
                   }
                 });
@@ -60,10 +64,12 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
   }
 
   private void startOutboxSender(
-      final @NotNull IHub hub, final @NotNull SentryOptions options, final @NotNull String path) {
+      final @NotNull IScopes scopes,
+      final @NotNull SentryOptions options,
+      final @NotNull String path) {
     final OutboxSender outboxSender =
         new OutboxSender(
-            hub,
+            scopes,
             options.getEnvelopeReader(),
             options.getSerializer(),
             options.getLogger(),
@@ -76,6 +82,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
     try {
       observer.startWatching();
       options.getLogger().log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
+      addIntegrationToSdkVersion("EnvelopeFileObserver");
     } catch (Throwable e) {
       // it could throw eg NoSuchFileException or NullPointerException
       options
@@ -86,7 +93,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
 
   @Override
   public void close() {
-    synchronized (startLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
       isClosed = true;
     }
     if (observer != null) {

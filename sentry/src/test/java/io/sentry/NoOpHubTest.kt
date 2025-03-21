@@ -6,7 +6,6 @@ import org.mockito.kotlin.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 
@@ -31,6 +30,10 @@ class NoOpHubTest {
     @Test
     fun `captureTransaction returns empty SentryId`() =
         assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock<Hint>()))
+
+    @Test
+    fun `captureProfileChunk returns empty SentryId`() =
+        assertEquals(SentryId.EMPTY_ID, sut.captureProfileChunk(mock()))
 
     @Test
     fun `captureException returns empty SentryId`() =
@@ -71,7 +74,9 @@ class NoOpHubTest {
     }
 
     @Test
-    fun `pushScope is no op`() = sut.pushScope()
+    fun `pushScope is no op`() {
+        sut.pushScope()
+    }
 
     @Test
     fun `popScope is no op`() = sut.popScope()
@@ -81,11 +86,6 @@ class NoOpHubTest {
 
     @Test
     fun `clone returns the same instance`() = assertSame(NoOpHub.getInstance(), sut.clone())
-
-    @Test
-    fun `traceHeaders is not null`() {
-        assertNotNull(sut.traceHeaders())
-    }
 
     @Test
     fun `getSpan returns null`() {
@@ -115,4 +115,10 @@ class NoOpHubTest {
         sut.withScope(scopeCallback)
         verify(scopeCallback).run(NoOpScope.getInstance())
     }
+
+    @Test
+    fun `startProfiler doesnt throw`() = sut.startProfiler()
+
+    @Test
+    fun `stopProfiler doesnt throw`() = sut.stopProfiler()
 }

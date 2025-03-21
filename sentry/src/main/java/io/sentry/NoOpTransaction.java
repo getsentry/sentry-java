@@ -1,6 +1,5 @@
 package io.sentry;
 
-import io.sentry.metrics.LocalMetricsAggregator;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
@@ -50,6 +49,12 @@ public final class NoOpTransaction implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(
+      @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
+    return NoOpSpan.getInstance();
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
       @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp,
@@ -90,13 +95,18 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public @Nullable Span getLatestActiveSpan() {
+  public @Nullable ISpan getLatestActiveSpan() {
     return null;
   }
 
   @Override
   public @NotNull SentryId getEventId() {
     return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public @NotNull ISentryLifecycleToken makeCurrent() {
+    return NoOpScopesLifecycleToken.getInstance();
   }
 
   @Override
@@ -175,10 +185,10 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {}
+  public void setTag(@Nullable String key, @Nullable String value) {}
 
   @Override
-  public @Nullable String getTag(@NotNull String key) {
+  public @Nullable String getTag(@Nullable String key) {
     return null;
   }
 
@@ -198,10 +208,10 @@ public final class NoOpTransaction implements ITransaction {
   }
 
   @Override
-  public void setData(@NotNull String key, @NotNull Object value) {}
+  public void setData(@Nullable String key, @Nullable Object value) {}
 
   @Override
-  public @Nullable Object getData(@NotNull String key) {
+  public @Nullable Object getData(@Nullable String key) {
     return null;
   }
 
@@ -214,7 +224,7 @@ public final class NoOpTransaction implements ITransaction {
 
   @ApiStatus.Internal
   @Override
-  public void setContext(@NotNull String key, @NotNull Object context) {}
+  public void setContext(@Nullable String key, @Nullable Object context) {}
 
   @ApiStatus.Internal
   @Override
@@ -240,10 +250,5 @@ public final class NoOpTransaction implements ITransaction {
   @Override
   public boolean isNoOp() {
     return true;
-  }
-
-  @Override
-  public @Nullable LocalMetricsAggregator getLocalMetricsAggregator() {
-    return null;
   }
 }

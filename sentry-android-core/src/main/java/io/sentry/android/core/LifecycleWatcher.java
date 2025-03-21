@@ -3,11 +3,13 @@ package io.sentry.android.core;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import io.sentry.Breadcrumb;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.Session;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicLong;
@@ -23,20 +25,20 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
 
   private @Nullable TimerTask timerTask;
   private final @NotNull Timer timer = new Timer(true);
-  private final @NotNull Object timerLock = new Object();
-  private final @NotNull IHub hub;
+  private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
+  private final @NotNull IScopes scopes;
   private final boolean enableSessionTracking;
   private final boolean enableAppLifecycleBreadcrumbs;
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
   LifecycleWatcher(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final long sessionIntervalMillis,
       final boolean enableSessionTracking,
       final boolean enableAppLifecycleBreadcrumbs) {
     this(
-        hub,
+        scopes,
         sessionIntervalMillis,
         enableSessionTracking,
         enableAppLifecycleBreadcrumbs,
@@ -44,7 +46,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   }
 
   LifecycleWatcher(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final long sessionIntervalMillis,
       final boolean enableSessionTracking,
       final boolean enableAppLifecycleBreadcrumbs,
@@ -52,7 +54,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     this.sessionIntervalMillis = sessionIntervalMillis;
     this.enableSessionTracking = enableSessionTracking;
     this.enableAppLifecycleBreadcrumbs = enableAppLifecycleBreadcrumbs;
-    this.hub = hub;
+    this.scopes = scopes;
     this.currentDateProvider = currentDateProvider;
   }
 
@@ -72,7 +74,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
 
     final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
 
-    hub.configureScope(
+    scopes.configureScope(
         scope -> {
           if (lastUpdatedSession.get() == 0L) {
             final @Nullable Session currentSession = scope.getSession();
@@ -86,11 +88,11 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     if (lastUpdatedSession == 0L
         || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
       if (enableSessionTracking) {
-        hub.startSession();
+        scopes.startSession();
       }
-      hub.getOptions().getReplayController().start();
+      scopes.getOptions().getReplayController().start();
     }
-    hub.getOptions().getReplayController().resume();
+    scopes.getOptions().getReplayController().resume();
     this.lastUpdatedSession.set(currentTimeMillis);
   }
 
@@ -101,7 +103,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
     final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
     this.lastUpdatedSession.set(currentTimeMillis);
 
-    hub.getOptions().getReplayController().pause();
+    scopes.getOptions().getReplayController().pause();
     scheduleEndSession();
 
     AppState.getInstance().setInBackground(true);
@@ -109,7 +111,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   }
 
   private void scheduleEndSession() {
-    synchronized (timerLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       cancelTask();
       if (timer != null) {
         timerTask =
@@ -117,9 +119,9 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
               @Override
               public void run() {
                 if (enableSessionTracking) {
-                  hub.endSession();
+                  scopes.endSession();
                 }
-                hub.getOptions().getReplayController().stop();
+                scopes.getOptions().getReplayController().stop();
               }
             };
 
@@ -129,7 +131,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
   }
 
   private void cancelTask() {
-    synchronized (timerLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       if (timerTask != null) {
         timerTask.cancel();
         timerTask = null;
@@ -144,7 +146,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
       breadcrumb.setData("state", state);
       breadcrumb.setCategory("app.lifecycle");
       breadcrumb.setLevel(SentryLevel.INFO);
-      hub.addBreadcrumb(breadcrumb);
+      scopes.addBreadcrumb(breadcrumb);
     }
   }
 

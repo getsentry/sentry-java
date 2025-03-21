@@ -1,7 +1,7 @@
 package io.sentry.android.ndk
 
 import io.sentry.android.core.SentryAndroidOptions
-import io.sentry.protocol.DebugImage
+import io.sentry.ndk.NativeModuleListLoader
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -40,7 +40,7 @@ class DebugImagesLoaderTest {
         whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf())
         assertNotNull(sut.loadDebugImages())
 
-        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(DebugImage()))
+        whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(io.sentry.ndk.DebugImage()))
         assertTrue(sut.loadDebugImages()!!.isEmpty())
     }
 
@@ -85,17 +85,17 @@ class DebugImagesLoaderTest {
     fun `find images by address`() {
         val sut = fixture.getSut()
 
-        val image1 = DebugImage().apply {
+        val image1 = io.sentry.ndk.DebugImage().apply {
             imageAddr = "0x1000"
             imageSize = 0x1000L
         }
 
-        val image2 = DebugImage().apply {
+        val image2 = io.sentry.ndk.DebugImage().apply {
             imageAddr = "0x2000"
             imageSize = 0x1000L
         }
 
-        val image3 = DebugImage().apply {
+        val image3 = io.sentry.ndk.DebugImage().apply {
             imageAddr = "0x3000"
             imageSize = 0x1000L
         }
@@ -116,12 +116,12 @@ class DebugImagesLoaderTest {
     fun `find images with invalid addresses are not added to the result`() {
         val sut = fixture.getSut()
 
-        val image1 = DebugImage().apply {
+        val image1 = io.sentry.ndk.DebugImage().apply {
             imageAddr = "0x1000"
             imageSize = 0x1000L
         }
 
-        val image2 = DebugImage().apply {
+        val image2 = io.sentry.ndk.DebugImage().apply {
             imageAddr = "0x2000"
             imageSize = 0x1000L
         }
@@ -138,12 +138,12 @@ class DebugImagesLoaderTest {
     fun `find images by address returns null if result is empty`() {
         val sut = fixture.getSut()
 
-        val image1 = DebugImage().apply {
+        val image1 = io.sentry.ndk.DebugImage().apply {
             imageAddr = "0x1000"
             imageSize = 0x1000L
         }
 
-        val image2 = DebugImage().apply {
+        val image2 = io.sentry.ndk.DebugImage().apply {
             imageAddr = "0x2000"
             imageSize = 0x1000L
         }
@@ -157,20 +157,20 @@ class DebugImagesLoaderTest {
     }
 
     @Test
-    fun `invalid image addresses are ignored for loadDebugImagesForAddresses`() {
+    fun `invalid image adresses are ignored for loadDebugImagesForAddresses`() {
         val sut = fixture.getSut()
 
-        val image1 = DebugImage().apply {
+        val image1 = io.sentry.ndk.DebugImage().apply {
             imageAddr = "0xNotANumber"
             imageSize = 0x1000L
         }
 
-        val image2 = DebugImage().apply {
+        val image2 = io.sentry.ndk.DebugImage().apply {
             imageAddr = "0x2000"
             imageSize = null
         }
 
-        val image3 = DebugImage().apply {
+        val image3 = io.sentry.ndk.DebugImage().apply {
             imageAddr = "0x5000"
             imageSize = 0x1000L
         }

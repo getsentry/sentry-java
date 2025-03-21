@@ -8,9 +8,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.CheckIn
 import io.sentry.Hint
-import io.sentry.IMetricsAggregator
 import io.sentry.IScope
 import io.sentry.ISentryClient
+import io.sentry.ProfileChunk
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
@@ -45,7 +45,7 @@ class SessionTrackingIntegrationTest {
     @Test
     fun `session tracking works properly with multiple backgrounds and foregrounds`() {
         lateinit var options: SentryAndroidOptions
-        SentryAndroid.init(context) {
+        initForTest(context) {
             it.dsn = "https://key@sentry.io/proj"
             it.release = "io.sentry.samples@2.3.0"
             it.environment = "production"
@@ -177,15 +177,15 @@ class SessionTrackingIntegrationTest {
             TODO("Not yet implemented")
         }
 
+        override fun captureProfileChunk(profileChunk: ProfileChunk, scope: IScope?): SentryId {
+            TODO("Not yet implemented")
+        }
+
         override fun captureCheckIn(checkIn: CheckIn, scope: IScope?, hint: Hint?): SentryId {
             TODO("Not yet implemented")
         }
 
         override fun getRateLimiter(): RateLimiter? {
-            TODO("Not yet implemented")
-        }
-
-        override fun getMetricsAggregator(): IMetricsAggregator {
             TODO("Not yet implemented")
         }
     }

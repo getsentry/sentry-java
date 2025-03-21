@@ -10,6 +10,8 @@ import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import io.sentry.IContinuousProfiler;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpLogger;
 import io.sentry.TracesSamplingDecision;
@@ -17,6 +19,7 @@ import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,6 +52,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private static long CLASS_LOADED_UPTIME_MS = SystemClock.uptimeMillis();
 
   private static volatile @Nullable AppStartMetrics instance;
+  public static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
 
   private @NotNull AppStartType appStartType = AppStartType.UNKNOWN;
   private boolean appLaunchedInForeground;
@@ -59,6 +64,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private final @NotNull Map<ContentProvider, TimeSpan> contentProviderOnCreates;
   private final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycles;
   private @Nullable ITransactionProfiler appStartProfiler = null;
+  private @Nullable IContinuousProfiler appStartContinuousProfiler = null;
   private @Nullable TracesSamplingDecision appStartSamplingDecision = null;
   private boolean isCallbackRegistered = false;
   private boolean shouldSendStartMeasurements = true;
@@ -66,9 +72,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private final AtomicBoolean firstDrawDone = new AtomicBoolean(false);
 
   public static @NotNull AppStartMetrics getInstance() {
-
     if (instance == null) {
-      synchronized (AppStartMetrics.class) {
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (instance == null) {
           instance = new AppStartMetrics();
         }
@@ -93,6 +98,22 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    */
   public @NotNull TimeSpan getAppStartTimeSpan() {
     return appStartSpan;
+  }
+
+  /**
+   * @return the app start span Uses Process.getStartUptimeMillis() as start timestamp, which
+   *     requires API level 24+
+   */
+  public @NotNull TimeSpan createProcessInitSpan() {
+    // AppStartSpan and CLASS_LOADED_UPTIME_MS can be modified at any time.
+    // So, we cannot cache the processInitSpan, but we need to create it when needed.
+    final @NotNull TimeSpan processInitSpan = new TimeSpan();
+    processInitSpan.setup(
+        "Process Initialization",
+        appStartSpan.getStartTimestampMs(),
+        appStartSpan.getStartUptimeMs(),
+        CLASS_LOADED_UPTIME_MS);
+    return processInitSpan;
   }
 
   /**
@@ -203,6 +224,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       appStartProfiler.close();
     }
     appStartProfiler = null;
+    if (appStartContinuousProfiler != null) {
+      appStartContinuousProfiler.close();
+    }
+    appStartContinuousProfiler = null;
     appStartSamplingDecision = null;
     appLaunchedInForeground = false;
     isCallbackRegistered = false;
@@ -217,6 +242,15 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   public void setAppStartProfiler(final @Nullable ITransactionProfiler appStartProfiler) {
     this.appStartProfiler = appStartProfiler;
+  }
+
+  public @Nullable IContinuousProfiler getAppStartContinuousProfiler() {
+    return appStartContinuousProfiler;
+  }
+
+  public void setAppStartContinuousProfiler(
+      final @Nullable IContinuousProfiler appStartContinuousProfiler) {
+    this.appStartContinuousProfiler = appStartContinuousProfiler;
   }
 
   public void setAppStartSamplingDecision(
@@ -293,10 +327,14 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
               if (activeActivitiesCounter.get() == 0) {
                 appLaunchedInForeground = false;
 
-                // we stop the app start profiler, as it's useless and likely to timeout
+                // we stop the app start profilers, as they are useless and likely to timeout
                 if (appStartProfiler != null && appStartProfiler.isRunning()) {
                   appStartProfiler.close();
                   appStartProfiler = null;
+                }
+                if (appStartContinuousProfiler != null && appStartContinuousProfiler.isRunning()) {
+                  appStartContinuousProfiler.close();
+                  appStartContinuousProfiler = null;
                 }
               }
             });

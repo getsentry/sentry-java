@@ -13,9 +13,9 @@ import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
-import io.sentry.metrics.NoopMetricsAggregator
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
+import io.sentry.protocol.Message
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryException
@@ -42,6 +42,7 @@ import org.mockito.kotlin.mockingDetails
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.msgpack.core.MessagePack
@@ -62,7 +63,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -76,8 +76,10 @@ class SentryClientTest {
         var transport = mock<ITransport>()
         var factory = mock<ITransportFactory>()
         val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val sentryTracer: SentryTracer
+        val profileChunk: ProfileChunk
+        val profilingTraceFile = Files.createTempFile("trace", ".trace").toFile()
 
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
@@ -94,15 +96,15 @@ class SentryClientTest {
 
         init {
             whenever(factory.create(any(), any())).thenReturn(transport)
-            whenever(hub.options).thenReturn(sentryOptions)
-            sentryTracer = SentryTracer(TransactionContext("a-transaction", "op", TracesSamplingDecision(true)), hub)
+            whenever(scopes.options).thenReturn(sentryOptions)
+            sentryTracer = SentryTracer(TransactionContext("a-transaction", "op", TracesSamplingDecision(true)), scopes)
             sentryTracer.startChild("a-span", "span 1").finish()
+            profileChunk = ProfileChunk(SentryId(), SentryId(), profilingTraceFile, emptyMap(), 1.0, sentryOptions)
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
         var attachment2 = Attachment("hello2".toByteArray(), "hello2.txt", "text/plain", true)
         var attachment3 = Attachment("hello3".toByteArray(), "hello3.txt", "text/plain", true)
-        val profilingTraceFile = Files.createTempFile("trace", ".trace").toFile()
         var profilingTraceData = ProfilingTraceData(profilingTraceFile, sentryTracer)
         var profilingNonExistingTraceData = ProfilingTraceData(File("non_existent.trace"), sentryTracer)
 
@@ -589,7 +591,7 @@ class SentryClientTest {
     @Test
     fun `when captureCheckIn, envelope is sent if ignored slug does not match`() {
         val sut = fixture.getSut { options ->
-            options.ignoredCheckIns = listOf("non_matching_slug")
+            options.setIgnoredCheckIns(listOf("non_matching_slug"))
         }
 
         sut.captureCheckIn(checkIn, null, null)
@@ -613,7 +615,7 @@ class SentryClientTest {
     @Test
     fun `when captureCheckIn, envelope is not sent if slug is ignored`() {
         val sut = fixture.getSut { options ->
-            options.ignoredCheckIns = listOf("some_slug")
+            options.setIgnoredCheckIns(listOf("some_slug"))
         }
 
         sut.captureCheckIn(checkIn, null, null)
@@ -822,6 +824,50 @@ class SentryClientTest {
     }
 
     @Test
+    fun `transaction dropped by ignoredTransactions is recorded`() {
+        fixture.sentryOptions.setIgnoredTransactions(listOf("a-transaction"))
+
+        val transaction = SentryTransaction(fixture.sentryTracer)
+
+        val eventId =
+            fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
+
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(
+                DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2)
+            )
+        )
+
+        assertEquals(SentryId.EMPTY_ID, eventId)
+    }
+
+    @Test
+    fun `transaction dropped by ignoredTransactions with regex is recorded`() {
+        fixture.sentryOptions.setIgnoredTransactions(listOf("a.*action"))
+
+        val transaction = SentryTransaction(fixture.sentryTracer)
+
+        val eventId =
+            fixture.getSut().captureTransaction(transaction, fixture.sentryTracer.traceContext())
+
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(
+                DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1),
+                DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2)
+            )
+        )
+
+        assertEquals(SentryId.EMPTY_ID, eventId)
+    }
+
+    @Test
     fun `backfillable events are only wired through backfilling processors`() {
         val backfillingProcessor = mock<BackfillingEventProcessor>()
         val nonBackfillingProcessor = mock<EventProcessor>()
@@ -858,7 +904,7 @@ class SentryClientTest {
             environment = "release"
             release = "io.sentry.samples@22.1.1"
             contexts[Contexts.REPLAY_ID] = "64cf554cc8d74c6eafa3e08b7c984f6d"
-            contexts.trace = SpanContext(traceId, SpanId(), "ui.load", null, null)
+            contexts.setTrace(SpanContext(traceId, SpanId(), "ui.load", null, null))
             transaction = "MainActivity"
         }
         val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
@@ -1083,6 +1129,22 @@ class SentryClientTest {
                 DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2)
             )
         )
+    }
+
+    @Test
+    fun `captureProfileChunk ignores beforeSend`() {
+        var invoked = false
+        fixture.sentryOptions.setBeforeSendTransaction { t, _ -> invoked = true; t }
+        fixture.getSut().captureProfileChunk(fixture.profileChunk, mock())
+        assertFalse(invoked)
+    }
+
+    @Test
+    fun `captureProfileChunk ignores Event Processors`() {
+        val mockProcessor = mock<EventProcessor>()
+        fixture.sentryOptions.addEventProcessor(mockProcessor)
+        fixture.getSut().captureProfileChunk(fixture.profileChunk, mock())
+        verifyNoInteractions(mockProcessor)
     }
 
     @Test
@@ -1486,6 +1548,29 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when captureProfileChunk`() {
+        val client = fixture.getSut()
+        client.captureProfileChunk(fixture.profileChunk, mock())
+        verifyProfileChunkInEnvelope(fixture.profileChunk.chunkId)
+    }
+
+    @Test
+    fun `when captureProfileChunk with empty trace file, profile chunk is not sent`() {
+        val client = fixture.getSut()
+        fixture.profilingTraceFile.writeText("")
+        client.captureProfileChunk(fixture.profileChunk, mock())
+        assertFails { verifyProfilingTraceInEnvelope(fixture.profileChunk.chunkId) }
+    }
+
+    @Test
+    fun `when captureProfileChunk with non existing profiling trace file, profile chunk is not sent`() {
+        val client = fixture.getSut()
+        fixture.profilingTraceFile.delete()
+        client.captureProfileChunk(fixture.profileChunk, mock())
+        assertFails { verifyProfilingTraceInEnvelope(fixture.profileChunk.chunkId) }
+    }
+
+    @Test
     fun `when captureTransaction with attachments not added to transaction`() {
         val transaction = SentryTransaction(fixture.sentryTracer)
         val scope = createScopeWithAttachments()
@@ -1530,9 +1615,9 @@ class SentryClientTest {
 
     @Test
     fun `when captureTransaction with scope, transaction should use user data`() {
-        val hub: IHub = mock()
-        whenever(hub.options).thenReturn(SentryOptions())
-        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), hub))
+        val scopes: IScopes = mock()
+        whenever(scopes.options).thenReturn(SentryOptions())
+        val transaction = SentryTransaction(SentryTracer(TransactionContext("tx", "op"), scopes))
         val scope = createScope()
 
         val sut = fixture.getSut()
@@ -1561,7 +1646,7 @@ class SentryClientTest {
         val event = SentryEvent()
         val sut = fixture.getSut()
         val scope = createScope()
-        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), fixture.hub)
+        val transaction = SentryTracer(TransactionContext("a-transaction", "op"), fixture.scopes)
         scope.setTransaction(transaction)
         val span = transaction.startChild("op")
         sut.captureEvent(event, scope)
@@ -1632,7 +1717,7 @@ class SentryClientTest {
         fixture.sentryOptions.release = "optionsRelease"
         fixture.sentryOptions.environment = "optionsEnvironment"
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         transaction.release = "transactionRelease"
         transaction.environment = "transactionEnvironment"
@@ -1645,7 +1730,7 @@ class SentryClientTest {
     fun `when transaction does not have SDK version set, and the SDK version is set on options, options values are applied to transactions`() {
         fixture.sentryOptions.sdkVersion = SdkVersion("sdk.name", "version")
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals(fixture.sentryOptions.sdkVersion, transaction.sdk)
@@ -1655,7 +1740,7 @@ class SentryClientTest {
     fun `when transaction has SDK version set, and the SDK version is set on options, options values are not applied to transactions`() {
         fixture.sentryOptions.sdkVersion = SdkVersion("sdk.name", "version")
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         val sdkVersion = SdkVersion("transaction.sdk.name", "version")
         transaction.sdk = sdkVersion
@@ -1667,7 +1752,7 @@ class SentryClientTest {
     fun `when transaction does not have tags, and tags are set on options, options values are applied to transactions`() {
         fixture.sentryOptions.setTag("tag1", "value1")
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals(mapOf("tag1" to "value1"), transaction.tags)
@@ -1678,7 +1763,7 @@ class SentryClientTest {
         fixture.sentryOptions.setTag("tag1", "value1")
         fixture.sentryOptions.setTag("tag2", "value2")
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         transaction.setTag("tag3", "value3")
         transaction.setTag("tag2", "transaction-tag")
@@ -1692,7 +1777,7 @@ class SentryClientTest {
     @Test
     fun `captured transactions without a platform, have the default platform set`() {
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         sut.captureTransaction(transaction, sentryTracer.traceContext())
         assertEquals("java", transaction.platform)
@@ -1701,7 +1786,7 @@ class SentryClientTest {
     @Test
     fun `captured transactions with a platform, do not get the platform overwritten`() {
         val sut = fixture.getSut()
-        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.hub)
+        val sentryTracer = SentryTracer(TransactionContext("name", "op"), fixture.scopes)
         val transaction = SentryTransaction(sentryTracer)
         transaction.platform = "abc"
         sut.captureTransaction(transaction, sentryTracer.traceContext())
@@ -1714,6 +1799,65 @@ class SentryClientTest {
         val sut = fixture.getSut()
         sut.captureException(IllegalStateException())
         verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when event message matches string in ignoredErrors, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredError("hello")
+        val sut = fixture.getSut()
+        val event = SentryEvent()
+        val message = Message()
+        message.message = "hello"
+        event.setMessage(message)
+        sut.captureEvent(event)
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when event message matches regex pattern in ignoredErrors, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredError("hello .*")
+        val sut = fixture.getSut()
+        val event = SentryEvent()
+        val message = Message()
+        message.message = "hello world"
+        event.setMessage(message)
+        sut.captureEvent(event)
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when event message does not match regex pattern in ignoredErrors, capturing event sends it`() {
+        fixture.sentryOptions.addIgnoredError("hello .*")
+        val sut = fixture.getSut()
+        val event = SentryEvent()
+        val message = Message()
+        message.message = "test"
+        event.setMessage(message)
+        sut.captureEvent(event)
+        verify(fixture.transport).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when exception message matches regex pattern in ignoredErrors, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredError(".*hello .*")
+        val sut = fixture.getSut()
+        sut.captureException(RuntimeException("hello world"))
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when class matches regex pattern in ignoredErrors, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredError("java\\.lang\\..*")
+        val sut = fixture.getSut()
+        sut.captureException(RuntimeException("hello world"))
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when ignoredExceptionsForType and ignoredErrors are not explicitly specified, capturing event sends event`() {
+        val sut = fixture.getSut()
+        sut.captureException(RuntimeException("test"))
+        verify(fixture.transport).send(any(), anyOrNull())
     }
 
     @Test
@@ -2496,7 +2640,7 @@ class SentryClientTest {
         val preExistingSpanContext = SpanContext("op.load")
 
         val sentryEvent = SentryEvent()
-        sentryEvent.contexts.trace = preExistingSpanContext
+        sentryEvent.contexts.setTrace(preExistingSpanContext)
         sut.captureEvent(sentryEvent, scope)
 
         verify(fixture.transport).send(
@@ -2568,7 +2712,7 @@ class SentryClientTest {
         val preExistingSpanContext = SpanContext("op.load")
 
         val sentryEvent = SentryEvent()
-        sentryEvent.contexts.trace = preExistingSpanContext
+        sentryEvent.contexts.setTrace(preExistingSpanContext)
         sut.captureEvent(sentryEvent, scope)
 
         verify(fixture.transport).send(
@@ -2604,22 +2748,6 @@ class SentryClientTest {
 
         sut.captureEvent(SentryEvent(), Hint())
         verify(fixture.transport).send(anyOrNull(), anyOrNull())
-    }
-
-    @Test
-    fun `no-op metrics aggregator is returned when metrics is disabled`() {
-        val sut = fixture.getSut { options ->
-            options.isEnableMetrics = false
-        }
-        assertSame(NoopMetricsAggregator.getInstance(), sut.metricsAggregator)
-    }
-
-    @Test
-    fun `metrics aggregator is returned when metrics is disabled`() {
-        val sut = fixture.getSut { options ->
-            options.isEnableMetrics = true
-        }
-        assertNotSame(NoopMetricsAggregator.getInstance(), sut.metricsAggregator)
     }
 
     @Test
@@ -3103,6 +3231,19 @@ class SentryClientTest {
                 assertNotNull(profilingTraceItem?.data)
             },
             anyOrNull()
+        )
+    }
+
+    private fun verifyProfileChunkInEnvelope(eventId: SentryId?) {
+        verify(fixture.transport).send(
+            check { actual ->
+                assertEquals(eventId, actual.header.eventId)
+
+                val profilingTraceItem = actual.items.firstOrNull { item ->
+                    item.header.type == SentryItemType.ProfileChunk
+                }
+                assertNotNull(profilingTraceItem?.data)
+            }
         )
     }
 

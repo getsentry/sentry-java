@@ -1,13 +1,13 @@
 package io.sentry.android.core
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.Hub
-import io.sentry.IHub
 import io.sentry.ILogger
+import io.sentry.IScopes
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.test.createTestScopes
 import org.junit.runner.RunWith
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -24,7 +24,7 @@ import kotlin.test.assertEquals
 @RunWith(AndroidJUnit4::class)
 class EnvelopeFileObserverIntegrationTest {
     inner class Fixture {
-        val hub: IHub = mock()
+        val scopes: IScopes = mock()
         private lateinit var options: SentryAndroidOptions
         val logger = mock<ILogger>()
 
@@ -33,7 +33,7 @@ class EnvelopeFileObserverIntegrationTest {
             options.setLogger(logger)
             options.isDebug = true
             optionConfiguration(options)
-            whenever(hub.options).thenReturn(options)
+            whenever(scopes.options).thenReturn(options)
 
             return object : EnvelopeFileObserverIntegration() {
                 override fun getPath(options: SentryOptions): String? = file.absolutePath
@@ -52,7 +52,12 @@ class EnvelopeFileObserverIntegrationTest {
 
     @AfterTest
     fun shutdown() {
-        Files.delete(file.toPath())
+        delete(file)
+    }
+
+    private fun delete(f: File) {
+        f.listFiles()?.forEach { delete(it) }
+        Files.delete(f.toPath())
     }
 
     @Test
@@ -65,27 +70,25 @@ class EnvelopeFileObserverIntegrationTest {
     }
 
     @Test
-    fun `when hub is closed, integrations should be closed`() {
+    fun `when scopes is closed, integrations should be closed`() {
         val integrationMock = mock<EnvelopeFileObserverIntegration>()
         val options = SentryOptions()
         options.dsn = "https://key@sentry.io/proj"
         options.cacheDirPath = file.absolutePath
         options.addIntegration(integrationMock)
         options.setSerializer(mock())
-//        val expected = HubAdapter.getInstance()
-        val hub = Hub(options)
-//        verify(integrationMock).register(expected, options)
-        hub.close()
+        val scopes = createTestScopes(options)
+        scopes.close()
         verify(integrationMock).close()
     }
 
     @Test
-    fun `when hub is closed right after start, integration is not registered`() {
+    fun `when scopes is closed right after start, integration is not registered`() {
         val deferredExecutorService = DeferredExecutorService()
         val integration = fixture.getSut {
             it.executorService = deferredExecutorService
         }
-        integration.register(fixture.hub, fixture.hub.options)
+        integration.register(fixture.scopes, fixture.scopes.options)
         integration.close()
         deferredExecutorService.runAll()
         verify(fixture.logger, never()).log(eq(SentryLevel.DEBUG), eq("EnvelopeFileObserverIntegration installed."))
@@ -96,7 +99,7 @@ class EnvelopeFileObserverIntegrationTest {
         val integration = fixture.getSut {
             it.executorService = mock()
         }
-        integration.register(fixture.hub, fixture.hub.options)
+        integration.register(fixture.scopes, fixture.scopes.options)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
             eq("Registering EnvelopeFileObserverIntegration for path: %s"),
@@ -110,7 +113,7 @@ class EnvelopeFileObserverIntegrationTest {
         val integration = fixture.getSut {
             it.executorService = ImmediateExecutorService()
         }
-        integration.register(fixture.hub, fixture.hub.options)
+        integration.register(fixture.scopes, fixture.scopes.options)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
             eq("Registering EnvelopeFileObserverIntegration for path: %s"),

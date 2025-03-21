@@ -15,6 +15,7 @@ import io.sentry.android.replay.video.MuxerConfig
 import io.sentry.android.replay.video.SimpleVideoEncoder
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
+import io.sentry.util.AutoClosableReentrantLock
 import io.sentry.util.FileUtils
 import java.io.Closeable
 import java.io.File
@@ -42,7 +43,8 @@ public class ReplayCache(
 ) : Closeable {
 
     private val isClosed = AtomicBoolean(false)
-    private val encoderLock = Any()
+    private val encoderLock = AutoClosableReentrantLock()
+    private val lock = AutoClosableReentrantLock()
     private var encoder: SimpleVideoEncoder? = null
 
     internal val replayCacheDir: File? by lazy {
@@ -147,7 +149,7 @@ public class ReplayCache(
             return null
         }
 
-        encoder = synchronized(encoderLock) {
+        encoder = encoderLock.acquire().use {
             SimpleVideoEncoder(
                 options,
                 MuxerConfig(
@@ -201,7 +203,7 @@ public class ReplayCache(
         }
 
         var videoDuration: Long
-        synchronized(encoderLock) {
+        encoderLock.acquire().use {
             encoder?.release()
             videoDuration = encoder?.duration ?: 0
             encoder = null
@@ -218,7 +220,7 @@ public class ReplayCache(
         }
         return try {
             val bitmap = BitmapFactory.decodeFile(frame.screenshot.absolutePath)
-            synchronized(encoderLock) {
+            encoderLock.acquire().use {
                 encoder?.encode(bitmap)
             }
             bitmap.recycle()
@@ -245,7 +247,7 @@ public class ReplayCache(
      * @param until value until whose the frames should be removed, represented as unix timestamp
      * @return the first screen in the rotated buffer, if any
      */
-    fun rotate(until: Long): String? {
+    internal fun rotate(until: Long): String? {
         var screen: String? = null
         frames.removeAll {
             if (it.timestamp < until) {
@@ -260,7 +262,7 @@ public class ReplayCache(
     }
 
     override fun close() {
-        synchronized(encoderLock) {
+        encoderLock.acquire().use {
             encoder?.release()
             encoder = null
         }
@@ -268,31 +270,32 @@ public class ReplayCache(
     }
 
     // TODO: it's awful, choose a better serialization format
-    @Synchronized
-    fun persistSegmentValues(key: String, value: String?) {
-        if (isClosed.get()) {
-            return
-        }
-        if (ongoingSegmentFile?.exists() != true) {
-            ongoingSegmentFile?.createNewFile()
-        }
-        if (ongoingSegment.isEmpty()) {
-            ongoingSegmentFile?.useLines { lines ->
-                lines.associateTo(ongoingSegment) {
-                    val (k, v) = it.split("=", limit = 2)
-                    k to v
+    internal fun persistSegmentValues(key: String, value: String?) {
+        lock.acquire().use {
+            if (isClosed.get()) {
+                return
+            }
+            if (ongoingSegmentFile?.exists() != true) {
+                ongoingSegmentFile?.createNewFile()
+            }
+            if (ongoingSegment.isEmpty()) {
+                ongoingSegmentFile?.useLines { lines ->
+                    lines.associateTo(ongoingSegment) {
+                        val (k, v) = it.split("=", limit = 2)
+                        k to v
+                    }
                 }
             }
+            if (value == null) {
+                ongoingSegment.remove(key)
+            } else {
+                ongoingSegment[key] = value
+            }
+            ongoingSegmentFile?.writeText(ongoingSegment.entries.joinToString("\n") { (k, v) -> "$k=$v" })
         }
-        if (value == null) {
-            ongoingSegment.remove(key)
-        } else {
-            ongoingSegment[key] = value
-        }
-        ongoingSegmentFile?.writeText(ongoingSegment.entries.joinToString("\n") { (k, v) -> "$k=$v" })
     }
 
-    companion object {
+    internal companion object {
         internal const val ONGOING_SEGMENT = ".ongoing_segment"
 
         internal const val SEGMENT_KEY_HEIGHT = "config.height"
