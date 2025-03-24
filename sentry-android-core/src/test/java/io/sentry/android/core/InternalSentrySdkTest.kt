@@ -523,8 +523,8 @@ class InternalSentrySdkTest {
             val propagationContext = scope.propagationContext
             assertEquals(SentryId(traceId), propagationContext.traceId)
             assertEquals(SpanId(spanId), propagationContext.parentSpanId)
-            assertEquals(sampleRate, propagationContext.baggage.sampleRateDouble)
-            assertEquals(sampleRand, propagationContext.baggage.sampleRandDouble)
+            assertEquals(sampleRate, propagationContext.baggage.sampleRate!!, 0.0001)
+            assertEquals(sampleRand, propagationContext.baggage.sampleRand!!, 0.0001)
         }
     }
 }
