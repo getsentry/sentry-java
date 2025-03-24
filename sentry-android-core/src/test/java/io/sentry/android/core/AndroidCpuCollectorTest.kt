@@ -45,6 +45,6 @@ class AndroidCpuCollectorTest {
         val cpuData = data.cpuData
         assertNotNull(cpuData)
         assertNotEquals(0.0, cpuData.cpuUsagePercentage)
-        assertNotEquals(0, cpuData.timestampMillis)
+        assertNotEquals(0, cpuData.timestamp.nanoTimestamp())
     }
 }
