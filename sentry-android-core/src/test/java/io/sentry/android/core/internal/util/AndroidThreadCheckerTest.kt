@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.protocol.SentryThread
 import org.junit.runner.RunWith
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -43,5 +44,24 @@ class AndroidThreadCheckerTest {
             id = thread.id
         }
         assertFalse(AndroidThreadChecker.getInstance().isMainThread(sentryThread))
+    }
+
+    @Test
+    fun `currentThreadName returns main when called on the main thread`() {
+        val thread = Thread.currentThread()
+        thread.name = "test"
+        assertEquals("main", AndroidThreadChecker.getInstance().currentThreadName)
+    }
+
+    @Test
+    fun `currentThreadName returns the name of the current thread`() {
+        var threadName = ""
+        val thread = Thread {
+            threadName = AndroidThreadChecker.getInstance().currentThreadName
+        }
+        thread.name = "test"
+        thread.start()
+        thread.join()
+        assertEquals("test", threadName)
     }
 }

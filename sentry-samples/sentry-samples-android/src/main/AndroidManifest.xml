@@ -110,10 +110,14 @@
         <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
 
         <!--    how to enable profiling when starting transactions -->
-        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1" />
+<!--        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />-->
 
-        <!--    how to enable app start profiling -->
-        <meta-data android:name="io.sentry.traces.profiling.enable-app-start" android:value="true" />
+        <!-- Enable profiling, adjust in production env -->
+        <meta-data android:name="io.sentry.traces.profiling.session-sample-rate" android:value="1.0" />
+        <!-- Set profiling lifecycle, can be `manual` or `trace` -->
+        <meta-data android:name="io.sentry.traces.profiling.lifecycle" android:value="manual" />
+        <!-- Enable profiling on app start -->
+        <meta-data android:name="io.sentry.traces.profiling.start-on-app-start" android:value="true" />
 
         <!--    how to disable the Activity auto instrumentation for tracing-->
         <!--    <meta-data android:name="io.sentry.traces.activity.enable" android:value="false" />-->
