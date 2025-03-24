@@ -51,6 +51,7 @@ class AndroidEnvelopeCacheTest {
                 AppStartMetrics.getInstance().apply {
                     if (options.isEnablePerformanceV2) {
                         appStartTimeSpan.setStartedAt(appStartMillis)
+                        sdkInitTimeSpan.setStartedAt(appStartMillis)
                     } else {
                         sdkInitTimeSpan.setStartedAt(appStartMillis)
                     }

@@ -2,9 +2,9 @@ package io.sentry.protocol;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
-import io.sentry.JsonObjectReader;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
+import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -49,6 +49,10 @@ public final class App implements JsonUnknown, JsonSerializable {
    * visible to the user.
    */
   private @Nullable Boolean inForeground;
+  /** A flag indicating whether the app is split into multiple APKs */
+  private @Nullable Boolean isSplitApks;
+  /* The list of split APKs */
+  private @Nullable List<String> splitNames;
 
   public App() {}
 
@@ -64,6 +68,8 @@ public final class App implements JsonUnknown, JsonSerializable {
     this.inForeground = app.inForeground;
     this.viewNames = CollectionUtils.newArrayList(app.viewNames);
     this.startType = app.startType;
+    this.isSplitApks = app.isSplitApks;
+    this.splitNames = app.splitNames;
     this.unknown = CollectionUtils.newConcurrentHashMap(app.unknown);
   }
 
@@ -163,6 +169,22 @@ public final class App implements JsonUnknown, JsonSerializable {
     this.startType = startType;
   }
 
+  public @Nullable Boolean getSplitApks() {
+    return isSplitApks;
+  }
+
+  public void setSplitApks(final @Nullable Boolean splitApks) {
+    isSplitApks = splitApks;
+  }
+
+  public @Nullable List<String> getSplitNames() {
+    return splitNames;
+  }
+
+  public void setSplitNames(final @Nullable List<String> splitNames) {
+    this.splitNames = splitNames;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -178,7 +200,9 @@ public final class App implements JsonUnknown, JsonSerializable {
         && Objects.equals(permissions, app.permissions)
         && Objects.equals(inForeground, app.inForeground)
         && Objects.equals(viewNames, app.viewNames)
-        && Objects.equals(startType, app.startType);
+        && Objects.equals(startType, app.startType)
+        && Objects.equals(isSplitApks, app.isSplitApks)
+        && Objects.equals(splitNames, app.splitNames);
   }
 
   @Override
@@ -194,7 +218,9 @@ public final class App implements JsonUnknown, JsonSerializable {
         permissions,
         inForeground,
         viewNames,
-        startType);
+        startType,
+        isSplitApks,
+        splitNames);
   }
 
   // region json
@@ -222,6 +248,8 @@ public final class App implements JsonUnknown, JsonSerializable {
     public static final String IN_FOREGROUND = "in_foreground";
     public static final String VIEW_NAMES = "view_names";
     public static final String START_TYPE = "start_type";
+    public static final String IS_SPLIT_APKS = "is_split_apks";
+    public static final String SPLIT_NAMES = "split_names";
   }
 
   @Override
@@ -261,6 +289,12 @@ public final class App implements JsonUnknown, JsonSerializable {
     if (startType != null) {
       writer.name(JsonKeys.START_TYPE).value(startType);
     }
+    if (isSplitApks != null) {
+      writer.name(JsonKeys.IS_SPLIT_APKS).value(isSplitApks);
+    }
+    if (splitNames != null && !splitNames.isEmpty()) {
+      writer.name(JsonKeys.SPLIT_NAMES).value(logger, splitNames);
+    }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -273,7 +307,7 @@ public final class App implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<App> {
     @SuppressWarnings("unchecked")
     @Override
-    public @NotNull App deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger)
+    public @NotNull App deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       reader.beginObject();
       App app = new App();
@@ -318,6 +352,15 @@ public final class App implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.START_TYPE:
             app.startType = reader.nextStringOrNull();
+            break;
+          case JsonKeys.IS_SPLIT_APKS:
+            app.isSplitApks = reader.nextBooleanOrNull();
+            break;
+          case JsonKeys.SPLIT_NAMES:
+            final @Nullable List<String> splitNames = (List<String>) reader.nextObjectOrNull();
+            if (splitNames != null) {
+              app.setSplitNames(splitNames);
+            }
             break;
           default:
             if (unknown == null) {

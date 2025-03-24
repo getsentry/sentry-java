@@ -20,7 +20,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@2cd2a6e951bd0b53f55a08e4e4c6f2586f3a36b9 # pin@v3
+        uses: gradle/actions/setup-gradle@4a417b5b1a01db0b076987546b67f8de18e7d340 # pin@v3
         with:
           gradle-home-cache-cleanup: true
 
@@ -28,7 +28,7 @@ jobs:
         run: |
           ./gradlew aggregateJavadocs
       - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@65b5dfd4f5bcd3a7403bbc2959c144256167464e # pin@4.5.0
+        uses: JamesIves/github-pages-deploy-action@6c2d9db40f9296374acc17b90404b6e8864128c8 # pin@4.7.3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages

@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import static io.sentry.Sentry.getCurrentScopes;
 import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.INFO;
 import static io.sentry.SentryLevel.WARNING;
@@ -8,12 +9,14 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import io.sentry.DateUtils;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
 import io.sentry.ILogger;
 import io.sentry.IScope;
+import io.sentry.IScopes;
 import io.sentry.ISerializer;
 import io.sentry.ObjectWriter;
+import io.sentry.PropagationContext;
+import io.sentry.ScopeType;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryEvent;
@@ -29,6 +32,7 @@ import io.sentry.protocol.Device;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.MapObjectWriter;
+import io.sentry.util.TracingUtils;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -47,13 +51,14 @@ import org.jetbrains.annotations.Nullable;
 public final class InternalSentrySdk {
 
   /**
-   * @return a copy of the current hub's topmost scope, or null in case the hub is disabled
+   * @return a copy of the current scopes's topmost scope, or null in case the scopes is disabled
    */
   @Nullable
   public static IScope getCurrentScope() {
     final @NotNull AtomicReference<IScope> scopeRef = new AtomicReference<>();
-    HubAdapter.getInstance()
+    ScopesAdapter.getInstance()
         .configureScope(
+            ScopeType.COMBINED,
             scope -> {
               scopeRef.set(scope.clone());
             });
@@ -108,7 +113,7 @@ public final class InternalSentrySdk {
       if (app == null) {
         app = new App();
       }
-      app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+      app.setAppName(ContextUtils.getApplicationName(context));
 
       final @NotNull TimeSpan appStartTimeSpan =
           AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
@@ -122,7 +127,7 @@ public final class InternalSentrySdk {
           ContextUtils.getPackageInfo(
               context, PackageManager.GET_PERMISSIONS, options.getLogger(), buildInfoProvider);
       if (packageInfo != null) {
-        ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, app);
+        ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, deviceInfoUtil, app);
       }
       scope.getContexts().setApp(app);
 
@@ -142,8 +147,8 @@ public final class InternalSentrySdk {
   }
 
   /**
-   * Captures the provided envelope. Compared to {@link IHub#captureEvent(SentryEvent)} this method
-   * <br>
+   * Captures the provided envelope. Compared to {@link IScopes#captureEvent(SentryEvent)} this
+   * method <br>
    * - will not enrich events with additional data (e.g. scope)<br>
    * - will not execute beforeSend: it's up to the caller to take care of this<br>
    * - will not perform any sampling: it's up to the caller to take care of this<br>
@@ -156,8 +161,8 @@ public final class InternalSentrySdk {
   @Nullable
   public static SentryId captureEnvelope(
       final @NotNull byte[] envelopeData, final boolean maybeStartNewSession) {
-    final @NotNull IHub hub = HubAdapter.getInstance();
-    final @NotNull SentryOptions options = hub.getOptions();
+    final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+    final @NotNull SentryOptions options = scopes.getOptions();
 
     try (final InputStream envelopeInputStream = new ByteArrayInputStream(envelopeData)) {
       final @NotNull ISerializer serializer = options.getSerializer();
@@ -187,22 +192,22 @@ public final class InternalSentrySdk {
       }
 
       // update session and add it to envelope if necessary
-      final @Nullable Session session = updateSession(hub, options, status, crashedOrErrored);
+      final @Nullable Session session = updateSession(scopes, options, status, crashedOrErrored);
       if (session != null) {
         final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
         envelopeItems.add(sessionItem);
         deleteCurrentSessionFile(
             options,
             // should be sync if going to crash or already not a main thread
-            !maybeStartNewSession || !hub.getOptions().getMainThreadChecker().isMainThread());
+            !maybeStartNewSession || !scopes.getOptions().getThreadChecker().isMainThread());
         if (maybeStartNewSession) {
-          hub.startSession();
+          scopes.startSession();
         }
       }
 
       final SentryEnvelope repackagedEnvelope =
           new SentryEnvelope(envelope.getHeader(), envelopeItems);
-      return hub.captureEnvelope(repackagedEnvelope);
+      return scopes.captureEnvelope(repackagedEnvelope);
     } catch (Throwable t) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
     }
@@ -213,14 +218,7 @@ public final class InternalSentrySdk {
     final @NotNull AppStartMetrics metrics = AppStartMetrics.getInstance();
     final @NotNull List<Map<String, Object>> spans = new ArrayList<>();
 
-    final @NotNull TimeSpan processInitNativeSpan = new TimeSpan();
-    processInitNativeSpan.setStartedAt(metrics.getAppStartTimeSpan().getStartUptimeMs());
-    processInitNativeSpan.setStartUnixTimeMs(
-        metrics.getAppStartTimeSpan().getStartTimestampMs()); // This has to go after setStartedAt
-    processInitNativeSpan.setStoppedAt(metrics.getClassLoadedUptimeMs());
-    processInitNativeSpan.setDescription("Process Initialization");
-
-    addTimeSpanToSerializedSpans(processInitNativeSpan, spans);
+    addTimeSpanToSerializedSpans(metrics.createProcessInitSpan(), spans);
     addTimeSpanToSerializedSpans(metrics.getApplicationOnCreateTimeSpan(), spans);
 
     for (final TimeSpan span : metrics.getContentProviderOnCreateTimeSpans()) {
@@ -244,7 +242,7 @@ public final class InternalSentrySdk {
 
   private static void addTimeSpanToSerializedSpans(TimeSpan span, List<Map<String, Object>> spans) {
     if (span.hasNotStarted()) {
-      HubAdapter.getInstance()
+      ScopesAdapter.getInstance()
           .getOptions()
           .getLogger()
           .log(WARNING, "Can not convert not-started TimeSpan to Map for Hybrid SDKs.");
@@ -252,7 +250,7 @@ public final class InternalSentrySdk {
     }
 
     if (span.hasNotStopped()) {
-      HubAdapter.getInstance()
+      ScopesAdapter.getInstance()
           .getOptions()
           .getLogger()
           .log(WARNING, "Can not convert not-stopped TimeSpan to Map for Hybrid SDKs.");
@@ -308,12 +306,12 @@ public final class InternalSentrySdk {
 
   @Nullable
   private static Session updateSession(
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @NotNull SentryOptions options,
       final @Nullable Session.State status,
       final boolean crashedOrErrored) {
     final @NotNull AtomicReference<Session> sessionRef = new AtomicReference<>();
-    hub.configureScope(
+    scopes.configureScope(
         scope -> {
           final @Nullable Session session = scope.getSession();
           if (session != null) {
@@ -333,5 +331,23 @@ public final class InternalSentrySdk {
           }
         });
     return sessionRef.get();
+  }
+
+  /**
+   * Allows a Hybrid SDK to set the trace on the native layer
+   *
+   * @param traceId the trace ID
+   * @param spanId the trace origin's span ID
+   * @param sampleRate the sample rate used by the origin of the trace
+   * @param sampleRand the random value used to sample with by the origin of the trace
+   */
+  public static void setTrace(
+      final @NotNull String traceId,
+      final @NotNull String spanId,
+      final @Nullable Double sampleRate,
+      final @Nullable Double sampleRand) {
+    TracingUtils.setTrace(
+        getCurrentScopes(),
+        PropagationContext.fromExistingTrace(traceId, spanId, sampleRate, sampleRand));
   }
 }

@@ -3,15 +3,16 @@ package io.sentry.spring.boot;
 import com.jakewharton.nopen.annotation.Open;
 import graphql.GraphQLError;
 import io.sentry.EventProcessor;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ISpanFactory;
 import io.sentry.ITransportFactory;
+import io.sentry.InitPriority;
 import io.sentry.Integration;
+import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.graphql.SentryGraphqlExceptionHandler;
-import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.quartz.SentryJobListener;
 import io.sentry.spring.ContextTagsEventProcessor;
@@ -21,6 +22,7 @@ import io.sentry.spring.SentrySpringFilter;
 import io.sentry.spring.SentryUserFilter;
 import io.sentry.spring.SentryUserProvider;
 import io.sentry.spring.SentryWebConfiguration;
+import io.sentry.spring.SpringProfilesEventProcessor;
 import io.sentry.spring.SpringSecuritySentryUserProvider;
 import io.sentry.spring.boot.graphql.SentryGraphqlAutoConfiguration;
 import io.sentry.spring.checkin.SentryCheckInAdviceConfiguration;
@@ -28,6 +30,9 @@ import io.sentry.spring.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.checkin.SentryQuartzConfiguration;
 import io.sentry.spring.exception.SentryCaptureExceptionParameterPointcutConfiguration;
 import io.sentry.spring.exception.SentryExceptionParameterAdviceConfiguration;
+import io.sentry.spring.opentelemetry.SentryOpenTelemetryAgentWithoutAutoInitConfiguration;
+import io.sentry.spring.opentelemetry.SentryOpenTelemetryNoAgentConfiguration;
+import io.sentry.spring.tracing.CombinedTransactionNameProvider;
 import io.sentry.spring.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.tracing.SentryTracingFilter;
@@ -37,6 +42,7 @@ import io.sentry.spring.tracing.SpringServletTransactionNameProvider;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -64,6 +70,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -115,10 +122,29 @@ public class SentryAutoConfiguration {
       return new InAppIncludesResolver();
     }
 
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryOpenTelemetryAgentWithoutAutoInitConfiguration.class)
+    @Open
+    @ConditionalOnProperty(name = "sentry.auto-init", havingValue = "false")
+    @ConditionalOnClass(name = {"io.sentry.opentelemetry.agent.AgentMarker"})
+    static class OpenTelemetryAgentWithoutAutoInitConfiguration {}
+
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryOpenTelemetryNoAgentConfiguration.class)
+    @Open
+    @ConditionalOnClass(
+        name = {
+          "io.opentelemetry.api.OpenTelemetry",
+          "io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider"
+        })
+    @ConditionalOnMissingClass("io.sentry.opentelemetry.agent.AgentMarker")
+    static class OpenTelemetryNoAgentConfiguration {}
+
     @Bean
-    public @NotNull IHub sentryHub(
+    public @NotNull IScopes sentryHub(
         final @NotNull List<Sentry.OptionsConfiguration<SentryOptions>> optionsConfigurations,
         final @NotNull SentryProperties options,
+        final @NotNull ObjectProvider<ISpanFactory> spanFactory,
         final @NotNull ObjectProvider<GitProperties> gitProperties) {
       optionsConfigurations.forEach(
           optionsConfiguration -> optionsConfiguration.configure(options));
@@ -128,10 +154,12 @@ public class SentryAutoConfiguration {
               options.setRelease(git.getCommitId());
             }
           });
+      spanFactory.ifAvailable(options::setSpanFactory);
 
       options.setSentryClientName(
           BuildConfig.SENTRY_SPRING_BOOT_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       options.setSdkVersion(createSdkVersion(options));
+      options.setInitPriority(InitPriority.LOW);
       addPackageAndIntegrationInfo();
       // Spring Boot sets ignored exceptions in runtime using reflection - where the generic
       // information is lost
@@ -139,7 +167,7 @@ public class SentryAutoConfiguration {
       // here we make sure that only classes that extend throwable are set on this field
       options.getIgnoredExceptionsForType().removeIf(it -> !Throwable.class.isAssignableFrom(it));
       Sentry.init(options);
-      return HubAdapter.getInstance();
+      return ScopesAdapter.getInstance();
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -151,19 +179,6 @@ public class SentryAutoConfiguration {
       public @NotNull ContextTagsEventProcessor contextTagsEventProcessor(
           final @NotNull SentryOptions sentryOptions) {
         return new ContextTagsEventProcessor(sentryOptions);
-      }
-    }
-
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnProperty(name = "sentry.auto-init", havingValue = "false")
-    @ConditionalOnClass(OpenTelemetryLinkErrorEventProcessor.class)
-    @Open
-    static class OpenTelemetryLinkErrorEventProcessorConfiguration {
-
-      @Bean
-      @ConditionalOnMissingBean
-      public @NotNull OpenTelemetryLinkErrorEventProcessor openTelemetryLinkErrorEventProcessor() {
-        return new OpenTelemetryLinkErrorEventProcessor();
       }
     }
 
@@ -239,7 +254,7 @@ public class SentryAutoConfiguration {
        * HttpServletRequest#getUserPrincipal()}. If Spring Security is auto-configured, its order is
        * set to run after Spring Security.
        *
-       * @param hub the Sentry hub
+       * @param scopes the Sentry scopes
        * @param sentryProperties the Sentry properties
        * @param sentryUserProvider the user provider
        * @return {@link SentryUserFilter} registration bean
@@ -247,11 +262,11 @@ public class SentryAutoConfiguration {
       @Bean
       @ConditionalOnBean(SentryUserProvider.class)
       public @NotNull FilterRegistrationBean<SentryUserFilter> sentryUserFilter(
-          final @NotNull IHub hub,
+          final @NotNull IScopes scopes,
           final @NotNull SentryProperties sentryProperties,
           final @NotNull List<SentryUserProvider> sentryUserProvider) {
         final FilterRegistrationBean<SentryUserFilter> filter = new FilterRegistrationBean<>();
-        filter.setFilter(new SentryUserFilter(hub, sentryUserProvider));
+        filter.setFilter(new SentryUserFilter(scopes, sentryUserProvider));
         filter.setOrder(resolveUserFilterOrder(sentryProperties));
         return filter;
       }
@@ -263,19 +278,19 @@ public class SentryAutoConfiguration {
       }
 
       @Bean
-      public @NotNull SentryRequestResolver sentryRequestResolver(final @NotNull IHub hub) {
-        return new SentryRequestResolver(hub);
+      public @NotNull SentryRequestResolver sentryRequestResolver(final @NotNull IScopes scopes) {
+        return new SentryRequestResolver(scopes);
       }
 
       @Bean
       @ConditionalOnMissingBean(name = "sentrySpringFilter")
       public @NotNull FilterRegistrationBean<SentrySpringFilter> sentrySpringFilter(
-          final @NotNull IHub hub,
+          final @NotNull IScopes scopes,
           final @NotNull SentryRequestResolver requestResolver,
           final @NotNull TransactionNameProvider transactionNameProvider) {
         FilterRegistrationBean<SentrySpringFilter> filter =
             new FilterRegistrationBean<>(
-                new SentrySpringFilter(hub, requestResolver, transactionNameProvider));
+                new SentrySpringFilter(scopes, requestResolver, transactionNameProvider));
         filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE);
         return filter;
       }
@@ -283,9 +298,15 @@ public class SentryAutoConfiguration {
       @Bean
       @ConditionalOnMissingBean(name = "sentryTracingFilter")
       public FilterRegistrationBean<SentryTracingFilter> sentryTracingFilter(
-          final @NotNull IHub hub, final @NotNull TransactionNameProvider transactionNameProvider) {
+          final @NotNull IScopes scopes,
+          final @NotNull TransactionNameProvider transactionNameProvider,
+          final @NotNull SentryProperties sentryProperties) {
         FilterRegistrationBean<SentryTracingFilter> filter =
-            new FilterRegistrationBean<>(new SentryTracingFilter(hub, transactionNameProvider));
+            new FilterRegistrationBean<>(
+                new SentryTracingFilter(
+                    scopes,
+                    transactionNameProvider,
+                    sentryProperties.isKeepTransactionsOpenForAsyncResponses()));
         filter.setOrder(SENTRY_SPRING_FILTER_PRECEDENCE + 1); // must run after SentrySpringFilter
         return filter;
       }
@@ -298,17 +319,20 @@ public class SentryAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean
         public @NotNull SentryExceptionResolver sentryExceptionResolver(
-            final @NotNull IHub sentryHub,
+            final @NotNull IScopes scopes,
             final @NotNull TransactionNameProvider transactionNameProvider,
             final @NotNull SentryProperties options) {
           return new SentryExceptionResolver(
-              sentryHub, transactionNameProvider, options.getExceptionResolverOrder());
+              scopes, transactionNameProvider, options.getExceptionResolverOrder());
         }
 
         @Bean
         @ConditionalOnMissingBean(TransactionNameProvider.class)
         public @NotNull TransactionNameProvider transactionNameProvider() {
-          return new SpringMvcTransactionNameProvider();
+          return new CombinedTransactionNameProvider(
+              Arrays.asList(
+                  new SpringMvcTransactionNameProvider(),
+                  new SpringServletTransactionNameProvider()));
         }
       }
 
@@ -367,8 +391,8 @@ public class SentryAutoConfiguration {
     @Open
     static class SentryPerformanceRestTemplateConfiguration {
       @Bean
-      public SentrySpanRestTemplateCustomizer sentrySpanRestTemplateCustomizer(IHub hub) {
-        return new SentrySpanRestTemplateCustomizer(hub);
+      public SentrySpanRestTemplateCustomizer sentrySpanRestTemplateCustomizer(IScopes scopes) {
+        return new SentrySpanRestTemplateCustomizer(scopes);
       }
     }
 
@@ -378,8 +402,8 @@ public class SentryAutoConfiguration {
     @Open
     static class SentryPerformanceWebClientConfiguration {
       @Bean
-      public SentrySpanWebClientCustomizer sentrySpanWebClientCustomizer(IHub hub) {
-        return new SentrySpanWebClientCustomizer(hub);
+      public SentrySpanWebClientCustomizer sentrySpanWebClientCustomizer(IScopes scopes) {
+        return new SentrySpanWebClientCustomizer(scopes);
       }
     }
 
@@ -419,10 +443,6 @@ public class SentryAutoConfiguration {
       super(ConfigurationPhase.REGISTER_BEAN);
     }
 
-    @ConditionalOnProperty(name = "sentry.enable-tracing")
-    @SuppressWarnings("UnusedNestedClass")
-    private static class SentryEnableTracingCondition {}
-
     @ConditionalOnProperty(name = "sentry.traces-sample-rate")
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryTracesSampleRateCondition {}
@@ -430,5 +450,15 @@ public class SentryAutoConfiguration {
     @ConditionalOnBean(SentryOptions.TracesSamplerCallback.class)
     @SuppressWarnings("UnusedNestedClass")
     private static class SentryTracesSamplerBeanCondition {}
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @Open
+  static class SpringProfilesEventProcessorConfiguration {
+    @Bean
+    public @NotNull SpringProfilesEventProcessor springProfilesEventProcessor(
+        final Environment environment) {
+      return new SpringProfilesEventProcessor(environment);
+    }
   }
 }

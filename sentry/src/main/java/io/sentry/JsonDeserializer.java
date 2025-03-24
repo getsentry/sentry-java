@@ -6,5 +6,5 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public interface JsonDeserializer<T> {
   @NotNull
-  T deserialize(@NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception;
+  T deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception;
 }

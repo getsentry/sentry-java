@@ -1,6 +1,7 @@
 name: 🐞 Bug Report - Android
 description: Tell us about something that's not working the way we (probably) intend.
 labels: ["Platform: Android", "Type: Bug"]
+type: Bug
 body:
   - type: dropdown
     id: integration
@@ -10,13 +11,13 @@ body:
       options:
         - sentry-android
         - sentry-android-ndk
-        - sentry-android-okhttp
         - sentry-android-timber
         - sentry-android-fragment
         - sentry-android-sqlite
         - sentry-apollo
-        - sentry-compose
         - sentry-apollo-3
+        - sentry-compose
+        - sentry-okhttp
         - other
     validations:
       required: true

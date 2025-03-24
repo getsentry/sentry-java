@@ -1,0 +1,245 @@
+{
+    "type": "replay_event",
+    "replay_type": "session",
+    "segment_id": 0,
+    "timestamp": "1942-07-09T12:55:34.000Z",
+    "replay_id": "f715e1d64ef64ea3ad7744b5230813c3",
+    "replay_start_timestamp": "1942-07-09T12:55:34.000Z",
+    "urls":
+    [
+      "ScreenOne"
+    ],
+    "error_ids":
+    [
+      "ab3a347a4cc14fd4b4cf1dc56b670c5b"
+    ],
+    "trace_ids":
+    [
+      "340cfef948204549ac07c3b353c81c50"
+    ],
+    "event_id": "afcb46b1140ade5187c4bbb5daa804df",
+    "contexts":
+    {
+        "app":
+        {
+            "app_identifier": "3b7a3313-53b4-43f4-a6a1-7a7c36a9b0db",
+            "app_start_time": "1918-11-17T07:46:04.000Z",
+            "device_app_hash": "3d1fcf36-2c25-4378-bdf8-1e65239f1df4",
+            "build_type": "d78c56cd-eb0f-4213-8899-cd10ddf20763",
+            "app_name": "873656fd-f620-4edf-bb7a-a0d13325dba0",
+            "app_version": "801aab22-ad4b-44fb-995c-bacb5387e20c",
+            "app_build": "660f0cde-eedb-49dc-a973-8aa1c04f4a28",
+            "permissions":
+            {
+              "WRITE_EXTERNAL_STORAGE": "not_granted",
+              "CAMERA": "granted"
+            },
+            "in_foreground": true,
+            "view_names": ["MainActivity", "SidebarActivity"],
+            "start_type": "cold"
+        },
+        "browser":
+        {
+            "name": "e1c723db-7408-4043-baa7-f4e96234e5dc",
+            "version": "724a48e9-2d35-416b-9f79-132beba2473a"
+        },
+        "device":
+        {
+            "name": "83f1de77-fdb0-470e-8249-8f5c5d894ec4",
+            "manufacturer": "e21b2405-e378-4a0b-ad2c-4822d97cd38c",
+            "brand": "1abbd13e-d1ca-4d81-bd1b-24aa2c339cf9",
+            "family": "67a4b8ea-6c38-4c33-8579-7697f538685c",
+            "model": "d6ca2f35-bcc5-4dd3-ad64-7c3b585e02fd",
+            "model_id": "d3f133bd-b0a2-4aa4-9eed-875eba93652e",
+            "archs":
+            [
+                "856e5da3-774c-4663-a830-d19f0b7dbb5b",
+                "b345bd5a-90a5-4301-a5a2-6c102d7589b6",
+                "fd7ed64e-a591-49e0-8dc1-578234356d23",
+                "8cec4101-0305-480b-91ee-f3c007f668c3",
+                "22583b9b-195e-49bf-bfe8-825ae3a346f2",
+                "8675b7aa-5b94-42d0-bc14-72ea1bb7112e"
+            ],
+            "battery_level": 0.45770407,
+            "charging": false,
+            "online": true,
+            "orientation": "portrait",
+            "simulator": true,
+            "memory_size": -6712323365568152393,
+            "free_memory": -953384122080236886,
+            "usable_memory": -8999512249221323968,
+            "low_memory": false,
+            "storage_size": -3227905175393990709,
+            "free_storage": -3749039933924297357,
+            "external_storage_size": -7739608324159255302,
+            "external_free_storage": -1562576688560812557,
+            "screen_width_pixels": 1101873181,
+            "screen_height_pixels": 1902392170,
+            "screen_density": 0.9829039,
+            "screen_dpi": -2092079070,
+            "boot_time": "2004-11-04T08:38:00.000Z",
+            "timezone": "Europe/Vienna",
+            "id": "e0fa5c8d-83f5-4e70-bc60-1e82ad30e196",
+            "connection_type": "9ceb3a6c-5292-4ed9-8665-5732495e8ed4",
+            "battery_temperature": 0.14775127,
+            "processor_count": 4,
+            "processor_frequency": 800.0,
+            "cpu_description": "cpu0"
+        },
+        "gpu":
+        {
+            "name": "d623a6b5-e1ab-4402-931b-c06f5a43a5ae",
+            "id": -596576280,
+            "vendor_id": "1874778041",
+            "vendor_name": "d732cf76-07dc-48e2-8920-96d6bfc2439d",
+            "memory_size": -1484004451,
+            "api_type": "95dfc8bc-88ae-4d66-b85f-6c88ad45b80f",
+            "multi_threaded_rendering": true,
+            "version": "3f3f73c3-83a2-423a-8a6f-bb3de0d4a6ae",
+            "npot_support": "e06b074a-463c-45de-a959-cbabd461d99d"
+        },
+        "os":
+        {
+            "name": "686a11a8-eae7-4393-aa10-a1368d523cb2",
+            "version": "3033f32d-6a27-4715-80c8-b232ce84ca61",
+            "raw_description": "eb2d0c5e-f5d4-49c7-b876-d8a654ee87cf",
+            "build": "bd197b97-eb68-49c3-9d07-ef789caf3069",
+            "kernel_version": "1df24aec-3a6f-49a9-8b50-69ae5f9dde08",
+            "rooted": true
+        },
+        "response":
+        {
+            "cookies": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1;",
+            "headers": {
+                "content-type": "text/html"
+            },
+            "status_code": 500,
+            "body_size": 1000,
+            "data":
+            {
+              "d9d709db-b666-40cc-bcbb-093bb12aad26": "1631d0e6-96b7-4632-85f8-ef69e8bcfb16"
+            },
+            "arbitrary_field": "arbitrary"
+        },
+        "runtime":
+        {
+            "name": "4ed019c4-9af9-43e0-830e-bfde9fe4461c",
+            "version": "16534f6b-1670-4bb8-aec2-647a1b97669b",
+            "raw_description": "773b5b05-a0f9-4ee6-9f3b-13155c37ad6e"
+        },
+        "trace":
+        {
+            "trace_id": "afcb46b1140ade5187c4bbb5daa804df",
+            "span_id": "bf6b582d-8ce3-412b-a334-f4c5539b9602",
+            "parent_span_id": "c7500f2a-d4e6-4f5f-a0f4-6bb67e98d5a2",
+            "op": "e481581d-35a4-4e97-8a1c-b554bf49f23e",
+            "description": "c204b6c7-9753-4d45-927d-b19789bfc9a5",
+            "status": "resource_exhausted",
+            "origin": "auto.test.unit.spancontext",
+            "tags":
+            {
+                "2a5fa3f5-7b87-487f-aaa5-84567aa73642": "4781d51a-c5af-47f2-a4ed-f030c9b3e194",
+                "29106d7d-7fa4-444f-9d34-b9d7510c69ab": "218c23ea-694a-497e-bf6d-e5f26f1ad7bd",
+                "ba9ce913-269f-4c03-882d-8ca5e6991b14": "35a74e90-8db8-4610-a411-872cbc1030ac"
+            },
+            "data":
+            {
+              "spanContextDataKey": "spanContextDataValue",
+              "thread.name": "test",
+              "thread.id": 10
+            }
+        }
+    },
+    "sdk":
+    {
+        "name": "3e934135-3f2b-49bc-8756-9f025b55143e",
+        "version": "3e31738e-4106-42d0-8be2-4a3a1bc648d3",
+        "packages":
+        [
+            {
+                "name": "b59a1949-9950-4203-b394-ddd8d02c9633",
+                "version": "3d7790f3-7f32-43f7-b82f-9f5bc85205a8"
+            }
+        ],
+        "integrations":
+        [
+            "daec50ae-8729-49b5-82f7-991446745cd5",
+            "8fc94968-3499-4a2c-b4d7-ecc058d9c1b0"
+        ]
+    },
+    "request":
+    {
+        "url": "67369bc9-64d3-4d31-bfba-37393b145682",
+        "method": "8185abc3-5411-4041-a0d9-374180081044",
+        "query_string": "e3dc7659-f42e-413c-a07c-52b24bf9d60d",
+        "data":
+        {
+            "d9d709db-b666-40cc-bcbb-093bb12aad26": "1631d0e6-96b7-4632-85f8-ef69e8bcfb16"
+        },
+        "cookies": "d84f4cfc-5310-4818-ad4f-3f8d22ceaca8",
+        "headers":
+        {
+            "c4991f66-9af9-4914-ac5e-e4854a5a4822": "37714d22-25a7-469b-b762-289b456fbec3"
+        },
+        "env":
+        {
+            "6d569c89-5d5e-40e0-a4fc-109b20a53778": "ccadf763-44e4-475c-830c-de6ba0dbd202"
+        },
+        "other":
+        {
+            "669ff1c1-517b-46dc-a889-131555364a56": "89043294-f6e1-4e2e-b152-1fdf9b1102fc"
+        },
+        "fragment": "fragment",
+        "body_size": 1000,
+        "api_target": "graphql"
+    },
+    "tags":
+    {
+        "79ba41db-8dc6-4156-b53e-6cf6d742eb88": "690ce82f-4d5d-4d81-b467-461a41dd9419"
+    },
+    "release": "be9b8133-72f5-497b-adeb-b0a245eebad6",
+    "environment": "89204175-e462-4628-8acb-3a7fa8d8da7d",
+    "platform": "38decc78-2711-4a6a-a0be-abb61bfa5a6e",
+    "user":
+    {
+        "email": "c4d61c1b-c144-431e-868f-37a46be5e5f2",
+        "id": "efb2084b-1871-4b59-8897-b4bd9f196a01",
+        "username": "60c05dff-7140-4d94-9a61-c9cdd9ca9b96",
+        "ip_address": "51d22b77-f663-4dbe-8103-8b749d1d9a48",
+        "name": "c8c60762-b1cf-11ed-afa1-0242ac120002",
+        "geo": {
+          "city": "0e6ed0b0-b1c5-11ed-afa1-0242ac120002",
+          "country_code": "JP",
+          "region": "273a3d0a-b1c5-11ed-afa1-0242ac120002"
+        },
+        "data":
+        {
+            "dc2813d0-0f66-4a3f-a995-71268f61a8fa": "991659ad-7c59-4dd3-bb89-0bd5c74014bd"
+        }
+    },
+    "dist": "27022a08-aace-40c6-8d0a-358a27fcaa7a",
+    "debug_meta":
+    {
+      "sdk_info":
+      {
+        "sdk_name": "182c4407-c1e1-4427-9b5a-ad2e22b1046a",
+        "version_major": 2045114005,
+        "version_minor": 1436566288,
+        "version_patchlevel": 1637914973
+      },
+      "images":
+      [
+        {
+          "uuid": "8994027e-1cd9-4be8-b611-88ce08cf16e6",
+          "type": "fd6e053b-a7fe-4754-916e-bfb3ab77177d",
+          "debug_id": "8c653f5a-3418-4823-ba91-29a84c9c1235",
+          "debug_file": "55cc15dd-51f3-4cad-803c-6fd90eac21f6",
+          "code_id": "01230ece-f729-4af4-8b48-df74700aa4bf",
+          "code_file": "415c8995-1cb4-4bed-ba5c-5b3d6ba1ad47",
+          "image_addr": "8a258c81-641d-4e54-b06e-a0f56b1ee2ef",
+          "image_size": -7905338721846826571,
+          "arch": "d00d5bea-fb5c-43c9-85f0-dc1350d957a4"
+        }
+      ]
+    }
+}

@@ -1,5 +1,6 @@
 package io.sentry.compose.gestures;
 
+import androidx.compose.ui.Modifier;
 import androidx.compose.ui.geometry.Rect;
 import androidx.compose.ui.layout.ModifierInfo;
 import androidx.compose.ui.node.LayoutNode;
@@ -8,11 +9,14 @@ import androidx.compose.ui.semantics.SemanticsConfiguration;
 import androidx.compose.ui.semantics.SemanticsModifier;
 import androidx.compose.ui.semantics.SemanticsPropertyKey;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.compose.SentryComposeHelper;
 import io.sentry.compose.helper.BuildConfig;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.gestures.UiElement;
+import io.sentry.util.AutoClosableReentrantLock;
+import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +31,7 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
 
   private final @NotNull ILogger logger;
   private volatile @Nullable SentryComposeHelper composeHelper;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   public ComposeGestureTargetLocator(final @NotNull ILogger logger) {
     this.logger = logger;
@@ -37,11 +42,11 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
 
   @Override
   public @Nullable UiElement locate(
-      @NotNull Object root, float x, float y, UiElement.Type targetType) {
+      @Nullable Object root, float x, float y, UiElement.Type targetType) {
 
     // lazy init composeHelper as it's using some reflection under the hood
     if (composeHelper == null) {
-      synchronized (this) {
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
         if (composeHelper == null) {
           composeHelper = new SentryComposeHelper(logger);
         }
@@ -90,13 +95,28 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
               }
             }
           } else {
+            final @NotNull Modifier modifier = modifierInfo.getModifier();
             // Newer Jetpack Compose 1.5 uses Node modifiers for clicks/scrolls
-            final @Nullable String type = modifierInfo.getModifier().getClass().getCanonicalName();
+            final @Nullable String type = modifier.getClass().getCanonicalName();
             if ("androidx.compose.foundation.ClickableElement".equals(type)
                 || "androidx.compose.foundation.CombinedClickableElement".equals(type)) {
               isClickable = true;
             } else if ("androidx.compose.foundation.ScrollingLayoutElement".equals(type)) {
               isScrollable = true;
+            } else if ("androidx.compose.ui.platform.TestTagElement".equals(type)) {
+              // Newer Jetpack Compose uses TestTagElement as node elements
+              // See
+              // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/platform/TestTag.kt;l=34;drc=dcaa116fbfda77e64a319e1668056ce3b032469f
+              try {
+                final Field tagField = modifier.getClass().getDeclaredField("tag");
+                tagField.setAccessible(true);
+                final @Nullable Object value = tagField.get(modifier);
+                if (value instanceof String) {
+                  lastKnownTag = (String) value;
+                }
+              } catch (Throwable e) {
+                // ignored
+              }
             }
           }
         }

@@ -65,6 +65,12 @@
       android:text="@string/anr" />
 
     <Button
+      android:id="@+id/native_anr"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/native_anr" />
+
+    <Button
       android:id="@+id/out_of_memory"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
@@ -142,11 +148,6 @@
       android:layout_height="wrap_content"
       android:text="@string/open_frame_data_for_spans"/>
 
-    <Button
-      android:id="@+id/open_metrics"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:text="@string/open_metrics"/>
   </LinearLayout>
 
 </ScrollView>

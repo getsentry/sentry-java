@@ -8,10 +8,12 @@ import android.app.Application;
 import android.os.Bundle;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -23,21 +25,23 @@ public final class ActivityBreadcrumbsIntegration
     implements Integration, Closeable, Application.ActivityLifecycleCallbacks {
 
   private final @NotNull Application application;
-  private @Nullable IHub hub;
+  private @Nullable IScopes scopes;
   private boolean enabled;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
+  // TODO check if locking is even required at all for lifecycle methods
   public ActivityBreadcrumbsIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     final SentryAndroidOptions androidOptions =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
 
-    this.hub = Objects.requireNonNull(hub, "Hub is required");
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.enabled = androidOptions.isEnableActivityLifecycleBreadcrumbs();
     options
         .getLogger()
@@ -46,7 +50,7 @@ public final class ActivityBreadcrumbsIntegration
     if (enabled) {
       application.registerActivityLifecycleCallbacks(this);
       options.getLogger().log(SentryLevel.DEBUG, "ActivityBreadcrumbIntegration installed.");
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("ActivityBreadcrumbs");
     }
   }
 
@@ -54,8 +58,9 @@ public final class ActivityBreadcrumbsIntegration
   public void close() throws IOException {
     if (enabled) {
       application.unregisterActivityLifecycleCallbacks(this);
-      if (hub != null) {
-        hub.getOptions()
+      if (scopes != null) {
+        scopes
+            .getOptions()
             .getLogger()
             .log(SentryLevel.DEBUG, "ActivityBreadcrumbsIntegration removed.");
       }
@@ -63,44 +68,58 @@ public final class ActivityBreadcrumbsIntegration
   }
 
   @Override
-  public synchronized void onActivityCreated(
+  public void onActivityCreated(
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
-    addBreadcrumb(activity, "created");
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "created");
+    }
   }
 
   @Override
-  public synchronized void onActivityStarted(final @NotNull Activity activity) {
-    addBreadcrumb(activity, "started");
+  public void onActivityStarted(final @NotNull Activity activity) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "started");
+    }
   }
 
   @Override
-  public synchronized void onActivityResumed(final @NotNull Activity activity) {
-    addBreadcrumb(activity, "resumed");
+  public void onActivityResumed(final @NotNull Activity activity) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "resumed");
+    }
   }
 
   @Override
-  public synchronized void onActivityPaused(final @NotNull Activity activity) {
-    addBreadcrumb(activity, "paused");
+  public void onActivityPaused(final @NotNull Activity activity) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "paused");
+    }
   }
 
   @Override
-  public synchronized void onActivityStopped(final @NotNull Activity activity) {
-    addBreadcrumb(activity, "stopped");
+  public void onActivityStopped(final @NotNull Activity activity) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "stopped");
+    }
   }
 
   @Override
-  public synchronized void onActivitySaveInstanceState(
+  public void onActivitySaveInstanceState(
       final @NotNull Activity activity, final @NotNull Bundle outState) {
-    addBreadcrumb(activity, "saveInstanceState");
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "saveInstanceState");
+    }
   }
 
   @Override
-  public synchronized void onActivityDestroyed(final @NotNull Activity activity) {
-    addBreadcrumb(activity, "destroyed");
+  public void onActivityDestroyed(final @NotNull Activity activity) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      addBreadcrumb(activity, "destroyed");
+    }
   }
 
   private void addBreadcrumb(final @NotNull Activity activity, final @NotNull String state) {
-    if (hub == null) {
+    if (scopes == null) {
       return;
     }
 
@@ -114,7 +133,7 @@ public final class ActivityBreadcrumbsIntegration
     final Hint hint = new Hint();
     hint.set(ANDROID_ACTIVITY, activity);
 
-    hub.addBreadcrumb(breadcrumb, hint);
+    scopes.addBreadcrumb(breadcrumb, hint);
   }
 
   private @NotNull String getActivityName(final @NotNull Activity activity) {

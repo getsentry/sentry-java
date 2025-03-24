@@ -5,8 +5,8 @@ import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.CpuCollectionData
-import io.sentry.IHub
 import io.sentry.ILogger
+import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
 import io.sentry.MemoryCollectionData
 import io.sentry.PerformanceCollectionData
@@ -89,7 +89,7 @@ class AndroidTransactionProfilerTest {
             executorService = mockExecutorService
         }
 
-        val hub: IHub = mock()
+        val scopes: IScopes = mock()
         val frameMetricsCollector: SentryFrameMetricsCollector = mock()
 
         lateinit var transaction1: SentryTracer
@@ -97,10 +97,10 @@ class AndroidTransactionProfilerTest {
         lateinit var transaction3: SentryTracer
 
         fun getSut(context: Context, buildInfoProvider: BuildInfoProvider = buildInfo): AndroidTransactionProfiler {
-            whenever(hub.options).thenReturn(options)
-            transaction1 = SentryTracer(TransactionContext("", ""), hub)
-            transaction2 = SentryTracer(TransactionContext("", ""), hub)
-            transaction3 = SentryTracer(TransactionContext("", ""), hub)
+            whenever(scopes.options).thenReturn(options)
+            transaction1 = SentryTracer(TransactionContext("", ""), scopes)
+            transaction2 = SentryTracer(TransactionContext("", ""), scopes)
+            transaction3 = SentryTracer(TransactionContext("", ""), scopes)
             return AndroidTransactionProfiler(context, options, buildInfoProvider, frameMetricsCollector)
         }
     }
@@ -124,6 +124,7 @@ class AndroidTransactionProfilerTest {
             buildInfoProvider,
             loadClass,
             activityFramesTracker,
+            false,
             false,
             false
         )
@@ -336,16 +337,6 @@ class AndroidTransactionProfilerTest {
     }
 
     @Test
-    fun `profiler ignores profilingTracesIntervalMillis`() {
-        fixture.options.apply {
-            profilingTracesIntervalMillis = 0
-        }
-        val profiler = fixture.getSut(context)
-        profiler.start()
-        assertEquals(1, profiler.transactionsCounter)
-    }
-
-    @Test
     fun `profiler never use background threads`() {
         val profiler = fixture.getSut(context)
         val mockExecutorService: ISentryExecutorService = mock()
@@ -357,6 +348,17 @@ class AndroidTransactionProfilerTest {
         val profilingTraceData: ProfilingTraceData? = profiler.onTransactionFinish(fixture.transaction1, null, fixture.options)
         assertNotNull(profilingTraceData)
         verify(mockExecutorService, never()).submit(any<Callable<*>>())
+    }
+
+    @Test
+    fun `profiling transaction with empty name fallbacks to unknown`() {
+        val profiler = fixture.getSut(context)
+        profiler.start()
+        profiler.bindTransaction(fixture.transaction1)
+        val profilingTraceData = profiler.onTransactionFinish(fixture.transaction1, null, fixture.options)
+        assertNotNull(profilingTraceData)
+        assertEquals("unknown", profilingTraceData.transactionName)
+        assertEquals("unknown", profilingTraceData.transactions.first().name)
     }
 
     @Test
@@ -458,12 +460,12 @@ class AndroidTransactionProfilerTest {
         val profiler = fixture.getSut(context)
         val performanceCollectionData = ArrayList<PerformanceCollectionData>()
         var singleData = PerformanceCollectionData()
-        singleData.addMemoryData(MemoryCollectionData(1, 2, 3))
-        singleData.addCpuData(CpuCollectionData(1, 1.4))
+        singleData.addMemoryData(MemoryCollectionData(2, 3, mock()))
+        singleData.addCpuData(CpuCollectionData(1.4, mock()))
         performanceCollectionData.add(singleData)
 
         singleData = PerformanceCollectionData()
-        singleData.addMemoryData(MemoryCollectionData(2, 3, 4))
+        singleData.addMemoryData(MemoryCollectionData(3, 4, mock()))
         performanceCollectionData.add(singleData)
 
         profiler.start()

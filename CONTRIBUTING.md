@@ -27,6 +27,36 @@ To run the build and tests:
 make compile
 ```
 
+# Format
+
+To format the changed code and make CI happy you can run:
+
+```shell
+make format
+```
+
+or
+
+```shell
+./gradlew spotlessApply
+```
+
+# Binary compatibility validation
+
+To prevent breaking ABI changes and exposing things we should not, we make use of https://github.com/Kotlin/binary-compatibility-validator. If your change intended to introduce a new public method/property or modify the existing one you can overwrite the API declarations to make CI happy as follows (overwrites them from scratch):
+
+```shell
+make api
+```
+
+or 
+
+```shell
+./gradlew apiDump
+```
+
+However, if your change did not intend to modify the public API, consider changing the method/property visibility or removing the change altogether.
+
 # CI
 
 Build and tests are automatically run against branches and pull requests

@@ -1,6 +1,46 @@
+public final class io/sentry/opentelemetry/OpenTelemetryAttributesExtractor {
+	public fun <init> ()V
+	public fun extract (Lio/opentelemetry/sdk/trace/data/SpanData;Lio/sentry/IScope;Lio/sentry/SentryOptions;)V
+	public fun extractUrl (Lio/opentelemetry/api/common/Attributes;Lio/sentry/SentryOptions;)Ljava/lang/String;
+}
+
 public final class io/sentry/opentelemetry/OpenTelemetryLinkErrorEventProcessor : io/sentry/EventProcessor {
 	public fun <init> ()V
+	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+}
+
+public final class io/sentry/opentelemetry/OtelInternalSpanDetectionUtil {
+	public fun <init> ()V
+	public static fun isSentryRequest (Lio/sentry/IScopes;Lio/opentelemetry/api/trace/SpanKind;Lio/opentelemetry/api/common/Attributes;)Z
+}
+
+public final class io/sentry/opentelemetry/OtelSamplingUtil {
+	public fun <init> ()V
+	public static fun extractSamplingDecision (Lio/opentelemetry/api/common/Attributes;)Lio/sentry/TracesSamplingDecision;
+}
+
+public final class io/sentry/opentelemetry/OtelSentryPropagator : io/opentelemetry/context/propagation/TextMapPropagator {
+	public fun <init> ()V
+	public fun extract (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapGetter;)Lio/opentelemetry/context/Context;
+	public fun fields ()Ljava/util/Collection;
+	public fun inject (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapSetter;)V
+}
+
+public final class io/sentry/opentelemetry/OtelSentrySpanProcessor : io/opentelemetry/sdk/trace/SpanProcessor {
+	public fun <init> ()V
+	public fun isEndRequired ()Z
+	public fun isStartRequired ()Z
+	public fun onEnd (Lio/opentelemetry/sdk/trace/ReadableSpan;)V
+	public fun onStart (Lio/opentelemetry/context/Context;Lio/opentelemetry/sdk/trace/ReadWriteSpan;)V
+}
+
+public final class io/sentry/opentelemetry/OtelSpanContext : io/sentry/SpanContext {
+	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/sentry/TracesSamplingDecision;Lio/sentry/opentelemetry/IOtelSpanWrapper;Lio/sentry/SpanId;Lio/sentry/Baggage;)V
+	public fun getOperation ()Ljava/lang/String;
+	public fun getStatus ()Lio/sentry/SpanStatus;
+	public fun setOperation (Ljava/lang/String;)V
+	public fun setStatus (Lio/sentry/SpanStatus;)V
 }
 
 public final class io/sentry/opentelemetry/OtelSpanInfo {
@@ -10,10 +50,57 @@ public final class io/sentry/opentelemetry/OtelSpanInfo {
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 }
 
-public final class io/sentry/opentelemetry/SentryOtelKeys {
-	public static final field SENTRY_BAGGAGE_KEY Lio/opentelemetry/context/ContextKey;
-	public static final field SENTRY_TRACE_KEY Lio/opentelemetry/context/ContextKey;
-	public fun <init> ()V
+public final class io/sentry/opentelemetry/OtelSpanWrapper : io/sentry/opentelemetry/IOtelSpanWrapper {
+	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/sentry/IScopes;Lio/sentry/SentryDate;Lio/sentry/TracesSamplingDecision;Lio/sentry/opentelemetry/IOtelSpanWrapper;Lio/sentry/SpanId;Lio/sentry/Baggage;)V
+	public fun finish ()V
+	public fun finish (Lio/sentry/SpanStatus;)V
+	public fun finish (Lio/sentry/SpanStatus;Lio/sentry/SentryDate;)V
+	public fun getContexts ()Lio/sentry/protocol/Contexts;
+	public fun getData ()Ljava/util/Map;
+	public fun getData (Ljava/lang/String;)Ljava/lang/Object;
+	public fun getDescription ()Ljava/lang/String;
+	public fun getFinishDate ()Lio/sentry/SentryDate;
+	public fun getMeasurements ()Ljava/util/Map;
+	public fun getOpenTelemetrySpanAttributes ()Lio/opentelemetry/api/common/Attributes;
+	public fun getOperation ()Ljava/lang/String;
+	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
+	public fun getScopes ()Lio/sentry/IScopes;
+	public fun getSpanContext ()Lio/sentry/SpanContext;
+	public fun getStartDate ()Lio/sentry/SentryDate;
+	public fun getStatus ()Lio/sentry/SpanStatus;
+	public fun getTag (Ljava/lang/String;)Ljava/lang/String;
+	public fun getTags ()Ljava/util/Map;
+	public fun getThrowable ()Ljava/lang/Throwable;
+	public fun getTraceId ()Lio/sentry/protocol/SentryId;
+	public fun getTransactionName ()Ljava/lang/String;
+	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
+	public fun isFinished ()Z
+	public fun isNoOp ()Z
+	public fun isProfileSampled ()Ljava/lang/Boolean;
+	public fun isSampled ()Ljava/lang/Boolean;
+	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
+	public fun setContext (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun setDescription (Ljava/lang/String;)V
+	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;)V
+	public fun setMeasurement (Ljava/lang/String;Ljava/lang/Number;Lio/sentry/MeasurementUnit;)V
+	public fun setOperation (Ljava/lang/String;)V
+	public fun setStatus (Lio/sentry/SpanStatus;)V
+	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setThrowable (Ljava/lang/Throwable;)V
+	public fun setTransactionName (Ljava/lang/String;)V
+	public fun setTransactionName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
+	public fun startChild (Lio/sentry/SpanContext;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
+	public fun storeInContext (Lio/opentelemetry/context/Context;)Lio/opentelemetry/context/Context;
+	public fun toBaggageHeader (Ljava/util/List;)Lio/sentry/BaggageHeader;
+	public fun toSentryTrace ()Lio/sentry/SentryTraceHeader;
+	public fun traceContext ()Lio/sentry/TraceContext;
+	public fun updateEndDate (Lio/sentry/SentryDate;)Z
 }
 
 public final class io/sentry/opentelemetry/SentryPropagator : io/opentelemetry/context/propagation/TextMapPropagator {
@@ -21,6 +108,29 @@ public final class io/sentry/opentelemetry/SentryPropagator : io/opentelemetry/c
 	public fun extract (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapGetter;)Lio/opentelemetry/context/Context;
 	public fun fields ()Ljava/util/Collection;
 	public fun inject (Lio/opentelemetry/context/Context;Ljava/lang/Object;Lio/opentelemetry/context/propagation/TextMapSetter;)V
+}
+
+public final class io/sentry/opentelemetry/SentrySampler : io/opentelemetry/sdk/trace/samplers/Sampler {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IScopes;)V
+	public fun getDescription ()Ljava/lang/String;
+	public fun shouldSample (Lio/opentelemetry/context/Context;Ljava/lang/String;Ljava/lang/String;Lio/opentelemetry/api/trace/SpanKind;Lio/opentelemetry/api/common/Attributes;Ljava/util/List;)Lio/opentelemetry/sdk/trace/samplers/SamplingResult;
+}
+
+public final class io/sentry/opentelemetry/SentrySamplingResult : io/opentelemetry/sdk/trace/samplers/SamplingResult {
+	public fun <init> (Lio/sentry/TracesSamplingDecision;)V
+	public fun getAttributes ()Lio/opentelemetry/api/common/Attributes;
+	public fun getDecision ()Lio/opentelemetry/sdk/trace/samplers/SamplingDecision;
+	public fun getSentryDecision ()Lio/sentry/TracesSamplingDecision;
+}
+
+public final class io/sentry/opentelemetry/SentrySpanExporter : io/opentelemetry/sdk/trace/export/SpanExporter {
+	public static final field TRACE_ORIGIN Ljava/lang/String;
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IScopes;)V
+	public fun export (Ljava/util/Collection;)Lio/opentelemetry/sdk/common/CompletableResultCode;
+	public fun flush ()Lio/opentelemetry/sdk/common/CompletableResultCode;
+	public fun shutdown ()Lio/opentelemetry/sdk/common/CompletableResultCode;
 }
 
 public final class io/sentry/opentelemetry/SentrySpanProcessor : io/opentelemetry/sdk/trace/SpanProcessor {
@@ -33,7 +143,19 @@ public final class io/sentry/opentelemetry/SentrySpanProcessor : io/opentelemetr
 
 public final class io/sentry/opentelemetry/SpanDescriptionExtractor {
 	public fun <init> ()V
-	public fun extractSpanDescription (Lio/opentelemetry/sdk/trace/ReadableSpan;)Lio/sentry/opentelemetry/OtelSpanInfo;
+	public fun extractSpanInfo (Lio/opentelemetry/sdk/trace/data/SpanData;Lio/sentry/opentelemetry/IOtelSpanWrapper;)Lio/sentry/opentelemetry/OtelSpanInfo;
+}
+
+public final class io/sentry/opentelemetry/SpanNode {
+	public fun <init> (Ljava/lang/String;)V
+	public fun addChild (Lio/sentry/opentelemetry/SpanNode;)V
+	public fun addChildren (Ljava/util/List;)V
+	public fun getChildren ()Ljava/util/List;
+	public fun getId ()Ljava/lang/String;
+	public fun getParentNode ()Lio/sentry/opentelemetry/SpanNode;
+	public fun getSpan ()Lio/opentelemetry/sdk/trace/data/SpanData;
+	public fun setParentNode (Lio/sentry/opentelemetry/SpanNode;)V
+	public fun setSpan (Lio/opentelemetry/sdk/trace/data/SpanData;)V
 }
 
 public final class io/sentry/opentelemetry/TraceData {

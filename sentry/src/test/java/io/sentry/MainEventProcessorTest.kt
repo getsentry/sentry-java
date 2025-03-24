@@ -27,13 +27,13 @@ import kotlin.test.assertTrue
 
 class MainEventProcessorTest {
     class Fixture {
-        private val sentryOptions: SentryOptions = SentryOptions().apply {
+        val sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
             release = "release"
             dist = "dist"
             sdkVersion = SdkVersion("test", "1.2.3")
         }
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         val getLocalhost = mock<InetAddress>()
         lateinit var sentryTracer: SentryTracer
         private val hostnameCacheMock = Mockito.mockStatic(HostnameCache::class.java)
@@ -72,8 +72,8 @@ class MainEventProcessorTest {
                 }
                 host
             }
-            whenever(hub.options).thenReturn(sentryOptions)
-            sentryTracer = SentryTracer(TransactionContext("", ""), hub)
+            whenever(scopes.options).thenReturn(sentryOptions)
+            sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
 
             val hostnameCache = HostnameCache(hostnameCacheDuration) { getLocalhost }
             hostnameCacheMock.`when`<Any> { HostnameCache.getInstance() }.thenReturn(hostnameCache)
@@ -303,6 +303,16 @@ class MainEventProcessorTest {
         sut.process(event, Hint())
         assertNotNull(event.user) {
             assertEquals("{{auto}}", it.ipAddress)
+        }
+    }
+
+    @Test
+    fun `when event does not have ip address set, do not enrich ip address if sendDefaultPii is false`() {
+        val sut = fixture.getSut(sendDefaultPii = false)
+        val event = SentryEvent()
+        sut.process(event, Hint())
+        assertNotNull(event.user) {
+            assertNull(it.ipAddress)
         }
     }
 
@@ -601,6 +611,34 @@ class MainEventProcessorTest {
                 assertEquals("proguard", images[0].type)
             }
         }
+    }
+
+    @Test
+    fun `enriches ReplayEvent`() {
+        val sut = fixture.getSut(tags = mapOf("tag1" to "value1"))
+
+        var replayEvent = SentryReplayEvent()
+        replayEvent = sut.process(replayEvent, Hint())
+
+        assertEquals("release", replayEvent.release)
+        assertEquals("environment", replayEvent.environment)
+        assertEquals("dist", replayEvent.dist)
+        assertEquals("1.2.3", replayEvent.sdk!!.version)
+        assertEquals("test", replayEvent.sdk!!.name)
+        assertEquals("java", replayEvent.platform)
+        assertEquals("value1", replayEvent.tags!!["tag1"])
+    }
+
+    @Test
+    fun `uses SdkVersion from replay options for replay events`() {
+        val sut = fixture.getSut(tags = mapOf("tag1" to "value1"))
+
+        fixture.sentryOptions.sessionReplay.sdkVersion = SdkVersion("dart", "3.2.1")
+        var replayEvent = SentryReplayEvent()
+        replayEvent = sut.process(replayEvent, Hint())
+
+        assertEquals("3.2.1", replayEvent.sdk!!.version)
+        assertEquals("dart", replayEvent.sdk!!.name)
     }
 
     private fun generateCrashedEvent(crashedThread: Thread = Thread.currentThread()) =

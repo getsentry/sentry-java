@@ -39,7 +39,7 @@ public final class MonitorContexts extends ConcurrentHashMap<String, Object>
     return toContextType(SpanContext.TYPE, SpanContext.class);
   }
 
-  public void setTrace(final @Nullable SpanContext traceContext) {
+  public void setTrace(final @NotNull SpanContext traceContext) {
     Objects.requireNonNull(traceContext, "traceContext is required");
     this.put(SpanContext.TYPE, traceContext);
   }
@@ -66,7 +66,7 @@ public final class MonitorContexts extends ConcurrentHashMap<String, Object>
 
     @Override
     public @NotNull MonitorContexts deserialize(
-        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
+        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
       final MonitorContexts contexts = new MonitorContexts();
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {

@@ -1,7 +1,9 @@
 package io.sentry;
 
+import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.Request;
+import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import java.util.Collection;
 import java.util.List;
@@ -45,6 +47,9 @@ public interface IScope {
   @Nullable
   ISpan getSpan();
 
+  @ApiStatus.Internal
+  void setActiveSpan(@Nullable ISpan span);
+
   /**
    * Sets the current active transaction
    *
@@ -83,6 +88,23 @@ public interface IScope {
    */
   @ApiStatus.Internal
   void setScreen(final @Nullable String screen);
+
+  /**
+   * Returns the Scope's current replay_id, previously set by {@link IScope#setReplayId(SentryId)}
+   *
+   * @return the id of the current session replay
+   */
+  @ApiStatus.Internal
+  @NotNull
+  SentryId getReplayId();
+
+  /**
+   * Sets the Scope's current replay_id
+   *
+   * @param replayId the id of the current session replay
+   */
+  @ApiStatus.Internal
+  void setReplayId(final @NotNull SentryId replayId);
 
   /**
    * Returns the Scope's request
@@ -174,14 +196,14 @@ public interface IScope {
    * @param key the key
    * @param value the value
    */
-  void setTag(final @NotNull String key, final @NotNull String value);
+  void setTag(final @Nullable String key, final @Nullable String value);
 
   /**
    * Removes a tag from the Scope's tags
    *
    * @param key the key
    */
-  void removeTag(final @NotNull String key);
+  void removeTag(final @Nullable String key);
 
   /**
    * Returns the Scope's extra map
@@ -198,14 +220,14 @@ public interface IScope {
    * @param key the key
    * @param value the value
    */
-  void setExtra(final @NotNull String key, final @NotNull String value);
+  void setExtra(final @Nullable String key, final @Nullable String value);
 
   /**
    * Removes an extra from the Scope's extras
    *
    * @param key the key
    */
-  void removeExtra(final @NotNull String key);
+  void removeExtra(final @Nullable String key);
 
   /**
    * Returns the Scope's contexts
@@ -221,7 +243,7 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull Object value);
+  void setContexts(final @Nullable String key, final @Nullable Object value);
 
   /**
    * Sets the Scope's contexts
@@ -229,7 +251,7 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull Boolean value);
+  void setContexts(final @Nullable String key, final @Nullable Boolean value);
 
   /**
    * Sets the Scope's contexts
@@ -237,7 +259,7 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull String value);
+  void setContexts(final @Nullable String key, final @Nullable String value);
 
   /**
    * Sets the Scope's contexts
@@ -245,7 +267,7 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull Number value);
+  void setContexts(final @Nullable String key, final @Nullable Number value);
 
   /**
    * Sets the Scope's contexts
@@ -253,7 +275,7 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull Collection<?> value);
+  void setContexts(final @Nullable String key, final @Nullable Collection<?> value);
 
   /**
    * Sets the Scope's contexts
@@ -261,7 +283,7 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull Object[] value);
+  void setContexts(final @Nullable String key, final @Nullable Object[] value);
 
   /**
    * Sets the Scope's contexts
@@ -269,14 +291,14 @@ public interface IScope {
    * @param key the context key
    * @param value the context value
    */
-  void setContexts(final @NotNull String key, final @NotNull Character value);
+  void setContexts(final @Nullable String key, final @Nullable Character value);
 
   /**
    * Removes a value from the Scope's contexts
    *
    * @param key the Key
    */
-  void removeContexts(final @NotNull String key);
+  void removeContexts(final @Nullable String key);
 
   /**
    * Returns the Scopes's attachments
@@ -302,8 +324,13 @@ public interface IScope {
    *
    * @return the event processors list
    */
+  @ApiStatus.Internal
   @NotNull
   List<EventProcessor> getEventProcessors();
+
+  @ApiStatus.Internal
+  @NotNull
+  List<EventProcessorAndOrder> getEventProcessorsWithOrder();
 
   /**
    * Adds an event processor to the Scope's event processors list
@@ -373,4 +400,26 @@ public interface IScope {
    */
   @NotNull
   IScope clone();
+
+  void setLastEventId(final @NotNull SentryId lastEventId);
+
+  @NotNull
+  SentryId getLastEventId();
+
+  void bindClient(final @NotNull ISentryClient client);
+
+  @NotNull
+  ISentryClient getClient();
+
+  @ApiStatus.Internal
+  void assignTraceContext(final @NotNull SentryEvent event);
+
+  @ApiStatus.Internal
+  void setSpanContext(
+      final @NotNull Throwable throwable,
+      final @NotNull ISpan span,
+      final @NotNull String transactionName);
+
+  @ApiStatus.Internal
+  void replaceOptions(final @NotNull SentryOptions options);
 }

@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -144,7 +143,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
 
     // Transaction info
     this.transactions = transactions;
-    this.transactionName = transactionName;
+    this.transactionName = transactionName.isEmpty() ? "unknown" : transactionName;
     this.durationNs = durationNanos;
 
     // App info
@@ -154,7 +153,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     // Stacktrace context
     this.transactionId = transactionId;
     this.traceId = traceId;
-    this.profileId = UUID.randomUUID().toString();
+    this.profileId = SentryUUID.generateSentryId();
     this.environment = environment != null ? environment : DEFAULT_ENVIRONMENT;
     this.truncationReason = truncationReason;
     if (!isTruncationReasonValid()) {
@@ -463,7 +462,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     @SuppressWarnings("unchecked")
     @Override
     public @NotNull ProfilingTraceData deserialize(
-        final @NotNull JsonObjectReader reader, final @NotNull ILogger logger) throws Exception {
+        final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       ProfilingTraceData data = new ProfilingTraceData();
       Map<String, Object> unknown = null;

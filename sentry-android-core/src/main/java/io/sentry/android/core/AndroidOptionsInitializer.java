@@ -6,32 +6,46 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
-import io.sentry.DefaultTransactionPerformanceCollector;
+import io.sentry.DefaultCompositePerformanceCollector;
+import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
+import io.sentry.NoOpCompositePerformanceCollector;
 import io.sentry.NoOpConnectionStatusProvider;
+import io.sentry.NoOpContinuousProfiler;
+import io.sentry.NoOpTransactionProfiler;
+import io.sentry.ScopeType;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOpenTelemetryMode;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
-import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
+import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
+import io.sentry.android.replay.DefaultReplayBreadcrumbConverter;
+import io.sentry.android.replay.ReplayIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.compose.gestures.ComposeGestureTargetLocator;
 import io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter;
+import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.gestures.GestureTargetLocator;
+import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
+import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.NoOpEnvelopeCache;
+import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
+import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,10 +101,7 @@ final class AndroidOptionsInitializer {
       final @NotNull BuildInfoProvider buildInfoProvider) {
     Objects.requireNonNull(context, "The context is required.");
 
-    // it returns null if ContextImpl, so let's check for nullability
-    if (context.getApplicationContext() != null) {
-      context = context.getApplicationContext();
-    }
+    context = ContextUtils.getApplicationContext(context);
 
     Objects.requireNonNull(options, "The options object is required.");
     Objects.requireNonNull(logger, "The ILogger object is required.");
@@ -98,6 +109,8 @@ final class AndroidOptionsInitializer {
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
 
+    options.setDefaultScopeType(ScopeType.CURRENT);
+    options.setOpenTelemetryMode(SentryOpenTelemetryMode.OFF);
     options.setDateProvider(new SentryAndroidDateProvider());
 
     // set a lower flush timeout on Android to avoid ANRs
@@ -116,7 +129,7 @@ final class AndroidOptionsInitializer {
   static void initializeIntegrationsAndProcessors(
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
-      final @NotNull LoadClass loadClass,
+      final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
     initializeIntegrationsAndProcessors(
         options,
@@ -130,7 +143,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull LoadClass loadClass,
+      final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker) {
 
     if (options.getCacheDirPath() != null
@@ -143,6 +156,11 @@ final class AndroidOptionsInitializer {
           new AndroidConnectionStatusProvider(context, options.getLogger(), buildInfoProvider));
     }
 
+    if (options.getCacheDirPath() != null) {
+      options.addScopeObserver(new PersistingScopeObserver(options));
+      options.addOptionsObserver(new PersistingOptionsObserver(options));
+    }
+
     options.addEventProcessor(new DeduplicateMultithreadedEventProcessor(options));
     options.addEventProcessor(
         new DefaultAndroidEventProcessor(context, buildInfoProvider, options));
@@ -150,30 +168,36 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
     options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
-    options.setTransportGate(new AndroidTransportGate(options));
+    if (options.getTransportGate() instanceof NoOpTransportGate) {
+      options.setTransportGate(new AndroidTransportGate(options));
+    }
 
     // Check if the profiler was already instantiated in the app start.
     // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
     // state of the profiler, and it's only possible retaining the instance.
-    synchronized (AppStartMetrics.getInstance()) {
-      final @Nullable ITransactionProfiler appStartProfiler =
-          AppStartMetrics.getInstance().getAppStartProfiler();
-      if (appStartProfiler != null) {
-        options.setTransactionProfiler(appStartProfiler);
-        AppStartMetrics.getInstance().setAppStartProfiler(null);
-      } else {
-        options.setTransactionProfiler(
-            new AndroidTransactionProfiler(
-                context,
-                options,
-                buildInfoProvider,
-                Objects.requireNonNull(
-                    options.getFrameMetricsCollector(),
-                    "options.getFrameMetricsCollector is required")));
-      }
+    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    final @Nullable ITransactionProfiler appStartTransactionProfiler;
+    final @Nullable IContinuousProfiler appStartContinuousProfiler;
+    try (final @NotNull ISentryLifecycleToken ignored = AppStartMetrics.staticLock.acquire()) {
+      appStartTransactionProfiler = appStartMetrics.getAppStartProfiler();
+      appStartContinuousProfiler = appStartMetrics.getAppStartContinuousProfiler();
+      appStartMetrics.setAppStartProfiler(null);
+      appStartMetrics.setAppStartContinuousProfiler(null);
     }
-    options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
-    options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
+
+    setupProfiler(
+        options,
+        context,
+        buildInfoProvider,
+        appStartTransactionProfiler,
+        appStartContinuousProfiler);
+
+    if (options.getModulesLoader() instanceof NoOpModulesLoader) {
+      options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
+    }
+    if (options.getDebugMetaLoader() instanceof NoOpDebugMetaLoader) {
+      options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
+    }
 
     final boolean isAndroidXScrollViewAvailable =
         loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
@@ -205,11 +229,12 @@ final class AndroidOptionsInitializer {
       options.setViewHierarchyExporters(viewHierarchyExporters);
     }
 
-    options.setMainThreadChecker(AndroidMainThreadChecker.getInstance());
+    if (options.getThreadChecker() instanceof NoOpThreadChecker) {
+      options.setThreadChecker(AndroidThreadChecker.getInstance());
+    }
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
-      options.addPerformanceCollector(
-          new AndroidCpuCollector(options.getLogger(), buildInfoProvider));
+      options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
 
       if (options.isEnablePerformanceV2()) {
         options.addPerformanceCollector(
@@ -220,13 +245,58 @@ final class AndroidOptionsInitializer {
                     "options.getFrameMetricsCollector is required")));
       }
     }
-    options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
+    if (options.getCompositePerformanceCollector() instanceof NoOpCompositePerformanceCollector) {
+      options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
+    }
+  }
 
-    if (options.getCacheDirPath() != null) {
-      if (options.isEnableScopePersistence()) {
-        options.addScopeObserver(new PersistingScopeObserver(options));
+  /** Setup the correct profiler (transaction or continuous) based on the options. */
+  private static void setupProfiler(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull Context context,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @Nullable ITransactionProfiler appStartTransactionProfiler,
+      final @Nullable IContinuousProfiler appStartContinuousProfiler) {
+    if (options.isProfilingEnabled() || options.getProfilesSampleRate() != null) {
+      options.setContinuousProfiler(NoOpContinuousProfiler.getInstance());
+      // This is a safeguard, but it should never happen, as the app start profiler should be the
+      // continuous one.
+      if (appStartContinuousProfiler != null) {
+        appStartContinuousProfiler.close();
       }
-      options.addOptionsObserver(new PersistingOptionsObserver(options));
+      if (appStartTransactionProfiler != null) {
+        options.setTransactionProfiler(appStartTransactionProfiler);
+      } else {
+        options.setTransactionProfiler(
+            new AndroidTransactionProfiler(
+                context,
+                options,
+                buildInfoProvider,
+                Objects.requireNonNull(
+                    options.getFrameMetricsCollector(),
+                    "options.getFrameMetricsCollector is required")));
+      }
+    } else {
+      options.setTransactionProfiler(NoOpTransactionProfiler.getInstance());
+      // This is a safeguard, but it should never happen, as the app start profiler should be the
+      // transaction one.
+      if (appStartTransactionProfiler != null) {
+        appStartTransactionProfiler.close();
+      }
+      if (appStartContinuousProfiler != null) {
+        options.setContinuousProfiler(appStartContinuousProfiler);
+      } else {
+        options.setContinuousProfiler(
+            new AndroidContinuousProfiler(
+                buildInfoProvider,
+                Objects.requireNonNull(
+                    options.getFrameMetricsCollector(),
+                    "options.getFrameMetricsCollector is required"),
+                options.getLogger(),
+                options.getProfilingTracesDirPath(),
+                options.getProfilingTracesHz(),
+                options.getExecutorService()));
+      }
     }
   }
 
@@ -234,10 +304,11 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull LoadClass loadClass,
+      final @NotNull io.sentry.util.LoadClass loadClass,
       final @NotNull ActivityFramesTracker activityFramesTracker,
       final boolean isFragmentAvailable,
-      final boolean isTimberAvailable) {
+      final boolean isTimberAvailable,
+      final boolean isReplayAvailable) {
 
     // Integration MUST NOT cache option values in ctor, as they will be configured later by the
     // user
@@ -272,6 +343,8 @@ final class AndroidOptionsInitializer {
     // AppLifecycleIntegration has to be installed before AnrIntegration, because AnrIntegration
     // relies on AppState set by it
     options.addIntegration(new AppLifecycleIntegration());
+    // AnrIntegration must be installed before ReplayIntegration, as ReplayIntegration relies on
+    // it to set the replayId in case of an ANR
     options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
@@ -300,8 +373,13 @@ final class AndroidOptionsInitializer {
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
     options.addIntegration(
         new NetworkBreadcrumbsIntegration(context, buildInfoProvider, options.getLogger()));
-    options.addIntegration(new TempSensorBreadcrumbsIntegration(context));
-    options.addIntegration(new PhoneStateBreadcrumbsIntegration(context));
+    if (isReplayAvailable) {
+      final ReplayIntegration replay =
+          new ReplayIntegration(context, CurrentDateProvider.getInstance());
+      replay.setBreadcrumbConverter(new DefaultReplayBreadcrumbConverter());
+      options.addIntegration(replay);
+      options.setReplayController(replay);
+    }
   }
 
   /**
@@ -314,8 +392,8 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    final PackageInfo packageInfo =
-        ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
+    final @Nullable PackageInfo packageInfo =
+        ContextUtils.getPackageInfo(context, buildInfoProvider);
     if (packageInfo != null) {
       // Sets App's release if not set by Manifest
       if (options.getRelease() == null) {

@@ -11,25 +11,29 @@ class GraphqlGreetingSystemTest {
     @Before
     fun setup() {
         testHelper = TestHelper("http://localhost:8080")
+        testHelper.reset()
     }
 
     @Test
     fun `greeting works`() {
-        testHelper.snapshotEnvelopeCount()
-
         val response = testHelper.graphqlClient.greet("world")
 
         testHelper.ensureNoErrors(response)
-        testHelper.ensureEnvelopeCountIncreased()
+        testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
+            testHelper.doesTransactionContainSpanWithDescription(transaction, "Query.greeting")
+        }
     }
 
     @Test
     fun `greeting error`() {
-        testHelper.snapshotEnvelopeCount()
-
         val response = testHelper.graphqlClient.greet("crash")
 
         testHelper.ensureErrorCount(response, 1)
-        testHelper.ensureEnvelopeCountIncreased()
+        testHelper.ensureErrorReceived { error ->
+            error.message?.message?.startsWith("Unresolved RuntimeException for executionId ") ?: false
+        }
+        testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
+            testHelper.doesTransactionContainSpanWithDescription(transaction, "Query.greeting")
+        }
     }
 }

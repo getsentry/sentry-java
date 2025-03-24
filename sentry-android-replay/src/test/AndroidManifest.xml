@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:tools="http://schemas.android.com/tools">
+
+  <uses-sdk
+    tools:overrideLibrary="androidx.compose.material3,
+    androidx.compose.material.icons,
+    coil.compose.singleton,
+    coil.compose.base,
+    com.google.accompanist.drawablepainter,
+    androidx.activity.compose,
+    androidx.compose.material.ripple,
+    androidx.compose.animation.core,
+    androidx.compose.foundation.layout,
+    androidx.compose.ui.test,
+    androidx.compose.ui.unit,
+    androidx.compose.ui.graphics,
+    androidx.compose.ui.geometry,
+    androidx.compose.ui.util,
+    androidx.compose.ui.text,
+    androidx.compose.ui.test.junit4,
+    coil.singleton,
+    coil.base,
+    androidx.compose.runtime.saveable"/>
+</manifest>

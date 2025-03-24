@@ -9,8 +9,8 @@ import android.content.Context;
 import io.sentry.Attachment;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
-import io.sentry.IHub;
 import io.sentry.ILogger;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -23,6 +23,8 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
+import io.sentry.protocol.DebugImage;
+import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
@@ -63,13 +65,13 @@ public class AnrV2Integration implements Integration, Closeable {
 
   AnrV2Integration(
       final @NotNull Context context, final @NotNull ICurrentDateProvider dateProvider) {
-    this.context = context;
+    this.context = ContextUtils.getApplicationContext(context);
     this.dateProvider = dateProvider;
   }
 
   @SuppressLint("NewApi") // we do the check in the AnrIntegrationFactory
   @Override
-  public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
+  public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -90,12 +92,12 @@ public class AnrV2Integration implements Integration, Closeable {
       try {
         options
             .getExecutorService()
-            .submit(new AnrProcessor(context, hub, this.options, dateProvider));
+            .submit(new AnrProcessor(context, scopes, this.options, dateProvider));
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start AnrProcessor.", e);
       }
       options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration installed.");
-      addIntegrationToSdkVersion(getClass());
+      addIntegrationToSdkVersion("AnrV2");
     }
   }
 
@@ -109,17 +111,17 @@ public class AnrV2Integration implements Integration, Closeable {
   static class AnrProcessor implements Runnable {
 
     private final @NotNull Context context;
-    private final @NotNull IHub hub;
+    private final @NotNull IScopes scopes;
     private final @NotNull SentryAndroidOptions options;
     private final long threshold;
 
     AnrProcessor(
         final @NotNull Context context,
-        final @NotNull IHub hub,
+        final @NotNull IScopes scopes,
         final @NotNull SentryAndroidOptions options,
         final @NotNull ICurrentDateProvider dateProvider) {
       this.context = context;
-      this.hub = hub;
+      this.scopes = scopes;
       this.options = options;
       this.threshold = dateProvider.getCurrentTimeMillis() - NINETY_DAYS_THRESHOLD;
     }
@@ -267,6 +269,11 @@ public class AnrV2Integration implements Integration, Closeable {
         event.setMessage(sentryMessage);
       } else if (result.type == ParseResult.Type.DUMP) {
         event.setThreads(result.threads);
+        if (result.debugImages != null) {
+          final DebugMeta debugMeta = new DebugMeta();
+          debugMeta.setImages(result.debugImages);
+          event.setDebugMeta(debugMeta);
+        }
       }
       event.setLevel(SentryLevel.FATAL);
       event.setTimestamp(DateUtils.getDateTime(anrTimestamp));
@@ -277,7 +284,7 @@ public class AnrV2Integration implements Integration, Closeable {
         }
       }
 
-      final @NotNull SentryId sentryId = hub.captureEvent(event, hint);
+      final @NotNull SentryId sentryId = scopes.captureEvent(event, hint);
       final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
       if (!isEventDropped) {
         // Block until the event is flushed to disk and the last_reported_anr marker is updated
@@ -311,12 +318,19 @@ public class AnrV2Integration implements Integration, Closeable {
         final Lines lines = Lines.readLines(reader);
 
         final ThreadDumpParser threadDumpParser = new ThreadDumpParser(options, isBackground);
-        final List<SentryThread> threads = threadDumpParser.parse(lines);
+        threadDumpParser.parse(lines);
+
+        final @NotNull List<SentryThread> threads = threadDumpParser.getThreads();
+        final @NotNull List<DebugImage> debugImages = threadDumpParser.getDebugImages();
+
         if (threads.isEmpty()) {
-          // if the list is empty this means our regex matching is garbage and this is still error
-          return new ParseResult(ParseResult.Type.ERROR, dump);
+          // if the list is empty this means the system failed to capture a proper thread dump of
+          // the android threads, and only contains kernel-level threads and statuses, those ANRs
+          // are not actionable and neither they are reported by Google Play Console, so we just
+          // fall back to not reporting them
+          return new ParseResult(ParseResult.Type.NO_DUMP);
         }
-        return new ParseResult(ParseResult.Type.DUMP, dump, threads);
+        return new ParseResult(ParseResult.Type.DUMP, dump, threads, debugImages);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
         return new ParseResult(ParseResult.Type.ERROR, dump);
@@ -400,24 +414,31 @@ public class AnrV2Integration implements Integration, Closeable {
     final Type type;
     final byte[] dump;
     final @Nullable List<SentryThread> threads;
+    final @Nullable List<DebugImage> debugImages;
 
     ParseResult(final @NotNull Type type) {
       this.type = type;
       this.dump = null;
       this.threads = null;
+      this.debugImages = null;
     }
 
     ParseResult(final @NotNull Type type, final byte[] dump) {
       this.type = type;
       this.dump = dump;
       this.threads = null;
+      this.debugImages = null;
     }
 
     ParseResult(
-        final @NotNull Type type, final byte[] dump, final @Nullable List<SentryThread> threads) {
+        final @NotNull Type type,
+        final byte[] dump,
+        final @Nullable List<SentryThread> threads,
+        final @Nullable List<DebugImage> debugImages) {
       this.type = type;
       this.dump = dump;
       this.threads = threads;
+      this.debugImages = debugImages;
     }
   }
 }

@@ -8,6 +8,7 @@ public class io/sentry/jul/SentryHandler : java/util/logging/Handler {
 	public static final field THREAD_ID Ljava/lang/String;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/SentryOptions;Z)V
 	public fun close ()V
 	public fun flush ()V
 	public fun getMinimumBreadcrumbLevel ()Ljava/util/logging/Level;

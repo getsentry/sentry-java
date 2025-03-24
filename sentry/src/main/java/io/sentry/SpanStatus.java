@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 public enum SpanStatus implements JsonSerializable {
   /** Not an error, returned on success. */
-  OK(200, 299),
+  OK(0, 399),
   /** The operation was cancelled, typically by the caller. */
   CANCELLED(499),
   /**
@@ -103,19 +103,34 @@ public enum SpanStatus implements JsonSerializable {
     return httpStatusCode >= minHttpStatusCode && httpStatusCode <= maxHttpStatusCode;
   }
 
+  public @NotNull String apiName() {
+    return name().toLowerCase(Locale.ROOT);
+  }
+
+  public static @Nullable SpanStatus fromApiNameSafely(final @Nullable String apiName) {
+    if (apiName == null) {
+      return null;
+    }
+    try {
+      return SpanStatus.valueOf(apiName.toUpperCase(Locale.ROOT));
+    } catch (IllegalArgumentException ex) {
+      return null;
+    }
+  }
+
   // JsonSerializable
 
   @Override
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
-    writer.value(name().toLowerCase(Locale.ROOT));
+    writer.value(apiName());
   }
 
   public static final class Deserializer implements JsonDeserializer<SpanStatus> {
 
     @Override
-    public @NotNull SpanStatus deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull SpanStatus deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       return SpanStatus.valueOf(reader.nextString().toUpperCase(Locale.ROOT));
     }
   }

@@ -10,11 +10,6 @@ plugins {
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
 }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
@@ -32,6 +27,8 @@ dependencies {
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.TestLibs.javaFaker)
+    testImplementation(Config.TestLibs.msgpack)
+    testImplementation(Config.TestLibs.okio)
     testImplementation(projects.sentryTestSupport)
 }
 

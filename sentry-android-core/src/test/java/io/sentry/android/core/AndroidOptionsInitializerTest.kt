@@ -6,19 +6,35 @@ import android.os.Build
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.DefaultTransactionPerformanceCollector
+import io.sentry.CompositePerformanceCollector
+import io.sentry.DefaultCompositePerformanceCollector
+import io.sentry.IConnectionStatusProvider
+import io.sentry.IContinuousProfiler
 import io.sentry.ILogger
+import io.sentry.ITransactionProfiler
 import io.sentry.MainEventProcessor
+import io.sentry.NoOpContinuousProfiler
+import io.sentry.NoOpTransactionProfiler
 import io.sentry.SentryOptions
 import io.sentry.android.core.cache.AndroidEnvelopeCache
+import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
 import io.sentry.android.core.internal.modules.AssetsModulesLoader
-import io.sentry.android.core.internal.util.AndroidMainThreadChecker
+import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider
+import io.sentry.android.core.internal.util.AndroidThreadChecker
+import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.android.fragment.FragmentLifecycleIntegration
+import io.sentry.android.replay.ReplayIntegration
 import io.sentry.android.timber.SentryTimberIntegration
+import io.sentry.cache.IEnvelopeCache
 import io.sentry.cache.PersistingOptionsObserver
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.compose.gestures.ComposeGestureTargetLocator
+import io.sentry.internal.debugmeta.IDebugMetaLoader
+import io.sentry.internal.modules.IModulesLoader
+import io.sentry.test.ImmediateExecutorService
+import io.sentry.transport.ITransportGate
+import io.sentry.util.thread.IThreadChecker
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -34,6 +50,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -54,6 +71,7 @@ class AndroidOptionsInitializerTest {
             configureContext: Context.() -> Unit = {},
             assets: AssetManager? = null
         ) {
+            sentryOptions.executorService = ImmediateExecutorService()
             mockContext = if (metadata != null) {
                 ContextUtilsTestHelper.mockMetaData(
                     mockContext = ContextUtilsTestHelper.createMockContext(hasAppContext),
@@ -83,6 +101,7 @@ class AndroidOptionsInitializerTest {
                 loadClass,
                 activityFramesTracker,
                 false,
+                false,
                 false
             )
 
@@ -96,10 +115,10 @@ class AndroidOptionsInitializerTest {
         }
 
         fun initSutWithClassLoader(
-            minApi: Int = Build.VERSION_CODES.KITKAT,
             classesToLoad: List<String> = emptyList(),
             isFragmentAvailable: Boolean = false,
-            isTimberAvailable: Boolean = false
+            isTimberAvailable: Boolean = false,
+            isReplayAvailable: Boolean = false
         ) {
             mockContext = ContextUtilsTestHelper.mockMetaData(
                 mockContext = ContextUtilsTestHelper.createMockContext(hasAppContext = true),
@@ -108,7 +127,7 @@ class AndroidOptionsInitializerTest {
                 }
             )
             sentryOptions.isDebug = true
-            val buildInfo = createBuildInfo(minApi)
+            val buildInfo = createBuildInfo()
             val loadClass = createClassMock(classesToLoad)
             val activityFramesTracker = ActivityFramesTracker(loadClass, sentryOptions)
 
@@ -126,7 +145,8 @@ class AndroidOptionsInitializerTest {
                 loadClass,
                 activityFramesTracker,
                 isFragmentAvailable,
-                isTimberAvailable
+                isTimberAvailable,
+                isReplayAvailable
             )
 
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
@@ -138,9 +158,9 @@ class AndroidOptionsInitializerTest {
             )
         }
 
-        private fun createBuildInfo(minApi: Int): BuildInfoProvider {
+        private fun createBuildInfo(): BuildInfoProvider {
             val buildInfo = mock<BuildInfoProvider>()
-            whenever(buildInfo.sdkInfoVersion).thenReturn(minApi)
+            whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
             return buildInfo
         }
 
@@ -160,6 +180,7 @@ class AndroidOptionsInitializerTest {
 
     @BeforeTest
     fun `set up`() {
+        ContextUtils.resetInstance()
         val appContext = ApplicationProvider.getApplicationContext<Context>()
         fixture = Fixture(appContext, appContext.cacheDir)
     }
@@ -341,11 +362,113 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `init should set Android transaction profiler`() {
+    fun `init should set Android continuous profiler`() {
         fixture.initSut()
 
         assertNotNull(fixture.sentryOptions.transactionProfiler)
+        assertEquals(fixture.sentryOptions.transactionProfiler, NoOpTransactionProfiler.getInstance())
+        assertTrue(fixture.sentryOptions.continuousProfiler is AndroidContinuousProfiler)
+    }
+
+    @Test
+    fun `init with profilesSampleRate should set Android transaction profiler`() {
+        fixture.initSut(configureOptions = {
+            profilesSampleRate = 1.0
+        })
+
+        assertNotNull(fixture.sentryOptions.transactionProfiler)
         assertTrue(fixture.sentryOptions.transactionProfiler is AndroidTransactionProfiler)
+        assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+    }
+
+    @Test
+    fun `init with profilesSampleRate 0 should set Android transaction profiler`() {
+        fixture.initSut(configureOptions = {
+            profilesSampleRate = 0.0
+        })
+
+        assertNotNull(fixture.sentryOptions.transactionProfiler)
+        assertTrue(fixture.sentryOptions.transactionProfiler is AndroidTransactionProfiler)
+        assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+    }
+
+    @Test
+    fun `init with profilesSampler should set Android transaction profiler`() {
+        fixture.initSut(configureOptions = {
+            profilesSampler = mock()
+        })
+
+        assertNotNull(fixture.sentryOptions.transactionProfiler)
+        assertTrue(fixture.sentryOptions.transactionProfiler is AndroidTransactionProfiler)
+        assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+    }
+
+    @Test
+    fun `init reuses transaction profiler of appStartMetrics, if exists`() {
+        val appStartProfiler = mock<ITransactionProfiler>()
+        AppStartMetrics.getInstance().appStartProfiler = appStartProfiler
+        fixture.initSut(configureOptions = {
+            profilesSampler = mock()
+        })
+
+        assertEquals(appStartProfiler, fixture.sentryOptions.transactionProfiler)
+        assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+
+        // AppStartMetrics should be cleared
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+    }
+
+    @Test
+    fun `init reuses continuous profiler of appStartMetrics, if exists`() {
+        val appStartContinuousProfiler = mock<IContinuousProfiler>()
+        AppStartMetrics.getInstance().appStartContinuousProfiler = appStartContinuousProfiler
+        fixture.initSut()
+
+        assertEquals(fixture.sentryOptions.transactionProfiler, NoOpTransactionProfiler.getInstance())
+        assertEquals(appStartContinuousProfiler, fixture.sentryOptions.continuousProfiler)
+
+        // AppStartMetrics should be cleared
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+    }
+
+    @Test
+    fun `init with transaction profiling closes continuous profiler of appStartMetrics`() {
+        val appStartContinuousProfiler = mock<IContinuousProfiler>()
+        AppStartMetrics.getInstance().appStartContinuousProfiler = appStartContinuousProfiler
+        fixture.initSut(configureOptions = {
+            profilesSampler = mock()
+        })
+
+        assertNotNull(fixture.sentryOptions.transactionProfiler)
+        assertNotEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+        assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+
+        // app start profiler is closed, because it will never be used
+        verify(appStartContinuousProfiler).close()
+
+        // AppStartMetrics should be cleared
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+    }
+
+    @Test
+    fun `init with continuous profiling closes transaction profiler of appStartMetrics`() {
+        val appStartProfiler = mock<ITransactionProfiler>()
+        AppStartMetrics.getInstance().appStartProfiler = appStartProfiler
+        fixture.initSut()
+
+        assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+        assertNotNull(fixture.sentryOptions.continuousProfiler)
+        assertNotEquals(NoOpContinuousProfiler.getInstance(), fixture.sentryOptions.continuousProfiler)
+
+        // app start profiler is closed, because it will never be used
+        verify(appStartProfiler).close()
+
+        // AppStartMetrics should be cleared
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
     }
 
     @Test
@@ -479,6 +602,31 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `ReplayIntegration added to the integration list if available on classpath`() {
+        fixture.initSutWithClassLoader(isReplayAvailable = true)
+
+        val actual =
+            fixture.sentryOptions.integrations.firstOrNull { it is ReplayIntegration }
+        assertNotNull(actual)
+    }
+
+    @Test
+    fun `ReplayIntegration set as ReplayController if available on classpath`() {
+        fixture.initSutWithClassLoader(isReplayAvailable = true)
+
+        assertTrue(fixture.sentryOptions.replayController is ReplayIntegration)
+    }
+
+    @Test
+    fun `ReplayIntegration won't be enabled, it throws class not found`() {
+        fixture.initSutWithClassLoader(isReplayAvailable = false)
+
+        val actual =
+            fixture.sentryOptions.integrations.firstOrNull { it is ReplayIntegration }
+        assertNull(actual)
+    }
+
+    @Test
     fun `AndroidEnvelopeCache is set to options`() {
         fixture.initSut()
 
@@ -495,11 +643,30 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be available`() {
+    fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be unavailable`() {
         fixture.initSut(
             hasAppContext = true,
             useRealContext = true,
             configureOptions = {
+                isEnableFramesTracking = true
+            }
+        )
+
+        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
+            .first { it is ActivityLifecycleIntegration }
+
+        assertFalse(
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+        )
+    }
+
+    @Test
+    fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be available if perfv2 is false`() {
+        fixture.initSut(
+            hasAppContext = true,
+            useRealContext = true,
+            configureOptions = {
+                isEnablePerformanceV2 = false
                 isEnableFramesTracking = true
             }
         )
@@ -527,12 +694,32 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `When Frames Tracking is initially disabled, but enabled via configureOptions it should be available`() {
+    fun `When Frames Tracking is initially disabled, but enabled via configureOptions it should be unavailable`() {
         fixture.sentryOptions.isEnableFramesTracking = false
         fixture.initSut(
             hasAppContext = true,
             useRealContext = true,
             configureOptions = {
+                isEnableFramesTracking = true
+            }
+        )
+
+        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
+            .first { it is ActivityLifecycleIntegration }
+
+        assertFalse(
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+        )
+    }
+
+    @Test
+    fun `When Frames Tracking is initially disabled, but enabled via configureOptions it should be available if perfv2 is false`() {
+        fixture.sentryOptions.isEnableFramesTracking = false
+        fixture.initSut(
+            hasAppContext = true,
+            useRealContext = true,
+            configureOptions = {
+                isEnablePerformanceV2 = false
                 isEnableFramesTracking = true
             }
         )
@@ -553,10 +740,10 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `AndroidMainThreadChecker is set to options`() {
+    fun `AndroidThreadChecker is set to options`() {
         fixture.initSut()
 
-        assertTrue { fixture.sentryOptions.mainThreadChecker is AndroidMainThreadChecker }
+        assertTrue { fixture.sentryOptions.threadChecker is AndroidThreadChecker }
     }
 
     @Test
@@ -596,10 +783,10 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `DefaultTransactionPerformanceCollector is set to options`() {
+    fun `DefaultCompositePerformanceCollector is set to options`() {
         fixture.initSut()
 
-        assertIs<DefaultTransactionPerformanceCollector>(fixture.sentryOptions.transactionPerformanceCollector)
+        assertIs<DefaultCompositePerformanceCollector>(fixture.sentryOptions.compositePerformanceCollector)
     }
 
     @Test
@@ -634,6 +821,7 @@ class AndroidOptionsInitializerTest {
             mock(),
             mock(),
             false,
+            false,
             false
         )
         verify(mockOptions, never()).outboxPath
@@ -655,9 +843,31 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `PersistingScopeObserver is not set to options, if scope persistence is disabled`() {
+    fun `PersistingScopeObserver is no-op, if scope persistence is disabled`() {
         fixture.initSut(configureOptions = { isEnableScopePersistence = false })
 
-        assertTrue { fixture.sentryOptions.scopeObservers.none { it is PersistingScopeObserver } }
+        fixture.sentryOptions.findPersistingScopeObserver()?.setTags(mapOf("key" to "value"))
+        assertFalse(File(AndroidOptionsInitializer.getCacheDir(fixture.context), PersistingScopeObserver.SCOPE_CACHE).exists())
+    }
+
+    @Test
+    fun `user options have precedence over defaults`() {
+        fixture.initSut(configureOptions = {
+            setTransportGate(mock<ITransportGate>())
+            setEnvelopeDiskCache(mock<IEnvelopeCache>())
+            connectionStatusProvider = mock<IConnectionStatusProvider>()
+            setModulesLoader(mock<IModulesLoader>())
+            setDebugMetaLoader(mock<IDebugMetaLoader>())
+            threadChecker = mock<IThreadChecker>()
+            compositePerformanceCollector = mock<CompositePerformanceCollector>()
+        })
+
+        assertFalse { fixture.sentryOptions.transportGate is AndroidTransportGate }
+        assertFalse { fixture.sentryOptions.envelopeDiskCache is AndroidEnvelopeCache }
+        assertFalse { fixture.sentryOptions.connectionStatusProvider is AndroidConnectionStatusProvider }
+        assertFalse { fixture.sentryOptions.modulesLoader is AssetsModulesLoader }
+        assertFalse { fixture.sentryOptions.debugMetaLoader is AssetsDebugMetaLoader }
+        assertFalse { fixture.sentryOptions.threadChecker is AndroidThreadChecker }
+        assertFalse { fixture.sentryOptions.compositePerformanceCollector is DefaultCompositePerformanceCollector }
     }
 }

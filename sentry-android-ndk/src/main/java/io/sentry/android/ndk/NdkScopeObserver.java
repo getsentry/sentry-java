@@ -2,9 +2,13 @@ package io.sentry.android.ndk;
 
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
+import io.sentry.IScope;
 import io.sentry.ScopeObserverAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.SpanContext;
+import io.sentry.ndk.INativeScope;
+import io.sentry.ndk.NativeScope;
 import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.Locale;
@@ -31,12 +35,18 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   @Override
   public void setUser(final @Nullable User user) {
     try {
-      if (user == null) {
-        // remove user if its null
-        nativeScope.removeUser();
-      } else {
-        nativeScope.setUser(user.getId(), user.getEmail(), user.getIpAddress(), user.getUsername());
-      }
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                if (user == null) {
+                  // remove user if its null
+                  nativeScope.removeUser();
+                } else {
+                  nativeScope.setUser(
+                      user.getId(), user.getEmail(), user.getIpAddress(), user.getUsername());
+                }
+              });
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setUser has an error.");
     }
@@ -45,24 +55,36 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   @Override
   public void addBreadcrumb(final @NotNull Breadcrumb crumb) {
     try {
-      String level = null;
-      if (crumb.getLevel() != null) {
-        level = crumb.getLevel().name().toLowerCase(Locale.ROOT);
-      }
-      final String timestamp = DateUtils.getTimestamp(crumb.getTimestamp());
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                String level = null;
+                if (crumb.getLevel() != null) {
+                  level = crumb.getLevel().name().toLowerCase(Locale.ROOT);
+                }
+                final String timestamp = DateUtils.getTimestamp(crumb.getTimestamp());
 
-      String data = null;
-      try {
-        final Map<String, Object> dataRef = crumb.getData();
-        if (!dataRef.isEmpty()) {
-          data = options.getSerializer().serialize(dataRef);
-        }
-      } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, e, "Breadcrumb data is not serializable.");
-      }
+                String data = null;
+                try {
+                  final Map<String, Object> dataRef = crumb.getData();
+                  if (!dataRef.isEmpty()) {
+                    data = options.getSerializer().serialize(dataRef);
+                  }
+                } catch (Throwable e) {
+                  options
+                      .getLogger()
+                      .log(SentryLevel.ERROR, e, "Breadcrumb data is not serializable.");
+                }
 
-      nativeScope.addBreadcrumb(
-          level, crumb.getMessage(), crumb.getCategory(), crumb.getType(), timestamp, data);
+                nativeScope.addBreadcrumb(
+                    level,
+                    crumb.getMessage(),
+                    crumb.getCategory(),
+                    crumb.getType(),
+                    timestamp,
+                    data);
+              });
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync addBreadcrumb has an error.");
     }
@@ -71,7 +93,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   @Override
   public void setTag(final @NotNull String key, final @NotNull String value) {
     try {
-      nativeScope.setTag(key, value);
+      options.getExecutorService().submit(() -> nativeScope.setTag(key, value));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTag(%s) has an error.", key);
     }
@@ -80,7 +102,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   @Override
   public void removeTag(final @NotNull String key) {
     try {
-      nativeScope.removeTag(key);
+      options.getExecutorService().submit(() -> nativeScope.removeTag(key));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync removeTag(%s) has an error.", key);
     }
@@ -89,7 +111,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   @Override
   public void setExtra(final @NotNull String key, final @NotNull String value) {
     try {
-      nativeScope.setExtra(key, value);
+      options.getExecutorService().submit(() -> nativeScope.setExtra(key, value));
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setExtra(%s) has an error.", key);
     }
@@ -98,11 +120,29 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   @Override
   public void removeExtra(final @NotNull String key) {
     try {
-      nativeScope.removeExtra(key);
+      options.getExecutorService().submit(() -> nativeScope.removeExtra(key));
     } catch (Throwable e) {
       options
           .getLogger()
           .log(SentryLevel.ERROR, e, "Scope sync removeExtra(%s) has an error.", key);
+    }
+  }
+
+  @Override
+  public void setTrace(@Nullable SpanContext spanContext, @NotNull IScope scope) {
+    if (spanContext == null) {
+      return;
+    }
+
+    try {
+      options
+          .getExecutorService()
+          .submit(
+              () ->
+                  nativeScope.setTrace(
+                      spanContext.getTraceId().toString(), spanContext.getSpanId().toString()));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTrace failed.");
     }
   }
 }

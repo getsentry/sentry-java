@@ -21,7 +21,7 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
 
   public MonitorConfig(final @NotNull MonitorSchedule schedule) {
     this.schedule = schedule;
-    final SentryOptions.Cron defaultCron = HubAdapter.getInstance().getOptions().getCron();
+    final SentryOptions.Cron defaultCron = ScopesAdapter.getInstance().getOptions().getCron();
     if (defaultCron != null) {
       this.checkinMargin = defaultCron.getDefaultCheckinMargin();
       this.maxRuntime = defaultCron.getDefaultMaxRuntime();
@@ -138,8 +138,8 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<MonitorConfig> {
     @Override
-    public @NotNull MonitorConfig deserialize(
-        @NotNull JsonObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull MonitorConfig deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       MonitorSchedule schedule = null;
       Long checkinMargin = null;
       Long maxRuntime = null;
