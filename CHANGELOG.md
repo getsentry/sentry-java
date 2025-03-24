@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Behavioral Changes
+
+- The Sentry SDK will now crash on startup if mixed versions have been detected ([#4277](https://github.com/getsentry/sentry-java/pull/4277))
+  - On `Sentry.init` / `SentryAndroid.init` the SDK now checks if all Sentry Java / Android SDK dependencies have the same version.
+  - While this may seem like a bad idea at first glance, mixing versions of dependencies has a very high chance of causing a crash later. We opted for a controlled crash that's hard to miss.
+  - Note: This detection only works for new versions of the SDK, so please take this as a reminder to check your SDK version alignment manually when upgrading the SDK to this version and then you should be good.
+  - The SDK will also print log messages if mixed versions have been detected at a later point. ([#4270](https://github.com/getsentry/sentry-java/pull/4270))
+    - This takes care of cases missed by the startup check above due to older versions.
+
 ### Features
 
 - Increase http timeouts from 5s to 30s to have a better chance of events being delivered without retry ([#4276](https://github.com/getsentry/sentry-java/pull/4276))
