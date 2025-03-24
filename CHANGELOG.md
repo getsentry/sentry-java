@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Session Replay: Change bitmap config to `ARGB_8888` for screenshots ([#4282](https://github.com/getsentry/sentry-java/pull/4282))
+
 ## 7.22.4
 
 ### Fixes
