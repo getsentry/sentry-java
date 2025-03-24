@@ -53,13 +53,13 @@ internal class ScreenshotRecorder(
         Bitmap.createBitmap(
             1,
             1,
-            Bitmap.Config.RGB_565
+            Bitmap.Config.ARGB_8888
         )
     }
     private val screenshot = Bitmap.createBitmap(
         config.recordingWidth,
         config.recordingHeight,
-        Bitmap.Config.RGB_565
+        Bitmap.Config.ARGB_8888
     )
     private val singlePixelBitmapCanvas: Canvas by lazy(NONE) { Canvas(singlePixelBitmap) }
     private val prescaledMatrix by lazy(NONE) {
@@ -217,7 +217,9 @@ internal class ScreenshotRecorder(
     fun close() {
         unbind(rootView?.get())
         rootView?.clear()
-        screenshot.recycle()
+        if (!screenshot.isRecycled) {
+            screenshot.recycle()
+        }
         isCapturing.set(false)
     }
 
