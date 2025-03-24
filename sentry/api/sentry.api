@@ -416,6 +416,11 @@ public final class io/sentry/DefaultSpanFactory : io/sentry/ISpanFactory {
 	public fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/CompositePerformanceCollector;)Lio/sentry/ITransaction;
 }
 
+public final class io/sentry/DefaultVersionDetector : io/sentry/IVersionDetector {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun checkForMixedVersions ()Z
+}
+
 public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ILogger;)V
 	public fun getLogger ()Lio/sentry/ILogger;
@@ -1101,6 +1106,10 @@ public abstract interface class io/sentry/ITransportFactory {
 	public abstract fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
 }
 
+public abstract interface class io/sentry/IVersionDetector {
+	public abstract fun checkForMixedVersions ()Z
+}
+
 public final class io/sentry/InitPriority : java/lang/Enum {
 	public static final field HIGH Lio/sentry/InitPriority;
 	public static final field HIGHEST Lio/sentry/InitPriority;
@@ -1248,6 +1257,11 @@ public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
+}
+
+public final class io/sentry/ManifestVersionDetector : io/sentry/IVersionDetector {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun checkForMixedVersions ()Z
 }
 
 public abstract interface class io/sentry/MeasurementUnit {
@@ -1800,6 +1814,11 @@ public final class io/sentry/NoOpTransactionProfiler : io/sentry/ITransactionPro
 public final class io/sentry/NoOpTransportFactory : io/sentry/ITransportFactory {
 	public fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
 	public static fun getInstance ()Lio/sentry/NoOpTransportFactory;
+}
+
+public final class io/sentry/NoopVersionDetector : io/sentry/IVersionDetector {
+	public fun checkForMixedVersions ()Z
+	public static fun getInstance ()Lio/sentry/NoopVersionDetector;
 }
 
 public abstract interface class io/sentry/ObjectReader : java/io/Closeable {
@@ -3100,6 +3119,7 @@ public class io/sentry/SentryOptions {
 	public fun getTransactionProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getTransportFactory ()Lio/sentry/ITransportFactory;
 	public fun getTransportGate ()Lio/sentry/transport/ITransportGate;
+	public fun getVersionDetector ()Lio/sentry/IVersionDetector;
 	public final fun getViewHierarchyExporters ()Ljava/util/List;
 	public fun isAttachServerName ()Z
 	public fun isAttachStacktrace ()Z
@@ -3234,6 +3254,7 @@ public class io/sentry/SentryOptions {
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
+	public fun setVersionDetector (Lio/sentry/IVersionDetector;)V
 	public fun setViewHierarchyExporters (Ljava/util/List;)V
 }
 
@@ -4408,6 +4429,20 @@ public final class io/sentry/instrumentation/file/SentryFileWriter : java/io/Out
 	public fun <init> (Ljava/io/FileDescriptor;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Z)V
+}
+
+public final class io/sentry/internal/ManifestVersionReader {
+	public static fun getInstance ()Lio/sentry/internal/ManifestVersionReader;
+	public fun readManifestFiles ()V
+	public fun readOpenTelemetryVersion ()Lio/sentry/internal/ManifestVersionReader$VersionInfoHolder;
+}
+
+public final class io/sentry/internal/ManifestVersionReader$VersionInfoHolder {
+	public fun <init> ()V
+	public fun getIntegrations ()Ljava/util/List;
+	public fun getPackages ()Ljava/util/List;
+	public fun getSdkName ()Ljava/lang/String;
+	public fun getSdkVersion ()Ljava/lang/String;
 }
 
 public abstract interface class io/sentry/internal/debugmeta/IDebugMetaLoader {
