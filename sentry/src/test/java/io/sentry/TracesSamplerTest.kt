@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.util.SentryRandom
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -16,6 +17,7 @@ class TracesSamplerTest {
         internal fun getSut(
             tracesSampleRate: Double? = null,
             profilesSampleRate: Double? = null,
+            profileSessionSampleRate: Double? = null,
             tracesSamplerCallback: SentryOptions.TracesSamplerCallback? = null,
             profilesSamplerCallback: SentryOptions.ProfilesSamplerCallback? = null,
             logger: ILogger? = null
@@ -26,6 +28,9 @@ class TracesSamplerTest {
             }
             if (profilesSampleRate != null) {
                 options.profilesSampleRate = profilesSampleRate
+            }
+            if (profileSessionSampleRate != null) {
+                options.experimental.profileSessionSampleRate = profileSessionSampleRate
             }
             if (tracesSamplerCallback != null) {
                 options.tracesSampler = tracesSamplerCallback
@@ -158,6 +163,28 @@ class TracesSamplerTest {
         assertFalse(samplingDecision.profileSampled)
         assertEquals(0.2, samplingDecision.profileSampleRate)
         assertEquals(0.9, samplingDecision.sampleRand)
+    }
+
+    @Test
+    fun `when profileSessionSampleRate is not set returns false`() {
+        val sampler = fixture.getSut()
+        val sampled = sampler.sampleSessionProfile(1.0)
+        assertFalse(sampled)
+    }
+
+    @Test
+    fun `when profileSessionSampleRate is set and random returns lower number returns true`() {
+        SentryRandom.current().nextDouble()
+        val sampler = fixture.getSut(profileSessionSampleRate = 0.2)
+        val sampled = sampler.sampleSessionProfile(0.1)
+        assertTrue(sampled)
+    }
+
+    @Test
+    fun `when profileSessionSampleRate is set and random returns greater number returns false`() {
+        val sampler = fixture.getSut(profileSessionSampleRate = 0.2)
+        val sampled = sampler.sampleSessionProfile(0.9)
+        assertFalse(sampled)
     }
 
     @Test

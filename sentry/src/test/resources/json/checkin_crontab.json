@@ -25,7 +25,12 @@
       "trace_id": "f382e3180c714217a81371f8c644aefe",
       "span_id": "85694b9f567145a6",
       "op": "default",
-      "origin": "manual"
+      "origin": "manual",
+      "data":
+      {
+        "thread.name": "test",
+        "thread.id": 10
+      }
     }
   }
 }

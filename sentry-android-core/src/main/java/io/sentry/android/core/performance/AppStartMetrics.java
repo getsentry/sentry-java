@@ -10,6 +10,7 @@ import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import io.sentry.IContinuousProfiler;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpLogger;
@@ -63,6 +64,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   private final @NotNull Map<ContentProvider, TimeSpan> contentProviderOnCreates;
   private final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycles;
   private @Nullable ITransactionProfiler appStartProfiler = null;
+  private @Nullable IContinuousProfiler appStartContinuousProfiler = null;
   private @Nullable TracesSamplingDecision appStartSamplingDecision = null;
   private boolean isCallbackRegistered = false;
   private boolean shouldSendStartMeasurements = true;
@@ -222,6 +224,10 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
       appStartProfiler.close();
     }
     appStartProfiler = null;
+    if (appStartContinuousProfiler != null) {
+      appStartContinuousProfiler.close();
+    }
+    appStartContinuousProfiler = null;
     appStartSamplingDecision = null;
     appLaunchedInForeground = false;
     isCallbackRegistered = false;
@@ -236,6 +242,15 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   public void setAppStartProfiler(final @Nullable ITransactionProfiler appStartProfiler) {
     this.appStartProfiler = appStartProfiler;
+  }
+
+  public @Nullable IContinuousProfiler getAppStartContinuousProfiler() {
+    return appStartContinuousProfiler;
+  }
+
+  public void setAppStartContinuousProfiler(
+      final @Nullable IContinuousProfiler appStartContinuousProfiler) {
+    this.appStartContinuousProfiler = appStartContinuousProfiler;
   }
 
   public void setAppStartSamplingDecision(
@@ -312,10 +327,14 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
               if (activeActivitiesCounter.get() == 0) {
                 appLaunchedInForeground = false;
 
-                // we stop the app start profiler, as it's useless and likely to timeout
+                // we stop the app start profilers, as they are useless and likely to timeout
                 if (appStartProfiler != null && appStartProfiler.isRunning()) {
                   appStartProfiler.close();
                   appStartProfiler = null;
+                }
+                if (appStartContinuousProfiler != null && appStartContinuousProfiler.isRunning()) {
+                  appStartContinuousProfiler.close();
+                  appStartContinuousProfiler = null;
                 }
               }
             });
