@@ -7,6 +7,7 @@ import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.ProfileContext;
 import io.sentry.SpanContext;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
@@ -55,6 +56,8 @@ public class Contexts implements JsonSerializable {
           this.setGpu(new Gpu((Gpu) value));
         } else if (SpanContext.TYPE.equals(entry.getKey()) && value instanceof SpanContext) {
           this.setTrace(new SpanContext((SpanContext) value));
+        } else if (ProfileContext.TYPE.equals(entry.getKey()) && value instanceof ProfileContext) {
+          this.setProfile(new ProfileContext((ProfileContext) value));
         } else if (Response.TYPE.equals(entry.getKey()) && value instanceof Response) {
           this.setResponse(new Response((Response) value));
         } else if (Spring.TYPE.equals(entry.getKey()) && value instanceof Spring) {
@@ -78,6 +81,15 @@ public class Contexts implements JsonSerializable {
   public void setTrace(final @NotNull SpanContext traceContext) {
     Objects.requireNonNull(traceContext, "traceContext is required");
     this.put(SpanContext.TYPE, traceContext);
+  }
+
+  public @Nullable ProfileContext getProfile() {
+    return toContextType(ProfileContext.TYPE, ProfileContext.class);
+  }
+
+  public void setProfile(final @Nullable ProfileContext profileContext) {
+    Objects.requireNonNull(profileContext, "profileContext is required");
+    this.put(ProfileContext.TYPE, profileContext);
   }
 
   public @Nullable App getApp() {
@@ -304,6 +316,9 @@ public class Contexts implements JsonSerializable {
             break;
           case SpanContext.TYPE:
             contexts.setTrace(new SpanContext.Deserializer().deserialize(reader, logger));
+            break;
+          case ProfileContext.TYPE:
+            contexts.setProfile(new ProfileContext.Deserializer().deserialize(reader, logger));
             break;
           case Response.TYPE:
             contexts.setResponse(new Response.Deserializer().deserialize(reader, logger));

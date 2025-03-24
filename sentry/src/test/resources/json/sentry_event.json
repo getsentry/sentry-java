@@ -265,7 +265,9 @@
             },
             "data":
             {
-              "spanContextDataKey": "spanContextDataValue"
+              "spanContextDataKey": "spanContextDataValue",
+              "thread.name": "test",
+              "thread.id": 10
             }
         }
     },
