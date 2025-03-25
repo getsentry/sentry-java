@@ -11,6 +11,7 @@ import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.EventProcessorUtils;
 import io.sentry.util.ExceptionUtils;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
 import java.lang.ref.WeakReference;
@@ -93,7 +94,7 @@ public final class Scope implements IScope {
   /** Scope's attachments */
   private @NotNull List<Attachment> attachments = new CopyOnWriteArrayList<>();
 
-  private @NotNull PropagationContext propagationContext;
+  private @NotNull LazyEvaluator<PropagationContext> propagationContext;
 
   /** Scope's session replay id */
   private @NotNull SentryId replayId = SentryId.EMPTY_ID;
@@ -111,7 +112,14 @@ public final class Scope implements IScope {
   public Scope(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.breadcrumbs = createBreadcrumbsList(this.options.getMaxBreadcrumbs());
-    this.propagationContext = new PropagationContext();
+    this.propagationContext =
+        new LazyEvaluator<>(
+            new LazyEvaluator.Evaluator<PropagationContext>() {
+              @Override
+              public @NotNull PropagationContext evaluate() {
+                return new PropagationContext();
+              }
+            });
     this.lastEventId = SentryId.EMPTY_ID;
   }
 
@@ -123,6 +131,15 @@ public final class Scope implements IScope {
     this.level = scope.level;
     this.client = scope.client;
     this.lastEventId = scope.getLastEventId();
+
+    this.propagationContext =
+        new LazyEvaluator<>(
+            new LazyEvaluator.Evaluator<PropagationContext>() {
+              @Override
+              public @NotNull PropagationContext evaluate() {
+                return new PropagationContext();
+              }
+            });
 
     final User userRef = scope.user;
     this.user = userRef != null ? new User(userRef) : null;
@@ -173,7 +190,7 @@ public final class Scope implements IScope {
 
     this.attachments = new CopyOnWriteArrayList<>(scope.attachments);
 
-    this.propagationContext = new PropagationContext(scope.propagationContext);
+    this.propagationContext.setValue(new PropagationContext(scope.propagationContext.getValue()));
   }
 
   /**
@@ -1065,7 +1082,7 @@ public final class Scope implements IScope {
   @ApiStatus.Internal
   @Override
   public void setPropagationContext(final @NotNull PropagationContext propagationContext) {
-    this.propagationContext = propagationContext;
+    this.propagationContext.setValue(propagationContext);
 
     final @NotNull SpanContext spanContext = propagationContext.toSpanContext();
     for (final IScopeObserver observer : options.getScopeObservers()) {
@@ -1076,7 +1093,7 @@ public final class Scope implements IScope {
   @ApiStatus.Internal
   @Override
   public @NotNull PropagationContext getPropagationContext() {
-    return propagationContext;
+    return propagationContext.getValue();
   }
 
   @ApiStatus.Internal
@@ -1084,8 +1101,9 @@ public final class Scope implements IScope {
   public @NotNull PropagationContext withPropagationContext(
       final @NotNull IWithPropagationContext callback) {
     try (final @NotNull ISentryLifecycleToken ignored = propagationContextLock.acquire()) {
-      callback.accept(propagationContext);
-      return new PropagationContext(propagationContext);
+      final @NotNull PropagationContext context = getPropagationContext();
+      callback.accept(context);
+      return new PropagationContext(context);
     }
   }
 
