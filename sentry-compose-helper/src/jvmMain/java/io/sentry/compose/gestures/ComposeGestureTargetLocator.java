@@ -76,7 +76,7 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
 
         final List<ModifierInfo> modifiers = node.getModifierInfo();
         for (ModifierInfo modifierInfo : modifiers) {
-          final @Nullable String tag = SentryComposeHelper.extractTag(modifierInfo.getModifier());
+          final @Nullable String tag = composeHelper.extractTag(modifierInfo.getModifier());
           if (tag != null) {
             lastKnownTag = tag;
           }

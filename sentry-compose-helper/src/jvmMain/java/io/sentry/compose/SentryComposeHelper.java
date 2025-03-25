@@ -1,5 +1,6 @@
 package io.sentry.compose;
 
+import androidx.annotation.NonNull;
 import androidx.compose.ui.Modifier;
 import androidx.compose.ui.geometry.Rect;
 import androidx.compose.ui.layout.LayoutCoordinatesKt;
@@ -15,27 +16,32 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@SuppressWarnings("KotlinInternalInJava")
 public class SentryComposeHelper {
 
   private final @NotNull ILogger logger;
-  private Field layoutDelegateField = null;
+  private final @Nullable Field layoutDelegateField;
+  private final @Nullable Field testTagElementField;
+  private final @Nullable Field sentryTagElementField;
 
   @Nullable
-  public static String extractTag(final @NotNull Modifier modifier) {
+  public String extractTag(final @NotNull Modifier modifier) {
     final @Nullable String type = modifier.getClass().getCanonicalName();
     // Newer Jetpack Compose uses TestTagElement as node elements
     // See
     // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/platform/TestTag.kt;l=34;drc=dcaa116fbfda77e64a319e1668056ce3b032469f
-    if ("androidx.compose.ui.platform.TestTagElement".equals(type)
-        || "io.sentry.compose.SentryModifier.SentryTagModifierNodeElement".equals(type)) {
-      try {
-        final Field tagField = modifier.getClass().getDeclaredField("tag");
-        tagField.setAccessible(true);
-        final @Nullable Object value = tagField.get(modifier);
+    try {
+      if ("androidx.compose.ui.platform.TestTagElement".equals(type)
+          && testTagElementField != null) {
+        final @Nullable Object value = testTagElementField.get(modifier);
         return (String) value;
-      } catch (Throwable e) {
-        // ignored
+      } else if ("io.sentry.compose.SentryModifier.SentryTagModifierNodeElement".equals(type)
+          && sentryTagElementField != null) {
+        final @Nullable Object value = sentryTagElementField.get(modifier);
+        return (String) value;
       }
+    } catch (Throwable e) {
+      // ignored
     }
 
     // Older versions use SemanticsModifier
@@ -56,13 +62,11 @@ public class SentryComposeHelper {
 
   public SentryComposeHelper(final @NotNull ILogger logger) {
     this.logger = logger;
-    try {
-      final Class<?> clazz = Class.forName("androidx.compose.ui.node.LayoutNode");
-      layoutDelegateField = clazz.getDeclaredField("layoutDelegate");
-      layoutDelegateField.setAccessible(true);
-    } catch (Exception e) {
-      logger.log(SentryLevel.WARNING, "Could not find LayoutNode.layoutDelegate field");
-    }
+    layoutDelegateField =
+        loadField(logger, "androidx.compose.ui.node.LayoutNode", "layoutDelegate");
+    testTagElementField = loadField(logger, "androidx.compose.ui.platform.TestTagElement", "tag");
+    sentryTagElementField =
+        loadField(logger, "io.sentry.compose.SentryModifier.SentryTagModifierNodeElement", "tag");
   }
 
   public @Nullable Rect getLayoutNodeBoundsInWindow(@NotNull final LayoutNode node) {
@@ -74,6 +78,20 @@ public class SentryComposeHelper {
       } catch (Exception e) {
         logger.log(SentryLevel.WARNING, "Could not fetch position for LayoutNode", e);
       }
+    }
+    return null;
+  }
+
+  @Nullable
+  private static Field loadField(
+      @NonNull ILogger logger, final @NotNull String className, final @NotNull String fieldName) {
+    try {
+      final Class<?> clazz = Class.forName(className);
+      final @Nullable Field field = clazz.getDeclaredField(fieldName);
+      field.setAccessible(true);
+      return field;
+    } catch (Exception e) {
+      logger.log(SentryLevel.WARNING, "Could not load " + className + "." + fieldName + " field");
     }
     return null;
   }

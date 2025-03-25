@@ -55,7 +55,7 @@ public final class ComposeViewHierarchyExporter implements ViewHierarchyExporter
       @NotNull final LayoutNode node) {
     if (node.isPlaced()) {
       final ViewHierarchyNode vhNode = new ViewHierarchyNode();
-      setTag(node, vhNode);
+      setTag(composeHelper, node, vhNode);
       setBounds(composeHelper, node, parentNode, vhNode);
 
       if (vhNode.getTag() != null) {
@@ -79,11 +79,13 @@ public final class ComposeViewHierarchyExporter implements ViewHierarchyExporter
   }
 
   private static void setTag(
-      final @NotNull LayoutNode node, final @NotNull ViewHierarchyNode vhNode) {
+      final @NotNull SentryComposeHelper helper,
+      final @NotNull LayoutNode node,
+      final @NotNull ViewHierarchyNode vhNode) {
     // needs to be in-sync with ComposeGestureTargetLocator
     final List<ModifierInfo> modifiers = node.getModifierInfo();
     for (ModifierInfo modifierInfo : modifiers) {
-      final @Nullable String tag = SentryComposeHelper.extractTag(modifierInfo.getModifier());
+      final @Nullable String tag = helper.extractTag(modifierInfo.getModifier());
       if (tag != null) {
         vhNode.setTag(tag);
       }
