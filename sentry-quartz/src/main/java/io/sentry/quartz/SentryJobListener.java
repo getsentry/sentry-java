@@ -41,8 +41,6 @@ public final class SentryJobListener implements JobListener {
   public SentryJobListener(final @NotNull IScopes scopes) {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     SentryIntegrationPackageStorage.getInstance().addIntegration("Quartz");
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-quartz", BuildConfig.VERSION_NAME);
   }
 
   @Override

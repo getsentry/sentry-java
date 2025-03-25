@@ -158,8 +158,6 @@ public class ReplayIntegration(
         }
 
         addIntegrationToSdkVersion("Replay")
-        SentryIntegrationPackageStorage.getInstance()
-            .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
 
         finalizePreviousReplay()
     }

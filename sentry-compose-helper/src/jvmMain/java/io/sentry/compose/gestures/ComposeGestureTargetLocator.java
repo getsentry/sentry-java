@@ -41,8 +41,6 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
   public ComposeGestureTargetLocator(final @NotNull ILogger logger) {
     this.logger = logger;
     SentryIntegrationPackageStorage.getInstance().addIntegration("ComposeUserInteraction");
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME);
   }
 
   @Override
