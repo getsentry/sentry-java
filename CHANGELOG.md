@@ -2,9 +2,14 @@
 
 ## Unreleased
 
+### Features
+
+- Increase http timeouts from 5s to 30s to have a better chance of events being delivered without retry ([#4276](https://github.com/getsentry/sentry-java/pull/4276))
+
 ### Fixes
 
 - Do not override user-defined `SentryOptions` ([#4262](https://github.com/getsentry/sentry-java/pull/4262))
+- Session Replay: Change bitmap config to `ARGB_8888` for screenshots ([#4282](https://github.com/getsentry/sentry-java/pull/4282))
 - Fix tags missing for compose view hierarchies ([#4275](https://github.com/getsentry/sentry-java/pull/4275))
 
 ### Dependencies
@@ -12,6 +17,7 @@
 - Bump Native SDK from v0.8.1 to v0.8.2 ([#4267](https://github.com/getsentry/sentry-java/pull/4267))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#082)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.8.1...0.8.2)
+- Bump Spring Boot from 2.7.5 to 2.7.18 ([#3496](https://github.com/getsentry/sentry-java/pull/3496))
 
 ## 8.5.0
 
@@ -566,6 +572,12 @@ If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that
     - As a consequence the list of exceptions in the group on top of an issue is no longer shown in Sentry UI.
     - We are planning to improve this in the future but opted for this fix first.
 - Fix swallow NDK loadLibrary errors ([#4082](https://github.com/getsentry/sentry-java/pull/4082))
+
+## 7.22.5
+
+### Fixes
+
+- Session Replay: Change bitmap config to `ARGB_8888` for screenshots ([#4282](https://github.com/getsentry/sentry-java/pull/4282))
 
 ## 7.22.4
 
