@@ -572,6 +572,12 @@ If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that
     - We are planning to improve this in the future but opted for this fix first.
 - Fix swallow NDK loadLibrary errors ([#4082](https://github.com/getsentry/sentry-java/pull/4082))
 
+## 7.22.5
+
+### Fixes
+
+- Session Replay: Change bitmap config to `ARGB_8888` for screenshots ([#4282](https://github.com/getsentry/sentry-java/pull/4282))
+
 ## 7.22.4
 
 ### Fixes
