@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -76,6 +77,22 @@ public interface ISentryClient {
    */
   default @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hint hint) {
     return captureEvent(event, null, hint);
+  }
+
+  /**
+   * Captures the feedback.
+   *
+   * @param feedback The feedback to send.
+   * @param hint An optional hint to be applied to the event.
+   * @param scope An optional scope to be applied to the event.
+   * @return The Id (SentryId object) of the event
+   */
+  default @NotNull SentryId captureFeedback(
+      @NotNull Feedback feedback, @Nullable Hint hint, @Nullable IScope scope) {
+    SentryEvent event = new SentryEvent();
+    event.getContexts().setFeedback(feedback);
+
+    return captureEvent(event, scope, hint);
   }
 
   /**

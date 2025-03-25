@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -45,6 +46,12 @@ public final class NoOpScopes implements IScopes {
   @Override
   public @NotNull SentryId captureMessage(
       @NotNull String message, @NotNull SentryLevel level, @NotNull ScopeCallback callback) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public @NotNull SentryId captureFeedback(
+      @NotNull Feedback feedback, @Nullable Hint hint, @Nullable ScopeCallback callback) {
     return SentryId.EMPTY_ID;
   }
 

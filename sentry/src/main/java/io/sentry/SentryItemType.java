@@ -28,7 +28,7 @@ public enum SentryItemType implements JsonSerializable {
 
   public static SentryItemType resolve(Object item) {
     if (item instanceof SentryEvent) {
-      return Event;
+      return ((SentryEvent) item).getContexts().getFeedback() == null ? Event : Feedback;
     } else if (item instanceof SentryTransaction) {
       return Transaction;
     } else if (item instanceof Session) {
