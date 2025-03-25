@@ -160,7 +160,8 @@ public final class SentryClient implements ISentryClient {
         scope != null ? scope.withSession((@Nullable Session session) -> {}) : null;
     @Nullable Session session = null;
 
-    if (event != null) {
+    // Feedbacks shouldn't be sampled, and they don't affect sessions
+    if (event != null && event.getContexts().getFeedback() == null) {
       // https://develop.sentry.dev/sdk/sessions/#terminal-session-states
       if (sessionBeforeUpdate == null || !sessionBeforeUpdate.isTerminated()) {
         session = updateSessionData(event, hint, scope);

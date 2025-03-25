@@ -1,12 +1,5 @@
 package io.sentry.protocol;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
@@ -15,34 +8,28 @@ import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SentryLevel;
 import io.sentry.vendor.gson.stream.JsonToken;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 // Specs can be found at https://develop.sentry.dev/sdk/data-model/envelope-items/#user-feedback
 
-public class Feedback implements JsonUnknown, JsonSerializable {
+public final class Feedback implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "feedback";
 
-  final @NotNull String message;
-  final @Nullable String contactEmail;
-  final @Nullable String name;
-  final @Nullable SentryId associatedEventId;
-  final @Nullable SentryId replayId;
-  final @Nullable String url;
+  private @NotNull String message;
+  private @Nullable String contactEmail;
+  private @Nullable String name;
+  private @Nullable SentryId associatedEventId;
+  private @Nullable SentryId replayId;
+  private @Nullable String url;
 
   private @Nullable Map<String, Object> unknown;
 
-  public Feedback(
-      final @NotNull String message,
-      final @Nullable String contactEmail,
-      final @Nullable String name,
-      final @Nullable SentryId associatedEventId,
-      final @Nullable SentryId replayId,
-      final @Nullable String url) {
+  public Feedback(final @NotNull String message) {
     this.message = message;
-    this.contactEmail = contactEmail;
-    this.name = name;
-    this.associatedEventId = associatedEventId;
-    this.replayId = replayId;
-    this.url = url;
   }
 
   public Feedback(final @NotNull Feedback feedback) {
@@ -53,6 +40,54 @@ public class Feedback implements JsonUnknown, JsonSerializable {
     this.replayId = feedback.replayId;
     this.url = feedback.url;
     this.unknown = feedback.unknown;
+  }
+
+  public @Nullable String getContactEmail() {
+    return contactEmail;
+  }
+
+  public void setContactEmail(final @Nullable String contactEmail) {
+    this.contactEmail = contactEmail;
+  }
+
+  public @Nullable String getName() {
+    return name;
+  }
+
+  public void setName(final @Nullable String name) {
+    this.name = name;
+  }
+
+  public @Nullable SentryId getAssociatedEventId() {
+    return associatedEventId;
+  }
+
+  public void setAssociatedEventId(final @NotNull SentryId associatedEventId) {
+    this.associatedEventId = associatedEventId;
+  }
+
+  public @Nullable SentryId getReplayId() {
+    return replayId;
+  }
+
+  public void setReplayId(final @NotNull SentryId replayId) {
+    this.replayId = replayId;
+  }
+
+  public @Nullable String getUrl() {
+    return url;
+  }
+
+  public void setUrl(final @Nullable String url) {
+    this.url = url;
+  }
+
+  public @NotNull String getMessage() {
+    return message;
+  }
+
+  public void setMessage(final @NotNull String message) {
+    this.message = message;
   }
 
   // JsonKeys
@@ -82,7 +117,7 @@ public class Feedback implements JsonUnknown, JsonSerializable {
 
   @Override
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
-    throws IOException {
+      throws IOException {
     writer.beginObject();
     writer.name(JsonKeys.MESSAGE).value(message);
     if (contactEmail != null) {
@@ -116,7 +151,7 @@ public class Feedback implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<Feedback> {
     @Override
     public @NotNull Feedback deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
-      throws Exception {
+        throws Exception {
       @Nullable String message = null;
       @Nullable String contactEmail = null;
       @Nullable String name = null;
@@ -164,8 +199,13 @@ public class Feedback implements JsonUnknown, JsonSerializable {
         throw exception;
       }
 
-      Feedback feedback = new Feedback(message, contactEmail, name, associatedEventId, replayId, url);
-      feedback.setUnknown(unknown);
+      Feedback feedback = new Feedback(message);
+      feedback.contactEmail = contactEmail;
+      feedback.name = name;
+      feedback.associatedEventId = associatedEventId;
+      feedback.replayId = replayId;
+      feedback.url = url;
+      feedback.unknown = unknown;
       return feedback;
     }
   }
