@@ -110,6 +110,7 @@ final class AndroidOptionsInitializer {
 
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
+    options.setFatalLogger(new AndroidFatalLogger());
 
     options.setDefaultScopeType(ScopeType.CURRENT);
     options.setOpenTelemetryMode(SentryOpenTelemetryMode.OFF);

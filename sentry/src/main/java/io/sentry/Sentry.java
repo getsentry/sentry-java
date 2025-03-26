@@ -292,6 +292,7 @@ public final class Sentry {
           .getLogger()
           .log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubModeToUse));
       Sentry.globalHubMode = globalHubModeToUse;
+      initFatalLogger(options);
       final boolean shouldInit =
           InitUtil.shouldInit(globalScope.getOptions(), options, isEnabled());
       if (shouldInit) {
@@ -389,6 +390,12 @@ public final class Sentry {
   private static void initLogger(final @NotNull SentryOptions options) {
     if (options.isDebug() && options.getLogger() instanceof NoOpLogger) {
       options.setLogger(new SystemOutLogger());
+    }
+  }
+
+  private static void initFatalLogger(final @NotNull SentryOptions options) {
+    if (options.getFatalLogger() instanceof NoOpLogger) {
+      options.setFatalLogger(new SystemOutLogger());
     }
   }
 
