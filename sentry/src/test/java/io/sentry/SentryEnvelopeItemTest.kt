@@ -467,10 +467,11 @@ class SentryEnvelopeItemTest {
         val file = File(fixture.pathname)
         val profileChunk = mock<ProfileChunk> {
             whenever(it.traceFile).thenReturn(file)
+            whenever(it.platform).thenReturn("chunk platform")
         }
 
         val chunk = SentryEnvelopeItem.fromProfileChunk(profileChunk, mock())
-        assertEquals("android", chunk.header.platform)
+        assertEquals("chunk platform", chunk.header.platform)
     }
 
     @Test
