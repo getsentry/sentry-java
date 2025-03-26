@@ -8,6 +8,7 @@ plugins {
     id(Config.QualityPlugins.errorProne)
     id(Config.QualityPlugins.gradleVersions)
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
+    id("me.champeau.jmh") version "0.7.3"
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -81,4 +82,10 @@ tasks.withType<JavaCompile>() {
         option("NullAway:AnnotatedPackages", "io.sentry")
     }
     options.errorprone.errorproneArgs.add("-XepExcludedPaths:.*/io/sentry/vendor/.*")
+}
+
+jmh {
+    warmupIterations = 2
+    iterations = 2
+    fork = 2
 }
