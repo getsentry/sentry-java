@@ -493,7 +493,7 @@ public final class Baggage {
     }
     setSampleRate(sampleRate(samplingDecision));
     setSampled(StringUtils.toString(sampled(samplingDecision)));
-    setSampleRand(sampleRand(samplingDecision)); // TODO check
+    setSampleRand(sampleRand(samplingDecision));
   }
 
   @ApiStatus.Internal
