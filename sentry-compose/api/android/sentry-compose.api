@@ -22,3 +22,23 @@ public final class io/sentry/compose/SentryNavigationIntegrationKt {
 	public static final fun withSentryObservableEffect (Landroidx/navigation/NavHostController;ZZLandroidx/compose/runtime/Composer;II)Landroidx/navigation/NavHostController;
 }
 
+public final class io/sentry/compose/gestures/ComposeGestureTargetLocator : io/sentry/internal/gestures/GestureTargetLocator {
+	public static final field $stable I
+	public static final field Companion Lio/sentry/compose/gestures/ComposeGestureTargetLocator$Companion;
+	public fun <init> (Lio/sentry/ILogger;)V
+	public fun locate (Ljava/lang/Object;FFLio/sentry/internal/gestures/UiElement$Type;)Lio/sentry/internal/gestures/UiElement;
+}
+
+public final class io/sentry/compose/gestures/ComposeGestureTargetLocator$Companion {
+}
+
+public final class io/sentry/compose/viewhierarchy/ComposeViewHierarchyExporter : io/sentry/internal/viewhierarchy/ViewHierarchyExporter {
+	public static final field $stable I
+	public static final field Companion Lio/sentry/compose/viewhierarchy/ComposeViewHierarchyExporter$Companion;
+	public fun <init> (Lio/sentry/ILogger;)V
+	public fun export (Lio/sentry/protocol/ViewHierarchyNode;Ljava/lang/Object;)Z
+}
+
+public final class io/sentry/compose/viewhierarchy/ComposeViewHierarchyExporter$Companion {
+}
+
