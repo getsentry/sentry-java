@@ -5,6 +5,7 @@
 ### Features
 
 - Increase http timeouts from 5s to 30s to have a better chance of events being delivered without retry ([#4276](https://github.com/getsentry/sentry-java/pull/4276))
+- Retain baggage sample rate/rand values as doubles ([#4279](https://github.com/getsentry/sentry-java/pull/4279))
 
 ### Fixes
 
