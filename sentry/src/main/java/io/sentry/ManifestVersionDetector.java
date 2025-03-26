@@ -16,6 +16,7 @@ public final class ManifestVersionDetector implements IVersionDetector {
   @Override
   public boolean checkForMixedVersions() {
     ManifestVersionReader.getInstance().readManifestFiles();
-    return SentryIntegrationPackageStorage.getInstance().checkForMixedVersions(options.getFatalLogger());
+    return SentryIntegrationPackageStorage.getInstance()
+        .checkForMixedVersions(options.getFatalLogger());
   }
 }

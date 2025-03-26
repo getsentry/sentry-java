@@ -14,6 +14,7 @@ public final class DefaultVersionDetector implements IVersionDetector {
 
   @Override
   public boolean checkForMixedVersions() {
-    return SentryIntegrationPackageStorage.getInstance().checkForMixedVersions(options.getFatalLogger());
+    return SentryIntegrationPackageStorage.getInstance()
+        .checkForMixedVersions(options.getFatalLogger());
   }
 }
