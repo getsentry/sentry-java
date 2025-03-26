@@ -2759,11 +2759,12 @@ public final class io/sentry/SentryEnvelopeItem {
 }
 
 public final class io/sentry/SentryEnvelopeItemHeader : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> (Lio/sentry/SentryItemType;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Lio/sentry/SentryItemType;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 	public fun getAttachmentType ()Ljava/lang/String;
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFileName ()Ljava/lang/String;
 	public fun getLength ()I
+	public fun getPlatform ()Ljava/lang/String;
 	public fun getType ()Lio/sentry/SentryItemType;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
@@ -2781,6 +2782,7 @@ public final class io/sentry/SentryEnvelopeItemHeader$JsonKeys {
 	public static final field CONTENT_TYPE Ljava/lang/String;
 	public static final field FILENAME Ljava/lang/String;
 	public static final field LENGTH Ljava/lang/String;
+	public static final field PLATFORM Ljava/lang/String;
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
 }
