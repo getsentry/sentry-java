@@ -2867,6 +2867,7 @@ public final class io/sentry/SentryInstantDateProvider : io/sentry/SentryDatePro
 public final class io/sentry/SentryIntegrationPackageStorage {
 	public fun addIntegration (Ljava/lang/String;)V
 	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
+	public fun checkForMixedVersions (Lio/sentry/ILogger;)Z
 	public fun clearStorage ()V
 	public static fun getInstance ()Lio/sentry/SentryIntegrationPackageStorage;
 	public fun getIntegrations ()Ljava/util/Set;
