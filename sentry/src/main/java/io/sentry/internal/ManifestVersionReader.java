@@ -61,7 +61,7 @@ public final class ManifestVersionReader {
           final @Nullable Attributes mainAttributes = manifest.getMainAttributes();
           if (mainAttributes != null) {
             final @Nullable String name = mainAttributes.getValue("Sentry-Opentelemetry-SDK-Name");
-            final @Nullable String version = mainAttributes.getValue("Sentry-Version-Name");
+            final @Nullable String version = mainAttributes.getValue("Implementation-Version");
             final @Nullable String sdkName = mainAttributes.getValue("Sentry-SDK-Name");
             final @Nullable String packageName = mainAttributes.getValue("Sentry-SDK-Package-Name");
 
