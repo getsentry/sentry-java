@@ -538,6 +538,8 @@ public class SentryOptions {
   private @NotNull SentryReplayOptions sessionReplay;
 
   @ApiStatus.Experimental private boolean captureOpenTelemetryEvents = false;
+
+  private @NotNull IVersionDetector versionDetector = NoopVersionDetector.getInstance();
   /**
    * Adds an event processor
    *
@@ -2539,6 +2541,17 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setEnableBackpressureHandling(final boolean enableBackpressureHandling) {
     this.enableBackpressureHandling = enableBackpressureHandling;
+  }
+
+  @ApiStatus.Internal
+  @NotNull
+  public IVersionDetector getVersionDetector() {
+    return versionDetector;
+  }
+
+  @ApiStatus.Internal
+  public void setVersionDetector(final @NotNull IVersionDetector versionDetector) {
+    this.versionDetector = versionDetector;
   }
 
   /**

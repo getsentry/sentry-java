@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
 import io.sentry.DefaultCompositePerformanceCollector;
+import io.sentry.DefaultVersionDetector;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
@@ -15,6 +16,7 @@ import io.sentry.NoOpCompositePerformanceCollector;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.NoOpContinuousProfiler;
 import io.sentry.NoOpTransactionProfiler;
+import io.sentry.NoopVersionDetector;
 import io.sentry.ScopeType;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
@@ -197,6 +199,9 @@ final class AndroidOptionsInitializer {
     }
     if (options.getDebugMetaLoader() instanceof NoOpDebugMetaLoader) {
       options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
+    }
+    if (options.getVersionDetector() instanceof NoopVersionDetector) {
+      options.setVersionDetector(new DefaultVersionDetector(options));
     }
 
     final boolean isAndroidXScrollViewAvailable =
