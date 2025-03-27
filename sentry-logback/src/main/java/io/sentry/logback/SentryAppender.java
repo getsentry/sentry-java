@@ -48,6 +48,11 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   private @NotNull Level minimumEventLevel = Level.ERROR;
   private @Nullable Encoder<ILoggingEvent> encoder;
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-logback", BuildConfig.VERSION_NAME);
+  }
+
   @Override
   public void start() {
     if (options.getDsn() == null || !options.getDsn().endsWith("_IS_UNDEFINED")) {
