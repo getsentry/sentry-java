@@ -11,6 +11,7 @@ import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.ISentryExecutorService;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.NoOpScopes;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.ProfileChunk;
@@ -24,6 +25,7 @@ import io.sentry.TracesSampler;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.RateLimiter;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.SentryRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,8 +60,12 @@ public class AndroidContinuousProfiler
   private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
   private @NotNull SentryDate startProfileChunkTimestamp = new SentryNanotimeDate();
   private boolean shouldSample = true;
+  private boolean shouldStop = false;
   private boolean isSampled = false;
   private int rootSpanCounter = 0;
+
+  private final AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+  private final AutoClosableReentrantLock payloadLock = new AutoClosableReentrantLock();
 
   public AndroidContinuousProfiler(
       final @NotNull BuildInfoProvider buildInfoProvider,
@@ -106,42 +112,46 @@ public class AndroidContinuousProfiler
   }
 
   @Override
-  public synchronized void startProfiler(
+  public void startProfiler(
       final @NotNull ProfileLifecycle profileLifecycle,
       final @NotNull TracesSampler tracesSampler) {
-    if (shouldSample) {
-      isSampled = tracesSampler.sampleSessionProfile(SentryRandom.current().nextDouble());
-      shouldSample = false;
-    }
-    if (!isSampled) {
-      logger.log(SentryLevel.DEBUG, "Profiler was not started due to sampling decision.");
-      return;
-    }
-    switch (profileLifecycle) {
-      case TRACE:
-        // rootSpanCounter should never be negative, unless the user changed profile lifecycle while
-        // the profiler is running or close() is called. This is just a safety check.
-        if (rootSpanCounter < 0) {
-          rootSpanCounter = 0;
-        }
-        rootSpanCounter++;
-        break;
-      case MANUAL:
-        // We check if the profiler is already running and log a message only in manual mode, since
-        // in trace mode we can have multiple concurrent traces
-        if (isRunning()) {
-          logger.log(SentryLevel.DEBUG, "Profiler is already running.");
-          return;
-        }
-        break;
-    }
-    if (!isRunning()) {
-      logger.log(SentryLevel.DEBUG, "Started Profiler.");
-      start();
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (shouldSample) {
+        isSampled = tracesSampler.sampleSessionProfile(SentryRandom.current().nextDouble());
+        shouldSample = false;
+      }
+      if (!isSampled) {
+        logger.log(SentryLevel.DEBUG, "Profiler was not started due to sampling decision.");
+        return;
+      }
+      switch (profileLifecycle) {
+        case TRACE:
+          // rootSpanCounter should never be negative, unless the user changed profile lifecycle
+          // while
+          // the profiler is running or close() is called. This is just a safety check.
+          if (rootSpanCounter < 0) {
+            rootSpanCounter = 0;
+          }
+          rootSpanCounter++;
+          break;
+        case MANUAL:
+          // We check if the profiler is already running and log a message only in manual mode,
+          // since
+          // in trace mode we can have multiple concurrent traces
+          if (isRunning()) {
+            logger.log(SentryLevel.DEBUG, "Profiler is already running.");
+            return;
+          }
+          break;
+      }
+      if (!isRunning()) {
+        logger.log(SentryLevel.DEBUG, "Started Profiler.");
+        start();
+      }
     }
   }
 
-  private synchronized void start() {
+  private void start() {
     if ((scopes == null || scopes == NoOpScopes.getInstance())
         && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
       this.scopes = Sentry.getCurrentScopes();
@@ -213,103 +223,112 @@ public class AndroidContinuousProfiler
           SentryLevel.ERROR,
           "Failed to schedule profiling chunk finish. Did you call Sentry.close()?",
           e);
+      shouldStop = true;
     }
   }
 
   @Override
-  public synchronized void stopProfiler(final @NotNull ProfileLifecycle profileLifecycle) {
-    switch (profileLifecycle) {
-      case TRACE:
-        rootSpanCounter--;
-        // If there are active spans, and profile lifecycle is trace, we don't stop the profiler
-        if (rootSpanCounter > 0) {
-          return;
-        }
-        // rootSpanCounter should never be negative, unless the user changed profile lifecycle while
-        // the profiler is running or close() is called. This is just a safety check.
-        if (rootSpanCounter < 0) {
-          rootSpanCounter = 0;
-        }
-        stop(false);
-        break;
-      case MANUAL:
-        stop(false);
-        break;
-    }
-  }
-
-  private synchronized void stop(final boolean restartProfiler) {
-    if (stopFuture != null) {
-      stopFuture.cancel(true);
-    }
-    // check if profiler was created and it's running
-    if (profiler == null || !isRunning) {
-      // When the profiler is stopped due to an error (e.g. offline or rate limited), reset the ids
-      profilerId = SentryId.EMPTY_ID;
-      chunkId = SentryId.EMPTY_ID;
-      return;
-    }
-
-    // onTransactionStart() is only available since Lollipop_MR1
-    // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) {
-      return;
-    }
-
-    List<PerformanceCollectionData> performanceCollectionData = null;
-    if (performanceCollector != null) {
-      performanceCollectionData = performanceCollector.stop(chunkId.toString());
-    }
-
-    final AndroidProfiler.ProfileEndData endData =
-        profiler.endAndCollect(false, performanceCollectionData);
-
-    // check if profiler end successfully
-    if (endData == null) {
-      logger.log(
-          SentryLevel.ERROR,
-          "An error occurred while collecting a profile chunk, and it won't be sent.");
-    } else {
-      // The scopes can be null if the profiler is started before the SDK is initialized (app start
-      //  profiling), meaning there's no scopes to send the chunks. In that case, we store the data
-      //  in a list and send it when the next chunk is finished.
-      synchronized (payloadBuilders) {
-        payloadBuilders.add(
-            new ProfileChunk.Builder(
-                profilerId,
-                chunkId,
-                endData.measurementsMap,
-                endData.traceFile,
-                startProfileChunkTimestamp));
+  public void stopProfiler(final @NotNull ProfileLifecycle profileLifecycle) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      switch (profileLifecycle) {
+        case TRACE:
+          rootSpanCounter--;
+          // If there are active spans, and profile lifecycle is trace, we don't stop the profiler
+          if (rootSpanCounter > 0) {
+            return;
+          }
+          // rootSpanCounter should never be negative, unless the user changed profile lifecycle
+          // while the profiler is running or close() is called. This is just a safety check.
+          if (rootSpanCounter < 0) {
+            rootSpanCounter = 0;
+          }
+          shouldStop = true;
+          break;
+        case MANUAL:
+          shouldStop = true;
+          break;
       }
     }
+  }
 
-    isRunning = false;
-    // A chunk is finished. Next chunk will have a different id.
-    chunkId = SentryId.EMPTY_ID;
+  private void stop(final boolean restartProfiler) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (stopFuture != null) {
+        stopFuture.cancel(true);
+      }
+      // check if profiler was created and it's running
+      if (profiler == null || !isRunning) {
+        // When the profiler is stopped due to an error (e.g. offline or rate limited), reset the
+        // ids
+        profilerId = SentryId.EMPTY_ID;
+        chunkId = SentryId.EMPTY_ID;
+        return;
+      }
 
-    if (scopes != null) {
-      sendChunks(scopes, scopes.getOptions());
-    }
+      // onTransactionStart() is only available since Lollipop_MR1
+      // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
+      if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) {
+        return;
+      }
 
-    if (restartProfiler) {
-      logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
-      start();
-    } else {
-      // When the profiler is stopped manually, we have to reset its id
-      profilerId = SentryId.EMPTY_ID;
-      logger.log(SentryLevel.DEBUG, "Profile chunk finished.");
+      List<PerformanceCollectionData> performanceCollectionData = null;
+      if (performanceCollector != null) {
+        performanceCollectionData = performanceCollector.stop(chunkId.toString());
+      }
+
+      final AndroidProfiler.ProfileEndData endData =
+          profiler.endAndCollect(false, performanceCollectionData);
+
+      // check if profiler end successfully
+      if (endData == null) {
+        logger.log(
+            SentryLevel.ERROR,
+            "An error occurred while collecting a profile chunk, and it won't be sent.");
+      } else {
+        // The scopes can be null if the profiler is started before the SDK is initialized (app
+        // start profiling), meaning there's no scopes to send the chunks. In that case, we store
+        // the data in a list and send it when the next chunk is finished.
+        try (final @NotNull ISentryLifecycleToken ignored2 = payloadLock.acquire()) {
+          payloadBuilders.add(
+              new ProfileChunk.Builder(
+                  profilerId,
+                  chunkId,
+                  endData.measurementsMap,
+                  endData.traceFile,
+                  startProfileChunkTimestamp));
+        }
+      }
+
+      isRunning = false;
+      // A chunk is finished. Next chunk will have a different id.
+      chunkId = SentryId.EMPTY_ID;
+
+      if (scopes != null) {
+        sendChunks(scopes, scopes.getOptions());
+      }
+
+      if (restartProfiler && !shouldStop) {
+        logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
+        start();
+      } else {
+        // When the profiler is stopped manually, we have to reset its id
+        profilerId = SentryId.EMPTY_ID;
+        logger.log(SentryLevel.DEBUG, "Profile chunk finished.");
+      }
     }
   }
 
-  public synchronized void reevaluateSampling() {
+  public void reevaluateSampling() {
     shouldSample = true;
   }
 
-  public synchronized void close() {
-    rootSpanCounter = 0;
-    stop(false);
-    isClosed.set(true);
+  public void close() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      rootSpanCounter = 0;
+      shouldStop = true;
+      stop(false);
+      isClosed.set(true);
+    }
   }
 
   @Override
@@ -328,7 +347,7 @@ public class AndroidContinuousProfiler
                   return;
                 }
                 final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
-                synchronized (payloadBuilders) {
+                try (final @NotNull ISentryLifecycleToken ignored = payloadLock.acquire()) {
                   for (ProfileChunk.Builder builder : payloadBuilders) {
                     payloads.add(builder.build(options));
                   }
