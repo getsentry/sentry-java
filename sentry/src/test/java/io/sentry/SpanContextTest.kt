@@ -36,8 +36,8 @@ class SpanContextTest {
         trace.samplingDecision = TracesSamplingDecision(true, 0.1, 0.2)
 
         assertEquals("true", trace.baggage?.sampled)
-        assertEquals("0.1", trace.baggage?.sampleRate)
-        assertEquals("0.2", trace.baggage?.sampleRand)
+        assertEquals(0.1, trace.baggage?.sampleRate!!, 0.0001)
+        assertEquals(0.2, trace.baggage?.sampleRand!!, 0.0001)
     }
 
     @Test

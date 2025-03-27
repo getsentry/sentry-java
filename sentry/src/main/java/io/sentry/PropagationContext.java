@@ -135,11 +135,7 @@ public final class PropagationContext {
   }
 
   public @Nullable TraceContext traceContext() {
-    if (baggage != null) {
-      return baggage.toTraceContext();
-    }
-
-    return null;
+    return baggage.toTraceContext();
   }
 
   public @NotNull SpanContext toSpanContext() {
@@ -149,7 +145,7 @@ public final class PropagationContext {
   }
 
   public @NotNull Double getSampleRand() {
-    final @Nullable Double sampleRand = baggage.getSampleRandDouble();
+    final @Nullable Double sampleRand = baggage.getSampleRand();
     // should never be null since we ensure it in ctor
     return sampleRand == null ? 0.0 : sampleRand;
   }
