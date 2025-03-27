@@ -24,6 +24,9 @@
 
 - Do not override user-defined `SentryOptions` ([#4262](https://github.com/getsentry/sentry-java/pull/4262))
 - Session Replay: Change bitmap config to `ARGB_8888` for screenshots ([#4282](https://github.com/getsentry/sentry-java/pull/4282))
+- The `MANIFEST.MF` of `sentry-opentelemetry-agent` now has `Implementation-Version` set to the raw version ([#4291](https://github.com/getsentry/sentry-java/pull/4291))
+  - An example value would be `8.6.0`
+  - The value of the `Sentry-Version-Name` attribute looks like `sentry-8.5.0-otel-2.10.0`
 
 ### Internal
 
