@@ -54,8 +54,6 @@ public final class SentryFeignClient implements Client {
   }
 
   private void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-openfeign", BuildConfig.VERSION_NAME);
     addIntegrationToSdkVersion("OpenFeign");
   }
 

@@ -436,8 +436,6 @@ public class SentryAutoConfiguration {
     }
 
     private static void addPackageAndIntegrationInfo() {
-      SentryIntegrationPackageStorage.getInstance()
-          .addPackage("maven:io.sentry:sentry-spring-boot-starter", BuildConfig.VERSION_NAME);
       SentryIntegrationPackageStorage.getInstance().addIntegration("SpringBoot");
     }
   }

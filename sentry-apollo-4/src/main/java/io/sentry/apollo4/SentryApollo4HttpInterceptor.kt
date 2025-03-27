@@ -52,8 +52,6 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
             SentryIntegrationPackageStorage.getInstance()
                 .addIntegration("Apollo4ClientError")
         }
-        SentryIntegrationPackageStorage.getInstance()
-            .addPackage("maven:io.sentry:sentry-apollo-4", BuildConfig.VERSION_NAME)
     }
 
     private val regex: Regex by lazy {

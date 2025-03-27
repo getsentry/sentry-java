@@ -57,8 +57,6 @@ public class FragmentLifecycleIntegration(
         application.registerActivityLifecycleCallbacks(this)
         options.logger.log(DEBUG, "FragmentLifecycleIntegration installed.")
         addIntegrationToSdkVersion("FragmentLifecycle")
-        SentryIntegrationPackageStorage.getInstance()
-            .addPackage("maven:io.sentry:sentry-android-fragment", BuildConfig.VERSION_NAME)
     }
 
     override fun close() {

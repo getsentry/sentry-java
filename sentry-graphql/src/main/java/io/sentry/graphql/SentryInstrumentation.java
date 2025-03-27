@@ -91,8 +91,6 @@ public final class SentryInstrumentation
         new SentryGraphqlInstrumentation(
             beforeSpan, subscriptionHandler, exceptionReporter, ignoredErrorTypes, TRACE_ORIGIN);
     SentryIntegrationPackageStorage.getInstance().addIntegration("GraphQL");
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-graphql", BuildConfig.VERSION_NAME);
   }
 
   /**

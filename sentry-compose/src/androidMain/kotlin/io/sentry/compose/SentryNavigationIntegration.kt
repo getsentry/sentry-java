@@ -34,7 +34,6 @@ internal class SentryLifecycleObserver(
 
     init {
         addIntegrationToSdkVersion("ComposeNavigation")
-        SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {

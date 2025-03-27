@@ -35,7 +35,6 @@ public class SentryTimberIntegration(
         Timber.plant(tree)
 
         logger.log(SentryLevel.DEBUG, "SentryTimberIntegration installed.")
-        SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-android-timber", VERSION_NAME)
         addIntegrationToSdkVersion("Timber")
     }
 
