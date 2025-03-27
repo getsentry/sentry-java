@@ -1,10 +1,16 @@
 package io.sentry
 
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SentryIntegrationPackageStorageTest {
+
+    @AfterTest
+    fun teardown() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+    }
 
     @Test
     fun `same package version is OK`() {
