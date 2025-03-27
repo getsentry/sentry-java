@@ -126,8 +126,8 @@ public class SentryOptions {
 
   /** Logger interface to log useful debugging information if debug is enabled */
   private @NotNull ILogger logger = NoOpLogger.getInstance();
-  @ApiStatus.Experimental
-  private @NotNull ILogger fatalLogger = NoOpLogger.getInstance();
+
+  @ApiStatus.Experimental private @NotNull ILogger fatalLogger = NoOpLogger.getInstance();
 
   @ApiStatus.Experimental private @NotNull ILogger fatalLogger = NoOpLogger.getInstance();
 
