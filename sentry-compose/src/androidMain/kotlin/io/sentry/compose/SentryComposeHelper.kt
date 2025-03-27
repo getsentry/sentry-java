@@ -76,7 +76,6 @@ internal class SentryComposeHelper(private val logger: ILogger) {
     }
 }
 
-
 /**
  * Copied from sentry-android-replay/src/main/java/io/sentry/android/replay/util/Nodes.kt
  *
