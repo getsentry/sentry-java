@@ -129,8 +129,6 @@ public class SentryOptions {
 
   @ApiStatus.Experimental private @NotNull ILogger fatalLogger = NoOpLogger.getInstance();
 
-  @ApiStatus.Experimental private @NotNull ILogger fatalLogger = NoOpLogger.getInstance();
-
   /** minimum LogLevel to be used if debug is enabled */
   private @NotNull SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
 
