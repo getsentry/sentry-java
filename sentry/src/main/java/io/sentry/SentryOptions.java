@@ -127,6 +127,8 @@ public class SentryOptions {
   /** Logger interface to log useful debugging information if debug is enabled */
   private @NotNull ILogger logger = NoOpLogger.getInstance();
 
+  @ApiStatus.Experimental private @NotNull ILogger fatalLogger = NoOpLogger.getInstance();
+
   /** minimum LogLevel to be used if debug is enabled */
   private @NotNull SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
 
@@ -538,6 +540,8 @@ public class SentryOptions {
   private @NotNull SentryReplayOptions sessionReplay;
 
   @ApiStatus.Experimental private boolean captureOpenTelemetryEvents = false;
+
+  private @NotNull IVersionDetector versionDetector = NoopVersionDetector.getInstance();
   /**
    * Adds an event processor
    *
@@ -642,6 +646,26 @@ public class SentryOptions {
    */
   public void setLogger(final @Nullable ILogger logger) {
     this.logger = (logger == null) ? NoOpLogger.getInstance() : new DiagnosticLogger(this, logger);
+  }
+
+  /**
+   * Returns the Logger interface for logging important SDK messages
+   *
+   * @return the logger for fatal SDK messages
+   */
+  @ApiStatus.Experimental
+  public @NotNull ILogger getFatalLogger() {
+    return fatalLogger;
+  }
+
+  /**
+   * Sets the Logger interface for important SDK messages. If null, logger will be NoOp
+   *
+   * @param logger the logger for fatal SDK messages
+   */
+  @ApiStatus.Experimental
+  public void setFatalLogger(final @Nullable ILogger logger) {
+    this.fatalLogger = (logger == null) ? NoOpLogger.getInstance() : logger;
   }
 
   /**
@@ -2539,6 +2563,17 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setEnableBackpressureHandling(final boolean enableBackpressureHandling) {
     this.enableBackpressureHandling = enableBackpressureHandling;
+  }
+
+  @ApiStatus.Internal
+  @NotNull
+  public IVersionDetector getVersionDetector() {
+    return versionDetector;
+  }
+
+  @ApiStatus.Internal
+  public void setVersionDetector(final @NotNull IVersionDetector versionDetector) {
+    this.versionDetector = versionDetector;
   }
 
   /**

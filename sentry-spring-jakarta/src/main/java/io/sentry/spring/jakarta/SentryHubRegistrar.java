@@ -20,6 +20,11 @@ import org.springframework.core.type.AnnotationMetadata;
 @Open
 public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-spring-jakarta", BuildConfig.VERSION_NAME);
+  }
+
   @Override
   public void registerBeanDefinitions(
       final @NotNull AnnotationMetadata importingClassMetadata,
@@ -93,8 +98,6 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
   }
 
   private static void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-spring-jakarta", BuildConfig.VERSION_NAME);
     SentryIntegrationPackageStorage.getInstance().addIntegration("Spring6");
   }
 }

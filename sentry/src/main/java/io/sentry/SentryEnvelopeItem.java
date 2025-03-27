@@ -302,7 +302,9 @@ public final class SentryEnvelopeItem {
             SentryItemType.ProfileChunk,
             () -> cachedItem.getBytes().length,
             "application-json",
-            traceFile.getName());
+            traceFile.getName(),
+            null,
+            profileChunk.getPlatform());
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef

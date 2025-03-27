@@ -24,9 +24,7 @@ public class ComposeGestureTargetLocator public constructor(private val logger: 
     private val lock = AutoClosableReentrantLock()
 
     init {
-        SentryIntegrationPackageStorage.getInstance().addIntegration("ComposeUserInteraction")
-        SentryIntegrationPackageStorage.getInstance()
-            .addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
+        SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME);
     }
 
     override fun locate(

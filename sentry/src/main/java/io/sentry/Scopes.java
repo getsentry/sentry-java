@@ -941,7 +941,7 @@ public final class Scopes implements IScopes {
   private @NotNull Double getSampleRand(final @NotNull TransactionContext transactionContext) {
     final @Nullable Baggage baggage = transactionContext.getBaggage();
     if (baggage != null) {
-      final @Nullable Double sampleRandFromBaggageMaybe = baggage.getSampleRandDouble();
+      final @Nullable Double sampleRandFromBaggageMaybe = baggage.getSampleRand();
       if (sampleRandFromBaggageMaybe != null) {
         return sampleRandFromBaggageMaybe;
       }

@@ -38,6 +38,11 @@ public final class SentryFeignClient implements Client {
   private final @NotNull IScopes scopes;
   private final @Nullable BeforeSpanCallback beforeSpan;
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-openfeign", BuildConfig.VERSION_NAME);
+  }
+
   public SentryFeignClient(
       final @NotNull Client delegate,
       final @NotNull IScopes scopes,
@@ -49,8 +54,6 @@ public final class SentryFeignClient implements Client {
   }
 
   private void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-openfeign", BuildConfig.VERSION_NAME);
     addIntegrationToSdkVersion("OpenFeign");
   }
 

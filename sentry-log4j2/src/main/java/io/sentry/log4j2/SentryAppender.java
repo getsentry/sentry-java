@@ -54,6 +54,11 @@ public class SentryAppender extends AbstractAppender {
   private final @NotNull IScopes scopes;
   private final @Nullable List<String> contextTags;
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-log4j2", BuildConfig.VERSION_NAME);
+  }
+
   public SentryAppender(
       final @NotNull String name,
       final @Nullable Filter filter,
@@ -277,8 +282,6 @@ public class SentryAppender extends AbstractAppender {
   }
 
   private void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-log4j2", BuildConfig.VERSION_NAME);
     SentryIntegrationPackageStorage.getInstance().addIntegration("Log4j");
   }
 }
