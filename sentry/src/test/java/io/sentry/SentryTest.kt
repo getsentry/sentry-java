@@ -11,6 +11,7 @@ import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader
 import io.sentry.internal.modules.CompositeModulesLoader
 import io.sentry.internal.modules.IModulesLoader
 import io.sentry.internal.modules.NoOpModulesLoader
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryThread
@@ -928,6 +929,23 @@ class SentryTest {
 
         await.untilTrue(triggered)
         assertFalse(previousSessionFile.exists())
+    }
+
+    @Test
+    fun `captureFeedback gets forwarded to client`() {
+        initForTest { it.dsn = dsn }
+
+        val client = createSentryClientMock()
+        Sentry.getCurrentScopes().bindClient(client)
+
+        val feedback = Feedback("message")
+        val hint = Hint()
+
+        Sentry.captureFeedback(feedback)
+        Sentry.captureFeedback(feedback, hint)
+
+        verify(client).captureFeedback(eq(feedback), eq(null), anyOrNull())
+        verify(client).captureFeedback(eq(feedback), eq(hint), anyOrNull())
     }
 
     @Test

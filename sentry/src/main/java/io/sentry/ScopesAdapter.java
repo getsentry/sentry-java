@@ -48,6 +48,16 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
+  public @NotNull SentryId captureFeedback(@NotNull Feedback feedback) {
+    return Sentry.captureFeedback(feedback);
+  }
+
+  @Override
+  public @NotNull SentryId captureFeedback(@NotNull Feedback feedback, @Nullable Hint hint) {
+    return Sentry.captureFeedback(feedback, hint);
+  }
+
+  @Override
   public @NotNull SentryId captureFeedback(
       @NotNull Feedback feedback, @Nullable Hint hint, @Nullable ScopeCallback callback) {
     return Sentry.captureFeedback(feedback, hint, callback);

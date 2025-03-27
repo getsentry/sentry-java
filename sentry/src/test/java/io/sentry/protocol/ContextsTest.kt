@@ -21,6 +21,7 @@ class ContextsTest {
         contexts.setResponse(Response())
         contexts.setTrace(SpanContext("op"))
         contexts.setSpring(Spring())
+        contexts.setFeedback(Feedback("message"))
 
         val clone = Contexts(contexts)
 
@@ -35,6 +36,7 @@ class ContextsTest {
         assertNotSame(contexts.trace, clone.trace)
         assertNotSame(contexts.response, clone.response)
         assertNotSame(contexts.spring, clone.spring)
+        assertNotSame(contexts.feedback, clone.feedback)
     }
 
     @Test

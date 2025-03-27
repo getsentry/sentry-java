@@ -14,6 +14,7 @@ import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
 import io.sentry.protocol.Contexts
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Message
 import io.sentry.protocol.Request
@@ -287,6 +288,25 @@ class SentryClientTest {
             SentryLevel.DEBUG
         )
         assertEquals(SentryLevel.DEBUG, sentEvent!!.level)
+    }
+
+    @Test
+    fun `when captureFeedback is called, sentry event contains feedback in contexts and header type`() {
+        var sentEvent: SentryEvent? = null
+        fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
+        val sut = fixture.getSut()
+        sut.captureFeedback(Feedback("message"), null, null)
+
+        val sentFeedback = sentEvent!!.contexts.feedback
+        assertNotNull(sentFeedback)
+        assertEquals("message", sentFeedback.message)
+
+        verify(fixture.transport).send(
+            check {
+                assertEquals(SentryItemType.Feedback, it.items.first().header.type)
+            },
+            anyOrNull()
+        )
     }
 
     @Test

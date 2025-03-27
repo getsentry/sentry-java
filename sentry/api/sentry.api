@@ -584,6 +584,8 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public fun captureFeedback (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
+	public fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
@@ -2231,6 +2233,8 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public fun captureFeedback (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
+	public fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
@@ -4747,6 +4751,7 @@ public final class io/sentry/protocol/Feedback : io/sentry/JsonSerializable, io/
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> (Lio/sentry/protocol/Feedback;)V
 	public fun <init> (Ljava/lang/String;)V
+	public fun equals (Ljava/lang/Object;)Z
 	public fun getAssociatedEventId ()Lio/sentry/protocol/SentryId;
 	public fun getContactEmail ()Ljava/lang/String;
 	public fun getMessage ()Ljava/lang/String;
@@ -4754,6 +4759,7 @@ public final class io/sentry/protocol/Feedback : io/sentry/JsonSerializable, io/
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUrl ()Ljava/lang/String;
+	public fun hashCode ()I
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAssociatedEventId (Lio/sentry/protocol/SentryId;)V
 	public fun setContactEmail (Ljava/lang/String;)V

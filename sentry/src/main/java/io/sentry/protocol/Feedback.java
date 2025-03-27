@@ -7,10 +7,12 @@ import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SentryLevel;
+import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,7 +41,7 @@ public final class Feedback implements JsonUnknown, JsonSerializable {
     this.associatedEventId = feedback.associatedEventId;
     this.replayId = feedback.replayId;
     this.url = feedback.url;
-    this.unknown = feedback.unknown;
+    this.unknown = CollectionUtils.newConcurrentHashMap(feedback.unknown);
   }
 
   public @Nullable String getContactEmail() {
@@ -88,6 +90,25 @@ public final class Feedback implements JsonUnknown, JsonSerializable {
 
   public void setMessage(final @NotNull String message) {
     this.message = message;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Feedback)) return false;
+    Feedback feedback = (Feedback) o;
+    return Objects.equals(message, feedback.message)
+        && Objects.equals(contactEmail, feedback.contactEmail)
+        && Objects.equals(name, feedback.name)
+        && Objects.equals(associatedEventId, feedback.associatedEventId)
+        && Objects.equals(replayId, feedback.replayId)
+        && Objects.equals(url, feedback.url)
+        && Objects.equals(unknown, feedback.unknown);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(message, contactEmail, name, associatedEventId, replayId, url, unknown);
   }
 
   // JsonKeys

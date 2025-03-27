@@ -40,6 +40,10 @@ class NoOpHubTest {
         assertEquals(SentryId.EMPTY_ID, sut.captureMessage("message"))
 
     @Test
+    fun `captureFeedback returns empty SentryId`() =
+        assertEquals(SentryId.EMPTY_ID, sut.captureFeedback(mock()))
+
+    @Test
     fun `close does not affect captureEvent`() {
         sut.close()
         assertEquals(SentryId.EMPTY_ID, sut.captureEvent(SentryEvent()))

@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.createSentryClientMock
@@ -55,6 +56,20 @@ class ScopesAdapterTest {
 
         ScopesAdapter.getInstance().captureMessage("message", sentryLevel, scopeCallback)
         verify(scopes).captureMessage(eq("message"), eq(sentryLevel), eq(scopeCallback))
+    }
+
+    @Test fun `captureFeedback calls Scopes`() {
+        val scopeCallback = mock<ScopeCallback>()
+        val hint = mock<Hint>()
+        val feedback = Feedback("message")
+        ScopesAdapter.getInstance().captureFeedback(feedback)
+        verify(scopes).captureFeedback(eq(feedback))
+
+        ScopesAdapter.getInstance().captureFeedback(feedback, hint)
+        verify(scopes).captureFeedback(eq(feedback), eq(hint))
+
+        ScopesAdapter.getInstance().captureFeedback(feedback, hint, scopeCallback)
+        verify(scopes).captureFeedback(eq(feedback), eq(hint), eq(scopeCallback))
     }
 
     @Test fun `captureEnvelope calls Scopes`() {
