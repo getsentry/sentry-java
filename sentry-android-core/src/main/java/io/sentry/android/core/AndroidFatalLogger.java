@@ -1,13 +1,11 @@
 package io.sentry.android.core;
 
 import android.util.Log;
-
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import io.sentry.ILogger;
-import io.sentry.SentryLevel;
 
 @ApiStatus.Internal
 public final class AndroidFatalLogger implements ILogger {
