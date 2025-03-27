@@ -16,6 +16,9 @@
 - Increase http timeouts from 5s to 30s to have a better chance of events being delivered without retry ([#4276](https://github.com/getsentry/sentry-java/pull/4276))
 - Add `MANIFEST.MF` to Sentry JARs ([#4272](https://github.com/getsentry/sentry-java/pull/4272))
 - Retain baggage sample rate/rand values as doubles ([#4279](https://github.com/getsentry/sentry-java/pull/4279))
+- Introduce fatal SDK logger ([#4288](https://github.com/getsentry/sentry-java/pull/4288))
+  - We use this to print out messages when there is a problem that prevents the SDK from working correctly.
+  - One example for this is when the SDK has been configured with mixed dependency versions where we print out details, which module and version are affected.
 
 ### Fixes
 
