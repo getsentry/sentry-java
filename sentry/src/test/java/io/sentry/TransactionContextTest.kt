@@ -105,7 +105,7 @@ class TransactionContextTest {
     fun `when passing null baggage creates a new one and uses parent sampling decision`() {
         val context = TransactionContext(SentryId(), SpanId(), null, TracesSamplingDecision(true, 0.1, 0.2), null)
         assertNotNull(context.baggage)
-        assertEquals("0.2", context.baggage?.sampleRand)
+        assertEquals(0.2, context.baggage?.sampleRand!!, 0.0001)
     }
 
     @Test
@@ -119,6 +119,6 @@ class TransactionContextTest {
     fun `when using few param ctor creates a new baggage and uses sampling decision`() {
         val context = TransactionContext("name", TransactionNameSource.CUSTOM, "op", TracesSamplingDecision(true, 0.1, 0.2))
         assertNotNull(context.baggage)
-        assertEquals("0.2", context.baggage?.sampleRand)
+        assertEquals(0.2, context.baggage?.sampleRand!!, 0.0001)
     }
 }

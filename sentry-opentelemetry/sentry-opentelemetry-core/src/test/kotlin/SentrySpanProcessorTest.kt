@@ -406,7 +406,7 @@ class SentrySpanProcessorTest {
                     assertTrue(it.parentSamplingDecision!!.sampled)
                     if (continuesWithFilledBaggage) {
                         assertEquals("2722d9f6ec019ade60c776169d9a8904", it.baggage?.traceId)
-                        assertEquals("1", it.baggage?.sampleRate)
+                        assertEquals(1.0, it.baggage?.sampleRate)
                         assertEquals("HTTP GET", it.baggage?.transaction)
                         assertEquals("502f25099c204a2fbf4cb16edc5975d1", it.baggage?.publicKey)
                         assertFalse(it.baggage!!.isMutable)
