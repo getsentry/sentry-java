@@ -28,7 +28,7 @@ public final class InitUtil {
               ? "https://docs.sentry.io/platforms/android/troubleshooting/mixed-versions"
               : "https://docs.sentry.io/platforms/java/troubleshooting/mixed-versions";
       throw new IllegalStateException(
-          "Sentry SDK has detected a mix of versions. This is not supported and likely leads to crashes. Please always use the same version of all Java SDK modules (dependencies). See "
+          "Sentry SDK has detected a mix of versions. This is not supported and likely leads to crashes. Please always use the same version of all SDK modules (dependencies). See "
               + docsUrl
               + " for more details.");
     }
