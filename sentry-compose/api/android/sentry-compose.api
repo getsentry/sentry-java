@@ -6,6 +6,10 @@ public final class io/sentry/compose/BuildConfig {
 	public fun <init> ()V
 }
 
+public final class io/sentry/compose/SentryComposeHelperKt {
+	public static final fun boundsInWindow (Landroidx/compose/ui/layout/LayoutCoordinates;Landroidx/compose/ui/layout/LayoutCoordinates;)Landroidx/compose/ui/geometry/Rect;
+}
+
 public final class io/sentry/compose/SentryComposeTracingKt {
 	public static final fun SentryTraced (Ljava/lang/String;Landroidx/compose/ui/Modifier;ZLkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 }
@@ -34,11 +38,7 @@ public final class io/sentry/compose/gestures/ComposeGestureTargetLocator$Compan
 
 public final class io/sentry/compose/viewhierarchy/ComposeViewHierarchyExporter : io/sentry/internal/viewhierarchy/ViewHierarchyExporter {
 	public static final field $stable I
-	public static final field Companion Lio/sentry/compose/viewhierarchy/ComposeViewHierarchyExporter$Companion;
 	public fun <init> (Lio/sentry/ILogger;)V
 	public fun export (Lio/sentry/protocol/ViewHierarchyNode;Ljava/lang/Object;)Z
-}
-
-public final class io/sentry/compose/viewhierarchy/ComposeViewHierarchyExporter$Companion {
 }
 

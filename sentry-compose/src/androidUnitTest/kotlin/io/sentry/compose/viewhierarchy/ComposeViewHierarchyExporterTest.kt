@@ -3,6 +3,7 @@
 package io.sentry.compose.viewhierarchy
 
 import androidx.compose.runtime.collection.mutableVectorOf
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.ModifierInfo
 import androidx.compose.ui.node.LayoutNode
@@ -17,6 +18,8 @@ import org.junit.Assert
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
+import org.mockito.kotlin.whenever
 
 class ComposeViewHierarchyExporterTest {
     @Test
@@ -69,8 +72,6 @@ class ComposeViewHierarchyExporterTest {
                 LayoutNode::class.java
             )
             `when`(nodeA.isPlaced).thenReturn(isPlaced)
-            `when`((nodeA.width)).thenReturn(width)
-            `when`((nodeA.height)).thenReturn(height)
 
             val modifierInfo = Mockito.mock(
                 ModifierInfo::class.java
@@ -101,6 +102,12 @@ class ComposeViewHierarchyExporterTest {
             val coordinates = Mockito.mock(
                 LayoutCoordinates::class.java
             )
+            val parentCoordinates = Mockito.mock(
+                LayoutCoordinates::class.java
+            )
+            whenever(coordinates.parentLayoutCoordinates).thenReturn(parentCoordinates)
+            whenever(parentCoordinates.localBoundingBoxOf(any(), any()))
+                .thenReturn(Rect(0f, 0f, width.toFloat(), height.toFloat()))
             `when`(nodeA.coordinates).thenReturn(coordinates)
             return nodeA
         }

@@ -2,6 +2,7 @@
 
 package io.sentry.compose.gestures
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.semantics.SemanticsModifier
@@ -9,6 +10,7 @@ import io.sentry.ILogger
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.compose.BuildConfig
 import io.sentry.compose.SentryComposeHelper
+import io.sentry.compose.boundsInWindow
 import io.sentry.internal.gestures.GestureTargetLocator
 import io.sentry.internal.gestures.UiElement
 import io.sentry.util.AutoClosableReentrantLock
@@ -33,22 +35,23 @@ public class ComposeGestureTargetLocator public constructor(private val logger: 
         y: Float,
         targetType: UiElement.Type
     ): UiElement? {
-        // lazy init composeHelper as it's using some reflection under the hood
+        if (root !is Owner) {
+            return null
+        }
 
+        // lazy init composeHelper as it's using some reflection under the hood
         if (composeHelper == null) {
-            lock.acquire().use { ignored ->
+            lock.acquire().use {
                 if (composeHelper == null) {
                     composeHelper = SentryComposeHelper(logger)
                 }
             }
         }
 
-        if (root !is Owner) {
-            return null
-        }
+        val rootLayoutNode = root.root
 
         val queue: Queue<LayoutNode> = LinkedList()
-        queue.add(root.root)
+        queue.add(rootLayoutNode)
 
         // the final tag to return
         var targetTag: String? = null
@@ -57,9 +60,8 @@ public class ComposeGestureTargetLocator public constructor(private val logger: 
         var lastKnownTag: String? = null
         while (!queue.isEmpty()) {
             val node = queue.poll() ?: continue
-
             if (node.isPlaced && layoutNodeBoundsContain(
-                    composeHelper!!,
+                    rootLayoutNode,
                     node,
                     x,
                     y
@@ -128,21 +130,17 @@ public class ComposeGestureTargetLocator public constructor(private val logger: 
         }
     }
 
+    private fun layoutNodeBoundsContain(
+        root: LayoutNode,
+        node: LayoutNode,
+        x: Float,
+        y: Float
+    ): Boolean {
+        val bounds = node.coordinates.boundsInWindow(root.coordinates)
+        return bounds.contains(Offset(x, y))
+    }
+
     public companion object {
         private const val ORIGIN = "jetpack_compose"
-
-        private fun layoutNodeBoundsContain(
-            composeHelper: SentryComposeHelper,
-            node: LayoutNode,
-            x: Float,
-            y: Float
-        ): Boolean {
-            val bounds = composeHelper.getLayoutNodeBoundsInWindow(node)
-            return if (bounds == null) {
-                false
-            } else {
-                x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom
-            }
-        }
     }
 }

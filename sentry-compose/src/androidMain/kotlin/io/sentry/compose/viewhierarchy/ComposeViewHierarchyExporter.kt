@@ -2,6 +2,7 @@
 
 package io.sentry.compose.viewhierarchy
 
+import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.Owner
 import io.sentry.ILogger
@@ -31,84 +32,61 @@ public class ComposeViewHierarchyExporter public constructor(private val logger:
         }
 
         val rootNode = element.root
-        addChild(composeHelper!!, parent, null, rootNode)
+        addChild(composeHelper!!, parent, rootNode, rootNode)
         return true
     }
 
-    public companion object {
-        private fun addChild(
-            composeHelper: SentryComposeHelper,
-            parent: ViewHierarchyNode,
-            parentNode: LayoutNode?,
-            node: LayoutNode
-        ) {
-            if (node.isPlaced) {
-                val vhNode = ViewHierarchyNode()
-                setTag(composeHelper, node, vhNode)
-                setBounds(composeHelper, node, parentNode, vhNode)
+    private fun addChild(
+        composeHelper: SentryComposeHelper,
+        parent: ViewHierarchyNode,
+        rootNode: LayoutNode,
+        node: LayoutNode
+    ) {
+        if (node.isPlaced) {
+            val vhNode = ViewHierarchyNode()
+            setTag(composeHelper, node, vhNode)
+            setBounds(node, vhNode)
+            vhNode.type = vhNode.tag ?: "@Composable"
 
-                if (vhNode.tag != null) {
-                    vhNode.type = vhNode.tag
-                } else {
-                    vhNode.type = "@Composable"
-                }
+            if (parent.children == null) {
+                parent.children = ArrayList()
+            }
+            parent.children!!.add(vhNode)
 
-                if (parent.children == null) {
-                    parent.children = ArrayList()
-                }
-                parent.children!!.add(vhNode)
-
-                val children = node.zSortedChildren
-                val childrenCount = children.size
-                for (i in 0 until childrenCount) {
-                    val child = children[i]
-                    addChild(composeHelper, vhNode, node, child)
-                }
+            val children = node.zSortedChildren
+            val childrenCount = children.size
+            for (i in 0 until childrenCount) {
+                val child = children[i]
+                addChild(composeHelper, vhNode, rootNode, child)
             }
         }
+    }
 
-        private fun setTag(
-            helper: SentryComposeHelper,
-            node: LayoutNode,
-            vhNode: ViewHierarchyNode
-        ) {
-            // needs to be in-sync with ComposeGestureTargetLocator
-            val modifiers = node.getModifierInfo()
-            for (modifierInfo in modifiers) {
-                val tag = helper.extractTag(modifierInfo.modifier)
-                if (tag != null) {
-                    vhNode.tag = tag
-                }
+    private fun setTag(
+        helper: SentryComposeHelper,
+        node: LayoutNode,
+        vhNode: ViewHierarchyNode
+    ) {
+        // needs to be in-sync with ComposeGestureTargetLocator
+        val modifiers = node.getModifierInfo()
+        for (modifierInfo in modifiers) {
+            val tag = helper.extractTag(modifierInfo.modifier)
+            if (tag != null) {
+                vhNode.tag = tag
             }
         }
+    }
 
-        private fun setBounds(
-            composeHelper: SentryComposeHelper,
-            node: LayoutNode,
-            parentNode: LayoutNode?,
-            vhNode: ViewHierarchyNode
-        ) {
-            val nodeHeight = node.height
-            val nodeWidth = node.width
+    private fun setBounds(
+        node: LayoutNode,
+        vhNode: ViewHierarchyNode
+    ) {
+        // layout coordinates for view hierarchy are relative to the parent node
+        val bounds = node.coordinates.boundsInParent()
 
-            vhNode.height = nodeHeight.toDouble()
-            vhNode.width = nodeWidth.toDouble()
-
-            val bounds = composeHelper.getLayoutNodeBoundsInWindow(node)
-            if (bounds != null) {
-                var x = bounds.left.toDouble()
-                var y = bounds.top.toDouble()
-                // layout coordinates for view hierarchy are relative to the parent node
-                parentNode?.let {
-                    val parentBounds = composeHelper.getLayoutNodeBoundsInWindow(it)
-                    if (parentBounds != null) {
-                        x -= parentBounds.left.toDouble()
-                        y -= parentBounds.top.toDouble()
-                    }
-                }
-                vhNode.x = x
-                vhNode.y = y
-            }
-        }
+        vhNode.x = bounds.left.toDouble()
+        vhNode.y = bounds.top.toDouble()
+        vhNode.height = bounds.height.toDouble()
+        vhNode.width = bounds.width.toDouble()
     }
 }
