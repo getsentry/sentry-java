@@ -3057,6 +3057,7 @@ public class io/sentry/SentryOptions {
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getExecutorService ()Lio/sentry/ISentryExecutorService;
 	public fun getExperimental ()Lio/sentry/ExperimentalOptions;
+	public fun getFatalLogger ()Lio/sentry/ILogger;
 	public fun getFlushTimeoutMillis ()J
 	public fun getFullyDisplayedReporter ()Lio/sentry/FullyDisplayedReporter;
 	public fun getGestureTargetLocators ()Ljava/util/List;
@@ -3196,6 +3197,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnvelopeReader (Lio/sentry/IEnvelopeReader;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExecutorService (Lio/sentry/ISentryExecutorService;)V
+	public fun setFatalLogger (Lio/sentry/ILogger;)V
 	public fun setFlushTimeoutMillis (J)V
 	public fun setForceInit (Z)V
 	public fun setFullyDisplayedReporter (Lio/sentry/FullyDisplayedReporter;)V
