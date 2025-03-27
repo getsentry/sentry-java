@@ -463,6 +463,18 @@ class SentryEnvelopeItemTest {
     }
 
     @Test
+    fun `fromProfileChunk sets platform header`() {
+        val file = File(fixture.pathname)
+        val profileChunk = mock<ProfileChunk> {
+            whenever(it.traceFile).thenReturn(file)
+            whenever(it.platform).thenReturn("chunk platform")
+        }
+
+        val chunk = SentryEnvelopeItem.fromProfileChunk(profileChunk, mock())
+        assertEquals("chunk platform", chunk.header.platform)
+    }
+
+    @Test
     fun `fromProfileChunk saves file as Base64`() {
         val file = File(fixture.pathname)
         val profileChunk = mock<ProfileChunk> {
