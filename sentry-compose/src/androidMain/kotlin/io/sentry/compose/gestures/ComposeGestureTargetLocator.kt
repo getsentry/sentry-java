@@ -2,6 +2,7 @@
 
 package io.sentry.compose.gestures
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.Owner
@@ -17,6 +18,7 @@ import io.sentry.util.AutoClosableReentrantLock
 import java.util.LinkedList
 import java.util.Queue
 
+@OptIn(InternalComposeUiApi::class)
 public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureTargetLocator {
     @Volatile
     private var composeHelper: SentryComposeHelper? = null

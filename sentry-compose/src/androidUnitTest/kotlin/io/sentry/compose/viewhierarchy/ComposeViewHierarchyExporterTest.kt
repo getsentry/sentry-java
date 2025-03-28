@@ -17,8 +17,8 @@ import io.sentry.protocol.ViewHierarchyNode
 import org.junit.Assert
 import org.junit.Test
 import org.mockito.Mockito
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class ComposeViewHierarchyExporterTest {
@@ -31,10 +31,8 @@ class ComposeViewHierarchyExporterTest {
         val childC = mockLayoutNode(false, null, 10, 20)
         val parent = mockLayoutNode(true, "root", 30, 40, listOf(childA, childB, childC))
 
-        val node = Mockito.mock(
-            Owner::class.java
-        )
-        `when`(node.root).thenReturn(parent)
+        val node = mock<Owner>()
+        whenever(node.root).thenReturn(parent)
 
         val exporter: ViewHierarchyExporter =
             ComposeViewHierarchyExporter(NoOpLogger.getInstance())
@@ -71,12 +69,12 @@ class ComposeViewHierarchyExporterTest {
             val nodeA = Mockito.mock(
                 LayoutNode::class.java
             )
-            `when`(nodeA.isPlaced).thenReturn(isPlaced)
+            whenever(nodeA.isPlaced).thenReturn(isPlaced)
 
             val modifierInfo = Mockito.mock(
                 ModifierInfo::class.java
             )
-            `when`(modifierInfo.modifier)
+            whenever(modifierInfo.modifier)
                 .thenReturn(
                     object : SemanticsModifier {
                         override val semanticsConfiguration: SemanticsConfiguration
@@ -94,9 +92,9 @@ class ComposeViewHierarchyExporterTest {
                 )
             val modifierInfoList: MutableList<ModifierInfo> = ArrayList()
             modifierInfoList.add(modifierInfo)
-            `when`((nodeA.getModifierInfo())).thenReturn(modifierInfoList)
+            whenever((nodeA.getModifierInfo())).thenReturn(modifierInfoList)
 
-            `when`((nodeA.zSortedChildren))
+            whenever((nodeA.zSortedChildren))
                 .thenReturn(mutableVectorOf<LayoutNode>().apply { addAll(children) })
 
             val coordinates = Mockito.mock(
@@ -108,7 +106,7 @@ class ComposeViewHierarchyExporterTest {
             whenever(coordinates.parentLayoutCoordinates).thenReturn(parentCoordinates)
             whenever(parentCoordinates.localBoundingBoxOf(any(), any()))
                 .thenReturn(Rect(0f, 0f, width.toFloat(), height.toFloat()))
-            `when`(nodeA.coordinates).thenReturn(coordinates)
+            whenever(nodeA.coordinates).thenReturn(coordinates)
             return nodeA
         }
     }
