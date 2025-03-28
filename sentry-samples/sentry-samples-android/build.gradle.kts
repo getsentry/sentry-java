@@ -126,7 +126,6 @@ dependencies {
     implementation(projects.sentryAndroidFragment)
     implementation(projects.sentryAndroidTimber)
     implementation(projects.sentryCompose)
-    implementation(projects.sentryComposeHelper)
     implementation(projects.sentryOkhttp)
     implementation(Config.Libs.fragment)
     implementation(Config.Libs.timber)
