@@ -6,7 +6,6 @@ plugins {
     id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
     kotlin("jvm")
     kotlin("plugin.spring") version Config.kotlinVersion
-    id("com.apollographql.apollo3") version "3.8.2"
 }
 
 group = "io.sentry.sample.spring-boot-jakarta"
@@ -46,7 +45,7 @@ dependencies {
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBoot3Starter)
     implementation(Config.Libs.kotlinReflect)
-    implementation(Config.Libs.springBootStarterJdbc)
+    implementation(Config.Libs.springBoot3StarterJdbc)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
@@ -56,12 +55,15 @@ dependencies {
     // database query tracing
     implementation(projects.sentryJdbc)
     runtimeOnly(Config.TestLibs.hsqldb)
+
+    testImplementation(projects.sentrySystemTestSupport)
     testImplementation(Config.Libs.springBoot3StarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation("ch.qos.logback:logback-classic:1.3.5")
+    testImplementation("ch.qos.logback:logback-classic:1.5.16")
+    testImplementation("ch.qos.logback:logback-core:1.5.16")
     testImplementation(Config.Libs.slf4jApi2)
     testImplementation(Config.Libs.apolloKotlin)
     testImplementation(projects.sentry)
@@ -95,15 +97,5 @@ tasks.named("test").configure {
 
     filter {
         excludeTestsMatching("io.sentry.systemtest.*")
-    }
-}
-
-apollo {
-    service("service") {
-        srcDir("src/test/graphql")
-        packageName.set("io.sentry.samples.graphql")
-        outputDirConnection {
-            connectToKotlinSourceSet("test")
-        }
     }
 }

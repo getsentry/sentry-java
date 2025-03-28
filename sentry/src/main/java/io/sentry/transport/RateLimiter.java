@@ -5,6 +5,7 @@ import static io.sentry.SentryLevel.INFO;
 
 import io.sentry.DataCategory;
 import io.sentry.Hint;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
@@ -13,6 +14,7 @@ import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.StringUtils;
 import java.io.Closeable;
@@ -39,7 +41,7 @@ public final class RateLimiter implements Closeable {
       new ConcurrentHashMap<>();
   private final @NotNull List<IRateLimitObserver> rateLimitObservers = new CopyOnWriteArrayList<>();
   private @Nullable Timer timer = null;
-  private final @NotNull Object timerLock = new Object();
+  private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
 
   public RateLimiter(
       final @NotNull ICurrentDateProvider currentDateProvider,
@@ -73,7 +75,10 @@ public final class RateLimiter implements Closeable {
     if (dropItems != null) {
       options
           .getLogger()
-          .log(SentryLevel.INFO, "%d items will be dropped due rate limiting.", dropItems.size());
+          .log(
+              SentryLevel.WARNING,
+              "%d envelope items will be dropped due rate limiting.",
+              dropItems.size());
 
       //       Need a new envelope
       List<SentryEnvelopeItem> toSend = new ArrayList<>();
@@ -85,7 +90,9 @@ public final class RateLimiter implements Closeable {
 
       // no reason to continue
       if (toSend.isEmpty()) {
-        options.getLogger().log(SentryLevel.INFO, "Envelope discarded due all items rate limited.");
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Envelope discarded due all items rate limited.");
 
         markHintWhenSendingFailed(hint, false);
         return null;
@@ -184,6 +191,8 @@ public final class RateLimiter implements Closeable {
         return DataCategory.Attachment;
       case "profile":
         return DataCategory.Profile;
+      case "profile_chunk":
+        return DataCategory.ProfileChunk;
       case "transaction":
         return DataCategory.Transaction;
       case "check_in":
@@ -285,7 +294,7 @@ public final class RateLimiter implements Closeable {
 
       notifyRateLimitObservers();
 
-      synchronized (timerLock) {
+      try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
         if (timer == null) {
           timer = new Timer(true);
         }
@@ -337,7 +346,7 @@ public final class RateLimiter implements Closeable {
 
   @Override
   public void close() throws IOException {
-    synchronized (timerLock) {
+    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       if (timer != null) {
         timer.cancel();
         timer = null;

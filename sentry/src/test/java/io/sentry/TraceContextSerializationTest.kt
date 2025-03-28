@@ -24,7 +24,8 @@ class TraceContextSerializationTest {
             "0252ec25-cd0a-4230-bd2f-936a4585637e",
             "0.00000021",
             "true",
-            SentryId("3367f5196c494acaae85bbbd535379aa")
+            SentryId("3367f5196c494acaae85bbbd535379aa"),
+            "0.00000012"
         )
     }
     private val fixture = Fixture()

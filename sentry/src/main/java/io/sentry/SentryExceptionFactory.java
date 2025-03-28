@@ -137,14 +137,15 @@ public final class SentryExceptionFactory {
   @NotNull
   Deque<SentryException> extractExceptionQueue(final @NotNull Throwable throwable) {
     return extractExceptionQueueInternal(
-        throwable, new AtomicInteger(-1), new HashSet<>(), new ArrayDeque<>());
+        throwable, new AtomicInteger(-1), new HashSet<>(), new ArrayDeque<>(), null);
   }
 
   Deque<SentryException> extractExceptionQueueInternal(
       final @NotNull Throwable throwable,
       final @NotNull AtomicInteger exceptionId,
       final @NotNull HashSet<Throwable> circularityDetector,
-      final @NotNull Deque<SentryException> exceptions) {
+      final @NotNull Deque<SentryException> exceptions,
+      @Nullable String mechanismTypeOverride) {
     Mechanism exceptionMechanism;
     Thread thread;
 
@@ -154,6 +155,8 @@ public final class SentryExceptionFactory {
     // Stack the exceptions to send them in the reverse order
     while (currentThrowable != null && circularityDetector.add(currentThrowable)) {
       boolean snapshot = false;
+      final @NotNull String mechanismType =
+          mechanismTypeOverride == null ? "chained" : mechanismTypeOverride;
       if (currentThrowable instanceof ExceptionMechanismException) {
         // this is for ANR I believe
         ExceptionMechanismException exceptionMechanismThrowable =
@@ -177,7 +180,7 @@ public final class SentryExceptionFactory {
       exceptions.addFirst(exception);
 
       if (exceptionMechanism.getType() == null) {
-        exceptionMechanism.setType("chained");
+        exceptionMechanism.setType(mechanismType);
       }
 
       if (exceptionId.get() >= 0) {
@@ -189,14 +192,17 @@ public final class SentryExceptionFactory {
 
       Throwable[] suppressed = currentThrowable.getSuppressed();
       if (suppressed != null && suppressed.length > 0) {
-        exceptionMechanism.setExceptionGroup(true);
+        // Disabled for now as it causes grouping in Sentry to sometimes use
+        // the suppressed exception as main exception.
+        // exceptionMechanism.setExceptionGroup(true);
         for (Throwable suppressedThrowable : suppressed) {
           extractExceptionQueueInternal(
-              suppressedThrowable, exceptionId, circularityDetector, exceptions);
+              suppressedThrowable, exceptionId, circularityDetector, exceptions, "suppressed");
         }
       }
       currentThrowable = currentThrowable.getCause();
       parentId = currentExceptionId;
+      mechanismTypeOverride = null;
     }
 
     return exceptions;

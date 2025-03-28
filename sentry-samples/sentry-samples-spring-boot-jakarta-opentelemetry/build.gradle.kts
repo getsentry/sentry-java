@@ -7,7 +7,6 @@ plugins {
     id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
     kotlin("jvm")
     kotlin("plugin.spring") version Config.kotlinVersion
-    id("com.apollographql.apollo3") version "3.8.2"
 }
 
 group = "io.sentry.sample.spring-boot-jakarta"
@@ -47,7 +46,7 @@ dependencies {
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springBoot3Starter)
     implementation(Config.Libs.kotlinReflect)
-    implementation(Config.Libs.springBootStarterJdbc)
+    implementation(Config.Libs.springBoot3StarterJdbc)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
@@ -58,20 +57,17 @@ dependencies {
     // database query tracing
     implementation(projects.sentryJdbc)
     runtimeOnly(Config.TestLibs.hsqldb)
+
+    testImplementation(projects.sentrySystemTestSupport)
     testImplementation(Config.Libs.springBoot3StarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation("ch.qos.logback:logback-classic:1.3.5")
+    testImplementation("ch.qos.logback:logback-classic:1.5.16")
+    testImplementation("ch.qos.logback:logback-core:1.5.16")
     testImplementation(Config.Libs.slf4jApi2)
     testImplementation(Config.Libs.apolloKotlin)
-}
-
-dependencyManagement {
-    imports {
-        mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.7.0")
-    }
 }
 
 configure<SourceSetContainer> {
@@ -88,9 +84,7 @@ tasks.register<BootRun>("bootRunWithAgent").configure {
     classpath = mainBootRunTask.classpath
 
     val versionName = project.properties["versionName"] as String
-    val agentProjectId = projects.sentryOpentelemetry.sentryOpentelemetryAgent.identityPath.toString()
-    val agentProjectPath = project(agentProjectId).projectDir.absolutePath
-    val agentJarPath = "$agentProjectPath/build/libs/sentry-opentelemetry-agent-$versionName.jar"
+    val agentJarPath = "$rootDir/sentry-opentelemetry/sentry-opentelemetry-agent/build/libs/sentry-opentelemetry-agent-$versionName.jar"
 
     val dsn = System.getenv("SENTRY_DSN") ?: "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563"
     val tracesSampleRate = System.getenv("SENTRY_TRACES_SAMPLE_RATE") ?: "1"
@@ -127,15 +121,5 @@ tasks.named("test").configure {
 
     filter {
         excludeTestsMatching("io.sentry.systemtest.*")
-    }
-}
-
-apollo {
-    service("service") {
-        srcDir("src/test/graphql")
-        packageName.set("io.sentry.samples.graphql")
-        outputDirConnection {
-            connectToKotlinSourceSet("test")
-        }
     }
 }

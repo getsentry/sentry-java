@@ -2,10 +2,10 @@ package io.sentry.android.core;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.InitPriority;
+import io.sentry.ProfileLifecycle;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SdkVersion;
@@ -64,6 +64,13 @@ final class ManifestMetadataReader {
 
   static final String PROFILES_SAMPLE_RATE = "io.sentry.traces.profiling.sample-rate";
 
+  static final String PROFILE_SESSION_SAMPLE_RATE =
+      "io.sentry.traces.profiling.session-sample-rate";
+
+  static final String PROFILE_LIFECYCLE = "io.sentry.traces.profiling.lifecycle";
+
+  static final String PROFILER_START_ON_APP_START = "io.sentry.traces.profiling.start-on-app-start";
+
   @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
   static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
 
@@ -106,6 +113,15 @@ final class ManifestMetadataReader {
 
   static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
 
+  static final String IGNORED_ERRORS = "io.sentry.ignored-errors";
+
+  static final String IN_APP_INCLUDES = "io.sentry.in-app-includes";
+
+  static final String IN_APP_EXCLUDES = "io.sentry.in-app-excludes";
+
+  static final String ENABLE_AUTO_TRACE_ID_GENERATION =
+      "io.sentry.traces.enable-auto-id-generation";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -131,7 +147,7 @@ final class ManifestMetadataReader {
         options.setDebug(readBool(metadata, logger, DEBUG, options.isDebug()));
 
         if (options.isDebug()) {
-          final String level =
+          final @Nullable String level =
               readString(
                   metadata,
                   logger,
@@ -153,7 +169,7 @@ final class ManifestMetadataReader {
                 options.isEnableAutoSessionTracking()));
 
         if (options.getSampleRate() == null) {
-          final Double sampleRate = readDouble(metadata, logger, SAMPLE_RATE);
+          final double sampleRate = readDouble(metadata, logger, SAMPLE_RATE);
           if (sampleRate != -1) {
             options.setSampleRate(sampleRate);
           }
@@ -172,7 +188,7 @@ final class ManifestMetadataReader {
         options.setAttachAnrThreadDump(
             readBool(metadata, logger, ANR_ATTACH_THREAD_DUMPS, options.isAttachAnrThreadDump()));
 
-        final String dsn = readString(metadata, logger, DSN, options.getDsn());
+        final @Nullable String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
 
         if (!enabled || (dsn != null && dsn.isEmpty())) {
@@ -285,7 +301,7 @@ final class ManifestMetadataReader {
                 options.isCollectAdditionalContext()));
 
         if (options.getTracesSampleRate() == null) {
-          final Double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
+          final double tracesSampleRate = readDouble(metadata, logger, TRACES_SAMPLE_RATE);
           if (tracesSampleRate != -1) {
             options.setTracesSampleRate(tracesSampleRate);
           }
@@ -309,11 +325,41 @@ final class ManifestMetadataReader {
                 options.isEnableActivityLifecycleTracingAutoFinish()));
 
         if (options.getProfilesSampleRate() == null) {
-          final Double profilesSampleRate = readDouble(metadata, logger, PROFILES_SAMPLE_RATE);
+          final double profilesSampleRate = readDouble(metadata, logger, PROFILES_SAMPLE_RATE);
           if (profilesSampleRate != -1) {
             options.setProfilesSampleRate(profilesSampleRate);
           }
         }
+
+        if (options.getProfileSessionSampleRate() == null) {
+          final double profileSessionSampleRate =
+              readDouble(metadata, logger, PROFILE_SESSION_SAMPLE_RATE);
+          if (profileSessionSampleRate != -1) {
+            options.getExperimental().setProfileSessionSampleRate(profileSessionSampleRate);
+          }
+        }
+
+        final @Nullable String profileLifecycle =
+            readString(
+                metadata,
+                logger,
+                PROFILE_LIFECYCLE,
+                options.getProfileLifecycle().name().toLowerCase(Locale.ROOT));
+        if (profileLifecycle != null) {
+          options
+              .getExperimental()
+              .setProfileLifecycle(
+                  ProfileLifecycle.valueOf(profileLifecycle.toUpperCase(Locale.ROOT)));
+        }
+
+        options
+            .getExperimental()
+            .setStartProfilerOnAppStart(
+                readBool(
+                    metadata,
+                    logger,
+                    PROFILER_START_ON_APP_START,
+                    options.isStartProfilerOnAppStart()));
 
         options.setEnableUserInteractionTracing(
             readBool(metadata, logger, TRACES_UI_ENABLE, options.isEnableUserInteractionTracing()));
@@ -355,6 +401,7 @@ final class ManifestMetadataReader {
 
         // sdkInfo.addIntegration();
 
+        @Nullable
         List<String> integrationsFromGradlePlugin =
             readList(metadata, logger, SENTRY_GRADLE_PLUGIN_INTEGRATIONS);
         if (integrationsFromGradlePlugin != null) {
@@ -379,32 +426,52 @@ final class ManifestMetadataReader {
             readBool(
                 metadata, logger, ENABLE_SCOPE_PERSISTENCE, options.isEnableScopePersistence()));
 
-        if (options.getExperimental().getSessionReplay().getSessionSampleRate() == null) {
-          final Double sessionSampleRate =
+        options.setEnableAutoTraceIdGeneration(
+            readBool(
+                metadata,
+                logger,
+                ENABLE_AUTO_TRACE_ID_GENERATION,
+                options.isEnableAutoTraceIdGeneration()));
+
+        if (options.getSessionReplay().getSessionSampleRate() == null) {
+          final double sessionSampleRate =
               readDouble(metadata, logger, REPLAYS_SESSION_SAMPLE_RATE);
           if (sessionSampleRate != -1) {
-            options.getExperimental().getSessionReplay().setSessionSampleRate(sessionSampleRate);
+            options.getSessionReplay().setSessionSampleRate(sessionSampleRate);
           }
         }
 
-        if (options.getExperimental().getSessionReplay().getOnErrorSampleRate() == null) {
-          final Double onErrorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
+        if (options.getSessionReplay().getOnErrorSampleRate() == null) {
+          final double onErrorSampleRate = readDouble(metadata, logger, REPLAYS_ERROR_SAMPLE_RATE);
           if (onErrorSampleRate != -1) {
-            options.getExperimental().getSessionReplay().setOnErrorSampleRate(onErrorSampleRate);
+            options.getSessionReplay().setOnErrorSampleRate(onErrorSampleRate);
           }
         }
 
         options
-            .getExperimental()
             .getSessionReplay()
             .setMaskAllText(readBool(metadata, logger, REPLAYS_MASK_ALL_TEXT, true));
 
         options
-            .getExperimental()
             .getSessionReplay()
             .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
-      }
 
+        options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
+
+        final @Nullable List<String> includes = readList(metadata, logger, IN_APP_INCLUDES);
+        if (includes != null && !includes.isEmpty()) {
+          for (final @NotNull String include : includes) {
+            options.addInAppInclude(include);
+          }
+        }
+
+        final @Nullable List<String> excludes = readList(metadata, logger, IN_APP_EXCLUDES);
+        if (excludes != null && !excludes.isEmpty()) {
+          for (final @NotNull String exclude : excludes) {
+            options.addInAppExclude(exclude);
+          }
+        }
+      }
       options
           .getLogger()
           .log(SentryLevel.INFO, "Retrieving configuration from AndroidManifest.xml");
@@ -474,10 +541,13 @@ final class ManifestMetadataReader {
     }
   }
 
-  private static @NotNull Double readDouble(
+  private static double readDouble(
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     // manifest meta-data only reads float
-    final Double value = ((Number) metadata.getFloat(key, metadata.getInt(key, -1))).doubleValue();
+    double value = ((Float) metadata.getFloat(key, -1)).doubleValue();
+    if (value == -1) {
+      value = ((Integer) metadata.getInt(key, -1)).doubleValue();
+    }
     logger.log(SentryLevel.DEBUG, key + " read: " + value);
     return value;
   }
@@ -520,18 +590,14 @@ final class ManifestMetadataReader {
    *
    * @param context the application context
    * @return the Bundle attached to the PackageManager
-   * @throws PackageManager.NameNotFoundException if the package name is non-existent
    */
   private static @Nullable Bundle getMetadata(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @Nullable BuildInfoProvider buildInfoProvider)
-      throws PackageManager.NameNotFoundException {
+      final @Nullable BuildInfoProvider buildInfoProvider) {
     final ApplicationInfo app =
         ContextUtils.getApplicationInfo(
-            context,
-            PackageManager.GET_META_DATA,
-            buildInfoProvider != null ? buildInfoProvider : new BuildInfoProvider(logger));
-    return app.metaData;
+            context, buildInfoProvider != null ? buildInfoProvider : new BuildInfoProvider(logger));
+    return app != null ? app.metaData : null;
   }
 }

@@ -6,7 +6,6 @@ plugins {
     id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
     kotlin("jvm")
     kotlin("plugin.spring") version Config.kotlinVersion
-    id("com.apollographql.apollo3") version "3.8.2"
 }
 
 group = "io.sentry.sample.spring-boot"
@@ -52,22 +51,29 @@ dependencies {
     implementation(projects.sentryLogback)
     implementation(projects.sentryGraphql)
     implementation(projects.sentryQuartz)
-    implementation(Config.Libs.springBoot3StarterOpenTelemetry)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
 
     // database query tracing
     implementation(projects.sentryJdbc)
     runtimeOnly(Config.TestLibs.hsqldb)
+
+    testImplementation(projects.sentrySystemTestSupport)
     testImplementation(Config.Libs.springBootStarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.Libs.logbackClassic)
+    testImplementation("ch.qos.logback:logback-classic:1.5.16")
+    testImplementation("ch.qos.logback:logback-core:1.5.16")
     testImplementation(Config.Libs.slf4jApi2)
     testImplementation(Config.Libs.apolloKotlin)
     testImplementation("org.apache.httpcomponents:httpclient")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom(Config.Libs.OpenTelemetry.otelInstrumentationBom)
+    }
 }
 
 configure<SourceSetContainer> {
@@ -98,15 +104,5 @@ tasks.named("test").configure {
 
     filter {
         excludeTestsMatching("io.sentry.systemtest.*")
-    }
-}
-
-apollo {
-    service("service") {
-        srcDir("src/test/graphql")
-        packageName.set("io.sentry.samples.graphql")
-        outputDirConnection {
-            connectToKotlinSourceSet("test")
-        }
     }
 }

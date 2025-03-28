@@ -16,7 +16,7 @@ import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.totalPaddingTopSafe
 
 @TargetApi(26)
-sealed class ViewHierarchyNode(
+internal sealed class ViewHierarchyNode(
     val x: Float,
     val y: Float,
     val width: Int,
@@ -269,22 +269,22 @@ sealed class ViewHierarchyNode(
                 return false
             }
 
-            if (this.javaClass.isAssignableFrom(options.experimental.sessionReplay.unmaskViewClasses)) {
+            if (this.javaClass.isAssignableFrom(options.sessionReplay.unmaskViewClasses)) {
                 return false
             }
 
-            return this.javaClass.isAssignableFrom(options.experimental.sessionReplay.maskViewClasses)
+            return this.javaClass.isAssignableFrom(options.sessionReplay.maskViewClasses)
         }
 
         private fun ViewParent.isUnmaskContainer(options: SentryOptions): Boolean {
             val unmaskContainer =
-                options.experimental.sessionReplay.unmaskViewContainerClass ?: return false
+                options.sessionReplay.unmaskViewContainerClass ?: return false
             return this.javaClass.name == unmaskContainer
         }
 
         private fun View.isMaskContainer(options: SentryOptions): Boolean {
             val maskContainer =
-                options.experimental.sessionReplay.maskViewContainerClass ?: return false
+                options.sessionReplay.maskViewContainerClass ?: return false
             return this.javaClass.name == maskContainer
         }
 

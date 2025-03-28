@@ -14,7 +14,6 @@ import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
 import io.sentry.SpanStatus;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
-import io.sentry.android.core.performance.ActivityLifecycleTimeSpan;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.protocol.App;
@@ -81,12 +80,13 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
         return transaction;
       }
 
+      final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
       // the app start measurement is only sent once and only if the transaction has
       // the app.start span, which is automatically created by the SDK.
       if (hasAppStartSpan(transaction)) {
-        if (!sentStartMeasurement) {
+        if (appStartMetrics.shouldSendStartMeasurements()) {
           final @NotNull TimeSpan appStartTimeSpan =
-              AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
+              appStartMetrics.getAppStartTimeSpanWithFallback(options);
           final long appStartUpDurationMs = appStartTimeSpan.getDurationMs();
 
           // if appStartUpDurationMs is 0, metrics are not ready to be sent
@@ -96,14 +96,14 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
                     (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
 
             final String appStartKey =
-                AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
+                appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.COLD
                     ? MeasurementValue.KEY_APP_START_COLD
                     : MeasurementValue.KEY_APP_START_WARM;
 
             transaction.getMeasurements().put(appStartKey, value);
 
-            attachColdAppStartSpans(AppStartMetrics.getInstance(), transaction);
-            sentStartMeasurement = true;
+            attachAppStartSpans(appStartMetrics, transaction);
+            appStartMetrics.onAppStartSpansSent();
           }
         }
 
@@ -113,7 +113,7 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
           transaction.getContexts().setApp(appContext);
         }
         final String appStartType =
-            AppStartMetrics.getInstance().getAppStartType() == AppStartMetrics.AppStartType.COLD
+            appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.COLD
                 ? "cold"
                 : "warm";
         appContext.setStartType(appStartType);
@@ -221,10 +221,10 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
             || context.getOperation().equals(APP_START_WARM));
   }
 
-  private void attachColdAppStartSpans(
+  private void attachAppStartSpans(
       final @NotNull AppStartMetrics appStartMetrics, final @NotNull SentryTransaction txn) {
 
-    // data will be filled only for cold app starts
+    // We include process init, content providers and application.onCreate spans only on cold start
     if (appStartMetrics.getAppStartType() != AppStartMetrics.AppStartType.COLD) {
       return;
     }
@@ -246,18 +246,9 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
     }
 
     // Process init
-    final long classInitUptimeMs = appStartMetrics.getClassLoadedUptimeMs();
-    final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
-    if (appStartTimeSpan.hasStarted()
-        && Math.abs(classInitUptimeMs - appStartTimeSpan.getStartUptimeMs())
-            <= MAX_PROCESS_INIT_APP_START_DIFF_MS) {
-      final @NotNull TimeSpan processInitTimeSpan = new TimeSpan();
-      processInitTimeSpan.setStartedAt(appStartTimeSpan.getStartUptimeMs());
-      processInitTimeSpan.setStartUnixTimeMs(appStartTimeSpan.getStartTimestampMs());
-
-      processInitTimeSpan.setStoppedAt(classInitUptimeMs);
-      processInitTimeSpan.setDescription("Process Initialization");
-
+    final @NotNull TimeSpan processInitTimeSpan = appStartMetrics.createProcessInitSpan();
+    if (processInitTimeSpan.hasStarted()
+        && Math.abs(processInitTimeSpan.getDurationMs()) <= MAX_PROCESS_INIT_APP_START_DIFF_MS) {
       txn.getSpans()
           .add(
               timeSpanToSentrySpan(
@@ -282,34 +273,6 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       txn.getSpans()
           .add(
               timeSpanToSentrySpan(appOnCreate, parentSpanId, traceId, APP_METRICS_APPLICATION_OP));
-    }
-
-    // Activities
-    final @NotNull List<ActivityLifecycleTimeSpan> activityLifecycleTimeSpans =
-        appStartMetrics.getActivityLifecycleTimeSpans();
-    if (!activityLifecycleTimeSpans.isEmpty()) {
-      for (ActivityLifecycleTimeSpan activityTimeSpan : activityLifecycleTimeSpans) {
-        if (activityTimeSpan.getOnCreate().hasStarted()
-            && activityTimeSpan.getOnCreate().hasStopped()) {
-          txn.getSpans()
-              .add(
-                  timeSpanToSentrySpan(
-                      activityTimeSpan.getOnCreate(),
-                      parentSpanId,
-                      traceId,
-                      APP_METRICS_ACTIVITIES_OP));
-        }
-        if (activityTimeSpan.getOnStart().hasStarted()
-            && activityTimeSpan.getOnStart().hasStopped()) {
-          txn.getSpans()
-              .add(
-                  timeSpanToSentrySpan(
-                      activityTimeSpan.getOnStart(),
-                      parentSpanId,
-                      traceId,
-                      APP_METRICS_ACTIVITIES_OP));
-        }
-      }
     }
   }
 

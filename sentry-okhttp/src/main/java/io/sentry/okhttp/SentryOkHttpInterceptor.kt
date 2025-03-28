@@ -18,6 +18,7 @@ import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import okhttp3.Interceptor
@@ -49,14 +50,19 @@ public open class SentryOkHttpInterceptor(
     private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
 ) : Interceptor {
 
+    private companion object {
+        init {
+            SentryIntegrationPackageStorage.getInstance()
+                .addPackage("maven:io.sentry:sentry-okhttp", BuildConfig.VERSION_NAME)
+        }
+    }
+
     public constructor() : this(ScopesAdapter.getInstance())
     public constructor(scopes: IScopes) : this(scopes, null)
     public constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
 
     init {
         addIntegrationToSdkVersion("OkHttp")
-        SentryIntegrationPackageStorage.getInstance()
-            .addPackage("maven:io.sentry:sentry-okhttp", BuildConfig.VERSION_NAME)
     }
 
     @Suppress("LongMethod")
@@ -80,6 +86,7 @@ public open class SentryOkHttpInterceptor(
             val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
             span = parentSpan?.startChild("http.client", "$method $url")
         }
+
         val startTimestamp = CurrentDateProvider.getInstance().currentTimeMillis
 
         span?.spanContext?.origin = TRACE_ORIGIN
@@ -93,16 +100,21 @@ public open class SentryOkHttpInterceptor(
         try {
             val requestBuilder = request.newBuilder()
 
-            TracingUtils.traceIfAllowed(
-                scopes,
-                request.url.toString(),
-                request.headers(BaggageHeader.BAGGAGE_HEADER),
-                span
-            )?.let { tracingHeaders ->
-                requestBuilder.addHeader(tracingHeaders.sentryTraceHeader.name, tracingHeaders.sentryTraceHeader.value)
-                tracingHeaders.baggageHeader?.let {
-                    requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
-                    requestBuilder.addHeader(it.name, it.value)
+            if (!isIgnored()) {
+                TracingUtils.traceIfAllowed(
+                    scopes,
+                    request.url.toString(),
+                    request.headers(BaggageHeader.BAGGAGE_HEADER),
+                    span
+                )?.let { tracingHeaders ->
+                    requestBuilder.addHeader(
+                        tracingHeaders.sentryTraceHeader.name,
+                        tracingHeaders.sentryTraceHeader.value
+                    )
+                    tracingHeaders.baggageHeader?.let {
+                        requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
+                        requestBuilder.addHeader(it.name, it.value)
+                    }
                 }
             }
 
@@ -135,6 +147,10 @@ public open class SentryOkHttpInterceptor(
             }
             throw e
         } finally {
+            // interceptors may change the request details, so let's update it here
+            // this only works correctly if SentryOkHttpInterceptor is the last one in the chain
+            okHttpEvent?.setRequest(request)
+
             finishSpan(span, request, response, isFromEventListener, okHttpEvent)
 
             // The SentryOkHttpEventListener will send the breadcrumb itself if used for this call
@@ -142,6 +158,10 @@ public open class SentryOkHttpInterceptor(
                 sendBreadcrumb(request, code, response, startTimestamp)
             }
         }
+    }
+
+    private fun isIgnored(): Boolean {
+        return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
     }
 
     private fun sendBreadcrumb(

@@ -3,6 +3,7 @@ package io.sentry
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.createSentryClientMock
+import io.sentry.test.initForTest
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
@@ -19,6 +20,9 @@ class ScopesAdapterTest {
 
     @BeforeTest
     fun `set up`() {
+        initForTest {
+            it.dsn = "https://key@localhost/proj"
+        }
         Sentry.setCurrentScopes(scopes)
     }
 
@@ -215,6 +219,12 @@ class ScopesAdapterTest {
         verify(scopes).captureTransaction(eq(transaction), eq(traceContext), eq(hint), eq(profilingTraceData))
     }
 
+    @Test fun `captureProfileChunk calls Scopes`() {
+        val profileChunk = mock<ProfileChunk>()
+        ScopesAdapter.getInstance().captureProfileChunk(profileChunk)
+        verify(scopes).captureProfileChunk(eq(profileChunk))
+    }
+
     @Test fun `startTransaction calls Scopes`() {
         val transactionContext = mock<TransactionContext>()
         val samplingContext = mock<CustomSamplingContext>()
@@ -258,5 +268,15 @@ class ScopesAdapterTest {
     @Test fun `reportFullyDisplayed calls Scopes`() {
         ScopesAdapter.getInstance().reportFullyDisplayed()
         verify(scopes).reportFullyDisplayed()
+    }
+
+    @Test fun `startProfiler calls Scopes`() {
+        ScopesAdapter.getInstance().startProfiler()
+        verify(scopes).startProfiler()
+    }
+
+    @Test fun `stopProfiler calls Scopes`() {
+        ScopesAdapter.getInstance().stopProfiler()
+        verify(scopes).stopProfiler()
     }
 }

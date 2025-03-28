@@ -14,6 +14,7 @@ import io.sentry.test.DeferredExecutorService
 import io.sentry.test.callMethod
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.createTestScopes
+import io.sentry.test.initForTest
 import io.sentry.util.HintUtils
 import io.sentry.util.StringUtils
 import junit.framework.TestCase.assertSame
@@ -27,6 +28,7 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -53,6 +55,7 @@ class ScopesTest {
 
     private lateinit var file: File
     private lateinit var profilingTraceFile: File
+    private val mockProfiler = spy(NoOpContinuousProfiler.getInstance())
 
     @BeforeTest
     fun `set up`() {
@@ -78,7 +81,13 @@ class ScopesTest {
 
     @Test
     fun `when no dsn available, ctor throws illegal arg`() {
-        val ex = assertFailsWith<IllegalArgumentException> { createScopes(SentryOptions()) }
+        val ex = assertFailsWith<IllegalArgumentException> {
+            val options = SentryOptions()
+            val scopeToUse = Scope(options)
+            val isolationScopeToUse = Scope(options)
+            val globalScopeToUse = Scope(options)
+            Scopes(scopeToUse, isolationScopeToUse, globalScopeToUse, "test")
+        }
         assertEquals("Scopes requires a DSN to be instantiated. Considering using the NoOpScopes if no DSN is available.", ex.message)
     }
 
@@ -91,6 +100,7 @@ class ScopesTest {
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
         val scopes = createScopes(options)
+        reset(integrationMock)
         scopes.forkedScopes("test")
         verifyNoMoreInteractions(integrationMock)
     }
@@ -104,6 +114,7 @@ class ScopesTest {
         options.setSerializer(mock())
         options.addIntegration(integrationMock)
         val scopes = createScopes(options)
+        reset(integrationMock)
         scopes.forkedCurrentScope("test")
         verifyNoMoreInteractions(integrationMock)
     }
@@ -772,6 +783,8 @@ class ScopesTest {
         }
     }
 
+    //endregion
+
     //region captureCheckIn tests
 
     @Test
@@ -964,7 +977,7 @@ class ScopesTest {
 
         var options: SentryOptions? = null
         // init main scopes and make it enabled
-        Sentry.init {
+        initForTest {
             it.addIntegration(mock)
             it.dsn = "https://key@sentry.io/proj"
             it.cacheDirPath = file.absolutePath
@@ -1576,6 +1589,52 @@ class ScopesTest {
     }
     //endregion
 
+    //region captureProfileChunk tests
+    @Test
+    fun `when captureProfileChunk is called on disabled client, do nothing`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = createScopes(options)
+        val mockClient = mock<ISentryClient>()
+        sut.bindClient(mockClient)
+        sut.close()
+
+        sut.captureProfileChunk(mock())
+        verify(mockClient, never()).captureProfileChunk(any(), any())
+        verify(mockClient, never()).captureProfileChunk(any(), any())
+    }
+
+    @Test
+    fun `when captureProfileChunk, captureProfileChunk on the client should be called`() {
+        val options = SentryOptions()
+        options.cacheDirPath = file.absolutePath
+        options.dsn = "https://key@sentry.io/proj"
+        options.setSerializer(mock())
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
+        sut.bindClient(mockClient)
+
+        val profileChunk = mock<ProfileChunk>()
+        sut.captureProfileChunk(profileChunk)
+        verify(mockClient).captureProfileChunk(eq(profileChunk), any())
+    }
+
+    @Test
+    fun `when profileChunk is called, lastEventId is not set`() {
+        val options = SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            setSerializer(mock())
+        }
+        val sut = createScopes(options)
+        val mockClient = createSentryClientMock()
+        sut.bindClient(mockClient)
+        sut.captureProfileChunk(mock())
+        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
+    }
+    //endregion
+
     //region profiling tests
 
     @Test
@@ -1749,18 +1808,25 @@ class ScopesTest {
     fun `Scopes should close the sentry executor processor, profiler and performance collector on close call`() {
         val executor = mock<ISentryExecutorService>()
         val profiler = mock<ITransactionProfiler>()
-        val performanceCollector = mock<TransactionPerformanceCollector>()
+        val backpressureMonitorMock = mock<IBackpressureMonitor>()
+        val continuousProfiler = mock<IContinuousProfiler>()
+        val performanceCollector = mock<CompositePerformanceCollector>()
         val options = SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
             cacheDirPath = file.absolutePath
             executorService = executor
             setTransactionProfiler(profiler)
-            transactionPerformanceCollector = performanceCollector
+            compositePerformanceCollector = performanceCollector
+            setContinuousProfiler(continuousProfiler)
+            experimental.profileSessionSampleRate = 1.0
+            backpressureMonitor = backpressureMonitorMock
         }
         val sut = createScopes(options)
         sut.close()
+        verify(backpressureMonitorMock).close()
         verify(executor).close(any())
         verify(profiler).close()
+        verify(continuousProfiler).close()
         verify(performanceCollector).close()
     }
 
@@ -1819,6 +1885,49 @@ class ScopesTest {
         }
         val transaction = scopes.startTransaction(TransactionContext("name", "op", TracesSamplingDecision(true)))
         assertTrue(transaction is NoOpTransaction)
+    }
+
+    @Test
+    fun `when startTransaction, trace profile session is started`() {
+        val scopes = generateScopes {
+            it.tracesSampleRate = 1.0
+            it.setContinuousProfiler(mockProfiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+        }
+
+        val transaction = scopes.startTransaction("name", "op")
+        assertTrue(transaction.isSampled!!)
+        verify(mockProfiler).startProfiler(eq(ProfileLifecycle.TRACE), any())
+    }
+
+    @Test
+    fun `when startTransaction, manual profile session is not started`() {
+        val scopes = generateScopes {
+            it.tracesSampleRate = 1.0
+            it.setContinuousProfiler(mockProfiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.experimental.profileLifecycle = ProfileLifecycle.MANUAL
+        }
+
+        val transaction = scopes.startTransaction("name", "op")
+        assertTrue(transaction.isSampled!!)
+        verify(mockProfiler, never()).startProfiler(any(), any())
+    }
+
+    @Test
+    fun `when startTransaction not sampled, trace profile session is not started`() {
+        val scopes = generateScopes {
+            // If transaction is not sampled, profiler should not start
+            it.tracesSampleRate = 0.0
+            it.setContinuousProfiler(mockProfiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+        }
+        val transaction = scopes.startTransaction("name", "op")
+        transaction.spanContext.setSampled(false, false)
+        assertFalse(transaction.isSampled!!)
+        verify(mockProfiler, never()).startProfiler(any(), any())
     }
     //endregion
 
@@ -1969,6 +2078,23 @@ class ScopesTest {
     }
 
     @Test
+    fun `continueTrace creates propagation context from headers and returns transaction context if performance enabled no sampled value`() {
+        val scopes = generateScopes()
+        val traceId = SentryId()
+        val parentSpanId = SpanId()
+        val transactionContext = scopes.continueTrace("$traceId-$parentSpanId", listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET"))
+
+        scopes.configureScope { scope ->
+            assertEquals(traceId, scope.propagationContext.traceId)
+            assertEquals(parentSpanId, scope.propagationContext.parentSpanId)
+        }
+
+        assertEquals(traceId, transactionContext!!.traceId)
+        assertEquals(parentSpanId, transactionContext!!.parentSpanId)
+        assertEquals(null, transactionContext!!.parentSamplingDecision)
+    }
+
+    @Test
     fun `continueTrace creates new propagation context if header invalid and returns transaction context if performance enabled`() {
         val scopes = generateScopes()
         val traceId = SentryId()
@@ -2067,7 +2193,7 @@ class ScopesTest {
     @Test
     fun `creating a transaction with an ignored origin noops`() {
         val scopes = generateScopes {
-            it.ignoredSpanOrigins = listOf("ignored.span.origin")
+            it.setIgnoredSpanOrigins(listOf("ignored.span.origin"))
         }
 
         val transactionContext = TransactionContext("transaction-name", "transaction-op")
@@ -2084,7 +2210,7 @@ class ScopesTest {
     @Test
     fun `creating a transaction with a non ignored origin creates the transaction`() {
         val scopes = generateScopes {
-            it.ignoredSpanOrigins = listOf("ignored.span.origin")
+            it.setIgnoredSpanOrigins(listOf("ignored.span.origin"))
         }
 
         val transactionContext = TransactionContext("transaction-name", "transaction-op")
@@ -2109,6 +2235,120 @@ class ScopesTest {
 
         val transaction = scopes.startTransaction(transactionContext, transactionOptions)
         assertEquals("other.span.origin", transaction.spanContext.origin)
+    }
+
+    //region profileSession
+
+    @Test
+    fun `startProfiler starts the continuous profiler`() {
+        val profiler = mock<IContinuousProfiler>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+        }
+        scopes.startProfiler()
+        verify(profiler).startProfiler(eq(ProfileLifecycle.MANUAL), any())
+    }
+
+    @Test
+    fun `startProfiler logs instructions if continuous profiling is disabled`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.profilesSampleRate = 1.0
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        scopes.startProfiler()
+        verify(profiler, never()).startProfiler(eq(ProfileLifecycle.MANUAL), any())
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."))
+    }
+
+    @Test
+    fun `startProfiler is ignored on trace lifecycle`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        scopes.startProfiler()
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Profiling lifecycle is %s. Profiling cannot be started manually."), eq(ProfileLifecycle.TRACE.name))
+        verify(profiler, never()).startProfiler(any(), any())
+    }
+
+    @Test
+    fun `stopProfiler stops the continuous profiler`() {
+        val profiler = mock<IContinuousProfiler>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+        }
+        scopes.stopProfiler()
+        verify(profiler).stopProfiler(eq(ProfileLifecycle.MANUAL))
+    }
+
+    @Test
+    fun `stopProfiler logs instructions if continuous profiling is disabled`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.profilesSampleRate = 1.0
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        scopes.stopProfiler()
+        verify(profiler, never()).stopProfiler(eq(ProfileLifecycle.MANUAL))
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it."))
+    }
+
+    @Test
+    fun `stopProfiler is ignored on trace lifecycle`() {
+        val profiler = mock<IContinuousProfiler>()
+        val logger = mock<ILogger>()
+        val scopes = generateScopes {
+            it.setContinuousProfiler(profiler)
+            it.experimental.profileSessionSampleRate = 1.0
+            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+            it.setLogger(logger)
+            it.isDebug = true
+        }
+        scopes.stopProfiler()
+        verify(logger).log(eq(SentryLevel.WARNING), eq("Profiling lifecycle is %s. Profiling cannot be stopped manually."), eq(ProfileLifecycle.TRACE.name))
+        verify(profiler, never()).stopProfiler(any())
+    }
+
+    //endregion
+
+    @Test
+    fun `null tags do not cause NPE`() {
+        val scopes = generateScopes()
+        scopes.setTag(null, null)
+        scopes.setTag("k", null)
+        scopes.setTag(null, "v")
+        scopes.removeTag(null)
+        assertTrue(scopes.scope.tags.isEmpty())
+        assertTrue(scopes.isolationScope.tags.isEmpty())
+        assertTrue(scopes.globalScope.tags.isEmpty())
+    }
+
+    @Test
+    fun `null extras do not cause NPE`() {
+        val scopes = generateScopes()
+        scopes.setExtra(null, null)
+        scopes.setExtra("k", null)
+        scopes.setExtra(null, "v")
+        scopes.removeExtra(null)
+        assertTrue(scopes.scope.extras.isEmpty())
+        assertTrue(scopes.isolationScope.extras.isEmpty())
+        assertTrue(scopes.globalScope.extras.isEmpty())
     }
 
     private val dsnTest = "https://key@sentry.io/proj"

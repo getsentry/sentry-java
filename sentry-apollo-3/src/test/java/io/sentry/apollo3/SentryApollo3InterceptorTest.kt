@@ -24,6 +24,7 @@ import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.apollo3.SentryApollo3HttpInterceptor.BeforeSpanCallback
+import io.sentry.mockServerRequestTimeoutMillis
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import io.sentry.util.Apollo3PlatformTestManipulator
@@ -40,6 +41,7 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -192,7 +194,7 @@ class SentryApollo3InterceptorTest {
         fixture.options.setTracePropagationTargets(listOf("some-host-that-does-not-exist"))
         executeQuery(isSpanActive = false)
 
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -201,15 +203,25 @@ class SentryApollo3InterceptorTest {
     fun `when there is no active span, does not add sentry trace header to the request`() {
         executeQuery(isSpanActive = false)
 
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
 
     @Test
+    fun `does not add sentry-trace header when span origin is ignored`() {
+        fixture.options.setIgnoredSpanOrigins(listOf("auto.graphql.apollo3"))
+        executeQuery(isSpanActive = false)
+
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+        assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+        assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+    }
+
+    @Test
     fun `when there is an active span, adds sentry trace headers to the request`() {
         executeQuery()
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
     }
@@ -217,7 +229,7 @@ class SentryApollo3InterceptorTest {
     @Test
     fun `when there is an active span, existing baggage headers are merged with sentry baggage into single header`() {
         executeQuery(sut = fixture.getSut(addThirdPartyBaggageHeader = true))
-        val recorderRequest = fixture.server.takeRequest()
+        val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNotNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
 
@@ -311,9 +323,6 @@ class SentryApollo3InterceptorTest {
     fun `sets SDKVersion Info`() {
         assertNotNull(fixture.scopes.options.sdkVersion)
         assert(fixture.scopes.options.sdkVersion!!.integrationSet.contains("Apollo3"))
-        val packageInfo = fixture.scopes.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-apollo-3" }
-        assertNotNull(packageInfo)
-        assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }
 
     @Test

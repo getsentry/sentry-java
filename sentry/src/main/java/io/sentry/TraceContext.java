@@ -19,6 +19,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
   private final @Nullable String userId;
   private final @Nullable String transaction;
   private final @Nullable String sampleRate;
+  private final @Nullable String sampleRand;
   private final @Nullable String sampled;
   private final @Nullable SentryId replayId;
 
@@ -27,6 +28,34 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
 
   TraceContext(@NotNull SentryId traceId, @NotNull String publicKey) {
     this(traceId, publicKey, null, null, null, null, null, null, null);
+  }
+
+  @SuppressWarnings("InlineMeSuggester")
+  /**
+   * @deprecated please use the constructor than also takes sampleRand
+   */
+  @Deprecated
+  TraceContext(
+      @NotNull SentryId traceId,
+      @NotNull String publicKey,
+      @Nullable String release,
+      @Nullable String environment,
+      @Nullable String userId,
+      @Nullable String transaction,
+      @Nullable String sampleRate,
+      @Nullable String sampled,
+      @Nullable SentryId replayId) {
+    this(
+        traceId,
+        publicKey,
+        release,
+        environment,
+        userId,
+        transaction,
+        sampleRate,
+        sampled,
+        replayId,
+        null);
   }
 
   TraceContext(
@@ -38,7 +67,8 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       @Nullable String transaction,
       @Nullable String sampleRate,
       @Nullable String sampled,
-      @Nullable SentryId replayId) {
+      @Nullable SentryId replayId,
+      @Nullable String sampleRand) {
     this.traceId = traceId;
     this.publicKey = publicKey;
     this.release = release;
@@ -48,6 +78,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     this.sampleRate = sampleRate;
     this.sampled = sampled;
     this.replayId = replayId;
+    this.sampleRand = sampleRand;
   }
 
   @SuppressWarnings("UnusedMethod")
@@ -88,6 +119,10 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     return sampleRate;
   }
 
+  public @Nullable String getSampleRand() {
+    return sampleRand;
+  }
+
   public @Nullable String getSampled() {
     return sampled;
   }
@@ -117,6 +152,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     public static final String USER_ID = "user_id";
     public static final String TRANSACTION = "transaction";
     public static final String SAMPLE_RATE = "sample_rate";
+    public static final String SAMPLE_RAND = "sample_rand";
     public static final String SAMPLED = "sampled";
     public static final String REPLAY_ID = "replay_id";
   }
@@ -141,6 +177,9 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     }
     if (sampleRate != null) {
       writer.name(TraceContext.JsonKeys.SAMPLE_RATE).value(sampleRate);
+    }
+    if (sampleRand != null) {
+      writer.name(TraceContext.JsonKeys.SAMPLE_RAND).value(sampleRand);
     }
     if (sampled != null) {
       writer.name(TraceContext.JsonKeys.SAMPLED).value(sampled);
@@ -171,6 +210,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
       String userId = null;
       String transaction = null;
       String sampleRate = null;
+      String sampleRand = null;
       String sampled = null;
       SentryId replayId = null;
 
@@ -198,6 +238,9 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
             break;
           case TraceContext.JsonKeys.SAMPLE_RATE:
             sampleRate = reader.nextStringOrNull();
+            break;
+          case TraceContext.JsonKeys.SAMPLE_RAND:
+            sampleRand = reader.nextStringOrNull();
             break;
           case TraceContext.JsonKeys.SAMPLED:
             sampled = reader.nextStringOrNull();
@@ -229,7 +272,8 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
               transaction,
               sampleRate,
               sampled,
-              replayId);
+              replayId,
+              sampleRand);
       traceContext.setUnknown(unknown);
       reader.endObject();
       return traceContext;

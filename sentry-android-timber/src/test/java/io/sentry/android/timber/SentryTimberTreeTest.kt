@@ -3,7 +3,6 @@ package io.sentry.android.timber
 import io.sentry.Breadcrumb
 import io.sentry.IScopes
 import io.sentry.SentryLevel
-import io.sentry.getExc
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
@@ -130,7 +129,7 @@ class SentryTimberTreeTest {
         sut.e(throwable)
         verify(fixture.scopes).captureEvent(
             check {
-                assertEquals(throwable, it.getExc())
+                assertEquals(throwable, it.throwable)
             }
         )
     }
@@ -141,7 +140,7 @@ class SentryTimberTreeTest {
         sut.e("message")
         verify(fixture.scopes).captureEvent(
             check {
-                assertNull(it.getExc())
+                assertNull(it.throwable)
             }
         )
     }

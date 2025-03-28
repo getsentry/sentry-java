@@ -1,6 +1,8 @@
 package io.sentry.util;
 
+import io.sentry.TracesSamplingDecision;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
@@ -21,6 +23,46 @@ public final class SampleRateUtils {
 
   public static boolean isValidProfilesSampleRate(@Nullable Double profilesSampleRate) {
     return isValidRate(profilesSampleRate, true);
+  }
+
+  public static boolean isValidContinuousProfilesSampleRate(@Nullable Double profilesSampleRate) {
+    return isValidRate(profilesSampleRate, true);
+  }
+
+  public static @NotNull Double backfilledSampleRand(
+      final @Nullable Double sampleRand,
+      final @Nullable Double sampleRate,
+      final @Nullable Boolean sampled) {
+    if (sampleRand != null) {
+      return sampleRand;
+    }
+
+    double newSampleRand = SentryRandom.current().nextDouble();
+    if (sampleRate != null && sampled != null) {
+      if (sampled) {
+        return newSampleRand * sampleRate;
+      } else {
+        return sampleRate + (newSampleRand * (1 - sampleRate));
+      }
+    }
+
+    return newSampleRand;
+  }
+
+  public static @NotNull TracesSamplingDecision backfilledSampleRand(
+      final @NotNull TracesSamplingDecision samplingDecision) {
+    if (samplingDecision.getSampleRand() != null) {
+      return samplingDecision;
+    }
+
+    final @NotNull Double sampleRand =
+        backfilledSampleRand(null, samplingDecision.getSampleRate(), samplingDecision.getSampled());
+    return new TracesSamplingDecision(
+        samplingDecision.getSampled(),
+        samplingDecision.getSampleRate(),
+        sampleRand,
+        samplingDecision.getProfileSampled(),
+        samplingDecision.getProfileSampleRate());
   }
 
   private static boolean isValidRate(final @Nullable Double rate, final boolean allowNull) {

@@ -19,9 +19,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-@SuppressWarnings("deprecation")
 public final class SentryInstrumentation
-    extends graphql.execution.instrumentation.SimpleInstrumentation {
+    extends graphql.execution.instrumentation.SimplePerformantInstrumentation {
+
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-graphql-22", BuildConfig.VERSION_NAME);
+  }
 
   /**
    * @deprecated please use {@link SentryGraphqlInstrumentation#SENTRY_SCOPES_CONTEXT_KEY}
@@ -90,8 +94,6 @@ public final class SentryInstrumentation
         new SentryGraphqlInstrumentation(
             beforeSpan, subscriptionHandler, exceptionReporter, ignoredErrorTypes, TRACE_ORIGIN);
     SentryIntegrationPackageStorage.getInstance().addIntegration("GraphQL-v22");
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-graphql-22", BuildConfig.VERSION_NAME);
   }
 
   /**
@@ -144,7 +146,7 @@ public final class SentryInstrumentation
   }
 
   @Override
-  @SuppressWarnings({"FutureReturnValueIgnored", "deprecation"})
+  @SuppressWarnings({"FutureReturnValueIgnored"})
   public @NotNull DataFetcher<?> instrumentDataFetcher(
       final @NotNull DataFetcher<?> dataFetcher,
       final @NotNull InstrumentationFieldFetchParameters parameters,

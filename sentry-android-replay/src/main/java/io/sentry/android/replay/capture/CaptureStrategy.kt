@@ -16,10 +16,11 @@ import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebMetaEvent
+import io.sentry.rrweb.RRWebOptionsEvent
 import io.sentry.rrweb.RRWebVideoEvent
-import io.sentry.util.AutoClosableReentrantLock
 import java.io.File
 import java.util.Date
+import java.util.Deque
 import java.util.LinkedList
 
 internal interface CaptureStrategy {
@@ -54,11 +55,12 @@ internal interface CaptureStrategy {
 
     fun convert(): CaptureStrategy
 
-    fun close()
-
     companion object {
         private const val BREADCRUMB_START_OFFSET = 100L
-        internal val currentEventsLock = AutoClosableReentrantLock()
+
+        // 5 minutes, otherwise relay will just drop it. Can prevent the case where the device
+        // time is wrong and the segment is too long.
+        private const val MAX_SEGMENT_DURATION = 1000L * 60 * 5
 
         fun createSegment(
             scopes: IScopes?,
@@ -72,16 +74,19 @@ internal interface CaptureStrategy {
             replayType: ReplayType,
             cache: ReplayCache?,
             frameRate: Int,
+            bitRate: Int,
             screenAtStart: String?,
             breadcrumbs: List<Breadcrumb>?,
-            events: LinkedList<RRWebEvent>
+            events: Deque<RRWebEvent>
         ): ReplaySegment {
             val generatedVideo = cache?.createVideoOf(
-                duration,
+                minOf(duration, MAX_SEGMENT_DURATION),
                 currentSegmentTimestamp.time,
                 segmentId,
                 height,
-                width
+                width,
+                frameRate,
+                bitRate
             ) ?: return ReplaySegment.Failed
 
             val (video, frameCount, videoDuration) = generatedVideo
@@ -128,7 +133,7 @@ internal interface CaptureStrategy {
             replayType: ReplayType,
             screenAtStart: String?,
             breadcrumbs: List<Breadcrumb>,
-            events: LinkedList<RRWebEvent>
+            events: Deque<RRWebEvent>
         ): ReplaySegment {
             val endTimestamp = DateUtils.getDateTime(segmentTimestamp.time + videoDuration)
             val replay = SentryReplayEvent().apply {
@@ -178,7 +183,9 @@ internal interface CaptureStrategy {
                         recordingPayload += rrwebEvent
 
                         // fill in the urls array from navigation breadcrumbs
-                        if ((rrwebEvent as? RRWebBreadcrumbEvent)?.category == "navigation") {
+                        if ((rrwebEvent as? RRWebBreadcrumbEvent)?.category == "navigation" &&
+                            rrwebEvent.data?.getOrElse("to", { null }) is String
+                        ) {
                             urls.add(rrwebEvent.data!!["to"] as String)
                         }
                     }
@@ -195,6 +202,10 @@ internal interface CaptureStrategy {
                 }
             }
 
+            if (segmentId == 0) {
+                recordingPayload += RRWebOptionsEvent(options)
+            }
+
             val recording = ReplayRecording().apply {
                 this.segmentId = segmentId
                 this.payload = recordingPayload.sortedBy { it.timestamp }
@@ -208,16 +219,16 @@ internal interface CaptureStrategy {
         }
 
         internal fun rotateEvents(
-            events: LinkedList<RRWebEvent>,
+            events: Deque<RRWebEvent>,
             until: Long,
             callback: ((RRWebEvent) -> Unit)? = null
         ) {
-            currentEventsLock.acquire().use {
-                var event = events.peek()
-                while (event != null && event.timestamp < until) {
+            val iter = events.iterator()
+            while (iter.hasNext()) {
+                val event = iter.next()
+                if (event.timestamp < until) {
                     callback?.invoke(event)
-                    events.remove()
-                    event = events.peek()
+                    iter.remove()
                 }
             }
         }
