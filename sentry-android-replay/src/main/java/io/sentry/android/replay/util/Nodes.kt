@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.text.TextLayoutResult
 import kotlin.math.roundToInt
@@ -165,8 +166,8 @@ private inline fun Float.fastCoerceAtMost(maximumValue: Float): Float {
  *
  * @return boundaries of this layout relative to the window's origin.
  */
-internal fun LayoutCoordinates.boundsInWindow(root: LayoutCoordinates?): Rect {
-    root ?: return Rect()
+internal fun LayoutCoordinates.boundsInWindow(rootCoordinates: LayoutCoordinates?): Rect {
+    val root = rootCoordinates ?: findRootCoordinates()
 
     val rootWidth = root.size.width.toFloat()
     val rootHeight = root.size.height.toFloat()

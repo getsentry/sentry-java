@@ -16,7 +16,10 @@ android {
 
         externalNativeBuild {
             cmake {
-                arguments.add(0, "-DANDROID_STL=c++_shared")
+                // Android 15: As we're using an older version of AGP / NDK, the STL is not 16kb page aligned yet
+                // Our example code doesn't use the STL, so we simply disable it
+                // See https://developer.android.com/guide/practices/page-sizes
+                arguments.add(0, "-DANDROID_STL=none")
             }
         }
 
@@ -25,11 +28,26 @@ android {
         }
     }
 
+    lint {
+        disable.addAll(
+            listOf(
+                "Typos",
+                "PluralsCandidate",
+                "MonochromeLauncherIcon",
+                "TextFields",
+                "ContentDescription",
+                "LabelFor",
+                "HardcodedText"
+            )
+        )
+    }
+
     buildFeatures {
         // Determines whether to support View Binding.
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
         compose = true
+        buildConfig = true
         prefab = true
     }
 
@@ -87,10 +105,8 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 
     @Suppress("UnstableApiUsage")

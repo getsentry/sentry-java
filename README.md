@@ -35,6 +35,7 @@ Sentry SDK for Java and Android
 | sentry-jdbc                             | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-jdbc/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-jdbc)                                                         |
 | sentry-apollo                           | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo)                                                     | 21 |
 | sentry-apollo-3                         | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo-3/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo-3)                                                 | 21 |
+| sentry-apollo-4                         | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo-4/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo-4)                                                 | 21 |
 | sentry-kotlin-extensions                | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-kotlin-extensions/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-kotlin-extensions)                               | 21 |
 | sentry-servlet                          | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet)                                                   | |
 | sentry-servlet-jakarta                  | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet-jakarta/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet-jakarta)                                   | |
@@ -56,6 +57,7 @@ Sentry SDK for Java and Android
 | sentry-opentelemetry-agentcustomization | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-agentcustomization/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-agentcustomization) |
 | sentry-opentelemetry-core               | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-core)                             |
 | sentry-okhttp                           | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-okhttp/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-okhttp)                                                     |
+| sentry-reactor                          | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-reactor/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-reactor)                                                    |
 
 # Releases
 
@@ -67,6 +69,7 @@ This repo uses the following ways to release SDK updates:
 
 # Useful links and docs
 
+* A deep dive into how we built [Session Replay for Android](https://www.droidcon.com/2024/11/22/rewind-and-resolve-a-deep-dive-into-building-session-replay-for-android/) at Droidcon London 2024.
 * Current Javadocs [generated from source code](https://getsentry.github.io/sentry-java/).
 * Java SDK version 1.x [can still be found here](https://docs.sentry.io/clients/java/).
 * Migration page from [sentry-android 1.x and 2.x to sentry-android 4.x](https://docs.sentry.io/platforms/android/migration/).

@@ -1,5 +1,6 @@
 package io.sentry.opentelemetry;
 
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
@@ -13,6 +14,7 @@ import io.sentry.Instrumenter;
 import io.sentry.MeasurementUnit;
 import io.sentry.NoOpScopesLifecycleToken;
 import io.sentry.NoOpSpan;
+import io.sentry.ScopeBindingMode;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
@@ -63,7 +65,6 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   private final @NotNull Contexts contexts = new Contexts();
   private @Nullable String transactionName;
   private @Nullable TransactionNameSource transactionNameSource;
-  private final @Nullable Baggage baggage;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
@@ -85,17 +86,12 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.span = new WeakReference<>(span);
     this.startTimestamp = startTimestamp;
-
-    if (parentSpan != null) {
-      this.baggage = parentSpan.getSpanContext().getBaggage();
-    } else if (baggage != null) {
-      this.baggage = baggage;
-    } else {
-      this.baggage = null;
-    }
-
+    final @Nullable Baggage baggageToUse =
+        baggage != null
+            ? baggage
+            : (parentSpan != null ? parentSpan.getSpanContext().getBaggage() : null);
     this.context =
-        new OtelSpanContext(span, samplingDecision, parentSpan, parentSpanId, this.baggage);
+        new OtelSpanContext(span, samplingDecision, parentSpan, parentSpanId, baggageToUse);
   }
 
   @Override
@@ -125,8 +121,23 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
 
     final @NotNull ISpan childSpan =
         scopes.getOptions().getSpanFactory().createSpan(scopes, spanOptions, spanContext, this);
-    // TODO [POTEL] spanOptions.isBindToScope with default true?
-    childSpan.makeCurrent();
+
+    if (ScopeBindingMode.ON == spanOptions.getScopeBindingMode()) {
+      childSpan.makeCurrent();
+    } else if (ScopeBindingMode.AUTO == spanOptions.getScopeBindingMode()) {
+      final @Nullable SpanId parentSpanId = spanContext.getParentSpanId();
+      if (parentSpanId != null) {
+        final @Nullable Span currentOtelSpan = Span.fromContextOrNull(Context.current());
+        if (currentOtelSpan != null) {
+          if (currentOtelSpan
+              .getSpanContext()
+              .getSpanId()
+              .equalsIgnoreCase(parentSpanId.toString())) {
+            childSpan.makeCurrent();
+          }
+        }
+      }
+    }
     return childSpan;
   }
 
@@ -188,18 +199,29 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
     return span.get();
   }
 
+  @ApiStatus.Internal
+  @Override
+  public @Nullable Attributes getOpenTelemetrySpanAttributes() {
+    final @Nullable ReadWriteSpan readWriteSpan = span.get();
+    if (readWriteSpan != null) {
+      return readWriteSpan.getAttributes();
+    }
+    return null;
+  }
+
   @Override
   public @Nullable TraceContext traceContext() {
     if (scopes.getOptions().isTraceSampling()) {
+      final @Nullable Baggage baggage = context.getBaggage();
       if (baggage != null) {
-        updateBaggageValues();
+        updateBaggageValues(baggage);
         return baggage.toTraceContext();
       }
     }
     return null;
   }
 
-  private void updateBaggageValues() {
+  private void updateBaggageValues(final @NotNull Baggage baggage) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (baggage != null && baggage.isMutable()) {
         final AtomicReference<SentryId> replayIdAtomicReference = new AtomicReference<>();
@@ -222,8 +244,9 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   @Override
   public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
     if (scopes.getOptions().isTraceSampling()) {
+      final @Nullable Baggage baggage = context.getBaggage();
       if (baggage != null) {
-        updateBaggageValues();
+        updateBaggageValues(baggage);
         return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
       }
     }
@@ -307,12 +330,15 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {
+  public void setTag(@Nullable String key, @Nullable String value) {
     context.setTag(key, value);
   }
 
   @Override
-  public @Nullable String getTag(@NotNull String key) {
+  public @Nullable String getTag(@Nullable String key) {
+    if (key == null) {
+      return null;
+    }
     return context.getTags().get(key);
   }
 
@@ -334,12 +360,22 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   }
 
   @Override
-  public void setData(@NotNull String key, @NotNull Object value) {
-    data.put(key, value);
+  public void setData(@Nullable String key, @Nullable Object value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      data.remove(key);
+    } else {
+      data.put(key, value);
+    }
   }
 
   @Override
-  public @Nullable Object getData(@NotNull String key) {
+  public @Nullable Object getData(@Nullable String key) {
+    if (key == null) {
+      return null;
+    }
     return data.get(key);
   }
 
@@ -399,7 +435,7 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   }
 
   @Override
-  public void setContext(@NotNull String key, @NotNull Object context) {
+  public void setContext(@Nullable String key, @Nullable Object context) {
     contexts.put(key, context);
   }
 

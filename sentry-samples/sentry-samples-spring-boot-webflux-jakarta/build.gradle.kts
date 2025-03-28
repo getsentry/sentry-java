@@ -6,7 +6,6 @@ plugins {
     id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
     kotlin("jvm")
     kotlin("plugin.spring") version Config.kotlinVersion
-    id("com.apollographql.apollo3") version "3.8.2"
 }
 
 group = "io.sentry.sample.spring-boot-webflux-jakarta"
@@ -30,12 +29,14 @@ dependencies {
     implementation(projects.sentryJdbc)
     implementation(projects.sentryGraphql22)
 
+    testImplementation(projects.sentrySystemTestSupport)
     testImplementation(Config.Libs.springBoot3StarterTest) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation("ch.qos.logback:logback-classic:1.3.5")
+    testImplementation("ch.qos.logback:logback-classic:1.5.16")
+    testImplementation("ch.qos.logback:logback-core:1.5.16")
     testImplementation(Config.Libs.slf4jApi2)
     testImplementation(Config.Libs.apolloKotlin)
 }
@@ -57,6 +58,8 @@ tasks.register<Test>("systemTest").configure {
     group = "verification"
     description = "Runs the System tests"
 
+    outputs.upToDateWhen { false }
+
     maxParallelForks = 1
 
     // Cap JVM args per test
@@ -73,15 +76,5 @@ tasks.named("test").configure {
 
     filter {
         excludeTestsMatching("io.sentry.systemtest.*")
-    }
-}
-
-apollo {
-    service("service") {
-        srcDir("src/test/graphql")
-        packageName.set("io.sentry.samples.graphql")
-        outputDirConnection {
-            connectToKotlinSourceSet("test")
-        }
     }
 }

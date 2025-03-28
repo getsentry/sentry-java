@@ -19,6 +19,7 @@ import io.sentry.SentryExceptionFactory
 import io.sentry.SentryItemType
 import io.sentry.SentryOptions
 import io.sentry.Session
+import io.sentry.SpanId
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.exception.ExceptionMechanismException
@@ -55,7 +56,7 @@ class InternalSentrySdkTest {
         lateinit var options: SentryOptions
 
         fun init(context: Context) {
-            SentryAndroid.init(context) { options ->
+            initForTest(context) { options ->
                 this@Fixture.options = options
                 options.dsn = "https://key@host/proj"
                 options.setTransportFactory { _, _ ->
@@ -318,7 +319,7 @@ class InternalSentrySdkTest {
     fun `serializeScope provides fallback app data if none is set`() {
         val options = SentryAndroidOptions()
         val scope = Scope(options)
-        scope.setContexts("app", null)
+        scope.setContexts("app", null as Any?)
 
         val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
         assertTrue(((serializedScope["contexts"] as Map<*, *>)["app"] as Map<*, *>).containsKey("app_name"))
@@ -504,5 +505,26 @@ class InternalSentrySdkTest {
         assertEquals("Process Initialization", actualProcessSpan["description"])
         assertEquals(20.toLong(), actualProcessSpan["start_timestamp_ms"])
         assertEquals(100.toLong(), actualProcessSpan["end_timestamp_ms"])
+    }
+
+    @Test
+    fun `setTrace sets correct propagation context`() {
+        val fixture = Fixture()
+        fixture.init(context)
+
+        val traceId = "771a43a4192642f0b136d5159a501700"
+        val spanId = "771a43a4192642f0"
+        val sampleRate = 0.5
+        val sampleRand = 0.3
+
+        InternalSentrySdk.setTrace(traceId, spanId, sampleRate, sampleRand)
+
+        Sentry.configureScope { scope ->
+            val propagationContext = scope.propagationContext
+            assertEquals(SentryId(traceId), propagationContext.traceId)
+            assertEquals(SpanId(spanId), propagationContext.parentSpanId)
+            assertEquals(sampleRate, propagationContext.baggage.sampleRate!!, 0.0001)
+            assertEquals(sampleRand, propagationContext.baggage.sampleRand!!, 0.0001)
+        }
     }
 }

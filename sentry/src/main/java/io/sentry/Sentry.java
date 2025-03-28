@@ -1,8 +1,10 @@
 package io.sentry;
 
 import io.sentry.backpressure.BackpressureMonitor;
+import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
+import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.config.PropertiesProviderFactory;
 import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader;
@@ -11,6 +13,7 @@ import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.ManifestModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
+import io.sentry.opentelemetry.OpenTelemetryUtil;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -20,6 +23,7 @@ import io.sentry.util.FileUtils;
 import io.sentry.util.InitUtil;
 import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
+import io.sentry.util.SentryRandom;
 import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
 import io.sentry.util.thread.ThreadChecker;
@@ -46,8 +50,7 @@ public final class Sentry {
   private Sentry() {}
 
   // TODO logger?
-  private static volatile @NotNull IScopesStorage scopesStorage =
-      ScopesStorageFactory.create(new LoadClass(), NoOpLogger.getInstance());
+  private static volatile @NotNull IScopesStorage scopesStorage = NoOpScopesStorage.getInstance();
 
   /** The root Scopes or NoOp if Sentry is disabled. */
   private static volatile @NotNull IScopes rootScopes = NoOpScopes.getInstance();
@@ -289,6 +292,7 @@ public final class Sentry {
           .getLogger()
           .log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubModeToUse));
       Sentry.globalHubMode = globalHubModeToUse;
+      initFatalLogger(options);
       final boolean shouldInit =
           InitUtil.shouldInit(globalScope.getOptions(), options, isEnabled());
       if (shouldInit) {
@@ -321,8 +325,9 @@ public final class Sentry {
         final IScope rootIsolationScope = new Scope(options);
         rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
+        initLogger(options);
+        initForOpenTelemetryMaybe(options);
         getScopesStorage().set(rootScopes);
-
         initConfigurations(options);
 
         globalScope.bindClient(new SentryClient(options));
@@ -346,6 +351,19 @@ public final class Sentry {
         finalizePreviousSession(options, ScopesAdapter.getInstance());
 
         handleAppStartProfilingConfig(options, options.getExecutorService());
+
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Using openTelemetryMode %s", options.getOpenTelemetryMode());
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Using span factory %s",
+                options.getSpanFactory().getClass().getName());
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Using scopes storage %s", scopesStorage.getClass().getName());
       } else {
         options
             .getLogger()
@@ -353,6 +371,40 @@ public final class Sentry {
                 SentryLevel.WARNING,
                 "This init call has been ignored due to priority being too low.");
       }
+    }
+  }
+
+  private static void initForOpenTelemetryMaybe(SentryOptions options) {
+    OpenTelemetryUtil.updateOpenTelemetryModeIfAuto(options, new LoadClass());
+    if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
+      options.setSpanFactory(new DefaultSpanFactory());
+      //    } else {
+      // enabling this causes issues with agentless where OTel spans seem to be randomly ended
+      //      options.setSpanFactory(SpanFactoryFactory.create(new LoadClass(),
+      // NoOpLogger.getInstance()));
+    }
+    initScopesStorage(options);
+    OpenTelemetryUtil.applyIgnoredSpanOrigins(options);
+  }
+
+  private static void initLogger(final @NotNull SentryOptions options) {
+    if (options.isDebug() && options.getLogger() instanceof NoOpLogger) {
+      options.setLogger(new SystemOutLogger());
+    }
+  }
+
+  private static void initFatalLogger(final @NotNull SentryOptions options) {
+    if (options.getFatalLogger() instanceof NoOpLogger) {
+      options.setFatalLogger(new SystemOutLogger());
+    }
+  }
+
+  private static void initScopesStorage(SentryOptions options) {
+    getScopesStorage().close();
+    if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
+      scopesStorage = new DefaultScopesStorage();
+    } else {
+      scopesStorage = ScopesStorageFactory.create(new LoadClass(), NoOpLogger.getInstance());
     }
   }
 
@@ -370,10 +422,12 @@ public final class Sentry {
               try {
                 // We always delete the config file for app start profiling
                 FileUtils.deleteRecursively(appStartProfilingConfigFile);
-                if (!options.isEnableAppStartProfiling()) {
+                if (!options.isEnableAppStartProfiling() && !options.isStartProfilerOnAppStart()) {
                   return;
                 }
-                if (!options.isTracingEnabled()) {
+                // isStartProfilerOnAppStart doesn't need tracing, as it can be started/stopped
+                // manually
+                if (!options.isStartProfilerOnAppStart() && !options.isTracingEnabled()) {
                   options
                       .getLogger()
                       .log(
@@ -382,8 +436,13 @@ public final class Sentry {
                   return;
                 }
                 if (appStartProfilingConfigFile.createNewFile()) {
+                  // If old app start profiling is false, it means the transaction will not be
+                  // sampled, but we create the file anyway to allow continuous profiling on app
+                  // start
                   final @NotNull TracesSamplingDecision appStartSamplingDecision =
-                      sampleAppStartProfiling(options);
+                      options.isEnableAppStartProfiling()
+                          ? sampleAppStartProfiling(options)
+                          : new TracesSamplingDecision(false);
                   final @NotNull SentryAppStartProfilingOptions appStartProfilingOptions =
                       new SentryAppStartProfilingOptions(options, appStartSamplingDecision);
                   try (final OutputStream outputStream =
@@ -415,7 +474,9 @@ public final class Sentry {
       final @NotNull SentryOptions options) {
     TransactionContext appStartTransactionContext = new TransactionContext("app.launch", "profile");
     appStartTransactionContext.setForNextAppStart(true);
-    SamplingContext appStartSamplingContext = new SamplingContext(appStartTransactionContext, null);
+    SamplingContext appStartSamplingContext =
+        new SamplingContext(
+            appStartTransactionContext, null, SentryRandom.current().nextDouble(), null);
     return options.getInternalTracesSampler().sample(appStartSamplingContext);
   }
 
@@ -451,7 +512,17 @@ public final class Sentry {
                   observer.setEnvironment(options.getEnvironment());
                   observer.setTags(options.getTags());
                   observer.setReplayErrorSampleRate(
-                      options.getExperimental().getSessionReplay().getOnErrorSampleRate());
+                      options.getSessionReplay().getOnErrorSampleRate());
+                }
+
+                // since it's a new SDK init we clean up persisted scope values before serializing
+                // new ones, so they are not making it to the new events if they were e.g. disabled
+                // (e.g. replayId) or are simply irrelevant (e.g. breadcrumbs). NOTE: this happens
+                // after the integrations relying on those values are done with processing them.
+                final @Nullable PersistingScopeObserver scopeCache =
+                    options.findPersistingScopeObserver();
+                if (scopeCache != null) {
+                  scopeCache.resetCache();
                 }
               });
     } catch (Throwable e) {
@@ -475,19 +546,14 @@ public final class Sentry {
     }
 
     // This creates the DSN object and performs some checks
-    options.getParsedDsn();
+    options.retrieveParsedDsn();
 
     return true;
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private static void initConfigurations(final @NotNull SentryOptions options) {
-    ILogger logger = options.getLogger();
-
-    if (options.isDebug() && logger instanceof NoOpLogger) {
-      options.setLogger(new SystemOutLogger());
-      logger = options.getLogger();
-    }
+    final @NotNull ILogger logger = options.getLogger();
     logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
 
     // TODO: read values from conf file, Build conf or system envs
@@ -514,7 +580,8 @@ public final class Sentry {
     }
 
     final String profilingTracesDirPath = options.getProfilingTracesDirPath();
-    if (options.isProfilingEnabled() && profilingTracesDirPath != null) {
+    if ((options.isProfilingEnabled() || options.isContinuousProfilingEnabled())
+        && profilingTracesDirPath != null) {
 
       final File profilingTracesDir = new File(profilingTracesDirPath);
       profilingTracesDir.mkdirs();
@@ -575,7 +642,10 @@ public final class Sentry {
     }
 
     if (options.isEnableBackpressureHandling() && Platform.isJvm()) {
-      options.setBackpressureMonitor(new BackpressureMonitor(options, ScopesAdapter.getInstance()));
+      if (options.getBackpressureMonitor() instanceof NoOpBackpressureMonitor) {
+        options.setBackpressureMonitor(
+            new BackpressureMonitor(options, ScopesAdapter.getInstance()));
+      }
       options.getBackpressureMonitor().start();
     }
   }
@@ -834,7 +904,7 @@ public final class Sentry {
    * @param key the key
    * @param value the value
    */
-  public static void setTag(final @NotNull String key, final @NotNull String value) {
+  public static void setTag(final @Nullable String key, final @Nullable String value) {
     getCurrentScopes().setTag(key, value);
   }
 
@@ -843,7 +913,7 @@ public final class Sentry {
    *
    * @param key the key
    */
-  public static void removeTag(final @NotNull String key) {
+  public static void removeTag(final @Nullable String key) {
     getCurrentScopes().removeTag(key);
   }
 
@@ -854,7 +924,7 @@ public final class Sentry {
    * @param key the key
    * @param value the value
    */
-  public static void setExtra(final @NotNull String key, final @NotNull String value) {
+  public static void setExtra(final @Nullable String key, final @Nullable String value) {
     getCurrentScopes().setExtra(key, value);
   }
 
@@ -863,7 +933,7 @@ public final class Sentry {
    *
    * @param key the key
    */
-  public static void removeExtra(final @NotNull String key) {
+  public static void removeExtra(final @Nullable String key) {
     getCurrentScopes().removeExtra(key);
   }
 
@@ -1047,6 +1117,18 @@ public final class Sentry {
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
     return getCurrentScopes().startTransaction(transactionContext, transactionOptions);
+  }
+
+  /** Starts the continuous profiler, if enabled. */
+  @ApiStatus.Experimental
+  public static void startProfiler() {
+    getCurrentScopes().startProfiler();
+  }
+
+  /** Stops the continuous profiler, if enabled. */
+  @ApiStatus.Experimental
+  public static void stopProfiler() {
+    getCurrentScopes().stopProfiler();
   }
 
   /**

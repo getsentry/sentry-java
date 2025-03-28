@@ -570,12 +570,19 @@ public final class Scope implements IScope {
    * @param value the value
    */
   @Override
-  public void setTag(final @NotNull String key, final @NotNull String value) {
-    this.tags.put(key, value);
+  public void setTag(final @Nullable String key, final @Nullable String value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      removeTag(key);
+    } else {
+      this.tags.put(key, value);
 
-    for (final IScopeObserver observer : options.getScopeObservers()) {
-      observer.setTag(key, value);
-      observer.setTags(tags);
+      for (final IScopeObserver observer : options.getScopeObservers()) {
+        observer.setTag(key, value);
+        observer.setTags(tags);
+      }
     }
   }
 
@@ -585,7 +592,10 @@ public final class Scope implements IScope {
    * @param key the key
    */
   @Override
-  public void removeTag(final @NotNull String key) {
+  public void removeTag(final @Nullable String key) {
+    if (key == null) {
+      return;
+    }
     this.tags.remove(key);
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
@@ -613,12 +623,19 @@ public final class Scope implements IScope {
    * @param value the value
    */
   @Override
-  public void setExtra(final @NotNull String key, final @NotNull String value) {
-    this.extra.put(key, value);
+  public void setExtra(final @Nullable String key, final @Nullable String value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      removeExtra(key);
+    } else {
+      this.extra.put(key, value);
 
-    for (final IScopeObserver observer : options.getScopeObservers()) {
-      observer.setExtra(key, value);
-      observer.setExtras(extra);
+      for (final IScopeObserver observer : options.getScopeObservers()) {
+        observer.setExtra(key, value);
+        observer.setExtras(extra);
+      }
     }
   }
 
@@ -628,7 +645,10 @@ public final class Scope implements IScope {
    * @param key the key
    */
   @Override
-  public void removeExtra(final @NotNull String key) {
+  public void removeExtra(final @Nullable String key) {
+    if (key == null) {
+      return;
+    }
     this.extra.remove(key);
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
@@ -654,7 +674,10 @@ public final class Scope implements IScope {
    * @param value the context value
    */
   @Override
-  public void setContexts(final @NotNull String key, final @NotNull Object value) {
+  public void setContexts(final @Nullable String key, final @Nullable Object value) {
+    if (key == null) {
+      return;
+    }
     this.contexts.put(key, value);
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
@@ -669,10 +692,18 @@ public final class Scope implements IScope {
    * @param value the context value
    */
   @Override
-  public void setContexts(final @NotNull String key, final @NotNull Boolean value) {
-    final Map<String, Boolean> map = new HashMap<>();
-    map.put("value", value);
-    setContexts(key, map);
+  public void setContexts(final @Nullable String key, final @Nullable Boolean value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      // unset
+      setContexts(key, (Object) null);
+    } else {
+      final Map<String, Boolean> map = new HashMap<>();
+      map.put("value", value);
+      setContexts(key, map);
+    }
   }
 
   /**
@@ -682,10 +713,18 @@ public final class Scope implements IScope {
    * @param value the context value
    */
   @Override
-  public void setContexts(final @NotNull String key, final @NotNull String value) {
-    final Map<String, String> map = new HashMap<>();
-    map.put("value", value);
-    setContexts(key, map);
+  public void setContexts(final @Nullable String key, final @Nullable String value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      // unset
+      setContexts(key, (Object) null);
+    } else {
+      final Map<String, String> map = new HashMap<>();
+      map.put("value", value);
+      setContexts(key, map);
+    }
   }
 
   /**
@@ -695,10 +734,18 @@ public final class Scope implements IScope {
    * @param value the context value
    */
   @Override
-  public void setContexts(final @NotNull String key, final @NotNull Number value) {
-    final Map<String, Number> map = new HashMap<>();
-    map.put("value", value);
-    setContexts(key, map);
+  public void setContexts(final @Nullable String key, final @Nullable Number value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      // unset
+      setContexts(key, (Object) null);
+    } else {
+      final Map<String, Number> map = new HashMap<>();
+      map.put("value", value);
+      setContexts(key, map);
+    }
   }
 
   /**
@@ -708,10 +755,18 @@ public final class Scope implements IScope {
    * @param value the context value
    */
   @Override
-  public void setContexts(final @NotNull String key, final @NotNull Collection<?> value) {
-    final Map<String, Collection<?>> map = new HashMap<>();
-    map.put("value", value);
-    setContexts(key, map);
+  public void setContexts(final @Nullable String key, final @Nullable Collection<?> value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      // unset
+      setContexts(key, (Object) null);
+    } else {
+      final Map<String, Collection<?>> map = new HashMap<>();
+      map.put("value", value);
+      setContexts(key, map);
+    }
   }
 
   /**
@@ -721,10 +776,18 @@ public final class Scope implements IScope {
    * @param value the context value
    */
   @Override
-  public void setContexts(final @NotNull String key, final @NotNull Object[] value) {
-    final Map<String, Object[]> map = new HashMap<>();
-    map.put("value", value);
-    setContexts(key, map);
+  public void setContexts(final @Nullable String key, final @Nullable Object[] value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      // unset
+      setContexts(key, (Object) null);
+    } else {
+      final Map<String, Object[]> map = new HashMap<>();
+      map.put("value", value);
+      setContexts(key, map);
+    }
   }
 
   /**
@@ -734,10 +797,18 @@ public final class Scope implements IScope {
    * @param value the context value
    */
   @Override
-  public void setContexts(final @NotNull String key, final @NotNull Character value) {
-    final Map<String, Character> map = new HashMap<>();
-    map.put("value", value);
-    setContexts(key, map);
+  public void setContexts(final @Nullable String key, final @Nullable Character value) {
+    if (key == null) {
+      return;
+    }
+    if (value == null) {
+      // unset
+      setContexts(key, (Object) null);
+    } else {
+      final Map<String, Character> map = new HashMap<>();
+      map.put("value", value);
+      setContexts(key, map);
+    }
   }
 
   /**
@@ -746,7 +817,10 @@ public final class Scope implements IScope {
    * @param key the Key
    */
   @Override
-  public void removeContexts(final @NotNull String key) {
+  public void removeContexts(final @Nullable String key) {
+    if (key == null) {
+      return;
+    }
     contexts.remove(key);
   }
 
@@ -786,7 +860,9 @@ public final class Scope implements IScope {
    * @return the breadcrumbs queue
    */
   static @NotNull Queue<Breadcrumb> createBreadcrumbsList(final int maxBreadcrumb) {
-    return SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxBreadcrumb));
+    return maxBreadcrumb > 0
+        ? SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxBreadcrumb))
+        : SynchronizedQueue.synchronizedQueue(new DisabledQueue<>());
   }
 
   /**
@@ -870,6 +946,8 @@ public final class Scope implements IScope {
       if (session != null) {
         // Assumes session will NOT flush itself (Not passing any scopes to it)
         session.end();
+        // Continuous profiler sample rate is reevaluated every time a session ends
+        options.getContinuousProfiler().reevaluateSampling();
       }
       previousSession = session;
 
@@ -943,6 +1021,8 @@ public final class Scope implements IScope {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       if (session != null) {
         session.end();
+        // Continuous profiler sample rate is reevaluated every time a session ends
+        options.getContinuousProfiler().reevaluateSampling();
         previousSession = session.clone();
         session = null;
       }

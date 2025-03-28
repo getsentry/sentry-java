@@ -14,12 +14,5 @@ configure<JavaPluginExtension> {
 }
 
 dependencies {
-    implementation(projects.sentry)
-
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
-    implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
-    implementation(Config.Libs.OpenTelemetry.otelSdk)
-    implementation(Config.Libs.OpenTelemetry.otelExtensionAutoconfigure)
-    implementation(Config.Libs.OpenTelemetry.otelSemconv)
-    implementation(Config.Libs.OpenTelemetry.otelSemconvIncubating)
+    implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentless)
 }

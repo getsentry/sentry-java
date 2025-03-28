@@ -210,6 +210,23 @@ class ExternalOptionsTest {
     }
 
     @Test
+    fun `creates options with ignored error patterns using external properties`() {
+        val logger = mock<ILogger>()
+        withPropertiesFile("ignored-errors=Some error,Another .*", logger) { options ->
+            assertTrue(options.ignoredErrors!!.contains("Some error"))
+            assertTrue(options.ignoredErrors!!.contains("Another .*"))
+        }
+    }
+
+    @Test
+    fun `creates options with null ignored errors if missing`() {
+        val logger = mock<ILogger>()
+        withPropertiesFile("Another .*", logger) { options ->
+            assertNull(options.ignoredErrors)
+        }
+    }
+
+    @Test
     fun `creates options with single bundle ID using external properties`() {
         withPropertiesFile("bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411") { options ->
             assertTrue(options.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411")))
@@ -258,6 +275,29 @@ class ExternalOptionsTest {
     fun `creates options with ignoredCheckIns`() {
         withPropertiesFile("ignored-checkins=slugA,slug2") { options ->
             assertTrue(options.ignoredCheckIns!!.containsAll(listOf("slugA", "slug2")))
+        }
+    }
+
+    @Test
+    fun `creates options with null ignoredCheckIns if missing`() {
+        val logger = mock<ILogger>()
+        withPropertiesFile("Another .*", logger) { options ->
+            assertNull(options.ignoredCheckIns)
+        }
+    }
+
+    @Test
+    fun `creates options with ignoredTransactions`() {
+        withPropertiesFile("ignored-transactions=transactionName1,transactionName2") { options ->
+            assertTrue(options.ignoredTransactions!!.containsAll(listOf("transactionName1", "transactionName2")))
+        }
+    }
+
+    @Test
+    fun `creates options with null ignoredTransactions if missing`() {
+        val logger = mock<ILogger>()
+        withPropertiesFile("Another .*", logger) { options ->
+            assertNull(options.ignoredTransactions)
         }
     }
 
@@ -318,6 +358,20 @@ class ExternalOptionsTest {
     fun `creates options with globalHubMode set to false`() {
         withPropertiesFile("global-hub-mode=false") { options ->
             assertTrue(options.isGlobalHubMode == false)
+        }
+    }
+
+    @Test
+    fun `creates options with captureOpenTelemetryEvents set to false`() {
+        withPropertiesFile("capture-open-telemetry-events=false") { options ->
+            assertTrue(options.isCaptureOpenTelemetryEvents == false)
+        }
+    }
+
+    @Test
+    fun `creates options with captureOpenTelemetryEvents set to true`() {
+        withPropertiesFile("capture-open-telemetry-events=true") { options ->
+            assertTrue(options.isCaptureOpenTelemetryEvents == true)
         }
     }
 

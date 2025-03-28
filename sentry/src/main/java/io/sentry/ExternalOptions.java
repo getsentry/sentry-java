@@ -1,10 +1,7 @@
 package io.sentry;
 
 import io.sentry.config.PropertiesProvider;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -39,6 +36,7 @@ public final class ExternalOptions {
   private @Nullable Long idleTimeout;
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
+  private @Nullable List<String> ignoredErrors;
   private @Nullable Boolean printUncaughtStackTrace;
   private @Nullable Boolean sendClientReports;
   private @NotNull Set<String> bundleIds = new CopyOnWriteArraySet<>();
@@ -48,12 +46,14 @@ public final class ExternalOptions {
   private @Nullable String spotlightConnectionUrl;
 
   private @Nullable List<String> ignoredCheckIns;
+  private @Nullable List<String> ignoredTransactions;
 
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
   private @Nullable Boolean enableBackpressureHandling;
   private @Nullable Boolean globalHubMode;
   private @Nullable Boolean forceInit;
+  private @Nullable Boolean captureOpenTelemetryEvents;
 
   private @Nullable SentryOptions.Cron cron;
 
@@ -129,6 +129,8 @@ public final class ExternalOptions {
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
 
+    options.setIgnoredErrors(propertiesProvider.getListOrNull("ignored-errors"));
+
     options.setEnabled(propertiesProvider.getBooleanProperty("enabled"));
 
     options.setEnablePrettySerializationOutput(
@@ -137,12 +139,16 @@ public final class ExternalOptions {
     options.setSendModules(propertiesProvider.getBooleanProperty("send-modules"));
     options.setSendDefaultPii(propertiesProvider.getBooleanProperty("send-default-pii"));
 
-    options.setIgnoredCheckIns(propertiesProvider.getList("ignored-checkins"));
+    options.setIgnoredCheckIns(propertiesProvider.getListOrNull("ignored-checkins"));
+    options.setIgnoredTransactions(propertiesProvider.getListOrNull("ignored-transactions"));
 
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
 
     options.setGlobalHubMode(propertiesProvider.getBooleanProperty("global-hub-mode"));
+
+    options.setCaptureOpenTelemetryEvents(
+        propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -371,6 +377,14 @@ public final class ExternalOptions {
     this.idleTimeout = idleTimeout;
   }
 
+  public @Nullable List<String> getIgnoredErrors() {
+    return ignoredErrors;
+  }
+
+  public void setIgnoredErrors(final @Nullable List<String> ignoredErrors) {
+    this.ignoredErrors = ignoredErrors;
+  }
+
   public @Nullable Boolean getSendClientReports() {
     return sendClientReports;
   }
@@ -430,6 +444,14 @@ public final class ExternalOptions {
     return ignoredCheckIns;
   }
 
+  public void setIgnoredTransactions(final @Nullable List<String> ignoredTransactions) {
+    this.ignoredTransactions = ignoredTransactions;
+  }
+
+  public @Nullable List<String> getIgnoredTransactions() {
+    return ignoredTransactions;
+  }
+
   @ApiStatus.Experimental
   public void setEnableBackpressureHandling(final @Nullable Boolean enableBackpressureHandling) {
     this.enableBackpressureHandling = enableBackpressureHandling;
@@ -485,5 +507,15 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public void setSpotlightConnectionUrl(final @Nullable String spotlightConnectionUrl) {
     this.spotlightConnectionUrl = spotlightConnectionUrl;
+  }
+
+  @ApiStatus.Experimental
+  public void setCaptureOpenTelemetryEvents(final @Nullable Boolean captureOpenTelemetryEvents) {
+    this.captureOpenTelemetryEvents = captureOpenTelemetryEvents;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Boolean isCaptureOpenTelemetryEvents() {
+    return captureOpenTelemetryEvents;
   }
 }

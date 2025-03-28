@@ -16,6 +16,7 @@ jobs:
     continue-on-error: true
     env:
       SENTRY_URL: http://127.0.0.1:8000
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
     strategy:
       fail-fast: false
       matrix:
@@ -24,6 +25,13 @@ jobs:
         agent-auto-init: [ "true" ]
         include:
           - sample: "sentry-samples-spring-boot"
+          - sample: "sentry-samples-spring-boot-opentelemetry-noagent"
+          - sample: "sentry-samples-spring-boot-opentelemetry"
+            agent: "1"
+            agent-auto-init: "true"
+          - sample: "sentry-samples-spring-boot-opentelemetry"
+            agent: "1"
+            agent-auto-init: "false"
           - sample: "sentry-samples-spring-boot-webflux-jakarta"
           - sample: "sentry-samples-spring-boot-webflux"
           - sample: "sentry-samples-spring-boot-jakarta-opentelemetry-noagent"
@@ -49,9 +57,10 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@bb0c460cbf5354b0cddd15bacdf0d6aaa3e5a32b # pin@v3
+        uses: gradle/actions/setup-gradle@4a417b5b1a01db0b076987546b67f8de18e7d340 # pin@v3
         with:
           gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Exclude android modules from build
         run: |
@@ -92,7 +101,7 @@ jobs:
 
       - name: Start server and run integration test for sentry-cli commands
         run: |
-          test/system-test-run.sh "${{ matrix.sample }}" "${{ matrix.agent }}" "${{ matrix.agent-auto-init }}"
+          test/system-test-run.sh "${{ matrix.sample }}" "${{ matrix.agent }}" "${{ matrix.agent-auto-init }}" "0"
 
       - name: Upload test results
         if: always()

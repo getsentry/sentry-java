@@ -19,6 +19,7 @@ import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.Instrumenter;
+import io.sentry.ScopeType;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryDate;
 import io.sentry.SentryInstantDate;
@@ -50,6 +51,8 @@ public final class SentrySpanExporter implements SpanExporter {
   private final @NotNull SentryWeakSpanStorage spanStorage = SentryWeakSpanStorage.getInstance();
   private final @NotNull SpanDescriptionExtractor spanDescriptionExtractor =
       new SpanDescriptionExtractor();
+  private final @NotNull OpenTelemetryAttributesExtractor attributesExtractor =
+      new OpenTelemetryAttributesExtractor();
   private final @NotNull IScopes scopes;
 
   private final @NotNull List<String> attributeKeysToRemove =
@@ -59,11 +62,15 @@ public final class SentrySpanExporter implements SpanExporter {
           InternalSemanticAttributes.BAGGAGE_MUTABLE.getKey(),
           InternalSemanticAttributes.SAMPLED.getKey(),
           InternalSemanticAttributes.SAMPLE_RATE.getKey(),
+          InternalSemanticAttributes.SAMPLE_RAND.getKey(),
           InternalSemanticAttributes.PROFILE_SAMPLED.getKey(),
           InternalSemanticAttributes.PROFILE_SAMPLE_RATE.getKey(),
           InternalSemanticAttributes.PARENT_SAMPLED.getKey(),
           ProcessIncubatingAttributes.PROCESS_COMMAND_ARGS.getKey() // can be very long
           );
+
+  private final @NotNull List<String> attributeToRemoveByPrefix =
+      Arrays.asList("http.request.header.", "http.response.header.");
   private static final @NotNull Long SPAN_TIMEOUT = DateUtils.secondsToNanos(5 * 60);
 
   public static final String TRACE_ORIGIN = "auto.opentelemetry";
@@ -227,7 +234,7 @@ public final class SentrySpanExporter implements SpanExporter {
     }
 
     setOtelInstrumentationInfo(spanData, sentryChildSpan);
-
+    setOtelSpanKind(spanData, sentryChildSpan);
     transferSpanDetails(sentrySpanMaybe, sentryChildSpan);
 
     for (SpanNode childNode : spanNode.getChildren()) {
@@ -267,8 +274,10 @@ public final class SentrySpanExporter implements SpanExporter {
         spanStorage.getSentrySpan(span.getSpanContext());
     final @Nullable IScopes scopesMaybe =
         sentrySpanMaybe != null ? sentrySpanMaybe.getScopes() : null;
-    final @NotNull IScopes scopesToUse =
+    final @NotNull IScopes scopesToUseBeforeForking =
         scopesMaybe == null ? ScopesAdapter.getInstance() : scopesMaybe;
+    final @NotNull IScopes scopesToUse =
+        scopesToUseBeforeForking.forkedCurrentScope("SentrySpanExporter.createTransaction");
     final @NotNull OtelSpanInfo spanInfo =
         spanDescriptionExtractor.extractSpanInfo(span, sentrySpanMaybe);
 
@@ -328,8 +337,12 @@ public final class SentrySpanExporter implements SpanExporter {
     sentryTransaction.setContext("otel", otelContext);
 
     setOtelInstrumentationInfo(span, sentryTransaction);
-
+    setOtelSpanKind(span, sentryTransaction);
     transferSpanDetails(sentrySpanMaybe, sentryTransaction);
+
+    scopesToUse.configureScope(
+        ScopeType.CURRENT,
+        scope -> attributesExtractor.extract(span, scope, scopesToUse.getOptions()));
 
     return sentryTransaction;
   }
@@ -479,10 +492,21 @@ public final class SentrySpanExporter implements SpanExporter {
   }
 
   private boolean shouldRemoveAttribute(final @NotNull String key) {
-    return attributeKeysToRemove.contains(key);
+    if (attributeKeysToRemove.contains(key)) {
+      return true;
+    }
+
+    for (String prefix : attributeToRemoveByPrefix) {
+      if (key.startsWith(prefix)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
-  private void setOtelInstrumentationInfo(SpanData span, ISpan sentryTransaction) {
+  private void setOtelInstrumentationInfo(
+      final @NotNull SpanData span, final @NotNull ISpan sentryTransaction) {
     final @Nullable String otelInstrumentationName = span.getInstrumentationScopeInfo().getName();
     if (otelInstrumentationName != null) {
       sentryTransaction.setData("otel.instrumentation.name", otelInstrumentationName);
@@ -493,6 +517,10 @@ public final class SentrySpanExporter implements SpanExporter {
     if (otelInstrumentationVersion != null) {
       sentryTransaction.setData("otel.instrumentation.version", otelInstrumentationVersion);
     }
+  }
+
+  private void setOtelSpanKind(final @NotNull SpanData otelSpan, final @NotNull ISpan sentrySpan) {
+    sentrySpan.setData("otel.kind", otelSpan.getKind().name());
   }
 
   @Override

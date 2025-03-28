@@ -249,7 +249,7 @@ class SentryWebFluxTracingFilterTest {
             verify(fixture.chain).filter(fixture.exchange)
 
             verify(fixture.scopes).isEnabled
-            verify(fixture.scopes, times(2)).options
+            verify(fixture.scopes, times(4)).options
             verify(fixture.scopes).continueTrace(anyOrNull(), anyOrNull())
             verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), any<Hint>())
             verify(fixture.scopes).configureScope(any<ScopeCallback>())
@@ -322,6 +322,31 @@ class SentryWebFluxTracingFilterTest {
             )
 
             verify(fixture.scopes).continueTrace(eq(sentryTraceHeaderString), eq(baggageHeaderStrings))
+        }
+    }
+
+    @Test
+    fun `does not continue incoming trace if span origin is ignored`() {
+        val parentSpanId = SpanId()
+        val sentryTraceHeaderString = "2722d9f6ec019ade60c776169d9a8904-$parentSpanId-1"
+        val baggageHeaderStrings = listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET")
+        fixture.options.tracesSampleRate = null
+        fixture.options.setIgnoredSpanOrigins(listOf("auto.spring.webflux"))
+        val filter = fixture.getSut(sentryTraceHeader = sentryTraceHeaderString, baggageHeaders = baggageHeaderStrings)
+
+        withMockScopes {
+            filter.filter(fixture.exchange, fixture.chain).block()
+
+            verify(fixture.chain).filter(fixture.exchange)
+
+            verify(fixture.scopes, never()).captureTransaction(
+                anyOrNull<SentryTransaction>(),
+                anyOrNull<TraceContext>(),
+                anyOrNull(),
+                anyOrNull()
+            )
+
+            verify(fixture.scopes, never()).continueTrace(any(), any())
         }
     }
 }

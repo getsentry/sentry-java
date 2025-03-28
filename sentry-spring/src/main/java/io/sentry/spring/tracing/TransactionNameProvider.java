@@ -27,4 +27,12 @@ public interface TransactionNameProvider {
   default TransactionNameSource provideTransactionSource() {
     return TransactionNameSource.CUSTOM;
   }
+
+  @NotNull
+  @ApiStatus.Internal
+  default TransactionNameWithSource provideTransactionNameAndSource(
+      final @NotNull HttpServletRequest request) {
+    return new TransactionNameWithSource(
+        provideTransactionName(request), provideTransactionSource());
+  }
 }

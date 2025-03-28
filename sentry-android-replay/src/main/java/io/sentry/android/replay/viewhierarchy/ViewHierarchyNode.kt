@@ -3,6 +3,7 @@ package io.sentry.android.replay.viewhierarchy
 import android.annotation.TargetApi
 import android.graphics.Rect
 import android.view.View
+import android.view.ViewParent
 import android.widget.ImageView
 import android.widget.TextView
 import io.sentry.SentryOptions
@@ -15,7 +16,7 @@ import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.totalPaddingTopSafe
 
 @TargetApi(26)
-sealed class ViewHierarchyNode(
+internal sealed class ViewHierarchyNode(
     val x: Float,
     val y: Float,
     val width: Int,
@@ -261,11 +262,30 @@ sealed class ViewHierarchyNode(
                 return true
             }
 
-            if (this.javaClass.isAssignableFrom(options.experimental.sessionReplay.unmaskViewClasses)) {
+            if (!this.isMaskContainer(options) &&
+                this.parent != null &&
+                this.parent.isUnmaskContainer(options)
+            ) {
                 return false
             }
 
-            return this.javaClass.isAssignableFrom(options.experimental.sessionReplay.maskViewClasses)
+            if (this.javaClass.isAssignableFrom(options.sessionReplay.unmaskViewClasses)) {
+                return false
+            }
+
+            return this.javaClass.isAssignableFrom(options.sessionReplay.maskViewClasses)
+        }
+
+        private fun ViewParent.isUnmaskContainer(options: SentryOptions): Boolean {
+            val unmaskContainer =
+                options.sessionReplay.unmaskViewContainerClass ?: return false
+            return this.javaClass.name == unmaskContainer
+        }
+
+        private fun View.isMaskContainer(options: SentryOptions): Boolean {
+            val maskContainer =
+                options.sessionReplay.maskViewContainerClass ?: return false
+            return this.javaClass.name == maskContainer
         }
 
         fun fromView(view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryOptions): ViewHierarchyNode {

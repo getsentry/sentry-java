@@ -34,6 +34,9 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SentryEnvelopeItem {
 
+  // Profiles bigger than 50 MB will be dropped by the backend, so we drop bigger ones
+  private static final long MAX_PROFILE_CHUNK_SIZE = 50 * 1024 * 1024; // 50MB
+
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -255,13 +258,66 @@ public final class SentryEnvelopeItem {
     }
   }
 
+  public static @NotNull SentryEnvelopeItem fromProfileChunk(
+      final @NotNull ProfileChunk profileChunk, final @NotNull ISerializer serializer)
+      throws SentryEnvelopeException {
+
+    final @NotNull File traceFile = profileChunk.getTraceFile();
+    // Using CachedItem, so we read the trace file in the background
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              if (!traceFile.exists()) {
+                throw new SentryEnvelopeException(
+                    String.format(
+                        "Dropping profile chunk, because the file '%s' doesn't exists",
+                        traceFile.getName()));
+              }
+              // The payload of the profile item is a json including the trace file encoded with
+              // base64
+              final byte[] traceFileBytes =
+                  readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
+              final @NotNull String base64Trace =
+                  Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
+              if (base64Trace.isEmpty()) {
+                throw new SentryEnvelopeException("Profiling trace file is empty");
+              }
+              profileChunk.setSampledProfile(base64Trace);
+
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(profileChunk, writer);
+                return stream.toByteArray();
+              } catch (IOException e) {
+                throw new SentryEnvelopeException(
+                    String.format("Failed to serialize profile chunk\n%s", e.getMessage()));
+              } finally {
+                // In any case we delete the trace file
+                traceFile.delete();
+              }
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.ProfileChunk,
+            () -> cachedItem.getBytes().length,
+            "application-json",
+            traceFile.getName(),
+            null,
+            profileChunk.getPlatform());
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
   public static @NotNull SentryEnvelopeItem fromProfilingTrace(
       final @NotNull ProfilingTraceData profilingTraceData,
       final long maxTraceFileSize,
       final @NotNull ISerializer serializer)
       throws SentryEnvelopeException {
 
-    File traceFile = profilingTraceData.getTraceFile();
+    final @NotNull File traceFile = profilingTraceData.getTraceFile();
     // Using CachedItem, so we read the trace file in the background
     final CachedItem cachedItem =
         new CachedItem(
@@ -274,8 +330,10 @@ public final class SentryEnvelopeItem {
               }
               // The payload of the profile item is a json including the trace file encoded with
               // base64
-              byte[] traceFileBytes = readBytesFromFile(traceFile.getPath(), maxTraceFileSize);
-              String base64Trace = Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
+              final byte[] traceFileBytes =
+                  readBytesFromFile(traceFile.getPath(), maxTraceFileSize);
+              final @NotNull String base64Trace =
+                  Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
               if (base64Trace.isEmpty()) {
                 throw new SentryEnvelopeException("Profiling trace file is empty");
               }

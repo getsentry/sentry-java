@@ -167,8 +167,23 @@ class SentryAndroidOptionsTest {
         assertTrue(SentryAndroidOptions().isEnableScopeSync)
     }
 
+    @Test
+    fun `ndk handler option defaults to default strategy`() {
+        val sentryOptions = SentryAndroidOptions()
+        assertEquals(NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_DEFAULT.value, sentryOptions.ndkHandlerStrategy)
+    }
+
+    @Test
+    fun `ndk handler strategy option can be changed`() {
+        val sentryOptions = SentryAndroidOptions()
+        sentryOptions.setNativeHandlerStrategy(NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START)
+        assertEquals(NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START.value, sentryOptions.ndkHandlerStrategy)
+    }
+
     private class CustomDebugImagesLoader : IDebugImagesLoader {
         override fun loadDebugImages(): List<DebugImage>? = null
+        override fun loadDebugImagesForAddresses(addresses: Set<String>?): Set<DebugImage>? = null
+
         override fun clearDebugImages() {}
     }
 }

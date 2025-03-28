@@ -87,10 +87,10 @@ class ReplayIntegrationWithRecorderTest {
         // fake current time to trigger segment creation, CurrentDateProvider.getInstance() should
         // be used in prod
         val dateProvider = ICurrentDateProvider {
-            System.currentTimeMillis() + fixture.options.experimental.sessionReplay.sessionSegmentDuration
+            System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
         }
 
-        fixture.options.experimental.sessionReplay.sessionSampleRate = 1.0
+        fixture.options.sessionReplay.sessionSampleRate = 1.0
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
         val replay: ReplayIntegration
@@ -127,17 +127,14 @@ class ReplayIntegrationWithRecorderTest {
         replay.start()
         assertEquals(STARTED, recorder.state)
 
-        replay.resume()
-        assertEquals(RESUMED, recorder.state)
-
         replay.pause()
         assertEquals(PAUSED, recorder.state)
 
+        replay.resume()
+        assertEquals(RESUMED, recorder.state)
+
         replay.stop()
         assertEquals(STOPPED, recorder.state)
-
-        replay.close()
-        assertEquals(CLOSED, recorder.state)
 
         // start again and capture some frames
         replay.start()
@@ -176,6 +173,9 @@ class ReplayIntegrationWithRecorderTest {
                 assertEquals(0, videoEvents?.first()?.segmentId)
             }
         )
+
+        replay.close()
+        assertEquals(CLOSED, recorder.state)
     }
 
     enum class LifecycleState {
