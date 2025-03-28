@@ -17,8 +17,7 @@ import io.sentry.util.AutoClosableReentrantLock
 import java.util.LinkedList
 import java.util.Queue
 
-public class ComposeGestureTargetLocator public constructor(private val logger: ILogger) :
-    GestureTargetLocator {
+public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureTargetLocator {
     @Volatile
     private var composeHelper: SentryComposeHelper? = null
     private val lock = AutoClosableReentrantLock()
