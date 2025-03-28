@@ -81,7 +81,6 @@ dependencies {
     compileOnly(projects.sentryAndroidTimber)
     compileOnly(projects.sentryAndroidReplay)
     compileOnly(projects.sentryCompose)
-    compileOnly(projects.sentryComposeHelper)
 
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)
@@ -109,7 +108,7 @@ dependencies {
     testImplementation(projects.sentryAndroidFragment)
     testImplementation(projects.sentryAndroidTimber)
     testImplementation(projects.sentryAndroidReplay)
-    testImplementation(projects.sentryComposeHelper)
+    testImplementation(projects.sentryCompose)
     testImplementation(projects.sentryAndroidNdk)
     testRuntimeOnly(Config.Libs.composeUi)
     testRuntimeOnly(Config.Libs.timber)

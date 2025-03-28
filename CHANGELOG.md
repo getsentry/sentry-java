@@ -27,6 +27,7 @@
 - The `MANIFEST.MF` of `sentry-opentelemetry-agent` now has `Implementation-Version` set to the raw version ([#4291](https://github.com/getsentry/sentry-java/pull/4291))
   - An example value would be `8.6.0`
   - The value of the `Sentry-Version-Name` attribute looks like `sentry-8.5.0-otel-2.10.0`
+- Fix tags missing for compose view hierarchies ([#4275](https://github.com/getsentry/sentry-java/pull/4275))
 
 ### Internal
 

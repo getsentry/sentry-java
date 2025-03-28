@@ -22,7 +22,6 @@ include(
     "sentry-android-sqlite",
     "sentry-android-replay",
     "sentry-compose",
-    "sentry-compose-helper",
     "sentry-apollo",
     "sentry-apollo-3",
     "sentry-apollo-4",
