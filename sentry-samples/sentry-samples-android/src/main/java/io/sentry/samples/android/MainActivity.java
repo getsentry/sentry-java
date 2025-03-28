@@ -14,18 +14,15 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.samples.android.compose.ComposeActivity;
 import io.sentry.samples.android.databinding.ActivityMainBinding;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import timber.log.Timber;
 
@@ -86,16 +83,10 @@ public class MainActivity extends AppCompatActivity {
         view -> {
           String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
           File file = getApplication().getFileStreamPath(fileName);
-          try (final FileOutputStream fileOutputStream = new SentryFileOutputStream(file);
-              final OutputStreamWriter outputStreamWriter =
-                  new OutputStreamWriter(fileOutputStream);
-              final Writer writer = new BufferedWriter(outputStreamWriter)) {
-            for (int i = 0; i < 1024; i++) {
-              // To keep the sample code simple this happens on the main thread. Don't do this in a
-              // real app.
-              writer.write(String.format(Locale.getDefault(), "%d\n", i));
-            }
-            writer.flush();
+          try (final FileOutputStream fis =
+              SentryFileOutputStream.Factory.create(new FileOutputStream(file), file)) {
+            FileChannel channel = fis.getChannel();
+            channel.write(java.nio.ByteBuffer.wrap("Hello, World!".getBytes()));
           } catch (IOException e) {
             Sentry.captureException(e);
           }
