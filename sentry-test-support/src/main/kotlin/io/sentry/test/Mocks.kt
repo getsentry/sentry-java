@@ -13,6 +13,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
+import java.util.concurrent.FutureTask
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ImmediateExecutorService : ISentryExecutorService {
@@ -58,7 +59,7 @@ class DeferredExecutorService : ISentryExecutorService {
         synchronized(this) {
             runnables.add(runnable)
         }
-        return mock()
+        return FutureTask {}
     }
 
     override fun <T> submit(callable: Callable<T>): Future<T> = mock()
@@ -66,7 +67,7 @@ class DeferredExecutorService : ISentryExecutorService {
         synchronized(this) {
             scheduledRunnables.add(runnable)
         }
-        return mock()
+        return FutureTask {}
     }
     override fun close(timeoutMillis: Long) {}
     override fun isClosed(): Boolean = false

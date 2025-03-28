@@ -13,6 +13,7 @@
 
 ### Features
 
+- Continuous Profiling - Add delayed stop ([#4293](https://github.com/getsentry/sentry-java/pull/4293))
 - Increase http timeouts from 5s to 30s to have a better chance of events being delivered without retry ([#4276](https://github.com/getsentry/sentry-java/pull/4276))
 - Add `MANIFEST.MF` to Sentry JARs ([#4272](https://github.com/getsentry/sentry-java/pull/4272))
 - Retain baggage sample rate/rand values as doubles ([#4279](https://github.com/getsentry/sentry-java/pull/4279))
@@ -28,6 +29,11 @@
   - An example value would be `8.6.0`
   - The value of the `Sentry-Version-Name` attribute looks like `sentry-8.5.0-otel-2.10.0`
 - Fix tags missing for compose view hierarchies ([#4275](https://github.com/getsentry/sentry-java/pull/4275))
+
+### Internal
+
+- Added `platform` to SentryEnvelopeItemHeader ([#4287](https://github.com/getsentry/sentry-java/pull/4287))
+  - Set `android` platform to ProfileChunk envelope item header
 
 ### Internal
 

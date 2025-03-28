@@ -87,6 +87,15 @@ class SentryTracerTest {
     }
 
     @Test
+    fun `root span has thread name and thread id in the data`() {
+        val tracer = fixture.getSut()
+        assertTrue(tracer.root.data.containsKey(SpanDataConvention.THREAD_NAME))
+        assertTrue(tracer.root.data.containsKey(SpanDataConvention.THREAD_ID))
+        assertTrue(tracer.data!!.containsKey(SpanDataConvention.THREAD_NAME))
+        assertTrue(tracer.data!!.containsKey(SpanDataConvention.THREAD_ID))
+    }
+
+    @Test
     fun `does not create child span if origin is ignored`() {
         val tracer = fixture.getSut({
             it.setDebug(true)
