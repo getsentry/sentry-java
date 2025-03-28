@@ -1,7 +1,5 @@
 # sentry-opentelemetry
 
-*NOTE: Our OpenTelemetry modules are still experimental. Any feedback is welcome.*
-
 ## OpenTelemetry
 
 More information on OpenTelemetry can be found on their [website](https://opentelemetry.io/) as well
@@ -44,16 +42,16 @@ the agent but still want some configuration convenience, you should rather use t
 Combines all modules and dependencies needed to use Sentry with OpenTelemetry without the agent.
 
 ### `sentry-opentelemetry-agentless-spring`
-Combines all modules and dependencies needed to use Sentry with OpenTelemetry in SpringBoot without an agent.
+Combines all modules and dependencies needed to use Sentry with OpenTelemetry in Spring Boot without an agent.
 
 ## Running without an Agent
-If you want to use Sentry with OpenTelemetry without an agent, you can do so by adding the `sentry-opentelemetry-agentless` module as dependencies to your project. 
+If you want to use Sentry with OpenTelemetry without an agent, you can do so by adding the `sentry-opentelemetry-agentless` (or `sentry-opentelemetry-agentless-spring`) module as dependency to your project. 
 
 And run your application with the following JVM arguments:
 ```
 -Dotel.java.global-autoconfigure.enabled=true
 ```
-You may also want to set the following environment variables to if you do not use OTEL exporters:
+You may also want to set the following environment variables to if you do not use OpenTelemetry exporters:
 `OTEL_LOGS_EXPORTER=none;OTEL_METRICS_EXPORTER=none;OTEL_TRACES_EXPORTER=none`
 
 Alternatively you can initialize OpenTelemetry programmatically like this:

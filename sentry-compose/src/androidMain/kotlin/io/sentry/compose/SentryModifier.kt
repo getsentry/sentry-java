@@ -1,8 +1,13 @@
 package io.sentry.compose
 
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.SemanticsModifierNode
+import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.semantics.SemanticsConfiguration
+import androidx.compose.ui.semantics.SemanticsModifier
 import androidx.compose.ui.semantics.SemanticsPropertyKey
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 
 public object SentryModifier {
 
@@ -19,11 +24,41 @@ public object SentryModifier {
     )
 
     @JvmStatic
-    public fun Modifier.sentryTag(tag: String): Modifier {
-        return semantics(
-            properties = {
-                this[SentryTag] = tag
+    public fun Modifier.sentryTag(tag: String): Modifier =
+        this then SentryTagModifierNodeElement(tag)
+
+    private data class SentryTagModifierNodeElement(val tag: String) :
+        ModifierNodeElement<SentryTagModifierNode>(), SemanticsModifier {
+
+        override val semanticsConfiguration: SemanticsConfiguration =
+            SemanticsConfiguration().also {
+                it[SentryTag] = tag
             }
-        )
+
+        override fun create(): SentryTagModifierNode = SentryTagModifierNode(tag)
+
+        override fun update(node: SentryTagModifierNode) {
+            node.tag = tag
+        }
+
+        override fun InspectorInfo.inspectableProperties() {
+            name = "sentryTag"
+            properties["tag"] = tag
+        }
+    }
+
+    private class SentryTagModifierNode(var tag: String) :
+        Modifier.Node(),
+        SemanticsModifierNode {
+
+        override val shouldClearDescendantSemantics: Boolean
+            get() = false
+
+        override val shouldMergeDescendantSemantics: Boolean
+            get() = false
+
+        override fun SemanticsPropertyReceiver.applySemantics() {
+            this[SentryTag] = tag
+        }
     }
 }

@@ -7,16 +7,12 @@ import io.sentry.hints.Backfillable;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.protocol.Contexts;
+import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.RateLimiter;
-import io.sentry.util.CheckInUtils;
-import io.sentry.util.HintUtils;
-import io.sentry.util.Objects;
-import io.sentry.util.Random;
-import io.sentry.util.SentryRandom;
-import io.sentry.util.TracingUtils;
+import io.sentry.util.*;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,7 +41,8 @@ public final class SentryClient implements ISentryClient {
     return enabled;
   }
 
-  SentryClient(final @NotNull SentryOptions options) {
+  @ApiStatus.Internal
+  public SentryClient(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "SentryOptions is required.");
     this.enabled = true;
 
@@ -102,13 +99,27 @@ public final class SentryClient implements ISentryClient {
 
     if (event != null) {
       final Throwable eventThrowable = event.getThrowable();
-      if (eventThrowable != null && options.containsIgnoredExceptionForType(eventThrowable)) {
+      if (eventThrowable != null
+          && ExceptionUtils.isIgnored(options.getIgnoredExceptionsForType(), eventThrowable)) {
         options
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
                 "Event was dropped as the exception %s is ignored",
                 eventThrowable.getClass());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+        return SentryId.EMPTY_ID;
+      }
+
+      if (ErrorUtils.isIgnored(options.getIgnoredErrors(), event)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was dropped as it matched a string/pattern in ignoredErrors",
+                event.getMessage());
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
@@ -473,8 +484,7 @@ public final class SentryClient implements ISentryClient {
     return event;
   }
 
-  @Nullable
-  private SentryTransaction processTransaction(
+  private @Nullable SentryTransaction processTransaction(
       @NotNull SentryTransaction transaction,
       final @NotNull Hint hint,
       final @NotNull List<EventProcessor> eventProcessors) {
@@ -757,6 +767,9 @@ public final class SentryClient implements ISentryClient {
             .log(SentryLevel.ERROR, "The BeforeEnvelope callback threw an exception.", e);
       }
     }
+
+    SentryIntegrationPackageStorage.getInstance().checkForMixedVersions(options.getLogger());
+
     if (hint == null) {
       transport.send(envelope);
     } else {
@@ -876,6 +889,42 @@ public final class SentryClient implements ISentryClient {
       }
     } catch (IOException | SentryEnvelopeException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
+    }
+
+    return sentryId;
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public @NotNull SentryId captureProfileChunk(
+      @NotNull ProfileChunk profileChunk, final @Nullable IScope scope) {
+    Objects.requireNonNull(profileChunk, "profileChunk is required.");
+
+    options
+        .getLogger()
+        .log(SentryLevel.DEBUG, "Capturing profile chunk: %s", profileChunk.getChunkId());
+
+    @NotNull SentryId sentryId = profileChunk.getChunkId();
+    final DebugMeta debugMeta = DebugMeta.buildDebugMeta(profileChunk.getDebugMeta(), options);
+    if (debugMeta != null) {
+      profileChunk.setDebugMeta(debugMeta);
+    }
+
+    // BeforeSend and EventProcessors are not supported at the moment for Profile Chunks
+
+    try {
+      final @NotNull SentryEnvelope envelope =
+          new SentryEnvelope(
+              new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), null),
+              Collections.singletonList(
+                  SentryEnvelopeItem.fromProfileChunk(profileChunk, options.getSerializer())));
+      sentryId = sendEnvelope(envelope, null);
+    } catch (IOException | SentryEnvelopeException e) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, e, "Capturing profile chunk %s failed.", sentryId);
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
     }

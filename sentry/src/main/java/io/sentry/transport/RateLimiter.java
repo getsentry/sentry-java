@@ -75,7 +75,10 @@ public final class RateLimiter implements Closeable {
     if (dropItems != null) {
       options
           .getLogger()
-          .log(SentryLevel.INFO, "%d items will be dropped due rate limiting.", dropItems.size());
+          .log(
+              SentryLevel.WARNING,
+              "%d envelope items will be dropped due rate limiting.",
+              dropItems.size());
 
       //       Need a new envelope
       List<SentryEnvelopeItem> toSend = new ArrayList<>();
@@ -87,7 +90,9 @@ public final class RateLimiter implements Closeable {
 
       // no reason to continue
       if (toSend.isEmpty()) {
-        options.getLogger().log(SentryLevel.INFO, "Envelope discarded due all items rate limited.");
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Envelope discarded due all items rate limited.");
 
         markHintWhenSendingFailed(hint, false);
         return null;
@@ -186,6 +191,8 @@ public final class RateLimiter implements Closeable {
         return DataCategory.Attachment;
       case "profile":
         return DataCategory.Profile;
+      case "profile_chunk":
+        return DataCategory.ProfileChunk;
       case "transaction":
         return DataCategory.Transaction;
       case "check_in":

@@ -9,6 +9,7 @@ import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISerializer
 import io.sentry.NoOpLogger
+import io.sentry.ProfileChunk
 import io.sentry.ProfilingTraceData
 import io.sentry.ReplayRecording
 import io.sentry.SentryEnvelope
@@ -28,6 +29,8 @@ import io.sentry.hints.DiskFlushNotification
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.test.getProperty
+import io.sentry.test.injectForField
 import io.sentry.util.HintUtils
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.eq
@@ -38,6 +41,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.io.File
+import java.util.Timer
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
@@ -207,8 +211,9 @@ class RateLimiterTest {
         val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
         val profileItem = SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, fixture.serializer)
         val checkInItem = SentryEnvelopeItem.fromCheckIn(fixture.serializer, CheckIn("monitor-slug-1", CheckInStatus.ERROR))
+        val profileChunkItem = SentryEnvelopeItem.fromProfileChunk(ProfileChunk(), fixture.serializer)
 
-        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem, profileItem, checkInItem))
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem, profileItem, checkInItem, profileChunkItem))
 
         rateLimiter.updateRetryAfterLimits(null, null, 429)
         val result = rateLimiter.filter(envelope, Hint())
@@ -221,6 +226,7 @@ class RateLimiterTest {
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(attachmentItem))
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileItem))
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(checkInItem))
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileChunkItem))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -331,6 +337,24 @@ class RateLimiterTest {
     }
 
     @Test
+    fun `drop profileChunk items as lost`() {
+        val rateLimiter = fixture.getSUT()
+
+        val profileChunkItem = SentryEnvelopeItem.fromProfileChunk(ProfileChunk(), fixture.serializer)
+        val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(profileChunkItem, attachmentItem))
+
+        rateLimiter.updateRetryAfterLimits("60:profile_chunk:key", null, 1)
+        val result = rateLimiter.filter(envelope, Hint())
+
+        assertNotNull(result)
+        assertEquals(1, result.items.toList().size)
+
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileChunkItem))
+        verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
     fun `apply rate limits notifies observers`() {
         val rateLimiter = fixture.getSUT()
 
@@ -361,20 +385,16 @@ class RateLimiterTest {
     @Test
     fun `close cancels the timer`() {
         val rateLimiter = fixture.getSUT()
-        whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 1, 2001)
+        val timer = mock<Timer>()
+        rateLimiter.injectForField("timer", timer)
 
-        val applied = AtomicBoolean(true)
-        rateLimiter.addRateLimitObserver {
-            applied.set(rateLimiter.isActiveForCategory(Replay))
-        }
-
-        rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
+        // When the rate limiter is closed
         rateLimiter.close()
 
-        // If rate limit didn't already change, wait for 1.5s to ensure the timer has run after 1s
-        if (!applied.get()) {
-            await.untilTrue(applied)
-        }
-        assertTrue(applied.get())
+        // Then the timer is cancelled
+        verify(timer).cancel()
+
+        // And is removed by the rateLimiter
+        assertNull(rateLimiter.getProperty("timer"))
     }
 }

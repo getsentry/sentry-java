@@ -35,6 +35,7 @@ import io.sentry.cache.PersistingScopeObserver.TAGS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.TRACE_FILENAME
 import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
 import io.sentry.cache.PersistingScopeObserver.USER_FILENAME
+import io.sentry.cache.tape.QueueFile
 import io.sentry.hints.AbnormalExit
 import io.sentry.hints.Backfillable
 import io.sentry.protocol.Browser
@@ -61,6 +62,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowBuild
+import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -85,7 +87,6 @@ class AnrV2EventProcessorTest {
         lateinit var context: Context
         val options = SentryAndroidOptions().apply {
             setLogger(NoOpLogger.getInstance())
-            isSendDefaultPii = true
         }
 
         fun getSut(
@@ -93,10 +94,14 @@ class AnrV2EventProcessorTest {
             currentSdk: Int = Build.VERSION_CODES.LOLLIPOP,
             populateScopeCache: Boolean = false,
             populateOptionsCache: Boolean = false,
-            replayErrorSampleRate: Double? = null
+            replayErrorSampleRate: Double? = null,
+            isSendDefaultPii: Boolean = true
         ): AnrV2EventProcessor {
             options.cacheDirPath = dir.newFolder().absolutePath
             options.environment = "release"
+            options.isSendDefaultPii = isSendDefaultPii
+            options.addScopeObserver(PersistingScopeObserver(options))
+
             whenever(buildInfo.sdkInfoVersion).thenReturn(currentSdk)
             whenever(buildInfo.isEmulator).thenReturn(true)
 
@@ -145,7 +150,16 @@ class AnrV2EventProcessorTest {
         fun <T : Any> persistScope(filename: String, entity: T) {
             val dir = File(options.cacheDirPath, SCOPE_CACHE).also { it.mkdirs() }
             val file = File(dir, filename)
-            options.serializer.serialize(entity, file.writer())
+            if (filename == BREADCRUMBS_FILENAME) {
+                val queueFile = QueueFile.Builder(file).build()
+                (entity as List<Breadcrumb>).forEach { crumb ->
+                    val baos = ByteArrayOutputStream()
+                    options.serializer.serialize(crumb, baos.writer())
+                    queueFile.add(baos.toByteArray())
+                }
+            } else {
+                options.serializer.serialize(entity, file.writer())
+            }
         }
 
         fun <T : Any> persistOptions(filename: String, entity: T) {
@@ -170,6 +184,7 @@ class AnrV2EventProcessorTest {
 
     @BeforeTest
     fun `set up`() {
+        DeviceInfoUtil.resetInstance()
         fixture.context = ApplicationProvider.getApplicationContext()
     }
 
@@ -278,6 +293,7 @@ class AnrV2EventProcessorTest {
         // user
         assertEquals("bot", processed.user!!.username)
         assertEquals("bot@me.com", processed.user!!.id)
+        assertEquals("{{auto}}", processed.user!!.ipAddress)
         // trace
         assertEquals("ui.load", processed.contexts.trace!!.operation)
         // tags
@@ -302,6 +318,13 @@ class AnrV2EventProcessorTest {
         // contexts
         assertEquals(1024, processed.contexts.response!!.bodySize)
         assertEquals("Google Chrome", processed.contexts.browser!!.name)
+    }
+
+    @Test
+    fun `when backfillable event is enrichable, does not backfill user ip`() {
+        val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+        val processed = processEvent(hint, isSendDefaultPii = false, populateScopeCache = true)
+        assertNull(processed.user!!.ipAddress)
     }
 
     @Test
@@ -610,13 +633,14 @@ class AnrV2EventProcessorTest {
         val processed = processor.process(SentryEvent(), hint)!!
 
         assertEquals(replayId1.toString(), processed.contexts[Contexts.REPLAY_ID].toString())
-        assertEquals(replayId1.toString(), PersistingScopeObserver.read(fixture.options, REPLAY_FILENAME, String::class.java))
+        assertEquals(replayId1.toString(), fixture.options.findPersistingScopeObserver()?.read(fixture.options, REPLAY_FILENAME, String::class.java))
     }
 
     private fun processEvent(
         hint: Hint,
         populateScopeCache: Boolean = false,
         populateOptionsCache: Boolean = false,
+        isSendDefaultPii: Boolean = true,
         configureEvent: SentryEvent.() -> Unit = {}
     ): SentryEvent {
         val original = SentryEvent().apply(configureEvent)
@@ -624,7 +648,8 @@ class AnrV2EventProcessorTest {
         val processor = fixture.getSut(
             tmpDir,
             populateScopeCache = populateScopeCache,
-            populateOptionsCache = populateOptionsCache
+            populateOptionsCache = populateOptionsCache,
+            isSendDefaultPii = isSendDefaultPii
         )
         return processor.process(original, hint)!!
     }

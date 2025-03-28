@@ -16,10 +16,10 @@ concurrency:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    runs-on: macos-15
 
-    strategy:
-      fail-fast: false
+    env:
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
       - name: Checkout Repo
@@ -34,12 +34,13 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3839b20885c2c3507be5f0521853826f4b37038a # pin@v3
+        uses: gradle/actions/setup-gradle@4a417b5b1a01db0b076987546b67f8de18e7d340 # pin@v3
         with:
           gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@df409f7d9260372bd5f19e5b04e83cb3c43714ae # pin@v2
+        uses: github/codeql-action/init@5f8171a638ada777af81d42b55959a643bb29017 # pin@v2
         with:
           languages: 'java'
 
@@ -48,4 +49,4 @@ jobs:
           ./gradlew buildForCodeQL
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@df409f7d9260372bd5f19e5b04e83cb3c43714ae # pin@v2
+        uses: github/codeql-action/analyze@5f8171a638ada777af81d42b55959a643bb29017 # pin@v2

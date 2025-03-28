@@ -1,7 +1,5 @@
 # sentry-opentelemetry-agentless
 
-*NOTE: Our OpenTelemetry modules are still experimental. Any feedback is welcome.*
-
 ## How to use it
 
 Add the latest `sentry-opentelemetry-agentless` module as a dependency and add a `sentry.properties` 
@@ -24,7 +22,7 @@ Run your application with the following JVM arguments:
 -Dotel.java.global-autoconfigure.enabled=true
 ```
 
-You may also want to set the following environment variables to if you do not use OTEL exporters:
+You may also want to set the following environment variables to if you do not use OpenTelemetry exporters:
 `OTEL_LOGS_EXPORTER=none;OTEL_METRICS_EXPORTER=none;OTEL_TRACES_EXPORTER=none`
 
 Alternatively you can initialize OpenTelemetry programmatically like this:

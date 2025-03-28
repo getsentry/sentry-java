@@ -19,6 +19,11 @@ import org.jetbrains.annotations.TestOnly;
 public final class SentryInstrumentation
     extends graphql.execution.instrumentation.SimpleInstrumentation {
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-graphql", BuildConfig.VERSION_NAME);
+  }
+
   /**
    * @deprecated please use {@link SentryGraphqlInstrumentation#SENTRY_SCOPES_CONTEXT_KEY}
    */
@@ -86,8 +91,6 @@ public final class SentryInstrumentation
         new SentryGraphqlInstrumentation(
             beforeSpan, subscriptionHandler, exceptionReporter, ignoredErrorTypes, TRACE_ORIGIN);
     SentryIntegrationPackageStorage.getInstance().addIntegration("GraphQL");
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-graphql", BuildConfig.VERSION_NAME);
   }
 
   /**

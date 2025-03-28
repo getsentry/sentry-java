@@ -10,11 +10,6 @@ plugins {
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
 }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
@@ -33,6 +28,7 @@ dependencies {
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.TestLibs.javaFaker)
     testImplementation(Config.TestLibs.msgpack)
+    testImplementation(Config.TestLibs.okio)
     testImplementation(projects.sentryTestSupport)
 }
 
@@ -85,4 +81,17 @@ tasks.withType<JavaCompile>() {
         option("NullAway:AnnotatedPackages", "io.sentry")
     }
     options.errorprone.errorproneArgs.add("-XepExcludedPaths:.*/io/sentry/vendor/.*")
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Sentry-Version-Name" to project.version,
+            "Sentry-SDK-Name" to Config.Sentry.SENTRY_JAVA_SDK_NAME,
+            "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry",
+            "Implementation-Vendor" to "Sentry",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version
+        )
+    }
 }

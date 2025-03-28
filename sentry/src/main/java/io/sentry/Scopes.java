@@ -26,7 +26,7 @@ public final class Scopes implements IScopes {
   private final @Nullable Scopes parentScopes;
 
   private final @NotNull String creator;
-  private final @NotNull TransactionPerformanceCollector transactionPerformanceCollector;
+  private final @NotNull CompositePerformanceCollector compositePerformanceCollector;
 
   private final @NotNull CombinedScopeView combinedScope;
 
@@ -53,7 +53,7 @@ public final class Scopes implements IScopes {
 
     final @NotNull SentryOptions options = getOptions();
     validateOptions(options);
-    this.transactionPerformanceCollector = options.getTransactionPerformanceCollector();
+    this.compositePerformanceCollector = options.getCompositePerformanceCollector();
   }
 
   public @NotNull String getCreator() {
@@ -405,7 +405,8 @@ public final class Scopes implements IScopes {
         configureScope(ScopeType.ISOLATION, scope -> scope.clear());
         getOptions().getBackpressureMonitor().close();
         getOptions().getTransactionProfiler().close();
-        getOptions().getTransactionPerformanceCollector().close();
+        getOptions().getContinuousProfiler().close();
+        getOptions().getCompositePerformanceCollector().close();
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
         if (isRestarting) {
           executorService.submit(
@@ -514,7 +515,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void setTag(final @NotNull String key, final @NotNull String value) {
+  public void setTag(final @Nullable String key, final @Nullable String value) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -527,7 +528,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void removeTag(final @NotNull String key) {
+  public void removeTag(final @Nullable String key) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -540,7 +541,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void setExtra(final @NotNull String key, final @NotNull String value) {
+  public void setExtra(final @Nullable String key, final @Nullable String value) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -553,7 +554,7 @@ public final class Scopes implements IScopes {
   }
 
   @Override
-  public void removeExtra(final @NotNull String key) {
+  public void removeExtra(final @Nullable String key) {
     if (!isEnabled()) {
       getOptions()
           .getLogger()
@@ -810,6 +811,35 @@ public final class Scopes implements IScopes {
     return sentryId;
   }
 
+  @ApiStatus.Internal
+  @Override
+  public @NotNull SentryId captureProfileChunk(
+      final @NotNull ProfileChunk profilingContinuousData) {
+    Objects.requireNonNull(profilingContinuousData, "profilingContinuousData is required");
+
+    @NotNull SentryId sentryId = SentryId.EMPTY_ID;
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureTransaction' call is a no-op.");
+    } else {
+      try {
+        sentryId = getClient().captureProfileChunk(profilingContinuousData, getScope());
+      } catch (Throwable e) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Error while capturing profile chunk with id: "
+                    + profilingContinuousData.getChunkId(),
+                e);
+      }
+    }
+    return sentryId;
+  }
+
   @Override
   public @NotNull ITransaction startTransaction(
       final @NotNull TransactionContext transactionContext,
@@ -857,8 +887,10 @@ public final class Scopes implements IScopes {
               SentryLevel.INFO, "Tracing is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
     } else {
+      final Double sampleRand = getSampleRand(transactionContext);
       final SamplingContext samplingContext =
-          new SamplingContext(transactionContext, transactionOptions.getCustomSamplingContext());
+          new SamplingContext(
+              transactionContext, transactionOptions.getCustomSamplingContext(), sampleRand, null);
       final @NotNull TracesSampler tracesSampler = getOptions().getInternalTracesSampler();
       @NotNull TracesSamplingDecision samplingDecision = tracesSampler.sample(samplingContext);
       transactionContext.setSamplingDecision(samplingDecision);
@@ -869,22 +901,34 @@ public final class Scopes implements IScopes {
 
       transaction =
           spanFactory.createTransaction(
-              transactionContext, this, transactionOptions, transactionPerformanceCollector);
+              transactionContext, this, transactionOptions, compositePerformanceCollector);
       //          new SentryTracer(
       //              transactionContext, this, transactionOptions,
-      // transactionPerformanceCollector);
+      // compositePerformanceCollector);
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it
-      if (samplingDecision.getSampled() && samplingDecision.getProfileSampled()) {
-        final ITransactionProfiler transactionProfiler = getOptions().getTransactionProfiler();
-        // If the profiler is not running, we start and bind it here.
-        if (!transactionProfiler.isRunning()) {
-          transactionProfiler.start();
-          transactionProfiler.bindTransaction(transaction);
-        } else if (transactionOptions.isAppStartTransaction()) {
-          // If the profiler is running and the current transaction is the app start, we bind it.
-          transactionProfiler.bindTransaction(transaction);
+      if (samplingDecision.getSampled()) {
+        // If transaction profiler is sampled, let's start it
+        if (samplingDecision.getProfileSampled()) {
+          final ITransactionProfiler transactionProfiler = getOptions().getTransactionProfiler();
+          // If the profiler is not running, we start and bind it here.
+          if (!transactionProfiler.isRunning()) {
+            transactionProfiler.start();
+            transactionProfiler.bindTransaction(transaction);
+          } else if (transactionOptions.isAppStartTransaction()) {
+            // If the profiler is running and the current transaction is the app start, we bind it.
+            transactionProfiler.bindTransaction(transaction);
+          }
+        }
+
+        // If continuous profiling is enabled in trace mode, let's start it. Profiler will sample on
+        // its own.
+        if (getOptions().isContinuousProfilingEnabled()
+            && getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE) {
+          getOptions()
+              .getContinuousProfiler()
+              .startProfiler(ProfileLifecycle.TRACE, getOptions().getInternalTracesSampler());
         }
       }
     }
@@ -892,6 +936,65 @@ public final class Scopes implements IScopes {
       transaction.makeCurrent();
     }
     return transaction;
+  }
+
+  private @NotNull Double getSampleRand(final @NotNull TransactionContext transactionContext) {
+    final @Nullable Baggage baggage = transactionContext.getBaggage();
+    if (baggage != null) {
+      final @Nullable Double sampleRandFromBaggageMaybe = baggage.getSampleRand();
+      if (sampleRandFromBaggageMaybe != null) {
+        return sampleRandFromBaggageMaybe;
+      }
+    }
+
+    return getCombinedScopeView().getPropagationContext().getSampleRand();
+  }
+
+  @Override
+  public void startProfiler() {
+    if (getOptions().isContinuousProfilingEnabled()) {
+      if (getOptions().getProfileLifecycle() != ProfileLifecycle.MANUAL) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Profiling lifecycle is %s. Profiling cannot be started manually.",
+                getOptions().getProfileLifecycle().name());
+        return;
+      }
+      getOptions()
+          .getContinuousProfiler()
+          .startProfiler(ProfileLifecycle.MANUAL, getOptions().getInternalTracesSampler());
+    } else if (getOptions().isProfilingEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
+    }
+  }
+
+  @Override
+  public void stopProfiler() {
+    if (getOptions().isContinuousProfilingEnabled()) {
+      if (getOptions().getProfileLifecycle() != ProfileLifecycle.MANUAL) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Profiling lifecycle is %s. Profiling cannot be stopped manually.",
+                getOptions().getProfileLifecycle().name());
+        return;
+      }
+      getOptions().getLogger().log(SentryLevel.DEBUG, "Stopped continuous Profiling.");
+      getOptions().getContinuousProfiler().stopProfiler(ProfileLifecycle.MANUAL);
+    } else {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
+    }
   }
 
   @Override
@@ -963,7 +1066,10 @@ public final class Scopes implements IScopes {
         PropagationContext.fromHeaders(getOptions().getLogger(), sentryTrace, baggageHeaders);
     configureScope(
         (scope) -> {
-          scope.setPropagationContext(propagationContext);
+          scope.withPropagationContext(
+              oldPropagationContext -> {
+                scope.setPropagationContext(propagationContext);
+              });
         });
     if (getOptions().isTracingEnabled()) {
       return TransactionContext.fromPropagationContext(propagationContext);

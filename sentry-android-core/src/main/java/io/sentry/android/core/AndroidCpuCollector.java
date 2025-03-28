@@ -8,6 +8,7 @@ import io.sentry.ILogger;
 import io.sentry.IPerformanceSnapshotCollector;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.SentryLevel;
+import io.sentry.SentryNanotimeDate;
 import io.sentry.util.FileUtils;
 import io.sentry.util.Objects;
 import java.io.File;
@@ -73,7 +74,7 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
 
     CpuCollectionData cpuData =
         new CpuCollectionData(
-            System.currentTimeMillis(), (cpuUsagePercentage / (double) numCores) * 100.0);
+            (cpuUsagePercentage / (double) numCores) * 100.0, new SentryNanotimeDate());
 
     performanceCollectionData.addCpuData(cpuData);
   }

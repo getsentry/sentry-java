@@ -6,12 +6,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- add extra permission (optional) -->
-    <!-- extra recommended permission, we'd be able to collect device ringing breadcrumbs (PhoneStateBreadcrumbsIntegration) -->
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <!-- Just some random permissions to showcase the permission context sent to Sentry -->
     <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <!-- Needed by leakcanary.NotificationEventListener -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
@@ -19,9 +16,12 @@
     <uses-sdk
         tools:overrideLibrary="io.sentry.android"/>
 
-    <application
+  <uses-feature
+    android:name="android.hardware.camera"
+    android:required="false" />
+
+  <application
         android:name=".MyApplication"
-        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -110,10 +110,14 @@
         <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
 
         <!--    how to enable profiling when starting transactions -->
-        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1" />
+<!--        <meta-data android:name="io.sentry.traces.profiling.sample-rate" android:value="1.0" />-->
 
-        <!--    how to enable app start profiling -->
-        <meta-data android:name="io.sentry.traces.profiling.enable-app-start" android:value="true" />
+        <!-- Enable profiling, adjust in production env -->
+        <meta-data android:name="io.sentry.traces.profiling.session-sample-rate" android:value="1.0" />
+        <!-- Set profiling lifecycle, can be `manual` or `trace` -->
+        <meta-data android:name="io.sentry.traces.profiling.lifecycle" android:value="manual" />
+        <!-- Enable profiling on app start -->
+        <meta-data android:name="io.sentry.traces.profiling.start-on-app-start" android:value="true" />
 
         <!--    how to disable the Activity auto instrumentation for tracing-->
         <!--    <meta-data android:name="io.sentry.traces.activity.enable" android:value="false" />-->

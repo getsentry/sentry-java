@@ -86,6 +86,13 @@ public class io/sentry/spring/jakarta/SentryWebConfiguration {
 	public fun httpServletRequestSentryUserProvider (Lio/sentry/SentryOptions;)Lio/sentry/spring/jakarta/HttpServletRequestSentryUserProvider;
 }
 
+public final class io/sentry/spring/jakarta/SpringProfilesEventProcessor : io/sentry/EventProcessor {
+	public fun <init> (Lorg/springframework/core/env/Environment;)V
+	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
+	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
+}
+
 public final class io/sentry/spring/jakarta/SpringSecuritySentryUserProvider : io/sentry/spring/jakarta/SentryUserProvider {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun provideUser ()Lio/sentry/protocol/User;
@@ -213,6 +220,13 @@ public class io/sentry/spring/jakarta/opentelemetry/SentryOpenTelemetryNoAgentCo
 	public fun sentryOpenTelemetryOptionsConfiguration ()Lio/sentry/Sentry$OptionsConfiguration;
 }
 
+public final class io/sentry/spring/jakarta/tracing/CombinedTransactionNameProvider : io/sentry/spring/jakarta/tracing/TransactionNameProvider {
+	public fun <init> (Ljava/util/List;)V
+	public fun provideTransactionName (Ljakarta/servlet/http/HttpServletRequest;)Ljava/lang/String;
+	public fun provideTransactionNameAndSource (Ljakarta/servlet/http/HttpServletRequest;)Lio/sentry/spring/jakarta/tracing/TransactionNameWithSource;
+	public fun provideTransactionSource ()Lio/sentry/protocol/TransactionNameSource;
+}
+
 public class io/sentry/spring/jakarta/tracing/SentryAdviceConfiguration {
 	public fun <init> ()V
 	public fun sentrySpanAdvice ()Lorg/aopalliance/aop/Advice;
@@ -257,7 +271,9 @@ public class io/sentry/spring/jakarta/tracing/SentryTracingFilter : org/springfr
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun <init> (Lio/sentry/IScopes;Lio/sentry/spring/jakarta/tracing/TransactionNameProvider;)V
+	public fun <init> (Lio/sentry/IScopes;Lio/sentry/spring/jakarta/tracing/TransactionNameProvider;Z)V
 	protected fun doFilterInternal (Ljakarta/servlet/http/HttpServletRequest;Ljakarta/servlet/http/HttpServletResponse;Ljakarta/servlet/FilterChain;)V
+	protected fun shouldNotFilterAsyncDispatch ()Z
 }
 
 public abstract interface annotation class io/sentry/spring/jakarta/tracing/SentryTransaction : java/lang/annotation/Annotation {
@@ -291,7 +307,14 @@ public final class io/sentry/spring/jakarta/tracing/SpringServletTransactionName
 
 public abstract interface class io/sentry/spring/jakarta/tracing/TransactionNameProvider {
 	public abstract fun provideTransactionName (Ljakarta/servlet/http/HttpServletRequest;)Ljava/lang/String;
+	public fun provideTransactionNameAndSource (Ljakarta/servlet/http/HttpServletRequest;)Lio/sentry/spring/jakarta/tracing/TransactionNameWithSource;
 	public fun provideTransactionSource ()Lio/sentry/protocol/TransactionNameSource;
+}
+
+public final class io/sentry/spring/jakarta/tracing/TransactionNameWithSource {
+	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
+	public fun getTransactionName ()Ljava/lang/String;
+	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 }
 
 public abstract class io/sentry/spring/jakarta/webflux/AbstractSentryWebFilter : org/springframework/web/server/WebFilter {
@@ -304,27 +327,6 @@ public abstract class io/sentry/spring/jakarta/webflux/AbstractSentryWebFilter :
 	protected fun maybeStartTransaction (Lio/sentry/IScopes;Lorg/springframework/http/server/reactive/ServerHttpRequest;Ljava/lang/String;)Lio/sentry/ITransaction;
 	protected fun shouldTraceRequest (Lio/sentry/IScopes;Lorg/springframework/http/server/reactive/ServerHttpRequest;)Z
 	protected fun startTransaction (Lio/sentry/IScopes;Lorg/springframework/http/server/reactive/ServerHttpRequest;Lio/sentry/TransactionContext;Ljava/lang/String;)Lio/sentry/ITransaction;
-}
-
-public final class io/sentry/spring/jakarta/webflux/ReactorUtils {
-	public fun <init> ()V
-	public static fun withSentry (Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;
-	public static fun withSentry (Lreactor/core/publisher/Mono;)Lreactor/core/publisher/Mono;
-	public static fun withSentryForkedRoots (Lreactor/core/publisher/Flux;)Lreactor/core/publisher/Flux;
-	public static fun withSentryForkedRoots (Lreactor/core/publisher/Mono;)Lreactor/core/publisher/Mono;
-	public static fun withSentryScopes (Lreactor/core/publisher/Flux;Lio/sentry/IScopes;)Lreactor/core/publisher/Flux;
-	public static fun withSentryScopes (Lreactor/core/publisher/Mono;Lio/sentry/IScopes;)Lreactor/core/publisher/Mono;
-}
-
-public final class io/sentry/spring/jakarta/webflux/SentryReactorThreadLocalAccessor : io/micrometer/context/ThreadLocalAccessor {
-	public static final field KEY Ljava/lang/String;
-	public fun <init> ()V
-	public fun getValue ()Lio/sentry/IScopes;
-	public synthetic fun getValue ()Ljava/lang/Object;
-	public fun key ()Ljava/lang/Object;
-	public fun reset ()V
-	public fun setValue (Lio/sentry/IScopes;)V
-	public synthetic fun setValue (Ljava/lang/Object;)V
 }
 
 public class io/sentry/spring/jakarta/webflux/SentryRequestResolver {
@@ -353,5 +355,9 @@ public final class io/sentry/spring/jakarta/webflux/SentryWebFilterWithThreadLoc
 	public static final field TRACE_ORIGIN Ljava/lang/String;
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;
+}
+
+public final class io/sentry/spring/jakarta/webflux/reactor/ReactorUtils : io/sentry/reactor/SentryReactorUtils {
+	public fun <init> ()V
 }
 

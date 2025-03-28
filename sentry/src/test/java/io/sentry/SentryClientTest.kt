@@ -15,6 +15,7 @@ import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
+import io.sentry.protocol.Message
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryException
@@ -41,6 +42,7 @@ import org.mockito.kotlin.mockingDetails
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.msgpack.core.MessagePack
@@ -76,6 +78,8 @@ class SentryClientTest {
         val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
         val scopes = mock<IScopes>()
         val sentryTracer: SentryTracer
+        val profileChunk: ProfileChunk
+        val profilingTraceFile = Files.createTempFile("trace", ".trace").toFile()
 
         var sentryOptions: SentryOptions = SentryOptions().apply {
             dsn = dsnString
@@ -95,12 +99,12 @@ class SentryClientTest {
             whenever(scopes.options).thenReturn(sentryOptions)
             sentryTracer = SentryTracer(TransactionContext("a-transaction", "op", TracesSamplingDecision(true)), scopes)
             sentryTracer.startChild("a-span", "span 1").finish()
+            profileChunk = ProfileChunk(SentryId(), SentryId(), profilingTraceFile, emptyMap(), 1.0, sentryOptions)
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)
         var attachment2 = Attachment("hello2".toByteArray(), "hello2.txt", "text/plain", true)
         var attachment3 = Attachment("hello3".toByteArray(), "hello3.txt", "text/plain", true)
-        val profilingTraceFile = Files.createTempFile("trace", ".trace").toFile()
         var profilingTraceData = ProfilingTraceData(profilingTraceFile, sentryTracer)
         var profilingNonExistingTraceData = ProfilingTraceData(File("non_existent.trace"), sentryTracer)
 
@@ -1128,6 +1132,22 @@ class SentryClientTest {
     }
 
     @Test
+    fun `captureProfileChunk ignores beforeSend`() {
+        var invoked = false
+        fixture.sentryOptions.setBeforeSendTransaction { t, _ -> invoked = true; t }
+        fixture.getSut().captureProfileChunk(fixture.profileChunk, mock())
+        assertFalse(invoked)
+    }
+
+    @Test
+    fun `captureProfileChunk ignores Event Processors`() {
+        val mockProcessor = mock<EventProcessor>()
+        fixture.sentryOptions.addEventProcessor(mockProcessor)
+        fixture.getSut().captureProfileChunk(fixture.profileChunk, mock())
+        verifyNoInteractions(mockProcessor)
+    }
+
+    @Test
     fun `when captureSession and no release is set, do nothing`() {
         fixture.getSut().captureSession(createSession(""))
         verify(fixture.transport, never()).send(any(), anyOrNull())
@@ -1528,6 +1548,29 @@ class SentryClientTest {
     }
 
     @Test
+    fun `when captureProfileChunk`() {
+        val client = fixture.getSut()
+        client.captureProfileChunk(fixture.profileChunk, mock())
+        verifyProfileChunkInEnvelope(fixture.profileChunk.chunkId)
+    }
+
+    @Test
+    fun `when captureProfileChunk with empty trace file, profile chunk is not sent`() {
+        val client = fixture.getSut()
+        fixture.profilingTraceFile.writeText("")
+        client.captureProfileChunk(fixture.profileChunk, mock())
+        assertFails { verifyProfilingTraceInEnvelope(fixture.profileChunk.chunkId) }
+    }
+
+    @Test
+    fun `when captureProfileChunk with non existing profiling trace file, profile chunk is not sent`() {
+        val client = fixture.getSut()
+        fixture.profilingTraceFile.delete()
+        client.captureProfileChunk(fixture.profileChunk, mock())
+        assertFails { verifyProfilingTraceInEnvelope(fixture.profileChunk.chunkId) }
+    }
+
+    @Test
     fun `when captureTransaction with attachments not added to transaction`() {
         val transaction = SentryTransaction(fixture.sentryTracer)
         val scope = createScopeWithAttachments()
@@ -1756,6 +1799,65 @@ class SentryClientTest {
         val sut = fixture.getSut()
         sut.captureException(IllegalStateException())
         verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when event message matches string in ignoredErrors, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredError("hello")
+        val sut = fixture.getSut()
+        val event = SentryEvent()
+        val message = Message()
+        message.message = "hello"
+        event.setMessage(message)
+        sut.captureEvent(event)
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when event message matches regex pattern in ignoredErrors, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredError("hello .*")
+        val sut = fixture.getSut()
+        val event = SentryEvent()
+        val message = Message()
+        message.message = "hello world"
+        event.setMessage(message)
+        sut.captureEvent(event)
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when event message does not match regex pattern in ignoredErrors, capturing event sends it`() {
+        fixture.sentryOptions.addIgnoredError("hello .*")
+        val sut = fixture.getSut()
+        val event = SentryEvent()
+        val message = Message()
+        message.message = "test"
+        event.setMessage(message)
+        sut.captureEvent(event)
+        verify(fixture.transport).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when exception message matches regex pattern in ignoredErrors, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredError(".*hello .*")
+        val sut = fixture.getSut()
+        sut.captureException(RuntimeException("hello world"))
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when class matches regex pattern in ignoredErrors, capturing event does not send it`() {
+        fixture.sentryOptions.addIgnoredError("java\\.lang\\..*")
+        val sut = fixture.getSut()
+        sut.captureException(RuntimeException("hello world"))
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when ignoredExceptionsForType and ignoredErrors are not explicitly specified, capturing event sends event`() {
+        val sut = fixture.getSut()
+        sut.captureException(RuntimeException("test"))
+        verify(fixture.transport).send(any(), anyOrNull())
     }
 
     @Test
@@ -3129,6 +3231,19 @@ class SentryClientTest {
                 assertNotNull(profilingTraceItem?.data)
             },
             anyOrNull()
+        )
+    }
+
+    private fun verifyProfileChunkInEnvelope(eventId: SentryId?) {
+        verify(fixture.transport).send(
+            check { actual ->
+                assertEquals(eventId, actual.header.eventId)
+
+                val profilingTraceItem = actual.items.firstOrNull { item ->
+                    item.header.type == SentryItemType.ProfileChunk
+                }
+                assertNotNull(profilingTraceItem?.data)
+            }
         )
     }
 

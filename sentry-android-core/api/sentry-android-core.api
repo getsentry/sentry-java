@@ -40,6 +40,18 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
+public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
+	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
+	public fun close ()V
+	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
+	public fun getRootSpanCounter ()I
+	public fun isRunning ()Z
+	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
+	public fun reevaluateSampling ()V
+	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
+	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
+}
+
 public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/IPerformanceSnapshotCollector {
 	public fun <init> (Lio/sentry/ILogger;)V
 	public fun collect (Lio/sentry/PerformanceCollectionData;)V
@@ -49,6 +61,15 @@ public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/IPerfo
 public final class io/sentry/android/core/AndroidDateUtils {
 	public fun <init> ()V
 	public static fun getCurrentSentryDateTime ()Lio/sentry/SentryDate;
+}
+
+public final class io/sentry/android/core/AndroidFatalLogger : io/sentry/ILogger {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public fun isEnabled (Lio/sentry/SentryLevel;)Z
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
 public final class io/sentry/android/core/AndroidLogger : io/sentry/ILogger {
@@ -195,6 +216,8 @@ public final class io/sentry/android/core/DeviceInfoUtil {
 	public static fun getInstance (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)Lio/sentry/android/core/DeviceInfoUtil;
 	public fun getOperatingSystem ()Lio/sentry/protocol/OperatingSystem;
 	public fun getSideLoadedInfo ()Lio/sentry/android/core/ContextUtils$SideLoadedInfo;
+	public fun getSplitApksInfo ()Lio/sentry/android/core/ContextUtils$SplitApksInfo;
+	public fun getTotalMemory ()Ljava/lang/Long;
 	public static fun isCharging (Landroid/content/Intent;Lio/sentry/SentryOptions;)Ljava/lang/Boolean;
 	public static fun resetInstance ()V
 }
@@ -210,6 +233,7 @@ public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : i
 public abstract interface class io/sentry/android/core/IDebugImagesLoader {
 	public abstract fun clearDebugImages ()V
 	public abstract fun loadDebugImages ()Ljava/util/List;
+	public abstract fun loadDebugImagesForAddresses (Ljava/util/Set;)Ljava/util/Set;
 }
 
 public final class io/sentry/android/core/InternalSentrySdk {
@@ -218,6 +242,7 @@ public final class io/sentry/android/core/InternalSentrySdk {
 	public static fun getAppStartMeasurement ()Ljava/util/Map;
 	public static fun getCurrentScope ()Lio/sentry/IScope;
 	public static fun serializeScope (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/IScope;)Ljava/util/Map;
+	public static fun setTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)V
 }
 
 public final class io/sentry/android/core/LoadClass : io/sentry/util/LoadClass {
@@ -244,12 +269,6 @@ public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration
 
 public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/ILogger;)V
-	public fun close ()V
-	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
-}
-
-public final class io/sentry/android/core/PhoneStateBreadcrumbsIntegration : io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
@@ -295,6 +314,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAppComponentBreadcrumbs ()Z
 	public fun isEnableAppLifecycleBreadcrumbs ()Z
 	public fun isEnableAutoActivityLifecycleTracing ()Z
+	public fun isEnableAutoTraceIdGeneration ()Z
 	public fun isEnableFramesTracking ()Z
 	public fun isEnableNdk ()Z
 	public fun isEnableNetworkEventBreadcrumbs ()Z
@@ -318,6 +338,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAppComponentBreadcrumbs (Z)V
 	public fun setEnableAppLifecycleBreadcrumbs (Z)V
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
+	public fun setEnableAutoTraceIdGeneration (Z)V
 	public fun setEnableFramesTracking (Z)V
 	public fun setEnableNdk (Z)V
 	public fun setEnableNetworkEventBreadcrumbs (Z)V
@@ -382,14 +403,7 @@ public final class io/sentry/android/core/SystemEventsBreadcrumbsIntegration : i
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;Ljava/util/List;)V
 	public fun close ()V
-	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
-}
-
-public final class io/sentry/android/core/TempSensorBreadcrumbsIntegration : android/hardware/SensorEventListener, io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/content/Context;)V
-	public fun close ()V
-	public fun onAccuracyChanged (Landroid/hardware/Sensor;I)V
-	public fun onSensorChanged (Landroid/hardware/SensorEvent;)V
+	public static fun getDefaultActions ()Ljava/util/List;
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
@@ -467,6 +481,7 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun clear ()V
 	public fun createProcessInitSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun getActivityLifecycleTimeSpans ()Ljava/util/List;
+	public fun getAppStartContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getAppStartProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getAppStartSamplingDecision ()Lio/sentry/TracesSamplingDecision;
 	public fun getAppStartTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
@@ -478,16 +493,17 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public static fun getInstance ()Lio/sentry/android/core/performance/AppStartMetrics;
 	public fun getSdkInitTimeSpan ()Lio/sentry/android/core/performance/TimeSpan;
 	public fun isAppLaunchedInForeground ()Z
-	public fun isColdStartValid ()Z
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
+	public fun onActivityDestroyed (Landroid/app/Activity;)V
+	public fun onActivityStarted (Landroid/app/Activity;)V
 	public fun onAppStartSpansSent ()V
 	public static fun onApplicationCreate (Landroid/app/Application;)V
 	public static fun onApplicationPostCreate (Landroid/app/Application;)V
 	public static fun onContentProviderCreate (Landroid/content/ContentProvider;)V
 	public static fun onContentProviderPostCreate (Landroid/content/ContentProvider;)V
-	public fun registerApplicationForegroundCheck (Landroid/app/Application;)V
-	public fun restartAppStart (J)V
+	public fun registerLifecycleCallbacks (Landroid/app/Application;)V
 	public fun setAppLaunchedInForeground (Z)V
+	public fun setAppStartContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
 	public fun setAppStartProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setAppStartSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setAppStartType (Lio/sentry/android/core/performance/AppStartMetrics$AppStartType;)V
@@ -533,5 +549,16 @@ public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable 
 public class io/sentry/android/core/performance/WindowContentChangedCallback : io/sentry/android/core/internal/gestures/WindowCallbackAdapter {
 	public fun <init> (Landroid/view/Window$Callback;Ljava/lang/Runnable;)V
 	public fun onContentChanged ()V
+}
+
+public final class io/sentry/android/core/util/AndroidLazyEvaluator {
+	public fun <init> (Lio/sentry/android/core/util/AndroidLazyEvaluator$AndroidEvaluator;)V
+	public fun getValue (Landroid/content/Context;)Ljava/lang/Object;
+	public fun resetValue ()V
+	public fun setValue (Ljava/lang/Object;)V
+}
+
+public abstract interface class io/sentry/android/core/util/AndroidLazyEvaluator$AndroidEvaluator {
+	public abstract fun evaluate (Landroid/content/Context;)Ljava/lang/Object;
 }
 

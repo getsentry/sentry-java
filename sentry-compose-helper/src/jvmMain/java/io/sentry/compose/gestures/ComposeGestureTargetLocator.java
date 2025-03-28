@@ -33,16 +33,19 @@ public final class ComposeGestureTargetLocator implements GestureTargetLocator {
   private volatile @Nullable SentryComposeHelper composeHelper;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
-  public ComposeGestureTargetLocator(final @NotNull ILogger logger) {
-    this.logger = logger;
-    SentryIntegrationPackageStorage.getInstance().addIntegration("ComposeUserInteraction");
+  static {
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME);
   }
 
+  public ComposeGestureTargetLocator(final @NotNull ILogger logger) {
+    this.logger = logger;
+    SentryIntegrationPackageStorage.getInstance().addIntegration("ComposeUserInteraction");
+  }
+
   @Override
   public @Nullable UiElement locate(
-      @NotNull Object root, float x, float y, UiElement.Type targetType) {
+      @Nullable Object root, float x, float y, UiElement.Type targetType) {
 
     // lazy init composeHelper as it's using some reflection under the hood
     if (composeHelper == null) {
