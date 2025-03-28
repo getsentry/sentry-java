@@ -27,6 +27,30 @@ public class ScreenshotUtils {
 
   private static final long CAPTURE_TIMEOUT_MS = 1000;
 
+  // Used by Hybrid SDKs
+  /**
+   * @noinspection unused
+   */
+  public static @Nullable byte[] takeScreenshot(
+      final @NotNull Activity activity,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    return takeScreenshot(activity, AndroidThreadChecker.getInstance(), logger, buildInfoProvider);
+  }
+
+  // Used by Hybrid SDKs
+  @SuppressLint("NewApi")
+  public static @Nullable byte[] takeScreenshot(
+      final @NotNull Activity activity,
+      final @NotNull IThreadChecker threadChecker,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+
+    final @Nullable Bitmap screenshot =
+        captureScreenshot(activity, threadChecker, logger, buildInfoProvider);
+    return compressBitmapToPng(screenshot, logger);
+  }
+
   public static @Nullable Bitmap captureScreenshot(
       final @NotNull Activity activity,
       final @NotNull ILogger logger,
