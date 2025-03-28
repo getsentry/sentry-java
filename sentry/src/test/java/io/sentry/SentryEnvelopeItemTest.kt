@@ -23,6 +23,7 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.nio.charset.Charset
 import java.nio.file.Files
+import java.util.concurrent.Callable
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -101,6 +102,30 @@ class SentryEnvelopeItemTest {
         )
 
         assertAttachment(attachment, viewHierarchySerialized, item)
+    }
+
+    @Test
+    fun `fromAttachment with byteProvider`() {
+        val attachment = Attachment(
+            object : Callable<ByteArray> {
+                override fun call(): ByteArray? {
+                    return byteArrayOf(0x1)
+                }
+            },
+            fixture.filename,
+            "text/plain",
+            "image/png",
+            false
+        )
+
+        val item = SentryEnvelopeItem.fromAttachment(
+            fixture.serializer,
+            fixture.options.logger,
+            attachment,
+            fixture.maxAttachmentSize
+        )
+
+        assertAttachment(attachment, byteArrayOf(0x1), item)
     }
 
     @Test

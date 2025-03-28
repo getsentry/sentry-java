@@ -1,12 +1,14 @@
 package io.sentry.android.core.internal.util
 
 import android.app.Activity
+import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
+import io.sentry.NoOpLogger
 import io.sentry.android.core.BuildInfoProvider
 import junit.framework.TestCase.assertNull
 import org.junit.runner.RunWith
@@ -17,6 +19,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowPixelCopy
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 @Config(
     shadows = [ShadowPixelCopy::class],
@@ -32,7 +35,7 @@ class ScreenshotUtilTest {
         whenever(activity.isDestroyed).thenReturn(false)
 
         val data =
-            ScreenshotUtils.takeScreenshot(activity, mock<ILogger>(), mock<BuildInfoProvider>())
+            ScreenshotUtils.captureScreenshot(activity, mock<ILogger>(), mock<BuildInfoProvider>())
         assertNull(data)
     }
 
@@ -44,7 +47,7 @@ class ScreenshotUtilTest {
         whenever(activity.window).thenReturn(mock<Window>())
 
         val data =
-            ScreenshotUtils.takeScreenshot(activity, mock<ILogger>(), mock<BuildInfoProvider>())
+            ScreenshotUtils.captureScreenshot(activity, mock<ILogger>(), mock<BuildInfoProvider>())
         assertNull(data)
     }
 
@@ -60,7 +63,7 @@ class ScreenshotUtilTest {
         whenever(window.peekDecorView()).thenReturn(decorView)
 
         val data =
-            ScreenshotUtils.takeScreenshot(activity, mock<ILogger>(), mock<BuildInfoProvider>())
+            ScreenshotUtils.captureScreenshot(activity, mock<ILogger>(), mock<BuildInfoProvider>())
         assertNull(data)
     }
 
@@ -81,7 +84,7 @@ class ScreenshotUtilTest {
         whenever(rootView.height).thenReturn(0)
 
         val data =
-            ScreenshotUtils.takeScreenshot(activity, mock<ILogger>(), mock<BuildInfoProvider>())
+            ScreenshotUtils.captureScreenshot(activity, mock<ILogger>(), mock<BuildInfoProvider>())
         assertNull(data)
     }
 
@@ -94,7 +97,7 @@ class ScreenshotUtilTest {
         val buildInfoProvider = mock<BuildInfoProvider>()
         whenever(buildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
 
-        val data = ScreenshotUtils.takeScreenshot(controller.get(), logger, buildInfoProvider)
+        val data = ScreenshotUtils.captureScreenshot(controller.get(), logger, buildInfoProvider)
         assertNotNull(data)
     }
 
@@ -107,8 +110,31 @@ class ScreenshotUtilTest {
         val buildInfoProvider = mock<BuildInfoProvider>()
         whenever(buildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
 
-        val data = ScreenshotUtils.takeScreenshot(controller.get(), logger, buildInfoProvider)
+        val data = ScreenshotUtils.captureScreenshot(controller.get(), logger, buildInfoProvider)
         assertNotNull(data)
+    }
+
+    @Test
+    fun `a null bitmap compresses into null`() {
+        val bytes = ScreenshotUtils.compressBitmapToPng(null, NoOpLogger.getInstance())
+        assertNull(bytes)
+    }
+
+    @Test
+    fun `a recycled bitmap compresses into null`() {
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        bitmap.recycle()
+
+        val bytes = ScreenshotUtils.compressBitmapToPng(bitmap, NoOpLogger.getInstance())
+        assertNull(bytes)
+    }
+
+    @Test
+    fun `a valid bitmap compresses into a valid bytearray`() {
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        val bytes = ScreenshotUtils.compressBitmapToPng(bitmap, NoOpLogger.getInstance())
+        assertNotNull(bytes)
+        assertTrue(bytes.isNotEmpty())
     }
 }
 
