@@ -189,4 +189,12 @@ public final class NoOpSpan implements ISpan {
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return NoOpScopesLifecycleToken.getInstance();
   }
+
+  @Override public void addLink(@NotNull SpanLink spanLink) {
+
+  }
+
+  @Override public @NotNull List<SpanLink> getLinks() {
+    return List.of();
+  }
 }

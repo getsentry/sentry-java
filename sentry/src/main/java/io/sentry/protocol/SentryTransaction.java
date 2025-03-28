@@ -11,6 +11,7 @@ import io.sentry.SentryBaseEvent;
 import io.sentry.SentryTracer;
 import io.sentry.Span;
 import io.sentry.SpanContext;
+import io.sentry.SpanLink;
 import io.sentry.SpanStatus;
 import io.sentry.TracesSamplingDecision;
 import io.sentry.util.Objects;
@@ -87,7 +88,8 @@ public final class SentryTransaction extends SentryBaseEvent
             tracerContext.getDescription(),
             tracerContext.getSamplingDecision(),
             tracerContext.getStatus(),
-            tracerContext.getOrigin());
+            tracerContext.getOrigin(),
+            sentryTracer.getLinks());
 
     for (final Map.Entry<String, String> tag : tracerContext.getTags().entrySet()) {
       this.setTag(tag.getKey(), tag.getValue());

@@ -274,4 +274,9 @@ public interface ISpan {
   @ApiStatus.Internal
   @NotNull
   ISentryLifecycleToken makeCurrent();
+
+  void addLink(@NotNull SpanLink spanLink);
+
+  @NotNull
+  List<SpanLink> getLinks();
 }

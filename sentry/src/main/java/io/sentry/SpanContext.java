@@ -7,6 +7,9 @@ import io.sentry.util.Objects;
 import io.sentry.util.thread.IThreadChecker;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -49,6 +52,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
 
   protected @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
 
+  private @NotNull List<SpanLink> links = new ArrayList<>();
+
   private @Nullable Map<String, Object> unknown;
 
   private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
@@ -75,7 +80,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       final @NotNull String operation,
       final @Nullable SpanId parentSpanId,
       final @Nullable TracesSamplingDecision samplingDecision) {
-    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null, DEFAULT_ORIGIN);
+    this(traceId, spanId, parentSpanId, operation, null, samplingDecision, null, DEFAULT_ORIGIN,
+        Collections.emptyList());
   }
 
   @ApiStatus.Internal
@@ -87,7 +93,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       final @Nullable String description,
       final @Nullable TracesSamplingDecision samplingDecision,
       final @Nullable SpanStatus status,
-      final @Nullable String origin) {
+      final @Nullable String origin,
+      final @NotNull List<SpanLink> links) {
     this.traceId = Objects.requireNonNull(traceId, "traceId is required");
     this.spanId = Objects.requireNonNull(spanId, "spanId is required");
     this.op = Objects.requireNonNull(operation, "operation is required");
@@ -95,6 +102,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     this.description = description;
     this.status = status;
     this.origin = origin;
+    this.links = links;
     setSamplingDecision(samplingDecision);
     final IThreadChecker threadChecker =
         ScopesAdapter.getInstance().getOptions().getThreadChecker();
@@ -130,6 +138,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     if (copiedData != null) {
       this.data = copiedData;
     }
+    final List<SpanLink> copiedLinks = new ArrayList<>(spanContext.links);
+    this.links = copiedLinks;
   }
 
   public void setOperation(final @NotNull String operation) {
@@ -283,7 +293,8 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
         null,
         samplingDecision,
         null,
-        DEFAULT_ORIGIN);
+        DEFAULT_ORIGIN,
+        Collections.emptyList());
   }
 
   @Override
@@ -316,6 +327,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     public static final String TAGS = "tags";
     public static final String ORIGIN = "origin";
     public static final String DATA = "data";
+    public static final String LINKS = "links";
   }
 
   @Override
@@ -345,6 +357,9 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     }
     if (!data.isEmpty()) {
       writer.name(JsonKeys.DATA).value(logger, data);
+    }
+    if (!links.isEmpty()) {
+      writer.name(JsonKeys.LINKS).value(logger, links);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {

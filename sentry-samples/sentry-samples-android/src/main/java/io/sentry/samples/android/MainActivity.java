@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
   private int screenLoadCount = 0;
 
   final Object mutex = new Object();
+  static ISpan secondActivitySpan = null;
 
   @Override
   @SuppressWarnings("deprecation")
@@ -84,6 +85,8 @@ public class MainActivity extends AppCompatActivity {
 
     binding.addAttachment.setOnClickListener(
         view -> {
+          secondActivitySpan = Tracer.startSpan("SecondActivity.launch");
+          ISpan NTS = Tracer.startSpan("NTS");
           String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
           File file = getApplication().getFileStreamPath(fileName);
           try (final FileOutputStream fileOutputStream = new SentryFileOutputStream(file);
@@ -100,13 +103,15 @@ public class MainActivity extends AppCompatActivity {
             Sentry.captureException(e);
           }
 
-          Sentry.configureScope(
-              scope -> {
-                String json = "{ \"number\": 10 }";
-                Attachment attachment = new Attachment(json.getBytes(), "log.json");
-                scope.addAttachment(attachment);
-                scope.addAttachment(new Attachment(file.getPath()));
-              });
+          startActivity(new Intent(this, SecondActivity.class));
+          Tracer.stopSpan(NTS);
+          //Sentry.configureScope(
+          //    scope -> {
+          //      String json = "{ \"number\": 10 }";
+          //      Attachment attachment = new Attachment(json.getBytes(), "log.json");
+          //      scope.addAttachment(attachment);
+          //      scope.addAttachment(new Attachment(file.getPath()));
+          //    });
         });
 
     binding.captureException.setOnClickListener(
@@ -298,5 +303,6 @@ public class MainActivity extends AppCompatActivity {
       measurementSpan.finish();
     }
     Sentry.reportFullyDisplayed();
+    Tracer.stopSpan(MyApplication.appLaunchTrace);
   }
 }

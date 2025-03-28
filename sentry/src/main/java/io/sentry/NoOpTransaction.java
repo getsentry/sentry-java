@@ -109,6 +109,14 @@ public final class NoOpTransaction implements ITransaction {
     return NoOpScopesLifecycleToken.getInstance();
   }
 
+  @Override public void addLink(@NotNull SpanLink spanLink) {
+
+  }
+
+  @Override public @NotNull List<SpanLink> getLinks() {
+    return Collections.emptyList();
+  }
+
   @Override
   public void scheduleFinish() {}
 

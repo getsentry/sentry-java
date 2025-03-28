@@ -40,6 +40,7 @@ import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -232,15 +233,41 @@ public final class ActivityLifecycleIntegration
         transactionOptions.setAppStartTransaction(appStartSamplingDecision != null);
         setSpanOrigin(transactionOptions);
 
+        ITransaction transaction = null;
         // we can only bind to the scope if there's no running transaction
-        ITransaction transaction =
-            scopes.startTransaction(
-                new TransactionContext(
-                    activityName,
-                    TransactionNameSource.COMPONENT,
-                    UI_LOAD_OP,
-                    appStartSamplingDecision),
-                transactionOptions);
+        if (scopes != null) {
+          final ITransaction current = scopes.getTransaction();
+          if (current != null) {
+            // Get trace information from the first transaction
+              TracingUtils.TracingHeaders headers = TracingUtils.trace(scopes, null, current);
+
+              if (headers != null && headers.getBaggageHeader() != null) {
+                TransactionContext trace =
+                    scopes.continueTrace(headers.getSentryTraceHeader().getValue(),
+                        Collections.singletonList(headers.getBaggageHeader().getValue()));
+
+                if (trace != null) {
+                  // Change name of the second transaction using the same trace
+                  trace.setName(activityName);
+                  trace.setOperation(UI_LOAD_OP);
+                  trace.setTransactionNameSource(TransactionNameSource.COMPONENT);
+                  trace.setSamplingDecision(appStartSamplingDecision);
+                  // Start second transaction with the same trace
+                  transaction = scopes.startTransaction(trace, transactionOptions);
+                }
+              }
+            }
+        }
+        if (transaction == null) {
+          transaction =
+              scopes.startTransaction(
+                  new TransactionContext(
+                      activityName,
+                      TransactionNameSource.COMPONENT,
+                      UI_LOAD_OP,
+                      appStartSamplingDecision),
+                  transactionOptions);
+        }
 
         final SpanOptions spanOptions = new SpanOptions();
         setSpanOrigin(spanOptions);
@@ -295,9 +322,10 @@ public final class ActivityLifecycleIntegration
         }
 
         // lets bind to the scope so other integrations can pick it up
+        ITransaction finalTransaction = transaction;
         scopes.configureScope(
             scope -> {
-              applyScope(scope, transaction);
+              applyScope(scope, finalTransaction);
             });
 
         activitiesWithOngoingTransactions.put(activity, transaction);

@@ -2,10 +2,13 @@ package io.sentry.samples.android;
 
 import android.app.Application;
 import android.os.StrictMode;
+import io.sentry.ISpan;
 import io.sentry.Sentry;
 
 /** Apps. main Application. */
 public class MyApplication extends Application {
+
+  static ISpan appLaunchTrace = null;
 
   @Override
   public void onCreate() {
@@ -13,6 +16,13 @@ public class MyApplication extends Application {
     strictMode();
     super.onCreate();
 
+    appLaunchTrace = Tracer.startSpan("MyApplication.onCreate");
+    try {
+      Thread.sleep(100);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    //Tracer.stopSpan(span);
     // Example how to initialize the SDK manually which allows access to SentryOptions callbacks.
     // Make sure you disable the auto init via manifest meta-data: io.sentry.auto-init=false
     // SentryAndroid.init(

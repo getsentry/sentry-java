@@ -950,6 +950,17 @@ public final class SentryTracer implements ITransaction {
     return NoOpScopesLifecycleToken.getInstance();
   }
 
+  @Override
+  public void addLink(@NotNull SpanLink spanLink) {
+    root.addLink(spanLink);
+  }
+
+  @Override
+  @NotNull
+  public List<SpanLink> getLinks() {
+    return root.getLinks();
+  }
+
   @NotNull
   Span getRoot() {
     return root;

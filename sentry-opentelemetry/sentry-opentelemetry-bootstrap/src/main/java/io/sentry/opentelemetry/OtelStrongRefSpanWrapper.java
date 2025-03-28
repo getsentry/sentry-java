@@ -12,6 +12,7 @@ import io.sentry.MeasurementUnit;
 import io.sentry.SentryDate;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanContext;
+import io.sentry.SpanLink;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TraceContext;
@@ -20,6 +21,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -303,6 +305,14 @@ public final class OtelStrongRefSpanWrapper implements IOtelSpanWrapper {
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return delegate.makeCurrent();
+  }
+
+  @Override public void addLink(@NotNull SpanLink spanLink) {
+
+  }
+
+  @Override public @NotNull List<SpanLink> getLinks() {
+    return Collections.emptyList();
   }
 
   @ApiStatus.Internal

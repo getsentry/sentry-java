@@ -126,7 +126,7 @@
         <!--    <meta-data android:name="io.sentry.traces.activity.auto-finish.enable" android:value="false" />-->
 
         <!-- how to enable the UI auto instrumentation for tracing -->
-        <meta-data android:name="io.sentry.traces.user-interaction.enable" android:value="true" />
+        <meta-data android:name="io.sentry.traces.user-interaction.enable" android:value="false" />
 
         <!-- how to enable the time-to-full-display tracing in Activity auto instrumentation -->
         <meta-data android:name="io.sentry.traces.time-to-full-display.enable" android:value="true" />
@@ -166,7 +166,7 @@
 
       <meta-data android:name="io.sentry.performance-v2.enable" android:value="true" />
 
-      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="1" />
+      <meta-data android:name="io.sentry.session-replay.session-sample-rate" android:value="0" />
       <meta-data android:name="io.sentry.session-replay.mask-all-text" android:value="true" />
     </application>
 </manifest>

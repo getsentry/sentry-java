@@ -12,6 +12,7 @@ import io.sentry.MeasurementUnit;
 import io.sentry.SentryDate;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanContext;
+import io.sentry.SpanLink;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TraceContext;
@@ -21,6 +22,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -256,6 +258,14 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return rootSpan.makeCurrent();
+  }
+
+  @Override public void addLink(@NotNull SpanLink spanLink) {
+
+  }
+
+  @Override public @NotNull List<SpanLink> getLinks() {
+    return Collections.emptyList();
   }
 
   @Override

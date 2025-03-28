@@ -20,8 +20,8 @@ class SecondActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val activeSpan = Sentry.getSpan()
-        val span = activeSpan?.startChild("onCreate", javaClass.simpleName)
+//        val activeSpan = Sentry.getSpan()
+//        val span = activeSpan?.startChild("onCreate", javaClass.simpleName)
 
         binding = ActivitySecondBinding.inflate(layoutInflater)
 
@@ -38,7 +38,7 @@ class SecondActivity : AppCompatActivity() {
 
         setContentView(binding.root)
 
-        span?.finish(SpanStatus.OK)
+//        span?.finish(SpanStatus.OK)
     }
 
     private fun showText(visible: Boolean = true, text: String = "") {
@@ -51,7 +51,7 @@ class SecondActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        val span = Sentry.getSpan()?.startChild("onResume", javaClass.simpleName)
+        val span = Tracer.startSpan("on_resume_tasks")
 
         // do some stuff
 
@@ -59,15 +59,13 @@ class SecondActivity : AppCompatActivity() {
 
         // do some stuff
 
-        span?.finish(SpanStatus.OK)
+        span.finish(SpanStatus.OK)
     }
 
     private fun updateRepos() {
         showText(false)
 
-        val currentSpan = Sentry.getSpan()
-        val span = currentSpan?.startChild("updateRepos", javaClass.simpleName)
-            ?: Sentry.startTransaction("updateRepos", "task")
+        val span = Tracer.startSpan("update_repos")
 
         GithubAPI.service.listRepos(binding.editRepo.text.toString()).enqueue(object : Callback<List<Repo>> {
             override fun onFailure(call: Call<List<Repo>>, t: Throwable) {
@@ -77,6 +75,7 @@ class SecondActivity : AppCompatActivity() {
                 showText(true, "error: ${t.message}")
 
                 Sentry.reportFullyDisplayed()
+                Tracer.stopSpan(MainActivity.secondActivitySpan)
             }
 
             override fun onResponse(call: Call<List<Repo>>, response: Response<List<Repo>>) {
@@ -87,6 +86,7 @@ class SecondActivity : AppCompatActivity() {
                 showText(text = "items: ${repos.size}")
 
                 Sentry.reportFullyDisplayed()
+                Tracer.stopSpan(MainActivity.secondActivitySpan)
             }
         })
     }

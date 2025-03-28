@@ -20,6 +20,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanContext;
 import io.sentry.SpanId;
+import io.sentry.SpanLink;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TraceContext;
@@ -32,6 +33,7 @@ import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -528,6 +530,14 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
       return token;
     }
     return NoOpScopesLifecycleToken.getInstance();
+  }
+
+  @Override public void addLink(@NotNull SpanLink spanLink) {
+
+  }
+
+  @Override public @NotNull List<SpanLink> getLinks() {
+    return Collections.emptyList();
   }
 
   private static final class OtelSpanWrapperToken implements ISentryLifecycleToken {

@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -47,6 +48,7 @@ public final class Span implements ISpan {
   private final @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
   private final @NotNull Map<String, MeasurementValue> measurements = new ConcurrentHashMap<>();
 
+  private final @NotNull List<SpanLink> links = new CopyOnWriteArrayList<>();
   private final @NotNull Contexts contexts = new Contexts();
 
   Span(
@@ -457,5 +459,14 @@ public final class Span implements ISpan {
   @Override
   public @NotNull ISentryLifecycleToken makeCurrent() {
     return NoOpScopesLifecycleToken.getInstance();
+  }
+
+  @Override
+  public void addLink(@NotNull SpanLink spanLink) {
+    links.add(spanLink);
+  }
+
+  @Override public @NotNull List<SpanLink> getLinks() {
+    return links;
   }
 }
