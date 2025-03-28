@@ -16,6 +16,7 @@ import org.mockito.kotlin.whenever
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import kotlin.test.Test
@@ -230,6 +231,17 @@ class SentryFileOutputStreamTest {
         val stream = fixture.getSut(file, delegate = delegate, tracesSampleRate = null)
 
         assertTrue { stream is ThrowingFileOutputStream }
+    }
+
+    @Test
+    fun `channels and descriptors are closed together with the stream`() {
+        val fos = fixture.getSut(tmpFile)
+        val channel = fos.channel
+
+        channel.write(ByteBuffer.wrap("hello".toByteArray()))
+        fos.close()
+        assertFalse(channel.isOpen)
+        assertFalse(fos.fd.valid())
     }
 }
 
