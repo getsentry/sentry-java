@@ -91,6 +91,9 @@ public final class ActivityLifecycleIntegration
 
   private final @NotNull ActivityFramesTracker activityFramesTracker;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+  private boolean fullyDisplayedCalled = false;
+  private final @NotNull AutoClosableReentrantLock fullyDisplayedLock =
+      new AutoClosableReentrantLock();
 
   public ActivityLifecycleIntegration(
       final @NotNull Application application,
@@ -413,12 +416,17 @@ public final class ActivityLifecycleIntegration
         scopes.configureScope(scope -> scope.setScreen(activityClassName));
       }
       startTracing(activity);
+      final @Nullable ISpan ttidSpan = ttidSpanMap.get(activity);
       final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
 
       firstActivityCreated = true;
 
-      if (performanceEnabled && ttfdSpan != null && fullyDisplayedReporter != null) {
-        fullyDisplayedReporter.registerFullyDrawnListener(() -> onFullFrameDrawn(ttfdSpan));
+      if (performanceEnabled
+          && ttidSpan != null
+          && ttfdSpan != null
+          && fullyDisplayedReporter != null) {
+        fullyDisplayedReporter.registerFullyDrawnListener(
+            () -> onFullFrameDrawn(ttidSpan, ttfdSpan));
       }
     }
   }
@@ -635,37 +643,59 @@ public final class ActivityLifecycleIntegration
     }
     finishAppStartSpan();
 
-    if (options != null && ttidSpan != null) {
-      final SentryDate endDate = options.getDateProvider().now();
-      final long durationNanos = endDate.diff(ttidSpan.getStartDate());
-      final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
-      ttidSpan.setMeasurement(
-          MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY, durationMillis, MILLISECOND);
-
-      if (ttfdSpan != null && ttfdSpan.isFinished()) {
-        ttfdSpan.updateEndDate(endDate);
-        // If the ttfd span was finished before the first frame we adjust the measurement, too
+    // Sentry.reportFullyDisplayed can be run in any thread, so we have to ensure synchronization
+    // with first frame drawn
+    try (final @NotNull ISentryLifecycleToken ignored = fullyDisplayedLock.acquire()) {
+      if (options != null && ttidSpan != null) {
+        final SentryDate endDate = options.getDateProvider().now();
+        final long durationNanos = endDate.diff(ttidSpan.getStartDate());
+        final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
         ttidSpan.setMeasurement(
-            MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
+            MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY, durationMillis, MILLISECOND);
+
+        // If the ttfd API was called before the first frame we finish the ttfd now
+        if (ttfdSpan != null && fullyDisplayedCalled) {
+          fullyDisplayedCalled = false;
+          ttidSpan.setMeasurement(
+              MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
+          ttfdSpan.setMeasurement(
+              MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
+          finishSpan(ttfdSpan, endDate);
+        }
+
+        finishSpan(ttidSpan, endDate);
+      } else {
+        finishSpan(ttidSpan);
+        if (fullyDisplayedCalled) {
+          finishSpan(ttfdSpan);
+        }
       }
-      finishSpan(ttidSpan, endDate);
-    } else {
-      finishSpan(ttidSpan);
     }
   }
 
-  private void onFullFrameDrawn(final @Nullable ISpan ttfdSpan) {
-    if (options != null && ttfdSpan != null) {
-      final SentryDate endDate = options.getDateProvider().now();
-      final long durationNanos = endDate.diff(ttfdSpan.getStartDate());
-      final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
-      ttfdSpan.setMeasurement(
-          MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
-      finishSpan(ttfdSpan, endDate);
-    } else {
-      finishSpan(ttfdSpan);
-    }
+  private void onFullFrameDrawn(final @NotNull ISpan ttidSpan, final @NotNull ISpan ttfdSpan) {
     cancelTtfdAutoClose();
+    // Sentry.reportFullyDisplayed can be run in any thread, so we have to ensure synchronization
+    // with first frame drawn
+    try (final @NotNull ISentryLifecycleToken ignored = fullyDisplayedLock.acquire()) {
+      // If the TTID span didn't finish, it means the first frame was not drawn yet, which means
+      // Sentry.reportFullyDisplayed was called too early. We set a flag, so that whenever the TTID
+      // will finish, we will finish the TTFD span as well.
+      if (!ttidSpan.isFinished()) {
+        fullyDisplayedCalled = true;
+        return;
+      }
+      if (options != null) {
+        final SentryDate endDate = options.getDateProvider().now();
+        final long durationNanos = endDate.diff(ttfdSpan.getStartDate());
+        final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
+        ttfdSpan.setMeasurement(
+            MeasurementValue.KEY_TIME_TO_FULL_DISPLAY, durationMillis, MILLISECOND);
+        finishSpan(ttfdSpan, endDate);
+      } else {
+        finishSpan(ttfdSpan);
+      }
+    }
   }
 
   private void finishExceededTtfdSpan(
