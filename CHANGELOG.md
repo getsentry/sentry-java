@@ -22,6 +22,7 @@
 
 ### Fixes
 
+- Fix TTFD measurement when API called too early ([#4297](https://github.com/getsentry/sentry-java/pull/4297))
 - Do not override user-defined `SentryOptions` ([#4262](https://github.com/getsentry/sentry-java/pull/4262))
 - Session Replay: Change bitmap config to `ARGB_8888` for screenshots ([#4282](https://github.com/getsentry/sentry-java/pull/4282))
 - The `MANIFEST.MF` of `sentry-opentelemetry-agent` now has `Implementation-Version` set to the raw version ([#4291](https://github.com/getsentry/sentry-java/pull/4291))
