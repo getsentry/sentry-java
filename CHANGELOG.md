@@ -36,9 +36,9 @@
 
 ### Dependencies
 
-- Bump Native SDK from v0.8.1 to v0.8.2 ([#4267](https://github.com/getsentry/sentry-java/pull/4267))
-  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#082)
-  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.1...0.8.2)
+- Bump Native SDK from v0.8.1 to v0.8.3 ([#4267](https://github.com/getsentry/sentry-java/pull/4267), [#4298](https://github.com/getsentry/sentry-java/pull/4298))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#083)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.1...0.8.3)
 - Bump Spring Boot from 2.7.5 to 2.7.18 ([#3496](https://github.com/getsentry/sentry-java/pull/3496))
 
 ## 8.5.0
