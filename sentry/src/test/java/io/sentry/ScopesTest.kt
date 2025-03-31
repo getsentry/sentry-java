@@ -609,11 +609,19 @@ class ScopesTest {
 
     //region captureFeedback tests
     @Test
-    fun `when captureFeedback is called and message is empty, lastEventId is empty`() {
+    fun `when captureFeedback is called and message is empty, client is never called`() {
         val (sut, mockClient) = getEnabledScopes()
         sut.captureFeedback(Feedback(""))
         assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
         verify(mockClient, never()).captureFeedback(any(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `when captureFeedback is called, lastEventId is not updated`() {
+        val (sut, mockClient) = getEnabledScopes()
+        sut.captureFeedback(Feedback("message"))
+        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
+        verify(mockClient).captureFeedback(any(), anyOrNull(), anyOrNull())
     }
 
     @Test

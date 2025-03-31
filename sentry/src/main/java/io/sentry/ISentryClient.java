@@ -88,9 +88,19 @@ public interface ISentryClient {
    * @return The Id (SentryId object) of the event
    */
   default @NotNull SentryId captureFeedback(
-      @NotNull Feedback feedback, @Nullable Hint hint, @Nullable IScope scope) {
+      @NotNull Feedback feedback, @Nullable Hint hint, @NotNull IScope scope) {
     SentryEvent event = new SentryEvent();
     event.getContexts().setFeedback(feedback);
+
+    if (feedback.getReplayId() == null) {
+      final @NotNull SentryId replayId = scope.getReplayId();
+      if (!replayId.equals(SentryId.EMPTY_ID)) {
+        feedback.setReplayId(replayId);
+      }
+    }
+    if (feedback.getUrl() == null) {
+      feedback.setUrl(scope.getScreen());
+    }
 
     return captureEvent(event, scope, hint);
   }

@@ -171,7 +171,7 @@ public final class Scopes implements IScopes {
     getCombinedScopeView().assignTraceContext(event);
   }
 
-  private IScope buildLocalScope(
+  private @NotNull IScope buildLocalScope(
       final @NotNull IScope parentScope, final @Nullable ScopeCallback callback) {
     if (callback != null) {
       try {
@@ -249,7 +249,7 @@ public final class Scopes implements IScopes {
           .log(SentryLevel.WARNING, "captureFeedback called with empty message.");
     } else {
       try {
-        final IScope localScope = buildLocalScope(getCombinedScopeView(), scopeCallback);
+        final @NotNull IScope localScope = buildLocalScope(getCombinedScopeView(), scopeCallback);
 
         sentryId = getClient().captureFeedback(feedback, hint, localScope);
       } catch (Throwable e) {
@@ -258,7 +258,6 @@ public final class Scopes implements IScopes {
             .log(SentryLevel.ERROR, "Error while capturing feedback: " + feedback.getMessage(), e);
       }
     }
-    updateLastEventId(sentryId);
     return sentryId;
   }
 

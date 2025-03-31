@@ -295,11 +295,14 @@ class SentryClientTest {
         var sentEvent: SentryEvent? = null
         fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
         val sut = fixture.getSut()
-        sut.captureFeedback(Feedback("message"), null, null)
+        val scope = createScope()
+        sut.captureFeedback(Feedback("message"), null, scope)
 
         val sentFeedback = sentEvent!!.contexts.feedback
         assertNotNull(sentFeedback)
         assertEquals("message", sentFeedback.message)
+        assertNull(sentFeedback.replayId)
+        assertNull(sentFeedback.url)
 
         verify(fixture.transport).send(
             check {
@@ -307,6 +310,37 @@ class SentryClientTest {
             },
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `when captureFeedback, scope replay id is attached to feedback`() {
+        var sentEvent: SentryEvent? = null
+        fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
+        val replayId = SentryId()
+        val sut = fixture.getSut()
+        val scope = createScope()
+        scope.replayId = replayId
+        sut.captureFeedback(Feedback("message"), null, scope)
+
+        val sentFeedback = sentEvent!!.contexts.feedback
+        assertNotNull(sentFeedback)
+        assertEquals(replayId.toString(), sentFeedback.replayId?.toString())
+        assertNull(sentFeedback.url)
+    }
+
+    @Test
+    fun `when captureFeedback, screen is attached to feedback as url`() {
+        var sentEvent: SentryEvent? = null
+        fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
+        val sut = fixture.getSut()
+        val scope = createScope()
+        scope.screen = "screen"
+        sut.captureFeedback(Feedback("message"), null, scope)
+
+        val sentFeedback = sentEvent!!.contexts.feedback
+        assertNotNull(sentFeedback)
+        assertEquals("screen", sentFeedback.url)
+        assertNull(sentFeedback.replayId)
     }
 
     @Test
