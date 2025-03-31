@@ -61,7 +61,7 @@ jobs:
 
       # We tried to use the cache action to cache gradle stuff, but it made tests slower and timeout
       - name: Run instrumentation tests
-        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d # pin@v2
+        uses: reactivecircus/android-emulator-runner@1dcd0090116d15e7c562f8db72807de5e036a4ed # pin@v2
         with:
           api-level: 30
           force-avd-creation: false
