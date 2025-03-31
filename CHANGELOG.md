@@ -28,6 +28,7 @@
   - An example value would be `8.6.0`
   - The value of the `Sentry-Version-Name` attribute looks like `sentry-8.5.0-otel-2.10.0`
 - Fix tags missing for compose view hierarchies ([#4275](https://github.com/getsentry/sentry-java/pull/4275))
+- Compress Screenshots on a background thread ([#4295](https://github.com/getsentry/sentry-java/pull/4295))
 
 ### Internal
 

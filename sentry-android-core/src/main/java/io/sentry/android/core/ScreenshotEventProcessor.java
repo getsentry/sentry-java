@@ -1,10 +1,11 @@
 package io.sentry.android.core;
 
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
-import static io.sentry.android.core.internal.util.ScreenshotUtils.takeScreenshot;
+import static io.sentry.android.core.internal.util.ScreenshotUtils.captureScreenshot;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
 import io.sentry.Attachment;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
@@ -12,6 +13,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
+import io.sentry.android.core.internal.util.ScreenshotUtils;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
@@ -87,14 +89,19 @@ public final class ScreenshotEventProcessor implements EventProcessor {
       return event;
     }
 
-    final byte[] screenshot =
-        takeScreenshot(
+    final Bitmap screenshot =
+        captureScreenshot(
             activity, options.getThreadChecker(), options.getLogger(), buildInfoProvider);
     if (screenshot == null) {
       return event;
     }
 
-    hint.setScreenshot(Attachment.fromScreenshot(screenshot));
+    hint.setScreenshot(
+        Attachment.fromByteProvider(
+            () -> ScreenshotUtils.compressBitmapToPng(screenshot, options.getLogger()),
+            "screenshot.png",
+            "image/png",
+            false));
     hint.set(ANDROID_ACTIVITY, activity);
     return event;
   }

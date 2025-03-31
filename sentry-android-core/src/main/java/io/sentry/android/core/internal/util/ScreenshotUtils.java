@@ -27,6 +27,10 @@ public class ScreenshotUtils {
 
   private static final long CAPTURE_TIMEOUT_MS = 1000;
 
+  // Used by Hybrid SDKs
+  /**
+   * @noinspection unused
+   */
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull ILogger logger,
@@ -34,8 +38,29 @@ public class ScreenshotUtils {
     return takeScreenshot(activity, AndroidThreadChecker.getInstance(), logger, buildInfoProvider);
   }
 
+  // Used by Hybrid SDKs
   @SuppressLint("NewApi")
   public static @Nullable byte[] takeScreenshot(
+      final @NotNull Activity activity,
+      final @NotNull IThreadChecker threadChecker,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+
+    final @Nullable Bitmap screenshot =
+        captureScreenshot(activity, threadChecker, logger, buildInfoProvider);
+    return compressBitmapToPng(screenshot, logger);
+  }
+
+  public static @Nullable Bitmap captureScreenshot(
+      final @NotNull Activity activity,
+      final @NotNull ILogger logger,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    return captureScreenshot(
+        activity, AndroidThreadChecker.getInstance(), logger, buildInfoProvider);
+  }
+
+  @SuppressLint("NewApi")
+  public static @Nullable Bitmap captureScreenshot(
       final @NotNull Activity activity,
       final @NotNull IThreadChecker threadChecker,
       final @NotNull ILogger logger,
@@ -71,7 +96,7 @@ public class ScreenshotUtils {
       return null;
     }
 
-    try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+    try {
       // ARGB_8888 -> This configuration is very flexible and offers the best quality
       final Bitmap bitmap =
           Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
@@ -132,7 +157,19 @@ public class ScreenshotUtils {
           return null;
         }
       }
+      return bitmap;
+    } catch (Throwable e) {
+      logger.log(SentryLevel.ERROR, "Taking screenshot failed.", e);
+    }
+    return null;
+  }
 
+  public static @Nullable byte[] compressBitmapToPng(
+      final @Nullable Bitmap bitmap, final @NotNull ILogger logger) {
+    if (bitmap == null || bitmap.isRecycled()) {
+      return null;
+    }
+    try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
       // 0 meaning compress for small size, 100 meaning compress for max quality.
       // Some formats, like PNG which is lossless, will ignore the quality setting.
       bitmap.compress(Bitmap.CompressFormat.PNG, 0, byteArrayOutputStream);
@@ -145,7 +182,7 @@ public class ScreenshotUtils {
       // screenshot png is around ~100-150 kb
       return byteArrayOutputStream.toByteArray();
     } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, "Taking screenshot failed.", e);
+      logger.log(SentryLevel.ERROR, "Compressing bitmap failed.", e);
     }
     return null;
   }
