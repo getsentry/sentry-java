@@ -83,9 +83,9 @@ public class MainActivity extends AppCompatActivity {
         view -> {
           String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
           File file = getApplication().getFileStreamPath(fileName);
-          try (final FileOutputStream fis =
+          try (final FileOutputStream fos =
               SentryFileOutputStream.Factory.create(new FileOutputStream(file), file)) {
-            FileChannel channel = fis.getChannel();
+            FileChannel channel = fos.getChannel();
             channel.write(java.nio.ByteBuffer.wrap("Hello, World!".getBytes()));
           } catch (IOException e) {
             Sentry.captureException(e);
