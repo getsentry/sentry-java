@@ -100,6 +100,7 @@
   - In certain cases the SDK was not able to provide a transaction name automatically and thus did not finish the transaction for the request.
   - We now first try `SpringMvcTransactionNameProvider` which would provide the route as transaction name.
   - If that does not return anything, we try `SpringServletTransactionNameProvider` next, which returns the URL of the request.
+- Remove "not yet implemented" from `Sentry.flush` comment ([#4305](https://github.com/getsentry/sentry-java/pull/4305))
 
 ### Behavioral Changes
 
