@@ -18,6 +18,7 @@ import java.io.File
 import java.io.FileDescriptor
 import java.io.FileInputStream
 import java.io.IOException
+import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import kotlin.test.Test
@@ -284,6 +285,17 @@ class SentryFileInputStreamTest {
         val stream = fixture.getSut(file, delegate = delegate, tracesSampleRate = null)
 
         assertTrue { stream is ThrowingFileInputStream }
+    }
+
+    @Test
+    fun `channels and descriptors are closed together with the stream`() {
+        val fis = fixture.getSut(tmpFile)
+        val channel = fis.channel
+
+        channel.read(ByteBuffer.allocate(1))
+        fis.close()
+        assertFalse(channel.isOpen)
+        assertFalse(fis.fd.valid())
     }
 }
 
