@@ -93,6 +93,11 @@
 
   To learn more visit [Sentry's Continuous Profiling](https://docs.sentry.io/product/explore/profiling/transaction-vs-continuous-profiling/#continuous-profiling-mode) documentation page.
 
+### Features
+
+- Add new User Feedback API ([#4286](https://github.com/getsentry/sentry-java/pull/4286))
+  - We now introduced Sentry.captureFeedback, which supersedes Sentry.captureUserFeedback
+
 ### Fixes
 
 - Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))

@@ -7,6 +7,7 @@ import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
@@ -603,6 +604,108 @@ class ScopesTest {
         )
 
         verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+    }
+
+    //endregion
+
+    //region captureFeedback tests
+    @Test
+    fun `when captureFeedback is called and message is empty, client is never called`() {
+        val (sut, mockClient) = getEnabledScopes()
+        sut.captureFeedback(Feedback(""))
+        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
+        verify(mockClient, never()).captureFeedback(any(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `when captureFeedback is called, lastEventId is not updated`() {
+        val (sut, mockClient) = getEnabledScopes()
+        sut.captureFeedback(Feedback("message"))
+        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
+        verify(mockClient).captureFeedback(any(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `when captureFeedback is called on disabled client, do nothing`() {
+        val (sut, mockClient) = getEnabledScopes()
+        sut.close()
+
+        sut.captureFeedback(mock())
+        verify(mockClient, never()).captureFeedback(any(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `when captureFeedback is called with a valid message, captureFeedback on the client should be called`() {
+        val (sut, mockClient) = getEnabledScopes()
+
+        sut.captureFeedback(Feedback("test"))
+        verify(mockClient).captureFeedback(any(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `when captureFeedback is called with a ScopeCallback then the modified scope is sent to the client`() {
+        val (sut, mockClient) = getEnabledScopes()
+
+        sut.captureFeedback(Feedback("test"), null) {
+            it.setTag("test", "testValue")
+        }
+
+        verify(mockClient).captureFeedback(
+            any(),
+            eq(null),
+            check {
+                assertEquals("testValue", it.tags["test"])
+            }
+        )
+    }
+
+    @Test
+    fun `when captureFeedback is called with a ScopeCallback then subsequent calls to captureFeedback send the unmodified Scope to the client`() {
+        val (sut, mockClient) = getEnabledScopes()
+        val argumentCaptor = argumentCaptor<IScope>()
+
+        sut.captureFeedback(Feedback("testMessage"), null) {
+            it.setTag("test", "testValue")
+        }
+
+        sut.captureFeedback(Feedback("test"))
+
+        verify(mockClient, times(2)).captureFeedback(
+            any(),
+            anyOrNull(),
+            argumentCaptor.capture()
+        )
+
+        assertEquals("testValue", argumentCaptor.allValues[0].tags["test"])
+        assertNull(argumentCaptor.allValues[1].tags["test"])
+    }
+
+    @Test
+    fun `when captureFeedback is called with a ScopeCallback that crashes then the feedback should still be captured`() {
+        val (sut, mockClient, logger) = getEnabledScopes()
+
+        val exception = Exception("scope callback exception")
+        sut.captureFeedback(Feedback("Hello World"), null) {
+            throw exception
+        }
+
+        verify(mockClient).captureFeedback(
+            any(),
+            anyOrNull(),
+            anyOrNull()
+        )
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+    }
+
+    @Test
+    fun `when captureFeedback is called with a Hint, it is passed to the client`() {
+        val (sut, mockClient) = getEnabledScopes()
+        val hint = Hint()
+
+        sut.captureFeedback(Feedback("Hello World"), hint)
+
+        verify(mockClient).captureFeedback(any(), eq(hint), anyOrNull())
     }
 
     //endregion
