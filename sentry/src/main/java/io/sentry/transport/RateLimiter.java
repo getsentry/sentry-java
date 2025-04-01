@@ -2,6 +2,7 @@ package io.sentry.transport;
 
 import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.SentryLevel.INFO;
+import static io.sentry.SentryLevel.WARNING;
 
 import io.sentry.DataCategory;
 import io.sentry.Hint;
@@ -73,12 +74,14 @@ public final class RateLimiter implements Closeable {
     }
 
     if (dropItems != null) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "%d envelope items will be dropped due rate limiting.",
-              dropItems.size());
+      if (options.getLogger().isEnabled(WARNING)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "%d envelope items will be dropped due rate limiting.",
+                dropItems.size());
+      }
 
       //       Need a new envelope
       List<SentryEnvelopeItem> toSend = new ArrayList<>();
@@ -90,9 +93,11 @@ public final class RateLimiter implements Closeable {
 
       // no reason to continue
       if (toSend.isEmpty()) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, "Envelope discarded due all items rate limited.");
+        if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+          options
+              .getLogger()
+              .log(SentryLevel.WARNING, "Envelope discarded due all items rate limited.");
+        }
 
         markHintWhenSendingFailed(hint, false);
         return null;
@@ -159,7 +164,11 @@ public final class RateLimiter implements Closeable {
         DiskFlushNotification.class,
         (diskFlushNotification) -> {
           diskFlushNotification.markFlushed();
-          options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired due to rate limit");
+          if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+            options
+                .getLogger()
+                .log(SentryLevel.DEBUG, "Disk flush envelope fired due to rate limit");
+          }
         });
   }
 
@@ -250,10 +259,14 @@ public final class RateLimiter implements Closeable {
                   if (catItemCapitalized != null) {
                     dataCategory = DataCategory.valueOf(catItemCapitalized);
                   } else {
-                    options.getLogger().log(ERROR, "Couldn't capitalize: %s", catItem);
+                    if (options.getLogger().isEnabled(ERROR)) {
+                      options.getLogger().log(ERROR, "Couldn't capitalize: %s", catItem);
+                    }
                   }
                 } catch (IllegalArgumentException e) {
-                  options.getLogger().log(INFO, e, "Unknown category: %s", catItem);
+                  if (options.getLogger().isEnabled(INFO)) {
+                    options.getLogger().log(INFO, e, "Unknown category: %s", catItem);
+                  }
                 }
                 // we dont apply rate limiting for unknown categories
                 if (DataCategory.Unknown.equals(dataCategory)) {

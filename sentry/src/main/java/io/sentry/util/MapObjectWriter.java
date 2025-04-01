@@ -115,7 +115,9 @@ public final class MapObjectWriter implements ObjectWriter {
     } else if (object.getClass().isEnum()) {
       value(object.toString());
     } else {
-      logger.log(SentryLevel.WARNING, "Failed serializing unknown object.", object);
+      if (logger.isEnabled(SentryLevel.WARNING)) {
+        logger.log(SentryLevel.WARNING, "Failed serializing unknown object.", object);
+      }
     }
     return this;
   }
@@ -203,7 +205,9 @@ public final class MapObjectWriter implements ObjectWriter {
     try {
       value(DateUtils.getTimestamp(date));
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when serializing Date", e);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error when serializing Date", e);
+      }
       nullValue(); // Fallback to setting null when date is malformed.
     }
   }
@@ -213,7 +217,9 @@ public final class MapObjectWriter implements ObjectWriter {
     try {
       value(timeZone.getID());
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when serializing TimeZone", e);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error when serializing TimeZone", e);
+      }
       nullValue(); // Fallback.
     }
   }

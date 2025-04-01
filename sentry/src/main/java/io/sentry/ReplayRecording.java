@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.DEBUG;
+
 import io.sentry.rrweb.RRWebBreadcrumbEvent;
 import io.sentry.rrweb.RRWebEvent;
 import io.sentry.rrweb.RRWebEventType;
@@ -176,10 +178,12 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
                           payload.add(interactionMoveEvent);
                           break;
                         default:
-                          logger.log(
-                              SentryLevel.DEBUG,
-                              "Unsupported rrweb incremental snapshot type %s",
-                              source);
+                          if (logger.isEnabled(DEBUG)) {
+                            logger.log(
+                                SentryLevel.DEBUG,
+                                "Unsupported rrweb incremental snapshot type %s",
+                                source);
+                          }
                           break;
                       }
                     }
@@ -215,13 +219,17 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
                           payload.add(spanEvent);
                           break;
                         default:
-                          logger.log(SentryLevel.DEBUG, "Unsupported rrweb event type %s", type);
+                          if (logger.isEnabled(DEBUG)) {
+                            logger.log(SentryLevel.DEBUG, "Unsupported rrweb event type %s", type);
+                          }
                           break;
                       }
                     }
                     break;
                   default:
-                    logger.log(SentryLevel.DEBUG, "Unsupported rrweb event type %s", type);
+                    if (logger.isEnabled(DEBUG)) {
+                      logger.log(SentryLevel.DEBUG, "Unsupported rrweb event type %s", type);
+                    }
                     break;
                 }
               }

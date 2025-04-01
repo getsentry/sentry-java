@@ -80,7 +80,9 @@ final class Stack {
       if (items.size() != 1) {
         items.pop();
       } else {
-        logger.log(SentryLevel.WARNING, "Attempt to pop the root scope.");
+        if (logger.isEnabled(SentryLevel.WARNING)) {
+          logger.log(SentryLevel.WARNING, "Attempt to pop the root scope.");
+        }
       }
     }
   }

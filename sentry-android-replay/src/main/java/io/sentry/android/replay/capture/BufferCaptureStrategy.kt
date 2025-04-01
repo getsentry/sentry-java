@@ -68,7 +68,12 @@ internal class BufferCaptureStrategy(
         val sampled = random.sample(options.sessionReplay.onErrorSampleRate)
 
         if (!sampled) {
-            options.logger.log(INFO, "Replay wasn't sampled by onErrorSampleRate, not capturing for event")
+            if (options.logger.isEnabled(INFO)) {
+                options.logger.log(
+                    INFO,
+                    "Replay wasn't sampled by onErrorSampleRate, not capturing for event"
+                )
+            }
             return
         }
 
@@ -81,7 +86,12 @@ internal class BufferCaptureStrategy(
         if (isTerminating) {
             this.isTerminating.set(true)
             // avoid capturing replay, because the video will be malformed
-            options.logger.log(DEBUG, "Not capturing replay for crashed event, will be captured on next launch")
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(
+                    DEBUG,
+                    "Not capturing replay for crashed event, will be captured on next launch"
+                )
+            }
             return
         }
 
@@ -126,7 +136,12 @@ internal class BufferCaptureStrategy(
 
     override fun convert(): CaptureStrategy {
         if (isTerminating.get()) {
-            options.logger.log(DEBUG, "Not converting to session mode, because the process is about to terminate")
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(
+                    DEBUG,
+                    "Not converting to session mode, because the process is about to terminate"
+                )
+            }
             return this
         }
         // we hand over replayExecutor to the new strategy to preserve order of execution
@@ -147,10 +162,23 @@ internal class BufferCaptureStrategy(
         }
         try {
             if (!file.delete()) {
-                options.logger.log(ERROR, "Failed to delete replay segment: %s", file.absolutePath)
+                if (options.logger.isEnabled(ERROR)) {
+                    options.logger.log(
+                        ERROR,
+                        "Failed to delete replay segment: %s",
+                        file.absolutePath
+                    )
+                }
             }
         } catch (e: Throwable) {
-            options.logger.log(ERROR, e, "Failed to delete replay segment: %s", file.absolutePath)
+            if (options.logger.isEnabled(ERROR)) {
+                options.logger.log(
+                    ERROR,
+                    e,
+                    "Failed to delete replay segment: %s",
+                    file.absolutePath
+                )
+            }
         }
     }
 

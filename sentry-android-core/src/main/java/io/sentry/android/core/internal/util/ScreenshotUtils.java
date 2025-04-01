@@ -44,30 +44,40 @@ public class ScreenshotUtils {
     // cross-platform SDKs
 
     if (!isActivityValid(activity)) {
-      logger.log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
+      }
       return null;
     }
 
     final @Nullable Window window = activity.getWindow();
     if (window == null) {
-      logger.log(SentryLevel.DEBUG, "Activity window is null, not taking screenshot.");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "Activity window is null, not taking screenshot.");
+      }
       return null;
     }
 
     final @Nullable View decorView = window.peekDecorView();
     if (decorView == null) {
-      logger.log(SentryLevel.DEBUG, "DecorView is null, not taking screenshot.");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "DecorView is null, not taking screenshot.");
+      }
       return null;
     }
 
     final @Nullable View view = decorView.getRootView();
     if (view == null) {
-      logger.log(SentryLevel.DEBUG, "Root view is null, not taking screenshot.");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "Root view is null, not taking screenshot.");
+      }
       return null;
     }
 
     if (view.getWidth() <= 0 || view.getHeight() <= 0) {
-      logger.log(SentryLevel.DEBUG, "View's width and height is zeroed, not taking screenshot.");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "View's width and height is zeroed, not taking screenshot.");
+      }
       return null;
     }
 
@@ -102,7 +112,9 @@ public class ScreenshotUtils {
               latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS) && copyResultSuccess.get();
         } catch (Throwable e) {
           // ignored
-          logger.log(SentryLevel.ERROR, "Taking screenshot using PixelCopy failed.", e);
+          if (logger.isEnabled(SentryLevel.ERROR)) {
+            logger.log(SentryLevel.ERROR, "Taking screenshot using PixelCopy failed.", e);
+          }
         } finally {
           thread.quit();
         }
@@ -121,7 +133,9 @@ public class ScreenshotUtils {
                 try {
                   view.draw(canvas);
                 } catch (Throwable e) {
-                  logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
+                  if (logger.isEnabled(SentryLevel.ERROR)) {
+                    logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
+                  }
                 } finally {
                   latch.countDown();
                 }
@@ -138,7 +152,9 @@ public class ScreenshotUtils {
       bitmap.compress(Bitmap.CompressFormat.PNG, 0, byteArrayOutputStream);
 
       if (byteArrayOutputStream.size() <= 0) {
-        logger.log(SentryLevel.DEBUG, "Screenshot is 0 bytes, not attaching the image.");
+        if (logger.isEnabled(SentryLevel.DEBUG)) {
+          logger.log(SentryLevel.DEBUG, "Screenshot is 0 bytes, not attaching the image.");
+        }
         return null;
       }
 

@@ -104,7 +104,9 @@ public final class InternalSentrySdk {
         try {
           user.setId(Installation.id(context));
         } catch (RuntimeException e) {
-          logger.log(SentryLevel.ERROR, "Could not retrieve installation ID", e);
+          if (logger.isEnabled(SentryLevel.ERROR)) {
+            logger.log(SentryLevel.ERROR, "Could not retrieve installation ID", e);
+          }
         }
       }
 
@@ -139,7 +141,9 @@ public final class InternalSentrySdk {
       writer.name("level").value(logger, scope.getLevel());
       writer.name("breadcrumbs").value(logger, scope.getBreadcrumbs());
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Could not serialize scope.", e);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Could not serialize scope.", e);
+      }
       return new HashMap<>();
     }
 
@@ -209,7 +213,9 @@ public final class InternalSentrySdk {
           new SentryEnvelope(envelope.getHeader(), envelopeItems);
       return scopes.captureEnvelope(repackagedEnvelope);
     } catch (Throwable t) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
+      }
     }
     return null;
   }
@@ -242,18 +248,22 @@ public final class InternalSentrySdk {
 
   private static void addTimeSpanToSerializedSpans(TimeSpan span, List<Map<String, Object>> spans) {
     if (span.hasNotStarted()) {
-      ScopesAdapter.getInstance()
-          .getOptions()
-          .getLogger()
-          .log(WARNING, "Can not convert not-started TimeSpan to Map for Hybrid SDKs.");
+      if (ScopesAdapter.getInstance().getOptions().getLogger().isEnabled(WARNING)) {
+        ScopesAdapter.getInstance()
+            .getOptions()
+            .getLogger()
+            .log(WARNING, "Can not convert not-started TimeSpan to Map for Hybrid SDKs.");
+      }
       return;
     }
 
     if (span.hasNotStopped()) {
-      ScopesAdapter.getInstance()
-          .getOptions()
-          .getLogger()
-          .log(WARNING, "Can not convert not-stopped TimeSpan to Map for Hybrid SDKs.");
+      if (ScopesAdapter.getInstance().getOptions().getLogger().isEnabled(WARNING)) {
+        ScopesAdapter.getInstance()
+            .getOptions()
+            .getLogger()
+            .log(WARNING, "Can not convert not-stopped TimeSpan to Map for Hybrid SDKs.");
+      }
       return;
     }
 
@@ -275,9 +285,11 @@ public final class InternalSentrySdk {
                   deleteCurrentSessionFile(options);
                 });
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(WARNING, "Submission of deletion of the current session file rejected.", e);
+        if (options.getLogger().isEnabled(WARNING)) {
+          options
+              .getLogger()
+              .log(WARNING, "Submission of deletion of the current session file rejected.", e);
+        }
       }
     } else {
       deleteCurrentSessionFile(options);
@@ -287,20 +299,27 @@ public final class InternalSentrySdk {
   private static void deleteCurrentSessionFile(final @NotNull SentryOptions options) {
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath == null) {
-      options.getLogger().log(INFO, "Cache dir is not set, not deleting the current session.");
+      if (options.getLogger().isEnabled(INFO)) {
+        options.getLogger().log(INFO, "Cache dir is not set, not deleting the current session.");
+      }
       return;
     }
 
     if (!options.isEnableAutoSessionTracking()) {
-      options
-          .getLogger()
-          .log(DEBUG, "Session tracking is disabled, bailing from deleting current session file.");
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(
+                DEBUG, "Session tracking is disabled, bailing from deleting current session file.");
+      }
       return;
     }
 
     final File sessionFile = EnvelopeCache.getCurrentSessionFile(cacheDirPath);
     if (!sessionFile.delete()) {
-      options.getLogger().log(WARNING, "Failed to delete the current session file.");
+      if (options.getLogger().isEnabled(WARNING)) {
+        options.getLogger().log(WARNING, "Failed to delete the current session file.");
+      }
     }
   }
 
@@ -327,7 +346,9 @@ public final class InternalSentrySdk {
               sessionRef.set(session);
             }
           } else {
-            options.getLogger().log(INFO, "Session is null on updateSession");
+            if (options.getLogger().isEnabled(INFO)) {
+              options.getLogger().log(INFO, "Session is null on updateSession");
+            }
           }
         });
     return sessionRef.get();

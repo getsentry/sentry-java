@@ -1,5 +1,8 @@
 package io.sentry.android.core;
 
+import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.WARNING;
+
 import android.annotation.SuppressLint;
 import android.os.Debug;
 import android.os.Process;
@@ -121,13 +124,19 @@ public class AndroidProfiler {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       // intervalUs is 0 only if there was a problem in the init
       if (intervalUs == 0) {
-        logger.log(
-            SentryLevel.WARNING, "Disabling profiling because intervaUs is set to %d", intervalUs);
+        if (logger.isEnabled(WARNING)) {
+          logger.log(
+              SentryLevel.WARNING,
+              "Disabling profiling because intervaUs is set to %d",
+              intervalUs);
+        }
         return null;
       }
 
       if (isRunning) {
-        logger.log(SentryLevel.WARNING, "Profiling has already started...");
+        if (logger.isEnabled(SentryLevel.WARNING)) {
+          logger.log(SentryLevel.WARNING, "Profiling has already started...");
+        }
         return null;
       }
 
@@ -194,10 +203,12 @@ public class AndroidProfiler {
                   () -> endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
         }
       } catch (RejectedExecutionException e) {
-        logger.log(
-            SentryLevel.ERROR,
-            "Failed to call the executor. Profiling will not be automatically finished. Did you call Sentry.close()?",
-            e);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(
+              SentryLevel.ERROR,
+              "Failed to call the executor. Profiling will not be automatically finished. Did you call Sentry.close()?",
+              e);
+        }
       }
 
       profileStartNanos = SystemClock.elapsedRealtimeNanos();
@@ -217,7 +228,9 @@ public class AndroidProfiler {
             profileStartNanos, profileStartCpuMillis, profileStartTimestamp);
       } catch (Throwable e) {
         endAndCollect(false, null);
-        logger.log(SentryLevel.ERROR, "Unable to start a profile: ", e);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(SentryLevel.ERROR, "Unable to start a profile: ", e);
+        }
         isRunning = false;
         return null;
       }
@@ -230,7 +243,9 @@ public class AndroidProfiler {
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (!isRunning) {
-        logger.log(SentryLevel.WARNING, "Profiler not running");
+        if (logger.isEnabled(SentryLevel.WARNING)) {
+          logger.log(SentryLevel.WARNING, "Profiler not running");
+        }
         return null;
       }
 
@@ -240,7 +255,9 @@ public class AndroidProfiler {
         // that throws)
         Debug.stopMethodTracing();
       } catch (Throwable e) {
-        logger.log(SentryLevel.ERROR, "Error while stopping profiling: ", e);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(SentryLevel.ERROR, "Error while stopping profiling: ", e);
+        }
       } finally {
         isRunning = false;
       }
@@ -250,7 +267,9 @@ public class AndroidProfiler {
       long transactionEndCpuMillis = Process.getElapsedCpuTime();
 
       if (traceFile == null) {
-        logger.log(SentryLevel.ERROR, "Trace file does not exists");
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, "Trace file does not exists");
+        }
         return null;
       }
 

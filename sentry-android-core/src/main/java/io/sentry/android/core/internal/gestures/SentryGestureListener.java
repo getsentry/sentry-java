@@ -1,5 +1,6 @@
 package io.sentry.android.core.internal.gestures;
 
+import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.TypeCheckHint.ANDROID_MOTION_EVENT;
 import static io.sentry.TypeCheckHint.ANDROID_VIEW;
 
@@ -69,9 +70,11 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
 
     if (scrollState.type == GestureType.Unknown) {
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Unable to define scroll type. No breadcrumb captured.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Unable to define scroll type. No breadcrumb captured.");
+      }
       return;
     }
 
@@ -108,9 +111,11 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
             options, decorView, motionEvent.getX(), motionEvent.getY(), UiElement.Type.CLICKABLE);
 
     if (target == null) {
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Unable to find click target. No breadcrumb captured.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Unable to find click target. No breadcrumb captured.");
+      }
       return false;
     }
 
@@ -136,14 +141,18 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
               options, decorView, firstEvent.getX(), firstEvent.getY(), UiElement.Type.SCROLLABLE);
 
       if (target == null) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Unable to find scroll target. No breadcrumb captured.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "Unable to find scroll target. No breadcrumb captured.");
+        }
         return false;
       } else {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Scroll target found: " + target.getIdentifier());
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "Scroll target found: " + target.getIdentifier());
+        }
       }
 
       scrollState.setTarget(target);
@@ -213,7 +222,9 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     final Activity activity = activityRef.get();
     if (activity == null) {
-      options.getLogger().log(SentryLevel.DEBUG, "Activity is null, no transaction captured.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "Activity is null, no transaction captured.");
+      }
       return;
     }
 
@@ -221,13 +232,15 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     if (activeTransaction != null) {
       if (!isNewInteraction && !activeTransaction.isFinished()) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "The view with id: "
-                    + viewIdentifier
-                    + " already has an ongoing transaction assigned. Rescheduling finish");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "The view with id: "
+                      + viewIdentifier
+                      + " already has an ongoing transaction assigned. Rescheduling finish");
+        }
 
         final Long idleTimeout = options.getIdleTimeout();
         if (idleTimeout != null) {
@@ -310,12 +323,14 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
           if (scopeTransaction == null) {
             scope.setTransaction(transaction);
           } else {
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.DEBUG,
-                    "Transaction '%s' won't be bound to the Scope since there's one already in there.",
-                    transaction.getName());
+            if (options.getLogger().isEnabled(DEBUG)) {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.DEBUG,
+                      "Transaction '%s' won't be bound to the Scope since there's one already in there.",
+                      transaction.getName());
+            }
           }
         });
   }
@@ -327,25 +342,31 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   private @Nullable View ensureWindowDecorView(final @NotNull String caller) {
     final Activity activity = activityRef.get();
     if (activity == null) {
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Activity is null in " + caller + ". No breadcrumb captured.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Activity is null in " + caller + ". No breadcrumb captured.");
+      }
       return null;
     }
 
     final Window window = activity.getWindow();
     if (window == null) {
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Window is null in " + caller + ". No breadcrumb captured.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Window is null in " + caller + ". No breadcrumb captured.");
+      }
       return null;
     }
 
     final View decorView = window.getDecorView();
     if (decorView == null) {
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "DecorView is null in " + caller + ". No breadcrumb captured.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "DecorView is null in " + caller + ". No breadcrumb captured.");
+      }
       return null;
     }
     return decorView;

@@ -352,7 +352,9 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     private Exception missingRequiredFieldException(String field, ILogger logger) {
       String message = "Missing required field \"" + field + "\"";
       Exception exception = new IllegalStateException(message);
-      logger.log(SentryLevel.ERROR, message, exception);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, message, exception);
+      }
       return exception;
     }
   }

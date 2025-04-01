@@ -101,7 +101,9 @@ public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
       try {
         writer.name(JsonKeys.VALUE).value(Integer.valueOf(value));
       } catch (Throwable t) {
-        logger.log(SentryLevel.ERROR, "Unable to serialize monitor schedule value: %s", value);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, "Unable to serialize monitor schedule value: %s", value);
+        }
       }
     } else {
       writer.name(JsonKeys.VALUE).value(value);
@@ -155,14 +157,18 @@ public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
       if (type == null) {
         String message = "Missing required field \"" + JsonKeys.TYPE + "\"";
         Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, message, exception);
+        }
         throw exception;
       }
 
       if (value == null) {
         String message = "Missing required field \"" + JsonKeys.VALUE + "\"";
         Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, message, exception);
+        }
         throw exception;
       }
 

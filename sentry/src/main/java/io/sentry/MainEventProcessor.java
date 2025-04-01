@@ -93,12 +93,14 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
     } else {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Event was cached so not applying data relevant to the current app execution/version: %s",
-              event.getEventId());
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was cached so not applying data relevant to the current app execution/version: %s",
+                event.getEventId());
+      }
       return false;
     }
   }

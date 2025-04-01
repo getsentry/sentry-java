@@ -1,5 +1,7 @@
 package io.sentry.util;
 
+import static io.sentry.SentryLevel.DEBUG;
+
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import java.util.List;
@@ -24,7 +26,9 @@ public final class DebugMetaPropertiesApplier {
     if (options.getBundleIds().isEmpty()) {
       for (Properties properties : debugMetaProperties) {
         final @Nullable String bundleIdStrings = properties.getProperty("io.sentry.bundle-ids");
-        options.getLogger().log(SentryLevel.DEBUG, "Bundle IDs found: %s", bundleIdStrings);
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "Bundle IDs found: %s", bundleIdStrings);
+        }
         if (bundleIdStrings != null) {
           final @NotNull String[] bundleIds = bundleIdStrings.split(",", -1);
           for (final String bundleId : bundleIds) {
@@ -41,7 +45,9 @@ public final class DebugMetaPropertiesApplier {
       for (Properties properties : debugMetaProperties) {
         final @Nullable String proguardUuid = getProguardUuid(properties);
         if (proguardUuid != null) {
-          options.getLogger().log(SentryLevel.DEBUG, "Proguard UUID found: %s", proguardUuid);
+          if (options.getLogger().isEnabled(DEBUG)) {
+            options.getLogger().log(SentryLevel.DEBUG, "Proguard UUID found: %s", proguardUuid);
+          }
           options.setProguardUuid(proguardUuid);
           break;
         }

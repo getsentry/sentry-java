@@ -229,7 +229,9 @@ public final class Scope implements IScope {
         observer.setTransaction(transaction);
       }
     } else {
-      options.getLogger().log(SentryLevel.WARNING, "Transaction cannot be null");
+      if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+        options.getLogger().log(SentryLevel.WARNING, "Transaction cannot be null");
+      }
     }
   }
 
@@ -443,12 +445,14 @@ public final class Scope implements IScope {
     try {
       breadcrumb = callback.execute(breadcrumb, hint);
     } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "The BeforeBreadcrumbCallback callback threw an exception. Exception details will be added to the breadcrumb.",
-              e);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The BeforeBreadcrumbCallback callback threw an exception. Exception details will be added to the breadcrumb.",
+                e);
+      }
 
       if (e.getMessage() != null) {
         breadcrumb.setData("sentry:message", e.getMessage());
@@ -485,7 +489,9 @@ public final class Scope implements IScope {
         observer.setBreadcrumbs(breadcrumbs);
       }
     } else {
-      options.getLogger().log(SentryLevel.INFO, "Breadcrumb was dropped by beforeBreadcrumb");
+      if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+        options.getLogger().log(SentryLevel.INFO, "Breadcrumb was dropped by beforeBreadcrumb");
+      }
     }
   }
 
@@ -959,11 +965,13 @@ public final class Scope implements IScope {
         final Session previousClone = previousSession != null ? previousSession.clone() : null;
         pair = new SessionPair(session.clone(), previousClone);
       } else {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "Release is not set on SentryOptions. Session could not be started");
+        if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Release is not set on SentryOptions. Session could not be started");
+        }
       }
     }
     return pair;

@@ -1,5 +1,7 @@
 package io.sentry.clientreport;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.DataCategory;
 import io.sentry.DateUtils;
 import io.sentry.SentryEnvelope;
@@ -35,7 +37,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     }
 
     try {
-      options.getLogger().log(SentryLevel.DEBUG, "Attaching client report to envelope.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "Attaching client report to envelope.");
+      }
 
       final List<SentryEnvelopeItem> items = new ArrayList<>();
 
@@ -47,7 +51,11 @@ public final class ClientReportRecorder implements IClientReportRecorder {
 
       return new SentryEnvelope(envelope.getHeader(), items);
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Unable to attach client report to envelope.");
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, e, "Unable to attach client report to envelope.");
+      }
       return envelope;
     }
   }
@@ -63,7 +71,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
         recordLostEnvelopeItem(reason, item);
       }
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope.");
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope.");
+      }
     }
   }
 
@@ -81,9 +91,13 @@ public final class ClientReportRecorder implements IClientReportRecorder {
           final ClientReport clientReport = envelopeItem.getClientReport(options.getSerializer());
           restoreCountsFromClientReport(clientReport);
         } catch (Exception e) {
-          options
-              .getLogger()
-              .log(SentryLevel.ERROR, "Unable to restore counts from previous client report.");
+          if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+            if (options.getLogger().isEnabled(ERROR)) {
+              options
+                  .getLogger()
+                  .log(SentryLevel.ERROR, "Unable to restore counts from previous client report.");
+            }
+          }
         }
       } else {
         final @NotNull DataCategory itemCategory = categoryFromItemType(itemType);
@@ -101,7 +115,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
         recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), 1L);
       }
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope item.");
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope item.");
+      }
     }
   }
 
@@ -116,7 +132,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     try {
       recordLostEventInternal(reason.getReason(), category.getCategory(), count);
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost event.");
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost event.");
+      }
     }
   }
 

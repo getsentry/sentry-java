@@ -1,5 +1,6 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.INFO;
 import static io.sentry.util.JsonSerializationUtils.atomicIntegerArrayToList;
 import static io.sentry.util.JsonSerializationUtils.calendarToMap;
 
@@ -70,14 +71,18 @@ public final class JsonReflectionObjectSerializer {
       return object.toString();
     } else {
       if (visiting.contains(object)) {
-        logger.log(SentryLevel.INFO, "Cyclic reference detected. Calling toString() on object.");
+        if (logger.isEnabled(SentryLevel.INFO)) {
+          logger.log(SentryLevel.INFO, "Cyclic reference detected. Calling toString() on object.");
+        }
         return object.toString();
       }
       visiting.add(object);
 
       if (visiting.size() > maxDepth) {
         visiting.remove(object);
-        logger.log(SentryLevel.INFO, "Max depth exceeded. Calling toString() on object.");
+        if (logger.isEnabled(SentryLevel.INFO)) {
+          logger.log(SentryLevel.INFO, "Max depth exceeded. Calling toString() on object.");
+        }
         return object.toString();
       }
 
@@ -98,7 +103,10 @@ public final class JsonReflectionObjectSerializer {
           }
         }
       } catch (Exception exception) {
-        logger.log(SentryLevel.INFO, "Not serializing object due to throwing sub-path.", exception);
+        if (logger.isEnabled(INFO)) {
+          logger.log(
+              SentryLevel.INFO, "Not serializing object due to throwing sub-path.", exception);
+        }
       } finally {
         visiting.remove(object);
       }
@@ -126,7 +134,9 @@ public final class JsonReflectionObjectSerializer {
         map.put(fieldName, serialize(fieldObject, logger));
         field.setAccessible(false);
       } catch (Exception exception) {
-        logger.log(SentryLevel.INFO, "Cannot access field " + fieldName + ".");
+        if (logger.isEnabled(SentryLevel.INFO)) {
+          logger.log(SentryLevel.INFO, "Cannot access field " + fieldName + ".");
+        }
       }
     }
 

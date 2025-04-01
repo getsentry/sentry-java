@@ -1,11 +1,11 @@
 package io.sentry.transport;
 
-import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
 import static java.net.HttpURLConnection.HTTP_OK;
 
 import io.sentry.RequestDetails;
 import io.sentry.SentryEnvelope;
+import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -87,14 +87,16 @@ final class HttpConnection {
           InetSocketAddress proxyAddr = new InetSocketAddress(host, Integer.parseInt(port));
           proxy = new Proxy(type, proxyAddr);
         } catch (NumberFormatException e) {
-          options
-              .getLogger()
-              .log(
-                  ERROR,
-                  e,
-                  "Failed to parse Sentry Proxy port: "
-                      + optionsProxy.getPort()
-                      + ". Proxy is ignored");
+          if (options.getLogger().isEnabled(ERROR)) {
+            options
+                .getLogger()
+                .log(
+                    ERROR,
+                    e,
+                    "Failed to parse Sentry Proxy port: "
+                        + optionsProxy.getPort()
+                        + ". Proxy is ignored");
+          }
         }
       }
     }
@@ -153,12 +155,14 @@ final class HttpConnection {
         final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
       options.getSerializer().serialize(envelope, gzip);
     } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(
-              ERROR,
-              e,
-              "An exception occurred while submitting the envelope to the Sentry server.");
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(
+                ERROR,
+                e,
+                "An exception occurred while submitting the envelope to the Sentry server.");
+      }
     } finally {
       result = readAndLog(connection);
     }
@@ -178,23 +182,31 @@ final class HttpConnection {
       updateRetryAfterLimits(connection, responseCode);
 
       if (!isSuccessfulResponseCode(responseCode)) {
-        options.getLogger().log(ERROR, "Request failed, API returned %s", responseCode);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options.getLogger().log(ERROR, "Request failed, API returned %s", responseCode);
+        }
         // double check because call is expensive
         if (options.isDebug()) {
           final @NotNull String errorMessage = getErrorMessageFromStream(connection);
           // the error message may contain anything (including formatting symbols), so provide it as
           // an argument itself
-          options.getLogger().log(ERROR, "%s", errorMessage);
+          if (options.getLogger().isEnabled(ERROR)) {
+            options.getLogger().log(ERROR, "%s", errorMessage);
+          }
         }
 
         return TransportResult.error(responseCode);
       }
 
-      options.getLogger().log(DEBUG, "Envelope sent successfully.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "Envelope sent successfully.");
+      }
 
       return TransportResult.success();
     } catch (IOException e) {
-      options.getLogger().log(ERROR, e, "Error reading and logging the response stream");
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(ERROR, e, "Error reading and logging the response stream");
+      }
     } finally {
       closeAndDisconnect(connection);
     }

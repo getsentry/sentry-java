@@ -13,10 +13,12 @@ public final class LogUtils {
       final @NotNull Class<?> expectedClass,
       final @Nullable Object sentrySdkHint,
       final @NotNull ILogger logger) {
-    logger.log(
-        SentryLevel.DEBUG,
-        "%s is not %s",
-        sentrySdkHint != null ? sentrySdkHint.getClass().getCanonicalName() : "Hint",
-        expectedClass.getCanonicalName());
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(
+          SentryLevel.DEBUG,
+          "%s is not %s",
+          sentrySdkHint != null ? sentrySdkHint.getClass().getCanonicalName() : "Hint",
+          expectedClass.getCanonicalName());
+    }
   }
 }

@@ -59,10 +59,12 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
 
-    logger.log(
-        SentryLevel.DEBUG,
-        "NetworkBreadcrumbsIntegration enabled: %s",
-        androidOptions.isEnableNetworkEventBreadcrumbs());
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      logger.log(
+          SentryLevel.DEBUG,
+          "NetworkBreadcrumbsIntegration enabled: %s",
+          androidOptions.isEnableNetworkEventBreadcrumbs());
+    }
 
     this.options = options;
 
@@ -70,7 +72,9 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
 
       // The specific error is logged in the ConnectivityChecker method
       if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
-        logger.log(SentryLevel.DEBUG, "NetworkCallbacks need Android N+.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          logger.log(SentryLevel.DEBUG, "NetworkCallbacks need Android N+.");
+        }
         return;
       }
 
@@ -95,18 +99,24 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
                           AndroidConnectionStatusProvider.registerNetworkCallback(
                               context, logger, buildInfoProvider, networkCallback);
                       if (registered) {
-                        logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration installed.");
+                        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+                          logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration installed.");
+                        }
                         addIntegrationToSdkVersion("NetworkBreadcrumbs");
                       } else {
-                        logger.log(
-                            SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration not installed.");
+                        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+                          logger.log(
+                              SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration not installed.");
+                        }
                         // The specific error is logged by AndroidConnectionStatusProvider
                       }
                     }
                   }
                 });
       } catch (Throwable t) {
-        logger.log(SentryLevel.ERROR, "Error submitting NetworkBreadcrumbsIntegration task.", t);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, "Error submitting NetworkBreadcrumbsIntegration task.", t);
+        }
       }
     }
   }
@@ -124,13 +134,17 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
                   if (networkCallback != null) {
                     AndroidConnectionStatusProvider.unregisterNetworkCallback(
                         context, logger, networkCallback);
-                    logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration removed.");
+                    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+                      logger.log(SentryLevel.DEBUG, "NetworkBreadcrumbsIntegration removed.");
+                    }
                   }
                   networkCallback = null;
                 }
               });
     } catch (Throwable t) {
-      logger.log(SentryLevel.ERROR, "Error submitting NetworkBreadcrumbsIntegration task.", t);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error submitting NetworkBreadcrumbsIntegration task.", t);
+      }
     }
   }
 

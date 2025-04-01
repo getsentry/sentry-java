@@ -100,10 +100,12 @@ public class SentrySpringFilter extends OncePerRequestFilter {
             }
           });
     } catch (Throwable e) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(SentryLevel.ERROR, "Failed to set scope for HTTP request", e);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to set scope for HTTP request", e);
+      }
     }
   }
 

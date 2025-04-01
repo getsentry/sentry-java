@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.WARNING;
+
 import io.sentry.config.PropertiesProvider;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -157,18 +159,22 @@ public final class ExternalOptions {
         if (Throwable.class.isAssignableFrom(clazz)) {
           options.addIgnoredExceptionForType((Class<? extends Throwable>) clazz);
         } else {
+          if (logger.isEnabled(WARNING)) {
+            logger.log(
+                SentryLevel.WARNING,
+                "Skipping setting %s as ignored-exception-for-type. Reason: %s does not extend Throwable",
+                ignoredExceptionType,
+                ignoredExceptionType);
+          }
+        }
+      } catch (ClassNotFoundException e) {
+        if (logger.isEnabled(WARNING)) {
           logger.log(
               SentryLevel.WARNING,
-              "Skipping setting %s as ignored-exception-for-type. Reason: %s does not extend Throwable",
+              "Skipping setting %s as ignored-exception-for-type. Reason: %s class is not found",
               ignoredExceptionType,
               ignoredExceptionType);
         }
-      } catch (ClassNotFoundException e) {
-        logger.log(
-            SentryLevel.WARNING,
-            "Skipping setting %s as ignored-exception-for-type. Reason: %s class is not found",
-            ignoredExceptionType,
-            ignoredExceptionType);
       }
     }
 

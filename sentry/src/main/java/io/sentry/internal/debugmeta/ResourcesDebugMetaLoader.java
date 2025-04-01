@@ -1,5 +1,7 @@
 package io.sentry.internal.debugmeta;
 
+import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.INFO;
 import static io.sentry.util.ClassLoaderUtils.classLoaderOrDefault;
 import static io.sentry.util.DebugMetaPropertiesApplier.DEBUG_META_PROPERTIES_FILENAME;
 
@@ -44,17 +46,25 @@ public final class ResourcesDebugMetaLoader implements IDebugMetaLoader {
           final @NotNull Properties currentProperties = new Properties();
           currentProperties.load(is);
           debugPropertyList.add(currentProperties);
-          logger.log(SentryLevel.INFO, "Debug Meta Data Properties loaded from %s", currentUrl);
+          if (logger.isEnabled(INFO)) {
+            logger.log(SentryLevel.INFO, "Debug Meta Data Properties loaded from %s", currentUrl);
+          }
         } catch (RuntimeException e) {
-          logger.log(SentryLevel.ERROR, e, "%s file is malformed.", currentUrl);
+          if (logger.isEnabled(ERROR)) {
+            logger.log(SentryLevel.ERROR, e, "%s file is malformed.", currentUrl);
+          }
         }
       }
     } catch (IOException e) {
-      logger.log(SentryLevel.ERROR, e, "Failed to load %s", DEBUG_META_PROPERTIES_FILENAME);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, e, "Failed to load %s", DEBUG_META_PROPERTIES_FILENAME);
+      }
     }
 
     if (debugPropertyList.isEmpty()) {
-      logger.log(SentryLevel.INFO, "No %s file was found.", DEBUG_META_PROPERTIES_FILENAME);
+      if (logger.isEnabled(INFO)) {
+        logger.log(SentryLevel.INFO, "No %s file was found.", DEBUG_META_PROPERTIES_FILENAME);
+      }
       return null;
     }
 

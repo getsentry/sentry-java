@@ -365,11 +365,13 @@ final class AndroidOptionsInitializer {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
       }
     } else {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "ActivityLifecycle, FragmentLifecycle and UserInteraction Integrations need an Application class to be installed.");
+      if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "ActivityLifecycle, FragmentLifecycle and UserInteraction Integrations need an Application class to be installed.");
+      }
     }
 
     if (isTimberAvailable) {
@@ -419,7 +421,9 @@ final class AndroidOptionsInitializer {
       try {
         options.setDistinctId(Installation.id(context));
       } catch (RuntimeException e) {
-        options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
+        if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+          options.getLogger().log(SentryLevel.ERROR, "Could not generate distinct Id.", e);
+        }
       }
     }
   }

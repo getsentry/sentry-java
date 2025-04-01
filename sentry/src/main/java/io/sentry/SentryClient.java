@@ -1,5 +1,9 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.WARNING;
+
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
@@ -61,9 +65,14 @@ public final class SentryClient implements ISentryClient {
     if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
     } else {
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Event was cached so not applying scope: %s", event.getEventId());
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was cached so not applying scope: %s",
+                event.getEventId());
+      }
       return false;
     }
   }
@@ -72,12 +81,14 @@ public final class SentryClient implements ISentryClient {
     if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
     } else {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Check-in was cached so not applying scope: %s",
-              event.getCheckInId());
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Check-in was cached so not applying scope: %s",
+                event.getCheckInId());
+      }
       return false;
     }
   }
@@ -95,18 +106,22 @@ public final class SentryClient implements ISentryClient {
       addScopeAttachmentsToHint(scope, hint);
     }
 
-    options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
+    if (options.getLogger().isEnabled(DEBUG)) {
+      options.getLogger().log(SentryLevel.DEBUG, "Capturing event: %s", event.getEventId());
+    }
 
     if (event != null) {
       final Throwable eventThrowable = event.getThrowable();
       if (eventThrowable != null
           && ExceptionUtils.isIgnored(options.getIgnoredExceptionsForType(), eventThrowable)) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Event was dropped as the exception %s is ignored",
-                eventThrowable.getClass());
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Event was dropped as the exception %s is ignored",
+                  eventThrowable.getClass());
+        }
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
@@ -114,12 +129,14 @@ public final class SentryClient implements ISentryClient {
       }
 
       if (ErrorUtils.isIgnored(options.getIgnoredErrors(), event)) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Event was dropped as it matched a string/pattern in ignoredErrors",
-                event.getMessage());
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Event was dropped as it matched a string/pattern in ignoredErrors",
+                  event.getMessage());
+        }
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
@@ -134,7 +151,9 @@ public final class SentryClient implements ISentryClient {
       event = applyScope(event, scope, hint);
 
       if (event == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by applyScope");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by applyScope");
+        }
         return SentryId.EMPTY_ID;
       }
     }
@@ -145,7 +164,9 @@ public final class SentryClient implements ISentryClient {
       event = executeBeforeSend(event, hint);
 
       if (event == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
+        }
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Error);
@@ -168,12 +189,14 @@ public final class SentryClient implements ISentryClient {
       }
 
       if (!sample()) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Event %s was dropped due to sampling decision.",
-                event.getEventId());
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Event %s was dropped due to sampling decision.",
+                  event.getEventId());
+        }
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Error);
@@ -186,11 +209,13 @@ public final class SentryClient implements ISentryClient {
         shouldSendSessionUpdateForDroppedEvent(sessionBeforeUpdate, session);
 
     if (event == null && !shouldSendSessionUpdate) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not sending session update for dropped event as it did not cause the session health to change.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not sending session update for dropped event as it did not cause the session health to change.");
+      }
       return SentryId.EMPTY_ID;
     }
 
@@ -235,7 +260,9 @@ public final class SentryClient implements ISentryClient {
         sentryId = sendEnvelope(envelope, hint);
       }
     } catch (IOException | SentryEnvelopeException e) {
-      options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
+      if (options.getLogger().isEnabled(WARNING)) {
+        options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
+      }
 
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
@@ -278,7 +305,11 @@ public final class SentryClient implements ISentryClient {
       applyScope(event, scope);
     }
 
-    options.getLogger().log(SentryLevel.DEBUG, "Capturing session replay: %s", event.getEventId());
+    if (options.getLogger().isEnabled(DEBUG)) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Capturing session replay: %s", event.getEventId());
+    }
 
     SentryId sentryId = SentryId.EMPTY_ID;
     if (event.getEventId() != null) {
@@ -291,7 +322,9 @@ public final class SentryClient implements ISentryClient {
       event = executeBeforeSendReplay(event, hint);
 
       if (event == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSendReplay");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSendReplay");
+        }
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Replay);
@@ -323,7 +356,9 @@ public final class SentryClient implements ISentryClient {
       hint.clear();
       transport.send(envelope, hint);
     } catch (IOException e) {
-      options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
+      if (options.getLogger().isEnabled(WARNING)) {
+        options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
+      }
 
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
@@ -459,22 +494,26 @@ public final class SentryClient implements ISentryClient {
           event = processor.process(event, hint);
         }
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                e,
-                "An exception occurred while processing event by processor: %s",
-                processor.getClass().getName());
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  e,
+                  "An exception occurred while processing event by processor: %s",
+                  processor.getClass().getName());
+        }
       }
 
       if (event == null) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Event was dropped by a processor: %s",
-                processor.getClass().getName());
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Event was dropped by a processor: %s",
+                  processor.getClass().getName());
+        }
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
@@ -493,23 +532,27 @@ public final class SentryClient implements ISentryClient {
       try {
         transaction = processor.process(transaction, hint);
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                e,
-                "An exception occurred while processing transaction by processor: %s",
-                processor.getClass().getName());
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  e,
+                  "An exception occurred while processing transaction by processor: %s",
+                  processor.getClass().getName());
+        }
       }
       final int spanCountAfterProcessor = transaction == null ? 0 : transaction.getSpans().size();
 
       if (transaction == null) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Transaction was dropped by a processor: %s",
-                processor.getClass().getName());
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Transaction was dropped by a processor: %s",
+                  processor.getClass().getName());
+        }
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
@@ -522,13 +565,15 @@ public final class SentryClient implements ISentryClient {
       } else if (spanCountAfterProcessor < spanCountBeforeProcessor) {
         // If the callback removed some spans, we report it
         final int droppedSpanCount = spanCountBeforeProcessor - spanCountAfterProcessor;
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "%d spans were dropped by a processor: %s",
-                droppedSpanCount,
-                processor.getClass().getName());
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "%d spans were dropped by a processor: %s",
+                  droppedSpanCount,
+                  processor.getClass().getName());
+        }
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Span, droppedSpanCount);
@@ -546,22 +591,26 @@ public final class SentryClient implements ISentryClient {
       try {
         replayEvent = processor.process(replayEvent, hint);
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                e,
-                "An exception occurred while processing replay event by processor: %s",
-                processor.getClass().getName());
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  e,
+                  "An exception occurred while processing replay event by processor: %s",
+                  processor.getClass().getName());
+        }
       }
 
       if (replayEvent == null) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Replay event was dropped by a processor: %s",
-                processor.getClass().getName());
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Replay event was dropped by a processor: %s",
+                  processor.getClass().getName());
+        }
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Replay);
@@ -576,24 +625,31 @@ public final class SentryClient implements ISentryClient {
     Objects.requireNonNull(userFeedback, "SentryEvent is required.");
 
     if (SentryId.EMPTY_ID.equals(userFeedback.getEventId())) {
-      options.getLogger().log(SentryLevel.WARNING, "Capturing userFeedback without a Sentry Id.");
+      if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+        options.getLogger().log(SentryLevel.WARNING, "Capturing userFeedback without a Sentry Id.");
+      }
       return;
     }
-    options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
+
+    if (options.getLogger().isEnabled(DEBUG)) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
+    }
 
     try {
       final @NotNull SentryEnvelope envelope = buildEnvelope(userFeedback);
       sendEnvelope(envelope, null);
     } catch (IOException e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              e,
-              "Capturing user feedback %s failed.",
-              userFeedback.getEventId());
+      if (options.getLogger().isEnabled(WARNING)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                e,
+                "Capturing user feedback %s failed.",
+                userFeedback.getEventId());
+      }
     }
   }
 
@@ -700,13 +756,17 @@ public final class SentryClient implements ISentryClient {
                       }
                     }
                   } else {
-                    options
-                        .getLogger()
-                        .log(SentryLevel.INFO, "Session is null on scope.withSession");
+                    if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+                      options
+                          .getLogger()
+                          .log(SentryLevel.INFO, "Session is null on scope.withSession");
+                    }
                   }
                 });
       } else {
-        options.getLogger().log(SentryLevel.INFO, "Scope is null on client.captureEvent");
+        if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+          options.getLogger().log(SentryLevel.INFO, "Scope is null on client.captureEvent");
+        }
       }
     }
     return clonedSession;
@@ -718,9 +778,11 @@ public final class SentryClient implements ISentryClient {
     Objects.requireNonNull(session, "Session is required.");
 
     if (session.getRelease() == null || session.getRelease().isEmpty()) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Sessions can't be captured without setting a release.");
+      if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Sessions can't be captured without setting a release.");
+      }
       return;
     }
 
@@ -728,7 +790,9 @@ public final class SentryClient implements ISentryClient {
     try {
       envelope = SentryEnvelope.from(options.getSerializer(), session, options.getSdkVersion());
     } catch (IOException e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to capture session.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to capture session.", e);
+      }
       return;
     }
 
@@ -749,7 +813,9 @@ public final class SentryClient implements ISentryClient {
       hint.clear();
       return sendEnvelope(envelope, hint);
     } catch (IOException e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
+      }
     }
     return SentryId.EMPTY_ID;
   }
@@ -762,9 +828,11 @@ public final class SentryClient implements ISentryClient {
       try {
         beforeEnvelopeCallback.execute(envelope, hint);
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "The BeforeEnvelope callback threw an exception.", e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "The BeforeEnvelope callback threw an exception.", e);
+        }
       }
     }
 
@@ -796,17 +864,21 @@ public final class SentryClient implements ISentryClient {
       addScopeAttachmentsToHint(scope, hint);
     }
 
-    options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
-
-    if (TracingUtils.isIgnored(options.getIgnoredTransactions(), transaction.getTransaction())) {
+    if (options.getLogger().isEnabled(DEBUG)) {
       options
           .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Transaction was dropped as transaction name %s is ignored",
-              transaction.getTransaction());
+          .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
+    }
+
+    if (TracingUtils.isIgnored(options.getIgnoredTransactions(), transaction.getTransaction())) {
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Transaction was dropped as transaction name %s is ignored",
+                transaction.getTransaction());
+      }
       options
           .getClientReportRecorder()
           .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Transaction);
@@ -830,7 +902,9 @@ public final class SentryClient implements ISentryClient {
       }
 
       if (transaction == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "Transaction was dropped by applyScope");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "Transaction was dropped by applyScope");
+        }
       }
     }
 
@@ -839,7 +913,9 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (transaction == null) {
-      options.getLogger().log(SentryLevel.DEBUG, "Transaction was dropped by Event processors.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "Transaction was dropped by Event processors.");
+      }
       return SentryId.EMPTY_ID;
     }
 
@@ -848,9 +924,11 @@ public final class SentryClient implements ISentryClient {
     final int spanCountAfterCallback = transaction == null ? 0 : transaction.getSpans().size();
 
     if (transaction == null) {
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Transaction was dropped by beforeSendTransaction.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Transaction was dropped by beforeSendTransaction.");
+      }
       options
           .getClientReportRecorder()
           .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Transaction);
@@ -863,12 +941,14 @@ public final class SentryClient implements ISentryClient {
     } else if (spanCountAfterCallback < spanCountBeforeCallback) {
       // If the callback removed some spans, we report it
       final int droppedSpanCount = spanCountBeforeCallback - spanCountAfterCallback;
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "%d spans were dropped by beforeSendTransaction.",
-              droppedSpanCount);
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "%d spans were dropped by beforeSendTransaction.",
+                droppedSpanCount);
+      }
       options
           .getClientReportRecorder()
           .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Span, droppedSpanCount);
@@ -888,7 +968,11 @@ public final class SentryClient implements ISentryClient {
         sentryId = sendEnvelope(envelope, hint);
       }
     } catch (IOException | SentryEnvelopeException e) {
-      options.getLogger().log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
+      if (options.getLogger().isEnabled(WARNING)) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, e, "Capturing transaction %s failed.", sentryId);
+      }
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
     }
@@ -902,9 +986,11 @@ public final class SentryClient implements ISentryClient {
       @NotNull ProfileChunk profileChunk, final @Nullable IScope scope) {
     Objects.requireNonNull(profileChunk, "profileChunk is required.");
 
-    options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Capturing profile chunk: %s", profileChunk.getChunkId());
+    if (options.getLogger().isEnabled(DEBUG)) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "Capturing profile chunk: %s", profileChunk.getChunkId());
+    }
 
     @NotNull SentryId sentryId = profileChunk.getChunkId();
     final DebugMeta debugMeta = DebugMeta.buildDebugMeta(profileChunk.getDebugMeta(), options);
@@ -922,9 +1008,11 @@ public final class SentryClient implements ISentryClient {
                   SentryEnvelopeItem.fromProfileChunk(profileChunk, options.getSerializer())));
       sentryId = sendEnvelope(envelope, null);
     } catch (IOException | SentryEnvelopeException e) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, e, "Capturing profile chunk %s failed.", sentryId);
+      if (options.getLogger().isEnabled(WARNING)) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, e, "Capturing profile chunk %s failed.", sentryId);
+      }
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
     }
@@ -953,19 +1041,23 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (CheckInUtils.isIgnored(options.getIgnoredCheckIns(), checkIn.getMonitorSlug())) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Check-in was dropped as slug %s is ignored",
-              checkIn.getMonitorSlug());
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Check-in was dropped as slug %s is ignored",
+                checkIn.getMonitorSlug());
+      }
       options
           .getClientReportRecorder()
           .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Monitor);
       return SentryId.EMPTY_ID;
     }
 
-    options.getLogger().log(SentryLevel.DEBUG, "Capturing check-in: %s", checkIn.getCheckInId());
+    if (options.getLogger().isEnabled(DEBUG)) {
+      options.getLogger().log(SentryLevel.DEBUG, "Capturing check-in: %s", checkIn.getCheckInId());
+    }
 
     SentryId sentryId = checkIn.getCheckInId();
 
@@ -987,7 +1079,9 @@ public final class SentryClient implements ISentryClient {
       hint.clear();
       sentryId = sendEnvelope(envelope, hint);
     } catch (IOException e) {
-      options.getLogger().log(SentryLevel.WARNING, e, "Capturing check-in %s failed.", sentryId);
+      if (options.getLogger().isEnabled(WARNING)) {
+        options.getLogger().log(SentryLevel.WARNING, e, "Capturing check-in %s failed.", sentryId);
+      }
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
     }
@@ -1159,12 +1253,14 @@ public final class SentryClient implements ISentryClient {
       try {
         event = beforeSend.execute(event, hint);
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                "The BeforeSend callback threw an exception. It will be added as breadcrumb and continue.",
-                e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "The BeforeSend callback threw an exception. It will be added as breadcrumb and continue.",
+                  e);
+        }
 
         // drop event in case of an error in beforeSend due to PII concerns
         event = null;
@@ -1181,12 +1277,14 @@ public final class SentryClient implements ISentryClient {
       try {
         transaction = beforeSendTransaction.execute(transaction, hint);
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                "The BeforeSendTransaction callback threw an exception. It will be added as breadcrumb and continue.",
-                e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "The BeforeSendTransaction callback threw an exception. It will be added as breadcrumb and continue.",
+                  e);
+        }
 
         // drop transaction in case of an error in beforeSend due to PII concerns
         transaction = null;
@@ -1202,12 +1300,14 @@ public final class SentryClient implements ISentryClient {
       try {
         event = beforeSendReplay.execute(event, hint);
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                "The BeforeSendReplay callback threw an exception. It will be added as breadcrumb and continue.",
-                e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "The BeforeSendReplay callback threw an exception. It will be added as breadcrumb and continue.",
+                  e);
+        }
 
         // drop event in case of an error in beforeSend due to PII concerns
         event = null;
@@ -1223,27 +1323,33 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public void close(final boolean isRestarting) {
-    options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
+    if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+      options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
+    }
     try {
       flush(isRestarting ? 0 : options.getShutdownTimeoutMillis());
       transport.close(isRestarting);
     } catch (IOException e) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Failed to close the connection to the Sentry Server.", e);
+      if (options.getLogger().isEnabled(WARNING)) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Failed to close the connection to the Sentry Server.", e);
+      }
     }
     for (EventProcessor eventProcessor : options.getEventProcessors()) {
       if (eventProcessor instanceof Closeable) {
         try {
           ((Closeable) eventProcessor).close();
         } catch (IOException e) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.WARNING,
-                  "Failed to close the event processor {}.",
-                  eventProcessor,
-                  e);
+          if (options.getLogger().isEnabled(WARNING)) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "Failed to close the event processor {}.",
+                    eventProcessor,
+                    e);
+          }
         }
       }
     }

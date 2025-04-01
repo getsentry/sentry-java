@@ -127,14 +127,18 @@ public class ReplayIntegration(
         this.options = options
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            options.logger.log(INFO, "Session replay is only supported on API 26 and above")
+            if (options.logger.isEnabled(INFO)) {
+                options.logger.log(INFO, "Session replay is only supported on API 26 and above")
+            }
             return
         }
 
         if (!options.sessionReplay.isSessionReplayEnabled &&
             !options.sessionReplay.isSessionReplayForErrorsEnabled
         ) {
-            options.logger.log(INFO, "Session replay is disabled, no sample rate specified")
+            if (options.logger.isEnabled(INFO)) {
+                options.logger.log(INFO, "Session replay is disabled, no sample rate specified")
+            }
             return
         }
 
@@ -149,11 +153,13 @@ public class ReplayIntegration(
             try {
                 context.registerComponentCallbacks(this)
             } catch (e: Throwable) {
-                options.logger.log(
-                    INFO,
-                    "ComponentCallbacks is not available, orientation changes won't be handled by Session replay",
-                    e
-                )
+                if (options.logger.isEnabled(INFO)) {
+                    options.logger.log(
+                        INFO,
+                        "ComponentCallbacks is not available, orientation changes won't be handled by Session replay",
+                        e
+                    )
+                }
             }
         }
 
@@ -171,16 +177,23 @@ public class ReplayIntegration(
             }
 
             if (!lifecycle.isAllowed(STARTED)) {
-                options.logger.log(
-                    DEBUG,
-                    "Session replay is already being recorded, not starting a new one"
-                )
+                if (options.logger.isEnabled(DEBUG)) {
+                    options.logger.log(
+                        DEBUG,
+                        "Session replay is already being recorded, not starting a new one"
+                    )
+                }
                 return
             }
 
             val isFullSession = random.sample(options.sessionReplay.sessionSampleRate)
             if (!isFullSession && !options.sessionReplay.isSessionReplayForErrorsEnabled) {
-                options.logger.log(INFO, "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified")
+                if (options.logger.isEnabled(INFO)) {
+                    options.logger.log(
+                        INFO,
+                        "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified"
+                    )
+                }
                 return
             }
 
@@ -228,7 +241,9 @@ public class ReplayIntegration(
         }
 
         if (SentryId.EMPTY_ID.equals(captureStrategy?.currentReplayId)) {
-            options.logger.log(DEBUG, "Replay id is not set, not capturing for event")
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(DEBUG, "Replay id is not set, not capturing for event")
+            }
             return
         }
 

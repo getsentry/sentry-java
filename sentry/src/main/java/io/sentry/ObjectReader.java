@@ -22,7 +22,9 @@ public interface ObjectReader extends Closeable {
       try {
         return DateUtils.getDateTimeWithMillisPrecision(dateString);
       } catch (Exception e) {
-        logger.log(SentryLevel.ERROR, "Error when deserializing millis timestamp format.", e);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, "Error when deserializing millis timestamp format.", e);
+        }
       }
     }
     return null;

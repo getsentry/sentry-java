@@ -65,7 +65,9 @@ public final class ScreenshotEventProcessor implements EventProcessor {
       return event;
     }
     if (!options.isAttachScreenshot()) {
-      this.options.getLogger().log(SentryLevel.DEBUG, "attachScreenshot is disabled.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        this.options.getLogger().log(SentryLevel.DEBUG, "attachScreenshot is disabled.");
+      }
 
       return event;
     }

@@ -121,7 +121,9 @@ public final class ActivityLifecycleIntegration
     timeToFullDisplaySpanEnabled = this.options.isEnableTimeToFullDisplayTracing();
 
     application.registerActivityLifecycleCallbacks(this);
-    this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      this.options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration installed.");
+    }
     addIntegrationToSdkVersion("ActivityLifecycle");
   }
 
@@ -134,7 +136,9 @@ public final class ActivityLifecycleIntegration
     application.unregisterActivityLifecycleCallbacks(this);
 
     if (options != null) {
-      options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
+      }
     }
 
     activityFramesTracker.stop();
@@ -202,12 +206,14 @@ public final class ActivityLifecycleIntegration
                     unwrappedActivity, finishingTransaction.getEventId());
               } else {
                 if (options != null) {
-                  options
-                      .getLogger()
-                      .log(
-                          SentryLevel.WARNING,
-                          "Unable to track activity frames as the Activity %s has been destroyed.",
-                          activityName);
+                  if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+                    options
+                        .getLogger()
+                        .log(
+                            SentryLevel.WARNING,
+                            "Unable to track activity frames as the Activity %s has been destroyed.",
+                            activityName);
+                  }
                 }
               }
             });
@@ -285,12 +291,14 @@ public final class ActivityLifecycleIntegration
                     .schedule(
                         () -> finishExceededTtfdSpan(ttfdSpan, ttidSpan), TTFD_TIMEOUT_MILLIS);
           } catch (RejectedExecutionException e) {
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.ERROR,
-                    "Failed to call the executor. Time to full display span will not be finished automatically. Did you call Sentry.close()?",
-                    e);
+            if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.ERROR,
+                      "Failed to call the executor. Time to full display span will not be finished automatically. Did you call Sentry.close()?",
+                      e);
+            }
           }
         }
 
@@ -318,12 +326,14 @@ public final class ActivityLifecycleIntegration
           if (scopeTransaction == null) {
             scope.setTransaction(transaction);
           } else if (options != null) {
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.DEBUG,
-                    "Transaction '%s' won't be bound to the Scope since there's one already in there.",
-                    transaction.getName());
+            if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.DEBUG,
+                      "Transaction '%s' won't be bound to the Scope since there's one already in there.",
+                      transaction.getName());
+            }
           }
         });
   }

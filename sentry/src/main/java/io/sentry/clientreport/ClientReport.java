@@ -1,5 +1,7 @@
 package io.sentry.clientreport;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
@@ -117,7 +119,9 @@ public final class ClientReport implements JsonUnknown, JsonSerializable {
     private Exception missingRequiredFieldException(String field, ILogger logger) {
       String message = "Missing required field \"" + field + "\"";
       Exception exception = new IllegalStateException(message);
-      logger.log(SentryLevel.ERROR, message, exception);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, message, exception);
+      }
       return exception;
     }
   }

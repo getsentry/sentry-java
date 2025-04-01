@@ -104,7 +104,9 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     final @Nullable Context context = getContext();
 
     if (context == null) {
-      logger.log(SentryLevel.FATAL, "App. Context from ContentProvider is null");
+      if (logger.isEnabled(SentryLevel.FATAL)) {
+        logger.log(SentryLevel.FATAL, "App. Context from ContentProvider is null");
+      }
       return;
     }
 
@@ -123,9 +125,11 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
               .deserialize(reader, SentryAppStartProfilingOptions.class);
 
       if (profilingOptions == null) {
-        logger.log(
-            SentryLevel.WARNING,
-            "Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start.");
+        if (logger.isEnabled(SentryLevel.WARNING)) {
+          logger.log(
+              SentryLevel.WARNING,
+              "Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start.");
+        }
         return;
       }
 
@@ -136,8 +140,10 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       }
 
       if (!profilingOptions.isProfilingEnabled()) {
-        logger.log(
-            SentryLevel.INFO, "Profiling is not enabled. App start profiling will not start.");
+        if (logger.isEnabled(SentryLevel.INFO)) {
+          logger.log(
+              SentryLevel.INFO, "Profiling is not enabled. App start profiling will not start.");
+        }
         return;
       }
 
@@ -145,9 +151,13 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
         createAndStartTransactionProfiler(context, profilingOptions, appStartMetrics);
       }
     } catch (FileNotFoundException e) {
-      logger.log(SentryLevel.ERROR, "App start profiling config file not found. ", e);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, "App start profiling config file not found. ", e);
+      }
     } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, "Error reading app start profiling config file. ", e);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error reading app start profiling config file. ", e);
+      }
     }
   }
 
@@ -157,7 +167,9 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       final @NotNull AppStartMetrics appStartMetrics) {
 
     if (!profilingOptions.isContinuousProfileSampled()) {
-      logger.log(SentryLevel.DEBUG, "App start profiling was not sampled. It will not start.");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "App start profiling was not sampled. It will not start.");
+      }
       return;
     }
 
@@ -172,7 +184,9 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
             new SentryExecutorService());
     appStartMetrics.setAppStartProfiler(null);
     appStartMetrics.setAppStartContinuousProfiler(appStartContinuousProfiler);
-    logger.log(SentryLevel.DEBUG, "App start continuous profiling started.");
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, "App start continuous profiling started.");
+    }
     SentryOptions sentryOptions = SentryOptions.empty();
     // Let's fake a sampler to accept the sampling decision that was calculated on last run
     sentryOptions
@@ -196,7 +210,9 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     appStartMetrics.setAppStartSamplingDecision(appStartSamplingDecision);
 
     if (!(appStartSamplingDecision.getProfileSampled() && appStartSamplingDecision.getSampled())) {
-      logger.log(SentryLevel.DEBUG, "App start profiling was not sampled. It will not start.");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "App start profiling was not sampled. It will not start.");
+      }
       return;
     }
 
@@ -212,7 +228,9 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
             new SentryExecutorService());
     appStartMetrics.setAppStartContinuousProfiler(null);
     appStartMetrics.setAppStartProfiler(appStartProfiler);
-    logger.log(SentryLevel.DEBUG, "App start profiling started.");
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, "App start profiling started.");
+    }
     appStartProfiler.start();
   }
 

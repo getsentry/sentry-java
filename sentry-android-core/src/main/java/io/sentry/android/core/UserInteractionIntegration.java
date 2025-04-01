@@ -39,7 +39,9 @@ public final class UserInteractionIntegration
     final Window window = activity.getWindow();
     if (window == null) {
       if (options != null) {
-        options.getLogger().log(SentryLevel.INFO, "Window was null in startTracking");
+        if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+          options.getLogger().log(SentryLevel.INFO, "Window was null in startTracking");
+        }
       }
       return;
     }
@@ -65,7 +67,9 @@ public final class UserInteractionIntegration
     final Window window = activity.getWindow();
     if (window == null) {
       if (options != null) {
-        options.getLogger().log(SentryLevel.INFO, "Window was null in stopTracking");
+        if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+          options.getLogger().log(SentryLevel.INFO, "Window was null in stopTracking");
+        }
       }
       return;
     }
@@ -118,21 +122,27 @@ public final class UserInteractionIntegration
     final boolean integrationEnabled =
         this.options.isEnableUserInteractionBreadcrumbs()
             || this.options.isEnableUserInteractionTracing();
-    this.options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "UserInteractionIntegration enabled: %s", integrationEnabled);
+    if (this.options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      this.options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "UserInteractionIntegration enabled: %s", integrationEnabled);
+    }
 
     if (integrationEnabled) {
       if (isAndroidXAvailable) {
         application.registerActivityLifecycleCallbacks(this);
-        this.options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration installed.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          this.options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration installed.");
+        }
         addIntegrationToSdkVersion("UserInteraction");
       } else {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.INFO,
-                "androidx.core is not available, UserInteractionIntegration won't be installed");
+        if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.INFO,
+                  "androidx.core is not available, UserInteractionIntegration won't be installed");
+        }
       }
     }
   }
@@ -142,7 +152,9 @@ public final class UserInteractionIntegration
     application.unregisterActivityLifecycleCallbacks(this);
 
     if (options != null) {
-      options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration removed.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration removed.");
+      }
     }
   }
 }

@@ -1,5 +1,8 @@
 package io.sentry.android.core;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.INFO;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import androidx.lifecycle.ProcessLifecycleOwner;
@@ -39,19 +42,23 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
 
-    this.options
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "enableSessionTracking enabled: %s",
-            this.options.isEnableAutoSessionTracking());
+    if (options.getLogger().isEnabled(DEBUG)) {
+      this.options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "enableSessionTracking enabled: %s",
+              this.options.isEnableAutoSessionTracking());
+    }
 
-    this.options
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "enableAppLifecycleBreadcrumbs enabled: %s",
-            this.options.isEnableAppLifecycleBreadcrumbs());
+    if (options.getLogger().isEnabled(DEBUG)) {
+      this.options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "enableAppLifecycleBreadcrumbs enabled: %s",
+              this.options.isEnableAppLifecycleBreadcrumbs());
+    }
 
     if (this.options.isEnableAutoSessionTracking()
         || this.options.isEnableAppLifecycleBreadcrumbs()) {
@@ -66,16 +73,20 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
           handler.post(() -> addObserver(scopes));
         }
       } catch (ClassNotFoundException e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.INFO,
-                "androidx.lifecycle is not available, AppLifecycleIntegration won't be installed",
-                e);
+        if (options.getLogger().isEnabled(INFO)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.INFO,
+                  "androidx.lifecycle is not available, AppLifecycleIntegration won't be installed",
+                  e);
+        }
       } catch (IllegalStateException e) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "AppLifecycleIntegration could not be installed", e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "AppLifecycleIntegration could not be installed", e);
+        }
       }
     }
   }
@@ -95,19 +106,23 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
 
     try {
       ProcessLifecycleOwner.get().getLifecycle().addObserver(watcher);
-      options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration installed.");
+      }
       addIntegrationToSdkVersion("AppLifecycle");
     } catch (Throwable e) {
       // This is to handle a potential 'AbstractMethodError' gracefully. The error is triggered in
       // connection with conflicting dependencies of the androidx.lifecycle.
       // //See the issue here: https://github.com/getsentry/sentry-java/pull/2228
       watcher = null;
-      options
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "AppLifecycleIntegration failed to get Lifecycle and could not be installed.",
-              e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "AppLifecycleIntegration failed to get Lifecycle and could not be installed.",
+                e);
+      }
     }
   }
 
@@ -116,7 +131,9 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     if (watcherRef != null) {
       ProcessLifecycleOwner.get().getLifecycle().removeObserver(watcherRef);
       if (options != null) {
-        options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration removed.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "AppLifecycleIntegration removed.");
+        }
       }
     }
     watcher = null;

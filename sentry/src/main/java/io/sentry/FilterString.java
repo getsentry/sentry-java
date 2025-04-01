@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.DEBUG;
+
 import java.util.Objects;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
@@ -15,13 +17,15 @@ public final class FilterString {
     try {
       pattern = Pattern.compile(filterString);
     } catch (Throwable t) {
-      Sentry.getCurrentScopes()
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Only using filter string for String comparison as it could not be parsed as regex: %s",
-              filterString);
+      if (Sentry.getCurrentScopes().getOptions().getLogger().isEnabled(DEBUG)) {
+        Sentry.getCurrentScopes()
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Only using filter string for String comparison as it could not be parsed as regex: %s",
+                filterString);
+      }
     }
     this.pattern = pattern;
   }

@@ -1,5 +1,9 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.INFO;
+
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
@@ -53,11 +57,15 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   @SuppressWarnings("FutureReturnValueIgnored")
   public void start(final @NotNull ITransaction transaction) {
     if (hasNoCollectors) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.INFO,
-              "No collector found. Performance stats will not be captured during transactions.");
+      if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+        if (options.getLogger().isEnabled(INFO)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.INFO,
+                  "No collector found. Performance stats will not be captured during transactions.");
+        }
+      }
       return;
     }
 
@@ -73,12 +81,14 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
             .getExecutorService()
             .schedule(() -> stop(transaction), TRANSACTION_COLLECTION_TIMEOUT_MILLIS);
       } catch (RejectedExecutionException e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                "Failed to call the executor. Performance collector will not be automatically finished. Did you call Sentry.close()?",
-                e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "Failed to call the executor. Performance collector will not be automatically finished. Did you call Sentry.close()?",
+                  e);
+        }
       }
     }
     start(transaction.getEventId().toString());
@@ -87,11 +97,15 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   @Override
   public void start(final @NotNull String id) {
     if (hasNoCollectors) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.INFO,
-              "No collector found. Performance stats will not be captured during transactions.");
+      if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+        if (options.getLogger().isEnabled(INFO)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.INFO,
+                  "No collector found. Performance stats will not be captured during transactions.");
+        }
+      }
       return;
     }
 
@@ -165,13 +179,15 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
 
   @Override
   public @Nullable List<PerformanceCollectionData> stop(final @NotNull ITransaction transaction) {
-    options
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "stop collecting performance info for transactions %s (%s)",
-            transaction.getName(),
-            transaction.getSpanContext().getTraceId().toString());
+    if (options.getLogger().isEnabled(DEBUG)) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "stop collecting performance info for transactions %s (%s)",
+              transaction.getName(),
+              transaction.getSpanContext().getTraceId().toString());
+    }
 
     for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {
       collector.onSpanFinished(transaction);
@@ -193,9 +209,11 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
 
   @Override
   public void close() {
-    options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "stop collecting all performance info for transactions");
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "stop collecting all performance info for transactions");
+    }
 
     performanceDataMap.clear();
     for (final @NotNull IPerformanceContinuousCollector collector : continuousCollectors) {

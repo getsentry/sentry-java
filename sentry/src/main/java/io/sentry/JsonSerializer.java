@@ -159,7 +159,9 @@ public final class JsonSerializer implements ISerializer {
         return (T) jsonObjectReader.nextObjectOrNull();
       }
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error when deserializing", e);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Error when deserializing", e);
+      }
       return null;
     }
   }
@@ -178,7 +180,9 @@ public final class JsonSerializer implements ISerializer {
         return null; // No way to deserialize objects we don't know about.
       }
     } catch (Exception e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error when deserializing", e);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Error when deserializing", e);
+      }
       return null;
     }
   }
@@ -189,7 +193,9 @@ public final class JsonSerializer implements ISerializer {
     try {
       return options.getEnvelopeReader().read(inputStream);
     } catch (IOException e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error deserializing envelope.", e);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Error deserializing envelope.", e);
+      }
       return null;
     }
   }
@@ -247,9 +253,11 @@ public final class JsonSerializer implements ISerializer {
 
           writer.write("\n");
         } catch (Exception exception) {
-          options
-              .getLogger()
-              .log(SentryLevel.ERROR, "Failed to create envelope item. Dropping it.", exception);
+          if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+            options
+                .getLogger()
+                .log(SentryLevel.ERROR, "Failed to create envelope item. Dropping it.", exception);
+          }
         }
       }
     } finally {

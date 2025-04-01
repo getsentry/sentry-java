@@ -454,7 +454,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
             if (sid != null && (sid.length() == 36 || sid.length() == 32)) {
               sessionId = sid;
             } else {
-              logger.log(SentryLevel.ERROR, "%s sid is not valid.", sid);
+              if (logger.isEnabled(SentryLevel.ERROR)) {
+                logger.log(SentryLevel.ERROR, "%s sid is not valid.", sid);
+              }
             }
             break;
           case JsonKeys.DID:
@@ -554,7 +556,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
     private Exception missingRequiredFieldException(String field, ILogger logger) {
       String message = "Missing required field \"" + field + "\"";
       Exception exception = new IllegalStateException(message);
-      logger.log(SentryLevel.ERROR, message, exception);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, message, exception);
+      }
       return exception;
     }
   }

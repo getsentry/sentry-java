@@ -181,11 +181,13 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
             try {
                 String(Base64.decode(it, Base64.NO_WRAP))
             } catch (e: Throwable) {
-                scopes.options.logger.log(
-                    SentryLevel.ERROR,
-                    "Error decoding internal apolloHeader $headerName",
-                    e
-                )
+                if (scopes.options.logger.isEnabled(SentryLevel.ERROR)) {
+                    scopes.options.logger.log(
+                        SentryLevel.ERROR,
+                        "Error decoding internal apolloHeader $headerName",
+                        e
+                    )
+                }
                 return null
             }
         }
@@ -220,11 +222,13 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
                         span.spanContext.sampled = false
                     }
                 } catch (e: Throwable) {
-                    scopes.options.logger.log(
-                        SentryLevel.ERROR,
-                        "An error occurred while executing beforeSpan in ApolloInterceptor",
-                        e
-                    )
+                    if (scopes.options.logger.isEnabled(SentryLevel.ERROR)) {
+                        scopes.options.logger.log(
+                            SentryLevel.ERROR,
+                            "An error occurred while executing beforeSpan in ApolloInterceptor",
+                            e
+                        )
+                    }
                 }
             }
             span.finish()
@@ -313,11 +317,13 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
             val body = try {
                 response.body?.peek()?.readUtf8() ?: ""
             } catch (e: Throwable) {
-                scopes.options.logger.log(
-                    SentryLevel.ERROR,
-                    "Error reading the response body.",
-                    e
-                )
+                if (scopes.options.logger.isEnabled(SentryLevel.ERROR)) {
+                    scopes.options.logger.log(
+                        SentryLevel.ERROR,
+                        "Error reading the response body.",
+                        e
+                    )
+                }
                 // bail out because the response body has the most important information
                 return
             }
@@ -384,11 +390,13 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
                         it.writeTo(buffer)
                         data = buffer.readUtf8()
                     } catch (e: Throwable) {
-                        scopes.options.logger.log(
-                            SentryLevel.ERROR,
-                            "Error reading the request body.",
-                            e
-                        )
+                        if (scopes.options.logger.isEnabled(SentryLevel.ERROR)) {
+                            scopes.options.logger.log(
+                                SentryLevel.ERROR,
+                                "Error reading the request body.",
+                                e
+                            )
+                        }
                         // continue because the response body alone can already give some insights
                     } finally {
                         buffer.close()
@@ -423,11 +431,13 @@ class SentryApollo4HttpInterceptor @JvmOverloads constructor(
 
             scopes.captureEvent(event, hint)
         } catch (e: Throwable) {
-            scopes.options.logger.log(
-                SentryLevel.ERROR,
-                "Error capturing the GraphQL error.",
-                e
-            )
+            if (scopes.options.logger.isEnabled(SentryLevel.ERROR)) {
+                scopes.options.logger.log(
+                    SentryLevel.ERROR,
+                    "Error capturing the GraphQL error.",
+                    e
+                )
+            }
         }
     }
 

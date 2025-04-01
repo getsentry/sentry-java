@@ -61,46 +61,54 @@ public final class OpenTelemetryLinkErrorEventProcessor implements EventProcesso
                   null);
 
           event.getContexts().setTrace(spanContext);
-          scopes
-              .getOptions()
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Linking Sentry event %s to span %s created via OpenTelemetry (trace %s).",
-                  event.getEventId(),
-                  spanId,
-                  traceId);
+          if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+            scopes
+                .getOptions()
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Linking Sentry event %s to span %s created via OpenTelemetry (trace %s).",
+                    event.getEventId(),
+                    spanId,
+                    traceId);
+          }
         } else {
-          scopes
-              .getOptions()
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Not linking Sentry event %s to any transaction created via OpenTelemetry as none has been found for span %s (trace %s).",
-                  event.getEventId(),
-                  spanId,
-                  traceId);
+          if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+            scopes
+                .getOptions()
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Not linking Sentry event %s to any transaction created via OpenTelemetry as none has been found for span %s (trace %s).",
+                    event.getEventId(),
+                    spanId,
+                    traceId);
+          }
         }
       } else {
+        if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+          scopes
+              .getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Not linking Sentry event %s to any transaction created via OpenTelemetry as traceId %s or spanId %s are invalid.",
+                  event.getEventId(),
+                  traceId,
+                  spanId);
+        }
+      }
+    } else {
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
         scopes
             .getOptions()
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
-                "Not linking Sentry event %s to any transaction created via OpenTelemetry as traceId %s or spanId %s are invalid.",
+                "Not linking Sentry event %s to any transaction created via OpenTelemetry as instrumenter is set to %s.",
                 event.getEventId(),
-                traceId,
-                spanId);
+                instrumenter);
       }
-    } else {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not linking Sentry event %s to any transaction created via OpenTelemetry as instrumenter is set to %s.",
-              event.getEventId(),
-              instrumenter);
     }
 
     return event;

@@ -1,5 +1,7 @@
 package io.sentry.config;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import java.io.BufferedInputStream;
@@ -33,8 +35,10 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
         }
       }
     } catch (IOException e) {
-      logger.log(
-          SentryLevel.ERROR, e, "Failed to load Sentry configuration from file: %s", filePath);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(
+            SentryLevel.ERROR, e, "Failed to load Sentry configuration from file: %s", filePath);
+      }
       return null;
     }
     return null;

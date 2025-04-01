@@ -34,13 +34,17 @@ public final class SpotlightIntegration
     if (options.getBeforeEnvelopeCallback() == null && options.isEnableSpotlight()) {
       executorService = new SentryExecutorService();
       options.setBeforeEnvelopeCallback(this);
-      logger.log(DEBUG, "SpotlightIntegration enabled.");
+      if (options.getLogger().isEnabled(DEBUG)) {
+        logger.log(DEBUG, "SpotlightIntegration enabled.");
+      }
       addIntegrationToSdkVersion("Spotlight");
     } else {
-      logger.log(
-          DEBUG,
-          "SpotlightIntegration is not enabled. "
-              + "BeforeEnvelopeCallback is already set or spotlight is not enabled.");
+      if (options.getLogger().isEnabled(DEBUG)) {
+        logger.log(
+            DEBUG,
+            "SpotlightIntegration is not enabled. "
+                + "BeforeEnvelopeCallback is already set or spotlight is not enabled.");
+      }
     }
   }
 
@@ -50,7 +54,9 @@ public final class SpotlightIntegration
     try {
       executorService.submit(() -> sendEnvelope(envelope));
     } catch (RejectedExecutionException e) {
-      logger.log(WARNING, "Spotlight envelope submission rejected.", e);
+      if (logger.isEnabled(WARNING)) {
+        logger.log(WARNING, "Spotlight envelope submission rejected.", e);
+      }
     }
   }
 
@@ -66,15 +72,23 @@ public final class SpotlightIntegration
           final GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {
         options.getSerializer().serialize(envelope, gzip);
       } catch (Throwable e) {
-        logger.log(
-            ERROR, "An exception occurred while submitting the envelope to the Sentry server.", e);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(
+              ERROR,
+              "An exception occurred while submitting the envelope to the Sentry server.",
+              e);
+        }
       } finally {
         final int responseCode = connection.getResponseCode();
-        logger.log(DEBUG, "Envelope sent to spotlight: %d", responseCode);
+        if (logger.isEnabled(DEBUG)) {
+          logger.log(DEBUG, "Envelope sent to spotlight: %d", responseCode);
+        }
         closeAndDisconnect(connection);
       }
     } catch (final Exception e) {
-      logger.log(ERROR, "An exception occurred while creating the connection to spotlight.", e);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(ERROR, "An exception occurred while creating the connection to spotlight.", e);
+      }
     }
   }
 

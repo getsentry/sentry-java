@@ -78,7 +78,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     final String cacheDirPath = options.getCacheDirPath();
     final int maxCacheItems = options.getMaxCacheItems();
     if (cacheDirPath == null) {
-      options.getLogger().log(WARNING, "cacheDirPath is null, returning NoOpEnvelopeCache");
+      if (options.getLogger().isEnabled(WARNING)) {
+        options.getLogger().log(WARNING, "cacheDirPath is null, returning NoOpEnvelopeCache");
+      }
       return NoOpEnvelopeCache.getInstance();
     } else {
       return new EnvelopeCache(options, cacheDirPath, maxCacheItems);
@@ -104,7 +106,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
     if (HintUtils.hasType(hint, SessionEnd.class)) {
       if (!currentSessionFile.delete()) {
-        options.getLogger().log(WARNING, "Current envelope doesn't exist.");
+        if (options.getLogger().isEnabled(WARNING)) {
+          options.getLogger().log(WARNING, "Current envelope doesn't exist.");
+        }
       }
     }
 
@@ -114,7 +118,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
     if (HintUtils.hasType(hint, SessionStart.class)) {
       if (currentSessionFile.exists()) {
-        options.getLogger().log(WARNING, "Current session is not ended, we'd need to end it.");
+        if (options.getLogger().isEnabled(WARNING)) {
+          options.getLogger().log(WARNING, "Current session is not ended, we'd need to end it.");
+        }
 
         try (final Reader reader =
             new BufferedReader(
@@ -124,7 +130,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
             writeSessionToDisk(previousSessionFile, session);
           }
         } catch (Throwable e) {
-          options.getLogger().log(SentryLevel.ERROR, "Error processing session.", e);
+          if (options.getLogger().isEnabled(ERROR)) {
+            options.getLogger().log(ERROR, "Error processing session.", e);
+          }
         }
       }
       updateCurrentSession(currentSessionFile, envelope);
@@ -139,18 +147,22 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       if (!crashedLastRun) {
         final File javaCrashMarkerFile = new File(options.getCacheDirPath(), CRASH_MARKER_FILE);
         if (javaCrashMarkerFile.exists()) {
-          options
-              .getLogger()
-              .log(INFO, "Crash marker file exists, crashedLastRun will return true.");
+          if (options.getLogger().isEnabled(INFO)) {
+            options
+                .getLogger()
+                .log(INFO, "Crash marker file exists, crashedLastRun will return true.");
+          }
 
           crashedLastRun = true;
           if (!javaCrashMarkerFile.delete()) {
-            options
-                .getLogger()
-                .log(
-                    ERROR,
-                    "Failed to delete the crash marker file. %s.",
-                    javaCrashMarkerFile.getAbsolutePath());
+            if (options.getLogger().isEnabled(ERROR)) {
+              options
+                  .getLogger()
+                  .log(
+                      ERROR,
+                      "Failed to delete the crash marker file. %s.",
+                      javaCrashMarkerFile.getAbsolutePath());
+            }
           }
         }
       }
@@ -165,17 +177,21 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
     final File envelopeFile = getEnvelopeFile(envelope);
     if (envelopeFile.exists()) {
-      options
-          .getLogger()
-          .log(
-              WARNING,
-              "Not adding Envelope to offline storage because it already exists: %s",
-              envelopeFile.getAbsolutePath());
+      if (options.getLogger().isEnabled(WARNING)) {
+        options
+            .getLogger()
+            .log(
+                WARNING,
+                "Not adding Envelope to offline storage because it already exists: %s",
+                envelopeFile.getAbsolutePath());
+      }
       return;
     } else {
-      options
-          .getLogger()
-          .log(DEBUG, "Adding Envelope to offline storage: %s", envelopeFile.getAbsolutePath());
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(DEBUG, "Adding Envelope to offline storage: %s", envelopeFile.getAbsolutePath());
+      }
     }
 
     writeEnvelopeToDisk(envelopeFile, envelope);
@@ -202,7 +218,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       final File previousSessionFile = getPreviousSessionFile(directory.getAbsolutePath());
 
       if (previousSessionFile.exists()) {
-        options.getLogger().log(WARNING, "Previous session is not ended, we'd need to end it.");
+        if (options.getLogger().isEnabled(WARNING)) {
+          options.getLogger().log(WARNING, "Previous session is not ended, we'd need to end it.");
+        }
 
         try (final Reader reader =
             new BufferedReader(
@@ -218,11 +236,13 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
               // sanity check if the abnormal exit actually happened when the session was alive
               final Date sessionStart = session.getStarted();
               if (sessionStart == null || timestamp.before(sessionStart)) {
-                options
-                    .getLogger()
-                    .log(
-                        WARNING,
-                        "Abnormal exit happened before previous session start, not ending the session.");
+                if (options.getLogger().isEnabled(WARNING)) {
+                  options
+                      .getLogger()
+                      .log(
+                          WARNING,
+                          "Abnormal exit happened before previous session start, not ending the session.");
+                }
                 return;
               }
             }
@@ -235,10 +255,14 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
             writeSessionToDisk(previousSessionFile, session);
           }
         } catch (Throwable e) {
-          options.getLogger().log(SentryLevel.ERROR, "Error processing previous session.", e);
+          if (options.getLogger().isEnabled(ERROR)) {
+            options.getLogger().log(ERROR, "Error processing previous session.", e);
+          }
         }
       } else {
-        options.getLogger().log(DEBUG, "No previous session file to end.");
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options.getLogger().log(DEBUG, "No previous session file to end.");
+        }
       }
     }
   }
@@ -250,7 +274,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       outputStream.write(timestamp.getBytes(UTF_8));
       outputStream.flush();
     } catch (Throwable e) {
-      options.getLogger().log(ERROR, "Error writing the crash marker file to the disk", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(ERROR, "Error writing the crash marker file to the disk", e);
+      }
     }
   }
 
@@ -268,60 +294,82 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
                 new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
           final Session session = serializer.getValue().deserialize(reader, Session.class);
           if (session == null) {
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.ERROR,
-                    "Item of type %s returned null by the parser.",
-                    item.getHeader().getType());
+            if (options.getLogger().isEnabled(ERROR)) {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.ERROR,
+                      "Item of type %s returned null by the parser.",
+                      item.getHeader().getType());
+            }
           } else {
             writeSessionToDisk(currentSessionFile, session);
           }
         } catch (Throwable e) {
-          options.getLogger().log(ERROR, "Item failed to process.", e);
+          if (options.getLogger().isEnabled(ERROR)) {
+            options.getLogger().log(ERROR, "Item failed to process.", e);
+          }
         }
       } else {
-        options
-            .getLogger()
-            .log(
-                INFO,
-                "Current envelope has a different envelope type %s",
-                item.getHeader().getType());
+        if (options.getLogger().isEnabled(INFO)) {
+          options
+              .getLogger()
+              .log(
+                  INFO,
+                  "Current envelope has a different envelope type %s",
+                  item.getHeader().getType());
+        }
       }
     } else {
-      options
-          .getLogger()
-          .log(INFO, "Current envelope %s is empty", currentSessionFile.getAbsolutePath());
+      if (options.getLogger().isEnabled(INFO)) {
+        options
+            .getLogger()
+            .log(INFO, "Current envelope %s is empty", currentSessionFile.getAbsolutePath());
+      }
     }
   }
 
   private void writeEnvelopeToDisk(
       final @NotNull File file, final @NotNull SentryEnvelope envelope) {
     if (file.exists()) {
-      options
-          .getLogger()
-          .log(DEBUG, "Overwriting envelope to offline storage: %s", file.getAbsolutePath());
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(DEBUG, "Overwriting envelope to offline storage: %s", file.getAbsolutePath());
+      }
       if (!file.delete()) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
+        }
       }
     }
 
     try (final OutputStream outputStream = new FileOutputStream(file)) {
       serializer.getValue().serialize(envelope, outputStream);
     } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(ERROR, e, "Error writing Envelope %s to offline storage", file.getAbsolutePath());
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(ERROR, e, "Error writing Envelope %s to offline storage", file.getAbsolutePath());
+      }
     }
   }
 
   private void writeSessionToDisk(final @NotNull File file, final @NotNull Session session) {
     if (file.exists()) {
-      options
-          .getLogger()
-          .log(DEBUG, "Overwriting session to offline storage: %s", session.getSessionId());
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(DEBUG, "Overwriting session to offline storage: %s", session.getSessionId());
+      }
       if (!file.delete()) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
+        }
       }
     }
 
@@ -329,9 +377,11 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       serializer.getValue().serialize(session, writer);
     } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(ERROR, e, "Error writing Session to offline storage: %s", session.getSessionId());
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(ERROR, e, "Error writing Session to offline storage: %s", session.getSessionId());
+      }
     }
   }
 
@@ -341,17 +391,25 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
     final File envelopeFile = getEnvelopeFile(envelope);
     if (envelopeFile.exists()) {
-      options
-          .getLogger()
-          .log(DEBUG, "Discarding envelope from cache: %s", envelopeFile.getAbsolutePath());
-
-      if (!envelopeFile.delete()) {
+      if (options.getLogger().isEnabled(DEBUG)) {
         options
             .getLogger()
-            .log(ERROR, "Failed to delete envelope: %s", envelopeFile.getAbsolutePath());
+            .log(DEBUG, "Discarding envelope from cache: %s", envelopeFile.getAbsolutePath());
+      }
+
+      if (!envelopeFile.delete()) {
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(ERROR, "Failed to delete envelope: %s", envelopeFile.getAbsolutePath());
+        }
       }
     } else {
-      options.getLogger().log(DEBUG, "Envelope was not cached: %s", envelopeFile.getAbsolutePath());
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(DEBUG, "Envelope was not cached: %s", envelopeFile.getAbsolutePath());
+      }
     }
   }
 
@@ -395,19 +453,24 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
 
         ret.add(serializer.getValue().deserializeEnvelope(is));
       } catch (FileNotFoundException e) {
-        options
-            .getLogger()
-            .log(
-                DEBUG,
-                "Envelope file '%s' disappeared while converting all cached files to envelopes.",
-                file.getAbsolutePath());
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  DEBUG,
+                  "Envelope file '%s' disappeared while converting all cached files to envelopes.",
+                  file.getAbsolutePath());
+        }
       } catch (IOException e) {
-        options
-            .getLogger()
-            .log(
-                ERROR,
-                format("Error while reading cached envelope from file %s", file.getAbsolutePath()),
-                e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(
+                  ERROR,
+                  format(
+                      "Error while reading cached envelope from file %s", file.getAbsolutePath()),
+                  e);
+        }
       }
     }
 
@@ -433,7 +496,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
           options.getSessionFlushTimeoutMillis(), TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      options.getLogger().log(DEBUG, "Timed out waiting for previous session to flush.");
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options.getLogger().log(DEBUG, "Timed out waiting for previous session to flush.");
+      }
     }
     return false;
   }

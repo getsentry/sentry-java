@@ -1,5 +1,8 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.WARNING;
+
 import io.sentry.vendor.gson.stream.JsonReader;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -87,7 +90,9 @@ public final class JsonObjectReader implements ObjectReader {
     try {
       unknown.put(name, nextObjectOrNull());
     } catch (Exception exception) {
-      logger.log(SentryLevel.ERROR, exception, "Error deserializing unknown key: %s", name);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, exception, "Error deserializing unknown key: %s", name);
+      }
     }
   }
 
@@ -105,7 +110,9 @@ public final class JsonObjectReader implements ObjectReader {
         try {
           list.add(deserializer.deserialize(this, logger));
         } catch (Exception e) {
-          logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
+          if (logger.isEnabled(WARNING)) {
+            logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
+          }
         }
       } while (jsonReader.peek() == JsonToken.BEGIN_OBJECT);
     }
@@ -128,7 +135,9 @@ public final class JsonObjectReader implements ObjectReader {
           String key = jsonReader.nextName();
           map.put(key, deserializer.deserialize(this, logger));
         } catch (Exception e) {
-          logger.log(SentryLevel.WARNING, "Failed to deserialize object in map.", e);
+          if (logger.isEnabled(WARNING)) {
+            logger.log(SentryLevel.WARNING, "Failed to deserialize object in map.", e);
+          }
         }
       } while (jsonReader.peek() == JsonToken.BEGIN_OBJECT || jsonReader.peek() == JsonToken.NAME);
     }
@@ -190,7 +199,9 @@ public final class JsonObjectReader implements ObjectReader {
     try {
       return TimeZone.getTimeZone(jsonReader.nextString());
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when deserializing TimeZone", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error when deserializing TimeZone", e);
+      }
     }
     return null;
   }

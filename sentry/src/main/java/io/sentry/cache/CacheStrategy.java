@@ -1,6 +1,7 @@
 package io.sentry.cache;
 
 import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.WARNING;
 
 import io.sentry.ISerializer;
 import io.sentry.SentryEnvelope;
@@ -61,12 +62,14 @@ abstract class CacheStrategy {
    */
   protected boolean isDirectoryValid() {
     if (!directory.isDirectory() || !directory.canWrite() || !directory.canRead()) {
-      options
-          .getLogger()
-          .log(
-              ERROR,
-              "The directory for caching files is inaccessible.: %s",
-              directory.getAbsolutePath());
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(
+                ERROR,
+                "The directory for caching files is inaccessible.: %s",
+                directory.getAbsolutePath());
+      }
       return false;
     }
     return true;
@@ -92,9 +95,11 @@ abstract class CacheStrategy {
   protected void rotateCacheIfNeeded(final @NotNull File[] files) {
     final int length = files.length;
     if (length >= maxSize) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Cache folder if full (respecting maxSize). Rotating files");
+      if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Cache folder if full (respecting maxSize). Rotating files");
+      }
       final int totalToBeDeleted = (length - maxSize) + 1;
 
       sortFilesOldestToNewest(files);
@@ -109,9 +114,11 @@ abstract class CacheStrategy {
         moveInitFlagIfNecessary(file, notDeletedFiles);
 
         if (!file.delete()) {
-          options
-              .getLogger()
-              .log(SentryLevel.WARNING, "File can't be deleted: %s", file.getAbsolutePath());
+          if (options.getLogger().isEnabled(WARNING)) {
+            options
+                .getLogger()
+                .log(SentryLevel.WARNING, "File can't be deleted: %s", file.getAbsolutePath());
+          }
         }
       }
     }
@@ -167,9 +174,11 @@ abstract class CacheStrategy {
 
         final Boolean init = session.getInit();
         if (init != null && init) {
-          options
-              .getLogger()
-              .log(ERROR, "Session %s has 2 times the init flag.", currentSession.getSessionId());
+          if (options.getLogger().isEnabled(ERROR)) {
+            options
+                .getLogger()
+                .log(ERROR, "Session %s has 2 times the init flag.", currentSession.getSessionId());
+          }
           return;
         }
 
@@ -182,13 +191,15 @@ abstract class CacheStrategy {
             // init flag true
             itemsIterator.remove();
           } catch (IOException e) {
-            options
-                .getLogger()
-                .log(
-                    ERROR,
-                    e,
-                    "Failed to create new envelope item for the session %s",
-                    currentSession.getSessionId());
+            if (options.getLogger().isEnabled(ERROR)) {
+              options
+                  .getLogger()
+                  .log(
+                      ERROR,
+                      e,
+                      "Failed to create new envelope item for the session %s",
+                      currentSession.getSessionId());
+            }
           }
 
           break;
@@ -200,12 +211,14 @@ abstract class CacheStrategy {
 
         long notDeletedFileTimestamp = notDeletedFile.lastModified();
         if (!notDeletedFile.delete()) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.WARNING,
-                  "File can't be deleted: %s",
-                  notDeletedFile.getAbsolutePath());
+          if (options.getLogger().isEnabled(WARNING)) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "File can't be deleted: %s",
+                    notDeletedFile.getAbsolutePath());
+          }
         }
 
         saveNewEnvelope(newEnvelope, notDeletedFile, notDeletedFileTimestamp);
@@ -218,7 +231,9 @@ abstract class CacheStrategy {
     try (final InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
       return serializer.getValue().deserializeEnvelope(inputStream);
     } catch (IOException e) {
-      options.getLogger().log(ERROR, "Failed to deserialize the envelope.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(ERROR, "Failed to deserialize the envelope.", e);
+      }
     }
 
     return null;
@@ -260,7 +275,9 @@ abstract class CacheStrategy {
             new InputStreamReader(new ByteArrayInputStream(item.getData()), UTF_8))) {
       return serializer.getValue().deserialize(reader, Session.class);
     } catch (Throwable e) {
-      options.getLogger().log(ERROR, "Failed to deserialize the session.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(ERROR, "Failed to deserialize the session.", e);
+      }
     }
     return null;
   }
@@ -272,7 +289,9 @@ abstract class CacheStrategy {
       // we need to set the same timestamp so the sorting from oldest to newest wont break.
       file.setLastModified(timestamp);
     } catch (Throwable e) {
-      options.getLogger().log(ERROR, "Failed to serialize the new envelope to the disk.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(ERROR, "Failed to serialize the new envelope to the disk.", e);
+      }
     }
   }
 

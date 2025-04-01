@@ -1,5 +1,8 @@
 package io.sentry.transport;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.DateUtils;
 import io.sentry.Hint;
 import io.sentry.ILogger;
@@ -83,7 +86,9 @@ public final class AsyncHttpTransport implements ITransport {
     if (HintUtils.hasType(hint, Cached.class)) {
       currentEnvelopeCache = NoOpEnvelopeCache.getInstance();
       cached = true;
-      options.getLogger().log(SentryLevel.DEBUG, "Captured Envelope is already cached");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "Captured Envelope is already cached");
+      }
     }
 
     final SentryEnvelope filteredEnvelope = rateLimiter.filter(envelope, hint);
@@ -116,7 +121,9 @@ public final class AsyncHttpTransport implements ITransport {
             Enqueable.class,
             enqueable -> {
               enqueable.markEnqueued();
-              options.getLogger().log(SentryLevel.DEBUG, "Envelope enqueued");
+              if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+                options.getLogger().log(SentryLevel.DEBUG, "Envelope enqueued");
+              }
             });
       }
     }
@@ -143,7 +150,9 @@ public final class AsyncHttpTransport implements ITransport {
             }
 
             markHintWhenSendingFailed(envelopeSender.hint, true);
-            logger.log(SentryLevel.WARNING, "Envelope rejected");
+            if (logger.isEnabled(SentryLevel.WARNING)) {
+              logger.log(SentryLevel.WARNING, "Envelope rejected");
+            }
           }
         };
 
@@ -172,18 +181,22 @@ public final class AsyncHttpTransport implements ITransport {
   public void close(final boolean isRestarting) throws IOException {
     rateLimiter.close();
     executor.shutdown();
-    options.getLogger().log(SentryLevel.DEBUG, "Shutting down");
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      options.getLogger().log(SentryLevel.DEBUG, "Shutting down");
+    }
     try {
       // We need a small timeout to be able to save to disk any rejected envelope
       long timeout = isRestarting ? 0 : options.getFlushTimeoutMillis();
       if (!executor.awaitTermination(timeout, TimeUnit.MILLISECONDS)) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "Failed to shutdown the async connection async sender  within "
-                    + timeout
-                    + " ms. Trying to force it now.");
+        if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Failed to shutdown the async connection async sender  within "
+                      + timeout
+                      + " ms. Trying to force it now.");
+        }
         executor.shutdownNow();
         if (currentRunnable != null) {
           // We store to disk any envelope that is currently being sent
@@ -192,9 +205,11 @@ public final class AsyncHttpTransport implements ITransport {
       }
     } catch (InterruptedException e) {
       // ok, just give up then...
-      options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Thread interrupted while closing the connection.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Thread interrupted while closing the connection.");
+      }
       Thread.currentThread().interrupt();
     }
   }
@@ -242,9 +257,13 @@ public final class AsyncHttpTransport implements ITransport {
       TransportResult result = this.failedResult;
       try {
         result = flush();
-        options.getLogger().log(SentryLevel.DEBUG, "Envelope flushed");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "Envelope flushed");
+        }
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, e, "Envelope submission failed");
+        if (options.getLogger().isEnabled(ERROR)) {
+          options.getLogger().log(SentryLevel.ERROR, e, "Envelope submission failed");
+        }
         throw e;
       } finally {
         final TransportResult finalResult = result;
@@ -252,12 +271,14 @@ public final class AsyncHttpTransport implements ITransport {
             hint,
             SubmissionResult.class,
             (submissionResult) -> {
-              options
-                  .getLogger()
-                  .log(
-                      SentryLevel.DEBUG,
-                      "Marking envelope submission result: %s",
-                      finalResult.isSuccess());
+              if (options.getLogger().isEnabled(DEBUG)) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.DEBUG,
+                        "Marking envelope submission result: %s",
+                        finalResult.isSuccess());
+              }
               submissionResult.setResult(finalResult.isSuccess());
             });
         currentRunnable = null;
@@ -276,13 +297,17 @@ public final class AsyncHttpTransport implements ITransport {
           (diskFlushNotification) -> {
             if (diskFlushNotification.isFlushable(envelope.getHeader().getEventId())) {
               diskFlushNotification.markFlushed();
-              options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
+              if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+                options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired");
+              }
             } else {
-              options
-                  .getLogger()
-                  .log(
-                      SentryLevel.DEBUG,
-                      "Not firing envelope flush as there's an ongoing transaction");
+              if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.DEBUG,
+                        "Not firing envelope flush as there's an ongoing transaction");
+              }
             }
           });
 
@@ -304,7 +329,9 @@ public final class AsyncHttpTransport implements ITransport {
                 "The transport failed to send the envelope with response code "
                     + result.getResponseCode();
 
-            options.getLogger().log(SentryLevel.ERROR, message);
+            if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+              options.getLogger().log(SentryLevel.ERROR, message);
+            }
 
             // ignore e.g. 429 as we're not the ones actively dropping
             if (result.getResponseCode() >= 400 && result.getResponseCode() != 429) {

@@ -48,7 +48,9 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
                 }
               });
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setUser has an error.");
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setUser has an error.");
+      }
     }
   }
 
@@ -72,9 +74,11 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
                     data = options.getSerializer().serialize(dataRef);
                   }
                 } catch (Throwable e) {
-                  options
-                      .getLogger()
-                      .log(SentryLevel.ERROR, e, "Breadcrumb data is not serializable.");
+                  if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+                    options
+                        .getLogger()
+                        .log(SentryLevel.ERROR, e, "Breadcrumb data is not serializable.");
+                  }
                 }
 
                 nativeScope.addBreadcrumb(
@@ -86,7 +90,9 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
                     data);
               });
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync addBreadcrumb has an error.");
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Scope sync addBreadcrumb has an error.");
+      }
     }
   }
 
@@ -95,7 +101,9 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
     try {
       options.getExecutorService().submit(() -> nativeScope.setTag(key, value));
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTag(%s) has an error.", key);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTag(%s) has an error.", key);
+      }
     }
   }
 
@@ -104,7 +112,11 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
     try {
       options.getExecutorService().submit(() -> nativeScope.removeTag(key));
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync removeTag(%s) has an error.", key);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, e, "Scope sync removeTag(%s) has an error.", key);
+      }
     }
   }
 
@@ -113,7 +125,9 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
     try {
       options.getExecutorService().submit(() -> nativeScope.setExtra(key, value));
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setExtra(%s) has an error.", key);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setExtra(%s) has an error.", key);
+      }
     }
   }
 
@@ -122,9 +136,11 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
     try {
       options.getExecutorService().submit(() -> nativeScope.removeExtra(key));
     } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, e, "Scope sync removeExtra(%s) has an error.", key);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, e, "Scope sync removeExtra(%s) has an error.", key);
+      }
     }
   }
 
@@ -142,7 +158,9 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
                   nativeScope.setTrace(
                       spanContext.getTraceId().toString(), spanContext.getSpanId().toString()));
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTrace failed.");
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTrace failed.");
+      }
     }
   }
 }

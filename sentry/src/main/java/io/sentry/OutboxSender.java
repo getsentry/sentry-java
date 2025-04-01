@@ -1,6 +1,8 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.WARNING;
 import static io.sentry.cache.EnvelopeCache.PREFIX_CURRENT_SESSION_FILE;
 import static io.sentry.cache.EnvelopeCache.PREFIX_PREVIOUS_SESSION_FILE;
 
@@ -60,23 +62,31 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
     Objects.requireNonNull(file, "File is required.");
 
     if (!isRelevantFileName(file.getName())) {
-      logger.log(SentryLevel.DEBUG, "File '%s' should be ignored.", file.getAbsolutePath());
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "File '%s' should be ignored.", file.getAbsolutePath());
+      }
       return;
     }
 
     try (final InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
       final SentryEnvelope envelope = envelopeReader.read(stream);
       if (envelope == null) {
-        logger.log(
-            SentryLevel.ERROR,
-            "Stream from path %s resulted in a null envelope.",
-            file.getAbsolutePath());
+        if (logger.isEnabled(ERROR)) {
+          logger.log(
+              SentryLevel.ERROR,
+              "Stream from path %s resulted in a null envelope.",
+              file.getAbsolutePath());
+        }
       } else {
         processEnvelope(envelope, hint);
-        logger.log(SentryLevel.DEBUG, "File '%s' is done.", file.getAbsolutePath());
+        if (logger.isEnabled(SentryLevel.DEBUG)) {
+          logger.log(SentryLevel.DEBUG, "File '%s' is done.", file.getAbsolutePath());
+        }
       }
     } catch (IOException e) {
-      logger.log(SentryLevel.ERROR, "Error processing envelope.", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error processing envelope.", e);
+      }
     } finally {
       HintUtils.runIfHasTypeLogIfNot(
           hint,
@@ -86,10 +96,14 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             if (!retryable.isRetry()) {
               try {
                 if (!file.delete()) {
-                  logger.log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
+                  if (logger.isEnabled(ERROR)) {
+                    logger.log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
+                  }
                 }
               } catch (RuntimeException e) {
-                logger.log(SentryLevel.ERROR, e, "Failed to delete: %s", file.getAbsolutePath());
+                if (logger.isEnabled(ERROR)) {
+                  logger.log(SentryLevel.ERROR, e, "Failed to delete: %s", file.getAbsolutePath());
+                }
               }
             }
           });
@@ -115,17 +129,21 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
 
   private void processEnvelope(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint)
       throws IOException {
-    logger.log(
-        SentryLevel.DEBUG,
-        "Processing Envelope with %d item(s)",
-        CollectionUtils.size(envelope.getItems()));
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(
+          SentryLevel.DEBUG,
+          "Processing Envelope with %d item(s)",
+          CollectionUtils.size(envelope.getItems()));
+    }
     int currentItem = 0;
 
     for (final SentryEnvelopeItem item : envelope.getItems()) {
       currentItem++;
 
       if (item.getHeader() == null) {
-        logger.log(SentryLevel.ERROR, "Item %d has no header", currentItem);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(SentryLevel.ERROR, "Item %d has no header", currentItem);
+        }
         continue;
       }
       if (SentryItemType.Event.equals(item.getHeader().getType())) {
@@ -153,7 +171,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             }
           }
         } catch (Throwable e) {
-          logger.log(ERROR, "Item failed to process.", e);
+          if (logger.isEnabled(ERROR)) {
+            logger.log(ERROR, "Item failed to process.", e);
+          }
         }
       } else if (SentryItemType.Transaction.equals(item.getHeader().getType())) {
         try (final Reader reader =
@@ -190,7 +210,9 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             }
           }
         } catch (Throwable e) {
-          logger.log(ERROR, "Item failed to process.", e);
+          if (logger.isEnabled(ERROR)) {
+            logger.log(ERROR, "Item failed to process.", e);
+          }
         }
       } else {
         // send unknown item types over the wire
@@ -198,17 +220,21 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             new SentryEnvelope(
                 envelope.getHeader().getEventId(), envelope.getHeader().getSdkVersion(), item);
         scopes.captureEnvelope(newEnvelope, hint);
-        logger.log(
-            SentryLevel.DEBUG,
-            "%s item %d is being captured.",
-            item.getHeader().getType().getItemType(),
-            currentItem);
+        if (logger.isEnabled(DEBUG)) {
+          logger.log(
+              SentryLevel.DEBUG,
+              "%s item %d is being captured.",
+              item.getHeader().getType().getItemType(),
+              currentItem);
+        }
 
         if (!waitFlush(hint)) {
-          logger.log(
-              SentryLevel.WARNING,
-              "Timed out waiting for item type submission: %s",
-              item.getHeader().getType().getItemType());
+          if (logger.isEnabled(WARNING)) {
+            logger.log(
+                SentryLevel.WARNING,
+                "Timed out waiting for item type submission: %s",
+                item.getHeader().getType().getItemType());
+          }
           break;
         }
       }
@@ -218,10 +244,12 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         if (!((SubmissionResult) sentrySdkHint).isSuccess()) {
           // Failed to send an item of the envelope: Stop attempting to send the rest (an attachment
           // without the event that created it isn't useful)
-          logger.log(
-              SentryLevel.WARNING,
-              "Envelope had a failed capture at item %d. No more items will be sent.",
-              currentItem);
+          if (logger.isEnabled(WARNING)) {
+            logger.log(
+                SentryLevel.WARNING,
+                "Envelope had a failed capture at item %d. No more items will be sent.",
+                currentItem);
+          }
           break;
         }
       }
@@ -239,10 +267,12 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         try {
           final Double sampleRate = Double.parseDouble(sampleRateString);
           if (!SampleRateUtils.isValidTracesSampleRate(sampleRate, false)) {
-            logger.log(
-                SentryLevel.ERROR,
-                "Invalid sample rate parsed from TraceContext: %s",
-                sampleRateString);
+            if (logger.isEnabled(ERROR)) {
+              logger.log(
+                  SentryLevel.ERROR,
+                  "Invalid sample rate parsed from TraceContext: %s",
+                  sampleRateString);
+            }
           } else {
             final @Nullable String sampleRandString = traceContext.getSampleRand();
             if (sampleRandString != null) {
@@ -256,10 +286,12 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
                 new TracesSamplingDecision(true, sampleRate));
           }
         } catch (Exception e) {
-          logger.log(
-              SentryLevel.ERROR,
-              "Unable to parse sample rate from TraceContext: %s",
-              sampleRateString);
+          if (logger.isEnabled(ERROR)) {
+            logger.log(
+                SentryLevel.ERROR,
+                "Unable to parse sample rate from TraceContext: %s",
+                sampleRateString);
+          }
         }
       }
     }
@@ -268,29 +300,37 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
   }
 
   private void logEnvelopeItemNull(final @NotNull SentryEnvelopeItem item, int itemIndex) {
-    logger.log(
-        SentryLevel.ERROR,
-        "Item %d of type %s returned null by the parser.",
-        itemIndex,
-        item.getHeader().getType());
+    if (logger.isEnabled(ERROR)) {
+      logger.log(
+          SentryLevel.ERROR,
+          "Item %d of type %s returned null by the parser.",
+          itemIndex,
+          item.getHeader().getType());
+    }
   }
 
   private void logUnexpectedEventId(
       final @NotNull SentryEnvelope envelope, final @Nullable SentryId eventId, int itemIndex) {
-    logger.log(
-        SentryLevel.ERROR,
-        "Item %d of has a different event id (%s) to the envelope header (%s)",
-        itemIndex,
-        envelope.getHeader().getEventId(),
-        eventId);
+    if (logger.isEnabled(ERROR)) {
+      logger.log(
+          SentryLevel.ERROR,
+          "Item %d of has a different event id (%s) to the envelope header (%s)",
+          itemIndex,
+          envelope.getHeader().getEventId(),
+          eventId);
+    }
   }
 
   private void logItemCaptured(int itemIndex) {
-    logger.log(SentryLevel.DEBUG, "Item %d is being captured.", itemIndex);
+    if (logger.isEnabled(DEBUG)) {
+      logger.log(SentryLevel.DEBUG, "Item %d is being captured.", itemIndex);
+    }
   }
 
   private void logTimeout(final @Nullable SentryId eventId) {
-    logger.log(SentryLevel.WARNING, "Timed out waiting for event id submission: %s", eventId);
+    if (logger.isEnabled(WARNING)) {
+      logger.log(SentryLevel.WARNING, "Timed out waiting for event id submission: %s", eventId);
+    }
   }
 
   private boolean waitFlush(final @NotNull Hint hint) {

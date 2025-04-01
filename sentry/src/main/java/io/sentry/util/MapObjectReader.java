@@ -34,7 +34,9 @@ public final class MapObjectReader implements ObjectReader {
     try {
       unknown.put(name, nextObjectOrNull());
     } catch (Exception exception) {
-      logger.log(SentryLevel.ERROR, exception, "Error deserializing unknown key: %s", name);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, exception, "Error deserializing unknown key: %s", name);
+      }
     }
   }
 
@@ -55,7 +57,9 @@ public final class MapObjectReader implements ObjectReader {
           try {
             list.add(deserializer.deserialize(this, logger));
           } catch (Exception e) {
-            logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
+            if (logger.isEnabled(SentryLevel.WARNING)) {
+              logger.log(SentryLevel.WARNING, "Failed to deserialize object in list.", e);
+            }
           }
         } while (peek() == JsonToken.BEGIN_OBJECT);
       }
@@ -84,7 +88,9 @@ public final class MapObjectReader implements ObjectReader {
             String key = nextName();
             map.put(key, deserializer.deserialize(this, logger));
           } catch (Exception e) {
-            logger.log(SentryLevel.WARNING, "Failed to deserialize object in map.", e);
+            if (logger.isEnabled(SentryLevel.WARNING)) {
+              logger.log(SentryLevel.WARNING, "Failed to deserialize object in map.", e);
+            }
           }
         } while (peek() == JsonToken.BEGIN_OBJECT || peek() == JsonToken.NAME);
       }

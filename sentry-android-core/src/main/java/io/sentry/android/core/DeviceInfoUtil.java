@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static android.os.BatteryManager.EXTRA_TEMPERATURE;
+import static io.sentry.SentryLevel.ERROR;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
@@ -263,7 +264,9 @@ public final class DeviceInfoUtil {
       // currentTimeMillis returns UTC already
       return DateUtils.getDateTime(System.currentTimeMillis() - SystemClock.elapsedRealtime());
     } catch (IllegalArgumentException e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Error getting the device's boot time.");
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Error getting the device's boot time.");
+      }
     }
     return null;
   }
@@ -294,7 +297,9 @@ public final class DeviceInfoUtil {
 
       return ((float) level / (float) scale) * percentMultiplier;
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting device battery level.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Error getting device battery level.", e);
+      }
       return null;
     }
   }
@@ -312,7 +317,9 @@ public final class DeviceInfoUtil {
       return plugged == BatteryManager.BATTERY_PLUGGED_AC
           || plugged == BatteryManager.BATTERY_PLUGGED_USB;
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting device charging state.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Error getting device charging state.", e);
+      }
       return null;
     }
   }
@@ -325,7 +332,9 @@ public final class DeviceInfoUtil {
         return ((float) temperature) / 10; // celsius
       }
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting battery temperature.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Error getting battery temperature.", e);
+      }
     }
     return null;
   }
@@ -342,15 +351,19 @@ public final class DeviceInfoUtil {
       deviceOrientation =
           DeviceOrientations.getOrientation(context.getResources().getConfiguration().orientation);
       if (deviceOrientation == null) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.INFO,
-                "No device orientation available (ORIENTATION_SQUARE|ORIENTATION_UNDEFINED)");
+        if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.INFO,
+                  "No device orientation available (ORIENTATION_SQUARE|ORIENTATION_UNDEFINED)");
+        }
         return null;
       }
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting device orientation.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Error getting device orientation.", e);
+      }
     }
     return deviceOrientation;
   }
@@ -367,7 +380,11 @@ public final class DeviceInfoUtil {
       long totalBlocks = stat.getBlockCountLong();
       return totalBlocks * blockSize;
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting total internal storage amount.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error getting total internal storage amount.", e);
+      }
       return null;
     }
   }
@@ -384,9 +401,11 @@ public final class DeviceInfoUtil {
       long availableBlocks = stat.getAvailableBlocksLong();
       return availableBlocks * blockSize;
     } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Error getting unused internal storage amount.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error getting unused internal storage amount.", e);
+      }
       return null;
     }
   }
@@ -399,7 +418,9 @@ public final class DeviceInfoUtil {
         return new StatFs(path.getPath());
       }
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.INFO, "Not possible to read external files directory");
+      if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+        options.getLogger().log(SentryLevel.INFO, "Not possible to read external files directory");
+      }
     }
     return null;
   }
@@ -429,7 +450,9 @@ public final class DeviceInfoUtil {
         return file;
       }
     } else {
-      options.getLogger().log(SentryLevel.INFO, "Not possible to read getExternalFilesDirs");
+      if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+        options.getLogger().log(SentryLevel.INFO, "Not possible to read getExternalFilesDirs");
+      }
     }
     return null;
   }
@@ -447,7 +470,11 @@ public final class DeviceInfoUtil {
       final long totalBlocks = stat.getBlockCountLong();
       return totalBlocks * blockSize;
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting total external storage amount.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error getting total external storage amount.", e);
+      }
       return null;
     }
   }
@@ -465,9 +492,11 @@ public final class DeviceInfoUtil {
       final long availableBlocks = stat.getAvailableBlocksLong();
       return availableBlocks * blockSize;
     } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Error getting unused external storage amount.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error getting unused external storage amount.", e);
+      }
       return null;
     }
   }

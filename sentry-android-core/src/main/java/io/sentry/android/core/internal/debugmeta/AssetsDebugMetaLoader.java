@@ -1,5 +1,7 @@
 package io.sentry.android.core.internal.debugmeta;
 
+import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.INFO;
 import static io.sentry.util.DebugMetaPropertiesApplier.DEBUG_META_PROPERTIES_FILENAME;
 
 import android.content.Context;
@@ -41,11 +43,17 @@ public final class AssetsDebugMetaLoader implements IDebugMetaLoader {
       properties.load(is);
       return Collections.singletonList(properties);
     } catch (FileNotFoundException e) {
-      logger.log(SentryLevel.INFO, e, "%s file was not found.", DEBUG_META_PROPERTIES_FILENAME);
+      if (logger.isEnabled(INFO)) {
+        logger.log(SentryLevel.INFO, e, "%s file was not found.", DEBUG_META_PROPERTIES_FILENAME);
+      }
     } catch (IOException e) {
-      logger.log(SentryLevel.ERROR, "Error getting Proguard UUIDs.", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error getting Proguard UUIDs.", e);
+      }
     } catch (RuntimeException e) {
-      logger.log(SentryLevel.ERROR, e, "%s file is malformed.", DEBUG_META_PROPERTIES_FILENAME);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, e, "%s file is malformed.", DEBUG_META_PROPERTIES_FILENAME);
+      }
     }
 
     return null;

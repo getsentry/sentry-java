@@ -29,9 +29,11 @@ public final class TracesSampler {
       try {
         profilesSampleRate = options.getProfilesSampler().sample(samplingContext);
       } catch (Throwable t) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Error in the 'ProfilesSamplerCallback' callback.", t);
+        if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Error in the 'ProfilesSamplerCallback' callback.", t);
+        }
       }
     }
     if (profilesSampleRate == null) {
@@ -44,9 +46,11 @@ public final class TracesSampler {
       try {
         samplerResult = options.getTracesSampler().sample(samplingContext);
       } catch (Throwable t) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Error in the 'TracesSamplerCallback' callback.", t);
+        if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Error in the 'TracesSamplerCallback' callback.", t);
+        }
       }
       if (samplerResult != null) {
         return new TracesSamplingDecision(

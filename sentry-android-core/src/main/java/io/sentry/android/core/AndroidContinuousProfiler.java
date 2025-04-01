@@ -83,16 +83,20 @@ public class AndroidContinuousProfiler
     }
     isInitialized = true;
     if (profilingTracesDirPath == null) {
-      logger.log(
-          SentryLevel.WARNING,
-          "Disabling profiling because no profiling traces dir path is defined in options.");
+      if (logger.isEnabled(SentryLevel.WARNING)) {
+        logger.log(
+            SentryLevel.WARNING,
+            "Disabling profiling because no profiling traces dir path is defined in options.");
+      }
       return;
     }
     if (profilingTracesHz <= 0) {
-      logger.log(
-          SentryLevel.WARNING,
-          "Disabling profiling because trace rate is set to %d",
-          profilingTracesHz);
+      if (logger.isEnabled(SentryLevel.WARNING)) {
+        logger.log(
+            SentryLevel.WARNING,
+            "Disabling profiling because trace rate is set to %d",
+            profilingTracesHz);
+      }
       return;
     }
 
@@ -114,7 +118,9 @@ public class AndroidContinuousProfiler
       shouldSample = false;
     }
     if (!isSampled) {
-      logger.log(SentryLevel.DEBUG, "Profiler was not started due to sampling decision.");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "Profiler was not started due to sampling decision.");
+      }
       return;
     }
     switch (profileLifecycle) {
@@ -130,13 +136,17 @@ public class AndroidContinuousProfiler
         // We check if the profiler is already running and log a message only in manual mode, since
         // in trace mode we can have multiple concurrent traces
         if (isRunning()) {
-          logger.log(SentryLevel.DEBUG, "Profiler is already running.");
+          if (logger.isEnabled(SentryLevel.DEBUG)) {
+            logger.log(SentryLevel.DEBUG, "Profiler is already running.");
+          }
           return;
         }
         break;
     }
     if (!isRunning()) {
-      logger.log(SentryLevel.DEBUG, "Started Profiler.");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "Started Profiler.");
+      }
       start();
     }
   }
@@ -169,7 +179,9 @@ public class AndroidContinuousProfiler
       if (rateLimiter != null
           && (rateLimiter.isActiveForCategory(All)
               || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk))) {
-        logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
+        if (logger.isEnabled(SentryLevel.WARNING)) {
+          logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
+        }
         // Let's stop and reset profiler id, as the profile is now broken anyway
         stop(false);
         return;
@@ -177,7 +189,9 @@ public class AndroidContinuousProfiler
 
       // If device is offline, we don't start the profiler, to avoid flooding the cache
       if (scopes.getOptions().getConnectionStatusProvider().getConnectionStatus() == DISCONNECTED) {
-        logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
+        if (logger.isEnabled(SentryLevel.WARNING)) {
+          logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
+        }
         // Let's stop and reset profiler id, as the profile is now broken anyway
         stop(false);
         return;
@@ -209,10 +223,12 @@ public class AndroidContinuousProfiler
     try {
       stopFuture = executorService.schedule(() -> stop(true), MAX_CHUNK_DURATION_MILLIS);
     } catch (RejectedExecutionException e) {
-      logger.log(
-          SentryLevel.ERROR,
-          "Failed to schedule profiling chunk finish. Did you call Sentry.close()?",
-          e);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(
+            SentryLevel.ERROR,
+            "Failed to schedule profiling chunk finish. Did you call Sentry.close()?",
+            e);
+      }
     }
   }
 
@@ -266,9 +282,11 @@ public class AndroidContinuousProfiler
 
     // check if profiler end successfully
     if (endData == null) {
-      logger.log(
-          SentryLevel.ERROR,
-          "An error occurred while collecting a profile chunk, and it won't be sent.");
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(
+            SentryLevel.ERROR,
+            "An error occurred while collecting a profile chunk, and it won't be sent.");
+      }
     } else {
       // The scopes can be null if the profiler is started before the SDK is initialized (app start
       //  profiling), meaning there's no scopes to send the chunks. In that case, we store the data
@@ -293,12 +311,16 @@ public class AndroidContinuousProfiler
     }
 
     if (restartProfiler) {
-      logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "Profile chunk finished. Starting a new one.");
+      }
       start();
     } else {
       // When the profiler is stopped manually, we have to reset its id
       profilerId = SentryId.EMPTY_ID;
-      logger.log(SentryLevel.DEBUG, "Profile chunk finished.");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "Profile chunk finished.");
+      }
     }
   }
 
@@ -339,7 +361,9 @@ public class AndroidContinuousProfiler
                 }
               });
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunks.", e);
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunks.", e);
+      }
     }
   }
 
@@ -364,7 +388,9 @@ public class AndroidContinuousProfiler
     // We stop the profiler as soon as we are rate limited, to avoid the performance overhead
     if (rateLimiter.isActiveForCategory(All)
         || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)) {
-      logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
+      if (logger.isEnabled(SentryLevel.WARNING)) {
+        logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
+      }
       stop(false);
     }
     // If we are not rate limited anymore, we don't do anything: the profile is broken, so it's

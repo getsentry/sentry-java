@@ -22,15 +22,15 @@ public class LoadClass {
     try {
       return Class.forName(clazz);
     } catch (ClassNotFoundException e) {
-      if (logger != null) {
+      if (logger != null && logger.isEnabled(SentryLevel.DEBUG)) {
         logger.log(SentryLevel.DEBUG, "Class not available:" + clazz, e);
       }
     } catch (UnsatisfiedLinkError e) {
-      if (logger != null) {
+      if (logger != null && logger.isEnabled(SentryLevel.ERROR)) {
         logger.log(SentryLevel.ERROR, "Failed to load (UnsatisfiedLinkError) " + clazz, e);
       }
     } catch (Throwable e) {
-      if (logger != null) {
+      if (logger != null && logger.isEnabled(SentryLevel.ERROR)) {
         logger.log(SentryLevel.ERROR, "Failed to initialize " + clazz, e);
       }
     }

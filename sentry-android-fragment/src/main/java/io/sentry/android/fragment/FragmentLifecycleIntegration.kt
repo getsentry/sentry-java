@@ -55,14 +55,18 @@ public class FragmentLifecycleIntegration(
         this.options = options
 
         application.registerActivityLifecycleCallbacks(this)
-        options.logger.log(DEBUG, "FragmentLifecycleIntegration installed.")
+        if (options.logger.isEnabled(DEBUG)) {
+            options.logger.log(DEBUG, "FragmentLifecycleIntegration installed.")
+        }
         addIntegrationToSdkVersion("FragmentLifecycle")
     }
 
     override fun close() {
         application.unregisterActivityLifecycleCallbacks(this)
         if (::options.isInitialized) {
-            options.logger.log(DEBUG, "FragmentLifecycleIntegration removed.")
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(DEBUG, "FragmentLifecycleIntegration removed.")
+            }
         }
     }
 

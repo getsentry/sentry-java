@@ -78,12 +78,14 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
 
-    this.options
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "SystemEventsBreadcrumbsIntegration enabled: %s",
-            this.options.isEnableSystemEventBreadcrumbs());
+    if (this.options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      this.options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "SystemEventsBreadcrumbsIntegration enabled: %s",
+              this.options.isEnableSystemEventBreadcrumbs());
+    }
 
     if (this.options.isEnableSystemEventBreadcrumbs()) {
 
@@ -99,12 +101,14 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
                   }
                 });
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Failed to start SystemEventsBreadcrumbsIntegration on executor thread.",
-                e);
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Failed to start SystemEventsBreadcrumbsIntegration on executor thread.",
+                  e);
+        }
       }
     }
   }
@@ -119,13 +123,17 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     try {
       // registerReceiver can throw SecurityException but it's not documented in the official docs
       ContextUtils.registerReceiver(context, options, receiver, filter);
-      options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
+      }
       addIntegrationToSdkVersion("SystemEventsBreadcrumbs");
     } catch (Throwable e) {
       options.setEnableSystemEventBreadcrumbs(false);
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Failed to initialize SystemEventsBreadcrumbsIntegration.", e);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to initialize SystemEventsBreadcrumbsIntegration.", e);
+      }
     }
   }
 
@@ -164,7 +172,9 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       receiver = null;
 
       if (options != null) {
-        options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration remove.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration remove.");
+        }
       }
     }
   }
@@ -206,9 +216,11 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
                   scopes.addBreadcrumb(breadcrumb, hint);
                 });
       } catch (Throwable t) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, t, "Failed to submit system event breadcrumb action.");
+        if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, t, "Failed to submit system event breadcrumb action.");
+        }
       }
     }
 
@@ -246,14 +258,16 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
                 newExtras.put(item, value.toString());
               }
             } catch (Throwable exception) {
-              options
-                  .getLogger()
-                  .log(
-                      SentryLevel.ERROR,
-                      exception,
-                      "%s key of the %s action threw an error.",
-                      item,
-                      action);
+              if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.ERROR,
+                        exception,
+                        "%s key of the %s action threw an error.",
+                        item,
+                        action);
+              }
             }
           }
           breadcrumb.setData("extras", newExtras);

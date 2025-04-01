@@ -284,9 +284,11 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
               try {
                 options.profileLifecycle = ProfileLifecycle.valueOf(profileLifecycle);
               } catch (IllegalArgumentException e) {
-                logger.log(
-                    SentryLevel.ERROR,
-                    "Error when deserializing ProfileLifecycle: " + profileLifecycle);
+                if (logger.isEnabled(SentryLevel.ERROR)) {
+                  logger.log(
+                      SentryLevel.ERROR,
+                      "Error when deserializing ProfileLifecycle: " + profileLifecycle);
+                }
               }
             }
             break;

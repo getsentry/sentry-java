@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.protocol.SentryId;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -223,21 +225,27 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
       if (sentryId == null) {
         String message = "Missing required field \"" + JsonKeys.CHECK_IN_ID + "\"";
         Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(SentryLevel.ERROR, message, exception);
+        }
         throw exception;
       }
 
       if (monitorSlug == null) {
         String message = "Missing required field \"" + JsonKeys.MONITOR_SLUG + "\"";
         Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(SentryLevel.ERROR, message, exception);
+        }
         throw exception;
       }
 
       if (status == null) {
         String message = "Missing required field \"" + JsonKeys.STATUS + "\"";
         Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(SentryLevel.ERROR, message, exception);
+        }
         throw exception;
       }
 

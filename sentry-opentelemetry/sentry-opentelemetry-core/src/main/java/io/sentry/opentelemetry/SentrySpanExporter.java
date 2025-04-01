@@ -100,14 +100,16 @@ public final class SentrySpanExporter implements SpanExporter {
     final int remainingSpanCount = remaining.size();
     final int sentSpanCount = openSpanCount + newSpanCount - remainingSpanCount;
 
-    scopes
-        .getOptions()
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "SpanExporter exported %s spans, %s unset spans remaining.",
-            sentSpanCount,
-            remainingSpanCount);
+    if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "SpanExporter exported %s spans, %s unset spans remaining.",
+              sentSpanCount,
+              remainingSpanCount);
+    }
 
     this.finishedSpans.clear();
 
@@ -127,13 +129,15 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull SentryDate startDate = new SentryLongDate(span.getStartEpochNanos());
     boolean isTimedOut = now.diff(startDate) > SPAN_TIMEOUT;
     if (isTimedOut) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Dropping span %s as it was pending for too long.",
-              span.getSpanId());
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Dropping span %s as it was pending for too long.",
+                span.getSpanId());
+      }
     }
     return isTimedOut;
   }
@@ -197,15 +201,17 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull OtelSpanInfo spanInfo =
         spanDescriptionExtractor.extractSpanInfo(spanData, sentrySpanMaybe);
 
-    scopes
-        .getOptions()
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "Creating Sentry child span for OpenTelemetry span %s (trace %s). Parent span is %s.",
-            spanId,
-            spanData.getTraceId(),
-            spanData.getParentSpanId());
+    if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Creating Sentry child span for OpenTelemetry span %s (trace %s). Parent span is %s.",
+              spanId,
+              spanData.getTraceId(),
+              spanData.getParentSpanId());
+    }
     final @NotNull SentryDate startDate = new SentryLongDate(spanData.getStartEpochNanos());
     final @NotNull SpanOptions spanOptions = new SpanOptions();
     final @NotNull io.sentry.SpanContext spanContext =
@@ -281,14 +287,16 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull OtelSpanInfo spanInfo =
         spanDescriptionExtractor.extractSpanInfo(span, sentrySpanMaybe);
 
-    scopesToUse
-        .getOptions()
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "Creating Sentry transaction for OpenTelemetry span %s (trace %s).",
-            spanId,
-            traceId);
+    if (scopesToUse.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+      scopesToUse
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Creating Sentry transaction for OpenTelemetry span %s (trace %s).",
+              spanId,
+              traceId);
+    }
     final SpanId sentrySpanId = new SpanId(spanId);
 
     @Nullable String transactionName = spanInfo.getDescription();

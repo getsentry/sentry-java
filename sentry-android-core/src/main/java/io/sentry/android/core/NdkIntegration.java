@@ -36,7 +36,9 @@ public final class NdkIntegration implements Integration, Closeable {
             "SentryAndroidOptions is required");
 
     final boolean enabled = this.options.isEnableNdk();
-    this.options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration enabled: %s", enabled);
+    if (this.options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      this.options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration enabled: %s", enabled);
+    }
 
     // Note: `scopes` isn't used here because the NDK integration writes files to disk which are
     // picked
@@ -44,7 +46,11 @@ public final class NdkIntegration implements Integration, Closeable {
     if (enabled && sentryNdkClass != null) {
       final String cachedDir = this.options.getCacheDirPath();
       if (cachedDir == null) {
-        this.options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
+        if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+          this.options
+              .getLogger()
+              .log(SentryLevel.ERROR, "No cache dir path is defined in options.");
+        }
         disableNdkIntegration(this.options);
         return;
       }
@@ -55,16 +61,22 @@ public final class NdkIntegration implements Integration, Closeable {
         args[0] = this.options;
         method.invoke(null, args);
 
-        this.options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          this.options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");
+        }
         addIntegrationToSdkVersion("Ndk");
       } catch (NoSuchMethodException e) {
         disableNdkIntegration(this.options);
-        this.options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Failed to invoke the SentryNdk.init method.", e);
+        if (this.options.getLogger().isEnabled(SentryLevel.ERROR)) {
+          this.options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Failed to invoke the SentryNdk.init method.", e);
+        }
       } catch (Throwable e) {
         disableNdkIntegration(this.options);
-        this.options.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
+        if (this.options.getLogger().isEnabled(SentryLevel.ERROR)) {
+          this.options.getLogger().log(SentryLevel.ERROR, "Failed to initialize SentryNdk.", e);
+        }
       }
     } else {
       disableNdkIntegration(this.options);
@@ -89,13 +101,19 @@ public final class NdkIntegration implements Integration, Closeable {
         final Method method = sentryNdkClass.getMethod("close");
         method.invoke(null, new Object[0]);
 
-        options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration removed.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration removed.");
+        }
       } catch (NoSuchMethodException e) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Failed to invoke the SentryNdk.close method.", e);
+        if (this.options.getLogger().isEnabled(SentryLevel.ERROR)) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Failed to invoke the SentryNdk.close method.", e);
+        }
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to close SentryNdk.", e);
+        if (this.options.getLogger().isEnabled(SentryLevel.ERROR)) {
+          options.getLogger().log(SentryLevel.ERROR, "Failed to close SentryNdk.", e);
+        }
       } finally {
         disableNdkIntegration(this.options);
       }

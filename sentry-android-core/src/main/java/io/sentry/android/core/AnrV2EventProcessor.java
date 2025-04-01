@@ -114,11 +114,13 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   public @Nullable SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
     final Object unwrappedHint = HintUtils.getSentrySdkHint(hint);
     if (!(unwrappedHint instanceof Backfillable)) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "The event is not Backfillable, but has been passed to BackfillingEventProcessor, skipping.");
+      if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "The event is not Backfillable, but has been passed to BackfillingEventProcessor, skipping.");
+      }
       return event;
     }
 
@@ -131,11 +133,13 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     setDevice(event);
 
     if (!((Backfillable) unwrappedHint).shouldEnrich()) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "The event is Backfillable, but should not be enriched, skipping.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "The event is Backfillable, but should not be enriched, skipping.");
+      }
       return event;
     }
 
@@ -175,16 +179,20 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       // we have to sample here with the old sample rate, because it may change between app launches
       final double replayErrorSampleRateDouble = Double.parseDouble(replayErrorSampleRate);
       if (replayErrorSampleRateDouble < SentryRandom.current().nextDouble()) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Not capturing replay for ANR %s due to not being sampled.",
-                event.getEventId());
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Not capturing replay for ANR %s due to not being sampled.",
+                  event.getEventId());
+        }
         return false;
       }
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error parsing replay sample rate.", e);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Error parsing replay sample rate.", e);
+      }
       return false;
     }
 
@@ -405,9 +413,11 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
         app.setAppVersion(versionName);
         app.setAppBuild(versionCode);
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
+        if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+          options
+              .getLogger()
+              .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
+        }
       }
     }
 
@@ -421,7 +431,9 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
         }
       }
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting split apks info.", e);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Error getting split apks info.", e);
+      }
     }
 
     event.getContexts().setApp(app);
@@ -481,9 +493,11 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
           final String versionCode = release.substring(release.indexOf('+') + 1);
           event.setDist(versionCode);
         } catch (Throwable e) {
-          options
-              .getLogger()
-              .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
+          if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+            options
+                .getLogger()
+                .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
+          }
         }
       }
     }
@@ -608,7 +622,9 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     try {
       return Installation.id(context);
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting installationId.", e);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Error getting installationId.", e);
+      }
     }
     return null;
   }
@@ -624,7 +640,9 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
         }
       }
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
+      }
     }
   }
 

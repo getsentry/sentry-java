@@ -3,6 +3,8 @@ package io.sentry.android.core;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.content.Context.ACTIVITY_SERVICE;
 import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
@@ -219,7 +221,9 @@ public final class ContextUtils {
         return context.getPackageManager().getPackageInfo(context.getPackageName(), flags);
       }
     } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, "Error getting package info.", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error getting package info.", e);
+      }
       return null;
     }
   }
@@ -305,7 +309,9 @@ public final class ContextUtils {
     try (BufferedReader br = new BufferedReader(new FileReader(file))) {
       return br.readLine();
     } catch (IOException e) {
-      logger.log(SentryLevel.ERROR, errorMsg, e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, errorMsg, e);
+      }
     }
 
     return defaultVersion;
@@ -333,7 +339,9 @@ public final class ContextUtils {
       }
     } catch (IllegalArgumentException e) {
       // it'll never be thrown as we are querying its own App's package.
-      logger.log(SentryLevel.DEBUG, "%s package isn't installed.", packageName);
+      if (logger.isEnabled(DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "%s package isn't installed.", packageName);
+      }
     }
 
     return null;
@@ -378,7 +386,9 @@ public final class ContextUtils {
     try {
       return context.getResources().getDisplayMetrics();
     } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, "Error getting DisplayMetrics.", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error getting DisplayMetrics.", e);
+      }
       return null;
     }
   }
@@ -393,7 +403,9 @@ public final class ContextUtils {
     try {
       return Build.MODEL.split(" ", -1)[0];
     } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, "Error getting device family.", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error getting device family.", e);
+      }
       return null;
     }
   }
@@ -417,10 +429,14 @@ public final class ContextUtils {
         actManager.getMemoryInfo(memInfo);
         return memInfo;
       }
-      logger.log(SentryLevel.INFO, "Error getting MemoryInfo.");
+      if (logger.isEnabled(SentryLevel.INFO)) {
+        logger.log(SentryLevel.INFO, "Error getting MemoryInfo.");
+      }
       return null;
     } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error getting MemoryInfo.", e);
+      }
       return null;
     }
   }

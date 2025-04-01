@@ -1,5 +1,8 @@
 package io.sentry.android.core;
 
+import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.FATAL;
+
 import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
@@ -137,12 +140,14 @@ public final class SentryAndroid {
               configuration.configure(options);
             } catch (Throwable t) {
               // let it slip, but log it
-              options
-                  .getLogger()
-                  .log(
-                      SentryLevel.ERROR,
-                      "Error in the 'OptionsConfiguration.configure' callback.",
-                      t);
+              if (options.getLogger().isEnabled(ERROR)) {
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.ERROR,
+                        "Error in the 'OptionsConfiguration.configure' callback.",
+                        t);
+              }
             }
 
             // if SentryPerformanceProvider was disabled or removed,
@@ -192,21 +197,29 @@ public final class SentryAndroid {
         scopes.getOptions().getReplayController().start();
       }
     } catch (IllegalAccessException e) {
-      logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
+      if (logger.isEnabled(FATAL)) {
+        logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
+      }
 
       // This is awful. Should we have this all on the interface and let the caller deal with these?
       // They mean bug in the SDK.
       throw new RuntimeException("Failed to initialize Sentry's SDK", e);
     } catch (InstantiationException e) {
-      logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
+      if (logger.isEnabled(FATAL)) {
+        logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
+      }
 
       throw new RuntimeException("Failed to initialize Sentry's SDK", e);
     } catch (NoSuchMethodException e) {
-      logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
+      if (logger.isEnabled(FATAL)) {
+        logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
+      }
 
       throw new RuntimeException("Failed to initialize Sentry's SDK", e);
     } catch (InvocationTargetException e) {
-      logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
+      if (logger.isEnabled(FATAL)) {
+        logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
+      }
 
       throw new RuntimeException("Failed to initialize Sentry's SDK", e);
     }

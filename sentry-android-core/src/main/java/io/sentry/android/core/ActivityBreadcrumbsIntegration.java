@@ -43,13 +43,16 @@ public final class ActivityBreadcrumbsIntegration
 
     this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.enabled = androidOptions.isEnableActivityLifecycleBreadcrumbs();
-    options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "ActivityBreadcrumbsIntegration enabled: %s", enabled);
-
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "ActivityBreadcrumbsIntegration enabled: %s", enabled);
+    }
     if (enabled) {
       application.registerActivityLifecycleCallbacks(this);
-      options.getLogger().log(SentryLevel.DEBUG, "ActivityBreadcrumbIntegration installed.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "ActivityBreadcrumbIntegration installed.");
+      }
       addIntegrationToSdkVersion("ActivityBreadcrumbs");
     }
   }
@@ -59,10 +62,12 @@ public final class ActivityBreadcrumbsIntegration
     if (enabled) {
       application.unregisterActivityLifecycleCallbacks(this);
       if (scopes != null) {
-        scopes
-            .getOptions()
-            .getLogger()
-            .log(SentryLevel.DEBUG, "ActivityBreadcrumbsIntegration removed.");
+        if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+          scopes
+              .getOptions()
+              .getLogger()
+              .log(SentryLevel.DEBUG, "ActivityBreadcrumbsIntegration removed.");
+        }
       }
     }
   }

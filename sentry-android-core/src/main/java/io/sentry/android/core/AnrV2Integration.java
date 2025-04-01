@@ -82,9 +82,11 @@ public class AnrV2Integration implements Integration, Closeable {
         .log(SentryLevel.DEBUG, "AnrIntegration enabled: %s", this.options.isAnrEnabled());
 
     if (this.options.getCacheDirPath() == null) {
-      this.options
-          .getLogger()
-          .log(SentryLevel.INFO, "Cache dir is not set, unable to process ANRs");
+      if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+        this.options
+            .getLogger()
+            .log(SentryLevel.INFO, "Cache dir is not set, unable to process ANRs");
+      }
       return;
     }
 
@@ -96,7 +98,9 @@ public class AnrV2Integration implements Integration, Closeable {
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start AnrProcessor.", e);
       }
-      options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration installed.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration installed.");
+      }
       addIntegrationToSdkVersion("AnrV2");
     }
   }
@@ -104,7 +108,9 @@ public class AnrV2Integration implements Integration, Closeable {
   @Override
   public void close() throws IOException {
     if (options != null) {
-      options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration removed.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "AnrV2Integration removed.");
+      }
     }
   }
 
@@ -135,7 +141,9 @@ public class AnrV2Integration implements Integration, Closeable {
       final List<ApplicationExitInfo> applicationExitInfoList =
           activityManager.getHistoricalProcessExitReasons(null, 0, 0);
       if (applicationExitInfoList.size() == 0) {
-        options.getLogger().log(SentryLevel.DEBUG, "No records in historical exit reasons.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "No records in historical exit reasons.");
+        }
         return;
       }
 
@@ -143,11 +151,13 @@ public class AnrV2Integration implements Integration, Closeable {
       if (cache instanceof EnvelopeCache) {
         if (options.isEnableAutoSessionTracking()
             && !((EnvelopeCache) cache).waitPreviousSessionFlush()) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.WARNING,
-                  "Timed out waiting to flush previous session to its own file.");
+          if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "Timed out waiting to flush previous session to its own file.");
+          }
 
           // if we timed out waiting here, we can already flush the latch, because the timeout is
           // big
@@ -174,24 +184,32 @@ public class AnrV2Integration implements Integration, Closeable {
       }
 
       if (latestAnr == null) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "No ANRs have been found in the historical exit reasons list.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "No ANRs have been found in the historical exit reasons list.");
+        }
         return;
       }
 
       if (latestAnr.getTimestamp() < threshold) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Latest ANR happened too long ago, returning early.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "Latest ANR happened too long ago, returning early.");
+        }
         return;
       }
 
       if (lastReportedAnrTimestamp != null
           && latestAnr.getTimestamp() <= lastReportedAnrTimestamp) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Latest ANR has already been reported, returning early.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "Latest ANR has already been reported, returning early.");
+        }
         return;
       }
 
@@ -215,16 +233,20 @@ public class AnrV2Integration implements Integration, Closeable {
       for (ApplicationExitInfo applicationExitInfo : exitInfos) {
         if (applicationExitInfo.getReason() == ApplicationExitInfo.REASON_ANR) {
           if (applicationExitInfo.getTimestamp() < threshold) {
-            options
-                .getLogger()
-                .log(SentryLevel.DEBUG, "ANR happened too long ago %s.", applicationExitInfo);
+            if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+              options
+                  .getLogger()
+                  .log(SentryLevel.DEBUG, "ANR happened too long ago %s.", applicationExitInfo);
+            }
             continue;
           }
 
           if (lastReportedAnr != null && applicationExitInfo.getTimestamp() <= lastReportedAnr) {
-            options
-                .getLogger()
-                .log(SentryLevel.DEBUG, "ANR has already been reported %s.", applicationExitInfo);
+            if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+              options
+                  .getLogger()
+                  .log(SentryLevel.DEBUG, "ANR has already been reported %s.", applicationExitInfo);
+            }
             continue;
           }
 
@@ -241,12 +263,14 @@ public class AnrV2Integration implements Integration, Closeable {
 
       final ParseResult result = parseThreadDump(exitInfo, isBackground);
       if (result.type == ParseResult.Type.NO_DUMP) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "Not reporting ANR event as there was no thread dump for the ANR %s",
-                exitInfo.toString());
+        if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Not reporting ANR event as there was no thread dump for the ANR %s",
+                  exitInfo.toString());
+        }
         return;
       }
       final AnrV2Hint anrHint =
@@ -289,12 +313,14 @@ public class AnrV2Integration implements Integration, Closeable {
       if (!isEventDropped) {
         // Block until the event is flushed to disk and the last_reported_anr marker is updated
         if (!anrHint.waitFlush()) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.WARNING,
-                  "Timed out waiting to flush ANR event to disk. Event: %s",
-                  event.getEventId());
+          if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "Timed out waiting to flush ANR event to disk. Event: %s",
+                    event.getEventId());
+          }
         }
       }
     }
@@ -309,7 +335,9 @@ public class AnrV2Integration implements Integration, Closeable {
         }
         dump = getDumpBytes(trace);
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.WARNING, "Failed to read ANR thread dump", e);
+        if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+          options.getLogger().log(SentryLevel.WARNING, "Failed to read ANR thread dump", e);
+        }
         return new ParseResult(ParseResult.Type.NO_DUMP);
       }
 
@@ -332,7 +360,9 @@ public class AnrV2Integration implements Integration, Closeable {
         }
         return new ParseResult(ParseResult.Type.DUMP, dump, threads, debugImages);
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
+        if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+          options.getLogger().log(SentryLevel.WARNING, "Failed to parse ANR thread dump", e);
+        }
         return new ParseResult(ParseResult.Type.ERROR, dump);
       }
     }

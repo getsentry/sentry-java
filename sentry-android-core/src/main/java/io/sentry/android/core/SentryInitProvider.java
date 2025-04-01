@@ -18,7 +18,9 @@ public final class SentryInitProvider extends EmptySecureContentProvider {
     AndroidLogger logger = new AndroidLogger();
     final Context context = getContext();
     if (context == null) {
-      logger.log(SentryLevel.FATAL, "App. Context from ContentProvider is null");
+      if (logger.isEnabled(SentryLevel.FATAL)) {
+        logger.log(SentryLevel.FATAL, "App. Context from ContentProvider is null");
+      }
       return false;
     }
     if (ManifestMetadataReader.isAutoInit(context, logger)) {

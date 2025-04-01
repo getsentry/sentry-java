@@ -1,5 +1,7 @@
 package io.sentry.backpressure;
 
+import static io.sentry.SentryLevel.DEBUG;
+
 import io.sentry.IScopes;
 import io.sentry.ISentryExecutorService;
 import io.sentry.ISentryLifecycleToken;
@@ -56,20 +58,24 @@ public final class BackpressureMonitor implements IBackpressureMonitor, Runnable
   void checkHealth() {
     if (isHealthy()) {
       if (downsampleFactor > 0) {
-        sentryOptions
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Health check positive, reverting to normal sampling.");
+        if (sentryOptions.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          sentryOptions
+              .getLogger()
+              .log(SentryLevel.DEBUG, "Health check positive, reverting to normal sampling.");
+        }
       }
       downsampleFactor = 0;
     } else {
       if (downsampleFactor < MAX_DOWNSAMPLE_FACTOR) {
         downsampleFactor++;
-        sentryOptions
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Health check negative, downsampling with a factor of %d",
-                downsampleFactor);
+        if (sentryOptions.getLogger().isEnabled(DEBUG)) {
+          sentryOptions
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Health check negative, downsampling with a factor of %d",
+                  downsampleFactor);
+        }
       }
     }
   }

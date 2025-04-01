@@ -44,25 +44,31 @@ final class PreviousSessionFinalizer implements Runnable {
   public void run() {
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath == null) {
-      options.getLogger().log(INFO, "Cache dir is not set, not finalizing the previous session.");
+      if (options.getLogger().isEnabled(INFO)) {
+        options.getLogger().log(INFO, "Cache dir is not set, not finalizing the previous session.");
+      }
       return;
     }
 
     if (!options.isEnableAutoSessionTracking()) {
-      options
-          .getLogger()
-          .log(DEBUG, "Session tracking is disabled, bailing from previous session finalizer.");
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(DEBUG, "Session tracking is disabled, bailing from previous session finalizer.");
+      }
       return;
     }
 
     final IEnvelopeCache cache = options.getEnvelopeDiskCache();
     if (cache instanceof EnvelopeCache) {
       if (!((EnvelopeCache) cache).waitPreviousSessionFlush()) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "Timed out waiting to flush previous session to its own file in session finalizer.");
+        if (options.getLogger().isEnabled(WARNING)) {
+          options
+              .getLogger()
+              .log(
+                  WARNING,
+                  "Timed out waiting to flush previous session to its own file in session finalizer.");
+        }
         return;
       }
     }
@@ -71,7 +77,9 @@ final class PreviousSessionFinalizer implements Runnable {
     final ISerializer serializer = options.getSerializer();
 
     if (previousSessionFile.exists()) {
-      options.getLogger().log(WARNING, "Current session is not ended, we'd need to end it.");
+      if (options.getLogger().isEnabled(WARNING)) {
+        options.getLogger().log(WARNING, "Current session is not ended, we'd need to end it.");
+      }
 
       try (final Reader reader =
           new BufferedReader(
@@ -79,30 +87,36 @@ final class PreviousSessionFinalizer implements Runnable {
 
         final Session session = serializer.deserialize(reader, Session.class);
         if (session == null) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.ERROR,
-                  "Stream from path %s resulted in a null envelope.",
-                  previousSessionFile.getAbsolutePath());
+          if (options.getLogger().isEnabled(ERROR)) {
+            options
+                .getLogger()
+                .log(
+                    ERROR,
+                    "Stream from path %s resulted in a null envelope.",
+                    previousSessionFile.getAbsolutePath());
+          }
         } else {
           Date timestamp = null;
           final File crashMarkerFile =
               new File(options.getCacheDirPath(), NATIVE_CRASH_MARKER_FILE);
           if (crashMarkerFile.exists()) {
-            options
-                .getLogger()
-                .log(INFO, "Crash marker file exists, last Session is gonna be Crashed.");
+            if (options.getLogger().isEnabled(INFO)) {
+              options
+                  .getLogger()
+                  .log(INFO, "Crash marker file exists, last Session is gonna be Crashed.");
+            }
 
             timestamp = getTimestampFromCrashMarkerFile(crashMarkerFile);
 
             if (!crashMarkerFile.delete()) {
-              options
-                  .getLogger()
-                  .log(
-                      ERROR,
-                      "Failed to delete the crash marker file. %s.",
-                      crashMarkerFile.getAbsolutePath());
+              if (options.getLogger().isEnabled(ERROR)) {
+                options
+                    .getLogger()
+                    .log(
+                        ERROR,
+                        "Failed to delete the crash marker file. %s.",
+                        crashMarkerFile.getAbsolutePath());
+              }
             }
             session.update(Session.State.Crashed, null, true);
           }
@@ -119,13 +133,17 @@ final class PreviousSessionFinalizer implements Runnable {
           scopes.captureEnvelope(fromSession);
         }
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Error processing previous session.", e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options.getLogger().log(ERROR, "Error processing previous session.", e);
+        }
       }
 
       // at this point the previous session and its session file already became a new envelope file
       // to be sent, so deleting it
       if (!previousSessionFile.delete()) {
-        options.getLogger().log(WARNING, "Failed to delete the previous session file.");
+        if (options.getLogger().isEnabled(WARNING)) {
+          options.getLogger().log(WARNING, "Failed to delete the previous session file.");
+        }
       }
     }
   }
@@ -140,12 +158,18 @@ final class PreviousSessionFinalizer implements Runnable {
     try (final BufferedReader reader =
         new BufferedReader(new InputStreamReader(new FileInputStream(markerFile), UTF_8))) {
       final String timestamp = reader.readLine();
-      options.getLogger().log(DEBUG, "Crash marker file has %s timestamp.", timestamp);
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options.getLogger().log(DEBUG, "Crash marker file has %s timestamp.", timestamp);
+      }
       return DateUtils.getDateTime(timestamp);
     } catch (IOException e) {
-      options.getLogger().log(ERROR, "Error reading the crash marker file.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(ERROR, "Error reading the crash marker file.", e);
+      }
     } catch (IllegalArgumentException e) {
-      options.getLogger().log(SentryLevel.ERROR, e, "Error converting the crash timestamp.");
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, e, "Error converting the crash timestamp.");
+      }
     }
     return null;
   }

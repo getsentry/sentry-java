@@ -382,13 +382,15 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   @Override
   public void setMeasurement(@NotNull String name, @NotNull Number value) {
     if (isFinished()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "The span is already finished. Measurement %s cannot be set",
-              name);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "The span is already finished. Measurement %s cannot be set",
+                name);
+      }
       return;
     }
     this.measurements.put(name, new MeasurementValue(value, null));
@@ -398,13 +400,15 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   public void setMeasurement(
       @NotNull String name, @NotNull Number value, @NotNull MeasurementUnit unit) {
     if (isFinished()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "The span is already finished. Measurement %s cannot be set",
-              name);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "The span is already finished. Measurement %s cannot be set",
+                name);
+      }
       return;
     }
     this.measurements.put(name, new MeasurementValue(value, unit.apiName()));

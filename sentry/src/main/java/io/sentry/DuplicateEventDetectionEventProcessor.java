@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.DEBUG;
+
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,19 +28,23 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
       if (throwable != null) {
         if (capturedObjects.containsKey(throwable)
             || containsAnyKey(capturedObjects, allCauses(throwable))) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Duplicate Exception detected. Event %s will be discarded.",
-                  event.getEventId());
+          if (options.getLogger().isEnabled(DEBUG)) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Duplicate Exception detected. Event %s will be discarded.",
+                    event.getEventId());
+          }
           return null;
         } else {
           capturedObjects.put(throwable, null);
         }
       }
     } else {
-      options.getLogger().log(SentryLevel.DEBUG, "Event deduplication is disabled.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "Event deduplication is disabled.");
+      }
     }
     return event;
   }

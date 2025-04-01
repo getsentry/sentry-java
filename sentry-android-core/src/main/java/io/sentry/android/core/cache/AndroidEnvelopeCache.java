@@ -59,12 +59,14 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       long timeSinceSdkInit =
           currentDateProvider.getCurrentTimeMillis() - sdkInitTimeSpan.getStartUptimeMs();
       if (timeSinceSdkInit <= options.getStartupCrashDurationThresholdMillis()) {
-        options
-            .getLogger()
-            .log(
-                DEBUG,
-                "Startup Crash detected %d milliseconds after SDK init. Writing a startup crash marker file to disk.",
-                timeSinceSdkInit);
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  DEBUG,
+                  "Startup Crash detected %d milliseconds after SDK init. Writing a startup crash marker file to disk.",
+                  timeSinceSdkInit);
+        }
         writeStartupCrashMarkerFile();
       }
     }
@@ -74,13 +76,14 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
         AnrV2Integration.AnrV2Hint.class,
         (anrHint) -> {
           final @Nullable Long timestamp = anrHint.timestamp();
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Writing last reported ANR marker with timestamp %d",
-                  timestamp);
-
+          if (options.getLogger().isEnabled(DEBUG)) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Writing last reported ANR marker with timestamp %d",
+                    timestamp);
+          }
           writeLastReportedAnrMarker(timestamp);
         });
   }
@@ -95,25 +98,33 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     // decide to write it, which will trigger the blocking init
     final String outboxPath = options.getOutboxPath();
     if (outboxPath == null) {
-      options
-          .getLogger()
-          .log(DEBUG, "Outbox path is null, the startup crash marker file will not be written");
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(DEBUG, "Outbox path is null, the startup crash marker file will not be written");
+      }
       return;
     }
     final File crashMarkerFile = new File(outboxPath, STARTUP_CRASH_MARKER_FILE);
     try {
       crashMarkerFile.createNewFile();
     } catch (Throwable e) {
-      options.getLogger().log(ERROR, "Error writing the startup crash marker file to the disk", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(ERROR, "Error writing the startup crash marker file to the disk", e);
+      }
     }
   }
 
   public static boolean hasStartupCrashMarker(final @NotNull SentryOptions options) {
     final String outboxPath = options.getOutboxPath();
     if (outboxPath == null) {
-      options
-          .getLogger()
-          .log(DEBUG, "Outbox path is null, the startup crash marker file does not exist");
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(DEBUG, "Outbox path is null, the startup crash marker file does not exist");
+      }
       return false;
     }
 
@@ -122,19 +133,23 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       final boolean exists = crashMarkerFile.exists();
       if (exists) {
         if (!crashMarkerFile.delete()) {
-          options
-              .getLogger()
-              .log(
-                  ERROR,
-                  "Failed to delete the startup crash marker file. %s.",
-                  crashMarkerFile.getAbsolutePath());
+          if (options.getLogger().isEnabled(ERROR)) {
+            options
+                .getLogger()
+                .log(
+                    ERROR,
+                    "Failed to delete the startup crash marker file. %s.",
+                    crashMarkerFile.getAbsolutePath());
+          }
         }
       }
       return exists;
     } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(ERROR, "Error reading/deleting the startup crash marker file on the disk", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(ERROR, "Error reading/deleting the startup crash marker file on the disk", e);
+      }
     }
     return false;
   }
@@ -152,12 +167,16 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
         //noinspection ConstantConditions
         return content.equals("null") ? null : Long.parseLong(content.trim());
       } else {
-        options
-            .getLogger()
-            .log(DEBUG, "Last ANR marker does not exist. %s.", lastAnrMarker.getAbsolutePath());
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options
+              .getLogger()
+              .log(DEBUG, "Last ANR marker does not exist. %s.", lastAnrMarker.getAbsolutePath());
+        }
       }
     } catch (Throwable e) {
-      options.getLogger().log(ERROR, "Error reading last ANR marker", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(ERROR, "Error reading last ANR marker", e);
+      }
     }
     return null;
   }
@@ -165,7 +184,11 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
   private void writeLastReportedAnrMarker(final @Nullable Long timestamp) {
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath == null) {
-      options.getLogger().log(DEBUG, "Cache dir path is null, the ANR marker will not be written");
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(DEBUG, "Cache dir path is null, the ANR marker will not be written");
+      }
       return;
     }
 
@@ -174,7 +197,9 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       outputStream.write(String.valueOf(timestamp).getBytes(UTF_8));
       outputStream.flush();
     } catch (Throwable e) {
-      options.getLogger().log(ERROR, "Error writing the ANR marker to the disk", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(ERROR, "Error writing the ANR marker to the disk", e);
+      }
     }
   }
 }

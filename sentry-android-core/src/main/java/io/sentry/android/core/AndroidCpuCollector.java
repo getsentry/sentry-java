@@ -88,8 +88,12 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
       // If an error occurs when reading the file, we avoid reading it again until the setup method
       // is called again
       isEnabled = false;
-      logger.log(
-          SentryLevel.WARNING, "Unable to read /proc/self/stat file. Disabling cpu collection.", e);
+      if (logger.isEnabled(SentryLevel.WARNING)) {
+        logger.log(
+            SentryLevel.WARNING,
+            "Unable to read /proc/self/stat file. Disabling cpu collection.",
+            e);
+      }
     }
     if (stat != null) {
       stat = stat.trim();
@@ -105,7 +109,9 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
         long csTime = Long.parseLong(stats[16]);
         return (long) ((uTime + sTime + cuTime + csTime) * nanosecondsPerClockTick);
       } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-        logger.log(SentryLevel.ERROR, "Error parsing /proc/self/stat file.", e);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, "Error parsing /proc/self/stat file.", e);
+        }
         return 0;
       }
     }

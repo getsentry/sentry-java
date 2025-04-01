@@ -99,10 +99,12 @@ public class SentryRequestResolver {
         }
       }
     } catch (Throwable t) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Failed to extract session cookie name from request.", t);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "Failed to extract session cookie name from request.", t);
+      }
     }
 
     return Collections.emptyList();

@@ -1,5 +1,6 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.util.JsonSerializationUtils.atomicIntegerArrayToList;
 import static io.sentry.util.JsonSerializationUtils.calendarToMap;
 
@@ -80,7 +81,9 @@ public final class JsonObjectSerializer {
         Object serializableObject = jsonReflectionObjectSerializer.serialize(object, logger);
         serialize(writer, logger, serializableObject);
       } catch (Exception exception) {
-        logger.log(SentryLevel.ERROR, "Failed serializing unknown object.", exception);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(SentryLevel.ERROR, "Failed serializing unknown object.", exception);
+        }
         writer.value(OBJECT_PLACEHOLDER);
       }
     }
@@ -94,7 +97,9 @@ public final class JsonObjectSerializer {
     try {
       writer.value(DateUtils.getTimestamp(date));
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when serializing Date", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error when serializing Date", e);
+      }
       writer.nullValue(); // Fallback to setting null when date is malformed.
     }
   }
@@ -105,7 +110,9 @@ public final class JsonObjectSerializer {
     try {
       writer.value(timeZone.getID());
     } catch (Exception e) {
-      logger.log(SentryLevel.ERROR, "Error when serializing TimeZone", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error when serializing TimeZone", e);
+      }
       writer.nullValue(); // Fallback.
     }
   }

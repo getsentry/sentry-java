@@ -58,9 +58,12 @@ public final class AnrIntegration implements Integration, Closeable {
 
   private void register(
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
-    options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "AnrIntegration enabled: %s", options.isAnrEnabled());
+
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "AnrIntegration enabled: %s", options.isAnrEnabled());
+    }
 
     if (options.isAnrEnabled()) {
       addIntegrationToSdkVersion("Anr");
@@ -76,9 +79,11 @@ public final class AnrIntegration implements Integration, Closeable {
                   }
                 });
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Failed to start AnrIntegration on executor thread.", e);
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "Failed to start AnrIntegration on executor thread.", e);
+        }
       }
     }
   }
@@ -87,12 +92,14 @@ public final class AnrIntegration implements Integration, Closeable {
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
     try (final @NotNull ISentryLifecycleToken ignored = watchDogLock.acquire()) {
       if (anrWatchDog == null) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "ANR timeout in milliseconds: %d",
-                options.getAnrTimeoutIntervalMillis());
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "ANR timeout in milliseconds: %d",
+                  options.getAnrTimeoutIntervalMillis());
+        }
 
         anrWatchDog =
             new ANRWatchDog(
@@ -103,7 +110,9 @@ public final class AnrIntegration implements Integration, Closeable {
                 context);
         anrWatchDog.start();
 
-        options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");
+        }
       }
     }
   }
@@ -113,7 +122,11 @@ public final class AnrIntegration implements Integration, Closeable {
       final @NotNull IScopes scopes,
       final @NotNull SentryAndroidOptions options,
       final @NotNull ApplicationNotResponding error) {
-    options.getLogger().log(SentryLevel.INFO, "ANR triggered with message: %s", error.getMessage());
+    if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+      options
+          .getLogger()
+          .log(SentryLevel.INFO, "ANR triggered with message: %s", error.getMessage());
+    }
 
     // if LifecycleWatcher isn't available, we always assume the ANR is foreground
     final boolean isAppInBackground = Boolean.TRUE.equals(AppState.getInstance().isInBackground());
@@ -162,7 +175,9 @@ public final class AnrIntegration implements Integration, Closeable {
         anrWatchDog.interrupt();
         anrWatchDog = null;
         if (options != null) {
-          options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration removed.");
+          if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+            options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration removed.");
+          }
         }
       }
     }

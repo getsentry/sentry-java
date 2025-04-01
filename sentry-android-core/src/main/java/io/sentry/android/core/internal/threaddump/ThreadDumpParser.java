@@ -157,7 +157,9 @@ public class ThreadDumpParser {
     while (lines.hasNext()) {
       final Line line = lines.next();
       if (line == null) {
-        options.getLogger().log(SentryLevel.WARNING, "Internal error while parsing thread dump.");
+        if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+          options.getLogger().log(SentryLevel.WARNING, "Internal error while parsing thread dump.");
+        }
         return;
       }
       final String text = line.text;
@@ -186,13 +188,17 @@ public class ThreadDumpParser {
     }
     final Line line = lines.next();
     if (line == null) {
-      options.getLogger().log(SentryLevel.WARNING, "Internal error while parsing thread dump.");
+      if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+        options.getLogger().log(SentryLevel.WARNING, "Internal error while parsing thread dump.");
+      }
       return null;
     }
     if (matches(beginManagedThreadRe, line.text)) {
       final Long tid = getLong(beginManagedThreadRe, 4, null);
       if (tid == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "No thread id in the dump, skipping thread.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "No thread id in the dump, skipping thread.");
+        }
         // tid is required by our protocol
         return null;
       }
@@ -211,7 +217,9 @@ public class ThreadDumpParser {
     } else if (matches(beginUnmanagedNativeThreadRe, line.text)) {
       final Long sysTid = getLong(beginUnmanagedNativeThreadRe, 3, null);
       if (sysTid == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "No thread id in the dump, skipping thread.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options.getLogger().log(SentryLevel.DEBUG, "No thread id in the dump, skipping thread.");
+        }
         // tid is required by our protocol
         return null;
       }
@@ -254,7 +262,9 @@ public class ThreadDumpParser {
     while (lines.hasNext()) {
       final Line line = lines.next();
       if (line == null) {
-        options.getLogger().log(SentryLevel.WARNING, "Internal error while parsing thread dump.");
+        if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+          options.getLogger().log(SentryLevel.WARNING, "Internal error while parsing thread dump.");
+        }
         break;
       }
       final String text = line.text;

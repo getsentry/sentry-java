@@ -122,10 +122,12 @@ public final class SentryTracer implements ITransaction {
           try {
             timer.schedule(idleTimeoutTask, idleTimeout);
           } catch (Throwable e) {
-            scopes
-                .getOptions()
-                .getLogger()
-                .log(SentryLevel.WARNING, "Failed to schedule finish timer", e);
+            if (scopes.getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+              scopes
+                  .getOptions()
+                  .getLogger()
+                  .log(SentryLevel.WARNING, "Failed to schedule finish timer", e);
+            }
             // if we failed to schedule the finish timer for some reason, we finish it here right
             // away
             onIdleTimeoutReached();
@@ -273,13 +275,15 @@ public final class SentryTracer implements ITransaction {
 
       if (dropIfNoChildren && children.isEmpty() && transactionOptions.getIdleTimeout() != null) {
         // if it's an idle transaction which has no children, we drop it to save user's quota
-        scopes
-            .getOptions()
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Dropping idle transaction %s because it has no child spans",
-                name);
+        if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+          scopes
+              .getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Dropping idle transaction %s because it has no child spans",
+                  name);
+        }
         return;
       }
 
@@ -315,10 +319,12 @@ public final class SentryTracer implements ITransaction {
           try {
             timer.schedule(deadlineTimeoutTask, deadlineTimeOut);
           } catch (Throwable e) {
-            scopes
-                .getOptions()
-                .getLogger()
-                .log(SentryLevel.WARNING, "Failed to schedule finish timer", e);
+            if (scopes.getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+              scopes
+                  .getOptions()
+                  .getLogger()
+                  .log(SentryLevel.WARNING, "Failed to schedule finish timer", e);
+            }
             // if we failed to schedule the finish timer for some reason, we finish it here right
             // away
             onDeadlineTimeoutReached();
@@ -533,14 +539,16 @@ public final class SentryTracer implements ITransaction {
       }
       return span;
     } else {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Span operation: %s, description: %s dropped due to limit reached. Returning NoOpSpan.",
-              operation,
-              description);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Span operation: %s, description: %s dropped due to limit reached. Returning NoOpSpan.",
+                operation,
+                description);
+      }
       return NoOpSpan.getInstance();
     }
   }
@@ -612,14 +620,16 @@ public final class SentryTracer implements ITransaction {
     if (children.size() < scopes.getOptions().getMaxSpans()) {
       return root.startChild(operation, description, timestamp, instrumenter, spanOptions);
     } else {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Span operation: %s, description: %s dropped due to limit reached. Returning NoOpSpan.",
-              operation,
-              description);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Span operation: %s, description: %s dropped due to limit reached. Returning NoOpSpan.",
+                operation,
+                description);
+      }
       return NoOpSpan.getInstance();
     }
   }
@@ -706,13 +716,15 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setOperation(final @NotNull String operation) {
     if (root.isFinished()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "The transaction is already finished. Operation %s cannot be set",
-              operation);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "The transaction is already finished. Operation %s cannot be set",
+                operation);
+      }
       return;
     }
 
@@ -727,13 +739,15 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setDescription(final @Nullable String description) {
     if (root.isFinished()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "The transaction is already finished. Description %s cannot be set",
-              description);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "The transaction is already finished. Description %s cannot be set",
+                description);
+      }
       return;
     }
 
@@ -748,13 +762,15 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setStatus(final @Nullable SpanStatus status) {
     if (root.isFinished()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "The transaction is already finished. Status %s cannot be set",
-              status == null ? "null" : status.name());
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "The transaction is already finished. Status %s cannot be set",
+                status == null ? "null" : status.name());
+      }
       return;
     }
 
@@ -769,10 +785,12 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setThrowable(final @Nullable Throwable throwable) {
     if (root.isFinished()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(SentryLevel.DEBUG, "The transaction is already finished. Throwable cannot be set");
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(SentryLevel.DEBUG, "The transaction is already finished. Throwable cannot be set");
+      }
       return;
     }
 
@@ -792,10 +810,15 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setTag(final @Nullable String key, final @Nullable String value) {
     if (root.isFinished()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(SentryLevel.DEBUG, "The transaction is already finished. Tag %s cannot be set", key);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "The transaction is already finished. Tag %s cannot be set",
+                key);
+      }
       return;
     }
 
@@ -815,11 +838,15 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setData(@Nullable String key, @Nullable Object value) {
     if (root.isFinished()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG, "The transaction is already finished. Data %s cannot be set", key);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "The transaction is already finished. Data %s cannot be set",
+                key);
+      }
       return;
     }
 
@@ -891,13 +918,15 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void setName(@NotNull String name, @NotNull TransactionNameSource transactionNameSource) {
     if (root.isFinished()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "The transaction is already finished. Name %s cannot be set",
-              name);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "The transaction is already finished. Name %s cannot be set",
+                name);
+      }
       return;
     }
 

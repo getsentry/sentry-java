@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.INFO;
+
 import io.sentry.hints.EventDropReason;
 import io.sentry.protocol.SentryException;
 import io.sentry.util.HintUtils;
@@ -50,12 +52,14 @@ public final class DeduplicateMultithreadedEventProcessor implements EventProces
 
     final Long tid = processedEvents.get(type);
     if (tid != null && !tid.equals(currentEventTid)) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.INFO,
-              "Event %s has been dropped due to multi-threaded deduplication",
-              event.getEventId());
+      if (options.getLogger().isEnabled(INFO)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.INFO,
+                "Event %s has been dropped due to multi-threaded deduplication",
+                event.getEventId());
+      }
       HintUtils.setEventDropReason(hint, EventDropReason.MULTITHREADED_DEDUPLICATION);
       return null;
     }

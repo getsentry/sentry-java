@@ -129,13 +129,17 @@ final class ANRWatchDog extends Thread {
         try {
           Thread.currentThread().interrupt();
         } catch (SecurityException ignored) {
-          logger.log(
-              SentryLevel.WARNING,
-              "Failed to interrupt due to SecurityException: %s",
-              e.getMessage());
+          if (logger.isEnabled(SentryLevel.WARNING)) {
+            logger.log(
+                SentryLevel.WARNING,
+                "Failed to interrupt due to SecurityException: %s",
+                e.getMessage());
+          }
           return;
         }
-        logger.log(SentryLevel.WARNING, "Interrupted: %s", e.getMessage());
+        if (logger.isEnabled(SentryLevel.WARNING)) {
+          logger.log(SentryLevel.WARNING, "Interrupted: %s", e.getMessage());
+        }
         return;
       }
 
@@ -145,9 +149,11 @@ final class ANRWatchDog extends Thread {
       // If the main thread has not handled ticker, it is blocked. ANR.
       if (unresponsiveDurationMs > timeoutIntervalMillis) {
         if (!reportInDebug && (Debug.isDebuggerConnected() || Debug.waitingForDebugger())) {
-          logger.log(
-              SentryLevel.DEBUG,
-              "An ANR was detected but ignored because the debugger is connected.");
+          if (logger.isEnabled(SentryLevel.DEBUG)) {
+            logger.log(
+                SentryLevel.DEBUG,
+                "An ANR was detected but ignored because the debugger is connected.");
+          }
           reported.set(true);
           continue;
         }
@@ -175,7 +181,10 @@ final class ANRWatchDog extends Thread {
         // It can throw RuntimeException or OutOfMemoryError
         processesInErrorState = am.getProcessesInErrorState();
       } catch (Throwable e) {
-        logger.log(SentryLevel.ERROR, "Error getting ActivityManager#getProcessesInErrorState.", e);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(
+              SentryLevel.ERROR, "Error getting ActivityManager#getProcessesInErrorState.", e);
+        }
       }
       // if list is null, there's no process in ANR state.
       if (processesInErrorState != null) {

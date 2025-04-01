@@ -43,7 +43,9 @@ public class SentryTimberIntegration(
             Timber.uproot(tree)
 
             if (this::logger.isInitialized) {
-                logger.log(SentryLevel.DEBUG, "SentryTimberIntegration removed.")
+                if (logger.isEnabled(SentryLevel.DEBUG)) {
+                    logger.log(SentryLevel.DEBUG, "SentryTimberIntegration removed.")
+                }
             }
         }
     }

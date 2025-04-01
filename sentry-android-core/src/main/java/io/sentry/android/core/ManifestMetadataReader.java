@@ -192,15 +192,19 @@ final class ManifestMetadataReader {
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
 
         if (!enabled || (dsn != null && dsn.isEmpty())) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Sentry enabled flag set to false or DSN is empty: disabling sentry-android");
+          if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Sentry enabled flag set to false or DSN is empty: disabling sentry-android");
+          }
         } else if (dsn == null) {
-          options
-              .getLogger()
-              .log(SentryLevel.FATAL, "DSN is required. Use empty string to disable SDK.");
+          if (options.getLogger().isEnabled(SentryLevel.FATAL)) {
+            options
+                .getLogger()
+                .log(SentryLevel.FATAL, "DSN is required. Use empty string to disable SDK.");
+          }
         }
 
         options.setEnabled(enabled);
@@ -472,9 +476,11 @@ final class ManifestMetadataReader {
           }
         }
       }
-      options
-          .getLogger()
-          .log(SentryLevel.INFO, "Retrieving configuration from AndroidManifest.xml");
+      if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+        options
+            .getLogger()
+            .log(SentryLevel.INFO, "Retrieving configuration from AndroidManifest.xml");
+      }
     } catch (Throwable e) {
       options
           .getLogger()
@@ -489,7 +495,9 @@ final class ManifestMetadataReader {
       final @NotNull String key,
       final boolean defaultValue) {
     final boolean value = metadata.getBoolean(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
@@ -502,10 +510,14 @@ final class ManifestMetadataReader {
     if (metadata.getSerializable(key) != null) {
       final boolean nonNullDefault = defaultValue == null ? false : true;
       final boolean bool = metadata.getBoolean(key, nonNullDefault);
-      logger.log(SentryLevel.DEBUG, key + " read: " + bool);
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, key + " read: " + bool);
+      }
       return bool;
     } else {
-      logger.log(SentryLevel.DEBUG, key + " used default " + defaultValue);
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, key + " used default " + defaultValue);
+      }
       return defaultValue;
     }
   }
@@ -516,7 +528,9 @@ final class ManifestMetadataReader {
       final @NotNull String key,
       final @Nullable String defaultValue) {
     final String value = metadata.getString(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
@@ -526,14 +540,18 @@ final class ManifestMetadataReader {
       final @NotNull String key,
       final @NotNull String defaultValue) {
     final String value = metadata.getString(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
   private static @Nullable List<String> readList(
       final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
     final String value = metadata.getString(key);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     if (value != null) {
       return Arrays.asList(value.split(",", -1));
     } else {
@@ -548,7 +566,9 @@ final class ManifestMetadataReader {
     if (value == -1) {
       value = ((Integer) metadata.getInt(key, -1)).doubleValue();
     }
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
@@ -559,7 +579,9 @@ final class ManifestMetadataReader {
       final long defaultValue) {
     // manifest meta-data only reads int if the value is not big enough
     final long value = metadata.getInt(key, (int) defaultValue);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
@@ -580,7 +602,10 @@ final class ManifestMetadataReader {
         autoInit = readBool(metadata, logger, AUTO_INIT, true);
       }
     } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, "Failed to read auto-init from android manifest metadata.", e);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(
+            SentryLevel.ERROR, "Failed to read auto-init from android manifest metadata.", e);
+      }
     }
     return autoInit;
   }

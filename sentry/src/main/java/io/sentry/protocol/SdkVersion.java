@@ -1,5 +1,7 @@
 package io.sentry.protocol;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
@@ -240,13 +242,17 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
       if (name == null) {
         String message = "Missing required field \"" + JsonKeys.NAME + "\"";
         Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(SentryLevel.ERROR, message, exception);
+        }
         throw exception;
       }
       if (version == null) {
         String message = "Missing required field \"" + JsonKeys.VERSION + "\"";
         Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(SentryLevel.ERROR, message, exception);
+        }
         throw exception;
       }
 

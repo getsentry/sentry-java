@@ -68,9 +68,11 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
         addWarn("Failed to init Sentry during appender initialization: " + e.getMessage());
       }
     } else if (!Sentry.isEnabled()) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "DSN is null. SentryAppender is not being initialized");
+      if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "DSN is null. SentryAppender is not being initialized");
+      }
     }
     addPackageAndIntegrationInfo();
     super.start();

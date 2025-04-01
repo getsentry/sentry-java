@@ -427,14 +427,18 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
       if (traceId == null) {
         String message = "Missing required field \"" + JsonKeys.TRACE_ID + "\"";
         Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, message, exception);
+        }
         throw exception;
       }
 
       if (spanId == null) {
         String message = "Missing required field \"" + JsonKeys.SPAN_ID + "\"";
         Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, message, exception);
+        }
         throw exception;
       }
 

@@ -1,5 +1,9 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.INFO;
+
 import io.sentry.backpressure.BackpressureMonitor;
 import io.sentry.backpressure.NoOpBackpressureMonitor;
 import io.sentry.cache.EnvelopeCache;
@@ -245,9 +249,11 @@ public final class Sentry {
     try {
       optionsConfiguration.configure(options);
     } catch (Throwable t) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Error in the 'OptionsConfiguration.configure' callback.", t);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error in the 'OptionsConfiguration.configure' callback.", t);
+      }
     }
   }
 
@@ -297,23 +303,27 @@ public final class Sentry {
           InitUtil.shouldInit(globalScope.getOptions(), options, isEnabled());
       if (shouldInit) {
         if (isEnabled()) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.WARNING,
-                  "Sentry has been already initialized. Previous configuration will be overwritten.");
+          if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "Sentry has been already initialized. Previous configuration will be overwritten.");
+          }
         }
 
         // load lazy fields of the options in a separate thread
         try {
           options.getExecutorService().submit(() -> options.loadLazyFields());
         } catch (RejectedExecutionException e) {
-          options
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Failed to call the executor. Lazy fields will not be loaded. Did you call Sentry.close()?",
-                  e);
+          if (options.getLogger().isEnabled(DEBUG)) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Failed to call the executor. Lazy fields will not be loaded. Did you call Sentry.close()?",
+                    e);
+          }
         }
 
         final IScopes scopes = getCurrentScopes();
@@ -352,24 +362,30 @@ public final class Sentry {
 
         handleAppStartProfilingConfig(options, options.getExecutorService());
 
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Using openTelemetryMode %s", options.getOpenTelemetryMode());
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Using span factory %s",
-                options.getSpanFactory().getClass().getName());
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Using scopes storage %s", scopesStorage.getClass().getName());
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "Using openTelemetryMode %s", options.getOpenTelemetryMode());
+
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Using span factory %s",
+                  options.getSpanFactory().getClass().getName());
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG, "Using scopes storage %s", scopesStorage.getClass().getName());
+        }
       } else {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "This init call has been ignored due to priority being too low.");
+        if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "This init call has been ignored due to priority being too low.");
+        }
       }
     }
   }
@@ -428,11 +444,13 @@ public final class Sentry {
                 // isStartProfilerOnAppStart doesn't need tracing, as it can be started/stopped
                 // manually
                 if (!options.isStartProfilerOnAppStart() && !options.isTracingEnabled()) {
-                  options
-                      .getLogger()
-                      .log(
-                          SentryLevel.INFO,
-                          "Tracing is disabled and app start profiling will not start.");
+                  if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+                    options
+                        .getLogger()
+                        .log(
+                            SentryLevel.INFO,
+                            "Tracing is disabled and app start profiling will not start.");
+                  }
                   return;
                 }
                 if (appStartProfilingConfigFile.createNewFile()) {
@@ -453,20 +471,26 @@ public final class Sentry {
                   }
                 }
               } catch (Throwable e) {
-                options
-                    .getLogger()
-                    .log(
-                        SentryLevel.ERROR, "Unable to create app start profiling config file. ", e);
+                if (options.getLogger().isEnabled(ERROR)) {
+                  options
+                      .getLogger()
+                      .log(
+                          SentryLevel.ERROR,
+                          "Unable to create app start profiling config file. ",
+                          e);
+                }
               }
             }
           });
     } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "Failed to call the executor. App start profiling config will not be changed. Did you call Sentry.close()?",
-              e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Failed to call the executor. App start profiling config will not be changed. Did you call Sentry.close()?",
+                e);
+      }
     }
   }
 
@@ -489,7 +513,9 @@ public final class Sentry {
     try {
       options.getExecutorService().submit(new PreviousSessionFinalizer(options, scopes));
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.DEBUG, "Failed to finalize previous session.", e);
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "Failed to finalize previous session.", e);
+      }
     }
   }
 
@@ -526,7 +552,9 @@ public final class Sentry {
                 }
               });
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.DEBUG, "Failed to notify options observers.", e);
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "Failed to notify options observers.", e);
+      }
     }
   }
 
@@ -554,7 +582,9 @@ public final class Sentry {
   @SuppressWarnings("FutureReturnValueIgnored")
   private static void initConfigurations(final @NotNull SentryOptions options) {
     final @NotNull ILogger logger = options.getLogger();
-    logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
+    if (options.getLogger().isEnabled(INFO)) {
+      logger.log(SentryLevel.INFO, "Initializing SDK with DSN: '%s'", options.getDsn());
+    }
 
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
@@ -565,7 +595,9 @@ public final class Sentry {
       final File outboxDir = new File(outboxPath);
       outboxDir.mkdirs();
     } else {
-      logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
+      if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+        logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
+      }
     }
 
     final String cacheDirPath = options.getCacheDirPath();
@@ -604,12 +636,14 @@ public final class Sentry {
                   }
                 });
       } catch (RejectedExecutionException e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                "Failed to call the executor. Old profiles will not be deleted. Did you call Sentry.close()?",
-                e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "Failed to call the executor. Old profiles will not be deleted. Did you call Sentry.close()?",
+                  e);
+        }
       }
     }
 

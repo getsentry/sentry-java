@@ -448,7 +448,9 @@ public final class SentryEnvelopeItem {
                   return serializeToMsgpack(replayPayload);
                 }
               } catch (Throwable t) {
-                logger.log(SentryLevel.ERROR, "Could not serialize replay recording", t);
+                if (logger.isEnabled(SentryLevel.ERROR)) {
+                  logger.log(SentryLevel.ERROR, "Could not serialize replay recording", t);
+                }
                 return null;
               } finally {
                 if (replayVideo != null) {

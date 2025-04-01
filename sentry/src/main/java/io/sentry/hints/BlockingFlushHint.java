@@ -27,7 +27,9 @@ public abstract class BlockingFlushHint implements DiskFlushNotification, Flusha
       return latch.await(flushTimeoutMillis, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      logger.log(ERROR, "Exception while awaiting for flush in BlockingFlushHint", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(ERROR, "Exception while awaiting for flush in BlockingFlushHint", e);
+      }
     }
     return false;
   }

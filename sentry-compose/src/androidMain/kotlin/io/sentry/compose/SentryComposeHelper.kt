@@ -69,7 +69,9 @@ internal class SentryComposeHelper(logger: ILogger) {
                 field.isAccessible = true
                 return field
             } catch (e: Exception) {
-                logger.log(SentryLevel.WARNING, "Could not load $className.$fieldName field")
+                if (logger.isEnabled(SentryLevel.WARNING)) {
+                    logger.log(SentryLevel.WARNING, "Could not load $className.$fieldName field")
+                }
             }
             return null
         }

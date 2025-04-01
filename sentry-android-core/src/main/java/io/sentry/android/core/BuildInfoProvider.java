@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import android.os.Build;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
@@ -67,8 +69,10 @@ public final class BuildInfoProvider {
           || Build.PRODUCT.contains("emulator")
           || Build.PRODUCT.contains("simulator");
     } catch (Throwable e) {
-      logger.log(
-          SentryLevel.ERROR, "Error checking whether application is running in an emulator.", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(
+            SentryLevel.ERROR, "Error checking whether application is running in an emulator.", e);
+      }
       return null;
     }
   }

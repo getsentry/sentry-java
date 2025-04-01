@@ -32,7 +32,9 @@ public final class PropagationContext {
       final @NotNull Baggage baggage = Baggage.fromHeader(baggageHeaderStrings, logger);
       return fromHeaders(traceHeader, baggage, null);
     } catch (InvalidSentryTraceHeaderException e) {
-      logger.log(SentryLevel.DEBUG, e, "Failed to parse Sentry trace header: %s", e.getMessage());
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, e, "Failed to parse Sentry trace header: %s", e.getMessage());
+      }
       return new PropagationContext();
     }
   }

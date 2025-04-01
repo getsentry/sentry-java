@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
@@ -131,9 +133,11 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
               if (dataEntry.getKey() instanceof String && dataEntry.getValue() != null) {
                 data.put((String) dataEntry.getKey(), dataEntry.getValue());
               } else {
-                options
-                    .getLogger()
-                    .log(SentryLevel.WARNING, "Invalid key or null value in data map.");
+                if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+                  options
+                      .getLogger()
+                      .log(SentryLevel.WARNING, "Invalid key or null value in data map.");
+                }
               }
             }
           }
@@ -833,7 +837,9 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
             try {
               level = new SentryLevel.Deserializer().deserialize(reader, logger);
             } catch (Exception exception) {
-              logger.log(SentryLevel.ERROR, exception, "Error when deserializing SentryLevel");
+              if (logger.isEnabled(ERROR)) {
+                logger.log(SentryLevel.ERROR, exception, "Error when deserializing SentryLevel");
+              }
             }
             break;
           default:

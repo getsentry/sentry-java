@@ -233,14 +233,18 @@ public final class ActivityFramesTracker {
                 runnable.run();
               } catch (Throwable ignored) {
                 if (tag != null) {
-                  options.getLogger().log(SentryLevel.WARNING, "Failed to execute " + tag);
+                  if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+                    options.getLogger().log(SentryLevel.WARNING, "Failed to execute " + tag);
+                  }
                 }
               }
             });
       }
     } catch (Throwable ignored) {
       if (tag != null) {
-        options.getLogger().log(SentryLevel.WARNING, "Failed to execute " + tag);
+        if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+          options.getLogger().log(SentryLevel.WARNING, "Failed to execute " + tag);
+        }
       }
     }
   }

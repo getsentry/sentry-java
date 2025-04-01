@@ -1,5 +1,9 @@
 package io.sentry.android.ndk;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.WARNING;
+
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -67,12 +71,16 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
               debugImage.setArch(d.getArch());
               debugImages.add(debugImage);
             }
-            options
-                .getLogger()
-                .log(SentryLevel.DEBUG, "Debug images loaded: %d", debugImages.size());
+            if (options.getLogger().isEnabled(DEBUG)) {
+              options
+                  .getLogger()
+                  .log(SentryLevel.DEBUG, "Debug images loaded: %d", debugImages.size());
+            }
           }
         } catch (Throwable e) {
-          options.getLogger().log(SentryLevel.ERROR, e, "Failed to load debug images.");
+          if (options.getLogger().isEnabled(ERROR)) {
+            options.getLogger().log(SentryLevel.ERROR, e, "Failed to load debug images.");
+          }
         }
       }
     }
@@ -98,12 +106,14 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
 
       final Set<DebugImage> referencedImages = filterImagesByAddresses(allDebugImages, addresses);
       if (referencedImages.isEmpty()) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "No debug images found for any of the %d addresses.",
-                addresses.size());
+        if (options.getLogger().isEnabled(WARNING)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "No debug images found for any of the %d addresses.",
+                  addresses.size());
+        }
         return null;
       }
 
@@ -171,9 +181,13 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
       try {
         moduleListLoader.clearModuleList();
 
-        options.getLogger().log(SentryLevel.INFO, "Debug images cleared.");
+        if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+          options.getLogger().log(SentryLevel.INFO, "Debug images cleared.");
+        }
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, e, "Failed to clear debug images.");
+        if (options.getLogger().isEnabled(ERROR)) {
+          options.getLogger().log(SentryLevel.ERROR, e, "Failed to clear debug images.");
+        }
       }
       debugImages = null;
     }

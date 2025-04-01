@@ -94,9 +94,11 @@ public final class OpenTelemetryAttributesExtractor {
                           HttpUtils.filterOutSecurityCookiesFromHeader(
                               headerValues, headerName, null)));
                 } catch (Throwable t) {
-                  options
-                      .getLogger()
-                      .log(SentryLevel.WARNING, "Expected a List<String> as header", t);
+                  if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+                    options
+                        .getLogger()
+                        .log(SentryLevel.WARNING, "Expected a List<String> as header", t);
+                  }
                 }
               }
             }
@@ -150,9 +152,11 @@ public final class OpenTelemetryAttributesExtractor {
         return new URL(scheme, serverAddress, serverPort.intValue(), pathToUse).toString();
       }
     } catch (Throwable t) {
-      options
-          .getLogger()
-          .log(SentryLevel.WARNING, "Unable to combine URL span attributes into one.", t);
+      if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Unable to combine URL span attributes into one.", t);
+      }
       return "";
     }
   }

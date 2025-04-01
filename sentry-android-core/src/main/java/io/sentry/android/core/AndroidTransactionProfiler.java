@@ -96,20 +96,26 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     }
     isInitialized = true;
     if (!isProfilingEnabled) {
-      logger.log(SentryLevel.INFO, "Profiling is disabled in options.");
+      if (logger.isEnabled(SentryLevel.INFO)) {
+        logger.log(SentryLevel.INFO, "Profiling is disabled in options.");
+      }
       return;
     }
     if (profilingTracesDirPath == null) {
-      logger.log(
-          SentryLevel.WARNING,
-          "Disabling profiling because no profiling traces dir path is defined in options.");
+      if (logger.isEnabled(SentryLevel.WARNING)) {
+        logger.log(
+            SentryLevel.WARNING,
+            "Disabling profiling because no profiling traces dir path is defined in options.");
+      }
       return;
     }
     if (profilingTracesHz <= 0) {
-      logger.log(
-          SentryLevel.WARNING,
-          "Disabling profiling because trace rate is set to %d",
-          profilingTracesHz);
+      if (logger.isEnabled(SentryLevel.WARNING)) {
+        logger.log(
+            SentryLevel.WARNING,
+            "Disabling profiling because trace rate is set to %d",
+            profilingTracesHz);
+      }
       return;
     }
 
@@ -135,11 +141,15 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       transactionsCounter++;
       // When the first transaction is starting, we can start profiling
       if (transactionsCounter == 1 && onFirstStart()) {
-        logger.log(SentryLevel.DEBUG, "Profiler started.");
+        if (logger.isEnabled(SentryLevel.DEBUG)) {
+          logger.log(SentryLevel.DEBUG, "Profiler started.");
+        }
       } else {
         transactionsCounter--;
-        logger.log(
-            SentryLevel.WARNING, "A profile is already running. This profile will be ignored.");
+        if (logger.isEnabled(SentryLevel.WARNING)) {
+          logger.log(
+              SentryLevel.WARNING, "A profile is already running. This profile will be ignored.");
+        }
       }
     }
   }
@@ -212,11 +222,13 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
       if (currentProfilingTransactionData == null
           || !currentProfilingTransactionData.getId().equals(transactionId)) {
         // A transaction is finishing, but it's not profiled. We can skip it
-        logger.log(
-            SentryLevel.INFO,
-            "Transaction %s (%s) finished, but was not currently being profiled. Skipping",
-            transactionName,
-            traceId);
+        if (logger.isEnabled(SentryLevel.INFO)) {
+          logger.log(
+              SentryLevel.INFO,
+              "Transaction %s (%s) finished, but was not currently being profiled. Skipping",
+              transactionName,
+              traceId);
+        }
         return null;
       }
 
@@ -224,7 +236,9 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         transactionsCounter--;
       }
 
-      logger.log(SentryLevel.DEBUG, "Transaction %s (%s) finished.", transactionName, traceId);
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "Transaction %s (%s) finished.", transactionName, traceId);
+      }
 
       if (transactionsCounter != 0) {
         // We notify the data referring to this transaction that it finished

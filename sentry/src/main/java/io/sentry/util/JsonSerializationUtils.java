@@ -1,5 +1,7 @@
 package io.sentry.util;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.ILogger;
 import io.sentry.ISerializer;
 import io.sentry.JsonSerializable;
@@ -61,7 +63,9 @@ public final class JsonSerializationUtils {
         return stream.toByteArray();
       }
     } catch (Throwable t) {
-      logger.log(SentryLevel.ERROR, "Could not serialize serializable", t);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, "Could not serialize serializable", t);
+      }
       return null;
     }
   }

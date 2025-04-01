@@ -1,5 +1,7 @@
 package io.sentry.android.core;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import io.sentry.ILogger;
@@ -36,12 +38,16 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
 
     final String path = getPath(options);
     if (path == null) {
-      logger.log(
-          SentryLevel.WARNING,
-          "Null given as a path to EnvelopeFileObserverIntegration. Nothing will be registered.");
+      if (logger.isEnabled(SentryLevel.WARNING)) {
+        logger.log(
+            SentryLevel.WARNING,
+            "Null given as a path to EnvelopeFileObserverIntegration. Nothing will be registered.");
+      }
     } else {
-      logger.log(
-          SentryLevel.DEBUG, "Registering EnvelopeFileObserverIntegration for path: %s", path);
+      if (logger.isEnabled(DEBUG)) {
+        logger.log(
+            SentryLevel.DEBUG, "Registering EnvelopeFileObserverIntegration for path: %s", path);
+      }
 
       try {
         options
@@ -55,10 +61,12 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
                   }
                 });
       } catch (Throwable e) {
-        logger.log(
-            SentryLevel.DEBUG,
-            "Failed to start EnvelopeFileObserverIntegration on executor thread.",
-            e);
+        if (logger.isEnabled(DEBUG)) {
+          logger.log(
+              SentryLevel.DEBUG,
+              "Failed to start EnvelopeFileObserverIntegration on executor thread.",
+              e);
+        }
       }
     }
   }
@@ -81,13 +89,17 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
             path, outboxSender, options.getLogger(), options.getFlushTimeoutMillis());
     try {
       observer.startWatching();
-      options.getLogger().log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration installed.");
+      }
       addIntegrationToSdkVersion("EnvelopeFileObserver");
     } catch (Throwable e) {
       // it could throw eg NoSuchFileException or NullPointerException
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Failed to initialize EnvelopeFileObserverIntegration.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Failed to initialize EnvelopeFileObserverIntegration.", e);
+      }
     }
   }
 
@@ -100,7 +112,9 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
       observer.stopWatching();
 
       if (logger != null) {
-        logger.log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration removed.");
+        if (logger.isEnabled(SentryLevel.DEBUG)) {
+          logger.log(SentryLevel.DEBUG, "EnvelopeFileObserverIntegration removed.");
+        }
       }
     }
   }

@@ -1,5 +1,7 @@
 package io.sentry.transport;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.SentryDate;
@@ -69,7 +71,9 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
     } else {
       lastRejectTimestamp = dateProvider.now();
       // if the thread pool is full, we don't cache it
-      logger.log(SentryLevel.WARNING, "Submit cancelled");
+      if (logger.isEnabled(SentryLevel.WARNING)) {
+        logger.log(SentryLevel.WARNING, "Submit cancelled");
+      }
       return new CancelledFuture<>();
     }
   }
@@ -89,7 +93,9 @@ final class QueuedThreadPoolExecutor extends ThreadPoolExecutor {
     try {
       unfinishedTasksCount.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
-      logger.log(SentryLevel.ERROR, "Failed to wait till idle", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, "Failed to wait till idle", e);
+      }
       Thread.currentThread().interrupt();
     }
   }

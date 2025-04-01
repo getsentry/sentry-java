@@ -45,11 +45,13 @@ public final class UncaughtExceptionHandlerIntegration
   @Override
   public final void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     if (registered) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "Attempt to register a UncaughtExceptionHandlerIntegration twice.");
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Attempt to register a UncaughtExceptionHandlerIntegration twice.");
+      }
       return;
     }
     registered = true;
@@ -57,24 +59,28 @@ public final class UncaughtExceptionHandlerIntegration
     this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options = Objects.requireNonNull(options, "SentryOptions is required");
 
-    this.options
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "UncaughtExceptionHandlerIntegration enabled: %s",
-            this.options.isEnableUncaughtExceptionHandler());
+    if (this.options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      this.options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "UncaughtExceptionHandlerIntegration enabled: %s",
+              this.options.isEnableUncaughtExceptionHandler());
+    }
 
     if (this.options.isEnableUncaughtExceptionHandler()) {
       final Thread.UncaughtExceptionHandler currentHandler =
           threadAdapter.getDefaultUncaughtExceptionHandler();
       if (currentHandler != null) {
-        this.options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "default UncaughtExceptionHandler class='"
-                    + currentHandler.getClass().getName()
-                    + "'");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          this.options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "default UncaughtExceptionHandler class='"
+                      + currentHandler.getClass().getName()
+                      + "'");
+        }
 
         if (currentHandler instanceof UncaughtExceptionHandlerIntegration) {
           final UncaughtExceptionHandlerIntegration currentHandlerIntegration =
@@ -87,9 +93,11 @@ public final class UncaughtExceptionHandlerIntegration
 
       threadAdapter.setDefaultUncaughtExceptionHandler(this);
 
-      this.options
-          .getLogger()
-          .log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration installed.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        this.options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration installed.");
+      }
       addIntegrationToSdkVersion("UncaughtExceptionHandler");
     }
   }
@@ -97,7 +105,9 @@ public final class UncaughtExceptionHandlerIntegration
   @Override
   public void uncaughtException(Thread thread, Throwable thrown) {
     if (options != null && scopes != null) {
-      options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
+      if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+        options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
+      }
 
       try {
         final UncaughtExceptionHint exceptionHint =
@@ -122,22 +132,28 @@ public final class UncaughtExceptionHandlerIntegration
             || EventDropReason.MULTITHREADED_DEDUPLICATION.equals(eventDropReason)) {
           // Block until the event is flushed to disk
           if (!exceptionHint.waitFlush()) {
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.WARNING,
-                    "Timed out waiting to flush event to disk before crashing. Event: %s",
-                    event.getEventId());
+            if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.WARNING,
+                      "Timed out waiting to flush event to disk before crashing. Event: %s",
+                      event.getEventId());
+            }
           }
         }
       } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
+        if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
+        }
       }
 
       if (defaultExceptionHandler != null) {
-        options.getLogger().log(SentryLevel.INFO, "Invoking inner uncaught exception handler.");
+        if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+          options.getLogger().log(SentryLevel.INFO, "Invoking inner uncaught exception handler.");
+        }
         defaultExceptionHandler.uncaughtException(thread, thrown);
       } else {
         if (options.isPrintUncaughtStackTrace()) {
@@ -163,7 +179,11 @@ public final class UncaughtExceptionHandlerIntegration
       threadAdapter.setDefaultUncaughtExceptionHandler(defaultExceptionHandler);
 
       if (options != null) {
-        options.getLogger().log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration removed.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration removed.");
+        }
       }
     }
   }

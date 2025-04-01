@@ -1,5 +1,7 @@
 package io.sentry.spring;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import java.io.IOException;
@@ -25,7 +27,9 @@ final class RequestPayloadExtractor {
                 : StreamUtils.copyToByteArray(cachedRequest.getInputStream());
         return new String(body, StandardCharsets.UTF_8);
       } catch (IOException e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to set request body", e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options.getLogger().log(SentryLevel.ERROR, "Failed to set request body", e);
+        }
         return null;
       }
     } else {

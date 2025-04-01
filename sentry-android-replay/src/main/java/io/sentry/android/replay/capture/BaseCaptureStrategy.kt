@@ -187,7 +187,13 @@ internal abstract class BaseCaptureStrategy(
                     try {
                         task()
                     } catch (e: Throwable) {
-                        options.logger.log(ERROR, "Failed to execute task $TAG.runInBackground", e)
+                        if (options.logger.isEnabled(ERROR)) {
+                            options.logger.log(
+                                ERROR,
+                                "Failed to execute task $TAG.runInBackground",
+                                e
+                            )
+                        }
                     }
                 }
             }

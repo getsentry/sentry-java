@@ -1,5 +1,10 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.INFO;
+import static io.sentry.SentryLevel.WARNING;
+
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.Retryable;
@@ -36,21 +41,29 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   @Override
   protected void processFile(final @NotNull File file, final @NotNull Hint hint) {
     if (!file.isFile()) {
-      logger.log(SentryLevel.DEBUG, "'%s' is not a file.", file.getAbsolutePath());
+      if (logger.isEnabled(DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "'%s' is not a file.", file.getAbsolutePath());
+      }
       return;
     }
 
     if (!isRelevantFileName(file.getName())) {
-      logger.log(
-          SentryLevel.DEBUG, "File '%s' doesn't match extension expected.", file.getAbsolutePath());
+      if (logger.isEnabled(DEBUG)) {
+        logger.log(
+            SentryLevel.DEBUG,
+            "File '%s' doesn't match extension expected.",
+            file.getAbsolutePath());
+      }
       return;
     }
 
     if (!file.getParentFile().canWrite()) {
-      logger.log(
-          SentryLevel.WARNING,
-          "File '%s' cannot be deleted so it will not be processed.",
-          file.getAbsolutePath());
+      if (logger.isEnabled(WARNING)) {
+        logger.log(
+            SentryLevel.WARNING,
+            "File '%s' cannot be deleted so it will not be processed.",
+            file.getAbsolutePath());
+      }
       return;
     }
 
@@ -69,23 +82,31 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
           logger,
           (flushable) -> {
             if (!flushable.waitFlush()) {
-              logger.log(SentryLevel.WARNING, "Timed out waiting for envelope submission.");
+              if (logger.isEnabled(SentryLevel.WARNING)) {
+                logger.log(SentryLevel.WARNING, "Timed out waiting for envelope submission.");
+              }
             }
           });
     } catch (FileNotFoundException e) {
-      logger.log(SentryLevel.ERROR, e, "File '%s' cannot be found.", file.getAbsolutePath());
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, e, "File '%s' cannot be found.", file.getAbsolutePath());
+      }
     } catch (IOException e) {
       logger.log(SentryLevel.ERROR, e, "I/O on file '%s' failed.", file.getAbsolutePath());
     } catch (Throwable e) {
-      logger.log(
-          SentryLevel.ERROR, e, "Failed to capture cached envelope %s", file.getAbsolutePath());
+      if (logger.isEnabled(ERROR)) {
+        logger.log(
+            SentryLevel.ERROR, e, "Failed to capture cached envelope %s", file.getAbsolutePath());
+      }
       HintUtils.runIfHasTypeLogIfNot(
           hint,
           Retryable.class,
           logger,
           (retryable) -> {
             retryable.setRetry(false);
-            logger.log(SentryLevel.INFO, e, "File '%s' won't retry.", file.getAbsolutePath());
+            if (logger.isEnabled(INFO)) {
+              logger.log(SentryLevel.INFO, e, "File '%s' won't retry.", file.getAbsolutePath());
+            }
           });
     } finally {
       // Unless the transport marked this to be retried, it'll be deleted.
@@ -96,12 +117,16 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
           (retryable) -> {
             if (!retryable.isRetry()) {
               safeDelete(file, "after trying to capture it");
-              logger.log(SentryLevel.DEBUG, "Deleted file %s.", file.getAbsolutePath());
+              if (logger.isEnabled(DEBUG)) {
+                logger.log(SentryLevel.DEBUG, "Deleted file %s.", file.getAbsolutePath());
+              }
             } else {
-              logger.log(
-                  SentryLevel.INFO,
-                  "File not deleted since retry was marked. %s.",
-                  file.getAbsolutePath());
+              if (logger.isEnabled(INFO)) {
+                logger.log(
+                    SentryLevel.INFO,
+                    "File not deleted since retry was marked. %s.",
+                    file.getAbsolutePath());
+              }
             }
           });
     }
@@ -122,19 +147,23 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
   private void safeDelete(final @NotNull File file, final @NotNull String errorMessageSuffix) {
     try {
       if (!file.delete()) {
+        if (logger.isEnabled(ERROR)) {
+          logger.log(
+              SentryLevel.ERROR,
+              "Failed to delete '%s' %s",
+              file.getAbsolutePath(),
+              errorMessageSuffix);
+        }
+      }
+    } catch (Throwable e) {
+      if (logger.isEnabled(ERROR)) {
         logger.log(
             SentryLevel.ERROR,
+            e,
             "Failed to delete '%s' %s",
             file.getAbsolutePath(),
             errorMessageSuffix);
       }
-    } catch (Throwable e) {
-      logger.log(
-          SentryLevel.ERROR,
-          e,
-          "Failed to delete '%s' %s",
-          file.getAbsolutePath(),
-          errorMessageSuffix);
     }
   }
 }

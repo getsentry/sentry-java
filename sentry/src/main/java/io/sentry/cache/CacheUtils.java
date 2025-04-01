@@ -33,7 +33,9 @@ final class CacheUtils {
       final @NotNull String fileName) {
     final File cacheDir = ensureCacheDir(options, dirName);
     if (cacheDir == null) {
-      options.getLogger().log(INFO, "Cache dir is not set, cannot store in scope cache");
+      if (options.getLogger().isEnabled(INFO)) {
+        options.getLogger().log(INFO, "Cache dir is not set, cannot store in scope cache");
+      }
       return;
     }
 
@@ -42,7 +44,9 @@ final class CacheUtils {
         final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       options.getSerializer().serialize(entity, writer);
     } catch (Throwable e) {
-      options.getLogger().log(ERROR, e, "Error persisting entity: %s", fileName);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(ERROR, e, "Error persisting entity: %s", fileName);
+      }
     }
   }
 
@@ -52,14 +56,20 @@ final class CacheUtils {
       final @NotNull String fileName) {
     final File cacheDir = ensureCacheDir(options, dirName);
     if (cacheDir == null) {
-      options.getLogger().log(INFO, "Cache dir is not set, cannot delete from scope cache");
+      if (options.getLogger().isEnabled(INFO)) {
+        options.getLogger().log(INFO, "Cache dir is not set, cannot delete from scope cache");
+      }
       return;
     }
 
     final File file = new File(cacheDir, fileName);
-    options.getLogger().log(DEBUG, "Deleting %s from scope cache", fileName);
+    if (options.getLogger().isEnabled(DEBUG)) {
+      options.getLogger().log(DEBUG, "Deleting %s from scope cache", fileName);
+    }
     if (!file.delete()) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
+      }
     }
   }
 
@@ -71,7 +81,9 @@ final class CacheUtils {
       final @Nullable JsonDeserializer<R> elementDeserializer) {
     final File cacheDir = ensureCacheDir(options, dirName);
     if (cacheDir == null) {
-      options.getLogger().log(INFO, "Cache dir is not set, cannot read from scope cache");
+      if (options.getLogger().isEnabled(INFO)) {
+        options.getLogger().log(INFO, "Cache dir is not set, cannot read from scope cache");
+      }
       return null;
     }
 
@@ -85,10 +97,14 @@ final class CacheUtils {
           return options.getSerializer().deserializeCollection(reader, clazz, elementDeserializer);
         }
       } catch (Throwable e) {
-        options.getLogger().log(ERROR, e, "Error reading entity from scope cache: %s", fileName);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options.getLogger().log(ERROR, e, "Error reading entity from scope cache: %s", fileName);
+        }
       }
     } else {
-      options.getLogger().log(DEBUG, "No entry stored for %s", fileName);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(DEBUG, "No entry stored for %s", fileName);
+      }
     }
     return null;
   }

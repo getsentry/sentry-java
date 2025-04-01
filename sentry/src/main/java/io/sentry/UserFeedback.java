@@ -211,7 +211,9 @@ public final class UserFeedback implements JsonUnknown, JsonSerializable {
       if (sentryId == null) {
         String message = "Missing required field \"" + JsonKeys.EVENT_ID + "\"";
         Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, message, exception);
+        }
         throw exception;
       }
 

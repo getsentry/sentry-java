@@ -1,5 +1,6 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import io.sentry.transport.RateLimiter;
@@ -41,7 +42,9 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
 
     default boolean hasValidPath(final @Nullable String dirPath, final @NotNull ILogger logger) {
       if (dirPath == null || dirPath.isEmpty()) {
-        logger.log(SentryLevel.INFO, "No cached dir path is defined in options.");
+        if (logger.isEnabled(SentryLevel.INFO)) {
+          logger.log(SentryLevel.INFO, "No cached dir path is defined in options.");
+        }
         return false;
       }
       return true;
@@ -53,11 +56,15 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
         final @NotNull ILogger logger) {
       final File dirFile = new File(dirPath);
       return () -> {
-        logger.log(SentryLevel.DEBUG, "Started processing cached files from %s", dirPath);
+        if (logger.isEnabled(SentryLevel.DEBUG)) {
+          logger.log(SentryLevel.DEBUG, "Started processing cached files from %s", dirPath);
+        }
 
         directoryProcessor.processDirectory(dirFile);
 
-        logger.log(SentryLevel.DEBUG, "Finished processing cached files from %s", dirPath);
+        if (logger.isEnabled(SentryLevel.DEBUG)) {
+          logger.log(SentryLevel.DEBUG, "Finished processing cached files from %s", dirPath);
+        }
       };
     }
   }
@@ -74,13 +81,17 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
 
     final String cachedDir = options.getCacheDirPath();
     if (!factory.hasValidPath(cachedDir, options.getLogger())) {
-      options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "No cache dir path is defined in options.");
+      }
       return;
     }
 
-    options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "SendCachedEventFireAndForgetIntegration installed.");
+    }
     addIntegrationToSdkVersion("SendCachedEnvelopeFireAndForget");
 
     sendCachedEnvelopes(scopes, options);
@@ -112,11 +123,13 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
               () -> {
                 try {
                   if (isClosed.get()) {
-                    options
-                        .getLogger()
-                        .log(
-                            SentryLevel.INFO,
-                            "SendCachedEnvelopeFireAndForgetIntegration, not trying to send after closing.");
+                    if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+                      options
+                          .getLogger()
+                          .log(
+                              SentryLevel.INFO,
+                              "SendCachedEnvelopeFireAndForgetIntegration, not trying to send after closing.");
+                    }
                     return;
                   }
 
@@ -131,50 +144,65 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
                   if (connectionStatusProvider != null
                       && connectionStatusProvider.getConnectionStatus()
                           == IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
-                    options
-                        .getLogger()
-                        .log(
-                            SentryLevel.INFO,
-                            "SendCachedEnvelopeFireAndForgetIntegration, no connection.");
+                    if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+                      options
+                          .getLogger()
+                          .log(
+                              SentryLevel.INFO,
+                              "SendCachedEnvelopeFireAndForgetIntegration, no connection.");
+                    }
                     return;
                   }
 
                   // in case there's rate limiting active, skip processing
                   final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
                   if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
-                    options
-                        .getLogger()
-                        .log(
-                            SentryLevel.INFO,
-                            "SendCachedEnvelopeFireAndForgetIntegration, rate limiting active.");
+                    if (options.getLogger().isEnabled(SentryLevel.INFO)) {
+                      options
+                          .getLogger()
+                          .log(
+                              SentryLevel.INFO,
+                              "SendCachedEnvelopeFireAndForgetIntegration, rate limiting active.");
+                    }
                     return;
                   }
 
                   if (sender == null) {
-                    options
-                        .getLogger()
-                        .log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
+                    if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+                      options
+                          .getLogger()
+                          .log(SentryLevel.ERROR, "SendFireAndForget factory is null.");
+                    }
                     return;
                   }
 
                   sender.send();
                 } catch (Throwable e) {
-                  options
-                      .getLogger()
-                      .log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
+                  if (options.getLogger().isEnabled(ERROR)) {
+                    options
+                        .getLogger()
+                        .log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
+                  }
                 }
               });
     } catch (RejectedExecutionException e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?",
-              e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?",
+                e);
+      }
     } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Failed to call the executor. Cached events will not be sent", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Failed to call the executor. Cached events will not be sent",
+                e);
+      }
     }
   }
 }

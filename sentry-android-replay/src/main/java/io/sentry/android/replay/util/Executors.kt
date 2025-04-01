@@ -41,7 +41,9 @@ internal fun ISentryExecutorService.submitSafely(
             }
         }
     } catch (e: Throwable) {
-        options.logger.log(ERROR, "Failed to submit task $taskName to executor", e)
+        if (options.logger.isEnabled(ERROR)) {
+            options.logger.log(ERROR, "Failed to submit task $taskName to executor", e)
+        }
         null
     }
 }
@@ -65,7 +67,9 @@ internal fun ExecutorService.submitSafely(
             }
         }
     } catch (e: Throwable) {
-        options.logger.log(ERROR, "Failed to submit task $taskName to executor", e)
+        if (options.logger.isEnabled(ERROR)) {
+            options.logger.log(ERROR, "Failed to submit task $taskName to executor", e)
+        }
         null
     }
 }
@@ -84,11 +88,15 @@ internal fun ScheduledExecutorService.scheduleAtFixedRateSafely(
             try {
                 task.run()
             } catch (e: Throwable) {
-                options.logger.log(ERROR, "Failed to execute task $taskName", e)
+                if (options.logger.isEnabled(ERROR)) {
+                    options.logger.log(ERROR, "Failed to execute task $taskName", e)
+                }
             }
         }, initialDelay, period, unit)
     } catch (e: Throwable) {
-        options.logger.log(ERROR, "Failed to submit task $taskName to executor", e)
+        if (options.logger.isEnabled(ERROR)) {
+            options.logger.log(ERROR, "Failed to submit task $taskName to executor", e)
+        }
         null
     }
 }

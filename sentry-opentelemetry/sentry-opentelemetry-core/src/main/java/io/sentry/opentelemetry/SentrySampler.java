@@ -133,12 +133,14 @@ public final class SentrySampler implements Sampler {
       }
       return new SentrySamplingResult(parentSamplingDecision);
     } else {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Encountered a missing parent sampling decision where one was expected.");
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Encountered a missing parent sampling decision where one was expected.");
+      }
       return new SentrySamplingResult(new TracesSamplingDecision(true));
     }
   }

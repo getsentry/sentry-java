@@ -18,11 +18,13 @@ public final class InitUtil {
       newOptions.setVersionDetector(new ManifestVersionDetector(newOptions));
     }
     if (newOptions.getVersionDetector().checkForMixedVersions()) {
-      newOptions
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "Not initializing Sentry because mixed SDK versions have been detected.");
+      if (newOptions.getLogger().isEnabled(SentryLevel.ERROR)) {
+        newOptions
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Not initializing Sentry because mixed SDK versions have been detected.");
+      }
       final @NotNull String docsUrl =
           Platform.isAndroid()
               ? "https://docs.sentry.io/platforms/android/troubleshooting/mixed-versions"

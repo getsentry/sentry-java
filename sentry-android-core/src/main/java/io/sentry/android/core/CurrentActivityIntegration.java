@@ -30,7 +30,9 @@ public final class CurrentActivityIntegration
   @Override
   public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     application.registerActivityLifecycleCallbacks(this);
-    options.getLogger().log(SentryLevel.DEBUG, "CurrentActivityIntegration installed.");
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      options.getLogger().log(SentryLevel.DEBUG, "CurrentActivityIntegration installed.");
+    }
     addIntegrationToSdkVersion("CurrentActivity");
   }
 

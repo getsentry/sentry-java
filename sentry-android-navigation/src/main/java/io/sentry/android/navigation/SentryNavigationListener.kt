@@ -116,10 +116,12 @@ public class SentryNavigationListener @JvmOverloads constructor(
 
         if (destination.navigatorName == "activity") {
             // we do not trace navigation between activities to avoid clashing with activity lifecycle tracing
-            scopes.options.logger.log(
-                DEBUG,
-                "Navigating to activity destination, no transaction captured."
-            )
+            if (scopes.options.logger.isEnabled(DEBUG)) {
+                scopes.options.logger.log(
+                    DEBUG,
+                    "Navigating to activity destination, no transaction captured."
+                )
+            }
             return
         }
 
@@ -180,10 +182,12 @@ public class SentryNavigationListener @JvmOverloads constructor(
         val name = route ?: try {
             context.resources.getResourceEntryName(id)
         } catch (e: NotFoundException) {
-            scopes.options.logger.log(
-                DEBUG,
-                "Destination id cannot be retrieved from Resources, no transaction captured."
-            )
+            if (scopes.options.logger.isEnabled(DEBUG)) {
+                scopes.options.logger.log(
+                    DEBUG,
+                    "Destination id cannot be retrieved from Resources, no transaction captured."
+                )
+            }
             null
         } ?: return null
 

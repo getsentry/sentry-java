@@ -1,6 +1,8 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.WARNING;
 
 import io.sentry.hints.Cached;
 import io.sentry.hints.Enqueable;
@@ -38,39 +40,51 @@ abstract class DirectoryProcessor {
 
   public void processDirectory(final @NotNull File directory) {
     try {
-      logger.log(SentryLevel.DEBUG, "Processing dir. %s", directory.getAbsolutePath());
+      if (logger.isEnabled(DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "Processing dir. %s", directory.getAbsolutePath());
+      }
 
       if (!directory.exists()) {
-        logger.log(
-            SentryLevel.WARNING,
-            "Directory '%s' doesn't exist. No cached events to send.",
-            directory.getAbsolutePath());
+        if (logger.isEnabled(WARNING)) {
+          logger.log(
+              SentryLevel.WARNING,
+              "Directory '%s' doesn't exist. No cached events to send.",
+              directory.getAbsolutePath());
+        }
         return;
       }
       if (!directory.isDirectory()) {
-        logger.log(
-            SentryLevel.ERROR, "Cache dir %s is not a directory.", directory.getAbsolutePath());
+        if (logger.isEnabled(ERROR)) {
+          logger.log(
+              SentryLevel.ERROR, "Cache dir %s is not a directory.", directory.getAbsolutePath());
+        }
         return;
       }
 
       final File[] listFiles = directory.listFiles();
       if (listFiles == null) {
-        logger.log(SentryLevel.ERROR, "Cache dir %s is null.", directory.getAbsolutePath());
+        if (logger.isEnabled(ERROR)) {
+          logger.log(SentryLevel.ERROR, "Cache dir %s is null.", directory.getAbsolutePath());
+        }
         return;
       }
 
       final File[] filteredListFiles = directory.listFiles((d, name) -> isRelevantFileName(name));
 
-      logger.log(
-          SentryLevel.DEBUG,
-          "Processing %d items from cache dir %s",
-          filteredListFiles != null ? filteredListFiles.length : 0,
-          directory.getAbsolutePath());
+      if (logger.isEnabled(DEBUG)) {
+        logger.log(
+            SentryLevel.DEBUG,
+            "Processing %d items from cache dir %s",
+            filteredListFiles != null ? filteredListFiles.length : 0,
+            directory.getAbsolutePath());
+      }
 
       for (File file : listFiles) {
         // it ignores .sentry-native database folder and new ones that might come up
         if (!file.isFile()) {
-          logger.log(SentryLevel.DEBUG, "File %s is not a File.", file.getAbsolutePath());
+          if (logger.isEnabled(DEBUG)) {
+            logger.log(SentryLevel.DEBUG, "File %s is not a File.", file.getAbsolutePath());
+          }
           continue;
         }
 
@@ -78,21 +92,27 @@ abstract class DirectoryProcessor {
         // if envelope has already been submitted into the transport queue, we don't process it
         // again
         if (processedEnvelopes.contains(filePath)) {
-          logger.log(
-              SentryLevel.DEBUG,
-              "File '%s' has already been processed so it will not be processed again.",
-              filePath);
+          if (logger.isEnabled(DEBUG)) {
+            logger.log(
+                SentryLevel.DEBUG,
+                "File '%s' has already been processed so it will not be processed again.",
+                filePath);
+          }
           continue;
         }
 
         // in case there's rate limiting active, skip processing
         final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
         if (rateLimiter != null && rateLimiter.isActiveForCategory(DataCategory.All)) {
-          logger.log(SentryLevel.INFO, "DirectoryProcessor, rate limiting active.");
+          if (logger.isEnabled(SentryLevel.INFO)) {
+            logger.log(SentryLevel.INFO, "DirectoryProcessor, rate limiting active.");
+          }
           return;
         }
 
-        logger.log(SentryLevel.DEBUG, "Processing file: %s", filePath);
+        if (logger.isEnabled(DEBUG)) {
+          logger.log(SentryLevel.DEBUG, "Processing file: %s", filePath);
+        }
 
         final SendCachedEnvelopeHint cachedHint =
             new SendCachedEnvelopeHint(flushTimeoutMillis, logger, filePath, processedEnvelopes);
@@ -106,7 +126,9 @@ abstract class DirectoryProcessor {
         Thread.sleep(ENVELOPE_PROCESSING_DELAY);
       }
     } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
+      if (logger.isEnabled(ERROR)) {
+        logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
+      }
     }
   }
 
@@ -153,7 +175,9 @@ abstract class DirectoryProcessor {
         return latch.await(flushTimeoutMillis, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
-        logger.log(ERROR, "Exception while awaiting on lock.", e);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(ERROR, "Exception while awaiting on lock.", e);
+        }
       }
       return false;
     }

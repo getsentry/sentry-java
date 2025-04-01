@@ -142,10 +142,12 @@ public class ReplayCache(
             videoFile.delete()
         }
         if (frames.isEmpty()) {
-            options.logger.log(
-                DEBUG,
-                "No captured frames, skipping generating a video segment"
-            )
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(
+                    DEBUG,
+                    "No captured frames, skipping generating a video segment"
+                )
+            }
             return null
         }
 
@@ -194,10 +196,12 @@ public class ReplayCache(
         }
 
         if (frameCount == 0) {
-            options.logger.log(
-                DEBUG,
-                "Generated a video with no frames, not capturing a replay segment"
-            )
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(
+                    DEBUG,
+                    "Generated a video with no frames, not capturing a replay segment"
+                )
+            }
             deleteFile(videoFile)
             return null
         }
@@ -226,7 +230,13 @@ public class ReplayCache(
             bitmap.recycle()
             true
         } catch (e: Throwable) {
-            options.logger.log(WARNING, "Unable to decode bitmap and encode it into a video, skipping frame", e)
+            if (options.logger.isEnabled(WARNING)) {
+                options.logger.log(
+                    WARNING,
+                    "Unable to decode bitmap and encode it into a video, skipping frame",
+                    e
+                )
+            }
             false
         }
     }
@@ -234,10 +244,18 @@ public class ReplayCache(
     private fun deleteFile(file: File) {
         try {
             if (!file.delete()) {
-                options.logger.log(ERROR, "Failed to delete replay frame: %s", file.absolutePath)
+                if (options.logger.isEnabled(ERROR)) {
+                    options.logger.log(
+                        ERROR,
+                        "Failed to delete replay frame: %s",
+                        file.absolutePath
+                    )
+                }
             }
         } catch (e: Throwable) {
-            options.logger.log(ERROR, e, "Failed to delete replay frame: %s", file.absolutePath)
+            if (options.logger.isEnabled(ERROR)) {
+                options.logger.log(ERROR, e, "Failed to delete replay frame: %s", file.absolutePath)
+            }
         }
     }
 
@@ -311,10 +329,12 @@ public class ReplayCache(
 
         fun makeReplayCacheDir(options: SentryOptions, replayId: SentryId): File? {
             return if (options.cacheDirPath.isNullOrEmpty()) {
-                options.logger.log(
-                    WARNING,
-                    "SentryOptions.cacheDirPath is not set, session replay is no-op"
-                )
+                if (options.logger.isEnabled(WARNING)) {
+                    options.logger.log(
+                        WARNING,
+                        "SentryOptions.cacheDirPath is not set, session replay is no-op"
+                    )
+                }
                 null
             } else {
                 File(options.cacheDirPath!!, "replay_$replayId").also { it.mkdirs() }
@@ -325,7 +345,9 @@ public class ReplayCache(
             val replayCacheDir = makeReplayCacheDir(options, replayId)
             val lastSegmentFile = File(replayCacheDir, ONGOING_SEGMENT)
             if (!lastSegmentFile.exists()) {
-                options.logger.log(DEBUG, "No ongoing segment found for replay: %s", replayId)
+                if (options.logger.isEnabled(DEBUG)) {
+                    options.logger.log(DEBUG, "No ongoing segment found for replay: %s", replayId)
+                }
                 FileUtils.deleteRecursively(replayCacheDir)
                 return null
             }
@@ -356,11 +378,13 @@ public class ReplayCache(
             if (height == null || width == null || frameRate == null || bitRate == null ||
                 (segmentId == null || segmentId == -1) || segmentTimestamp == null || replayType == null
             ) {
-                options.logger.log(
-                    DEBUG,
-                    "Incorrect segment values found for replay: %s, deleting the replay",
-                    replayId
-                )
+                if (options.logger.isEnabled(DEBUG)) {
+                    options.logger.log(
+                        DEBUG,
+                        "Incorrect segment values found for replay: %s, deleting the replay",
+                        replayId
+                    )
+                }
                 FileUtils.deleteRecursively(replayCacheDir)
                 return null
             }
@@ -388,11 +412,13 @@ public class ReplayCache(
             }
 
             if (cache.frames.isEmpty()) {
-                options.logger.log(
-                    DEBUG,
-                    "No frames found for replay: %s, deleting the replay",
-                    replayId
-                )
+                if (options.logger.isEnabled(DEBUG)) {
+                    options.logger.log(
+                        DEBUG,
+                        "No frames found for replay: %s, deleting the replay",
+                        replayId
+                    )
+                }
                 FileUtils.deleteRecursively(replayCacheDir)
                 return null
             }

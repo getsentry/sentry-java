@@ -72,26 +72,33 @@ internal class ScreenshotRecorder(
 
     fun capture() {
         if (!isCapturing.get()) {
-            options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
+            }
             return
         }
 
         if (!contentChanged.get() && lastCaptureSuccessful.get()) {
-            options.logger.log(DEBUG, "Content hasn't changed, repeating last known frame")
-
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(DEBUG, "Content hasn't changed, repeating last known frame")
+            }
             screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
             return
         }
 
         val root = rootView?.get()
         if (root == null || root.width <= 0 || root.height <= 0 || !root.isShown) {
-            options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
+            }
             return
         }
 
         val window = root.phoneWindow
         if (window == null) {
-            options.logger.log(DEBUG, "Window is invalid, not capturing screenshot")
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(DEBUG, "Window is invalid, not capturing screenshot")
+            }
             return
         }
 
@@ -104,14 +111,25 @@ internal class ScreenshotRecorder(
                     screenshot,
                     { copyResult: Int ->
                         if (copyResult != PixelCopy.SUCCESS) {
-                            options.logger.log(INFO, "Failed to capture replay recording: %d", copyResult)
+                            if (options.logger.isEnabled(INFO)) {
+                                options.logger.log(
+                                    INFO,
+                                    "Failed to capture replay recording: %d",
+                                    copyResult
+                                )
+                            }
                             lastCaptureSuccessful.set(false)
                             return@request
                         }
 
                         // TODO: handle animations with heuristics (e.g. if we fall under this condition 2 times in a row, we should capture)
                         if (contentChanged.get()) {
-                            options.logger.log(INFO, "Failed to determine view hierarchy, not capturing")
+                            if (options.logger.isEnabled(INFO)) {
+                                options.logger.log(
+                                    INFO,
+                                    "Failed to determine view hierarchy, not capturing"
+                                )
+                            }
                             lastCaptureSuccessful.set(false)
                             return@request
                         }
@@ -170,7 +188,9 @@ internal class ScreenshotRecorder(
                     mainLooperHandler.handler
                 )
             } catch (e: Throwable) {
-                options.logger.log(WARNING, "Failed to capture replay recording", e)
+                if (options.logger.isEnabled(WARNING)) {
+                    options.logger.log(WARNING, "Failed to capture replay recording", e)
+                }
                 lastCaptureSuccessful.set(false)
             }
         }
@@ -179,7 +199,9 @@ internal class ScreenshotRecorder(
     override fun onDraw() {
         val root = rootView?.get()
         if (root == null || root.width <= 0 || root.height <= 0 || !root.isShown) {
-            options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
+            }
             return
         }
 

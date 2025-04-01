@@ -113,10 +113,11 @@ public final class ApacheHttpClientTransport implements ITransport {
                   @Override
                   public void completed(SimpleHttpResponse response) {
                     if (response.getCode() != 200) {
-                      options
-                          .getLogger()
-                          .log(ERROR, "Request failed, API returned %s", response.getCode());
-
+                      if (options.getLogger().isEnabled(ERROR)) {
+                        options
+                            .getLogger()
+                            .log(ERROR, "Request failed, API returned %s", response.getCode());
+                      }
                       if (response.getCode() >= 400 && response.getCode() != 429) {
                         if (!HintUtils.hasType(hint, Retryable.class)) {
                           options
@@ -126,7 +127,9 @@ public final class ApacheHttpClientTransport implements ITransport {
                         }
                       }
                     } else {
-                      options.getLogger().log(INFO, "Envelope sent successfully.");
+                      if (options.getLogger().isEnabled(INFO)) {
+                        options.getLogger().log(INFO, "Envelope sent successfully.");
+                      }
                     }
                     final Header retryAfter = response.getFirstHeader("Retry-After");
                     final Header rateLimits = response.getFirstHeader("X-Sentry-Rate-Limits");
@@ -139,7 +142,9 @@ public final class ApacheHttpClientTransport implements ITransport {
 
                   @Override
                   public void failed(Exception ex) {
-                    options.getLogger().log(ERROR, "Error while sending an envelope", ex);
+                    if (options.getLogger().isEnabled(ERROR)) {
+                      options.getLogger().log(ERROR, "Error while sending an envelope", ex);
+                    }
                     if (!HintUtils.hasType(hint, Retryable.class)) {
                       options
                           .getClientReportRecorder()
@@ -151,7 +156,9 @@ public final class ApacheHttpClientTransport implements ITransport {
 
                   @Override
                   public void cancelled() {
-                    options.getLogger().log(WARNING, "Request cancelled");
+                    if (options.getLogger().isEnabled(WARNING)) {
+                      options.getLogger().log(WARNING, "Request cancelled");
+                    }
                     if (!HintUtils.hasType(hint, Retryable.class)) {
                       options
                           .getClientReportRecorder()
@@ -162,7 +169,9 @@ public final class ApacheHttpClientTransport implements ITransport {
                   }
                 });
           } catch (Throwable e) {
-            options.getLogger().log(ERROR, "Error when sending envelope", e);
+            if (options.getLogger().isEnabled(ERROR)) {
+              options.getLogger().log(ERROR, "Error when sending envelope", e);
+            }
             if (!HintUtils.hasType(hint, Retryable.class)) {
               options
                   .getClientReportRecorder()
@@ -172,7 +181,9 @@ public final class ApacheHttpClientTransport implements ITransport {
         }
       }
     } else {
-      options.getLogger().log(SentryLevel.WARNING, "Submit cancelled");
+      if (options.getLogger().isEnabled(WARNING)) {
+        options.getLogger().log(WARNING, "Submit cancelled");
+      }
       options.getClientReportRecorder().recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelope);
     }
   }
@@ -181,10 +192,16 @@ public final class ApacheHttpClientTransport implements ITransport {
   public void flush(long timeoutMillis) {
     try {
       if (!currentlyRunning.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS)) {
-        options.getLogger().log(WARNING, "Failed to flush all events within %s ms", timeoutMillis);
+        if (options.getLogger().isEnabled(WARNING)) {
+          options
+              .getLogger()
+              .log(WARNING, "Failed to flush all events within %s ms", timeoutMillis);
+        }
       }
     } catch (InterruptedException e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to flush events", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to flush events", e);
+      }
       Thread.currentThread().interrupt();
     }
   }
@@ -201,11 +218,15 @@ public final class ApacheHttpClientTransport implements ITransport {
 
   @Override
   public void close(final boolean isRestarting) throws IOException {
-    options.getLogger().log(DEBUG, "Shutting down");
+    if (options.getLogger().isEnabled(DEBUG)) {
+      options.getLogger().log(DEBUG, "Shutting down");
+    }
     try {
       httpclient.awaitShutdown(TimeValue.ofSeconds(isRestarting ? 0 : 1));
     } catch (InterruptedException e) {
-      options.getLogger().log(DEBUG, "Thread interrupted while closing the connection.");
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options.getLogger().log(DEBUG, "Thread interrupted while closing the connection.");
+      }
       Thread.currentThread().interrupt();
     } finally {
       httpclient.close(CloseMode.GRACEFUL);

@@ -1,5 +1,7 @@
 package io.sentry.rrweb;
 
+import static io.sentry.SentryLevel.DEBUG;
+
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
@@ -291,7 +293,9 @@ public final class RRWebBreadcrumbEvent extends RRWebEvent
             try {
               event.level = new SentryLevel.Deserializer().deserialize(reader, logger);
             } catch (Exception exception) {
-              logger.log(SentryLevel.DEBUG, exception, "Error when deserializing SentryLevel");
+              if (logger.isEnabled(DEBUG)) {
+                logger.log(SentryLevel.DEBUG, exception, "Error when deserializing SentryLevel");
+              }
             }
             break;
           case JsonKeys.DATA:

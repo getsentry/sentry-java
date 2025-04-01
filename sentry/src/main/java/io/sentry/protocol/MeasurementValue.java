@@ -132,7 +132,9 @@ public final class MeasurementValue implements JsonUnknown, JsonSerializable {
       if (value == null) {
         final String message = "Missing required field \"value\"";
         final Exception ex = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, ex);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, message, ex);
+        }
         throw ex;
       }
 

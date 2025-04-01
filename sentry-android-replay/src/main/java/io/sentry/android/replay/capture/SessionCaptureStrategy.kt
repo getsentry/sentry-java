@@ -2,6 +2,7 @@ package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
 import io.sentry.IScopes
+import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
@@ -67,7 +68,9 @@ internal class SessionCaptureStrategy(
     }
 
     override fun captureReplay(isTerminating: Boolean, onSegmentSent: (Date) -> Unit) {
-        options.logger.log(DEBUG, "Replay is already running in 'session' mode, not capturing for event")
+        if (options.logger.isEnabled(SentryLevel.DEBUG)) {
+            options.logger.log(DEBUG, "Replay is already running in 'session' mode, not capturing for event")
+        }
         this.isTerminating.set(isTerminating)
     }
 
@@ -82,12 +85,19 @@ internal class SessionCaptureStrategy(
 
             val currentSegmentTimestamp = segmentTimestamp
             currentSegmentTimestamp ?: run {
-                options.logger.log(DEBUG, "Segment timestamp is not set, not recording frame")
+                if (options.logger.isEnabled(SentryLevel.DEBUG)) {
+                    options.logger.log(DEBUG, "Segment timestamp is not set, not recording frame")
+                }
                 return@submitSafely
             }
 
             if (isTerminating.get()) {
-                options.logger.log(DEBUG, "Not capturing segment, because the app is terminating, will be captured on next launch")
+                if (options.logger.isEnabled(SentryLevel.DEBUG)) {
+                    options.logger.log(
+                        DEBUG,
+                        "Not capturing segment, because the app is terminating, will be captured on next launch"
+                    )
+                }
                 return@submitSafely
             }
 
@@ -112,7 +122,12 @@ internal class SessionCaptureStrategy(
 
             if ((now - replayStartTimestamp.get() >= options.sessionReplay.sessionDuration)) {
                 options.replayController.stop()
-                options.logger.log(INFO, "Session replay deadline exceeded (1h), stopping recording")
+                if (options.logger.isEnabled(SentryLevel.INFO)) {
+                    options.logger.log(
+                        INFO,
+                        "Session replay deadline exceeded (1h), stopping recording"
+                    )
+                }
             }
         }
     }

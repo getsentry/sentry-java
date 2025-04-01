@@ -1,5 +1,8 @@
 package io.sentry.android.core;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
+
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -135,12 +138,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (HintUtils.shouldApplyScopeData(hint)) {
       return true;
     } else {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Event was cached so not applying data relevant to the current app execution/version: %s",
-              event.getEventId());
+      if (options.getLogger().isEnabled(DEBUG)) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Event was cached so not applying data relevant to the current app execution/version: %s",
+                event.getEventId());
+      }
       return false;
     }
   }
@@ -171,7 +176,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
             .getContexts()
             .setDevice(deviceInfoUtil.get().collectDeviceInformation(errorEvent, applyScopeData));
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+        }
       }
       mergeOS(event);
     }
@@ -184,7 +191,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       // make Android OS the main OS using the 'os' key
       event.getContexts().setOperatingSystem(androidOS);
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
+      }
     }
 
     if (currentOS != null) {
@@ -244,7 +253,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       try {
         deviceInfoUtil = this.deviceInfoUtil.get();
       } catch (Throwable e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+        }
       }
 
       ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, deviceInfoUtil, app);
@@ -297,7 +308,9 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
         }
       }
     } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "Error getting side loaded info.", e);
+      }
     }
   }
 

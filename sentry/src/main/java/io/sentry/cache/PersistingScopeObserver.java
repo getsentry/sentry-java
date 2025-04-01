@@ -56,7 +56,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
           () -> {
             final File cacheDir = ensureCacheDir(options, SCOPE_CACHE);
             if (cacheDir == null) {
-              options.getLogger().log(INFO, "Cache dir is not set, cannot store in scope cache");
+              if (options.getLogger().isEnabled(INFO)) {
+                options.getLogger().log(INFO, "Cache dir is not set, cannot store in scope cache");
+              }
               return ObjectQueue.createEmpty();
             }
 
@@ -76,7 +78,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
                 queueFile = new QueueFile.Builder(file).size(options.getMaxBreadcrumbs()).build();
               }
             } catch (IOException e) {
-              options.getLogger().log(ERROR, "Failed to create breadcrumbs queue", e);
+              if (options.getLogger().isEnabled(ERROR)) {
+                options.getLogger().log(ERROR, "Failed to create breadcrumbs queue", e);
+              }
               return ObjectQueue.createEmpty();
             }
             return ObjectQueue.create(
@@ -90,7 +94,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
                             new InputStreamReader(new ByteArrayInputStream(source), UTF_8))) {
                       return options.getSerializer().deserialize(reader, Breadcrumb.class);
                     } catch (Throwable e) {
-                      options.getLogger().log(ERROR, e, "Error reading entity from scope cache");
+                      if (options.getLogger().isEnabled(ERROR)) {
+                        options.getLogger().log(ERROR, e, "Error reading entity from scope cache");
+                      }
                     }
                     return null;
                   }
@@ -128,7 +134,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
           try {
             breadcrumbsQueue.getValue().add(crumb);
           } catch (IOException e) {
-            options.getLogger().log(ERROR, "Failed to add breadcrumb to file queue", e);
+            if (options.getLogger().isEnabled(ERROR)) {
+              options.getLogger().log(ERROR, "Failed to add breadcrumb to file queue", e);
+            }
           }
         });
   }
@@ -143,7 +151,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
             try {
               breadcrumbsQueue.getValue().clear();
             } catch (IOException e) {
-              options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
+              if (options.getLogger().isEnabled(ERROR)) {
+                options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
+              }
             }
           });
     }
@@ -234,7 +244,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
       try {
         task.run();
       } catch (Throwable e) {
-        options.getLogger().log(ERROR, "Serialization task failed", e);
+        if (options.getLogger().isEnabled(ERROR)) {
+          options.getLogger().log(ERROR, "Serialization task failed", e);
+        }
       }
       return;
     }
@@ -247,11 +259,15 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
                 try {
                   task.run();
                 } catch (Throwable e) {
-                  options.getLogger().log(ERROR, "Serialization task failed", e);
+                  if (options.getLogger().isEnabled(ERROR)) {
+                    options.getLogger().log(ERROR, "Serialization task failed", e);
+                  }
                 }
               });
     } catch (Throwable e) {
-      options.getLogger().log(ERROR, "Serialization task could not be scheduled", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(ERROR, "Serialization task could not be scheduled", e);
+      }
     }
   }
 
@@ -278,7 +294,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
       try {
         return clazz.cast(breadcrumbsQueue.getValue().asList());
       } catch (IOException e) {
-        options.getLogger().log(ERROR, "Unable to read serialized breadcrumbs from QueueFile");
+        if (options.getLogger().isEnabled(ERROR)) {
+          options.getLogger().log(ERROR, "Unable to read serialized breadcrumbs from QueueFile");
+        }
         return null;
       }
     }
@@ -294,7 +312,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     try {
       breadcrumbsQueue.getValue().clear();
     } catch (IOException e) {
-      options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
+      if (options.getLogger().isEnabled(ERROR)) {
+        options.getLogger().log(ERROR, "Failed to clear breadcrumbs from file queue", e);
+      }
     }
 
     // the rest we can safely delete

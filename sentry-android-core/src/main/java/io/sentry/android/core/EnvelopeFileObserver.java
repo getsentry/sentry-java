@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
 
 import android.os.FileObserver;
@@ -48,12 +49,14 @@ final class EnvelopeFileObserver extends FileObserver {
       return;
     }
 
-    logger.log(
-        SentryLevel.DEBUG,
-        "onEvent fired for EnvelopeFileObserver with event type %d on path: %s for file %s.",
-        eventType,
-        this.rootPath,
-        relativePath);
+    if (logger.isEnabled(DEBUG)) {
+      logger.log(
+          SentryLevel.DEBUG,
+          "onEvent fired for EnvelopeFileObserver with event type %d on path: %s for file %s.",
+          eventType,
+          this.rootPath,
+          relativePath);
+    }
 
     // TODO: Only some event types should be pass through?
 
@@ -85,7 +88,9 @@ final class EnvelopeFileObserver extends FileObserver {
         return latch.await(flushTimeoutMillis, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
-        logger.log(ERROR, "Exception while awaiting on lock.", e);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(ERROR, "Exception while awaiting on lock.", e);
+        }
       }
       return false;
     }

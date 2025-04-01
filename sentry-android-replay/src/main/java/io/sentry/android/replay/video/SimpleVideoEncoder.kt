@@ -37,6 +37,7 @@ import android.media.MediaCodecList
 import android.media.MediaFormat
 import android.os.Build
 import android.view.Surface
+import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
 import java.io.File
@@ -81,14 +82,18 @@ internal class SimpleVideoEncoder(
                 .videoCapabilities
 
             if (!videoCapabilities.bitrateRange.contains(bitRate)) {
-                options.logger.log(
-                    DEBUG,
-                    "Encoder doesn't support the provided bitRate: $bitRate, the value will be clamped to the closest one"
-                )
+                if (options.logger.isEnabled(DEBUG)) {
+                    options.logger.log(
+                        DEBUG,
+                        "Encoder doesn't support the provided bitRate: $bitRate, the value will be clamped to the closest one"
+                    )
+                }
                 bitRate = videoCapabilities.bitrateRange.clamp(bitRate)
             }
         } catch (e: Throwable) {
-            options.logger.log(DEBUG, "Could not retrieve MediaCodec info", e)
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(DEBUG, "Could not retrieve MediaCodec info", e)
+            }
         }
 
         // TODO: if this ever becomes a problem, move this to ScreenshotRecorderConfig.from()
@@ -181,9 +186,13 @@ internal class SimpleVideoEncoder(
      * Borrows heavily from https://bigflake.com/mediacodec/EncodeAndMuxTest.java.txt
      */
     private fun drainCodec(endOfStream: Boolean) {
-        options.logger.log(DEBUG, "[Encoder]: drainCodec($endOfStream)")
+        if (options.logger.isEnabled(DEBUG)) {
+            options.logger.log(DEBUG, "[Encoder]: drainCodec($endOfStream)")
+        }
         if (endOfStream) {
-            options.logger.log(DEBUG, "[Encoder]: sending EOS to encoder")
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(DEBUG, "[Encoder]: sending EOS to encoder")
+            }
             mediaCodec.signalEndOfInputStream()
         }
         var encoderOutputBuffers: Array<ByteBuffer?>? = mediaCodec.outputBuffers
@@ -194,7 +203,12 @@ internal class SimpleVideoEncoder(
                 if (!endOfStream) {
                     break // out of while
                 } else {
-                    options.logger.log(DEBUG, "[Encoder]: no output available, spinning to await EOS")
+                    if (options.logger.isEnabled(DEBUG)) {
+                        options.logger.log(
+                            DEBUG,
+                            "[Encoder]: no output available, spinning to await EOS"
+                        )
+                    }
                 }
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
                 // not expected for an encoder
@@ -205,12 +219,18 @@ internal class SimpleVideoEncoder(
                     throw RuntimeException("format changed twice")
                 }
                 val newFormat: MediaFormat = mediaCodec.outputFormat
-                options.logger.log(DEBUG, "[Encoder]: encoder output format changed: $newFormat")
-
+                if (options.logger.isEnabled(DEBUG)) {
+                    options.logger.log(
+                        DEBUG,
+                        "[Encoder]: encoder output format changed: $newFormat"
+                    )
+                }
                 // now that we have the Magic Goodies, start the muxer
                 frameMuxer.start(newFormat)
             } else if (encoderStatus < 0) {
-                options.logger.log(DEBUG, "[Encoder]: unexpected result from encoder.dequeueOutputBuffer: $encoderStatus")
+                if (options.logger.isEnabled(DEBUG)) {
+                    options.logger.log(DEBUG, "[Encoder]: unexpected result from encoder.dequeueOutputBuffer: $encoderStatus")
+                }
                 // let's ignore it
             } else {
                 val encodedData = encoderOutputBuffers?.get(encoderStatus)
@@ -218,7 +238,9 @@ internal class SimpleVideoEncoder(
                 if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0) {
                     // The codec config data was pulled out and fed to the muxer when we got
                     // the INFO_OUTPUT_FORMAT_CHANGED status.  Ignore it.
-                    options.logger.log(DEBUG, "[Encoder]: ignoring BUFFER_FLAG_CODEC_CONFIG")
+                    if (options.logger.isEnabled(DEBUG)) {
+                        options.logger.log(DEBUG, "[Encoder]: ignoring BUFFER_FLAG_CODEC_CONFIG")
+                    }
                     bufferInfo.size = 0
                 }
                 if (bufferInfo.size != 0) {
@@ -226,14 +248,20 @@ internal class SimpleVideoEncoder(
                         throw RuntimeException("muxer hasn't started")
                     }
                     frameMuxer.muxVideoFrame(encodedData, bufferInfo)
-                    options.logger.log(DEBUG, "[Encoder]: sent ${bufferInfo.size} bytes to muxer")
+                    if (options.logger.isEnabled(DEBUG)) {
+                        options.logger.log(DEBUG, "[Encoder]: sent ${bufferInfo.size} bytes to muxer")
+                    }
                 }
                 mediaCodec.releaseOutputBuffer(encoderStatus, false)
                 if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
                     if (!endOfStream) {
-                        options.logger.log(DEBUG, "[Encoder]: reached end of stream unexpectedly")
+                        if (options.logger.isEnabled(DEBUG)) {
+                            options.logger.log(DEBUG, "[Encoder]: reached end of stream unexpectedly")
+                        }
                     } else {
-                        options.logger.log(DEBUG, "[Encoder]: end of stream reached")
+                        if (options.logger.isEnabled(DEBUG)) {
+                            options.logger.log(DEBUG, "[Encoder]: end of stream reached")
+                        }
                     }
                     break // out of while
                 }
@@ -251,7 +279,9 @@ internal class SimpleVideoEncoder(
 
             frameMuxer.release()
         } catch (e: Throwable) {
-            options.logger.log(DEBUG, "Failed to properly release video encoder", e)
+            if (options.logger.isEnabled(SentryLevel.DEBUG)) {
+                options.logger.log(DEBUG, "Failed to properly release video encoder", e)
+            }
         }
     }
 }

@@ -42,7 +42,9 @@ internal class GestureRecorder(
     private fun View.startGestureTracking() {
         val window = phoneWindow
         if (window == null) {
-            options.logger.log(DEBUG, "Window is invalid, not tracking gestures")
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(DEBUG, "Window is invalid, not tracking gestures")
+            }
             return
         }
 
@@ -55,7 +57,9 @@ internal class GestureRecorder(
     private fun View.stopGestureTracking() {
         val window = phoneWindow
         if (window == null) {
-            options.logger.log(DEBUG, "Window was null in stopGestureTracking")
+            if (options.logger.isEnabled(DEBUG)) {
+                options.logger.log(DEBUG, "Window was null in stopGestureTracking")
+            }
             return
         }
 

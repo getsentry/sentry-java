@@ -1,5 +1,8 @@
 package io.sentry.android.core.internal.util;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -117,8 +120,10 @@ public final class RootChecker {
           return true;
         }
       } catch (RuntimeException e) {
-        logger.log(
-            SentryLevel.ERROR, e, "Error when trying to check if root file %s exists.", path);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(
+              SentryLevel.ERROR, e, "Error when trying to check if root file %s exists.", path);
+        }
       }
     }
     return false;
@@ -141,9 +146,13 @@ public final class RootChecker {
         return reader.readLine() != null;
       }
     } catch (IOException e) {
-      logger.log(SentryLevel.DEBUG, "SU isn't found on this Device.");
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "SU isn't found on this Device.");
+      }
     } catch (Throwable e) {
-      logger.log(SentryLevel.DEBUG, "Error when trying to check if SU exists.", e);
+      if (logger.isEnabled(DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "Error when trying to check if SU exists.", e);
+      }
     } finally {
       if (process != null) {
         process.destroy();

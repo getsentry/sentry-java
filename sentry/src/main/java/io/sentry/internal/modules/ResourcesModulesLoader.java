@@ -1,5 +1,6 @@
 package io.sentry.internal.modules;
 
+import static io.sentry.SentryLevel.INFO;
 import static io.sentry.util.ClassLoaderUtils.classLoaderOrDefault;
 
 import io.sentry.ILogger;
@@ -33,15 +34,21 @@ public final class ResourcesModulesLoader extends ModulesLoader {
         classLoader.getResourceAsStream(EXTERNAL_MODULES_FILENAME)) {
 
       if (resourcesStream == null) {
-        logger.log(SentryLevel.INFO, "%s file was not found.", EXTERNAL_MODULES_FILENAME);
+        if (logger.isEnabled(INFO)) {
+          logger.log(SentryLevel.INFO, "%s file was not found.", EXTERNAL_MODULES_FILENAME);
+        }
         return modules;
       }
 
       return parseStream(resourcesStream);
     } catch (SecurityException e) {
-      logger.log(SentryLevel.INFO, "Access to resources denied.", e);
+      if (logger.isEnabled(INFO)) {
+        logger.log(SentryLevel.INFO, "Access to resources denied.", e);
+      }
     } catch (IOException e) {
-      logger.log(SentryLevel.INFO, "Access to resources failed.", e);
+      if (logger.isEnabled(INFO)) {
+        logger.log(SentryLevel.INFO, "Access to resources failed.", e);
+      }
     }
     return modules;
   }

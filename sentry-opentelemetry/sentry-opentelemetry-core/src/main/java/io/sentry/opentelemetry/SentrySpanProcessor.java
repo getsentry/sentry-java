@@ -76,29 +76,33 @@ public final class SentrySpanProcessor implements SpanProcessor {
     final @NotNull TraceData traceData = getTraceData(otelSpan, parentContext);
 
     if (isSentryRequest(otelSpan)) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not forwarding OpenTelemetry span %s to Sentry as this looks like a span for a request to Sentry (trace %s).",
-              traceData.getSpanId(),
-              traceData.getTraceId());
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not forwarding OpenTelemetry span %s to Sentry as this looks like a span for a request to Sentry (trace %s).",
+                traceData.getSpanId(),
+                traceData.getTraceId());
+      }
       return;
     }
     final @Nullable ISpan sentryParentSpan =
         traceData.getParentSpanId() == null ? null : spanStorage.get(traceData.getParentSpanId());
 
     if (sentryParentSpan != null) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Creating Sentry child span for OpenTelemetry span %s (trace %s). Parent span is %s.",
-              traceData.getSpanId(),
-              traceData.getTraceId(),
-              traceData.getParentSpanId());
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Creating Sentry child span for OpenTelemetry span %s (trace %s). Parent span is %s.",
+                traceData.getSpanId(),
+                traceData.getTraceId(),
+                traceData.getParentSpanId());
+      }
       final @NotNull SentryDate startDate =
           new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos());
       final @NotNull SpanOptions spanOptions = new SpanOptions();
@@ -108,14 +112,16 @@ public final class SentrySpanProcessor implements SpanProcessor {
               otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL, spanOptions);
       spanStorage.store(traceData.getSpanId(), sentryChildSpan);
     } else {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Creating Sentry transaction for OpenTelemetry span %s (trace %s).",
-              traceData.getSpanId(),
-              traceData.getTraceId());
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Creating Sentry transaction for OpenTelemetry span %s (trace %s).",
+                traceData.getSpanId(),
+                traceData.getTraceId());
+      }
       final @NotNull String transactionName = otelSpan.getName();
       final @NotNull TransactionNameSource transactionNameSource = TransactionNameSource.CUSTOM;
       final @Nullable String op = otelSpan.getName();
@@ -159,52 +165,60 @@ public final class SentrySpanProcessor implements SpanProcessor {
     final @Nullable ISpan sentrySpan = spanStorage.removeAndGet(traceData.getSpanId());
 
     if (sentrySpan == null) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Unable to find Sentry span for OpenTelemetry span %s (trace %s). This may simply mean it is a Sentry request.",
-              traceData.getSpanId(),
-              traceData.getTraceId());
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Unable to find Sentry span for OpenTelemetry span %s (trace %s). This may simply mean it is a Sentry request.",
+                traceData.getSpanId(),
+                traceData.getTraceId());
+      }
       return;
     }
 
     if (isSentryRequest(otelSpan)) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not forwarding OpenTelemetry span %s to Sentry as this looks like a span for a request to Sentry (trace %s).",
-              traceData.getSpanId(),
-              traceData.getTraceId());
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not forwarding OpenTelemetry span %s to Sentry as this looks like a span for a request to Sentry (trace %s).",
+                traceData.getSpanId(),
+                traceData.getTraceId());
+      }
       return;
     }
 
     if (sentrySpan instanceof ITransaction) {
       final @NotNull ITransaction sentryTransaction = (ITransaction) sentrySpan;
       updateTransactionWithOtelData(sentryTransaction, otelSpan);
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Finishing Sentry transaction %s for OpenTelemetry span %s (trace %s).",
-              sentryTransaction.getEventId(),
-              traceData.getSpanId(),
-              traceData.getTraceId());
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Finishing Sentry transaction %s for OpenTelemetry span %s (trace %s).",
+                sentryTransaction.getEventId(),
+                traceData.getSpanId(),
+                traceData.getTraceId());
+      }
     } else {
       updateSpanWithOtelData(sentrySpan, otelSpan);
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Finishing Sentry span for OpenTelemetry span %s (trace %s). Parent span is %s.",
-              traceData.getSpanId(),
-              traceData.getTraceId(),
-              traceData.getParentSpanId());
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Finishing Sentry span for OpenTelemetry span %s (trace %s). Parent span is %s.",
+                traceData.getSpanId(),
+                traceData.getTraceId(),
+                traceData.getParentSpanId());
+      }
     }
 
     final @NotNull SpanStatus sentryStatus = mapOtelStatus(otelSpan);
@@ -220,35 +234,41 @@ public final class SentrySpanProcessor implements SpanProcessor {
 
   private boolean ensurePrerequisites(final @NotNull ReadableSpan otelSpan) {
     if (!hasSentryBeenInitialized()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not forwarding OpenTelemetry span to Sentry as Sentry has not yet been initialized.");
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not forwarding OpenTelemetry span to Sentry as Sentry has not yet been initialized.");
+      }
       return false;
     }
 
     final @NotNull Instrumenter instrumenter = scopes.getOptions().getInstrumenter();
     if (!Instrumenter.OTEL.equals(instrumenter)) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not forwarding OpenTelemetry span to Sentry as instrumenter has been set to %s.",
-              instrumenter);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not forwarding OpenTelemetry span to Sentry as instrumenter has been set to %s.",
+                instrumenter);
+      }
       return false;
     }
 
     final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
     if (!otelSpanContext.isValid()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not forwarding OpenTelemetry span to Sentry as the span is invalid.");
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not forwarding OpenTelemetry span to Sentry as the span is invalid.");
+      }
       return false;
     }
 

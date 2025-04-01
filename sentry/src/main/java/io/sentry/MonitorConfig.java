@@ -183,7 +183,9 @@ public final class MonitorConfig implements JsonUnknown, JsonSerializable {
       if (schedule == null) {
         String message = "Missing required field \"" + JsonKeys.SCHEDULE + "\"";
         Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, message, exception);
+        }
         throw exception;
       }
 

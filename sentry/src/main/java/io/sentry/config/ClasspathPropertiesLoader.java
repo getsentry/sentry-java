@@ -1,5 +1,6 @@
 package io.sentry.config;
 
+import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.util.ClassLoaderUtils.classLoaderOrDefault;
 
 import io.sentry.ILogger;
@@ -39,11 +40,13 @@ final class ClasspathPropertiesLoader implements PropertiesLoader {
         }
       }
     } catch (IOException e) {
-      logger.log(
-          SentryLevel.ERROR,
-          e,
-          "Failed to load Sentry configuration from classpath resource: %s",
-          fileName);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(
+            SentryLevel.ERROR,
+            e,
+            "Failed to load Sentry configuration from classpath resource: %s",
+            fileName);
+      }
       return null;
     }
     return null;

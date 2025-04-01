@@ -88,21 +88,31 @@ public final class SentryIntegrationPackageStorage {
       for (SentryPackage pkg : packages) {
         if (pkg.getName().startsWith("maven:io.sentry:")
             && !sdkVersion.equalsIgnoreCase(pkg.getVersion())) {
-          logger.log(
-              SentryLevel.ERROR,
-              "The Sentry SDK has been configured with mixed versions. Expected %s to match core SDK version %s but was %s",
-              pkg.getName(),
-              sdkVersion,
-              pkg.getVersion());
+          if (logger.isEnabled(SentryLevel.ERROR)) {
+            logger.log(
+                SentryLevel.ERROR,
+                "The Sentry SDK has been configured with mixed versions. Expected %s to match core SDK version %s but was %s",
+                pkg.getName(),
+                sdkVersion,
+                pkg.getVersion());
+          }
           mixedVersionsDetectedThisCheck = true;
         }
       }
 
       if (mixedVersionsDetectedThisCheck) {
-        logger.log(SentryLevel.ERROR, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-        logger.log(SentryLevel.ERROR, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-        logger.log(SentryLevel.ERROR, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-        logger.log(SentryLevel.ERROR, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+        }
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+        }
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+        }
+        if (logger.isEnabled(SentryLevel.ERROR)) {
+          logger.log(SentryLevel.ERROR, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+        }
       }
       mixedVersionsDetected = mixedVersionsDetectedThisCheck;
       return mixedVersionsDetectedThisCheck;

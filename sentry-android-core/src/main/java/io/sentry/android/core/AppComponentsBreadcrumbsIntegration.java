@@ -1,5 +1,8 @@
 package io.sentry.android.core;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
+import static io.sentry.SentryLevel.INFO;
 import static io.sentry.TypeCheckHint.ANDROID_CONFIGURATION;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
@@ -41,24 +44,30 @@ public final class AppComponentsBreadcrumbsIntegration
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
 
-    this.options
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "AppComponentsBreadcrumbsIntegration enabled: %s",
-            this.options.isEnableAppComponentBreadcrumbs());
+    if (options.getLogger().isEnabled(DEBUG)) {
+      this.options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "AppComponentsBreadcrumbsIntegration enabled: %s",
+              this.options.isEnableAppComponentBreadcrumbs());
+    }
 
     if (this.options.isEnableAppComponentBreadcrumbs()) {
       try {
         // if its a ContextImpl, registerComponentCallbacks can't be used
         context.registerComponentCallbacks(this);
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration installed.");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration installed.");
+        }
         addIntegrationToSdkVersion("AppComponentsBreadcrumbs");
       } catch (Throwable e) {
         this.options.setEnableAppComponentBreadcrumbs(false);
-        options.getLogger().log(SentryLevel.INFO, e, "ComponentCallbacks2 is not available.");
+        if (options.getLogger().isEnabled(INFO)) {
+          options.getLogger().log(SentryLevel.INFO, e, "ComponentCallbacks2 is not available.");
+        }
       }
     }
   }
@@ -71,14 +80,21 @@ public final class AppComponentsBreadcrumbsIntegration
     } catch (Throwable ignored) {
       // fine, might throw on older versions
       if (options != null) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, ignored, "It was not possible to unregisterComponentCallbacks");
+        if (options.getLogger().isEnabled(DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  ignored,
+                  "It was not possible to unregisterComponentCallbacks");
+        }
       }
     }
 
     if (options != null) {
-      options.getLogger().log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration removed.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "AppComponentsBreadcrumbsIntegration removed.");
+      }
     }
   }
 
@@ -161,9 +177,11 @@ public final class AppComponentsBreadcrumbsIntegration
       try {
         options.getExecutorService().submit(runnable);
       } catch (Throwable t) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, t, "Failed to submit app components breadcrumb task");
+        if (options.getLogger().isEnabled(ERROR)) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, t, "Failed to submit app components breadcrumb task");
+        }
       }
     }
   }

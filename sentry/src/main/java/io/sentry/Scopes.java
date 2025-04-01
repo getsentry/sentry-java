@@ -139,12 +139,19 @@ public final class Scopes implements IScopes {
       final @Nullable ScopeCallback scopeCallback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING, "Instance is disabled and this 'captureEvent' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'captureEvent' call is a no-op.");
+      }
     } else if (event == null) {
-      getOptions().getLogger().log(SentryLevel.WARNING, "captureEvent called with null parameter.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "captureEvent called with null parameter.");
+      }
     } else {
       try {
         assignTraceContext(event);
@@ -153,10 +160,14 @@ public final class Scopes implements IScopes {
         sentryId = getClient().captureEvent(event, localScope, hint);
         updateLastEventId(sentryId);
       } catch (Throwable e) {
-        getOptions()
-            .getLogger()
-            .log(
-                SentryLevel.ERROR, "Error while capturing event with id: " + event.getEventId(), e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "Error while capturing event with id: " + event.getEventId(),
+                  e);
+        }
       }
     }
     return sentryId;
@@ -178,9 +189,11 @@ public final class Scopes implements IScopes {
         callback.run(localScope);
         return localScope;
       } catch (Throwable t) {
-        getOptions()
-            .getLogger()
-            .log(SentryLevel.ERROR, "Error in the 'ScopeCallback' callback.", t);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions()
+              .getLogger()
+              .log(SentryLevel.ERROR, "Error in the 'ScopeCallback' callback.", t);
+        }
       }
     }
     return parentScope;
@@ -206,24 +219,30 @@ public final class Scopes implements IScopes {
       final @Nullable ScopeCallback scopeCallback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureMessage' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'captureMessage' call is a no-op.");
+      }
     } else if (message == null) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "captureMessage called with null parameter.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "captureMessage called with null parameter.");
+      }
     } else {
       try {
         final IScope localScope = buildLocalScope(getCombinedScopeView(), scopeCallback);
 
         sentryId = getClient().captureMessage(message, level, localScope);
       } catch (Throwable e) {
-        getOptions()
-            .getLogger()
-            .log(SentryLevel.ERROR, "Error while capturing message: " + message, e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions()
+              .getLogger()
+              .log(SentryLevel.ERROR, "Error while capturing message: " + message, e);
+        }
       }
     }
     updateLastEventId(sentryId);
@@ -238,11 +257,13 @@ public final class Scopes implements IScopes {
 
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureEnvelope' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'captureEnvelope' call is a no-op.");
+      }
     } else {
       try {
         final SentryId capturedEnvelopeId = getClient().captureEnvelope(envelope, hint);
@@ -250,7 +271,9 @@ public final class Scopes implements IScopes {
           sentryId = capturedEnvelopeId;
         }
       } catch (Throwable e) {
-        getOptions().getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions().getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
+        }
       }
     }
     return sentryId;
@@ -277,15 +300,19 @@ public final class Scopes implements IScopes {
       final @Nullable ScopeCallback scopeCallback) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureException' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'captureException' call is a no-op.");
+      }
     } else if (throwable == null) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "captureException called with null parameter.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "captureException called with null parameter.");
+      }
     } else {
       try {
         final SentryEvent event = new SentryEvent(throwable);
@@ -295,10 +322,14 @@ public final class Scopes implements IScopes {
 
         sentryId = getClient().captureEvent(event, localScope, hint);
       } catch (Throwable e) {
-        getOptions()
-            .getLogger()
-            .log(
-                SentryLevel.ERROR, "Error while capturing exception: " + throwable.getMessage(), e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "Error while capturing exception: " + throwable.getMessage(),
+                  e);
+        }
       }
     }
     updateLastEventId(sentryId);
@@ -308,21 +339,25 @@ public final class Scopes implements IScopes {
   @Override
   public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureUserFeedback' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'captureUserFeedback' call is a no-op.");
+      }
     } else {
       try {
         getClient().captureUserFeedback(userFeedback);
       } catch (Throwable e) {
-        getOptions()
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                "Error while capturing captureUserFeedback: " + userFeedback.toString(),
-                e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "Error while capturing captureUserFeedback: " + userFeedback.toString(),
+                  e);
+        }
       }
     }
   }
@@ -330,10 +365,13 @@ public final class Scopes implements IScopes {
   @Override
   public void startSession() {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING, "Instance is disabled and this 'startSession' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'startSession' call is a no-op.");
+      }
     } else {
       final Scope.SessionPair pair = getCombinedScopeView().startSession();
       if (pair != null) {
@@ -350,7 +388,9 @@ public final class Scopes implements IScopes {
 
         getClient().captureSession(pair.getCurrent(), hint);
       } else {
-        getOptions().getLogger().log(SentryLevel.WARNING, "Session could not be started.");
+        if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+          getOptions().getLogger().log(SentryLevel.WARNING, "Session could not be started.");
+        }
       }
     }
   }
@@ -358,9 +398,12 @@ public final class Scopes implements IScopes {
   @Override
   public void endSession() {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'endSession' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING, "Instance is disabled and this 'endSession' call is a no-op.");
+      }
     } else {
       final Session previousSession = getCombinedScopeView().endSession();
       if (previousSession != null) {
@@ -384,9 +427,11 @@ public final class Scopes implements IScopes {
   @SuppressWarnings("FutureReturnValueIgnored")
   public void close(final boolean isRestarting) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'close' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "Instance is disabled and this 'close' call is a no-op.");
+      }
     } else {
       try {
         for (Integration integration : getOptions().getIntegrations()) {
@@ -394,9 +439,12 @@ public final class Scopes implements IScopes {
             try {
               ((Closeable) integration).close();
             } catch (Throwable e) {
-              getOptions()
-                  .getLogger()
-                  .log(SentryLevel.WARNING, "Failed to close the integration {}.", integration, e);
+              if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+                getOptions()
+                    .getLogger()
+                    .log(
+                        SentryLevel.WARNING, "Failed to close the integration {}.", integration, e);
+              }
             }
           }
         }
@@ -420,7 +468,9 @@ public final class Scopes implements IScopes {
         configureScope(ScopeType.ISOLATION, scope -> scope.getClient().close(isRestarting));
         configureScope(ScopeType.GLOBAL, scope -> scope.getClient().close(isRestarting));
       } catch (Throwable e) {
-        getOptions().getLogger().log(SentryLevel.ERROR, "Error while closing the Scopes.", e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions().getLogger().log(SentryLevel.ERROR, "Error while closing the Scopes.", e);
+        }
       }
     }
   }
@@ -428,15 +478,19 @@ public final class Scopes implements IScopes {
   @Override
   public void addBreadcrumb(final @NotNull Breadcrumb breadcrumb, final @Nullable Hint hint) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'addBreadcrumb' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'addBreadcrumb' call is a no-op.");
+      }
     } else if (breadcrumb == null) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "addBreadcrumb called with null parameter.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "addBreadcrumb called with null parameter.");
+      }
     } else {
       getCombinedScopeView().addBreadcrumb(breadcrumb, hint);
     }
@@ -450,9 +504,11 @@ public final class Scopes implements IScopes {
   @Override
   public void setLevel(final @Nullable SentryLevel level) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'setLevel' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "Instance is disabled and this 'setLevel' call is a no-op.");
+      }
     } else {
       getCombinedScopeView().setLevel(level);
     }
@@ -461,24 +517,30 @@ public final class Scopes implements IScopes {
   @Override
   public void setTransaction(final @Nullable String transaction) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'setTransaction' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'setTransaction' call is a no-op.");
+      }
     } else if (transaction != null) {
       getCombinedScopeView().setTransaction(transaction);
     } else {
-      getOptions().getLogger().log(SentryLevel.WARNING, "Transaction cannot be null");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions().getLogger().log(SentryLevel.WARNING, "Transaction cannot be null");
+      }
     }
   }
 
   @Override
   public void setUser(final @Nullable User user) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'setUser' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "Instance is disabled and this 'setUser' call is a no-op.");
+      }
     } else {
       getCombinedScopeView().setUser(user);
     }
@@ -487,15 +549,19 @@ public final class Scopes implements IScopes {
   @Override
   public void setFingerprint(final @NotNull List<String> fingerprint) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'setFingerprint' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'setFingerprint' call is a no-op.");
+      }
     } else if (fingerprint == null) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "setFingerprint called with null parameter.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "setFingerprint called with null parameter.");
+      }
     } else {
       getCombinedScopeView().setFingerprint(fingerprint);
     }
@@ -504,11 +570,13 @@ public final class Scopes implements IScopes {
   @Override
   public void clearBreadcrumbs() {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'clearBreadcrumbs' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'clearBreadcrumbs' call is a no-op.");
+      }
     } else {
       getCombinedScopeView().clearBreadcrumbs();
     }
@@ -517,11 +585,15 @@ public final class Scopes implements IScopes {
   @Override
   public void setTag(final @Nullable String key, final @Nullable String value) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'setTag' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "Instance is disabled and this 'setTag' call is a no-op.");
+      }
     } else if (key == null || value == null) {
-      getOptions().getLogger().log(SentryLevel.WARNING, "setTag called with null parameter.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions().getLogger().log(SentryLevel.WARNING, "setTag called with null parameter.");
+      }
     } else {
       getCombinedScopeView().setTag(key, value);
     }
@@ -530,11 +602,15 @@ public final class Scopes implements IScopes {
   @Override
   public void removeTag(final @Nullable String key) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'removeTag' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "Instance is disabled and this 'removeTag' call is a no-op.");
+      }
     } else if (key == null) {
-      getOptions().getLogger().log(SentryLevel.WARNING, "removeTag called with null parameter.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions().getLogger().log(SentryLevel.WARNING, "removeTag called with null parameter.");
+      }
     } else {
       getCombinedScopeView().removeTag(key);
     }
@@ -543,11 +619,15 @@ public final class Scopes implements IScopes {
   @Override
   public void setExtra(final @Nullable String key, final @Nullable String value) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'setExtra' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "Instance is disabled and this 'setExtra' call is a no-op.");
+      }
     } else if (key == null || value == null) {
-      getOptions().getLogger().log(SentryLevel.WARNING, "setExtra called with null parameter.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions().getLogger().log(SentryLevel.WARNING, "setExtra called with null parameter.");
+      }
     } else {
       getCombinedScopeView().setExtra(key, value);
     }
@@ -556,11 +636,19 @@ public final class Scopes implements IScopes {
   @Override
   public void removeExtra(final @Nullable String key) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'removeExtra' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'removeExtra' call is a no-op.");
+      }
     } else if (key == null) {
-      getOptions().getLogger().log(SentryLevel.WARNING, "removeExtra called with null parameter.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "removeExtra called with null parameter.");
+      }
     } else {
       getCombinedScopeView().removeExtra(key);
     }
@@ -578,9 +666,11 @@ public final class Scopes implements IScopes {
   @Override
   public ISentryLifecycleToken pushScope() {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "Instance is disabled and this 'pushScope' call is a no-op.");
+      }
       return NoOpScopesLifecycleToken.getInstance();
     } else {
       final @NotNull IScopes scopes = this.forkedCurrentScope("pushScope");
@@ -591,11 +681,13 @@ public final class Scopes implements IScopes {
   @Override
   public ISentryLifecycleToken pushIsolationScope() {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'pushIsolationScope' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'pushIsolationScope' call is a no-op.");
+      }
       return NoOpScopesLifecycleToken.getInstance();
     } else {
       final @NotNull IScopes scopes = this.forkedScopes("pushIsolationScope");
@@ -616,9 +708,11 @@ public final class Scopes implements IScopes {
   @Deprecated
   public void popScope() {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'popScope' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "Instance is disabled and this 'popScope' call is a no-op.");
+      }
     } else {
       final @Nullable Scopes parent = parentScopes;
       if (parent != null) {
@@ -633,7 +727,9 @@ public final class Scopes implements IScopes {
       try {
         callback.run(NoOpScope.getInstance());
       } catch (Throwable e) {
-        getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
+        }
       }
 
     } else {
@@ -641,7 +737,9 @@ public final class Scopes implements IScopes {
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         callback.run(forkedScopes.getScope());
       } catch (Throwable e) {
-        getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
+        }
       }
     }
   }
@@ -652,9 +750,11 @@ public final class Scopes implements IScopes {
       try {
         callback.run(NoOpScope.getInstance());
       } catch (Throwable e) {
-        getOptions()
-            .getLogger()
-            .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions()
+              .getLogger()
+              .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
+        }
       }
 
     } else {
@@ -662,9 +762,11 @@ public final class Scopes implements IScopes {
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         callback.run(forkedScopes.getIsolationScope());
       } catch (Throwable e) {
-        getOptions()
-            .getLogger()
-            .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions()
+              .getLogger()
+              .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
+        }
       }
     }
   }
@@ -673,18 +775,22 @@ public final class Scopes implements IScopes {
   public void configureScope(
       final @Nullable ScopeType scopeType, final @NotNull ScopeCallback callback) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'configureScope' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'configureScope' call is a no-op.");
+      }
     } else {
       try {
         callback.run(combinedScope.getSpecificScope(scopeType));
       } catch (Throwable e) {
-        getOptions()
-            .getLogger()
-            .log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions()
+              .getLogger()
+              .log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);
+        }
       }
     }
   }
@@ -692,10 +798,14 @@ public final class Scopes implements IScopes {
   @Override
   public void bindClient(final @NotNull ISentryClient client) {
     if (client != null) {
-      getOptions().getLogger().log(SentryLevel.DEBUG, "New client bound to scope.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        getOptions().getLogger().log(SentryLevel.DEBUG, "New client bound to scope.");
+      }
       getCombinedScopeView().bindClient(client);
     } else {
-      getOptions().getLogger().log(SentryLevel.DEBUG, "NoOp client bound to scope.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        getOptions().getLogger().log(SentryLevel.DEBUG, "NoOp client bound to scope.");
+      }
       getCombinedScopeView().bindClient(NoOpSentryClient.getInstance());
     }
   }
@@ -708,14 +818,18 @@ public final class Scopes implements IScopes {
   @Override
   public void flush(long timeoutMillis) {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'flush' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "Instance is disabled and this 'flush' call is a no-op.");
+      }
     } else {
       try {
         getClient().flush(timeoutMillis);
       } catch (Throwable e) {
-        getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'client.flush'.", e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'client.flush'.", e);
+        }
       }
     }
   }
@@ -729,7 +843,9 @@ public final class Scopes implements IScopes {
   @SuppressWarnings("deprecation")
   public @NotNull IHub clone() {
     if (!isEnabled()) {
-      getOptions().getLogger().log(SentryLevel.WARNING, "Disabled Scopes cloned.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions().getLogger().log(SentryLevel.WARNING, "Disabled Scopes cloned.");
+      }
     }
     return new HubScopesWrapper(forkedScopes("scopes clone"));
   }
@@ -745,27 +861,33 @@ public final class Scopes implements IScopes {
 
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureTransaction' call is a no-op.");
-    } else {
-      if (!transaction.isFinished()) {
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
         getOptions()
             .getLogger()
             .log(
                 SentryLevel.WARNING,
-                "Transaction: %s is not finished and this 'captureTransaction' call is a no-op.",
-                transaction.getEventId());
-      } else {
-        if (!Boolean.TRUE.equals(transaction.isSampled())) {
+                "Instance is disabled and this 'captureTransaction' call is a no-op.");
+      }
+    } else {
+      if (!transaction.isFinished()) {
+        if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
           getOptions()
               .getLogger()
               .log(
-                  SentryLevel.DEBUG,
-                  "Transaction %s was dropped due to sampling decision.",
+                  SentryLevel.WARNING,
+                  "Transaction: %s is not finished and this 'captureTransaction' call is a no-op.",
                   transaction.getEventId());
+        }
+      } else {
+        if (!Boolean.TRUE.equals(transaction.isSampled())) {
+          if (getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+            getOptions()
+                .getLogger()
+                .log(
+                    SentryLevel.DEBUG,
+                    "Transaction %s was dropped due to sampling decision.",
+                    transaction.getEventId());
+          }
           if (getOptions().getBackpressureMonitor().getDownsampleFactor() > 0) {
             getOptions()
                 .getClientReportRecorder()
@@ -798,12 +920,14 @@ public final class Scopes implements IScopes {
                         hint,
                         profilingTraceData);
           } catch (Throwable e) {
-            getOptions()
-                .getLogger()
-                .log(
-                    SentryLevel.ERROR,
-                    "Error while capturing transaction with id: " + transaction.getEventId(),
-                    e);
+            if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+              getOptions()
+                  .getLogger()
+                  .log(
+                      SentryLevel.ERROR,
+                      "Error while capturing transaction with id: " + transaction.getEventId(),
+                      e);
+            }
           }
         }
       }
@@ -819,22 +943,26 @@ public final class Scopes implements IScopes {
 
     @NotNull SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureTransaction' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'captureTransaction' call is a no-op.");
+      }
     } else {
       try {
         sentryId = getClient().captureProfileChunk(profilingContinuousData, getScope());
       } catch (Throwable e) {
-        getOptions()
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                "Error while capturing profile chunk with id: "
-                    + profilingContinuousData.getChunkId(),
-                e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.ERROR,
+                  "Error while capturing profile chunk with id: "
+                      + profilingContinuousData.getChunkId(),
+                  e);
+        }
       }
     }
     return sentryId;
@@ -855,36 +983,46 @@ public final class Scopes implements IScopes {
 
     ITransaction transaction;
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'startTransaction' returns a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'startTransaction' returns a no-op.");
+      }
       transaction = NoOpTransaction.getInstance();
     } else if (SpanUtils.isIgnored(
         getOptions().getIgnoredSpanOrigins(), transactionContext.getOrigin())) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Returning no-op for span origin %s as the SDK has been configured to ignore it",
-              transactionContext.getOrigin());
+
+      if (getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Returning no-op for span origin %s as the SDK has been configured to ignore it",
+                transactionContext.getOrigin());
+      }
       transaction = NoOpTransaction.getInstance();
 
     } else if (!getOptions().getInstrumenter().equals(transactionContext.getInstrumenter())) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Returning no-op for instrumenter %s as the SDK has been configured to use instrumenter %s",
-              transactionContext.getInstrumenter(),
-              getOptions().getInstrumenter());
+      if (getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Returning no-op for instrumenter %s as the SDK has been configured to use instrumenter %s",
+                transactionContext.getInstrumenter(),
+                getOptions().getInstrumenter());
+      }
       transaction = NoOpTransaction.getInstance();
     } else if (!getOptions().isTracingEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.INFO, "Tracing is disabled and this 'startTransaction' returns a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.INFO)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.INFO,
+                "Tracing is disabled and this 'startTransaction' returns a no-op.");
+      }
       transaction = NoOpTransaction.getInstance();
     } else {
       final Double sampleRand = getSampleRand(transactionContext);
@@ -954,23 +1092,27 @@ public final class Scopes implements IScopes {
   public void startProfiler() {
     if (getOptions().isContinuousProfilingEnabled()) {
       if (getOptions().getProfileLifecycle() != ProfileLifecycle.MANUAL) {
-        getOptions()
-            .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "Profiling lifecycle is %s. Profiling cannot be started manually.",
-                getOptions().getProfileLifecycle().name());
+        if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+          getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Profiling lifecycle is %s. Profiling cannot be started manually.",
+                  getOptions().getProfileLifecycle().name());
+        }
         return;
       }
       getOptions()
           .getContinuousProfiler()
           .startProfiler(ProfileLifecycle.MANUAL, getOptions().getInternalTracesSampler());
     } else if (getOptions().isProfilingEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
+      }
     }
   }
 
@@ -978,22 +1120,28 @@ public final class Scopes implements IScopes {
   public void stopProfiler() {
     if (getOptions().isContinuousProfilingEnabled()) {
       if (getOptions().getProfileLifecycle() != ProfileLifecycle.MANUAL) {
+        if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+          getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Profiling lifecycle is %s. Profiling cannot be stopped manually.",
+                  getOptions().getProfileLifecycle().name());
+        }
+        return;
+      }
+      if (getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        getOptions().getLogger().log(SentryLevel.DEBUG, "Stopped continuous Profiling.");
+      }
+      getOptions().getContinuousProfiler().stopProfiler(ProfileLifecycle.MANUAL);
+    } else {
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
         getOptions()
             .getLogger()
             .log(
                 SentryLevel.WARNING,
-                "Profiling lifecycle is %s. Profiling cannot be stopped manually.",
-                getOptions().getProfileLifecycle().name());
-        return;
+                "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
       }
-      getOptions().getLogger().log(SentryLevel.DEBUG, "Stopped continuous Profiling.");
-      getOptions().getContinuousProfiler().stopProfiler(ProfileLifecycle.MANUAL);
-    } else {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Continuous Profiling is not enabled. Set profilesSampleRate and profilesSampler to null to enable it.");
     }
   }
 
@@ -1009,9 +1157,11 @@ public final class Scopes implements IScopes {
   @Override
   public @Nullable ISpan getSpan() {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "Instance is disabled and this 'getSpan' call is a no-op.");
+      }
     } else {
       return getCombinedScopeView().getSpan();
     }
@@ -1028,11 +1178,13 @@ public final class Scopes implements IScopes {
   public @Nullable ITransaction getTransaction() {
     ITransaction span = null;
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'getTransaction' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'getTransaction' call is a no-op.");
+      }
     } else {
       span = getCombinedScopeView().getTransaction();
     }
@@ -1081,11 +1233,13 @@ public final class Scopes implements IScopes {
   @Override
   public @Nullable SentryTraceHeader getTraceparent() {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'getTraceparent' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'getTraceparent' call is a no-op.");
+      }
     } else {
       final @Nullable TracingUtils.TracingHeaders headers =
           TracingUtils.trace(this, null, getSpan());
@@ -1100,9 +1254,12 @@ public final class Scopes implements IScopes {
   @Override
   public @Nullable BaggageHeader getBaggage() {
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'getBaggage' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING, "Instance is disabled and this 'getBaggage' call is a no-op.");
+      }
     } else {
       final @Nullable TracingUtils.TracingHeaders headers =
           TracingUtils.trace(this, null, getSpan());
@@ -1119,18 +1276,22 @@ public final class Scopes implements IScopes {
   public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureCheckIn' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'captureCheckIn' call is a no-op.");
+      }
     } else {
       try {
         sentryId = getClient().captureCheckIn(checkIn, getCombinedScopeView(), null);
       } catch (Throwable e) {
-        getOptions()
-            .getLogger()
-            .log(SentryLevel.ERROR, "Error while capturing check-in for slug", e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions()
+              .getLogger()
+              .log(SentryLevel.ERROR, "Error while capturing check-in for slug", e);
+        }
       }
     }
     updateLastEventId(sentryId);
@@ -1142,16 +1303,20 @@ public final class Scopes implements IScopes {
       final @NotNull SentryReplayEvent replay, final @Nullable Hint hint) {
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureReplay' call is a no-op.");
+      if (getOptions().getLogger().isEnabled(SentryLevel.WARNING)) {
+        getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Instance is disabled and this 'captureReplay' call is a no-op.");
+      }
     } else {
       try {
         sentryId = getClient().captureReplayEvent(replay, getCombinedScopeView(), hint);
       } catch (Throwable e) {
-        getOptions().getLogger().log(SentryLevel.ERROR, "Error while capturing replay", e);
+        if (getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+          getOptions().getLogger().log(SentryLevel.ERROR, "Error while capturing replay", e);
+        }
       }
     }
     return sentryId;

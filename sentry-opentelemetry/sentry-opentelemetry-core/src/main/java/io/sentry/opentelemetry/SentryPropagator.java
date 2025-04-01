@@ -56,24 +56,28 @@ public final class SentryPropagator implements TextMapPropagator {
     final @NotNull Span otelSpan = Span.fromContext(context);
     final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
     if (!otelSpanContext.isValid()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not injecting Sentry tracing information for invalid OpenTelemetry span.");
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not injecting Sentry tracing information for invalid OpenTelemetry span.");
+      }
       return;
     }
     final @Nullable ISpan sentrySpan = spanStorage.get(otelSpanContext.getSpanId());
     if (sentrySpan == null || sentrySpan.isNoOp()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not injecting Sentry tracing information for span %s as no Sentry span has been found or it is a NoOp (trace %s). This might simply mean this is a request to Sentry.",
-              otelSpanContext.getSpanId(),
-              otelSpanContext.getTraceId());
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not injecting Sentry tracing information for span %s as no Sentry span has been found or it is a NoOp (trace %s). This might simply mean this is a request to Sentry.",
+                otelSpanContext.getSpanId(),
+                otelSpanContext.getTraceId());
+      }
       return;
     }
 
@@ -115,20 +119,24 @@ public final class SentryPropagator implements TextMapPropagator {
       Span wrappedSpan = Span.wrap(otelSpanContext);
       modifiedContext = modifiedContext.with(wrappedSpan);
 
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(SentryLevel.DEBUG, "Continuing Sentry trace %s", sentryTraceHeader.getTraceId());
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Continuing Sentry trace %s", sentryTraceHeader.getTraceId());
+      }
 
       return modifiedContext;
     } catch (InvalidSentryTraceHeaderException e) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.ERROR,
-              "Unable to extract Sentry tracing information from invalid header.",
-              e);
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.ERROR)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "Unable to extract Sentry tracing information from invalid header.",
+                e);
+      }
       return context;
     }
   }

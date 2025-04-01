@@ -27,7 +27,9 @@ public final class SendFireAndForgetOutboxSender
 
     final String dirPath = sendFireAndForgetDirPath.getDirPath();
     if (dirPath == null || !hasValidPath(dirPath, options.getLogger())) {
-      options.getLogger().log(SentryLevel.ERROR, "No outbox dir path is defined in options.");
+      if (options.getLogger().isEnabled(SentryLevel.ERROR)) {
+        options.getLogger().log(SentryLevel.ERROR, "No outbox dir path is defined in options.");
+      }
       return null;
     }
 

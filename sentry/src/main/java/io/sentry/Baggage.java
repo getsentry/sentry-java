@@ -1,5 +1,6 @@
 package io.sentry;
 
+import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.protocol.Contexts.REPLAY_ID;
 
 import io.sentry.protocol.SentryId;
@@ -142,18 +143,22 @@ public final class Baggage {
                 shouldFreeze = true;
               }
             } catch (Throwable e) {
-              logger.log(
-                  SentryLevel.ERROR,
-                  e,
-                  "Unable to decode baggage key value pair %s",
-                  keyValueString);
+              if (logger.isEnabled(ERROR)) {
+                logger.log(
+                    SentryLevel.ERROR,
+                    e,
+                    "Unable to decode baggage key value pair %s",
+                    keyValueString);
+              }
             }
           } else if (includeThirdPartyValues) {
             thirdPartyKeyValueStrings.add(keyValueString.trim());
           }
         }
       } catch (Throwable e) {
-        logger.log(SentryLevel.ERROR, e, "Unable to decode baggage header %s", headerValue);
+        if (logger.isEnabled(ERROR)) {
+          logger.log(SentryLevel.ERROR, e, "Unable to decode baggage header %s", headerValue);
+        }
       }
     }
     final String thirdPartyHeader =
@@ -276,11 +281,13 @@ public final class Baggage {
 
       if (value != null) {
         if (listMemberCount >= MAX_BAGGAGE_LIST_MEMBER_COUNT) {
-          logger.log(
-              SentryLevel.ERROR,
-              "Not adding baggage value %s as the total number of list members would exceed the maximum of %s.",
-              key,
-              MAX_BAGGAGE_LIST_MEMBER_COUNT);
+          if (logger.isEnabled(ERROR)) {
+            logger.log(
+                SentryLevel.ERROR,
+                "Not adding baggage value %s as the total number of list members would exceed the maximum of %s.",
+                key,
+                MAX_BAGGAGE_LIST_MEMBER_COUNT);
+          }
         } else {
           try {
             final String encodedKey = encode(key);
@@ -290,23 +297,27 @@ public final class Baggage {
             final int valueLength = encodedKeyValue.length();
             final int totalLengthIfValueAdded = sb.length() + valueLength;
             if (totalLengthIfValueAdded > MAX_BAGGAGE_STRING_LENGTH) {
-              logger.log(
-                  SentryLevel.ERROR,
-                  "Not adding baggage value %s as the total header value length would exceed the maximum of %s.",
-                  key,
-                  MAX_BAGGAGE_STRING_LENGTH);
+              if (logger.isEnabled(ERROR)) {
+                logger.log(
+                    SentryLevel.ERROR,
+                    "Not adding baggage value %s as the total header value length would exceed the maximum of %s.",
+                    key,
+                    MAX_BAGGAGE_STRING_LENGTH);
+              }
             } else {
               listMemberCount++;
               sb.append(encodedKeyValue);
               separator = ",";
             }
           } catch (Throwable e) {
-            logger.log(
-                SentryLevel.ERROR,
-                e,
-                "Unable to encode baggage key value pair (key=%s,value=%s).",
-                key,
-                value);
+            if (logger.isEnabled(ERROR)) {
+              logger.log(
+                  SentryLevel.ERROR,
+                  e,
+                  "Unable to encode baggage key value pair (key=%s,value=%s).",
+                  key,
+                  value);
+            }
           }
         }
       }

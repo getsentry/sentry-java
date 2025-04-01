@@ -1,5 +1,7 @@
 package io.sentry.quartz;
 
+import static io.sentry.SentryLevel.ERROR;
+
 import io.sentry.BuildConfig;
 import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
@@ -65,10 +67,12 @@ public final class SentryJobListener implements JobListener {
       context.put(SENTRY_SLUG_KEY, slug);
       context.put(SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY, lifecycleToken);
     } catch (Throwable t) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(SentryLevel.ERROR, "Unable to capture check-in in jobToBeExecuted.", t);
+      if (scopes.getOptions().getLogger().isEnabled(ERROR)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Unable to capture check-in in jobToBeExecuted.", t);
+      }
     }
   }
 
@@ -106,10 +110,12 @@ public final class SentryJobListener implements JobListener {
         scopes.captureCheckIn(new CheckIn(checkInId, slug, status));
       }
     } catch (Throwable t) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(SentryLevel.ERROR, "Unable to capture check-in in jobWasExecuted.", t);
+      if (scopes.getOptions().getLogger().isEnabled(ERROR)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Unable to capture check-in in jobWasExecuted.", t);
+      }
     } finally {
       LifecycleHelper.close(context.get(SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY));
     }

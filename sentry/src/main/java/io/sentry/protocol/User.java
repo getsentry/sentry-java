@@ -104,7 +104,9 @@ public final class User implements JsonUnknown, JsonSerializable {
               if (geoEntry.getKey() instanceof String && geoEntry.getValue() != null) {
                 geoData.put((String) geoEntry.getKey(), geoEntry.getValue());
               } else {
-                options.getLogger().log(SentryLevel.WARNING, "Invalid key type in gep map.");
+                if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+                  options.getLogger().log(SentryLevel.WARNING, "Invalid key type in gep map.");
+                }
               }
             }
             user.geo = Geo.fromMap(geoData);
@@ -119,9 +121,11 @@ public final class User implements JsonUnknown, JsonSerializable {
               if (dataEntry.getKey() instanceof String && dataEntry.getValue() != null) {
                 userData.put((String) dataEntry.getKey(), dataEntry.getValue().toString());
               } else {
-                options
-                    .getLogger()
-                    .log(SentryLevel.WARNING, "Invalid key or null value in data map.");
+                if (options.getLogger().isEnabled(SentryLevel.WARNING)) {
+                  options
+                      .getLogger()
+                      .log(SentryLevel.WARNING, "Invalid key or null value in data map.");
+                }
               }
             }
             user.data = userData;

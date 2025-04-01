@@ -49,11 +49,17 @@ public abstract class ModulesLoader implements IModulesLoader {
         modules.put(group, version);
         module = reader.readLine();
       }
-      logger.log(SentryLevel.DEBUG, "Extracted %d modules from resources.", modules.size());
+      if (logger.isEnabled(SentryLevel.DEBUG)) {
+        logger.log(SentryLevel.DEBUG, "Extracted %d modules from resources.", modules.size());
+      }
     } catch (IOException e) {
-      logger.log(SentryLevel.ERROR, "Error extracting modules.", e);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, "Error extracting modules.", e);
+      }
     } catch (RuntimeException e) {
-      logger.log(SentryLevel.ERROR, e, "%s file is malformed.", EXTERNAL_MODULES_FILENAME);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, e, "%s file is malformed.", EXTERNAL_MODULES_FILENAME);
+      }
     }
     return modules;
   }

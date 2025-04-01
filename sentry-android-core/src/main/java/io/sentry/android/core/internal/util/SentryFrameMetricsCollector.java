@@ -1,5 +1,8 @@
 package io.sentry.android.core.internal.util;
 
+import static io.sentry.SentryLevel.DEBUG;
+import static io.sentry.SentryLevel.ERROR;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
@@ -106,7 +109,11 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     HandlerThread handlerThread =
         new HandlerThread("io.sentry.android.core.internal.util.SentryFrameMetricsCollector");
     handlerThread.setUncaughtExceptionHandler(
-        (thread, e) -> logger.log(SentryLevel.ERROR, "Error during frames measurements.", e));
+        (thread, e) -> {
+          if (logger.isEnabled(DEBUG)) {
+            logger.log(SentryLevel.ERROR, "Error during frames measurements.", e);
+          }
+        });
     handlerThread.start();
     handler = new Handler(handlerThread.getLooper());
 
@@ -124,10 +131,12 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
               try {
                 choreographer = Choreographer.getInstance();
               } catch (Throwable e) {
-                logger.log(
-                    SentryLevel.ERROR,
-                    "Error retrieving Choreographer instance. Slow and frozen frames will not be reported.",
-                    e);
+                if (logger.isEnabled(ERROR)) {
+                  logger.log(
+                      SentryLevel.ERROR,
+                      "Error retrieving Choreographer instance. Slow and frozen frames will not be reported.",
+                      e);
+                }
               }
             });
     // Let's get the last frame timestamp from the choreographer private field
@@ -135,8 +144,10 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
       choreographerLastFrameTimeField = Choreographer.class.getDeclaredField("mLastFrameTimeNanos");
       choreographerLastFrameTimeField.setAccessible(true);
     } catch (NoSuchFieldException e) {
-      logger.log(
-          SentryLevel.ERROR, "Unable to get the frame timestamp from the choreographer: ", e);
+      if (logger.isEnabled(ERROR)) {
+        logger.log(
+            SentryLevel.ERROR, "Unable to get the frame timestamp from the choreographer: ", e);
+      }
     }
 
     frameMetricsAvailableListener =
@@ -288,7 +299,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
           windowFrameMetricsManager.removeOnFrameMetricsAvailableListener(
               window, frameMetricsAvailableListener);
         } catch (Exception e) {
-          logger.log(SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
+          if (logger.isEnabled(ERROR)) {
+            logger.log(SentryLevel.ERROR, "Failed to remove frameMetricsAvailableListener", e);
+          }
         }
       }
       trackedWindows.remove(window);

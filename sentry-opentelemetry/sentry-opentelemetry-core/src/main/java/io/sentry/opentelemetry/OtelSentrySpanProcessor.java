@@ -197,23 +197,27 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
 
   private boolean ensurePrerequisites(final @NotNull ReadableSpan otelSpan) {
     if (!hasSentryBeenInitialized()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not forwarding OpenTelemetry span to Sentry as Sentry has not yet been initialized.");
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not forwarding OpenTelemetry span to Sentry as Sentry has not yet been initialized.");
+      }
       return false;
     }
 
     final @NotNull SpanContext otelSpanContext = otelSpan.getSpanContext();
     if (!otelSpanContext.isValid()) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not forwarding OpenTelemetry span to Sentry as the span is invalid.");
+      if (scopes.getOptions().getLogger().isEnabled(SentryLevel.DEBUG)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Not forwarding OpenTelemetry span to Sentry as the span is invalid.");
+      }
       return false;
     }
 

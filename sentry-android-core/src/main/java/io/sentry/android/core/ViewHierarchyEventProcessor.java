@@ -75,7 +75,9 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     }
 
     if (!options.isAttachViewHierarchy()) {
-      options.getLogger().log(SentryLevel.DEBUG, "attachViewHierarchy is disabled.");
+      if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+        options.getLogger().log(SentryLevel.DEBUG, "attachViewHierarchy is disabled.");
+      }
       return event;
     }
 
@@ -122,18 +124,24 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
         snapshotViewHierarchy(activity, new ArrayList<>(0), threadChecker, logger);
 
     if (viewHierarchy == null) {
-      logger.log(SentryLevel.ERROR, "Could not get ViewHierarchy.");
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, "Could not get ViewHierarchy.");
+      }
       return null;
     }
 
     final @Nullable byte[] bytes =
         JsonSerializationUtils.bytesFrom(serializer, logger, viewHierarchy);
     if (bytes == null) {
-      logger.log(SentryLevel.ERROR, "Could not serialize ViewHierarchy.");
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, "Could not serialize ViewHierarchy.");
+      }
       return null;
     }
     if (bytes.length < 1) {
-      logger.log(SentryLevel.ERROR, "Got empty bytes array after serializing ViewHierarchy.");
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, "Got empty bytes array after serializing ViewHierarchy.");
+      }
       return null;
     }
 
@@ -155,19 +163,25 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
       final @NotNull ILogger logger) {
 
     if (activity == null) {
-      logger.log(SentryLevel.INFO, "Missing activity for view hierarchy snapshot.");
+      if (logger.isEnabled(SentryLevel.INFO)) {
+        logger.log(SentryLevel.INFO, "Missing activity for view hierarchy snapshot.");
+      }
       return null;
     }
 
     final @Nullable Window window = activity.getWindow();
     if (window == null) {
-      logger.log(SentryLevel.INFO, "Missing window for view hierarchy snapshot.");
+      if (logger.isEnabled(SentryLevel.INFO)) {
+        logger.log(SentryLevel.INFO, "Missing window for view hierarchy snapshot.");
+      }
       return null;
     }
 
     final @Nullable View decorView = window.peekDecorView();
     if (decorView == null) {
-      logger.log(SentryLevel.INFO, "Missing decor view for view hierarchy snapshot.");
+      if (logger.isEnabled(SentryLevel.INFO)) {
+        logger.log(SentryLevel.INFO, "Missing decor view for view hierarchy snapshot.");
+      }
       return null;
     }
 
@@ -183,7 +197,9 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
                 viewHierarchy.set(snapshotViewHierarchy(decorView, exporters));
                 latch.countDown();
               } catch (Throwable t) {
-                logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
+                if (logger.isEnabled(SentryLevel.ERROR)) {
+                  logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
+                }
               }
             });
         if (latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
@@ -191,7 +207,9 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
         }
       }
     } catch (Throwable t) {
-      logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
+      if (logger.isEnabled(SentryLevel.ERROR)) {
+        logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
+      }
     }
     return null;
   }

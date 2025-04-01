@@ -1,5 +1,7 @@
 package io.sentry.spring.checkin;
 
+import static io.sentry.SentryLevel.WARNING;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
@@ -70,23 +72,27 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         // Sentry should alert the user about missed checkins in this case since the monitor slug
         // won't match
         // what is configured in Sentry.
+        if (scopes.getOptions().getLogger().isEnabled(WARNING)) {
+          scopes
+              .getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "Slug for method annotated with @SentryCheckIn could not be resolved from properties.",
+                  e);
+        }
+      }
+    }
+
+    if (ObjectUtils.isEmpty(monitorSlug)) {
+      if (scopes.getOptions().getLogger().isEnabled(WARNING)) {
         scopes
             .getOptions()
             .getLogger()
             .log(
                 SentryLevel.WARNING,
-                "Slug for method annotated with @SentryCheckIn could not be resolved from properties.",
-                e);
+                "Not capturing check-in for method annotated with @SentryCheckIn because it does not specify a monitor slug.");
       }
-    }
-
-    if (ObjectUtils.isEmpty(monitorSlug)) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Not capturing check-in for method annotated with @SentryCheckIn because it does not specify a monitor slug.");
       return invocation.proceed();
     }
 

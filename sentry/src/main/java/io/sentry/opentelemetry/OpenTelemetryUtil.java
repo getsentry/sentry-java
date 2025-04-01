@@ -36,27 +36,33 @@ public final class OpenTelemetryUtil {
     if (SentryOpenTelemetryMode.AUTO.equals(openTelemetryMode)) {
       if (loadClass.isClassAvailable(
           "io.sentry.opentelemetry.agent.AgentMarker", NoOpLogger.getInstance())) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "openTelemetryMode has been inferred from AUTO to AGENT");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "openTelemetryMode has been inferred from AUTO to AGENT");
+        }
         options.setOpenTelemetryMode(SentryOpenTelemetryMode.AGENT);
         return;
       }
       if (loadClass.isClassAvailable(
           "io.sentry.opentelemetry.agent.AgentlessMarker", NoOpLogger.getInstance())) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "openTelemetryMode has been inferred from AUTO to AGENTLESS");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "openTelemetryMode has been inferred from AUTO to AGENTLESS");
+        }
         options.setOpenTelemetryMode(SentryOpenTelemetryMode.AGENTLESS);
         return;
       }
       if (loadClass.isClassAvailable(
           "io.sentry.opentelemetry.agent.AgentlessSpringMarker", NoOpLogger.getInstance())) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "openTelemetryMode has been inferred from AUTO to AGENTLESS_SPRING");
+        if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "openTelemetryMode has been inferred from AUTO to AGENTLESS_SPRING");
+        }
         options.setOpenTelemetryMode(SentryOpenTelemetryMode.AGENTLESS_SPRING);
         return;
       }
