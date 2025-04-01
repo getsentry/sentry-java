@@ -753,6 +753,7 @@ public abstract interface class io/sentry/IContinuousProfiler {
 	public abstract fun isRunning ()Z
 	public abstract fun reevaluateSampling ()V
 	public abstract fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
+	public abstract fun stopAllProfiles ()V
 	public abstract fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
 }
 
@@ -1437,6 +1438,7 @@ public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfi
 	public fun isRunning ()Z
 	public fun reevaluateSampling ()V
 	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
+	public fun stopAllProfiles ()V
 	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
 }
 

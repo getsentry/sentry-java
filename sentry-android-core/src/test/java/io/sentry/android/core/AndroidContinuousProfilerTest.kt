@@ -471,6 +471,23 @@ class AndroidContinuousProfilerTest {
     }
 
     @Test
+    fun `stopAllProfiles stops all profiles after chunk is finished`() {
+        val profiler = fixture.getSut()
+        profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+        profiler.startProfiler(ProfileLifecycle.TRACE, fixture.mockTracesSampler)
+        assertTrue(profiler.isRunning)
+        // We are scheduling the profiler to stop at the end of the chunk, so it should still be running
+        profiler.stopAllProfiles()
+        assertTrue(profiler.isRunning)
+        // However, stopAllProfiles already resets the rootSpanCounter
+        assertEquals(0, profiler.rootSpanCounter)
+
+        // We run the executor service to trigger the chunk finish, and the profiler shouldn't restart
+        fixture.executor.runAll()
+        assertFalse(profiler.isRunning)
+    }
+
+    @Test
     fun `profiler does not send chunks after close`() {
         val profiler = fixture.getSut()
         profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)

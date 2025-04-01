@@ -27,6 +27,9 @@ public final class NoOpContinuousProfiler implements IContinuousProfiler {
       final @NotNull TracesSampler tracesSampler) {}
 
   @Override
+  public void stopAllProfiles() {}
+
+  @Override
   public void close() {}
 
   @Override
