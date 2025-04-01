@@ -29,6 +29,7 @@
   - The value of the `Sentry-Version-Name` attribute looks like `sentry-8.5.0-otel-2.10.0`
 - Fix tags missing for compose view hierarchies ([#4275](https://github.com/getsentry/sentry-java/pull/4275))
 - Do not leak SentryFileInputStream/SentryFileOutputStream descriptors and channels ([#4296](https://github.com/getsentry/sentry-java/pull/4296))
+- Remove "not yet implemented" from `Sentry.flush` comment ([#4305](https://github.com/getsentry/sentry-java/pull/4305))
 
 ### Internal
 
@@ -100,7 +101,6 @@
   - In certain cases the SDK was not able to provide a transaction name automatically and thus did not finish the transaction for the request.
   - We now first try `SpringMvcTransactionNameProvider` which would provide the route as transaction name.
   - If that does not return anything, we try `SpringServletTransactionNameProvider` next, which returns the URL of the request.
-- Remove "not yet implemented" from `Sentry.flush` comment ([#4305](https://github.com/getsentry/sentry-java/pull/4305))
 
 ### Behavioral Changes
 
