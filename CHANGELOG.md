@@ -4,6 +4,7 @@
 
 ### Features
 
+- Continuous Profiling - stop when app goes in background ([#4311](https://github.com/getsentry/sentry-java/pull/4311))
 - Continuous Profiling - Add delayed stop ([#4293](https://github.com/getsentry/sentry-java/pull/4293))
 - Increase http timeouts from 5s to 30s to have a better chance of events being delivered without retry ([#4276](https://github.com/getsentry/sentry-java/pull/4276))
 
