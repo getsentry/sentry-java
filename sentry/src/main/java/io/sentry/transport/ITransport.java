@@ -20,7 +20,7 @@ public interface ITransport extends Closeable {
   }
 
   /**
-   * Flushes events queued up, but keeps the client enabled. Not implemented yet.
+   * Flushes events queued up, but keeps the client enabled.
    *
    * @param timeoutMillis time in milliseconds
    */
