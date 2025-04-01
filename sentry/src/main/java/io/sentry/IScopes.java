@@ -376,7 +376,7 @@ public interface IScopes {
   boolean isHealthy();
 
   /**
-   * Flushes events queued up, but keeps the scopes enabled. Not implemented yet.
+   * Flushes events queued up, but keeps the scopes enabled.
    *
    * @param timeoutMillis time in milliseconds
    */

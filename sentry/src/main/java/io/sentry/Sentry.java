@@ -1030,7 +1030,7 @@ public final class Sentry {
   }
 
   /**
-   * Flushes events queued up to the current Scopes. Not implemented yet.
+   * Flushes events queued up to the current Scopes.
    *
    * @param timeoutMillis time in milliseconds
    */
