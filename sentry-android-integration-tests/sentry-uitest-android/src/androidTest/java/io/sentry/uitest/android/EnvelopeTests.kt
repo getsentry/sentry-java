@@ -22,6 +22,7 @@ import io.sentry.protocol.SentryTransaction
 import org.junit.Assume
 import org.junit.Assume.assumeNotNull
 import org.junit.runner.RunWith
+import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -227,6 +228,36 @@ class EnvelopeTests : BaseUiTest() {
         IdlingRegistry.getInstance().unregister(ProfilingSampleActivity.scrollingIdlingResource)
         // Let this test send all data, so that it doesn't interfere with other tests
         Thread.sleep(5000)
+    }
+
+    @Test
+    fun sendsNativeTransaction() {
+        var optionsRef: SentryAndroidOptions? = null
+        initSentry(true) { options ->
+            options.tracesSampleRate = 1.0
+            optionsRef = options
+        }
+
+        // based on https://github.com/getsentry/sentry-native/blob/20d5d5f75f1f48228f2f47e2bb99b17f9996ebbf/ndk/lib/src/androidTest/java/io/sentry/ndk/SentryNdkTest.java#L131
+        File(optionsRef!!.outboxPath, "14779dbf-b2f0-4c00-f4e5-4a287abc4267")
+            .writeText(
+                """
+            {"dsn":"https://key@sentry.io/proj","event_id":"729ff878-5539-458d-f657-a1acf423a127","sent_at":"2025-04-02T10:02:04.732577Z"}
+            {"type":"transaction","length":1335}
+            {"event_id":"729ff878-5539-458d-f657-a1acf423a127","platform":"native","transaction":"little.teapot","start_timestamp":"2025-04-02T10:02:04.731697Z","spans":[{"op":"littlest.teapot","span_id":"00028ba394454124","status":"ok","trace_id":"7160e289fe4c4496f02c72bbc7edb392","parent_span_id":"b0dc1649a8ec4101","description":null,"start_timestamp":"2025-04-02T10:02:04.732127Z","timestamp":"2025-04-02T10:02:04.732133Z"},{"op":"littler.teapot","span_id":"b0dc1649a8ec4101","status":"ok","trace_id":"7160e289fe4c4496f02c72bbc7edb392","parent_span_id":"7ad2e40529af4650","description":null,"start_timestamp":"2025-04-02T10:02:04.732118Z","data":{"span_data_says":"hi!"},"timestamp":"2025-04-02T10:02:04.732137Z"}],"type":"transaction","timestamp":"2025-04-02T10:02:04.732142Z","level":"info","contexts":{"trace":{"trace_id":"7160e289fe4c4496f02c72bbc7edb392","span_id":"7ad2e40529af4650","op":"Short and stout here is my handle and here is my spout","status":"ok","data":{"url":"https://example.com"}},"os":{"build":"android14-4-00257-g7e35917775b8-ab9964412","name":"Linux","version":"6.1.23"}},"release":"1.0.0","dist":"dist","environment":"production","sdk":{"name":"io.sentry.ndk","version":"0.8.3","packages":[{"name":"github:getsentry/sentry-native","version":"0.8.3"}],"integrations":["inproc"]},"tags":{},"extra":{},"breadcrumbs":[]}
+                """.trimIndent()
+            )
+
+        relayIdlingResource.increment()
+
+        relay.assert {
+            assertFirstEnvelope {
+                val event: SentryEvent = it.assertItem()
+                it.assertNoOtherItems()
+                assertEquals("little.teapot", event.transaction)
+            }
+            assertNoOtherEnvelopes()
+        }
     }
 
     private fun swipeList(times: Int) {
