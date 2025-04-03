@@ -1422,6 +1422,11 @@ public final class io/sentry/MonitorScheduleUnit : java/lang/Enum {
 	public static fun values ()[Lio/sentry/MonitorScheduleUnit;
 }
 
+public final class io/sentry/MultiplexedTransportFactory : io/sentry/ITransportFactory {
+	public fun <init> (Lio/sentry/ITransportFactory;Ljava/util/List;)V
+	public fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
+}
+
 public final class io/sentry/NoOpCompositePerformanceCollector : io/sentry/CompositePerformanceCollector {
 	public fun close ()V
 	public static fun getInstance ()Lio/sentry/NoOpCompositePerformanceCollector;
@@ -6255,6 +6260,16 @@ public abstract interface class io/sentry/transport/ITransport : java/io/Closeab
 
 public abstract interface class io/sentry/transport/ITransportGate {
 	public abstract fun isConnected ()Z
+}
+
+public final class io/sentry/transport/MultiplexedTransport : io/sentry/transport/ITransport {
+	public fun <init> (Ljava/util/List;)V
+	public fun close ()V
+	public fun close (Z)V
+	public fun flush (J)V
+	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
+	public fun isHealthy ()Z
+	public fun send (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 }
 
 public final class io/sentry/transport/NoOpEnvelopeCache : io/sentry/cache/IEnvelopeCache {
