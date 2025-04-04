@@ -398,7 +398,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
             setContinuousProfiler(profiler)
-            experimental.profileSessionSampleRate = 1.0
+            profileSessionSampleRate = 1.0
         }
 
         val scope = Scope(options)
@@ -419,7 +419,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
             setContinuousProfiler(profiler)
-            experimental.profileSessionSampleRate = 1.0
+            profileSessionSampleRate = 1.0
         }
 
         val scope = Scope(options)
@@ -435,7 +435,7 @@ class ScopeTest {
         val options = SentryOptions().apply {
             release = "0.0.1"
             setContinuousProfiler(profiler)
-            experimental.profileSessionSampleRate = 1.0
+            profileSessionSampleRate = 1.0
         }
 
         val scope = Scope(options)
