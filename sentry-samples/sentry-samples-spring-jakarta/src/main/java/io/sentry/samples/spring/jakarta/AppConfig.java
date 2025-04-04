@@ -1,6 +1,6 @@
 package io.sentry.samples.spring.jakarta;
 
-import io.sentry.IScopes;
+import io.sentry.ScopesAdapter;
 import io.sentry.spring.jakarta.SentryUserFilter;
 import io.sentry.spring.jakarta.SentryUserProvider;
 import java.util.List;
@@ -13,8 +13,7 @@ import org.springframework.context.annotation.Import;
 public class AppConfig {
 
   @Bean
-  SentryUserFilter sentryUserFilter(
-      final IScopes scopes, final List<SentryUserProvider> sentryUserProviders) {
-    return new SentryUserFilter(scopes, sentryUserProviders);
+  SentryUserFilter sentryUserFilter(final List<SentryUserProvider> sentryUserProviders) {
+    return new SentryUserFilter(ScopesAdapter.getInstance(), sentryUserProviders);
   }
 }
