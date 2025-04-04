@@ -1,8 +1,10 @@
 package io.sentry.samples.spring;
 
-import io.sentry.ScopesAdapter;
+import io.sentry.IScopes;
 import io.sentry.spring.tracing.SentrySpanClientHttpRequestInterceptor;
 import java.util.Collections;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +18,8 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @EnableWebMvc
 public class WebConfig {
 
+  @Autowired private ApplicationContext applicationContext;
+
   /**
    * Creates a {@link RestTemplate} which calls are intercepted with {@link
    * SentrySpanClientHttpRequestInterceptor} to create spans around HTTP calls.
@@ -26,7 +30,7 @@ public class WebConfig {
   RestTemplate restTemplate() {
     RestTemplate restTemplate = new RestTemplate();
     SentrySpanClientHttpRequestInterceptor sentryRestTemplateInterceptor =
-        new SentrySpanClientHttpRequestInterceptor(ScopesAdapter.getInstance());
+        new SentrySpanClientHttpRequestInterceptor(applicationContext.getBean(IScopes.class));
     restTemplate.setInterceptors(Collections.singletonList(sentryRestTemplateInterceptor));
     return restTemplate;
   }
