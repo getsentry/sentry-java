@@ -272,7 +272,7 @@ class SentryTracerTest {
         whenever(continuousProfiler.profilerId).thenReturn(profilerId)
         val tracer = fixture.getSut(optionsConfiguration = {
             it.setContinuousProfiler(continuousProfiler)
-            it.experimental.profileLifecycle = ProfileLifecycle.MANUAL
+            it.profileLifecycle = ProfileLifecycle.MANUAL
         }, samplingDecision = TracesSamplingDecision(true))
         tracer.finish()
         // profiler is never stopped, as it should be stopped manually

@@ -32,8 +32,8 @@ public abstract interface class io/sentry/BackfillingEventProcessor : io/sentry/
 public final class io/sentry/Baggage {
 	public fun <init> (Lio/sentry/Baggage;)V
 	public fun <init> (Lio/sentry/ILogger;)V
-	public fun <init> (Ljava/util/Map;Ljava/lang/String;ZZLio/sentry/ILogger;)V
-	public fun forceSetSampleRate (Ljava/lang/String;)V
+	public fun <init> (Ljava/util/Map;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/String;ZZLio/sentry/ILogger;)V
+	public fun forceSetSampleRate (Ljava/lang/Double;)V
 	public fun freeze ()V
 	public static fun fromEvent (Lio/sentry/SentryEvent;Lio/sentry/SentryOptions;)Lio/sentry/Baggage;
 	public static fun fromHeader (Ljava/lang/String;)Lio/sentry/Baggage;
@@ -47,10 +47,8 @@ public final class io/sentry/Baggage {
 	public fun getPublicKey ()Ljava/lang/String;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getReplayId ()Ljava/lang/String;
-	public fun getSampleRand ()Ljava/lang/String;
-	public fun getSampleRandDouble ()Ljava/lang/Double;
-	public fun getSampleRate ()Ljava/lang/String;
-	public fun getSampleRateDouble ()Ljava/lang/Double;
+	public fun getSampleRand ()Ljava/lang/Double;
+	public fun getSampleRate ()Ljava/lang/Double;
 	public fun getSampled ()Ljava/lang/String;
 	public fun getThirdPartyHeader ()Ljava/lang/String;
 	public fun getTraceId ()Ljava/lang/String;
@@ -64,9 +62,8 @@ public final class io/sentry/Baggage {
 	public fun setPublicKey (Ljava/lang/String;)V
 	public fun setRelease (Ljava/lang/String;)V
 	public fun setReplayId (Ljava/lang/String;)V
-	public fun setSampleRand (Ljava/lang/String;)V
-	public fun setSampleRandDouble (Ljava/lang/Double;)V
-	public fun setSampleRate (Ljava/lang/String;)V
+	public fun setSampleRand (Ljava/lang/Double;)V
+	public fun setSampleRate (Ljava/lang/Double;)V
 	public fun setSampled (Ljava/lang/String;)V
 	public fun setTraceId (Ljava/lang/String;)V
 	public fun setTransaction (Ljava/lang/String;)V
@@ -416,6 +413,11 @@ public final class io/sentry/DefaultSpanFactory : io/sentry/ISpanFactory {
 	public fun createTransaction (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;Lio/sentry/CompositePerformanceCollector;)Lio/sentry/ITransaction;
 }
 
+public final class io/sentry/DefaultVersionDetector : io/sentry/IVersionDetector {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun checkForMixedVersions ()Z
+}
+
 public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ILogger;)V
 	public fun getLogger ()Lio/sentry/ILogger;
@@ -456,12 +458,6 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
-	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
-	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
-	public fun isStartProfilerOnAppStart ()Z
-	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
-	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
-	public fun setStartProfilerOnAppStart (Z)V
 }
 
 public final class io/sentry/ExternalOptions {
@@ -1101,6 +1097,10 @@ public abstract interface class io/sentry/ITransportFactory {
 	public abstract fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
 }
 
+public abstract interface class io/sentry/IVersionDetector {
+	public abstract fun checkForMixedVersions ()Z
+}
+
 public final class io/sentry/InitPriority : java/lang/Enum {
 	public static final field HIGH Lio/sentry/InitPriority;
 	public static final field HIGHEST Lio/sentry/InitPriority;
@@ -1248,6 +1248,11 @@ public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
+}
+
+public final class io/sentry/ManifestVersionDetector : io/sentry/IVersionDetector {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun checkForMixedVersions ()Z
 }
 
 public abstract interface class io/sentry/MeasurementUnit {
@@ -1800,6 +1805,11 @@ public final class io/sentry/NoOpTransactionProfiler : io/sentry/ITransactionPro
 public final class io/sentry/NoOpTransportFactory : io/sentry/ITransportFactory {
 	public fun create (Lio/sentry/SentryOptions;Lio/sentry/RequestDetails;)Lio/sentry/transport/ITransport;
 	public static fun getInstance ()Lio/sentry/NoOpTransportFactory;
+}
+
+public final class io/sentry/NoopVersionDetector : io/sentry/IVersionDetector {
+	public fun checkForMixedVersions ()Z
+	public static fun getInstance ()Lio/sentry/NoopVersionDetector;
 }
 
 public abstract interface class io/sentry/ObjectReader : java/io/Closeable {
@@ -2870,6 +2880,7 @@ public final class io/sentry/SentryInstantDateProvider : io/sentry/SentryDatePro
 public final class io/sentry/SentryIntegrationPackageStorage {
 	public fun addIntegration (Ljava/lang/String;)V
 	public fun addPackage (Ljava/lang/String;Ljava/lang/String;)V
+	public fun checkForMixedVersions (Lio/sentry/ILogger;)Z
 	public fun clearStorage ()V
 	public static fun getInstance ()Lio/sentry/SentryIntegrationPackageStorage;
 	public fun getIntegrations ()Ljava/util/Set;
@@ -3040,6 +3051,7 @@ public class io/sentry/SentryOptions {
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getExecutorService ()Lio/sentry/ISentryExecutorService;
 	public fun getExperimental ()Lio/sentry/ExperimentalOptions;
+	public fun getFatalLogger ()Lio/sentry/ILogger;
 	public fun getFlushTimeoutMillis ()J
 	public fun getFullyDisplayedReporter ()Lio/sentry/FullyDisplayedReporter;
 	public fun getGestureTargetLocators ()Ljava/util/List;
@@ -3101,6 +3113,7 @@ public class io/sentry/SentryOptions {
 	public fun getTransactionProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getTransportFactory ()Lio/sentry/ITransportFactory;
 	public fun getTransportGate ()Lio/sentry/transport/ITransportGate;
+	public fun getVersionDetector ()Lio/sentry/IVersionDetector;
 	public final fun getViewHierarchyExporters ()Ljava/util/List;
 	public fun isAttachServerName ()Z
 	public fun isAttachStacktrace ()Z
@@ -3178,6 +3191,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnvelopeReader (Lio/sentry/IEnvelopeReader;)V
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExecutorService (Lio/sentry/ISentryExecutorService;)V
+	public fun setFatalLogger (Lio/sentry/ILogger;)V
 	public fun setFlushTimeoutMillis (J)V
 	public fun setForceInit (Z)V
 	public fun setFullyDisplayedReporter (Lio/sentry/FullyDisplayedReporter;)V
@@ -3202,6 +3216,8 @@ public class io/sentry/SentryOptions {
 	public fun setModulesLoader (Lio/sentry/internal/modules/IModulesLoader;)V
 	public fun setOpenTelemetryMode (Lio/sentry/SentryOpenTelemetryMode;)V
 	public fun setPrintUncaughtStackTrace (Z)V
+	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
+	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
 	public fun setProfilingTracesHz (I)V
@@ -3225,6 +3241,7 @@ public class io/sentry/SentryOptions {
 	public fun setSpanFactory (Lio/sentry/ISpanFactory;)V
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
+	public fun setStartProfilerOnAppStart (Z)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThreadChecker (Lio/sentry/util/thread/IThreadChecker;)V
 	public fun setTraceOptionsRequests (Z)V
@@ -3235,6 +3252,7 @@ public class io/sentry/SentryOptions {
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
+	public fun setVersionDetector (Lio/sentry/IVersionDetector;)V
 	public fun setViewHierarchyExporters (Ljava/util/List;)V
 }
 
@@ -4409,6 +4427,20 @@ public final class io/sentry/instrumentation/file/SentryFileWriter : java/io/Out
 	public fun <init> (Ljava/io/FileDescriptor;)V
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Z)V
+}
+
+public final class io/sentry/internal/ManifestVersionReader {
+	public static fun getInstance ()Lio/sentry/internal/ManifestVersionReader;
+	public fun readManifestFiles ()V
+	public fun readOpenTelemetryVersion ()Lio/sentry/internal/ManifestVersionReader$VersionInfoHolder;
+}
+
+public final class io/sentry/internal/ManifestVersionReader$VersionInfoHolder {
+	public fun <init> ()V
+	public fun getIntegrations ()Ljava/util/List;
+	public fun getPackages ()Ljava/util/List;
+	public fun getSdkName ()Ljava/lang/String;
+	public fun getSdkVersion ()Ljava/lang/String;
 }
 
 public abstract interface class io/sentry/internal/debugmeta/IDebugMetaLoader {

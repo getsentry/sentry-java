@@ -63,6 +63,15 @@ public final class io/sentry/android/core/AndroidDateUtils {
 	public static fun getCurrentSentryDateTime ()Lio/sentry/SentryDate;
 }
 
+public final class io/sentry/android/core/AndroidFatalLogger : io/sentry/ILogger {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;)V
+	public fun isEnabled (Lio/sentry/SentryLevel;)Z
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
+}
+
 public final class io/sentry/android/core/AndroidLogger : io/sentry/ILogger {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;)V

@@ -1,4 +1,4 @@
-import com.android.build.gradle.internal.tasks.LibraryAarJarsTask
+
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.dokka.gradle.DokkaTask
 
@@ -42,8 +42,6 @@ kotlin {
             dependencies {
                 compileOnly(compose.runtime)
                 compileOnly(compose.ui)
-
-                compileOnly(projects.sentryComposeHelper)
             }
         }
         val androidMain by getting {
@@ -135,24 +133,4 @@ tasks.withType<DokkaTask>().configureEach {
             suppress.set(true)
         }
     }
-}
-
-/**
- * Due to https://youtrack.jetbrains.com/issue/KT-30878
- * you can not have java sources in a KMP-enabled project which has the android-lib plugin applied.
- * Thus we compile relevant java code in sentry-compose-helper first and embed it in here.
- */
-val embedComposeHelperConfig by configurations.creating {
-    isCanBeConsumed = false
-    isCanBeResolved = true
-}
-
-dependencies {
-    embedComposeHelperConfig(
-        project(":" + projects.sentryComposeHelper.name, "embeddedJar")
-    )
-}
-
-tasks.withType<LibraryAarJarsTask> {
-    mainScopeClassFiles.setFrom(embedComposeHelperConfig)
 }

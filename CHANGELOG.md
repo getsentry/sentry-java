@@ -5,12 +5,43 @@
 ### Features
 
 - Continuous Profiling - Add delayed stop ([#4293](https://github.com/getsentry/sentry-java/pull/4293))
+- Continuous Profiling - Out of Experimental ([#4310](https://github.com/getsentry/sentry-java/pull/4310))
+
+## 8.6.0
+
+### Behavioral Changes
+
+- The Sentry SDK will now crash on startup if mixed versions have been detected ([#4277](https://github.com/getsentry/sentry-java/pull/4277))
+  - On `Sentry.init` / `SentryAndroid.init` the SDK now checks if all Sentry Java / Android SDK dependencies have the same version.
+  - While this may seem like a bad idea at first glance, mixing versions of dependencies has a very high chance of causing a crash later. We opted for a controlled crash that's hard to miss.
+  - Note: This detection only works for new versions of the SDK, so please take this as a reminder to check your SDK version alignment manually when upgrading the SDK to this version and then you should be good.
+  - The SDK will also print log messages if mixed versions have been detected at a later point. ([#4270](https://github.com/getsentry/sentry-java/pull/4270))
+    - This takes care of cases missed by the startup check above due to older versions.
+
+### Features
+
 - Increase http timeouts from 5s to 30s to have a better chance of events being delivered without retry ([#4276](https://github.com/getsentry/sentry-java/pull/4276))
+- Add `MANIFEST.MF` to Sentry JARs ([#4272](https://github.com/getsentry/sentry-java/pull/4272))
+- Retain baggage sample rate/rand values as doubles ([#4279](https://github.com/getsentry/sentry-java/pull/4279))
+- Introduce fatal SDK logger ([#4288](https://github.com/getsentry/sentry-java/pull/4288))
+  - We use this to print out messages when there is a problem that prevents the SDK from working correctly.
+  - One example for this is when the SDK has been configured with mixed dependency versions where we print out details, which module and version are affected.
 
 ### Fixes
 
 - Do not override user-defined `SentryOptions` ([#4262](https://github.com/getsentry/sentry-java/pull/4262))
 - Session Replay: Change bitmap config to `ARGB_8888` for screenshots ([#4282](https://github.com/getsentry/sentry-java/pull/4282))
+- The `MANIFEST.MF` of `sentry-opentelemetry-agent` now has `Implementation-Version` set to the raw version ([#4291](https://github.com/getsentry/sentry-java/pull/4291))
+  - An example value would be `8.6.0`
+  - The value of the `Sentry-Version-Name` attribute looks like `sentry-8.5.0-otel-2.10.0`
+- Fix tags missing for compose view hierarchies ([#4275](https://github.com/getsentry/sentry-java/pull/4275))
+- Do not leak SentryFileInputStream/SentryFileOutputStream descriptors and channels ([#4296](https://github.com/getsentry/sentry-java/pull/4296))
+- Remove "not yet implemented" from `Sentry.flush` comment ([#4305](https://github.com/getsentry/sentry-java/pull/4305))
+
+### Internal
+
+- Added `platform` to SentryEnvelopeItemHeader ([#4287](https://github.com/getsentry/sentry-java/pull/4287))
+  - Set `android` platform to ProfileChunk envelope item header
 
 ### Internal
 
@@ -19,9 +50,9 @@
 
 ### Dependencies
 
-- Bump Native SDK from v0.8.1 to v0.8.2 ([#4267](https://github.com/getsentry/sentry-java/pull/4267))
-  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#082)
-  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.1...0.8.2)
+- Bump Native SDK from v0.8.1 to v0.8.3 ([#4267](https://github.com/getsentry/sentry-java/pull/4267), [#4298](https://github.com/getsentry/sentry-java/pull/4298))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#083)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.1...0.8.3)
 - Bump Spring Boot from 2.7.5 to 2.7.18 ([#3496](https://github.com/getsentry/sentry-java/pull/3496))
 
 ## 8.5.0

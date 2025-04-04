@@ -26,9 +26,14 @@ internal class SentryLifecycleObserver(
         SentryNavigationListener(traceOriginAppendix = TRACE_ORIGIN_APPENDIX)
 ) : LifecycleEventObserver {
 
+    private companion object {
+        init {
+            SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
+        }
+    }
+
     init {
         addIntegrationToSdkVersion("ComposeNavigation")
-        SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
