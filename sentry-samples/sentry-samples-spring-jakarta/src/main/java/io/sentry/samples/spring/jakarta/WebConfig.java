@@ -1,6 +1,6 @@
 package io.sentry.samples.spring.jakarta;
 
-import io.sentry.IScopes;
+import io.sentry.ScopesAdapter;
 import io.sentry.spring.jakarta.tracing.SentrySpanClientHttpRequestInterceptor;
 import java.util.Collections;
 import org.springframework.context.annotation.Bean;
@@ -20,14 +20,13 @@ public class WebConfig {
    * Creates a {@link RestTemplate} which calls are intercepted with {@link
    * SentrySpanClientHttpRequestInterceptor} to create spans around HTTP calls.
    *
-   * @param scopes - sentry scopes
    * @return RestTemplate
    */
   @Bean
-  RestTemplate restTemplate(IScopes scopes) {
+  RestTemplate restTemplate() {
     RestTemplate restTemplate = new RestTemplate();
     SentrySpanClientHttpRequestInterceptor sentryRestTemplateInterceptor =
-        new SentrySpanClientHttpRequestInterceptor(scopes);
+        new SentrySpanClientHttpRequestInterceptor(ScopesAdapter.getInstance());
     restTemplate.setInterceptors(Collections.singletonList(sentryRestTemplateInterceptor));
     return restTemplate;
   }
