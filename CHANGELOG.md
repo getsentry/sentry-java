@@ -43,11 +43,6 @@
 - Added `platform` to SentryEnvelopeItemHeader ([#4287](https://github.com/getsentry/sentry-java/pull/4287))
   - Set `android` platform to ProfileChunk envelope item header
 
-### Internal
-
-- Added `platform` to SentryEnvelopeItemHeader ([#4287](https://github.com/getsentry/sentry-java/pull/4287))
-  - Set `android` platform to ProfileChunk envelope item header
-
 ### Dependencies
 
 - Bump Native SDK from v0.8.1 to v0.8.3 ([#4267](https://github.com/getsentry/sentry-java/pull/4267), [#4298](https://github.com/getsentry/sentry-java/pull/4298))
