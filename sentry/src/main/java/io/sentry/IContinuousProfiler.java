@@ -19,6 +19,9 @@ public interface IContinuousProfiler {
 
   void reevaluateSampling();
 
+  /** Stops all profiles currently running, regardless of the profileLifecycle that started them. */
+  void stopAllProfiles();
+
   @NotNull
   SentryId getProfilerId();
 }

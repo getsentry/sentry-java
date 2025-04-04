@@ -18,6 +18,10 @@ class NoOpContinuousProfilerTest {
         profiler.stopProfiler(mock())
 
     @Test
+    fun `stopAllProfiles does not throw`() =
+        profiler.stopAllProfiles()
+
+    @Test
     fun `isRunning returns false`() {
         assertFalse(profiler.isRunning)
     }
