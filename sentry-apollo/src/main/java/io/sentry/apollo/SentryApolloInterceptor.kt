@@ -36,12 +36,17 @@ class SentryApolloInterceptor(
     private val beforeSpan: BeforeSpanCallback? = null
 ) : ApolloInterceptor {
 
+    private companion object {
+        init {
+            SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
+        }
+    }
+
     constructor(scopes: IScopes) : this(scopes, null)
     constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
 
     init {
         addIntegrationToSdkVersion("Apollo")
-        SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
     }
 
     override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {

@@ -32,6 +32,7 @@ import io.sentry.spring.exception.SentryCaptureExceptionParameterPointcutConfigu
 import io.sentry.spring.exception.SentryExceptionParameterAdviceConfiguration;
 import io.sentry.spring.opentelemetry.SentryOpenTelemetryAgentWithoutAutoInitConfiguration;
 import io.sentry.spring.opentelemetry.SentryOpenTelemetryNoAgentConfiguration;
+import io.sentry.spring.tracing.CombinedTransactionNameProvider;
 import io.sentry.spring.tracing.SentryAdviceConfiguration;
 import io.sentry.spring.tracing.SentrySpanPointcutConfiguration;
 import io.sentry.spring.tracing.SentryTracingFilter;
@@ -41,6 +42,7 @@ import io.sentry.spring.tracing.SpringServletTransactionNameProvider;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -80,6 +82,11 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 @ConditionalOnProperty(name = "sentry.dsn")
 @Open
 public class SentryAutoConfiguration {
+
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-spring-boot-starter", BuildConfig.VERSION_NAME);
+  }
 
   /** Registers general purpose Sentry related beans. */
   @Configuration(proxyBeanMethods = false)
@@ -327,7 +334,10 @@ public class SentryAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean(TransactionNameProvider.class)
         public @NotNull TransactionNameProvider transactionNameProvider() {
-          return new SpringMvcTransactionNameProvider();
+          return new CombinedTransactionNameProvider(
+              Arrays.asList(
+                  new SpringMvcTransactionNameProvider(),
+                  new SpringServletTransactionNameProvider()));
         }
       }
 
@@ -426,8 +436,6 @@ public class SentryAutoConfiguration {
     }
 
     private static void addPackageAndIntegrationInfo() {
-      SentryIntegrationPackageStorage.getInstance()
-          .addPackage("maven:io.sentry:sentry-spring-boot-starter", BuildConfig.VERSION_NAME);
       SentryIntegrationPackageStorage.getInstance().addIntegration("SpringBoot");
     }
   }

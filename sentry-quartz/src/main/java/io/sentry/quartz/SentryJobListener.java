@@ -23,6 +23,11 @@ import org.quartz.JobListener;
 @ApiStatus.Experimental
 public final class SentryJobListener implements JobListener {
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-quartz", BuildConfig.VERSION_NAME);
+  }
+
   public static final String SENTRY_CHECK_IN_ID_KEY = "sentry-checkin-id";
   public static final String SENTRY_SLUG_KEY = "sentry-slug";
   public static final String SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY = "sentry-scope-lifecycle";
@@ -36,8 +41,6 @@ public final class SentryJobListener implements JobListener {
   public SentryJobListener(final @NotNull IScopes scopes) {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     SentryIntegrationPackageStorage.getInstance().addIntegration("Quartz");
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-quartz", BuildConfig.VERSION_NAME);
   }
 
   @Override

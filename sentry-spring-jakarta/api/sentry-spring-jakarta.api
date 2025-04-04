@@ -220,6 +220,13 @@ public class io/sentry/spring/jakarta/opentelemetry/SentryOpenTelemetryNoAgentCo
 	public fun sentryOpenTelemetryOptionsConfiguration ()Lio/sentry/Sentry$OptionsConfiguration;
 }
 
+public final class io/sentry/spring/jakarta/tracing/CombinedTransactionNameProvider : io/sentry/spring/jakarta/tracing/TransactionNameProvider {
+	public fun <init> (Ljava/util/List;)V
+	public fun provideTransactionName (Ljakarta/servlet/http/HttpServletRequest;)Ljava/lang/String;
+	public fun provideTransactionNameAndSource (Ljakarta/servlet/http/HttpServletRequest;)Lio/sentry/spring/jakarta/tracing/TransactionNameWithSource;
+	public fun provideTransactionSource ()Lio/sentry/protocol/TransactionNameSource;
+}
+
 public class io/sentry/spring/jakarta/tracing/SentryAdviceConfiguration {
 	public fun <init> ()V
 	public fun sentrySpanAdvice ()Lorg/aopalliance/aop/Advice;
@@ -300,7 +307,14 @@ public final class io/sentry/spring/jakarta/tracing/SpringServletTransactionName
 
 public abstract interface class io/sentry/spring/jakarta/tracing/TransactionNameProvider {
 	public abstract fun provideTransactionName (Ljakarta/servlet/http/HttpServletRequest;)Ljava/lang/String;
+	public fun provideTransactionNameAndSource (Ljakarta/servlet/http/HttpServletRequest;)Lio/sentry/spring/jakarta/tracing/TransactionNameWithSource;
 	public fun provideTransactionSource ()Lio/sentry/protocol/TransactionNameSource;
+}
+
+public final class io/sentry/spring/jakarta/tracing/TransactionNameWithSource {
+	public fun <init> (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
+	public fun getTransactionName ()Ljava/lang/String;
+	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 }
 
 public abstract class io/sentry/spring/jakarta/webflux/AbstractSentryWebFilter : org/springframework/web/server/WebFilter {

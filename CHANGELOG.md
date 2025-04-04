@@ -4,15 +4,113 @@
 
 ### Features
 
+- Continuous Profiling - Out of Experimental ([#4310](https://github.com/getsentry/sentry-java/pull/4310))
 - Add `CoroutineExceptionHandler` for reporting uncaught exceptions in coroutines to Sentry ([#4259](https://github.com/getsentry/sentry-java/pull/4259))
   - This is now part of `sentry-kotlin-extensions` and can be used together with `SentryContext` when launching a coroutine
   - Any exceptions thrown in a coroutine when using the handler will be captured (not rethrown!) and reported to Sentry
   - It's also possible to extend `CoroutineExceptionHandler` to implement custom behavior in addition to the one we provide by default
 
+## 8.6.0
+
+### Behavioral Changes
+
+- The Sentry SDK will now crash on startup if mixed versions have been detected ([#4277](https://github.com/getsentry/sentry-java/pull/4277))
+  - On `Sentry.init` / `SentryAndroid.init` the SDK now checks if all Sentry Java / Android SDK dependencies have the same version.
+  - While this may seem like a bad idea at first glance, mixing versions of dependencies has a very high chance of causing a crash later. We opted for a controlled crash that's hard to miss.
+  - Note: This detection only works for new versions of the SDK, so please take this as a reminder to check your SDK version alignment manually when upgrading the SDK to this version and then you should be good.
+  - The SDK will also print log messages if mixed versions have been detected at a later point. ([#4270](https://github.com/getsentry/sentry-java/pull/4270))
+    - This takes care of cases missed by the startup check above due to older versions.
+
+### Features
+
+- Increase http timeouts from 5s to 30s to have a better chance of events being delivered without retry ([#4276](https://github.com/getsentry/sentry-java/pull/4276))
+- Add `MANIFEST.MF` to Sentry JARs ([#4272](https://github.com/getsentry/sentry-java/pull/4272))
+- Retain baggage sample rate/rand values as doubles ([#4279](https://github.com/getsentry/sentry-java/pull/4279))
+- Introduce fatal SDK logger ([#4288](https://github.com/getsentry/sentry-java/pull/4288))
+  - We use this to print out messages when there is a problem that prevents the SDK from working correctly.
+  - One example for this is when the SDK has been configured with mixed dependency versions where we print out details, which module and version are affected.
+
+### Fixes
+
+- Do not override user-defined `SentryOptions` ([#4262](https://github.com/getsentry/sentry-java/pull/4262))
+- Session Replay: Change bitmap config to `ARGB_8888` for screenshots ([#4282](https://github.com/getsentry/sentry-java/pull/4282))
+- The `MANIFEST.MF` of `sentry-opentelemetry-agent` now has `Implementation-Version` set to the raw version ([#4291](https://github.com/getsentry/sentry-java/pull/4291))
+  - An example value would be `8.6.0`
+  - The value of the `Sentry-Version-Name` attribute looks like `sentry-8.5.0-otel-2.10.0`
+- Fix tags missing for compose view hierarchies ([#4275](https://github.com/getsentry/sentry-java/pull/4275))
+- Do not leak SentryFileInputStream/SentryFileOutputStream descriptors and channels ([#4296](https://github.com/getsentry/sentry-java/pull/4296))
+- Remove "not yet implemented" from `Sentry.flush` comment ([#4305](https://github.com/getsentry/sentry-java/pull/4305))
+
+### Internal
+
+- Added `platform` to SentryEnvelopeItemHeader ([#4287](https://github.com/getsentry/sentry-java/pull/4287))
+  - Set `android` platform to ProfileChunk envelope item header
+
+### Dependencies
+
+- Bump Native SDK from v0.8.1 to v0.8.3 ([#4267](https://github.com/getsentry/sentry-java/pull/4267), [#4298](https://github.com/getsentry/sentry-java/pull/4298))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#083)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.1...0.8.3)
+- Bump Spring Boot from 2.7.5 to 2.7.18 ([#3496](https://github.com/getsentry/sentry-java/pull/3496))
+
+## 8.5.0
+
+### Features
+
+- Add native stack frame address information and debug image metadata to ANR events ([#4061](https://github.com/getsentry/sentry-java/pull/4061))
+    - This enables symbolication for stripped native code in ANRs
+- Add Continuous Profiling Support ([#3710](https://github.com/getsentry/sentry-java/pull/3710))
+
+  To enable Continuous Profiling use the `Sentry.startProfiler` and `Sentry.stopProfiler` experimental APIs. Sampling rate can be set through `options.profileSessionSampleRate`, which defaults to null (disabled).   
+  Note: Both `options.profilesSampler` and `options.profilesSampleRate` must **not** be set to enable Continuous Profiling.
+
+  ```java
+  import io.sentry.ProfileLifecycle;
+  import io.sentry.android.core.SentryAndroid;
+
+  SentryAndroid.init(context) { options ->
+   
+    // Currently under experimental options:
+    options.getExperimental().setProfileSessionSampleRate(1.0);
+    // In manual mode, you need to start and stop the profiler manually using Sentry.startProfiler and Sentry.stopProfiler
+    // In trace mode, the profiler will start and stop automatically whenever a sampled trace starts and finishes
+    options.getExperimental().setProfileLifecycle(ProfileLifecycle.MANUAL);
+  }
+  // Start profiling
+  Sentry.startProfiler();
+  
+  // After all profiling is done, stop the profiler. Profiles can last indefinitely if not stopped.
+  Sentry.stopProfiler();
+  ```
+  ```kotlin
+  import io.sentry.ProfileLifecycle
+  import io.sentry.android.core.SentryAndroid
+
+  SentryAndroid.init(context) { options ->
+   
+    // Currently under experimental options:
+    options.experimental.profileSessionSampleRate = 1.0
+    // In manual mode, you need to start and stop the profiler manually using Sentry.startProfiler and Sentry.stopProfiler
+    // In trace mode, the profiler will start and stop automatically whenever a sampled trace starts and finishes
+    options.experimental.profileLifecycle = ProfileLifecycle.MANUAL
+  }
+  // Start profiling
+  Sentry.startProfiler()
+  
+  // After all profiling is done, stop the profiler. Profiles can last indefinitely if not stopped.
+  Sentry.stopProfiler()
+  ```
+
+  To learn more visit [Sentry's Continuous Profiling](https://docs.sentry.io/product/explore/profiling/transaction-vs-continuous-profiling/#continuous-profiling-mode) documentation page.
+
 ### Fixes
 
 - Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))
 - Ensure app start type is set, even when ActivityLifecycleIntegration is not running ([#4250](https://github.com/getsentry/sentry-java/pull/4250))
+- Use `SpringServletTransactionNameProvider` as fallback for Spring WebMVC ([#4263](https://github.com/getsentry/sentry-java/pull/4263))
+  - In certain cases the SDK was not able to provide a transaction name automatically and thus did not finish the transaction for the request.
+  - We now first try `SpringMvcTransactionNameProvider` which would provide the route as transaction name.
+  - If that does not return anything, we try `SpringServletTransactionNameProvider` next, which returns the URL of the request.
 
 ### Behavioral Changes
 
@@ -508,6 +606,32 @@ If you have been using `8.0.0-rc.4` of the Java SDK, here's the new changes that
     - As a consequence the list of exceptions in the group on top of an issue is no longer shown in Sentry UI.
     - We are planning to improve this in the future but opted for this fix first.
 - Fix swallow NDK loadLibrary errors ([#4082](https://github.com/getsentry/sentry-java/pull/4082))
+
+## 7.22.5
+
+### Fixes
+
+- Session Replay: Change bitmap config to `ARGB_8888` for screenshots ([#4282](https://github.com/getsentry/sentry-java/pull/4282))
+
+## 7.22.4
+
+### Fixes
+
+- Session Replay: Fix crash when a navigation breadcrumb does not have "to" destination ([#4185](https://github.com/getsentry/sentry-java/pull/4185))
+- Session Replay: Cap video segment duration to maximum 5 minutes to prevent endless video encoding in background ([#4185](https://github.com/getsentry/sentry-java/pull/4185))
+- Avoid logging an error when a float is passed in the manifest ([#4266](https://github.com/getsentry/sentry-java/pull/4266))
+
+## 7.22.3
+
+### Fixes
+
+- Reduce excessive CPU usage when serializing breadcrumbs to disk for ANRs ([#4181](https://github.com/getsentry/sentry-java/pull/4181))
+
+## 7.22.2
+
+### Fixes
+
+- Fix AbstractMethodError when using SentryTraced for Jetpack Compose ([#4256](https://github.com/getsentry/sentry-java/pull/4256))
 
 ## 7.22.1
 

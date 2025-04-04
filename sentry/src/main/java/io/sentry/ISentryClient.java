@@ -40,7 +40,7 @@ public interface ISentryClient {
   void close(boolean isRestarting);
 
   /**
-   * Flushes events queued up, but keeps the client enabled. Not implemented yet.
+   * Flushes events queued up, but keeps the client enabled.
    *
    * @param timeoutMillis time in milliseconds
    */
@@ -276,6 +276,17 @@ public interface ISentryClient {
   default @NotNull SentryId captureTransaction(@NotNull SentryTransaction transaction) {
     return captureTransaction(transaction, null, null, null);
   }
+
+  /**
+   * Captures the profile chunk and enqueues it for sending to Sentry server.
+   *
+   * @param profilingContinuousData the continuous profiling payload
+   * @return the profile chunk id
+   */
+  @ApiStatus.Internal
+  @NotNull
+  SentryId captureProfileChunk(
+      final @NotNull ProfileChunk profilingContinuousData, final @Nullable IScope scope);
 
   @NotNull
   @ApiStatus.Experimental

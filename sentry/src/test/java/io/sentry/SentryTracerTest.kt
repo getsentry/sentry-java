@@ -32,14 +32,18 @@ class SentryTracerTest {
     private class Fixture {
         val options = SentryOptions()
         val scopes: Scopes
-        val transactionPerformanceCollector: TransactionPerformanceCollector
+        val compositePerformanceCollector: CompositePerformanceCollector
 
         init {
             options.dsn = "https://key@sentry.io/proj"
             options.environment = "environment"
             options.release = "release@3.0.0"
             scopes = spy(createTestScopes(options))
-            transactionPerformanceCollector = spy(DefaultTransactionPerformanceCollector(options))
+            compositePerformanceCollector = spy(
+                DefaultCompositePerformanceCollector(
+                    options
+                )
+            )
         }
 
         fun getSut(
@@ -51,7 +55,7 @@ class SentryTracerTest {
             trimEnd: Boolean = false,
             transactionFinishedCallback: TransactionFinishedCallback? = null,
             samplingDecision: TracesSamplingDecision? = null,
-            performanceCollector: TransactionPerformanceCollector? = transactionPerformanceCollector
+            performanceCollector: CompositePerformanceCollector? = compositePerformanceCollector
         ): SentryTracer {
             optionsConfiguration.configure(options)
 
@@ -207,6 +211,114 @@ class SentryTracerTest {
         }, samplingDecision = TracesSamplingDecision(true, null, true, null))
         tracer.finish()
         verify(transactionProfiler).onTransactionFinish(any(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `when continuous profiler is running, profile context is set`() {
+        val continuousProfiler = mock<IContinuousProfiler>()
+        val profilerId = SentryId()
+        whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.setContinuousProfiler(continuousProfiler)
+        }, samplingDecision = TracesSamplingDecision(true))
+        tracer.finish()
+        verify(fixture.scopes).captureTransaction(
+            check {
+                assertNotNull(it.contexts.profile) {
+                    assertEquals(profilerId, it.profilerId)
+                }
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when transaction is not sampled, profile context is not set`() {
+        val continuousProfiler = mock<IContinuousProfiler>()
+        val profilerId = SentryId()
+        whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.setContinuousProfiler(continuousProfiler)
+        }, samplingDecision = TracesSamplingDecision(false))
+        tracer.finish()
+        // profiler is never stopped, as it was never started
+        verify(continuousProfiler, never()).stopProfiler(any())
+        // profile context is not set
+        verify(fixture.scopes).captureTransaction(
+            check {
+                assertNull(it.contexts.profile)
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when continuous profiler is running in MANUAL mode, profiler is not stopped on transaction finish`() {
+        val continuousProfiler = mock<IContinuousProfiler>()
+        val profilerId = SentryId()
+        whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.setContinuousProfiler(continuousProfiler)
+            it.profileLifecycle = ProfileLifecycle.MANUAL
+        }, samplingDecision = TracesSamplingDecision(true))
+        tracer.finish()
+        // profiler is never stopped, as it should be stopped manually
+        verify(continuousProfiler, never()).stopProfiler(any())
+    }
+
+    @Test
+    fun `when continuous profiler is not running, profile context is not set`() {
+        val tracer = fixture.getSut(optionsConfiguration = {
+            it.setContinuousProfiler(NoOpContinuousProfiler.getInstance())
+        })
+        tracer.finish()
+        verify(fixture.scopes).captureTransaction(
+            check {
+                assertNull(it.contexts.profile)
+            },
+            anyOrNull<TraceContext>(),
+            anyOrNull(),
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when continuous profiler is running, profiler id is set in span data`() {
+        val profilerId = SentryId()
+        val profiler = mock<IContinuousProfiler>()
+        whenever(profiler.profilerId).thenReturn(profilerId)
+
+        val tracer = fixture.getSut(optionsConfiguration = { options ->
+            options.setContinuousProfiler(profiler)
+        }, samplingDecision = TracesSamplingDecision(true))
+        val span = tracer.startChild("span.op")
+        assertEquals(profilerId.toString(), span.getData(SpanDataConvention.PROFILER_ID))
+    }
+
+    @Test
+    fun `when transaction is not sampled, profiler id is NOT set in span data`() {
+        val profilerId = SentryId()
+        val profiler = mock<IContinuousProfiler>()
+        whenever(profiler.profilerId).thenReturn(profilerId)
+
+        val tracer = fixture.getSut(optionsConfiguration = { options ->
+            options.setContinuousProfiler(profiler)
+        }, samplingDecision = TracesSamplingDecision(false))
+        val span = tracer.startChild("span.op")
+        assertNull(span.getData(SpanDataConvention.PROFILER_ID))
+    }
+
+    @Test
+    fun `when continuous profiler is not running, profiler id is not set in span data`() {
+        val tracer = fixture.getSut(optionsConfiguration = { options ->
+            options.setContinuousProfiler(NoOpContinuousProfiler.getInstance())
+        })
+        val span = tracer.startChild("span.op")
+        assertNull(span.getData(SpanDataConvention.PROFILER_ID))
     }
 
     @Test
@@ -1026,35 +1138,35 @@ class SentryTracerTest {
     }
 
     @Test
-    fun `when transaction is created, but not profiled, transactionPerformanceCollector is started anyway`() {
+    fun `when transaction is created, but not profiled, compositePerformanceCollector is started anyway`() {
         val transaction = fixture.getSut()
-        verify(fixture.transactionPerformanceCollector).start(anyOrNull())
+        verify(fixture.compositePerformanceCollector).start(anyOrNull<ITransaction>())
     }
 
     @Test
-    fun `when transaction is created and profiled transactionPerformanceCollector is started`() {
+    fun `when transaction is created and profiled compositePerformanceCollector is started`() {
         val transaction = fixture.getSut(optionsConfiguration = {
             it.profilesSampleRate = 1.0
         }, samplingDecision = TracesSamplingDecision(true, null, true, null))
-        verify(fixture.transactionPerformanceCollector).start(check { assertEquals(transaction, it) })
+        verify(fixture.compositePerformanceCollector).start(check<ITransaction> { assertEquals(transaction, it) })
     }
 
     @Test
-    fun `when transaction is finished, transactionPerformanceCollector is stopped`() {
+    fun `when transaction is finished, compositePerformanceCollector is stopped`() {
         val transaction = fixture.getSut()
         transaction.finish()
-        verify(fixture.transactionPerformanceCollector).stop(check { assertEquals(transaction, it) })
+        verify(fixture.compositePerformanceCollector).stop(check<ITransaction> { assertEquals(transaction, it) })
     }
 
     @Test
-    fun `when a span is started and finished the transactionPerformanceCollector gets notified`() {
+    fun `when a span is started and finished the compositePerformanceCollector gets notified`() {
         val transaction = fixture.getSut()
 
         val span = transaction.startChild("op.span")
         span.finish()
 
-        verify(fixture.transactionPerformanceCollector).onSpanStarted(check { assertEquals(span, it) })
-        verify(fixture.transactionPerformanceCollector).onSpanFinished(check { assertEquals(span, it) })
+        verify(fixture.compositePerformanceCollector).onSpanStarted(check { assertEquals(span, it) })
+        verify(fixture.compositePerformanceCollector).onSpanFinished(check { assertEquals(span, it) })
     }
 
     @Test
@@ -1208,11 +1320,13 @@ class SentryTracerTest {
     @Test
     fun `when transaction is finished, collected performance data is cleared`() {
         val data = mutableListOf<PerformanceCollectionData>(mock(), mock())
-        val mockPerformanceCollector = object : TransactionPerformanceCollector {
+        val mockPerformanceCollector = object : CompositePerformanceCollector {
             override fun start(transaction: ITransaction) {}
+            override fun start(id: String) {}
             override fun onSpanStarted(span: ISpan) {}
             override fun onSpanFinished(span: ISpan) {}
             override fun stop(transaction: ITransaction): MutableList<PerformanceCollectionData> = data
+            override fun stop(id: String): MutableList<PerformanceCollectionData> = data
             override fun close() {}
         }
         val transaction = fixture.getSut(optionsConfiguration = {
@@ -1363,6 +1477,7 @@ class SentryTracerTest {
     fun `when a span is launched on the main thread, the thread info should be set correctly`() {
         val threadChecker = mock<IThreadChecker>()
         whenever(threadChecker.isMainThread).thenReturn(true)
+        whenever(threadChecker.currentThreadName).thenReturn("main")
 
         val tracer = fixture.getSut(optionsConfiguration = { options ->
             options.threadChecker = threadChecker
@@ -1376,6 +1491,7 @@ class SentryTracerTest {
     fun `when a span is launched on the background thread, the thread info should be set correctly`() {
         val threadChecker = mock<IThreadChecker>()
         whenever(threadChecker.isMainThread).thenReturn(false)
+        whenever(threadChecker.currentThreadName).thenReturn("test")
 
         val tracer = fixture.getSut(optionsConfiguration = { options ->
             options.threadChecker = threadChecker

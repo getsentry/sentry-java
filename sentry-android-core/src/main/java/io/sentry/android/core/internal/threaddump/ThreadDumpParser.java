@@ -22,9 +22,14 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryLockReason;
 import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
+import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
+import java.math.BigInteger;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,12 +47,40 @@ public class ThreadDumpParser {
   private static final Pattern BEGIN_UNMANAGED_NATIVE_THREAD_RE =
       Pattern.compile("\"(.*)\" (.*) ?sysTid=(\\d+)");
 
+  // For reference, see native_stack_dump.cc and tombstone_proto_to_text.cpp in Android sources
+  // Groups
+  // 0:entire regex
+  // 1:index
+  // 2:pc
+  // 3:mapinfo
+  // 4:filename
+  // 5:mapoffset
+  // 6:function
+  // 7:fnoffset
+  // 8:buildid
   private static final Pattern NATIVE_RE =
       Pattern.compile(
-          " *(?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*?)\\s+\\((.*)\\+(\\d+)\\)(?: \\(.*\\))?");
-  private static final Pattern NATIVE_NO_LOC_RE =
-      Pattern.compile(
-          " *(?:native: )?#\\d+ \\S+ [0-9a-fA-F]+\\s+(.*)\\s*\\(?(.*)\\)?(?: \\(.*\\))?");
+          // "  native: #12 pc 0xabcd1234"
+          " *(?:native: )?#(\\d+) \\S+ ([0-9a-fA-F]+)"
+              // The map info includes a filename and an optional offset into the file
+              + ("\\s+("
+                  // "/path/to/file.ext",
+                  + "(.*?)"
+                  // optional " (deleted)" suffix (deleted files) needed here to bias regex
+                  // correctly
+                  + "(?:\\s+\\(deleted\\))?"
+                  // " (offset 0xabcd1234)", if the mapping is not into the beginning of the file
+                  + "(?:\\s+\\(offset (.*?)\\))?"
+                  + ")")
+              // Optional function
+              + ("(?:\\s+\\((?:"
+                  + "\\?\\?\\?" // " (???) marks a missing function, so don't capture it in a group
+                  + "|(.*?)(?:\\+(\\d+))?" // " (func+1234)", offset is
+                  // optional
+                  + ")\\))?")
+              // Optional " (BuildId: abcd1234abcd1234abcd1234abcd1234abcd1234)"
+              + "(?:\\s+\\(BuildId: (.*?)\\))?");
+
   private static final Pattern JAVA_RE =
       Pattern.compile(" *at (?:(.+)\\.)?([^.]+)\\.([^.]+)\\((.*):([\\d-]+)\\)");
   private static final Pattern JNI_RE =
@@ -75,15 +108,48 @@ public class ThreadDumpParser {
 
   private final @NotNull SentryStackTraceFactory stackTraceFactory;
 
+  private final @NotNull Map<String, DebugImage> debugImages;
+
+  private final @NotNull List<SentryThread> threads;
+
   public ThreadDumpParser(final @NotNull SentryOptions options, final boolean isBackground) {
     this.options = options;
     this.isBackground = isBackground;
     this.stackTraceFactory = new SentryStackTraceFactory(options);
+    this.debugImages = new HashMap<>();
+    this.threads = new ArrayList<>();
   }
 
   @NotNull
-  public List<SentryThread> parse(final @NotNull Lines lines) {
-    final List<SentryThread> sentryThreads = new ArrayList<>();
+  public List<DebugImage> getDebugImages() {
+    return new ArrayList<>(debugImages.values());
+  }
+
+  @NotNull
+  public List<SentryThread> getThreads() {
+    return threads;
+  }
+
+  @Nullable
+  private static String buildIdToDebugId(final @NotNull String buildId) {
+    try {
+      // Abuse BigInteger as a hex string parser. Extra byte needed to handle leading zeros.
+      final ByteBuffer buf = ByteBuffer.wrap(new BigInteger("10" + buildId, 16).toByteArray());
+      buf.get();
+      return String.format(
+          "%08x-%04x-%04x-%04x-%04x%08x",
+          buf.order(ByteOrder.LITTLE_ENDIAN).getInt(),
+          buf.getShort(),
+          buf.getShort(),
+          buf.order(ByteOrder.BIG_ENDIAN).getShort(),
+          buf.getShort(),
+          buf.getInt());
+    } catch (NumberFormatException | BufferUnderflowException e) {
+      return null;
+    }
+  }
+
+  public void parse(final @NotNull Lines lines) {
 
     final Matcher beginManagedThreadRe = BEGIN_MANAGED_THREAD_RE.matcher("");
     final Matcher beginUnmanagedNativeThreadRe = BEGIN_UNMANAGED_NATIVE_THREAD_RE.matcher("");
@@ -92,7 +158,7 @@ public class ThreadDumpParser {
       final Line line = lines.next();
       if (line == null) {
         options.getLogger().log(SentryLevel.WARNING, "Internal error while parsing thread dump.");
-        return sentryThreads;
+        return;
       }
       final String text = line.text;
       // we only handle managed threads, as unmanaged/not attached do not have the thread id and
@@ -102,11 +168,10 @@ public class ThreadDumpParser {
 
         final SentryThread thread = parseThread(lines);
         if (thread != null) {
-          sentryThreads.add(thread);
+          threads.add(thread);
         }
       }
     }
-    return sentryThreads;
   }
 
   private SentryThread parseThread(final @NotNull Lines lines) {
@@ -176,7 +241,6 @@ public class ThreadDumpParser {
     SentryStackFrame lastJavaFrame = null;
 
     final Matcher nativeRe = NATIVE_RE.matcher("");
-    final Matcher nativeNoLocRe = NATIVE_NO_LOC_RE.matcher("");
     final Matcher javaRe = JAVA_RE.matcher("");
     final Matcher jniRe = JNI_RE.matcher("");
     final Matcher lockedRe = LOCKED_RE.matcher("");
@@ -194,20 +258,7 @@ public class ThreadDumpParser {
         break;
       }
       final String text = line.text;
-      if (matches(nativeRe, text)) {
-        final SentryStackFrame frame = new SentryStackFrame();
-        frame.setPackage(nativeRe.group(1));
-        frame.setFunction(nativeRe.group(2));
-        frame.setLineno(getInteger(nativeRe, 3, null));
-        frames.add(frame);
-        lastJavaFrame = null;
-      } else if (matches(nativeNoLocRe, text)) {
-        final SentryStackFrame frame = new SentryStackFrame();
-        frame.setPackage(nativeNoLocRe.group(1));
-        frame.setFunction(nativeNoLocRe.group(2));
-        frames.add(frame);
-        lastJavaFrame = null;
-      } else if (matches(javaRe, text)) {
+      if (matches(javaRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
         final String packageName = javaRe.group(1);
         final String className = javaRe.group(2);
@@ -219,6 +270,31 @@ public class ThreadDumpParser {
         frame.setInApp(stackTraceFactory.isInApp(module));
         frames.add(frame);
         lastJavaFrame = frame;
+      } else if (matches(nativeRe, text)) {
+        final SentryStackFrame frame = new SentryStackFrame();
+        frame.setPackage(nativeRe.group(3));
+        frame.setFunction(nativeRe.group(6));
+        frame.setLineno(getInteger(nativeRe, 7, null));
+        frame.setInstructionAddr("0x" + nativeRe.group(2));
+        frame.setPlatform("native");
+
+        final String buildId = nativeRe.group(8);
+        final String debugId = buildId == null ? null : buildIdToDebugId(buildId);
+        if (debugId != null) {
+          if (!debugImages.containsKey(debugId)) {
+            final DebugImage debugImage = new DebugImage();
+            debugImage.setDebugId(debugId);
+            debugImage.setType("elf");
+            debugImage.setCodeFile(nativeRe.group(4));
+            debugImage.setCodeId(buildId);
+            debugImages.put(debugId, debugImage);
+          }
+          // The addresses in the thread dump are relative to the image
+          frame.setAddrMode("rel:" + debugId);
+        }
+
+        frames.add(frame);
+        lastJavaFrame = null;
       } else if (matches(jniRe, text)) {
         final SentryStackFrame frame = new SentryStackFrame();
         final String packageName = jniRe.group(1);
@@ -227,6 +303,7 @@ public class ThreadDumpParser {
         frame.setModule(module);
         frame.setFunction(jniRe.group(3));
         frame.setInApp(stackTraceFactory.isInApp(module));
+        frame.setNative(true);
         frames.add(frame);
         lastJavaFrame = frame;
       } else if (matches(lockedRe, text)) {
@@ -334,8 +411,8 @@ public class ThreadDumpParser {
 
   @Nullable
   private Integer getInteger(
-      final @NotNull Matcher matcher, final int group, final @Nullable Integer defaultValue) {
-    final String str = matcher.group(group);
+      final @NotNull Matcher matcher, final int groupIndex, final @Nullable Integer defaultValue) {
+    final String str = matcher.group(groupIndex);
     if (str == null || str.length() == 0) {
       return defaultValue;
     } else {
