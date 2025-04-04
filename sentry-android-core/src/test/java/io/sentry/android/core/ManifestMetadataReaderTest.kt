@@ -826,7 +826,7 @@ class ManifestMetadataReaderTest {
     fun `applyMetadata does not override profileSessionSampleRate from options`() {
         // Arrange
         val expectedSampleRate = 0.99f
-        fixture.options.experimental.profileSessionSampleRate = expectedSampleRate.toDouble()
+        fixture.options.profileSessionSampleRate = expectedSampleRate.toDouble()
         val bundle = bundleOf(ManifestMetadataReader.PROFILE_SESSION_SAMPLE_RATE to 0.1f)
         val context = fixture.getContext(metaData = bundle)
 

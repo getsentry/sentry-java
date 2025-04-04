@@ -458,12 +458,6 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
-	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
-	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
-	public fun isStartProfilerOnAppStart ()Z
-	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
-	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
-	public fun setStartProfilerOnAppStart (Z)V
 }
 
 public final class io/sentry/ExternalOptions {
@@ -3222,6 +3216,8 @@ public class io/sentry/SentryOptions {
 	public fun setModulesLoader (Lio/sentry/internal/modules/IModulesLoader;)V
 	public fun setOpenTelemetryMode (Lio/sentry/SentryOpenTelemetryMode;)V
 	public fun setPrintUncaughtStackTrace (Z)V
+	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
+	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
 	public fun setProfilingTracesHz (I)V
@@ -3245,6 +3241,7 @@ public class io/sentry/SentryOptions {
 	public fun setSpanFactory (Lio/sentry/ISpanFactory;)V
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
+	public fun setStartProfilerOnAppStart (Z)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThreadChecker (Lio/sentry/util/thread/IThreadChecker;)V
 	public fun setTraceOptionsRequests (Z)V

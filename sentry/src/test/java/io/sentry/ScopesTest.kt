@@ -1818,7 +1818,7 @@ class ScopesTest {
             setTransactionProfiler(profiler)
             compositePerformanceCollector = performanceCollector
             setContinuousProfiler(continuousProfiler)
-            experimental.profileSessionSampleRate = 1.0
+            profileSessionSampleRate = 1.0
             backpressureMonitor = backpressureMonitorMock
         }
         val sut = createScopes(options)
@@ -1892,8 +1892,8 @@ class ScopesTest {
         val scopes = generateScopes {
             it.tracesSampleRate = 1.0
             it.setContinuousProfiler(mockProfiler)
-            it.experimental.profileSessionSampleRate = 1.0
-            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+            it.profileSessionSampleRate = 1.0
+            it.profileLifecycle = ProfileLifecycle.TRACE
         }
 
         val transaction = scopes.startTransaction("name", "op")
@@ -1906,8 +1906,8 @@ class ScopesTest {
         val scopes = generateScopes {
             it.tracesSampleRate = 1.0
             it.setContinuousProfiler(mockProfiler)
-            it.experimental.profileSessionSampleRate = 1.0
-            it.experimental.profileLifecycle = ProfileLifecycle.MANUAL
+            it.profileSessionSampleRate = 1.0
+            it.profileLifecycle = ProfileLifecycle.MANUAL
         }
 
         val transaction = scopes.startTransaction("name", "op")
@@ -1921,8 +1921,8 @@ class ScopesTest {
             // If transaction is not sampled, profiler should not start
             it.tracesSampleRate = 0.0
             it.setContinuousProfiler(mockProfiler)
-            it.experimental.profileSessionSampleRate = 1.0
-            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+            it.profileSessionSampleRate = 1.0
+            it.profileLifecycle = ProfileLifecycle.TRACE
         }
         val transaction = scopes.startTransaction("name", "op")
         transaction.spanContext.setSampled(false, false)
@@ -2244,7 +2244,7 @@ class ScopesTest {
         val profiler = mock<IContinuousProfiler>()
         val scopes = generateScopes {
             it.setContinuousProfiler(profiler)
-            it.experimental.profileSessionSampleRate = 1.0
+            it.profileSessionSampleRate = 1.0
         }
         scopes.startProfiler()
         verify(profiler).startProfiler(eq(ProfileLifecycle.MANUAL), any())
@@ -2256,7 +2256,7 @@ class ScopesTest {
         val logger = mock<ILogger>()
         val scopes = generateScopes {
             it.setContinuousProfiler(profiler)
-            it.experimental.profileSessionSampleRate = 1.0
+            it.profileSessionSampleRate = 1.0
             it.profilesSampleRate = 1.0
             it.setLogger(logger)
             it.isDebug = true
@@ -2272,8 +2272,8 @@ class ScopesTest {
         val logger = mock<ILogger>()
         val scopes = generateScopes {
             it.setContinuousProfiler(profiler)
-            it.experimental.profileSessionSampleRate = 1.0
-            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+            it.profileSessionSampleRate = 1.0
+            it.profileLifecycle = ProfileLifecycle.TRACE
             it.setLogger(logger)
             it.isDebug = true
         }
@@ -2287,7 +2287,7 @@ class ScopesTest {
         val profiler = mock<IContinuousProfiler>()
         val scopes = generateScopes {
             it.setContinuousProfiler(profiler)
-            it.experimental.profileSessionSampleRate = 1.0
+            it.profileSessionSampleRate = 1.0
         }
         scopes.stopProfiler()
         verify(profiler).stopProfiler(eq(ProfileLifecycle.MANUAL))
@@ -2299,7 +2299,7 @@ class ScopesTest {
         val logger = mock<ILogger>()
         val scopes = generateScopes {
             it.setContinuousProfiler(profiler)
-            it.experimental.profileSessionSampleRate = 1.0
+            it.profileSessionSampleRate = 1.0
             it.profilesSampleRate = 1.0
             it.setLogger(logger)
             it.isDebug = true
@@ -2315,8 +2315,8 @@ class ScopesTest {
         val logger = mock<ILogger>()
         val scopes = generateScopes {
             it.setContinuousProfiler(profiler)
-            it.experimental.profileSessionSampleRate = 1.0
-            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+            it.profileSessionSampleRate = 1.0
+            it.profileLifecycle = ProfileLifecycle.TRACE
             it.setLogger(logger)
             it.isDebug = true
         }

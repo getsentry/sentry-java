@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Continuous Profiling - Out of Experimental ([#4310](https://github.com/getsentry/sentry-java/pull/4310))
+
 ## 8.6.0
 
 ### Behavioral Changes
