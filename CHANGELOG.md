@@ -5,6 +5,10 @@
 ### Features
 
 - Continuous Profiling - Out of Experimental ([#4310](https://github.com/getsentry/sentry-java/pull/4310))
+- Add `CoroutineExceptionHandler` for reporting uncaught exceptions in coroutines to Sentry ([#4259](https://github.com/getsentry/sentry-java/pull/4259))
+  - This is now part of `sentry-kotlin-extensions` and can be used together with `SentryContext` when launching a coroutine
+  - Any exceptions thrown in a coroutine when using the handler will be captured (not rethrown!) and reported to Sentry
+  - It's also possible to extend `CoroutineExceptionHandler` to implement custom behavior in addition to the one we provide by default
 
 ## 8.6.0
 

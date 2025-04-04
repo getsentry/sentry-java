@@ -150,5 +150,8 @@ dependencies {
     implementation(Config.Libs.composeCoil)
     implementation(Config.Libs.sentryNativeNdk)
 
+    implementation(projects.sentryKotlinExtensions)
+    implementation(Config.Libs.coroutinesAndroid)
+
     debugImplementation(Config.Libs.leakCanary)
 }

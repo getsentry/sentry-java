@@ -121,6 +121,8 @@ object Config {
 
         val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1"
 
+        val coroutinesAndroid = "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1"
+
         val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 
         val reactorCore = "io.projectreactor:reactor-core:3.5.3"
@@ -214,6 +216,7 @@ object Config {
         val leakCanaryInstrumentation = "com.squareup.leakcanary:leakcanary-android-instrumentation:2.14"
         val composeUiTestJunit4 = "androidx.compose.ui:ui-test-junit4:1.6.8"
         val okio = "com.squareup.okio:okio:1.13.0"
+        val coroutinesTest = "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.1"
     }
 
     object QualityPlugins {

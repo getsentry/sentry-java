@@ -270,6 +270,11 @@ public class MainActivity extends AppCompatActivity {
     binding.openFrameDataForSpans.setOnClickListener(
         view -> startActivity(new Intent(this, FrameDataForSpansActivity.class)));
 
+    binding.throwInCoroutine.setOnClickListener(
+        view -> {
+          CoroutinesUtil.INSTANCE.throwInCoroutine();
+        });
+
     setContentView(binding.getRoot());
   }
 
