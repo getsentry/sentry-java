@@ -127,6 +127,8 @@ public class SentryOptions {
   /** Logger interface to log useful debugging information if debug is enabled */
   private @NotNull ILogger logger = NoOpLogger.getInstance();
 
+  @ApiStatus.Experimental private @NotNull ILogger fatalLogger = NoOpLogger.getInstance();
+
   /** minimum LogLevel to be used if debug is enabled */
   private @NotNull SentryLevel diagnosticLevel = DEFAULT_DIAGNOSTIC_LEVEL;
 
@@ -538,6 +540,32 @@ public class SentryOptions {
   private @NotNull SentryReplayOptions sessionReplay;
 
   @ApiStatus.Experimental private boolean captureOpenTelemetryEvents = false;
+
+  private @NotNull IVersionDetector versionDetector = NoopVersionDetector.getInstance();
+
+  /**
+   * Indicates the percentage in which the profiles for the session will be created. Specifying 0
+   * means never, 1.0 means always. The value needs to be >= 0.0 and <= 1.0 The default is null
+   * (disabled).
+   */
+  private @Nullable Double profileSessionSampleRate;
+
+  /**
+   * Whether the profiling lifecycle is controlled manually or based on the trace lifecycle.
+   * Defaults to {@link ProfileLifecycle#MANUAL}.
+   */
+  private @NotNull ProfileLifecycle profileLifecycle = ProfileLifecycle.MANUAL;
+
+  /**
+   * Whether profiling can automatically be started as early as possible during the app lifecycle,
+   * to capture more of app startup. If {@link SentryOptions#profileLifecycle} is {@link
+   * ProfileLifecycle#MANUAL} Profiling is started automatically on startup and stopProfiler must be
+   * called manually whenever the app startup is completed If {@link SentryOptions#profileLifecycle}
+   * is {@link ProfileLifecycle#TRACE} Profiling is started automatically on startup, and will
+   * automatically be stopped when the root span that is associated with app startup ends
+   */
+  private boolean startProfilerOnAppStart = false;
+
   /**
    * Adds an event processor
    *
@@ -642,6 +670,26 @@ public class SentryOptions {
    */
   public void setLogger(final @Nullable ILogger logger) {
     this.logger = (logger == null) ? NoOpLogger.getInstance() : new DiagnosticLogger(this, logger);
+  }
+
+  /**
+   * Returns the Logger interface for logging important SDK messages
+   *
+   * @return the logger for fatal SDK messages
+   */
+  @ApiStatus.Experimental
+  public @NotNull ILogger getFatalLogger() {
+    return fatalLogger;
+  }
+
+  /**
+   * Sets the Logger interface for important SDK messages. If null, logger will be NoOp
+   *
+   * @param logger the logger for fatal SDK messages
+   */
+  @ApiStatus.Experimental
+  public void setFatalLogger(final @Nullable ILogger logger) {
+    this.fatalLogger = (logger == null) ? NoOpLogger.getInstance() : logger;
   }
 
   /**
@@ -1797,7 +1845,6 @@ public class SentryOptions {
    *
    * @return the continuous profiler.
    */
-  @ApiStatus.Experimental
   public @NotNull IContinuousProfiler getContinuousProfiler() {
     return continuousProfiler;
   }
@@ -1807,7 +1854,6 @@ public class SentryOptions {
    *
    * @param continuousProfiler - the continuous profiler
    */
-  @ApiStatus.Experimental
   public void setContinuousProfiler(final @Nullable IContinuousProfiler continuousProfiler) {
     // We allow to set the profiler only if it was not set before, and we don't allow to unset it.
     if (this.continuousProfiler == NoOpContinuousProfiler.getInstance()
@@ -1835,8 +1881,8 @@ public class SentryOptions {
   public boolean isContinuousProfilingEnabled() {
     return profilesSampleRate == null
         && profilesSampler == null
-        && experimental.getProfileSessionSampleRate() != null
-        && experimental.getProfileSessionSampleRate() > 0;
+        && profileSessionSampleRate != null
+        && profileSessionSampleRate > 0;
   }
 
   /**
@@ -1890,9 +1936,23 @@ public class SentryOptions {
    *
    * @return the sample rate
    */
-  @ApiStatus.Experimental
   public @Nullable Double getProfileSessionSampleRate() {
-    return experimental.getProfileSessionSampleRate();
+    return profileSessionSampleRate;
+  }
+
+  /**
+   * Set the session sample rate. Default is null (disabled). ProfilesSampleRate takes precedence
+   * over this. To enable continuous profiling, don't set profilesSampleRate or profilesSampler, or
+   * set them to null.
+   */
+  public void setProfileSessionSampleRate(final @Nullable Double profileSessionSampleRate) {
+    if (!SampleRateUtils.isValidContinuousProfilesSampleRate(profileSessionSampleRate)) {
+      throw new IllegalArgumentException(
+          "The value "
+              + profileSessionSampleRate
+              + " is not valid. Use values between 0.0 and 1.0.");
+    }
+    this.profileSessionSampleRate = profileSessionSampleRate;
   }
 
   /**
@@ -1901,17 +1961,33 @@ public class SentryOptions {
    *
    * @return the profile lifecycle
    */
-  @ApiStatus.Experimental
   public @NotNull ProfileLifecycle getProfileLifecycle() {
-    return experimental.getProfileLifecycle();
+    return profileLifecycle;
+  }
+
+  /** Sets the profiling lifecycle. */
+  public void setProfileLifecycle(final @NotNull ProfileLifecycle profileLifecycle) {
+    this.profileLifecycle = profileLifecycle;
+    if (profileLifecycle == ProfileLifecycle.TRACE && !isTracingEnabled()) {
+      logger.log(
+          SentryLevel.WARNING,
+          "Profiling lifecycle is set to TRACE but tracing is disabled. "
+              + "Profiling will not be started automatically.");
+    }
   }
 
   /**
    * Whether profiling can automatically be started as early as possible during the app lifecycle.
    */
-  @ApiStatus.Experimental
   public boolean isStartProfilerOnAppStart() {
-    return experimental.isStartProfilerOnAppStart();
+    return startProfilerOnAppStart;
+  }
+
+  /**
+   * Set if profiling can automatically be started as early as possible during the app lifecycle.
+   */
+  public void setStartProfilerOnAppStart(final boolean startProfilerOnAppStart) {
+    this.startProfilerOnAppStart = startProfilerOnAppStart;
   }
 
   /**
@@ -2539,6 +2615,17 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public void setEnableBackpressureHandling(final boolean enableBackpressureHandling) {
     this.enableBackpressureHandling = enableBackpressureHandling;
+  }
+
+  @ApiStatus.Internal
+  @NotNull
+  public IVersionDetector getVersionDetector() {
+    return versionDetector;
+  }
+
+  @ApiStatus.Internal
+  public void setVersionDetector(final @NotNull IVersionDetector versionDetector) {
+    this.versionDetector = versionDetector;
   }
 
   /**

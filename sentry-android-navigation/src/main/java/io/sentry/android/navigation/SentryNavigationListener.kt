@@ -50,8 +50,6 @@ public class SentryNavigationListener @JvmOverloads constructor(
 
     init {
         addIntegrationToSdkVersion("NavigationListener")
-        SentryIntegrationPackageStorage.getInstance()
-            .addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
     }
 
     override fun onDestinationChanged(
@@ -195,5 +193,10 @@ public class SentryNavigationListener @JvmOverloads constructor(
 
     public companion object {
         public const val NAVIGATION_OP: String = "navigation"
+
+        init {
+            SentryIntegrationPackageStorage.getInstance()
+                .addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
+        }
     }
 }

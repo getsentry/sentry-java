@@ -49,6 +49,11 @@ public class SentryHandler extends Handler {
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.SEVERE;
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-jul", BuildConfig.VERSION_NAME);
+  }
+
   /** Creates an instance of SentryHandler. */
   public SentryHandler() {
     this(new SentryOptions());
@@ -305,8 +310,6 @@ public class SentryHandler extends Handler {
   }
 
   private void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-jul", BuildConfig.VERSION_NAME);
     SentryIntegrationPackageStorage.getInstance().addIntegration("Jul");
   }
 

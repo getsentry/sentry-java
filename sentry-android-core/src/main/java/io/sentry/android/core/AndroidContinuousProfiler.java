@@ -59,7 +59,7 @@ public class AndroidContinuousProfiler
   private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
   private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
   private @NotNull SentryDate startProfileChunkTimestamp = new SentryNanotimeDate();
-  private boolean shouldSample = true;
+  private volatile boolean shouldSample = true;
   private boolean shouldStop = false;
   private boolean isSampled = false;
   private int rootSpanCounter = 0;
