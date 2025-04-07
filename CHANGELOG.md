@@ -4,6 +4,7 @@
 
 ### Features
 
+- Continuous Profiling - Add delayed stop ([#4293](https://github.com/getsentry/sentry-java/pull/4293))
 - Continuous Profiling - Out of Experimental ([#4310](https://github.com/getsentry/sentry-java/pull/4310))
 
 ### Fixes
