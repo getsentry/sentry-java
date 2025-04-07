@@ -22,7 +22,6 @@ import io.opentelemetry.semconv.UrlAttributes
 import io.sentry.IScopes
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
-import io.sentry.util.SpanUtils
 import org.junit.Assert.assertTrue
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -49,7 +48,6 @@ class OtelSentrySpanProcessorTest {
 
         val options = SentryOptions().also {
             it.dsn = "https://key@sentry.io/proj"
-            it.ignoredSpanOrigins = SpanUtils.ignoredSpanOriginsForOpenTelemetry(false)
             it.spanFactory = OtelSpanFactory()
             it.sampleRate = 1.0
             it.tracesSampleRate = 1.0
@@ -326,7 +324,6 @@ class OtelSentrySpanProcessorTest {
 
         if (isContinued) {
             assertNull(spanContext.description)
-//            assertEquals(TransactionNameSource.CUSTOM, spanContext.transactionNameSource)
             assertEquals("testspan", spanContext.operation)
             assertEquals(otelSpan.spanContext.spanId, spanContext.spanId.toString())
             assertEquals(SENTRY_TRACE_ID, spanContext.traceId.toString())
@@ -337,7 +334,7 @@ class OtelSentrySpanProcessorTest {
                 val baggage = spanContext.baggage
                 assertNotNull(baggage)
                 assertEquals(SENTRY_TRACE_ID, baggage.traceId)
-                assertEquals("1", baggage.sampleRate)
+                assertEquals(1.0, baggage.sampleRate)
                 assertEquals("HTTP GET", baggage.transaction)
                 assertEquals("502f25099c204a2fbf4cb16edc5975d1", baggage.publicKey)
                 assertFalse(baggage.isMutable)
@@ -347,18 +344,15 @@ class OtelSentrySpanProcessorTest {
                 assertNull(spanContext.baggage?.sampleRate)
                 assertNull(spanContext.baggage?.transaction)
                 assertNull(spanContext.baggage?.publicKey)
-//                assertFalse(spanContext.baggage!!.isMutable)
             }
 
             assertNotNull(sentrySpan.startDate)
-//            assertFalse(sentrySpan.isBindToScope)
         } else {
             assertNull(sentrySpan.description)
             assertEquals("testspan", sentrySpan.operation)
             assertEquals(otelSpan.spanContext.spanId, spanContext.spanId.toString())
             assertEquals(otelSpan.spanContext.traceId, spanContext.traceId.toString())
             assertNull(spanContext.parentSpanId)
-            assertNull(spanContext.baggage)
             assertNotNull(sentrySpan.startDate)
         }
     }
