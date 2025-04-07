@@ -389,7 +389,7 @@ class AndroidContinuousProfilerTest {
         profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
 
-        profiler.close()
+        profiler.close(true)
         assertFalse(profiler.isRunning)
 
         // The timeout scheduled job should be cleared
@@ -471,13 +471,30 @@ class AndroidContinuousProfilerTest {
     }
 
     @Test
+    fun `close without terminating stops all profiles after chunk is finished`() {
+        val profiler = fixture.getSut()
+        profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+        profiler.startProfiler(ProfileLifecycle.TRACE, fixture.mockTracesSampler)
+        assertTrue(profiler.isRunning)
+        // We are scheduling the profiler to stop at the end of the chunk, so it should still be running
+        profiler.close(false)
+        assertTrue(profiler.isRunning)
+        // However, close() already resets the rootSpanCounter
+        assertEquals(0, profiler.rootSpanCounter)
+
+        // We run the executor service to trigger the chunk finish, and the profiler shouldn't restart
+        fixture.executor.runAll()
+        assertFalse(profiler.isRunning)
+    }
+
+    @Test
     fun `profiler does not send chunks after close`() {
         val profiler = fixture.getSut()
         profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
 
         // We close the profiler, which should prevent sending additional chunks
-        profiler.close()
+        profiler.close(true)
 
         // The executor used to send the chunk doesn't do anything
         fixture.executor.runAll()

@@ -322,12 +322,15 @@ public class AndroidContinuousProfiler
     shouldSample = true;
   }
 
-  public void close() {
+  @Override
+  public void close(final boolean isTerminating) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       rootSpanCounter = 0;
       shouldStop = true;
-      stop(false);
-      isClosed.set(true);
+      if (isTerminating) {
+        stop(false);
+        isClosed.set(true);
+      }
     }
   }
 
