@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Compress Screenshots on a background thread ([#4295](https://github.com/getsentry/sentry-java/pull/4295))
+
 ## 7.22.5
 
 ### Fixes
