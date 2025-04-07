@@ -744,12 +744,11 @@ public abstract interface class io/sentry/IConnectionStatusProvider$IConnectionS
 }
 
 public abstract interface class io/sentry/IContinuousProfiler {
-	public abstract fun close ()V
+	public abstract fun close (Z)V
 	public abstract fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isRunning ()Z
 	public abstract fun reevaluateSampling ()V
 	public abstract fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
-	public abstract fun stopAllProfiles ()V
 	public abstract fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
 }
 
@@ -1437,13 +1436,12 @@ public final class io/sentry/NoOpConnectionStatusProvider : io/sentry/IConnectio
 }
 
 public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfiler {
-	public fun close ()V
+	public fun close (Z)V
 	public static fun getInstance ()Lio/sentry/NoOpContinuousProfiler;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun isRunning ()Z
 	public fun reevaluateSampling ()V
 	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
-	public fun stopAllProfiles ()V
 	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
 }
 

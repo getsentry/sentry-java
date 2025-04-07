@@ -1826,7 +1826,7 @@ class ScopesTest {
         verify(backpressureMonitorMock).close()
         verify(executor).close(any())
         verify(profiler).close()
-        verify(continuousProfiler).close()
+        verify(continuousProfiler).close(eq(true))
         verify(performanceCollector).close()
     }
 

@@ -323,20 +323,14 @@ public class AndroidContinuousProfiler
   }
 
   @Override
-  public void stopAllProfiles() {
+  public void close(final boolean isTerminating) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       rootSpanCounter = 0;
       shouldStop = true;
-    }
-  }
-
-  @Override
-  public void close() {
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      rootSpanCounter = 0;
-      shouldStop = true;
-      stop(false);
-      isClosed.set(true);
+      if (isTerminating) {
+        stop(false);
+        isClosed.set(true);
+      }
     }
   }
 

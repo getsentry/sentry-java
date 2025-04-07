@@ -122,7 +122,7 @@ final class LifecycleWatcher implements DefaultLifecycleObserver {
                   scopes.endSession();
                 }
                 scopes.getOptions().getReplayController().stop();
-                scopes.getOptions().getContinuousProfiler().stopAllProfiles();
+                scopes.getOptions().getContinuousProfiler().close(false);
               }
             };
 

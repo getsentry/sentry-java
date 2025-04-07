@@ -16,6 +16,7 @@ import io.sentry.transport.ICurrentDateProvider
 import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.timeout
@@ -109,7 +110,7 @@ class LifecycleWatcherTest {
         watcher.onStop(fixture.ownerMock)
         verify(fixture.scopes, timeout(10000)).endSession()
         verify(fixture.replayController, timeout(10000)).stop()
-        verify(fixture.continuousProfiler, timeout(10000)).stopAllProfiles()
+        verify(fixture.continuousProfiler, timeout(10000)).close(eq(false))
     }
 
     @Test
