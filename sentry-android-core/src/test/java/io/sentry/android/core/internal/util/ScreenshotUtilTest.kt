@@ -18,6 +18,7 @@ import org.robolectric.Robolectric.buildActivity
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowPixelCopy
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -135,6 +136,14 @@ class ScreenshotUtilTest {
         val bytes = ScreenshotUtils.compressBitmapToPng(bitmap, NoOpLogger.getInstance())
         assertNotNull(bytes)
         assertTrue(bytes.isNotEmpty())
+    }
+
+    @Test
+    fun `compressBitmapToPng recycles the supplied bitmap`() {
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        assertFalse(bitmap.isRecycled)
+        ScreenshotUtils.compressBitmapToPng(bitmap, NoOpLogger.getInstance())
+        assertTrue(bitmap.isRecycled)
     }
 }
 

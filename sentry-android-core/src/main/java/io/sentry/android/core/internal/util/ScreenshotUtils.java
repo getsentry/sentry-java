@@ -164,6 +164,14 @@ public class ScreenshotUtils {
     return null;
   }
 
+  /**
+   * Compresses the supplied Bitmap to a PNG byte array. After compression, the Bitmap will be
+   * recycled.
+   *
+   * @param bitmap The bitmap to compress
+   * @param logger the logger
+   * @return the Bitmap in PNG format, or null if the bitmap was null, recycled or compressing faile
+   */
   public static @Nullable byte[] compressBitmapToPng(
       final @Nullable Bitmap bitmap, final @NotNull ILogger logger) {
     if (bitmap == null || bitmap.isRecycled()) {
@@ -173,6 +181,7 @@ public class ScreenshotUtils {
       // 0 meaning compress for small size, 100 meaning compress for max quality.
       // Some formats, like PNG which is lossless, will ignore the quality setting.
       bitmap.compress(Bitmap.CompressFormat.PNG, 0, byteArrayOutputStream);
+      bitmap.recycle();
 
       if (byteArrayOutputStream.size() <= 0) {
         logger.log(SentryLevel.DEBUG, "Screenshot is 0 bytes, not attaching the image.");
