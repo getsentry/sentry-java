@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Features
+
+- Continuous Profiling - Out of Experimental ([#4310](https://github.com/getsentry/sentry-java/pull/4310))
+
+### Fixes
+
+- Compress Screenshots on a background thread ([#4295](https://github.com/getsentry/sentry-java/pull/4295))
+
+## 8.6.0
+
 ### Behavioral Changes
 
 - The Sentry SDK will now crash on startup if mixed versions have been detected ([#4277](https://github.com/getsentry/sentry-java/pull/4277))
@@ -28,7 +38,8 @@
   - An example value would be `8.6.0`
   - The value of the `Sentry-Version-Name` attribute looks like `sentry-8.5.0-otel-2.10.0`
 - Fix tags missing for compose view hierarchies ([#4275](https://github.com/getsentry/sentry-java/pull/4275))
-- Compress Screenshots on a background thread ([#4295](https://github.com/getsentry/sentry-java/pull/4295))
+- Do not leak SentryFileInputStream/SentryFileOutputStream descriptors and channels ([#4296](https://github.com/getsentry/sentry-java/pull/4296))
+- Remove "not yet implemented" from `Sentry.flush` comment ([#4305](https://github.com/getsentry/sentry-java/pull/4305))
 
 ### Internal
 
@@ -37,9 +48,9 @@
 
 ### Dependencies
 
-- Bump Native SDK from v0.8.1 to v0.8.2 ([#4267](https://github.com/getsentry/sentry-java/pull/4267))
-  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#082)
-  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.1...0.8.2)
+- Bump Native SDK from v0.8.1 to v0.8.3 ([#4267](https://github.com/getsentry/sentry-java/pull/4267), [#4298](https://github.com/getsentry/sentry-java/pull/4298))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#083)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.1...0.8.3)
 - Bump Spring Boot from 2.7.5 to 2.7.18 ([#3496](https://github.com/getsentry/sentry-java/pull/3496))
 
 ## 8.5.0

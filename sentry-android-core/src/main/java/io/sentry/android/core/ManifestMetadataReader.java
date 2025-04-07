@@ -335,7 +335,7 @@ final class ManifestMetadataReader {
           final double profileSessionSampleRate =
               readDouble(metadata, logger, PROFILE_SESSION_SAMPLE_RATE);
           if (profileSessionSampleRate != -1) {
-            options.getExperimental().setProfileSessionSampleRate(profileSessionSampleRate);
+            options.setProfileSessionSampleRate(profileSessionSampleRate);
           }
         }
 
@@ -346,20 +346,16 @@ final class ManifestMetadataReader {
                 PROFILE_LIFECYCLE,
                 options.getProfileLifecycle().name().toLowerCase(Locale.ROOT));
         if (profileLifecycle != null) {
-          options
-              .getExperimental()
-              .setProfileLifecycle(
-                  ProfileLifecycle.valueOf(profileLifecycle.toUpperCase(Locale.ROOT)));
+          options.setProfileLifecycle(
+              ProfileLifecycle.valueOf(profileLifecycle.toUpperCase(Locale.ROOT)));
         }
 
-        options
-            .getExperimental()
-            .setStartProfilerOnAppStart(
-                readBool(
-                    metadata,
-                    logger,
-                    PROFILER_START_ON_APP_START,
-                    options.isStartProfilerOnAppStart()));
+        options.setStartProfilerOnAppStart(
+            readBool(
+                metadata,
+                logger,
+                PROFILER_START_ON_APP_START,
+                options.isStartProfilerOnAppStart()));
 
         options.setEnableUserInteractionTracing(
             readBool(metadata, logger, TRACES_UI_ENABLE, options.isEnableUserInteractionTracing()));

@@ -30,7 +30,7 @@ class TracesSamplerTest {
                 options.profilesSampleRate = profilesSampleRate
             }
             if (profileSessionSampleRate != null) {
-                options.experimental.profileSessionSampleRate = profileSessionSampleRate
+                options.profileSessionSampleRate = profileSessionSampleRate
             }
             if (tracesSamplerCallback != null) {
                 options.tracesSampler = tracesSamplerCallback
