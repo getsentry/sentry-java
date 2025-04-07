@@ -239,7 +239,7 @@ class SentryOptionsTest {
     @Test
     fun `when profileSessionSampleRate is set to 0, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
-            this.experimental.profileSessionSampleRate = 0.0
+            this.profileSessionSampleRate = 0.0
         }
         assertFalse(options.isProfilingEnabled)
         assertFalse(options.isContinuousProfilingEnabled)
@@ -248,7 +248,7 @@ class SentryOptionsTest {
     @Test
     fun `when profileSessionSampleRate is null, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions()
-        assertNull(options.experimental.profileSessionSampleRate)
+        assertNull(options.profileSessionSampleRate)
         assertFalse(options.isProfilingEnabled)
         assertFalse(options.isContinuousProfilingEnabled)
     }
@@ -274,25 +274,25 @@ class SentryOptionsTest {
     @Test
     fun `when profileSessionSampleRate is set to exactly 0, value is set`() {
         val options = SentryOptions().apply {
-            this.experimental.profileSessionSampleRate = 0.0
+            this.profileSessionSampleRate = 0.0
         }
         assertEquals(0.0, options.profileSessionSampleRate)
     }
 
     @Test
     fun `when profileSessionSampleRate is set to higher than 1_0, setter throws`() {
-        assertFailsWith<IllegalArgumentException> { SentryOptions().experimental.profileSessionSampleRate = 1.0000000000001 }
+        assertFailsWith<IllegalArgumentException> { SentryOptions().profileSessionSampleRate = 1.0000000000001 }
     }
 
     @Test
     fun `when profileSessionSampleRate is set to lower than 0, setter throws`() {
-        assertFailsWith<IllegalArgumentException> { SentryOptions().experimental.profileSessionSampleRate = -0.0000000000001 }
+        assertFailsWith<IllegalArgumentException> { SentryOptions().profileSessionSampleRate = -0.0000000000001 }
     }
 
     @Test
     fun `when profileLifecycleSessionSampleRate is set to a value, value is set`() {
         val options = SentryOptions().apply {
-            this.experimental.profileLifecycle = ProfileLifecycle.TRACE
+            this.profileLifecycle = ProfileLifecycle.TRACE
         }
         assertEquals(ProfileLifecycle.TRACE, options.profileLifecycle)
     }
@@ -306,7 +306,7 @@ class SentryOptionsTest {
     @Test
     fun `when isStartProfilerOnAppStart is set to a value, value is set`() {
         val options = SentryOptions().apply {
-            this.experimental.isStartProfilerOnAppStart = true
+            this.isStartProfilerOnAppStart = true
         }
         assertTrue(options.isStartProfilerOnAppStart)
     }
@@ -643,7 +643,7 @@ class SentryOptionsTest {
     fun `when profiling is disabled, isEnableAppStartProfiling is always false`() {
         val options = SentryOptions()
         options.isEnableAppStartProfiling = true
-        options.experimental.profileSessionSampleRate = 0.0
+        options.profileSessionSampleRate = 0.0
         assertFalse(options.isEnableAppStartProfiling)
     }
 
@@ -651,7 +651,7 @@ class SentryOptionsTest {
     fun `when setEnableAppStartProfiling is called and continuous profiling is enabled, isEnableAppStartProfiling is true`() {
         val options = SentryOptions()
         options.isEnableAppStartProfiling = true
-        options.experimental.profileSessionSampleRate = 1.0
+        options.profileSessionSampleRate = 1.0
         assertTrue(options.isEnableAppStartProfiling)
     }
 

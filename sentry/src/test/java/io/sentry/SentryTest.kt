@@ -407,7 +407,7 @@ class SentryTest {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
-            it.experimental.profileSessionSampleRate = 1.0
+            it.profileSessionSampleRate = 1.0
             it.cacheDirPath = tempPath
             sentryOptions = it
         }
@@ -422,7 +422,7 @@ class SentryTest {
         var sentryOptions: SentryOptions? = null
         Sentry.init {
             it.dsn = dsn
-            it.experimental.profileSessionSampleRate = 0.0
+            it.profileSessionSampleRate = 0.0
             it.cacheDirPath = tempPath
             sentryOptions = it
         }
@@ -1138,7 +1138,7 @@ class SentryTest {
         Sentry.init {
             it.dsn = dsn
             it.tracesSampleRate = 1.0
-            it.experimental.isStartProfilerOnAppStart = true
+            it.isStartProfilerOnAppStart = true
             it.profilesSampleRate = 1.0
             it.tracesSampler = mockSampleTracer
             it.profilesSampler = mockProfilesSampler
@@ -1251,7 +1251,7 @@ class SentryTest {
             it.dsn = dsn
             it.cacheDirPath = path
             it.isEnableAppStartProfiling = false
-            it.experimental.isStartProfilerOnAppStart = true
+            it.isStartProfilerOnAppStart = true
             it.tracesSampleRate = 0.0
             it.executorService = ImmediateExecutorService()
         }
@@ -1267,7 +1267,7 @@ class SentryTest {
             it.cacheDirPath = path
             it.tracesSampleRate = 0.5
             it.isEnableAppStartProfiling = true
-            it.experimental.isStartProfilerOnAppStart = true
+            it.isStartProfilerOnAppStart = true
             it.profilesSampleRate = 0.2
             it.executorService = ImmediateExecutorService()
             options = it
@@ -1352,7 +1352,7 @@ class SentryTest {
         Sentry.init {
             it.dsn = dsn
             it.setContinuousProfiler(profiler)
-            it.experimental.profileSessionSampleRate = 1.0
+            it.profileSessionSampleRate = 1.0
         }
         Sentry.startProfiler()
         verify(profiler).startProfiler(eq(ProfileLifecycle.MANUAL), any())
@@ -1377,8 +1377,8 @@ class SentryTest {
         Sentry.init {
             it.dsn = dsn
             it.setContinuousProfiler(profiler)
-            it.experimental.profileSessionSampleRate = 1.0
-            it.experimental.profileLifecycle = ProfileLifecycle.TRACE
+            it.profileSessionSampleRate = 1.0
+            it.profileLifecycle = ProfileLifecycle.TRACE
             it.isDebug = true
             it.setLogger(logger)
         }
@@ -1397,7 +1397,7 @@ class SentryTest {
         Sentry.init {
             it.dsn = dsn
             it.setContinuousProfiler(profiler)
-            it.experimental.profileSessionSampleRate = 1.0
+            it.profileSessionSampleRate = 1.0
         }
         Sentry.stopProfiler()
         verify(profiler).stopProfiler(eq(ProfileLifecycle.MANUAL))
