@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix do not initialize SDK for Jetpack Compose Preview builds ([#4324](https://github.com/getsentry/sentry-java/pull/4324))
+
 ## 8.7.0
 
 ### Features
