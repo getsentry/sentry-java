@@ -9,7 +9,8 @@ public final class ClassLoaderUtils {
     // bootstrap classloader is represented as null, so using system classloader instead
     if (classLoader == null) {
       // try thread context classloader
-      final @Nullable ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+      final @Nullable ClassLoader contextClassLoader =
+          Thread.currentThread().getContextClassLoader();
       if (contextClassLoader != null) {
         return contextClassLoader;
       }
