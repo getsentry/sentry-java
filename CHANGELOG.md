@@ -6,7 +6,7 @@
 
 - UI Profiling GA
 
-  Continuous Profiling is now GA, named UI Profiling. To enable it you can use one of the following options.
+  Continuous Profiling is now GA, named UI Profiling. To enable it you can use one of the following options. More info can be found at https://docs.sentry.io/platforms/android/profiling/.
     Note: Both `options.profilesSampler` and `options.profilesSampleRate` must **not** be set to enable UI Profiling.
     To keep the same transaction-based behaviour, without the 30 seconds limitation, you can use the `trace` lifecycle mode.
   
