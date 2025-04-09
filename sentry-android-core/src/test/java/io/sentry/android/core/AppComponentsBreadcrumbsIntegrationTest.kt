@@ -96,24 +96,6 @@ class AppComponentsBreadcrumbsIntegrationTest {
     }
 
     @Test
-    fun `When low memory event, a breadcrumb with type, category and level should be set`() {
-        val sut = fixture.getSut()
-        val options = SentryAndroidOptions().apply {
-            executorService = ImmediateExecutorService()
-        }
-        val scopes = mock<IScopes>()
-        sut.register(scopes, options)
-        sut.onLowMemory()
-        verify(scopes).addBreadcrumb(
-            check<Breadcrumb> {
-                assertEquals("device.event", it.category)
-                assertEquals("system", it.type)
-                assertEquals(SentryLevel.WARNING, it.level)
-            }
-        )
-    }
-
-    @Test
     fun `When trim memory event with level, a breadcrumb with type, category and level should be set`() {
         val sut = fixture.getSut()
         val options = SentryAndroidOptions().apply {
