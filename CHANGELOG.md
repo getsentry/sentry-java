@@ -18,7 +18,6 @@
 
 ### Features
 
-- Continuous Profiling - Out of Experimental ([#4310](https://github.com/getsentry/sentry-java/pull/4310))
 - UI Profiling GA
 
   Continuous Profiling is now GA, named UI Profiling. To enable it you can use one of the following options. More info can be found at https://docs.sentry.io/platforms/android/profiling/.
