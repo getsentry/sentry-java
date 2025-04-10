@@ -5,6 +5,7 @@
 ### Fixes
 
 - Compress Screenshots on a background thread ([#4295](https://github.com/getsentry/sentry-java/pull/4295))
+- Improve low memory breadcrumb capturing ([#4325](https://github.com/getsentry/sentry-java/pull/4325))
 
 ## 7.22.5
 

@@ -15,6 +15,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.lang.NullPointerException
 import kotlin.test.Test
@@ -96,24 +97,6 @@ class AppComponentsBreadcrumbsIntegrationTest {
     }
 
     @Test
-    fun `When low memory event, a breadcrumb with type, category and level should be set`() {
-        val sut = fixture.getSut()
-        val options = SentryAndroidOptions().apply {
-            executorService = ImmediateExecutorService()
-        }
-        val hub = mock<IHub>()
-        sut.register(hub, options)
-        sut.onLowMemory()
-        verify(hub).addBreadcrumb(
-            check<Breadcrumb> {
-                assertEquals("device.event", it.category)
-                assertEquals("system", it.type)
-                assertEquals(SentryLevel.WARNING, it.level)
-            }
-        )
-    }
-
-    @Test
     fun `When trim memory event with level, a breadcrumb with type, category and level should be set`() {
         val sut = fixture.getSut()
         val options = SentryAndroidOptions().apply {
@@ -127,7 +110,8 @@ class AppComponentsBreadcrumbsIntegrationTest {
                 assertEquals("device.event", it.category)
                 assertEquals("system", it.type)
                 assertEquals(SentryLevel.WARNING, it.level)
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -161,5 +145,27 @@ class AppComponentsBreadcrumbsIntegrationTest {
             },
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `low memory changes are debounced`() {
+        val sut = fixture.getSut()
+
+        val scopes = mock<IScopes>()
+        val options = SentryAndroidOptions().apply {
+            executorService = ImmediateExecutorService()
+        }
+        sut.register(scopes, options)
+        sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_BACKGROUND)
+        sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+
+        // should only add the first crumb
+        verify(scopes).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals(it.data["level"], 40)
+            },
+            anyOrNull()
+        )
+        verifyNoMoreInteractions(scopes)
     }
 }
