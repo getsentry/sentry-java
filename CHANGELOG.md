@@ -6,6 +6,7 @@
 
 - Use thread context classloader when available ([#4320](https://github.com/getsentry/sentry-java/pull/4320))
   - This ensures correct resource loading in environments like Spring Boot where the thread context classloader is used for resource loading.
+- Improve low memory breadcrumb capturing ([#4325](https://github.com/getsentry/sentry-java/pull/4325))
 - Fix do not initialize SDK for Jetpack Compose Preview builds ([#4324](https://github.com/getsentry/sentry-java/pull/4324))
 
 ## 8.7.0
