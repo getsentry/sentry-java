@@ -12,6 +12,8 @@ import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
+import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.protocol.Device;
 import io.sentry.util.Objects;
@@ -24,9 +26,16 @@ import org.jetbrains.annotations.Nullable;
 public final class AppComponentsBreadcrumbsIntegration
     implements Integration, Closeable, ComponentCallbacks2 {
 
+  private static final long DEBOUNCE_WAIT_TIME_MS = 60 * 1000;
+  // pre-allocate hint to avoid creating it every time for the low memory case
+  private static final @NotNull Hint EMPTY_HINT = new Hint();
+
   private final @NotNull Context context;
   private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
+
+  private final @NotNull Debouncer trimMemoryDebouncer =
+      new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
 
   public AppComponentsBreadcrumbsIntegration(final @NotNull Context context) {
     this.context =
@@ -109,6 +118,11 @@ public final class AppComponentsBreadcrumbsIntegration
       return;
     }
 
+    if (trimMemoryDebouncer.checkForDebounce()) {
+      // if we received trim_memory within 1 minute time, ignore this call
+      return;
+    }
+
     final long now = System.currentTimeMillis();
     executeInBackground(() -> captureLowMemoryBreadcrumb(now, level));
   }
@@ -122,7 +136,7 @@ public final class AppComponentsBreadcrumbsIntegration
       breadcrumb.setData("action", "LOW_MEMORY");
       breadcrumb.setData("level", level);
       breadcrumb.setLevel(SentryLevel.WARNING);
-      scopes.addBreadcrumb(breadcrumb);
+      scopes.addBreadcrumb(breadcrumb, EMPTY_HINT);
     }
   }
 

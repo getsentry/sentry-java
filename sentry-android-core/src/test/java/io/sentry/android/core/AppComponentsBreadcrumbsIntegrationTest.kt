@@ -15,6 +15,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.lang.NullPointerException
 import kotlin.test.Test
@@ -109,7 +110,8 @@ class AppComponentsBreadcrumbsIntegrationTest {
                 assertEquals("device.event", it.category)
                 assertEquals("system", it.type)
                 assertEquals(SentryLevel.WARNING, it.level)
-            }
+            },
+            anyOrNull()
         )
     }
 
@@ -143,5 +145,27 @@ class AppComponentsBreadcrumbsIntegrationTest {
             },
             anyOrNull()
         )
+    }
+
+    @Test
+    fun `low memory changes are debounced`() {
+        val sut = fixture.getSut()
+
+        val scopes = mock<IScopes>()
+        val options = SentryAndroidOptions().apply {
+            executorService = ImmediateExecutorService()
+        }
+        sut.register(scopes, options)
+        sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_BACKGROUND)
+        sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+
+        // should only add the first crumb
+        verify(scopes).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals(it.data["level"], 40)
+            },
+            anyOrNull()
+        )
+        verifyNoMoreInteractions(scopes)
     }
 }
