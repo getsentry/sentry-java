@@ -21,7 +21,9 @@ public final class SentryInitProvider extends EmptySecureContentProvider {
       logger.log(SentryLevel.FATAL, "App. Context from ContentProvider is null");
       return false;
     }
-    if (ManifestMetadataReader.isAutoInit(context, logger)) {
+
+    if (ManifestMetadataReader.isAutoInit(context, logger)
+        && !ContextUtils.appIsLibraryForComposePreview(context)) {
       SentryAndroid.init(context, logger);
       SentryIntegrationPackageStorage.getInstance().addIntegration("AutoInit");
     }
