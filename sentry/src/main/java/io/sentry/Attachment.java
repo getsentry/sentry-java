@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.ViewHierarchy;
 import java.io.File;
+import java.util.concurrent.Callable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,6 +11,7 @@ public final class Attachment {
 
   private @Nullable byte[] bytes;
   private final @Nullable JsonSerializable serializable;
+  private final @Nullable Callable<byte[]> byteProvider;
   private @Nullable String pathname;
   private final @NotNull String filename;
   private final @Nullable String contentType;
@@ -84,6 +86,7 @@ public final class Attachment {
       final boolean addToTransactions) {
     this.bytes = bytes;
     this.serializable = null;
+    this.byteProvider = null;
     this.filename = filename;
     this.contentType = contentType;
     this.attachmentType = attachmentType;
@@ -109,6 +112,33 @@ public final class Attachment {
       final boolean addToTransactions) {
     this.bytes = null;
     this.serializable = serializable;
+    this.byteProvider = null;
+    this.filename = filename;
+    this.contentType = contentType;
+    this.attachmentType = attachmentType;
+    this.addToTransactions = addToTransactions;
+  }
+
+  /**
+   * Initializes an Attachment with bytes factory, a filename, a content type, and
+   * addToTransactions.
+   *
+   * @param byteProvider A provider holding the attachment payload
+   * @param filename The name of the attachment to display in Sentry.
+   * @param contentType The content type of the attachment.
+   * @param attachmentType the attachment type.
+   * @param addToTransactions <code>true</code> if the SDK should add this attachment to every
+   *     {@link ITransaction} or set to <code>false</code> if it shouldn't.
+   */
+  public Attachment(
+      final @NotNull Callable<byte[]> byteProvider,
+      final @NotNull String filename,
+      final @Nullable String contentType,
+      final @Nullable String attachmentType,
+      final boolean addToTransactions) {
+    this.bytes = null;
+    this.serializable = null;
+    this.byteProvider = byteProvider;
     this.filename = filename;
     this.contentType = contentType;
     this.attachmentType = attachmentType;
@@ -186,6 +216,7 @@ public final class Attachment {
     this.pathname = pathname;
     this.filename = filename;
     this.serializable = null;
+    this.byteProvider = null;
     this.contentType = contentType;
     this.attachmentType = attachmentType;
     this.addToTransactions = addToTransactions;
@@ -212,6 +243,7 @@ public final class Attachment {
     this.pathname = pathname;
     this.filename = filename;
     this.serializable = null;
+    this.byteProvider = null;
     this.contentType = contentType;
     this.addToTransactions = addToTransactions;
   }
@@ -240,6 +272,7 @@ public final class Attachment {
     this.pathname = pathname;
     this.filename = filename;
     this.serializable = null;
+    this.byteProvider = null;
     this.contentType = contentType;
     this.addToTransactions = addToTransactions;
     this.attachmentType = attachmentType;
@@ -310,14 +343,33 @@ public final class Attachment {
     return attachmentType;
   }
 
+  public @Nullable Callable<byte[]> getByteProvider() {
+    return byteProvider;
+  }
+
   /**
    * Creates a new Screenshot Attachment
    *
-   * @param screenshotBytes the array bytes
+   * @param screenshotBytes the array bytes of the PNG screenshot
    * @return the Attachment
    */
   public static @NotNull Attachment fromScreenshot(final byte[] screenshotBytes) {
     return new Attachment(screenshotBytes, "screenshot.png", "image/png", false);
+  }
+
+  /**
+   * Creates a new Screenshot Attachment
+   *
+   * @param provider the mechanism providing the screenshot payload
+   * @return the Attachment
+   */
+  public static @NotNull Attachment fromByteProvider(
+      final @NotNull Callable<byte[]> provider,
+      final @NotNull String filename,
+      final @Nullable String contentType,
+      final boolean addToTransactions) {
+    return new Attachment(
+        provider, filename, contentType, DEFAULT_ATTACHMENT_TYPE, addToTransactions);
   }
 
   /**

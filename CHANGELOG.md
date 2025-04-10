@@ -4,11 +4,71 @@
 
 ### Features
 
-- Continuous Profiling - Out of Experimental ([#4310](https://github.com/getsentry/sentry-java/pull/4310))
 - Add `CoroutineExceptionHandler` for reporting uncaught exceptions in coroutines to Sentry ([#4259](https://github.com/getsentry/sentry-java/pull/4259))
   - This is now part of `sentry-kotlin-extensions` and can be used together with `SentryContext` when launching a coroutine
   - Any exceptions thrown in a coroutine when using the handler will be captured (not rethrown!) and reported to Sentry
   - It's also possible to extend `CoroutineExceptionHandler` to implement custom behavior in addition to the one we provide by default
+
+### Fixes
+
+- Use thread context classloader when available ([#4320](https://github.com/getsentry/sentry-java/pull/4320))
+  - This ensures correct resource loading in environments like Spring Boot where the thread context classloader is used for resource loading.
+
+## 8.7.0
+
+### Features
+
+- Continuous Profiling - Out of Experimental ([#4310](https://github.com/getsentry/sentry-java/pull/4310))
+- UI Profiling GA
+
+  Continuous Profiling is now GA, named UI Profiling. To enable it you can use one of the following options. More info can be found at https://docs.sentry.io/platforms/android/profiling/.
+    Note: Both `options.profilesSampler` and `options.profilesSampleRate` must **not** be set to enable UI Profiling.
+    To keep the same transaction-based behaviour, without the 30 seconds limitation, you can use the `trace` lifecycle mode.
+  
+  ```xml
+  <application>
+    <!-- Enable UI profiling, adjust in production env. This is evaluated only once per session -->
+    <meta-data android:name="io.sentry.traces.profiling.session-sample-rate" android:value="1.0" />
+    <!-- Set profiling lifecycle, can be `manual` (controlled through `Sentry.startProfiler()` and `Sentry.stopProfiler()`) or `trace` (automatically starts and stop a profile whenever a sampled trace starts and finishes) -->
+    <meta-data android:name="io.sentry.traces.profiling.lifecycle" android:value="trace" />
+    <!-- Enable profiling on app start. The app start profile will be stopped automatically when the app start root span finishes -->
+    <meta-data android:name="io.sentry.traces.profiling.start-on-app-start" android:value="true" />
+  </application>
+  ```
+  ```java
+  import io.sentry.ProfileLifecycle;
+  import io.sentry.android.core.SentryAndroid;
+  
+  SentryAndroid.init(context, options -> {
+      // Enable UI profiling, adjust in production env. This is evaluated only once per session
+      options.setProfileSessionSampleRate(1.0);
+      // Set profiling lifecycle, can be `manual` (controlled through `Sentry.startProfiler()` and `Sentry.stopProfiler()`) or `trace` (automatically starts and stop a profile whenever a sampled trace starts and finishes)
+      options.setProfileLifecycle(ProfileLifecycle.TRACE);
+      // Enable profiling on app start. The app start profile will be stopped automatically when the app start root span finishes
+      options.setStartProfilerOnAppStart(true);
+    });
+  ```
+  ```kotlin
+  import io.sentry.ProfileLifecycle
+  import io.sentry.android.core.SentryAndroid
+
+  SentryAndroid.init(context, { options ->
+    // Enable UI profiling, adjust in production env. This is evaluated only once per session
+    options.profileSessionSampleRate = 1.0
+    // Set profiling lifecycle, can be `manual` (controlled through `Sentry.startProfiler()` and `Sentry.stopProfiler()`) or `trace` (automatically starts and stop a profile whenever a sampled trace starts and finishes)
+    options.profileLifecycle = ProfileLifecycle.TRACE
+    // Enable profiling on app start. The app start profile will be stopped automatically when the app start root span finishes
+    options.isStartProfilerOnAppStart = true
+    })
+  ```
+
+  - Continuous Profiling - Stop when app goes in background ([#4311](https://github.com/getsentry/sentry-java/pull/4311))
+  - Continuous Profiling - Add delayed stop ([#4293](https://github.com/getsentry/sentry-java/pull/4293))
+  - Continuous Profiling - Out of Experimental ([#4310](https://github.com/getsentry/sentry-java/pull/4310))
+
+### Fixes
+
+- Compress Screenshots on a background thread ([#4295](https://github.com/getsentry/sentry-java/pull/4295))
 
 ## 8.6.0
 

@@ -95,7 +95,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       final @Nullable IContinuousProfiler appStartContinuousProfiler =
           AppStartMetrics.getInstance().getAppStartContinuousProfiler();
       if (appStartContinuousProfiler != null) {
-        appStartContinuousProfiler.close();
+        appStartContinuousProfiler.close(true);
       }
     }
   }
