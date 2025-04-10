@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Features
+
+- Add new User Feedback API ([#4286](https://github.com/getsentry/sentry-java/pull/4286))
+  - We now introduced Sentry.captureFeedback, which supersedes Sentry.captureUserFeedback
+
 ### Fixes
 
 - Use thread context classloader when available ([#4320](https://github.com/getsentry/sentry-java/pull/4320))
