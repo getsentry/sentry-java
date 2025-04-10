@@ -11,14 +11,17 @@ public final class io/sentry/Attachment {
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;)V
+	public fun <init> (Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> ([BLjava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V
 	public fun <init> ([BLjava/lang/String;Ljava/lang/String;Z)V
+	public static fun fromByteProvider (Ljava/util/concurrent/Callable;Ljava/lang/String;Ljava/lang/String;Z)Lio/sentry/Attachment;
 	public static fun fromScreenshot ([B)Lio/sentry/Attachment;
 	public static fun fromThreadDump ([B)Lio/sentry/Attachment;
 	public static fun fromViewHierarchy (Lio/sentry/protocol/ViewHierarchy;)Lio/sentry/Attachment;
 	public fun getAttachmentType ()Ljava/lang/String;
+	public fun getByteProvider ()Ljava/util/concurrent/Callable;
 	public fun getBytes ()[B
 	public fun getContentType ()Ljava/lang/String;
 	public fun getFilename ()Ljava/lang/String;
@@ -458,12 +461,6 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
-	public fun getProfileLifecycle ()Lio/sentry/ProfileLifecycle;
-	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
-	public fun isStartProfilerOnAppStart ()Z
-	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
-	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
-	public fun setStartProfilerOnAppStart (Z)V
 }
 
 public final class io/sentry/ExternalOptions {
@@ -750,7 +747,7 @@ public abstract interface class io/sentry/IConnectionStatusProvider$IConnectionS
 }
 
 public abstract interface class io/sentry/IContinuousProfiler {
-	public abstract fun close ()V
+	public abstract fun close (Z)V
 	public abstract fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isRunning ()Z
 	public abstract fun reevaluateSampling ()V
@@ -1442,7 +1439,7 @@ public final class io/sentry/NoOpConnectionStatusProvider : io/sentry/IConnectio
 }
 
 public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfiler {
-	public fun close ()V
+	public fun close (Z)V
 	public static fun getInstance ()Lio/sentry/NoOpContinuousProfiler;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun isRunning ()Z
@@ -3222,6 +3219,8 @@ public class io/sentry/SentryOptions {
 	public fun setModulesLoader (Lio/sentry/internal/modules/IModulesLoader;)V
 	public fun setOpenTelemetryMode (Lio/sentry/SentryOpenTelemetryMode;)V
 	public fun setPrintUncaughtStackTrace (Z)V
+	public fun setProfileLifecycle (Lio/sentry/ProfileLifecycle;)V
+	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
 	public fun setProfilingTracesHz (I)V
@@ -3245,6 +3244,7 @@ public class io/sentry/SentryOptions {
 	public fun setSpanFactory (Lio/sentry/ISpanFactory;)V
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
+	public fun setStartProfilerOnAppStart (Z)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThreadChecker (Lio/sentry/util/thread/IThreadChecker;)V
 	public fun setTraceOptionsRequests (Z)V

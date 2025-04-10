@@ -95,7 +95,7 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       final @Nullable IContinuousProfiler appStartContinuousProfiler =
           AppStartMetrics.getInstance().getAppStartContinuousProfiler();
       if (appStartContinuousProfiler != null) {
-        appStartContinuousProfiler.close();
+        appStartContinuousProfiler.close(true);
       }
     }
   }
@@ -175,9 +175,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     logger.log(SentryLevel.DEBUG, "App start continuous profiling started.");
     SentryOptions sentryOptions = SentryOptions.empty();
     // Let's fake a sampler to accept the sampling decision that was calculated on last run
-    sentryOptions
-        .getExperimental()
-        .setProfileSessionSampleRate(profilingOptions.isContinuousProfileSampled() ? 1.0 : 0.0);
+    sentryOptions.setProfileSessionSampleRate(
+        profilingOptions.isContinuousProfileSampled() ? 1.0 : 0.0);
     appStartContinuousProfiler.startProfiler(
         profilingOptions.getProfileLifecycle(), new TracesSampler(sentryOptions));
   }

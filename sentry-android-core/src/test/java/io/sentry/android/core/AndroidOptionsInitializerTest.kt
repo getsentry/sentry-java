@@ -446,7 +446,7 @@ class AndroidOptionsInitializerTest {
         assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
 
         // app start profiler is closed, because it will never be used
-        verify(appStartContinuousProfiler).close()
+        verify(appStartContinuousProfiler).close(eq(true))
 
         // AppStartMetrics should be cleared
         assertNull(AppStartMetrics.getInstance().appStartProfiler)
