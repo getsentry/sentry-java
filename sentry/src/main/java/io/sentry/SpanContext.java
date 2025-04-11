@@ -125,6 +125,7 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     if (copiedUnknown != null) {
       this.unknown = copiedUnknown;
     }
+    // TODO should this be a deep copy instead?
     this.baggage = spanContext.baggage;
     final Map<String, Object> copiedData = CollectionUtils.newConcurrentHashMap(spanContext.data);
     if (copiedData != null) {

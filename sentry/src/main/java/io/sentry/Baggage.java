@@ -13,6 +13,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -44,13 +45,13 @@ public final class Baggage {
   private static final DecimalFormatterThreadLocal decimalFormatter =
       new DecimalFormatterThreadLocal();
 
-  final @NotNull Map<String, String> keyValues;
-  @Nullable Double sampleRate;
-  @Nullable Double sampleRand;
+  private final @NotNull Map<String, String> keyValues;
+  private @Nullable Double sampleRate;
+  private @Nullable Double sampleRand;
 
-  final @Nullable String thirdPartyHeader;
+  private final @Nullable String thirdPartyHeader;
   private boolean mutable;
-  private boolean shouldFreeze;
+  private final boolean shouldFreeze;
   final @NotNull ILogger logger;
 
   @NotNull
@@ -217,10 +218,12 @@ public final class Baggage {
       final @Nullable Double sampleRate,
       final @Nullable Double sampleRand,
       final @Nullable String thirdPartyHeader,
-      boolean isMutable,
-      boolean shouldFreeze,
+      final boolean isMutable,
+      final boolean shouldFreeze,
       final @NotNull ILogger logger) {
-    this.keyValues = keyValues;
+    // TODO should we deep-copy the keyValues here?
+    // if so we could optimize this by only synchronizing in case isMutable is true
+    this.keyValues = Collections.synchronizedMap(keyValues);
     this.sampleRate = sampleRate;
     this.sampleRand = sampleRand;
     this.logger = logger;
@@ -440,20 +443,15 @@ public final class Baggage {
     set(DSCKeys.REPLAY_ID, replayId);
   }
 
-  @ApiStatus.Internal
-  public void set(final @NotNull String key, final @Nullable String value) {
-    set(key, value, false);
-  }
-
   /**
-   * Sets / updates a value
+   * Sets / updates a value, but only if the baggage is still mutable.
    *
    * @param key key
    * @param value value to set
-   * @param force ignores mutability of this baggage and sets the value anyways
    */
-  private void set(final @NotNull String key, final @Nullable String value, final boolean force) {
-    if (mutable || force) {
+  @ApiStatus.Internal
+  public void set(final @NotNull String key, final @Nullable String value) {
+    if (mutable) {
       this.keyValues.put(key, value);
     }
   }
