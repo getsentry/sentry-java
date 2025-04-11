@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Improvements
+
+- Make `SystemEventsBreadcrumbsIntegration` faster ([#4330](https://github.com/getsentry/sentry-java/pull/4330))
+
 ### Fixes
 
 - Use thread context classloader when available ([#4320](https://github.com/getsentry/sentry-java/pull/4320))
