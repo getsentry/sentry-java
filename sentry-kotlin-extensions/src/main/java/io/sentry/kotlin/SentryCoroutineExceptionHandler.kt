@@ -21,6 +21,7 @@ public open class SentryCoroutineExceptionHandler(private val scopes: IScopes = 
     override fun handleException(context: CoroutineContext, exception: Throwable) {
         val mechanism = Mechanism().apply {
             type = "CoroutineExceptionHandler"
+            isHandled = true
         }
         // the current thread is not necessarily the one that threw the exception
         val error = ExceptionMechanismException(mechanism, exception, Thread.currentThread())
