@@ -54,6 +54,7 @@ import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import java.util.Date
 import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -300,7 +301,7 @@ class ActivityLifecycleIntegrationTest {
         val sut = fixture.getSut(initializer = {
             it.tracesSampleRate = 1.0
             it.isEnableTimeToFullDisplayTracing = true
-            it.idleTimeout = 200
+            it.idleTimeout = 100
         })
         sut.register(fixture.scopes, fixture.options)
         sut.onActivityCreated(activity, fixture.bundle)
@@ -318,7 +319,7 @@ class ActivityLifecycleIntegrationTest {
             )
 
         // but when idle timeout has passed
-        Thread.sleep(400)
+        Thread.sleep(200)
 
         // then the transaction should be finished
         verify(fixture.scopes).captureTransaction(
@@ -815,7 +816,6 @@ class ActivityLifecycleIntegrationTest {
 
         // when activity is resumed
         sut.onActivityResumed(activity)
-        Thread.sleep(1)
         runFirstDraw(view)
         // end-time should be set
         assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasStopped())
@@ -863,17 +863,14 @@ class ActivityLifecycleIntegrationTest {
         sut.onActivityCreated(activity, fixture.bundle)
         sut.onActivityStarted(activity)
         sut.onActivityResumed(activity)
-        Thread.sleep(1)
         runFirstDraw(view)
 
         val firstAppStartEndTime = AppStartMetrics.getInstance().sdkInitTimeSpan.projectedStopTimestamp
 
-        Thread.sleep(1)
         sut.onActivityPaused(activity)
         sut.onActivityStopped(activity)
         sut.onActivityStarted(activity)
         sut.onActivityResumed(activity)
-        Thread.sleep(1)
         runFirstDraw(view)
 
         // then the end time should not be overwritten
@@ -984,6 +981,36 @@ class ActivityLifecycleIntegrationTest {
     }
 
     @Test
+    fun `When isEnableTimeToFullDisplayTracing is true and reportFullyDrawn is called, ttfd is finished on first frame if ttid is running`() {
+        val sut = fixture.getSut()
+        val view = fixture.createView()
+        val activity = mock<Activity>()
+        whenever(activity.findViewById<View>(any())).thenReturn(view)
+        fixture.options.tracesSampleRate = 1.0
+        fixture.options.isEnableTimeToFullDisplayTracing = true
+        sut.register(fixture.scopes, fixture.options)
+        sut.onActivityCreated(activity, fixture.bundle)
+        sut.onActivityResumed(activity)
+        val ttidSpan = sut.ttidSpanMap[activity]
+        val ttfdSpan = sut.ttfdSpanMap[activity]
+
+        // Assert the ttfd span is running and a timeout autoCancel future has been scheduled
+        assertNotNull(ttidSpan)
+        assertNotNull(ttfdSpan)
+        assertFalse(ttidSpan.isFinished)
+        assertFalse(ttfdSpan.isFinished)
+
+        // ReportFullyDrawn should not finish the ttfd span, as the ttid is still running
+        fixture.options.fullyDisplayedReporter.reportFullyDrawn()
+        assertFalse(ttfdSpan.isFinished)
+
+        // But when ReportFullyDrawn should not finish the ttfd span, as the ttid is still running
+        runFirstDraw(view)
+        assertTrue(ttidSpan.isFinished)
+        assertTrue(ttfdSpan.isFinished)
+    }
+
+    @Test
     fun `When isEnableTimeToFullDisplayTracing is true and reportFullyDrawn is called, ttfd autoClose future is cancelled`() {
         val sut = fixture.getSut()
         fixture.options.tracesSampleRate = 1.0
@@ -991,8 +1018,10 @@ class ActivityLifecycleIntegrationTest {
         sut.register(fixture.scopes, fixture.options)
         val activity = mock<Activity>()
         sut.onActivityCreated(activity, fixture.bundle)
+        val ttidSpan = sut.ttidSpanMap[activity]
         val ttfdSpan = sut.ttfdSpanMap[activity]
         var autoCloseFuture = sut.getProperty<Future<*>?>("ttfdAutoCloseFuture")
+        ttidSpan?.finish()
 
         // Assert the ttfd span is running and a timeout autoCancel future has been scheduled
         assertNotNull(ttfdSpan)
@@ -1000,7 +1029,6 @@ class ActivityLifecycleIntegrationTest {
         assertNotNull(autoCloseFuture)
 
         // ReportFullyDrawn should finish the ttfd span and cancel the future
-        Thread.sleep(1)
         fixture.options.fullyDisplayedReporter.reportFullyDrawn()
         assertTrue(ttfdSpan.isFinished)
         assertNotEquals(SpanStatus.DEADLINE_EXCEEDED, ttfdSpan.status)
@@ -1077,7 +1105,6 @@ class ActivityLifecycleIntegrationTest {
         assertFalse(ttidSpan.isFinished)
 
         // Mock the draw of the view. The ttid span should finish now
-        Thread.sleep(1)
         runFirstDraw(view)
         assertTrue(ttidSpan.isFinished)
 
@@ -1097,7 +1124,9 @@ class ActivityLifecycleIntegrationTest {
 
     @Test
     fun `When isEnableTimeToFullDisplayTracing is true and reportFullyDrawn is called too early, ttfd is adjusted to equal ttid`() {
-        val sut = fixture.getSut()
+        val sut = fixture.getSut() {
+//            it.fullyDisplayedReporter = mock()
+        }
         val view = fixture.createView()
         val activity = mock<Activity>()
         fixture.options.tracesSampleRate = 1.0
@@ -1116,18 +1145,28 @@ class ActivityLifecycleIntegrationTest {
         assertFalse(ttfdSpan.isFinished)
 
         // Let's finish the ttfd span too early (before the first view is drawn)
-        ttfdSpan.finish()
-        assertTrue(ttfdSpan.isFinished)
-        val oldEndDate = ttfdSpan.finishDate
+        fixture.options.fullyDisplayedReporter.reportFullyDrawn()
 
-        // Mock the draw of the view. The ttid span should finish now and the ttfd end date should be adjusted
+        // The TTFD shouldn't be finished yet
+        assertFalse(ttfdSpan.isFinished)
+
+        // Mock the draw of the view. The ttid span should finish now and the ttfd, too
         runFirstDraw(view)
         assertTrue(ttidSpan.isFinished)
-        val newEndDate = ttfdSpan.finishDate
-        assertNotEquals(newEndDate, oldEndDate)
-        assertEquals(newEndDate, ttidSpan.finishDate)
+        assertTrue(ttfdSpan.isFinished)
+        assertEquals(ttfdSpan.finishDate, ttidSpan.finishDate)
 
         sut.onActivityDestroyed(activity)
+
+        // The measurements should be set to the same value for ttid and ttfd
+        val ttidDuration = TimeUnit.NANOSECONDS.toMillis(ttidSpan.finishDate!!.diff(ttidSpan.startDate))
+        val ttfdDuration = TimeUnit.NANOSECONDS.toMillis(ttfdSpan.finishDate!!.diff(ttfdSpan.startDate))
+        assertEquals(ttidDuration, ttfdDuration)
+        // TTID also has initial display measurement, but TTFD has not
+        assertEquals(ttidDuration, ttidSpan.measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]!!.value)
+        assertEquals(ttidDuration, ttidSpan.measurements[MeasurementValue.KEY_TIME_TO_FULL_DISPLAY]!!.value)
+        assertEquals(ttidDuration, ttfdSpan.measurements[MeasurementValue.KEY_TIME_TO_FULL_DISPLAY]!!.value)
+
         verify(fixture.scopes).captureTransaction(
             check {
                 // ttid and ttfd measurements should be the same
@@ -1189,7 +1228,6 @@ class ActivityLifecycleIntegrationTest {
         assertFalse(ttfdSpan.isFinished)
 
         // Run the autoClose task 1 ms after finishing the ttid span and assert the ttfd span is finished
-        Thread.sleep(1)
         deferredExecutorService.runAll()
         assertTrue(ttfdSpan.isFinished)
 
