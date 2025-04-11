@@ -185,6 +185,7 @@ public final class io/sentry/android/core/BuildInfoProvider {
 }
 
 public final class io/sentry/android/core/ContextUtils {
+	public static fun appIsLibraryForComposePreview (Landroid/content/Context;)Z
 	public static fun getApplicationContext (Landroid/content/Context;)Landroid/content/Context;
 	public static fun isForegroundImportance ()Z
 }

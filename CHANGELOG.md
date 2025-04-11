@@ -2,14 +2,23 @@
 
 ## Unreleased
 
-### Improvements
+### Features
 
-- Make `SystemEventsBreadcrumbsIntegration` faster ([#4330](https://github.com/getsentry/sentry-java/pull/4330))
+- Add `CoroutineExceptionHandler` for reporting uncaught exceptions in coroutines to Sentry ([#4259](https://github.com/getsentry/sentry-java/pull/4259))
+  - This is now part of `sentry-kotlin-extensions` and can be used together with `SentryContext` when launching a coroutine
+  - Any exceptions thrown in a coroutine when using the handler will be captured (not rethrown!) and reported to Sentry
+  - It's also possible to extend `CoroutineExceptionHandler` to implement custom behavior in addition to the one we provide by default
 
 ### Fixes
 
 - Use thread context classloader when available ([#4320](https://github.com/getsentry/sentry-java/pull/4320))
   - This ensures correct resource loading in environments like Spring Boot where the thread context classloader is used for resource loading.
+- Improve low memory breadcrumb capturing ([#4325](https://github.com/getsentry/sentry-java/pull/4325))
+- Fix do not initialize SDK for Jetpack Compose Preview builds ([#4324](https://github.com/getsentry/sentry-java/pull/4324))
+
+### Improvements
+
+- Make `SystemEventsBreadcrumbsIntegration` faster ([#4330](https://github.com/getsentry/sentry-java/pull/4330))
 
 ## 8.7.0
 

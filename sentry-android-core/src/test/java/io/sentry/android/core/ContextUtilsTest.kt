@@ -5,7 +5,9 @@ import android.app.ActivityManager
 import android.app.ActivityManager.MemoryInfo
 import android.app.ActivityManager.RunningAppProcessInfo
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
@@ -269,5 +271,36 @@ class ContextUtilsTest {
 
         val appContext = ContextUtils.getApplicationContext(contextMock)
         assertSame(appContextMock, appContext)
+    }
+
+    @Test
+    fun `appIsLibraryForComposePreview is correctly determined`() {
+        fun getMockContext(
+            packageName: String,
+            activityClassName: String
+        ): Context {
+            val context = mock<Context>()
+            val activityManager = mock<ActivityManager>()
+            whenever(context.packageName).thenReturn(packageName)
+            whenever(context.getSystemService(eq(Context.ACTIVITY_SERVICE))).thenReturn(
+                activityManager
+            )
+            val taskInfo = ActivityManager.RecentTaskInfo()
+            taskInfo.baseIntent = Intent().setComponent(
+                ComponentName(
+                    "com.example.library",
+                    activityClassName
+                )
+            )
+            val appTask = mock<ActivityManager.AppTask>()
+            whenever(appTask.taskInfo).thenReturn(taskInfo)
+            whenever(activityManager.appTasks).thenReturn(listOf(appTask))
+
+            return context
+        }
+
+        assertTrue(ContextUtils.appIsLibraryForComposePreview(getMockContext("com.example.library.test", "androidx.compose.ui.tooling.PreviewActivity")))
+        assertFalse(ContextUtils.appIsLibraryForComposePreview(getMockContext("com.example.library.test", "com.example.HomeActivity")))
+        assertFalse(ContextUtils.appIsLibraryForComposePreview(getMockContext("com.example.library", "androidx.compose.ui.tooling.PreviewActivity")))
     }
 }
