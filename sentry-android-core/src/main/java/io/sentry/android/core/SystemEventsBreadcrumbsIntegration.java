@@ -65,13 +65,13 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   private SystemEventsBreadcrumbsIntegration(
       final @NotNull Context context, final @NotNull String[] actions) {
-    this.context = context;
+    this.context = ContextUtils.getApplicationContext(context);
     this.actions = actions;
   }
 
   public SystemEventsBreadcrumbsIntegration(
       final @NotNull Context context, final @NotNull List<String> actions) {
-    this.context = context;
+    this.context = ContextUtils.getApplicationContext(context);
     this.actions = new String[actions.size()];
     actions.toArray(this.actions);
   }
