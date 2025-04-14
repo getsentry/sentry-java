@@ -263,7 +263,10 @@ public final class Baggage {
       separator = ",";
     }
 
-    final Set<String> keys = new TreeSet<>(keyValues.keySet());
+    final Set<String> keys;
+    synchronized (keyValues) {
+      keys = new TreeSet<>(keyValues.keySet());
+    }
     keys.add(DSCKeys.SAMPLE_RATE);
     keys.add(DSCKeys.SAMPLE_RAND);
 
@@ -459,17 +462,18 @@ public final class Baggage {
   @ApiStatus.Internal
   public @NotNull Map<String, Object> getUnknown() {
     final @NotNull Map<String, Object> unknown = new ConcurrentHashMap<>();
-    for (Map.Entry<String, String> keyValue : this.keyValues.entrySet()) {
-      final @NotNull String key = keyValue.getKey();
-      final @Nullable String value = keyValue.getValue();
-      if (!DSCKeys.ALL.contains(key)) {
-        if (value != null) {
-          final @NotNull String unknownKey = key.replaceFirst(SENTRY_BAGGAGE_PREFIX, "");
-          unknown.put(unknownKey, value);
+    synchronized (keyValues) {
+      for (final Map.Entry<String, String> keyValue : keyValues.entrySet()) {
+        final @NotNull String key = keyValue.getKey();
+        final @Nullable String value = keyValue.getValue();
+        if (!DSCKeys.ALL.contains(key)) {
+          if (value != null) {
+            final @NotNull String unknownKey = key.replaceFirst(SENTRY_BAGGAGE_PREFIX, "");
+            unknown.put(unknownKey, value);
+          }
         }
       }
     }
-
     return unknown;
   }
 
