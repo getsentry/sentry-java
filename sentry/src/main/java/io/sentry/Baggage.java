@@ -457,7 +457,11 @@ public final class Baggage {
   @ApiStatus.Internal
   public void set(final @NotNull String key, final @Nullable String value) {
     if (mutable) {
-      this.keyValues.put(key, value);
+      if (value == null) {
+        keyValues.remove(key);
+      } else {
+        keyValues.put(key, value);
+      }
     }
   }
 
