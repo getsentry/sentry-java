@@ -4,6 +4,7 @@ import static io.sentry.protocol.Contexts.REPLAY_ID;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
 import java.io.UnsupportedEncodingException;
@@ -14,7 +15,6 @@ import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -45,7 +45,9 @@ public final class Baggage {
   private static final DecimalFormatterThreadLocal decimalFormatter =
       new DecimalFormatterThreadLocal();
 
-  private final @NotNull Map<String, String> keyValues;
+  private final @NotNull ConcurrentHashMap<String, String> keyValues;
+  private final @NotNull AutoClosableReentrantLock keyValuesLock = new AutoClosableReentrantLock();
+
   private @Nullable Double sampleRate;
   private @Nullable Double sampleRand;
 
@@ -100,7 +102,9 @@ public final class Baggage {
       final @Nullable String headerValue,
       final boolean includeThirdPartyValues,
       final @NotNull ILogger logger) {
-    final @NotNull Map<String, String> keyValues = new HashMap<>();
+
+    final @NotNull ConcurrentHashMap<String, String> keyValues = new ConcurrentHashMap<>();
+
     final @NotNull List<String> thirdPartyKeyValueStrings = new ArrayList<>();
     boolean shouldFreeze = false;
 
@@ -197,7 +201,7 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public Baggage(final @NotNull ILogger logger) {
-    this(new HashMap<>(), null, null, null, true, false, logger);
+    this(new ConcurrentHashMap<>(), null, null, null, true, false, logger);
   }
 
   @ApiStatus.Internal
@@ -214,16 +218,14 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public Baggage(
-      final @NotNull Map<String, String> keyValues,
+      final @NotNull ConcurrentHashMap<String, String> keyValues,
       final @Nullable Double sampleRate,
       final @Nullable Double sampleRand,
       final @Nullable String thirdPartyHeader,
       final boolean isMutable,
       final boolean shouldFreeze,
       final @NotNull ILogger logger) {
-    // TODO should we deep-copy the keyValues here?
-    // if so we could optimize this by only synchronizing in case isMutable is true
-    this.keyValues = Collections.synchronizedMap(keyValues);
+    this.keyValues = keyValues;
     this.sampleRate = sampleRate;
     this.sampleRand = sampleRand;
     this.logger = logger;
@@ -264,8 +266,8 @@ public final class Baggage {
     }
 
     final Set<String> keys;
-    synchronized (keyValues) {
-      keys = new TreeSet<>(keyValues.keySet());
+    try (final @NotNull ISentryLifecycleToken ignored = keyValuesLock.acquire()) {
+      keys = new TreeSet<>(Collections.list(keyValues.keys()));
     }
     keys.add(DSCKeys.SAMPLE_RATE);
     keys.add(DSCKeys.SAMPLE_RAND);
@@ -462,7 +464,7 @@ public final class Baggage {
   @ApiStatus.Internal
   public @NotNull Map<String, Object> getUnknown() {
     final @NotNull Map<String, Object> unknown = new ConcurrentHashMap<>();
-    synchronized (keyValues) {
+    try (final @NotNull ISentryLifecycleToken ignored = keyValuesLock.acquire()) {
       for (final Map.Entry<String, String> keyValue : keyValues.entrySet()) {
         final @NotNull String key = keyValue.getKey();
         final @Nullable String value = keyValue.getValue();
