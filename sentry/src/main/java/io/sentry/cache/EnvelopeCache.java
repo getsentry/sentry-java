@@ -345,7 +345,12 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
           .getLogger()
           .log(DEBUG, "Discarding envelope from cache: %s", envelopeFile.getAbsolutePath());
     } else {
-      options.getLogger().log(DEBUG, "Envelope was not cached or could not be deleted: %s", envelopeFile.getAbsolutePath());
+      options
+          .getLogger()
+          .log(
+              DEBUG,
+              "Envelope was not cached or could not be deleted: %s",
+              envelopeFile.getAbsolutePath());
     }
   }
 

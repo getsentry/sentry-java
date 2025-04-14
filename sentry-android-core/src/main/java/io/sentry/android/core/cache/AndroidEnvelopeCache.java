@@ -156,8 +156,8 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       new String(buf, 0, 0);
       if (e instanceof FileNotFoundException) {
         options
-          .getLogger()
-          .log(DEBUG, "Last ANR marker does not exist. %s.", lastAnrMarker.getAbsolutePath());
+            .getLogger()
+            .log(DEBUG, "Last ANR marker does not exist. %s.", lastAnrMarker.getAbsolutePath());
       } else {
         options.getLogger().log(ERROR, "Error reading last ANR marker", e);
       }
