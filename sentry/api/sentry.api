@@ -35,7 +35,7 @@ public abstract interface class io/sentry/BackfillingEventProcessor : io/sentry/
 public final class io/sentry/Baggage {
 	public fun <init> (Lio/sentry/Baggage;)V
 	public fun <init> (Lio/sentry/ILogger;)V
-	public fun <init> (Ljava/util/Map;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/String;ZZLio/sentry/ILogger;)V
+	public fun <init> (Ljava/util/concurrent/ConcurrentHashMap;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/String;ZZLio/sentry/ILogger;)V
 	public fun forceSetSampleRate (Ljava/lang/Double;)V
 	public fun freeze ()V
 	public static fun fromEvent (Lio/sentry/SentryEvent;Lio/sentry/SentryOptions;)Lio/sentry/Baggage;

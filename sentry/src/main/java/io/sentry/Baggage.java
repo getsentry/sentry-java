@@ -4,6 +4,7 @@ import static io.sentry.protocol.Contexts.REPLAY_ID;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
 import java.io.UnsupportedEncodingException;
@@ -13,7 +14,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -44,13 +45,15 @@ public final class Baggage {
   private static final DecimalFormatterThreadLocal decimalFormatter =
       new DecimalFormatterThreadLocal();
 
-  final @NotNull Map<String, String> keyValues;
-  @Nullable Double sampleRate;
-  @Nullable Double sampleRand;
+  private final @NotNull ConcurrentHashMap<String, String> keyValues;
+  private final @NotNull AutoClosableReentrantLock keyValuesLock = new AutoClosableReentrantLock();
 
-  final @Nullable String thirdPartyHeader;
+  private @Nullable Double sampleRate;
+  private @Nullable Double sampleRand;
+
+  private final @Nullable String thirdPartyHeader;
   private boolean mutable;
-  private boolean shouldFreeze;
+  private final boolean shouldFreeze;
   final @NotNull ILogger logger;
 
   @NotNull
@@ -99,7 +102,9 @@ public final class Baggage {
       final @Nullable String headerValue,
       final boolean includeThirdPartyValues,
       final @NotNull ILogger logger) {
-    final @NotNull Map<String, String> keyValues = new HashMap<>();
+
+    final @NotNull ConcurrentHashMap<String, String> keyValues = new ConcurrentHashMap<>();
+
     final @NotNull List<String> thirdPartyKeyValueStrings = new ArrayList<>();
     boolean shouldFreeze = false;
 
@@ -196,7 +201,7 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public Baggage(final @NotNull ILogger logger) {
-    this(new HashMap<>(), null, null, null, true, false, logger);
+    this(new ConcurrentHashMap<>(), null, null, null, true, false, logger);
   }
 
   @ApiStatus.Internal
@@ -213,12 +218,12 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public Baggage(
-      final @NotNull Map<String, String> keyValues,
+      final @NotNull ConcurrentHashMap<String, String> keyValues,
       final @Nullable Double sampleRate,
       final @Nullable Double sampleRand,
       final @Nullable String thirdPartyHeader,
-      boolean isMutable,
-      boolean shouldFreeze,
+      final boolean isMutable,
+      final boolean shouldFreeze,
       final @NotNull ILogger logger) {
     this.keyValues = keyValues;
     this.sampleRate = sampleRate;
@@ -260,7 +265,10 @@ public final class Baggage {
       separator = ",";
     }
 
-    final Set<String> keys = new TreeSet<>(keyValues.keySet());
+    final Set<String> keys;
+    try (final @NotNull ISentryLifecycleToken ignored = keyValuesLock.acquire()) {
+      keys = new TreeSet<>(Collections.list(keyValues.keys()));
+    }
     keys.add(DSCKeys.SAMPLE_RATE);
     keys.add(DSCKeys.SAMPLE_RAND);
 
@@ -440,38 +448,38 @@ public final class Baggage {
     set(DSCKeys.REPLAY_ID, replayId);
   }
 
-  @ApiStatus.Internal
-  public void set(final @NotNull String key, final @Nullable String value) {
-    set(key, value, false);
-  }
-
   /**
-   * Sets / updates a value
+   * Sets / updates a value, but only if the baggage is still mutable.
    *
    * @param key key
    * @param value value to set
-   * @param force ignores mutability of this baggage and sets the value anyways
    */
-  private void set(final @NotNull String key, final @Nullable String value, final boolean force) {
-    if (mutable || force) {
-      this.keyValues.put(key, value);
+  @ApiStatus.Internal
+  public void set(final @NotNull String key, final @Nullable String value) {
+    if (mutable) {
+      if (value == null) {
+        keyValues.remove(key);
+      } else {
+        keyValues.put(key, value);
+      }
     }
   }
 
   @ApiStatus.Internal
   public @NotNull Map<String, Object> getUnknown() {
     final @NotNull Map<String, Object> unknown = new ConcurrentHashMap<>();
-    for (Map.Entry<String, String> keyValue : this.keyValues.entrySet()) {
-      final @NotNull String key = keyValue.getKey();
-      final @Nullable String value = keyValue.getValue();
-      if (!DSCKeys.ALL.contains(key)) {
-        if (value != null) {
-          final @NotNull String unknownKey = key.replaceFirst(SENTRY_BAGGAGE_PREFIX, "");
-          unknown.put(unknownKey, value);
+    try (final @NotNull ISentryLifecycleToken ignored = keyValuesLock.acquire()) {
+      for (final Map.Entry<String, String> keyValue : keyValues.entrySet()) {
+        final @NotNull String key = keyValue.getKey();
+        final @Nullable String value = keyValue.getValue();
+        if (!DSCKeys.ALL.contains(key)) {
+          if (value != null) {
+            final @NotNull String unknownKey = key.replaceFirst(SENTRY_BAGGAGE_PREFIX, "");
+            unknown.put(unknownKey, value);
+          }
         }
       }
     }
-
     return unknown;
   }
 
