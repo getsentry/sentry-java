@@ -105,6 +105,8 @@ class SystemEventsBreadcrumbsIntegrationTest {
         sut.register(fixture.scopes, fixture.options)
         val intent = Intent().apply {
             action = Intent.ACTION_TIME_CHANGED
+            putExtra("test", 10)
+            putExtra("test2", 20)
         }
         sut.receiver!!.onReceive(fixture.context, intent)
 
@@ -182,5 +184,51 @@ class SystemEventsBreadcrumbsIntegrationTest {
         sut.register(fixture.scopes, fixture.options)
 
         assertFalse(fixture.options.isEnableSystemEventBreadcrumbs)
+    }
+
+    @Test
+    fun `when str has full package, return last string after dot`() {
+        val sut = fixture.getSut()
+
+        sut.register(fixture.scopes, fixture.options)
+
+        assertEquals("DEVICE_IDLE_MODE_CHANGED", sut.receiver?.getStringAfterDotFast("io.sentry.DEVICE_IDLE_MODE_CHANGED"))
+        assertEquals("POWER_SAVE_MODE_CHANGED", sut.receiver?.getStringAfterDotFast("io.sentry.POWER_SAVE_MODE_CHANGED"))
+    }
+
+    @Test
+    fun `when str is null, return null`() {
+        val sut = fixture.getSut()
+
+        sut.register(fixture.scopes, fixture.options)
+
+        assertNull(sut.receiver?.getStringAfterDotFast(null))
+    }
+
+    @Test
+    fun `when str is empty, return the original str`() {
+        val sut = fixture.getSut()
+
+        sut.register(fixture.scopes, fixture.options)
+
+        assertEquals("", sut.receiver?.getStringAfterDotFast(""))
+    }
+
+    @Test
+    fun `when str ends with a dot, return empty str`() {
+        val sut = fixture.getSut()
+
+        sut.register(fixture.scopes, fixture.options)
+
+        assertEquals("", sut.receiver?.getStringAfterDotFast("io.sentry."))
+    }
+
+    @Test
+    fun `when str has no dots, return the original str`() {
+        val sut = fixture.getSut()
+
+        sut.register(fixture.scopes, fixture.options)
+
+        assertEquals("iosentry", sut.receiver?.getStringAfterDotFast("iosentry"))
     }
 }

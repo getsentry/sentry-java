@@ -17,6 +17,10 @@
 - Fix do not initialize SDK for Jetpack Compose Preview builds ([#4324](https://github.com/getsentry/sentry-java/pull/4324))
 - Fix Synchronize Baggage values ([#4327](https://github.com/getsentry/sentry-java/pull/4327))
 
+### Improvements
+
+- Make `SystemEventsBreadcrumbsIntegration` faster ([#4330](https://github.com/getsentry/sentry-java/pull/4330))
+
 ## 8.7.0
 
 ### Features
