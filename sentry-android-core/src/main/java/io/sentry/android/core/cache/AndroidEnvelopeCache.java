@@ -19,6 +19,7 @@ import io.sentry.util.FileUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import org.jetbrains.annotations.ApiStatus;
@@ -146,22 +147,25 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
     final File lastAnrMarker = new File(cacheDirPath, LAST_ANR_REPORT);
     try {
-      if (lastAnrMarker.exists() && lastAnrMarker.canRead()) {
-        final String content = FileUtils.readText(lastAnrMarker);
-        // we wrapped into try-catch already
-        //noinspection ConstantConditions
-        return content.equals("null") ? null : Long.parseLong(content.trim());
-      } else {
-        options
-            .getLogger()
-            .log(DEBUG, "Last ANR marker does not exist. %s.", lastAnrMarker.getAbsolutePath());
-      }
+      final String content = FileUtils.readText(lastAnrMarker);
+      // we wrapped into try-catch already
+      //noinspection ConstantConditions
+      return content.equals("null") ? null : Long.parseLong(content.trim());
     } catch (Throwable e) {
-      options.getLogger().log(ERROR, "Error reading last ANR marker", e);
+      final char[] buf = new char[64];
+      new String(buf, 0, 0);
+      if (e instanceof FileNotFoundException) {
+        options
+          .getLogger()
+          .log(DEBUG, "Last ANR marker does not exist. %s.", lastAnrMarker.getAbsolutePath());
+      } else {
+        options.getLogger().log(ERROR, "Error reading last ANR marker", e);
+      }
     }
     return null;
   }
 
+  @TestOnly
   private void writeLastReportedAnrMarker(final @Nullable Long timestamp) {
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath == null) {

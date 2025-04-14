@@ -340,18 +340,12 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
     final File envelopeFile = getEnvelopeFile(envelope);
-    if (envelopeFile.exists()) {
+    if (envelopeFile.delete()) {
       options
           .getLogger()
           .log(DEBUG, "Discarding envelope from cache: %s", envelopeFile.getAbsolutePath());
-
-      if (!envelopeFile.delete()) {
-        options
-            .getLogger()
-            .log(ERROR, "Failed to delete envelope: %s", envelopeFile.getAbsolutePath());
-      }
     } else {
-      options.getLogger().log(DEBUG, "Envelope was not cached: %s", envelopeFile.getAbsolutePath());
+      options.getLogger().log(DEBUG, "Envelope was not cached or could not be deleted: %s", envelopeFile.getAbsolutePath());
     }
   }
 
