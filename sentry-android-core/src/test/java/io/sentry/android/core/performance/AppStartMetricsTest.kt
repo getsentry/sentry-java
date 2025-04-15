@@ -12,6 +12,7 @@ import io.sentry.DateUtils
 import io.sentry.IContinuousProfiler
 import io.sentry.ITransactionProfiler
 import io.sentry.SentryNanotimeDate
+import io.sentry.android.core.CurrentActivityHolder
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
 import org.junit.Before
@@ -506,5 +507,30 @@ class AppStartMetricsTest {
         assertEquals(9, span.durationMs)
         // Class loaded uptimeMs is 10 ms, and process init span should finish at the same ms
         assertEquals(10, span.projectedStopTimestampMs)
+    }
+
+    @Test
+    fun `when activity is created and CurrentActivityHolder is empty, sets the activity`() {
+        val metrics = AppStartMetrics.getInstance()
+        val activity = mock<Activity>()
+        val currentActivityHolder = CurrentActivityHolder.getInstance()
+        currentActivityHolder.clearActivity()
+
+        metrics.onActivityCreated(activity, null)
+
+        assertEquals(activity, currentActivityHolder.getActivity())
+    }
+
+    @Test
+    fun `when activity is created and CurrentActivityHolder has activity, does not change it`() {
+        val metrics = AppStartMetrics.getInstance()
+        val existingActivity = mock<Activity>()
+        val newActivity = mock<Activity>()
+        val currentActivityHolder = CurrentActivityHolder.getInstance()
+        currentActivityHolder.setActivity(existingActivity)
+
+        metrics.onActivityCreated(newActivity, null)
+
+        assertEquals(existingActivity, currentActivityHolder.getActivity())
     }
 }

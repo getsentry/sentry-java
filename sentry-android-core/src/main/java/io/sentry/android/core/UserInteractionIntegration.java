@@ -6,6 +6,8 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 import android.view.Window;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleOwner;
 import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
@@ -27,12 +29,15 @@ public final class UserInteractionIntegration
   private @Nullable SentryAndroidOptions options;
 
   private final boolean isAndroidXAvailable;
+  private final boolean isAndroidxLifecycleAvailable;
 
   public UserInteractionIntegration(
       final @NotNull Application application, final @NotNull io.sentry.util.LoadClass classLoader) {
     this.application = Objects.requireNonNull(application, "Application is required");
     isAndroidXAvailable =
         classLoader.isClassAvailable("androidx.core.view.GestureDetectorCompat", options);
+    isAndroidxLifecycleAvailable =
+        classLoader.isClassAvailable("androidx.lifecycle.Lifecycle", options);
   }
 
   private void startTracking(final @NotNull Activity activity) {
@@ -127,6 +132,17 @@ public final class UserInteractionIntegration
         application.registerActivityLifecycleCallbacks(this);
         this.options.getLogger().log(SentryLevel.DEBUG, "UserInteractionIntegration installed.");
         addIntegrationToSdkVersion("UserInteraction");
+
+        // In case of a deferred init, we hook into any resumed activity
+        if (isAndroidxLifecycleAvailable) {
+          final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
+          if (activity instanceof LifecycleOwner) {
+            if (((LifecycleOwner) activity).getLifecycle().getCurrentState()
+                == Lifecycle.State.RESUMED) {
+              startTracking(activity);
+            }
+          }
+        }
       } else {
         options
             .getLogger()
