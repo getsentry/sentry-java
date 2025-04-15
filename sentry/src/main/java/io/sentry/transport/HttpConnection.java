@@ -146,6 +146,7 @@ final class HttpConnection {
   }
 
   public @NotNull TransportResult send(final @NotNull SentryEnvelope envelope) throws IOException {
+    options.getSocketTagger().tagSockets();
     final HttpURLConnection connection = createConnection();
     TransportResult result;
 
@@ -161,6 +162,7 @@ final class HttpConnection {
               "An exception occurred while submitting the envelope to the Sentry server.");
     } finally {
       result = readAndLog(connection);
+      options.getSocketTagger().untagSockets();
     }
     return result;
   }

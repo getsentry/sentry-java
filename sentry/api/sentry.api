@@ -1028,6 +1028,11 @@ public abstract interface class io/sentry/ISerializer {
 	public abstract fun serialize (Ljava/util/Map;)Ljava/lang/String;
 }
 
+public abstract interface class io/sentry/ISocketTagger {
+	public abstract fun tagSockets ()V
+	public abstract fun untagSockets ()V
+}
+
 public abstract interface class io/sentry/ISpan {
 	public abstract fun finish ()V
 	public abstract fun finish (Lio/sentry/SpanStatus;)V
@@ -1694,6 +1699,12 @@ public final class io/sentry/NoOpScopesStorage : io/sentry/IScopesStorage {
 	public static fun getInstance ()Lio/sentry/NoOpScopesStorage;
 	public fun init ()V
 	public fun set (Lio/sentry/IScopes;)Lio/sentry/ISentryLifecycleToken;
+}
+
+public final class io/sentry/NoOpSocketTagger : io/sentry/ISocketTagger {
+	public static fun getInstance ()Lio/sentry/ISocketTagger;
+	public fun tagSockets ()V
+	public fun untagSockets ()V
 }
 
 public final class io/sentry/NoOpSpan : io/sentry/ISpan {
@@ -3105,6 +3116,7 @@ public class io/sentry/SentryOptions {
 	public fun getSessionReplay ()Lio/sentry/SentryReplayOptions;
 	public fun getSessionTrackingIntervalMillis ()J
 	public fun getShutdownTimeoutMillis ()J
+	public fun getSocketTagger ()Lio/sentry/ISocketTagger;
 	public fun getSpanFactory ()Lio/sentry/ISpanFactory;
 	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
 	public fun getSslSocketFactory ()Ljavax/net/ssl/SSLSocketFactory;
@@ -3241,6 +3253,7 @@ public class io/sentry/SentryOptions {
 	public fun setSessionReplay (Lio/sentry/SentryReplayOptions;)V
 	public fun setSessionTrackingIntervalMillis (J)V
 	public fun setShutdownTimeoutMillis (J)V
+	public fun setSocketTagger (Lio/sentry/ISocketTagger;)V
 	public fun setSpanFactory (Lio/sentry/ISpanFactory;)V
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
