@@ -4,6 +4,16 @@
 
 ### Features
 
+- Add `SentryWrapper.wrapRunnable` to wrap `Runnable` for use with Sentry ([#4332](https://github.com/getsentry/sentry-java/pull/4332))
+
+### Fixes
+
+- Fix TTFD measurement when API called too early ([#4297](https://github.com/getsentry/sentry-java/pull/4297))
+
+## 8.8.0
+
+### Features
+
 - Add `CoroutineExceptionHandler` for reporting uncaught exceptions in coroutines to Sentry ([#4259](https://github.com/getsentry/sentry-java/pull/4259))
   - This is now part of `sentry-kotlin-extensions` and can be used together with `SentryContext` when launching a coroutine
   - Any exceptions thrown in a coroutine when using the handler will be captured (not rethrown!) and reported to Sentry
@@ -15,6 +25,11 @@
   - This ensures correct resource loading in environments like Spring Boot where the thread context classloader is used for resource loading.
 - Improve low memory breadcrumb capturing ([#4325](https://github.com/getsentry/sentry-java/pull/4325))
 - Fix do not initialize SDK for Jetpack Compose Preview builds ([#4324](https://github.com/getsentry/sentry-java/pull/4324))
+- Fix Synchronize Baggage values ([#4327](https://github.com/getsentry/sentry-java/pull/4327))
+
+### Improvements
+
+- Make `SystemEventsBreadcrumbsIntegration` faster ([#4330](https://github.com/getsentry/sentry-java/pull/4330))
 
 ### Improvements
 
