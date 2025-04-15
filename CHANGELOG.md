@@ -9,6 +9,8 @@
 ### Fixes
 
 - Fix TTFD measurement when API called too early ([#4297](https://github.com/getsentry/sentry-java/pull/4297))
+- Tag sockets traffic originating from Sentry's HttpConnection ([#4340](https://github.com/getsentry/sentry-java/pull/4340))
+  - This should suppress the StrictMode's `UntaggedSocketViolation`
 
 ## 8.8.0
 
