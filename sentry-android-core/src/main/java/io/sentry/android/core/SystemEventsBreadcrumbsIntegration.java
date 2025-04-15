@@ -193,6 +193,8 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     }
   }
 
+  // TODO: this duplicates a lot of AppLifecycleIntegration. We should register once on init
+  //  and multiplex to different listeners rather.
   private void addLifecycleObserver(final @NotNull SentryAndroidOptions options) {
     try {
       Class.forName("androidx.lifecycle.DefaultLifecycleObserver");
