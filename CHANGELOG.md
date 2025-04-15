@@ -31,7 +31,6 @@
 
 - Make `SystemEventsBreadcrumbsIntegration` faster ([#4330](https://github.com/getsentry/sentry-java/pull/4330))
 
-
 ## 8.7.0
 
 ### Features
