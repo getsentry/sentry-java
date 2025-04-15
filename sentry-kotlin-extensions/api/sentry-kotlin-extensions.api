@@ -10,3 +10,10 @@ public final class io/sentry/kotlin/SentryContext : kotlin/coroutines/AbstractCo
 	public synthetic fun updateThreadContext (Lkotlin/coroutines/CoroutineContext;)Ljava/lang/Object;
 }
 
+public class io/sentry/kotlin/SentryCoroutineExceptionHandler : kotlin/coroutines/AbstractCoroutineContextElement, kotlinx/coroutines/CoroutineExceptionHandler {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IScopes;)V
+	public synthetic fun <init> (Lio/sentry/IScopes;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun handleException (Lkotlin/coroutines/CoroutineContext;Ljava/lang/Throwable;)V
+}
+

@@ -7,6 +7,7 @@ import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -27,6 +28,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -283,6 +285,36 @@ public final class ContextUtils {
   @ApiStatus.Internal
   public static boolean isForegroundImportance() {
     return isForegroundImportance.getValue();
+  }
+
+  /**
+   * Determines if the app is a packaged android library for running Compose Preview Mode
+   *
+   * @param context the context
+   * @return true, if the app is actually a library running as an app for Compose Preview Mode
+   */
+  @ApiStatus.Internal
+  public static boolean appIsLibraryForComposePreview(final @NotNull Context context) {
+    // Jetpack Compose Preview (aka "Run Preview on Device")
+    // uses the androidTest flavor for android library modules,
+    // so let's fail-fast by checking this first
+    if (context.getPackageName().endsWith(".test")) {
+      try {
+        final @NotNull ActivityManager activityManager =
+            (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        final @NotNull List<ActivityManager.AppTask> appTasks = activityManager.getAppTasks();
+        for (final ActivityManager.AppTask task : appTasks) {
+          final @Nullable ComponentName component = task.getTaskInfo().baseIntent.getComponent();
+          if (component != null
+              && component.getClassName().equals("androidx.compose.ui.tooling.PreviewActivity")) {
+            return true;
+          }
+        }
+      } catch (Throwable t) {
+        // ignored
+      }
+    }
+    return false;
   }
 
   /**

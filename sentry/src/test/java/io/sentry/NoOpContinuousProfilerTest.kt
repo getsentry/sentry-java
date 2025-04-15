@@ -24,7 +24,7 @@ class NoOpContinuousProfilerTest {
 
     @Test
     fun `close does not throw`() =
-        profiler.close()
+        profiler.close(true)
 
     @Test
     fun `getProfilerId returns Empty SentryId`() {

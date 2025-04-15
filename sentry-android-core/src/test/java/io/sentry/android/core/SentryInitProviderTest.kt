@@ -7,11 +7,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Sentry
 import io.sentry.test.callMethod
 import org.junit.runner.RunWith
+import org.mockito.Mockito
+import org.mockito.kotlin.any
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.use
 
 @RunWith(AndroidJUnit4::class)
 class SentryInitProviderTest {
@@ -151,6 +154,24 @@ class SentryInitProviderTest {
         AndroidOptionsInitializer.initializeIntegrationsAndProcessors(sentryOptions, mockContext, loadClass, activityFramesTracker)
 
         assertFalse(sentryOptions.isEnableNdk)
+    }
+
+    @Test
+    fun `skips init in compose preview mode`() {
+        val providerInfo = ProviderInfo()
+
+        assertFalse(Sentry.isEnabled())
+        providerInfo.authority = AUTHORITY
+
+        val metaData = Bundle()
+        metaData.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
+        val mockContext = ContextUtilsTestHelper.mockMetaData(metaData = metaData)
+
+        Mockito.mockStatic(ContextUtils::class.java).use { contextUtils ->
+            contextUtils.`when`<Boolean> { ContextUtils.appIsLibraryForComposePreview(any()) }.thenReturn(true)
+            sentryInitProvider.attachInfo(mockContext, providerInfo)
+        }
+        assertFalse(Sentry.isEnabled())
     }
 
     companion object {

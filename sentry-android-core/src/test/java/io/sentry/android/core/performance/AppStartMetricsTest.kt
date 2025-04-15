@@ -16,6 +16,7 @@ import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
 import org.junit.Before
 import org.junit.runner.RunWith
+import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -273,7 +274,7 @@ class AppStartMetricsTest {
         // Job on main thread checks if activity was launched
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-        verify(profiler).close()
+        verify(profiler).close(eq(true))
     }
 
     @Test
@@ -301,7 +302,7 @@ class AppStartMetricsTest {
         // Job on main thread checks if activity was launched
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-        verify(profiler, never()).close()
+        verify(profiler, never()).close(any())
     }
 
     @Test
