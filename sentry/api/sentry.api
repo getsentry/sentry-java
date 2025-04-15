@@ -3541,6 +3541,7 @@ public final class io/sentry/SentryUUID {
 public final class io/sentry/SentryWrapper {
 	public fun <init> ()V
 	public static fun wrapCallable (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Callable;
+	public static fun wrapRunnable (Ljava/lang/Runnable;)Ljava/lang/Runnable;
 	public static fun wrapSupplier (Ljava/util/function/Supplier;)Ljava/util/function/Supplier;
 }
 
