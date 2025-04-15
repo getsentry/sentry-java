@@ -652,8 +652,8 @@ public final class ActivityLifecycleIntegration
         final long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
         ttidSpan.setMeasurement(
             MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY, durationMillis, MILLISECOND);
-
-        // If the ttfd API was called before the first frame we finish the ttfd now
+        // If Sentry.reportFullyDisplayed was called before the first frame is drawn, we finish
+        //  the ttfd now
         if (ttfdSpan != null && fullyDisplayedCalled) {
           fullyDisplayedCalled = false;
           ttidSpan.setMeasurement(
