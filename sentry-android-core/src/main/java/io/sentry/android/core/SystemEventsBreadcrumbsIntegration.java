@@ -67,6 +67,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   private @Nullable IScopes scopes;
 
   private final @NotNull String[] actions;
+  private volatile boolean isClosed = false;
   private volatile boolean isStopped = false;
   private volatile IntentFilter filter = null;
   private final @NotNull AutoClosableReentrantLock receiverLock = new AutoClosableReentrantLock();
@@ -129,7 +130,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     }
 
     try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
-      if (isStopped || receiver != null) {
+      if (isClosed || isStopped || receiver != null) {
         return;
       }
     }
@@ -140,7 +141,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
           .submit(
               () -> {
                 try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
-                  if (isStopped || receiver != null) {
+                  if (isClosed || isStopped || receiver != null) {
                     return;
                   }
 
@@ -265,6 +266,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   @Override
   public void close() throws IOException {
     try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
+      isClosed = true;
       filter = null;
     }
 

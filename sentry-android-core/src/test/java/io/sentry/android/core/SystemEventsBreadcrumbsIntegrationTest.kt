@@ -389,4 +389,31 @@ class SystemEventsBreadcrumbsIntegrationTest {
         deferredExecutorService.runAll()
         assertNull(sut.receiver)
     }
+
+    @Test
+    fun `when enters foreground right after closing, receiver is not registered`() {
+        val deferredExecutorService = DeferredExecutorService()
+        val latch = CountDownLatch(1)
+
+        val sut = fixture.getSut(executorService = deferredExecutorService, mockHandler = false)
+        sut.register(fixture.scopes, fixture.options)
+        deferredExecutorService.runAll()
+        assertNotNull(sut.receiver)
+
+        Thread {
+            sut.close()
+            latch.countDown()
+        }.start()
+
+        latch.await()
+
+        sut.lifecycleHandler!!.onStart(mock())
+        assertNull(sut.receiver)
+        deferredExecutorService.runAll()
+
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertNull(sut.receiver)
+        assertNull(sut.lifecycleHandler)
+    }
 }
