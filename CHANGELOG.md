@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix TTFD measurement when API called too early ([#4297](https://github.com/getsentry/sentry-java/pull/4297))
+
 ## 8.8.0
 
 ### Features
