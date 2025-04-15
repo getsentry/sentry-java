@@ -268,7 +268,7 @@ final class AndroidOptionsInitializer {
       // This is a safeguard, but it should never happen, as the app start profiler should be the
       // continuous one.
       if (appStartContinuousProfiler != null) {
-        appStartContinuousProfiler.close();
+        appStartContinuousProfiler.close(true);
       }
       if (appStartTransactionProfiler != null) {
         options.setTransactionProfiler(appStartTransactionProfiler);

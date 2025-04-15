@@ -225,7 +225,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     }
     appStartProfiler = null;
     if (appStartContinuousProfiler != null) {
-      appStartContinuousProfiler.close();
+      appStartContinuousProfiler.close(true);
     }
     appStartContinuousProfiler = null;
     appStartSamplingDecision = null;
@@ -333,7 +333,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
                   appStartProfiler = null;
                 }
                 if (appStartContinuousProfiler != null && appStartContinuousProfiler.isRunning()) {
-                  appStartContinuousProfiler.close();
+                  appStartContinuousProfiler.close(true);
                   appStartContinuousProfiler = null;
                 }
               }
