@@ -207,10 +207,10 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       options
           .getLogger()
           .log(
-              SentryLevel.DEBUG,
+              SentryLevel.WARNING,
               "androidx.lifecycle is not available, SystemEventsBreadcrumbsIntegration won't be able"
                   + " to register/unregister an internal BroadcastReceiver. This may result in an"
-                  + "increased ANR rate on Android 14 and above.");
+                  + " increased ANR rate on Android 14 and above.");
     } catch (Throwable e) {
       options
           .getLogger()
