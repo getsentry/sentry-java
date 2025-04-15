@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes 
+
+- Hook User Interaction integration into running Activity in case of deferred SDK init ([#4337](https://github.com/getsentry/sentry-java/pull/4337))
+
 ## 8.8.0
 
 ### Features
