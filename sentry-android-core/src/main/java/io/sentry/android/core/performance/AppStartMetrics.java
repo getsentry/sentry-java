@@ -17,6 +17,7 @@ import io.sentry.NoOpLogger;
 import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
+import io.sentry.android.core.CurrentActivityHolder;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.internal.util.FirstDrawDoneListener;
 import io.sentry.util.AutoClosableReentrantLock;
@@ -346,6 +347,13 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
     // the first activity determines the app start type
     if (activeActivitiesCounter.incrementAndGet() == 1 && !firstDrawDone.get()) {
+
+      final @Nullable Activity currentKnownActivity =
+          CurrentActivityHolder.getInstance().getActivity();
+      if (currentKnownActivity == null) {
+        CurrentActivityHolder.getInstance().setActivity(activity);
+      }
+
       // If the app (process) was launched more than 1 minute ago, it's likely wrong
       final long durationSinceAppStartMillis = nowUptimeMs - appStartSpan.getStartUptimeMs();
       if (!appLaunchedInForeground || durationSinceAppStartMillis > TimeUnit.MINUTES.toMillis(1)) {
