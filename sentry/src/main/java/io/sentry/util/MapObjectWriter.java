@@ -126,6 +126,16 @@ public final class MapObjectWriter implements ObjectWriter {
   }
 
   @Override
+  public void setIndent(@Nullable String indent) {
+    // no-op
+  }
+
+  @Override
+  public @Nullable String getIndent() {
+    return null;
+  }
+
+  @Override
   public MapObjectWriter beginArray() throws IOException {
     stack.add(new ArrayList<>());
     return this;

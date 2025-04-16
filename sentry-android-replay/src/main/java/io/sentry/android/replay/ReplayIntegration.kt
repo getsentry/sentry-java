@@ -151,8 +151,7 @@ public class ReplayIntegration(
             } catch (e: Throwable) {
                 options.logger.log(
                     INFO,
-                    "ComponentCallbacks is not available, orientation changes won't be handled by Session replay",
-                    e
+                    "ComponentCallbacks is not available, orientation changes won't be handled by Session replay"
                 )
             }
         }
