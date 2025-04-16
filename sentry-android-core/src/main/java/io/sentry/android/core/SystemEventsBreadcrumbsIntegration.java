@@ -116,14 +116,14 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
     if (this.options.isEnableSystemEventBreadcrumbs()) {
       addLifecycleObserver(this.options);
-      registerReceiver(this.scopes, this.options, /* newIntegration = */ true);
+      registerReceiver(this.scopes, this.options, /* reportAsNewIntegration = */ true);
     }
   }
 
   private void registerReceiver(
       final @NotNull IScopes scopes,
       final @NotNull SentryAndroidOptions options,
-      final boolean newIntegration) {
+      final boolean reportAsNewIntegration) {
 
     if (!options.isEnableSystemEventBreadcrumbs()) {
       return;
@@ -156,7 +156,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
                     // registerReceiver can throw SecurityException but it's not documented in the
                     // official docs
                     ContextUtils.registerReceiver(context, options, receiver, filter);
-                    if (newIntegration) {
+                    if (reportAsNewIntegration) {
                       options
                           .getLogger()
                           .log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
@@ -320,7 +320,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         isStopped = false;
       }
 
-      registerReceiver(scopes, options, /* newIntegration = */ false);
+      registerReceiver(scopes, options, /* reportAsNewIntegration = */ false);
     }
 
     @Override
