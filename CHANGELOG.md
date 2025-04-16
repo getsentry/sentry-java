@@ -9,6 +9,7 @@
 ### Fixes
 
 - Fix TTFD measurement when API called too early ([#4297](https://github.com/getsentry/sentry-java/pull/4297))
+- Reduce debug logs verbosity ([#4341](https://github.com/getsentry/sentry-java/pull/4341))
 
 ## 8.8.0
 
