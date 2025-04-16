@@ -7,8 +7,8 @@ import io.sentry.hints.Backfillable;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.protocol.Contexts;
-import io.sentry.protocol.Feedback;
 import io.sentry.protocol.DebugMeta;
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
@@ -1105,6 +1105,7 @@ public final class SentryClient implements ISentryClient {
         final @NotNull PropagationContext propagationContext =
             TracingUtils.maybeUpdateBaggage(scope, options);
         traceContext = propagationContext.traceContext();
+      }
     }
     return traceContext;
   }
