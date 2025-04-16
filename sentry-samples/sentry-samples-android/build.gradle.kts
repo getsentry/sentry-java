@@ -118,7 +118,6 @@ android {
         val taskName = "toggle${variant.name.capitalized()}NativeLogging"
         val toggleNativeLoggingTask = project.tasks.register<ToggleNativeLoggingTask>(taskName) {
             mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
-            output.set(project.layout.buildDirectory.dir("intermediates/$taskName"))
             rootDir.set(project.rootDir.absolutePath)
         }
         project.afterEvaluate {
@@ -180,12 +179,6 @@ dependencies {
 
 abstract class ToggleNativeLoggingTask : Exec() {
 
-    // In order for the task to be up-to-date when the inputs have not changed,
-    // the task must declare an output, even if it's not used. Tasks with no
-    // output are always run regardless of whether the inputs changed
-    @get:OutputDirectory
-    abstract val output: DirectoryProperty
-
     @get:Input
     abstract val rootDir: Property<String>
 
@@ -193,6 +186,7 @@ abstract class ToggleNativeLoggingTask : Exec() {
     abstract val mergedManifest: RegularFileProperty
 
     override fun exec() {
+        isIgnoreExitValue = true
         val manifestFile = mergedManifest.get().asFile
         val manifestContent = manifestFile.readText()
         val match = regex.find(manifestContent)
