@@ -154,6 +154,12 @@ public class SentryOptions {
   private @Nullable BeforeSendCallback beforeSend;
 
   /**
+   * This function is called with an SDK specific feedback object and can return a modified feedback
+   * object or nothing to skip reporting the feedback
+   */
+  private @Nullable BeforeSendCallback beforeSendFeedback;
+
+  /**
    * This function is called with an SDK specific transaction object and can return a modified
    * transaction object or nothing to skip reporting the transaction
    */
@@ -772,6 +778,24 @@ public class SentryOptions {
   public void setBeforeSendTransaction(
       @Nullable BeforeSendTransactionCallback beforeSendTransaction) {
     this.beforeSendTransaction = beforeSendTransaction;
+  }
+
+  /**
+   * Returns the BeforeSendFeedback callback
+   *
+   * @return the beforeSendFeedback callback or null if not set
+   */
+  public @Nullable BeforeSendCallback getBeforeSendFeedback() {
+    return beforeSendFeedback;
+  }
+
+  /**
+   * Sets the beforeSendFeedback callback
+   *
+   * @param beforeSendFeedback the beforeSendFeedback callback
+   */
+  public void setBeforeSendFeedback(@Nullable BeforeSendCallback beforeSendFeedback) {
+    this.beforeSendFeedback = beforeSendFeedback;
   }
 
   /**
