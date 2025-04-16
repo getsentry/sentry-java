@@ -71,6 +71,13 @@ public class ReplayIntegration(
     IConnectionStatusObserver,
     IRateLimitObserver {
 
+    private companion object {
+        init {
+            SentryIntegrationPackageStorage.getInstance()
+                .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
+        }
+    }
+
     // needed for the Java's call site
     public constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
         context.appContext(),
@@ -151,8 +158,6 @@ public class ReplayIntegration(
         }
 
         addIntegrationToSdkVersion("Replay")
-        SentryIntegrationPackageStorage.getInstance()
-            .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
 
         finalizePreviousReplay()
     }

@@ -7,6 +7,7 @@ import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -14,7 +15,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.provider.Settings;
 import android.util.DisplayMetrics;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
@@ -28,6 +28,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -89,10 +90,6 @@ public final class ContextUtils {
 
   // to avoid doing a bunch of Binder calls we use LazyEvaluator to cache the values that are static
   // during the app process running
-
-  private static final @NotNull AndroidLazyEvaluator<String> deviceName =
-      new AndroidLazyEvaluator<>(
-          (context) -> Settings.Global.getString(context.getContentResolver(), "device_name"));
 
   private static final @NotNull LazyEvaluator<Boolean> isForegroundImportance =
       new LazyEvaluator<>(
@@ -291,6 +288,36 @@ public final class ContextUtils {
   }
 
   /**
+   * Determines if the app is a packaged android library for running Compose Preview Mode
+   *
+   * @param context the context
+   * @return true, if the app is actually a library running as an app for Compose Preview Mode
+   */
+  @ApiStatus.Internal
+  public static boolean appIsLibraryForComposePreview(final @NotNull Context context) {
+    // Jetpack Compose Preview (aka "Run Preview on Device")
+    // uses the androidTest flavor for android library modules,
+    // so let's fail-fast by checking this first
+    if (context.getPackageName().endsWith(".test")) {
+      try {
+        final @NotNull ActivityManager activityManager =
+            (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        final @NotNull List<ActivityManager.AppTask> appTasks = activityManager.getAppTasks();
+        for (final ActivityManager.AppTask task : appTasks) {
+          final @Nullable ComponentName component = task.getTaskInfo().baseIntent.getComponent();
+          if (component != null
+              && component.getClassName().equals("androidx.compose.ui.tooling.PreviewActivity")) {
+            return true;
+          }
+        }
+      } catch (Throwable t) {
+        // ignored
+      }
+    }
+    return false;
+  }
+
+  /**
    * Get the device's current kernel version, as a string. Attempts to read /proc/version, and falls
    * back to the 'os.version' System Property.
    *
@@ -401,10 +428,6 @@ public final class ContextUtils {
       logger.log(SentryLevel.ERROR, "Error getting device family.", e);
       return null;
     }
-  }
-
-  static @Nullable String getDeviceName(final @NotNull Context context) {
-    return deviceName.getValue(context);
   }
 
   static @NotNull String[] getArchitectures() {
@@ -521,7 +544,6 @@ public final class ContextUtils {
 
   @TestOnly
   static void resetInstance() {
-    deviceName.resetValue();
     isForegroundImportance.resetValue();
     staticPackageInfo33.resetValue();
     staticPackageInfo.resetValue();

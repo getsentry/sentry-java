@@ -9,6 +9,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryNdk {
@@ -63,6 +64,13 @@ public final class SentryNdk {
             == NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START.getValue()) {
           ndkOptions.setNdkHandlerStrategy(
               io.sentry.ndk.NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START);
+        }
+
+        final @Nullable Double tracesSampleRate = options.getTracesSampleRate();
+        if (tracesSampleRate == null) {
+          ndkOptions.setTracesSampleRate(0.0f);
+        } else {
+          ndkOptions.setTracesSampleRate(tracesSampleRate.floatValue());
         }
 
         //noinspection UnstableApiUsage

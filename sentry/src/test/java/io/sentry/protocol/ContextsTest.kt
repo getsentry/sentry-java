@@ -1,5 +1,6 @@
 package io.sentry.protocol
 
+import io.sentry.ProfileContext
 import io.sentry.SpanContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,6 +21,7 @@ class ContextsTest {
         contexts.setGpu(Gpu())
         contexts.setResponse(Response())
         contexts.setTrace(SpanContext("op"))
+        contexts.profile = ProfileContext(SentryId())
         contexts.setSpring(Spring())
         contexts.setFeedback(Feedback("message"))
 
@@ -34,6 +36,7 @@ class ContextsTest {
         assertNotSame(contexts.runtime, clone.runtime)
         assertNotSame(contexts.gpu, clone.gpu)
         assertNotSame(contexts.trace, clone.trace)
+        assertNotSame(contexts.profile, clone.profile)
         assertNotSame(contexts.response, clone.response)
         assertNotSame(contexts.spring, clone.spring)
         assertNotSame(contexts.feedback, clone.feedback)
@@ -42,9 +45,11 @@ class ContextsTest {
     @Test
     fun `copying contexts will have the same values`() {
         val contexts = Contexts()
+        val id = SentryId()
         contexts["some-property"] = "some-value"
         contexts.setTrace(SpanContext("op"))
         contexts.trace!!.description = "desc"
+        contexts.profile = ProfileContext(id)
 
         val clone = Contexts(contexts)
 
@@ -52,6 +57,7 @@ class ContextsTest {
         assertNotSame(contexts, clone)
         assertEquals(contexts["some-property"], clone["some-property"])
         assertEquals(contexts.trace!!.description, clone.trace!!.description)
+        assertEquals(contexts.profile!!.profilerId, clone.profile!!.profilerId)
     }
 
     @Test

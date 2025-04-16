@@ -13,18 +13,15 @@ import io.sentry.protocol.Feedback;
 import io.sentry.protocol.User;
 import io.sentry.samples.android.compose.ComposeActivity;
 import io.sentry.samples.android.databinding.ActivityMainBinding;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import timber.log.Timber;
 
@@ -84,16 +81,10 @@ public class MainActivity extends AppCompatActivity {
         view -> {
           String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
           File file = getApplication().getFileStreamPath(fileName);
-          try (final FileOutputStream fileOutputStream = new SentryFileOutputStream(file);
-              final OutputStreamWriter outputStreamWriter =
-                  new OutputStreamWriter(fileOutputStream);
-              final Writer writer = new BufferedWriter(outputStreamWriter)) {
-            for (int i = 0; i < 1024; i++) {
-              // To keep the sample code simple this happens on the main thread. Don't do this in a
-              // real app.
-              writer.write(String.format(Locale.getDefault(), "%d\n", i));
-            }
-            writer.flush();
+          try (final FileOutputStream fos =
+              SentryFileOutputStream.Factory.create(new FileOutputStream(file), file)) {
+            FileChannel channel = fos.getChannel();
+            channel.write(java.nio.ByteBuffer.wrap("Hello, World!".getBytes()));
           } catch (IOException e) {
             Sentry.captureException(e);
           }
@@ -208,6 +199,31 @@ public class MainActivity extends AppCompatActivity {
                   1000);
         });
 
+    binding.nativeAnr.setOnClickListener(
+        view -> {
+          new Thread(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      NativeSample.freezeMysteriously(mutex);
+                    }
+                  })
+              .start();
+
+          new Handler()
+              .postDelayed(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      synchronized (mutex) {
+                        // Shouldn't happen
+                        throw new IllegalStateException();
+                      }
+                    }
+                  },
+                  1000);
+        });
+
     binding.openSecondActivity.setOnClickListener(
         view -> {
           // finishing so its completely destroyed
@@ -251,6 +267,11 @@ public class MainActivity extends AppCompatActivity {
 
     binding.openFrameDataForSpans.setOnClickListener(
         view -> startActivity(new Intent(this, FrameDataForSpansActivity.class)));
+
+    binding.throwInCoroutine.setOnClickListener(
+        view -> {
+          CoroutinesUtil.INSTANCE.throwInCoroutine();
+        });
 
     setContentView(binding.getRoot());
   }

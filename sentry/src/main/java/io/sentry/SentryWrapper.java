@@ -57,4 +57,23 @@ public final class SentryWrapper {
       }
     };
   }
+
+  /**
+   * Helper method to wrap {@link Runnable}
+   *
+   * <p>Forks current and isolation scope before execution and restores previous state afterwards.
+   * This prevents reused threads (e.g. from thread-pools) from getting an incorrect state.
+   *
+   * @param runnable - the {@link Runnable} to be wrapped
+   * @return the wrapped {@link Runnable}
+   */
+  public static Runnable wrapRunnable(final @NotNull Runnable runnable) {
+    final IScopes newScopes = Sentry.forkedScopes("SentryWrapper.wrapRunnable");
+
+    return () -> {
+      try (ISentryLifecycleToken ignore = newScopes.makeCurrent()) {
+        runnable.run();
+      }
+    };
+  }
 }

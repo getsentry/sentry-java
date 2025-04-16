@@ -6,11 +6,17 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import io.sentry.DeduplicateMultithreadedEventProcessor;
-import io.sentry.DefaultTransactionPerformanceCollector;
+import io.sentry.DefaultCompositePerformanceCollector;
+import io.sentry.DefaultVersionDetector;
+import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
+import io.sentry.NoOpCompositePerformanceCollector;
 import io.sentry.NoOpConnectionStatusProvider;
+import io.sentry.NoOpContinuousProfiler;
+import io.sentry.NoOpTransactionProfiler;
+import io.sentry.NoopVersionDetector;
 import io.sentry.ScopeType;
 import io.sentry.SendFireAndForgetEnvelopeSender;
 import io.sentry.SendFireAndForgetOutboxSender;
@@ -32,12 +38,16 @@ import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
 import io.sentry.compose.gestures.ComposeGestureTargetLocator;
 import io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter;
+import io.sentry.internal.debugmeta.NoOpDebugMetaLoader;
 import io.sentry.internal.gestures.GestureTargetLocator;
+import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.NoOpEnvelopeCache;
+import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
+import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,6 +110,7 @@ final class AndroidOptionsInitializer {
 
     // Firstly set the logger, if `debug=true` configured, logging can start asap.
     options.setLogger(logger);
+    options.setFatalLogger(new AndroidFatalLogger());
 
     options.setDefaultScopeType(ScopeType.CURRENT);
     options.setOpenTelemetryMode(SentryOpenTelemetryMode.OFF);
@@ -160,30 +171,39 @@ final class AndroidOptionsInitializer {
     options.addEventProcessor(new ScreenshotEventProcessor(options, buildInfoProvider));
     options.addEventProcessor(new ViewHierarchyEventProcessor(options));
     options.addEventProcessor(new AnrV2EventProcessor(context, options, buildInfoProvider));
-    options.setTransportGate(new AndroidTransportGate(options));
+    if (options.getTransportGate() instanceof NoOpTransportGate) {
+      options.setTransportGate(new AndroidTransportGate(options));
+    }
 
     // Check if the profiler was already instantiated in the app start.
     // We use the Android profiler, that uses a global start/stop api, so we need to preserve the
     // state of the profiler, and it's only possible retaining the instance.
+    final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    final @Nullable ITransactionProfiler appStartTransactionProfiler;
+    final @Nullable IContinuousProfiler appStartContinuousProfiler;
     try (final @NotNull ISentryLifecycleToken ignored = AppStartMetrics.staticLock.acquire()) {
-      final @Nullable ITransactionProfiler appStartProfiler =
-          AppStartMetrics.getInstance().getAppStartProfiler();
-      if (appStartProfiler != null) {
-        options.setTransactionProfiler(appStartProfiler);
-        AppStartMetrics.getInstance().setAppStartProfiler(null);
-      } else {
-        options.setTransactionProfiler(
-            new AndroidTransactionProfiler(
-                context,
-                options,
-                buildInfoProvider,
-                Objects.requireNonNull(
-                    options.getFrameMetricsCollector(),
-                    "options.getFrameMetricsCollector is required")));
-      }
+      appStartTransactionProfiler = appStartMetrics.getAppStartProfiler();
+      appStartContinuousProfiler = appStartMetrics.getAppStartContinuousProfiler();
+      appStartMetrics.setAppStartProfiler(null);
+      appStartMetrics.setAppStartContinuousProfiler(null);
     }
-    options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
-    options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
+
+    setupProfiler(
+        options,
+        context,
+        buildInfoProvider,
+        appStartTransactionProfiler,
+        appStartContinuousProfiler);
+
+    if (options.getModulesLoader() instanceof NoOpModulesLoader) {
+      options.setModulesLoader(new AssetsModulesLoader(context, options.getLogger()));
+    }
+    if (options.getDebugMetaLoader() instanceof NoOpDebugMetaLoader) {
+      options.setDebugMetaLoader(new AssetsDebugMetaLoader(context, options.getLogger()));
+    }
+    if (options.getVersionDetector() instanceof NoopVersionDetector) {
+      options.setVersionDetector(new DefaultVersionDetector(options));
+    }
 
     final boolean isAndroidXScrollViewAvailable =
         loadClass.isClassAvailable("androidx.core.view.ScrollingView", options);
@@ -215,7 +235,9 @@ final class AndroidOptionsInitializer {
       options.setViewHierarchyExporters(viewHierarchyExporters);
     }
 
-    options.setThreadChecker(AndroidThreadChecker.getInstance());
+    if (options.getThreadChecker() instanceof NoOpThreadChecker) {
+      options.setThreadChecker(AndroidThreadChecker.getInstance());
+    }
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
       options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
@@ -229,7 +251,59 @@ final class AndroidOptionsInitializer {
                     "options.getFrameMetricsCollector is required")));
       }
     }
-    options.setTransactionPerformanceCollector(new DefaultTransactionPerformanceCollector(options));
+    if (options.getCompositePerformanceCollector() instanceof NoOpCompositePerformanceCollector) {
+      options.setCompositePerformanceCollector(new DefaultCompositePerformanceCollector(options));
+    }
+  }
+
+  /** Setup the correct profiler (transaction or continuous) based on the options. */
+  private static void setupProfiler(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull Context context,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final @Nullable ITransactionProfiler appStartTransactionProfiler,
+      final @Nullable IContinuousProfiler appStartContinuousProfiler) {
+    if (options.isProfilingEnabled() || options.getProfilesSampleRate() != null) {
+      options.setContinuousProfiler(NoOpContinuousProfiler.getInstance());
+      // This is a safeguard, but it should never happen, as the app start profiler should be the
+      // continuous one.
+      if (appStartContinuousProfiler != null) {
+        appStartContinuousProfiler.close(true);
+      }
+      if (appStartTransactionProfiler != null) {
+        options.setTransactionProfiler(appStartTransactionProfiler);
+      } else {
+        options.setTransactionProfiler(
+            new AndroidTransactionProfiler(
+                context,
+                options,
+                buildInfoProvider,
+                Objects.requireNonNull(
+                    options.getFrameMetricsCollector(),
+                    "options.getFrameMetricsCollector is required")));
+      }
+    } else {
+      options.setTransactionProfiler(NoOpTransactionProfiler.getInstance());
+      // This is a safeguard, but it should never happen, as the app start profiler should be the
+      // transaction one.
+      if (appStartTransactionProfiler != null) {
+        appStartTransactionProfiler.close();
+      }
+      if (appStartContinuousProfiler != null) {
+        options.setContinuousProfiler(appStartContinuousProfiler);
+      } else {
+        options.setContinuousProfiler(
+            new AndroidContinuousProfiler(
+                buildInfoProvider,
+                Objects.requireNonNull(
+                    options.getFrameMetricsCollector(),
+                    "options.getFrameMetricsCollector is required"),
+                options.getLogger(),
+                options.getProfilingTracesDirPath(),
+                options.getProfilingTracesHz(),
+                options.getExecutorService()));
+      }
+    }
   }
 
   static void installDefaultIntegrations(

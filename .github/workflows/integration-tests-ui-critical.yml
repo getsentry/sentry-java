@@ -36,7 +36,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@aa23778d2dc6f6556fcc7164e99babbd8c3134e4 # pin@v3
+        uses: gradle/actions/setup-gradle@06832c7b30a0129d7fb559bcc6e43d26f6374244 # pin@v3
         with:
           gradle-home-cache-cleanup: true
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
@@ -102,7 +102,7 @@ jobs:
           version: ${{env.MAESTRO_VERSION}}
 
       - name: Run tests
-        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d # pin@v2.33.0
+        uses: reactivecircus/android-emulator-runner@1dcd0090116d15e7c562f8db72807de5e036a4ed # pin@v2.34.0
         with:
           api-level: ${{ matrix.api-level }}
           force-avd-creation: false

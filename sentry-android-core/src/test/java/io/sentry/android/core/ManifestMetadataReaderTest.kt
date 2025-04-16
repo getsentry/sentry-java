@@ -6,6 +6,7 @@ import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.FilterString
 import io.sentry.ILogger
+import io.sentry.ProfileLifecycle
 import io.sentry.SentryLevel
 import io.sentry.SentryReplayOptions
 import org.junit.runner.RunWith
@@ -805,6 +806,98 @@ class ManifestMetadataReaderTest {
 
         // Assert
         assertNull(fixture.options.profilesSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata reads profileSessionSampleRate from metadata`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+        val bundle = bundleOf(ManifestMetadataReader.PROFILE_SESSION_SAMPLE_RATE to expectedSampleRate)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.profileSessionSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata does not override profileSessionSampleRate from options`() {
+        // Arrange
+        val expectedSampleRate = 0.99f
+        fixture.options.profileSessionSampleRate = expectedSampleRate.toDouble()
+        val bundle = bundleOf(ManifestMetadataReader.PROFILE_SESSION_SAMPLE_RATE to 0.1f)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(expectedSampleRate.toDouble(), fixture.options.profileSessionSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata without specifying profileSessionSampleRate, stays null`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertNull(fixture.options.profileSessionSampleRate)
+    }
+
+    @Test
+    fun `applyMetadata without specifying profileLifecycle, stays MANUAL`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(ProfileLifecycle.MANUAL, fixture.options.profileLifecycle)
+    }
+
+    @Test
+    fun `applyMetadata reads profileLifecycle from metadata`() {
+        // Arrange
+        val expectedLifecycle = "trace"
+        val bundle = bundleOf(ManifestMetadataReader.PROFILE_LIFECYCLE to expectedLifecycle)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertEquals(ProfileLifecycle.TRACE, fixture.options.profileLifecycle)
+    }
+
+    @Test
+    fun `applyMetadata without specifying isStartProfilerOnAppStart, stays false`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.isStartProfilerOnAppStart)
+    }
+
+    @Test
+    fun `applyMetadata reads isStartProfilerOnAppStart from metadata`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.PROFILER_START_ON_APP_START to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.isStartProfilerOnAppStart)
     }
 
     @Test

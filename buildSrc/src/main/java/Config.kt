@@ -6,7 +6,7 @@ object Config {
     val kotlinVersion = "1.9.24"
     val kotlinStdLib = "stdlib-jdk8"
 
-    val springBootVersion = "2.7.5"
+    val springBootVersion = "2.7.18"
     val springBoot3Version = "3.4.2"
     val kotlinCompatibleLanguageVersion = "1.6"
 
@@ -121,6 +121,8 @@ object Config {
 
         val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1"
 
+        val coroutinesAndroid = "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1"
+
         val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 
         val reactorCore = "io.projectreactor:reactor-core:3.5.3"
@@ -161,7 +163,7 @@ object Config {
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
         val apolloKotlin4 = "com.apollographql.apollo:apollo-runtime:4.1.1"
 
-        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.8.1"
+        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.8.3"
 
         object OpenTelemetry {
             val otelVersion = "1.44.1"
@@ -214,6 +216,7 @@ object Config {
         val leakCanaryInstrumentation = "com.squareup.leakcanary:leakcanary-android-instrumentation:2.14"
         val composeUiTestJunit4 = "androidx.compose.ui:ui-test-junit4:1.6.8"
         val okio = "com.squareup.okio:okio:1.13.0"
+        val coroutinesTest = "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.1"
     }
 
     object QualityPlugins {
@@ -251,12 +254,21 @@ object Config {
         val SENTRY_SPRING_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring"
         val SENTRY_SPRING_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring.jakarta"
         val SENTRY_SPRING_BOOT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot"
+        val SENTRY_SPRING_BOOT_STARTER_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot-starter"
         val SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot.jakarta"
+        val SENTRY_SPRING_BOOT_STARTER_JAKARTA_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.spring-boot-starter.jakarta"
+        val SENTRY_OPENTELEMETRY_BOOTSTRAP_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.bootstrap"
+        val SENTRY_OPENTELEMETRY_CORE_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.core"
         val SENTRY_OPENTELEMETRY_AGENT_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.agent"
+        val SENTRY_OPENTELEMETRY_AGENTLESS_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.agentless"
+        val SENTRY_OPENTELEMETRY_AGENTLESS_SPRING_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.agentless-spring"
+        val SENTRY_OPENTELEMETRY_AGENTCUSTOMIZATION_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.opentelemetry.agentcustomization"
+        val SENTRY_OPENFEIGN_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.openfeign"
         val SENTRY_APOLLO3_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo3"
         val SENTRY_APOLLO4_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo4"
         val SENTRY_APOLLO_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo"
         val SENTRY_GRAPHQL_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql"
+        val SENTRY_GRAPHQL_CORE_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql-core"
         val SENTRY_GRAPHQL22_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql22"
         val SENTRY_QUARTZ_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.quartz"
         val SENTRY_JDBC_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.jdbc"
@@ -265,6 +277,7 @@ object Config {
         val SENTRY_COMPOSE_HELPER_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.compose.helper"
         val SENTRY_OKHTTP_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.okhttp"
         val SENTRY_REACTOR_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.reactor"
+        val SENTRY_KOTLIN_EXTENSIONS_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.kotlin-extensions"
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val versionNameProp = "versionName"

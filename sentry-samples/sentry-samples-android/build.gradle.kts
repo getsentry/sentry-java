@@ -126,7 +126,6 @@ dependencies {
     implementation(projects.sentryAndroidFragment)
     implementation(projects.sentryAndroidTimber)
     implementation(projects.sentryCompose)
-    implementation(projects.sentryComposeHelper)
     implementation(projects.sentryOkhttp)
     implementation(Config.Libs.fragment)
     implementation(Config.Libs.timber)
@@ -150,6 +149,9 @@ dependencies {
     implementation(Config.Libs.composeMaterial)
     implementation(Config.Libs.composeCoil)
     implementation(Config.Libs.sentryNativeNdk)
+
+    implementation(projects.sentryKotlinExtensions)
+    implementation(Config.Libs.coroutinesAndroid)
 
     debugImplementation(Config.Libs.leakCanary)
 }

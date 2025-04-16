@@ -293,6 +293,7 @@ public final class Sentry {
           .getLogger()
           .log(SentryLevel.INFO, "GlobalHubMode: '%s'", String.valueOf(globalHubModeToUse));
       Sentry.globalHubMode = globalHubModeToUse;
+      initFatalLogger(options);
       final boolean shouldInit =
           InitUtil.shouldInit(globalScope.getOptions(), options, isEnabled());
       if (shouldInit) {
@@ -393,6 +394,12 @@ public final class Sentry {
     }
   }
 
+  private static void initFatalLogger(final @NotNull SentryOptions options) {
+    if (options.getFatalLogger() instanceof NoOpLogger) {
+      options.setFatalLogger(new SystemOutLogger());
+    }
+  }
+
   private static void initScopesStorage(SentryOptions options) {
     getScopesStorage().close();
     if (SentryOpenTelemetryMode.OFF == options.getOpenTelemetryMode()) {
@@ -416,10 +423,12 @@ public final class Sentry {
               try {
                 // We always delete the config file for app start profiling
                 FileUtils.deleteRecursively(appStartProfilingConfigFile);
-                if (!options.isEnableAppStartProfiling()) {
+                if (!options.isEnableAppStartProfiling() && !options.isStartProfilerOnAppStart()) {
                   return;
                 }
-                if (!options.isTracingEnabled()) {
+                // isStartProfilerOnAppStart doesn't need tracing, as it can be started/stopped
+                // manually
+                if (!options.isStartProfilerOnAppStart() && !options.isTracingEnabled()) {
                   options
                       .getLogger()
                       .log(
@@ -428,8 +437,13 @@ public final class Sentry {
                   return;
                 }
                 if (appStartProfilingConfigFile.createNewFile()) {
+                  // If old app start profiling is false, it means the transaction will not be
+                  // sampled, but we create the file anyway to allow continuous profiling on app
+                  // start
                   final @NotNull TracesSamplingDecision appStartSamplingDecision =
-                      sampleAppStartProfiling(options);
+                      options.isEnableAppStartProfiling()
+                          ? sampleAppStartProfiling(options)
+                          : new TracesSamplingDecision(false);
                   final @NotNull SentryAppStartProfilingOptions appStartProfilingOptions =
                       new SentryAppStartProfilingOptions(options, appStartSamplingDecision);
                   try (final OutputStream outputStream =
@@ -567,7 +581,8 @@ public final class Sentry {
     }
 
     final String profilingTracesDirPath = options.getProfilingTracesDirPath();
-    if (options.isProfilingEnabled() && profilingTracesDirPath != null) {
+    if ((options.isProfilingEnabled() || options.isContinuousProfilingEnabled())
+        && profilingTracesDirPath != null) {
 
       final File profilingTracesDir = new File(profilingTracesDirPath);
       profilingTracesDir.mkdirs();
@@ -1053,7 +1068,7 @@ public final class Sentry {
   }
 
   /**
-   * Flushes events queued up to the current Scopes. Not implemented yet.
+   * Flushes events queued up to the current Scopes.
    *
    * @param timeoutMillis time in milliseconds
    */
@@ -1140,6 +1155,18 @@ public final class Sentry {
       final @NotNull TransactionContext transactionContext,
       final @NotNull TransactionOptions transactionOptions) {
     return getCurrentScopes().startTransaction(transactionContext, transactionOptions);
+  }
+
+  /** Starts the continuous profiler, if enabled. */
+  @ApiStatus.Experimental
+  public static void startProfiler() {
+    getCurrentScopes().startProfiler();
+  }
+
+  /** Stops the continuous profiler, if enabled. */
+  @ApiStatus.Experimental
+  public static void stopProfiler() {
+    getCurrentScopes().stopProfiler();
   }
 
   /**
