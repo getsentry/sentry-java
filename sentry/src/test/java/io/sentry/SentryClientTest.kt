@@ -294,59 +294,6 @@ class SentryClientTest {
     }
 
     @Test
-    fun `when captureFeedback is called, sentry event contains feedback in contexts and header type`() {
-        var sentEvent: SentryEvent? = null
-        fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
-        val sut = fixture.getSut()
-        val scope = createScope()
-        sut.captureFeedback(Feedback("message"), null, scope)
-
-        val sentFeedback = sentEvent!!.contexts.feedback
-        assertNotNull(sentFeedback)
-        assertEquals("message", sentFeedback.message)
-        assertNull(sentFeedback.replayId)
-        assertNull(sentFeedback.url)
-
-        verify(fixture.transport).send(
-            check {
-                assertEquals(SentryItemType.Feedback, it.items.first().header.type)
-            },
-            anyOrNull()
-        )
-    }
-
-    @Test
-    fun `when captureFeedback, scope replay id is attached to feedback`() {
-        var sentEvent: SentryEvent? = null
-        fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
-        val replayId = SentryId()
-        val sut = fixture.getSut()
-        val scope = createScope()
-        scope.replayId = replayId
-        sut.captureFeedback(Feedback("message"), null, scope)
-
-        val sentFeedback = sentEvent!!.contexts.feedback
-        assertNotNull(sentFeedback)
-        assertEquals(replayId.toString(), sentFeedback.replayId?.toString())
-        assertNull(sentFeedback.url)
-    }
-
-    @Test
-    fun `when captureFeedback, screen is attached to feedback as url`() {
-        var sentEvent: SentryEvent? = null
-        fixture.sentryOptions.setBeforeSend { e, _ -> sentEvent = e; e }
-        val sut = fixture.getSut()
-        val scope = createScope()
-        scope.screen = "screen"
-        sut.captureFeedback(Feedback("message"), null, scope)
-
-        val sentFeedback = sentEvent!!.contexts.feedback
-        assertNotNull(sentFeedback)
-        assertEquals("screen", sentFeedback.url)
-        assertNull(sentFeedback.replayId)
-    }
-
-    @Test
     fun `when event has release, value from options not applied`() {
         val event = SentryEvent()
         val expected = "original"
@@ -2804,6 +2751,8 @@ class SentryClientTest {
         verify(fixture.transport).send(anyOrNull(), anyOrNull())
     }
 
+    //region Replay
+
     @Test
     fun `when captureReplayEvent, envelope is sent`() {
         val sut = fixture.getSut()
@@ -3043,6 +2992,194 @@ class SentryClientTest {
             )
         )
     }
+
+    //endregion
+
+    //region Feedback
+
+    @Test
+    fun `when captureFeedback is called, sentry event contains feedback in contexts and header type`() {
+        var sentEvent: SentryEvent? = null
+        fixture.sentryOptions.setBeforeSendFeedback { e, _ -> sentEvent = e; e }
+        val sut = fixture.getSut()
+        val scope = createScope()
+        sut.captureFeedback(Feedback("message"), null, scope)
+
+        val sentFeedback = sentEvent!!.contexts.feedback
+        assertNotNull(sentFeedback)
+        assertEquals("message", sentFeedback.message)
+        assertNull(sentFeedback.replayId)
+        assertNull(sentFeedback.url)
+
+        verify(fixture.transport).send(
+            check {
+                assertEquals(SentryItemType.Feedback, it.items.first().header.type)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `when captureFeedback, scope data is attached to feedback`() {
+        var sentEvent: SentryEvent? = null
+        fixture.sentryOptions.setBeforeSendFeedback { e, _ -> sentEvent = e; e }
+        val sut = fixture.getSut()
+        val scope = createScope()
+        val scopeReplayId = SentryId()
+        scope.contexts.setTrace(SpanContext("test"))
+        scope.setContexts("context-key", "context-value")
+        scope.screen = "screen"
+        scope.replayId = scopeReplayId
+        sut.captureFeedback(Feedback("message"), null, scope)
+
+        val sentFeedback = sentEvent!!.contexts.feedback
+        assertNotNull(sentFeedback)
+        // User, tags and contexts are applied to the feedback
+        assertEquals(scope.user, sentEvent!!.user)
+        assertEquals("tags", sentEvent!!.tags!!["tags"])
+        assertEquals(
+            scope.contexts.trace!!.traceId.toString(),
+            sentEvent!!.contexts.trace!!.traceId.toString()
+        )
+        assertEquals(mapOf("value" to "context-value"), sentEvent!!.contexts["context-key"])
+        // currently running replay id set in scope is applied to feedback
+        assertEquals(scopeReplayId, sentFeedback.replayId)
+        // screen set to scope is applied as url
+        assertEquals("screen", sentFeedback.url)
+        // extras and breadcrumbs are not applied to feedback
+        assertNull(sentEvent!!.extras)
+        assertNull(sentEvent!!.breadcrumbs)
+    }
+
+    @Test
+    fun `when captureFeedback, replay controller is stopped if no replay id is provided`() {
+        var sentEvent: SentryEvent? = null
+        fixture.sentryOptions.setBeforeSendFeedback { e, _ -> sentEvent = e; e }
+        val replayController = mock<ReplayController>()
+        val replayId = SentryId()
+        val scope = createScope()
+        whenever(replayController.captureReplay(any())).thenAnswer {
+            run { scope.replayId = replayId }
+        }
+        val sut = fixture.getSut { it.setReplayController(replayController) }
+        // When there is no replay id in the feedback
+        sut.captureFeedback(Feedback("message"), null, scope)
+
+        // Then the replay controller captures the replay
+        verify(replayController).captureReplay(eq(false))
+
+        val sentFeedback = sentEvent!!.contexts.feedback
+        assertNotNull(sentFeedback)
+        // And the replay id is set to the one from the scope (coming from the replay controller)
+        assertEquals(replayId, sentFeedback.replayId)
+    }
+
+    @Test
+    fun `when captureFeedback, replay controller is not stopped if replay id is provided`() {
+        var sentEvent: SentryEvent? = null
+        fixture.sentryOptions.setBeforeSendFeedback { e, _ -> sentEvent = e; e }
+        val replayController = mock<ReplayController>()
+        val replayId = SentryId()
+        val scope = createScope()
+        whenever(replayController.captureReplay(any())).thenAnswer {
+            run { scope.replayId = replayId }
+        }
+        val sut = fixture.getSut { it.setReplayController(replayController) }
+        // When there is replay id in the feedback
+        val feedback = Feedback("message")
+        feedback.setReplayId(SentryId())
+        sut.captureFeedback(feedback, null, scope)
+
+        // Then the replay controller doesn't capture the replay
+        verify(replayController, never()).captureReplay(any())
+
+        val sentFeedback = sentEvent!!.contexts.feedback
+        assertNotNull(sentFeedback)
+        // And the replay id is set to the one from the scope (coming from the replay controller)
+        assertNotNull(sentFeedback.replayId)
+        assertNotEquals(replayId, sentFeedback.replayId)
+    }
+
+    @Test
+    fun `when beforeSendFeedback is set, callback is invoked`() {
+        var invoked = false
+        fixture.sentryOptions.setBeforeSendFeedback { event: SentryEvent, _: Hint -> invoked = true; event }
+        fixture.getSut().captureFeedback(Feedback("message"), null, createScope())
+        assertTrue(invoked)
+    }
+
+    @Test
+    fun `when beforeSendFeedback returns null, feedback is dropped`() {
+        fixture.sentryOptions.setBeforeSendFeedback { event: SentryEvent, _: Hint -> null }
+        fixture.getSut().captureFeedback(Feedback("message"), null, createScope())
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(
+                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 1)
+            )
+        )
+    }
+
+    @Test
+    fun `when beforeSendFeedback returns new instance, new instance is sent`() {
+        val expected = SentryEvent().apply { contexts.setFeedback(Feedback("expected")) }
+        fixture.sentryOptions.setBeforeSendFeedback { _, _ -> expected }
+
+        fixture.getSut().captureFeedback(Feedback("sent"), null, Scope(fixture.sentryOptions))
+
+        verify(fixture.transport).send(
+            check {
+                val event = getEventFromData(it.items.first().data)
+                assertEquals("expected", event.contexts.feedback!!.message)
+            },
+            anyOrNull()
+        )
+        verifyNoMoreInteractions(fixture.transport)
+    }
+
+    @Test
+    fun `when beforeSendFeedback throws an exception, feedback is dropped`() {
+        val exception = Exception("test")
+        fixture.sentryOptions.setBeforeSendFeedback { _, _ -> throw exception }
+        val id = fixture.getSut().captureFeedback(Feedback("message"), null, Scope(fixture.sentryOptions))
+        assertEquals(SentryId.EMPTY_ID, id)
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(
+                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 1)
+            )
+        )
+    }
+
+    @Test
+    fun `when feedback is dropped, captures client report with datacategory feedback`() {
+        fixture.sentryOptions.addEventProcessor(DropEverythingEventProcessor())
+        val sut = fixture.getSut()
+        sut.captureFeedback(Feedback("message"), null, createScope())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Feedback.category, 1))
+        )
+    }
+
+    @Test
+    fun `captureFeedback does not capture replay when backfilled`() {
+        val replayController = mock<ReplayController>()
+        val sut = fixture.getSut { it.setReplayController(replayController) }
+
+        sut.captureFeedback(
+            Feedback("message"),
+            HintUtils.createWithTypeCheckHint(BackfillableHint()),
+            createScope()
+        )
+        verify(replayController, never()).captureReplay(any())
+    }
+
+    //endregion
 
     private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): IScope {
         val scope = createScope(fixture.sentryOptions)

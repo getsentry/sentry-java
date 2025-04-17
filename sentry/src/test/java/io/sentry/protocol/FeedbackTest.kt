@@ -1,5 +1,7 @@
 package io.sentry.protocol
 
+import io.sentry.ILogger
+import org.mockito.kotlin.mock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -7,11 +9,23 @@ import kotlin.test.assertNotSame
 
 class FeedbackTest {
 
+    class Fixture {
+        val logger = mock<ILogger>()
+
+        fun getSut() = Feedback("message").apply {
+            name = "name"
+            contactEmail = "contact@email.com"
+            url = "url"
+            setReplayId(SentryId("00000000-0000-0000-0000-000000000001"))
+            setAssociatedEventId(SentryId("00000000-0000-0000-0000-000000000002"))
+            unknown = mapOf(Pair("unknown", "unknown"))
+        }
+    }
+    private val fixture = Fixture()
+
     @Test
     fun `copying feedback wont have the same references`() {
-        val feedback = Feedback("message")
-        val unknown = mapOf(Pair("unknown", "unknown"))
-        feedback.setUnknown(unknown)
+        val feedback = fixture.getSut()
 
         val clone = Feedback(feedback)
 
@@ -22,13 +36,7 @@ class FeedbackTest {
 
     @Test
     fun `copying feedback will have the same values`() {
-        val feedback = Feedback("message")
-        feedback.name = "name"
-        feedback.contactEmail = "contact@email.com"
-        feedback.url = "url"
-        feedback.setReplayId(SentryId("00000000-0000-0000-0000-000000000001"))
-        feedback.setAssociatedEventId(SentryId("00000000-0000-0000-0000-000000000002"))
-        feedback.unknown = mapOf(Pair("unknown", "unknown"))
+        val feedback = fixture.getSut()
 
         val clone = Feedback(feedback)
         assertEquals("message", clone.message)

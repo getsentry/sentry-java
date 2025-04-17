@@ -972,9 +972,19 @@ class SentryTest {
 
         Sentry.captureFeedback(feedback)
         Sentry.captureFeedback(feedback, hint)
+        Sentry.captureFeedback(feedback, hint) { it.setTag("testKey", "testValue") }
 
         verify(client).captureFeedback(eq(feedback), eq(null), anyOrNull())
-        verify(client).captureFeedback(eq(feedback), eq(hint), anyOrNull())
+        verify(client).captureFeedback(
+            eq(feedback),
+            eq(hint),
+            check { assertFalse(it.tags.containsKey("testKey")) }
+        )
+        verify(client).captureFeedback(
+            eq(feedback),
+            eq(hint),
+            check { assertEquals("testValue", it.tags["testKey"]) }
+        )
     }
 
     @Test
