@@ -67,7 +67,12 @@ internal class SessionCaptureStrategy(
     }
 
     override fun captureReplay(isTerminating: Boolean, onSegmentSent: (Date) -> Unit) {
-        options.logger.log(DEBUG, "Replay is already running in 'session' mode, not capturing for event")
+        if (options.sessionReplay.isDebug) {
+            options.logger.log(
+                DEBUG,
+                "Replay is already running in 'session' mode, not capturing for event"
+            )
+        }
         this.isTerminating.set(isTerminating)
     }
 
