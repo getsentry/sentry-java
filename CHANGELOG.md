@@ -15,6 +15,12 @@
 - Fix unregister `SystemEventsBroadcastReceiver` when entering background ([#4338](https://github.com/getsentry/sentry-java/pull/4338))
   - This should reduce ANRs seen with this class in the stack trace for Android 14 and above
 
+### Dependencies
+
+- Bump Native SDK from v0.8.3 to v0.8.4 ([#4343](https://github.com/getsentry/sentry-java/pull/4343))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#084)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.3...0.8.4)
+
 ## 8.8.0
 
 ### Features
