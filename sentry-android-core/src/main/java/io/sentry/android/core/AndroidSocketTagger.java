@@ -7,6 +7,9 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 public final class AndroidSocketTagger implements ISocketTagger {
 
+  // just a random number to tag outgoing traffic from the Sentry SDK
+  private static final int SENTRY_TAG = 0xF001;
+
   private static final AndroidSocketTagger instance = new AndroidSocketTagger();
 
   private AndroidSocketTagger() {}
@@ -17,7 +20,7 @@ public final class AndroidSocketTagger implements ISocketTagger {
 
   @Override
   public void tagSockets() {
-    TrafficStats.setThreadStatsTag(1);
+    TrafficStats.setThreadStatsTag(SENTRY_TAG);
   }
 
   @Override
