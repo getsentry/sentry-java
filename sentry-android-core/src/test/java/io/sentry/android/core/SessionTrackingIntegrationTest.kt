@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.Lifecycle.Event.ON_START
 import androidx.lifecycle.Lifecycle.Event.ON_STOP
 import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.CheckIn
@@ -116,7 +117,7 @@ class SessionTrackingIntegrationTest {
     }
 
     private fun setupLifecycle(options: SentryOptions): LifecycleRegistry {
-        val lifecycle = LifecycleRegistry(mock())
+        val lifecycle = LifecycleRegistry(ProcessLifecycleOwner.get())
         val lifecycleWatcher = (
             options.integrations.find {
                 it is AppLifecycleIntegration
