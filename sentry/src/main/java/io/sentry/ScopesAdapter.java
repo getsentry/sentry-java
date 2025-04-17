@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -44,6 +45,22 @@ public final class ScopesAdapter implements IScopes {
   public @NotNull SentryId captureMessage(
       @NotNull String message, @NotNull SentryLevel level, @NotNull ScopeCallback callback) {
     return Sentry.captureMessage(message, level, callback);
+  }
+
+  @Override
+  public @NotNull SentryId captureFeedback(@NotNull Feedback feedback) {
+    return Sentry.captureFeedback(feedback);
+  }
+
+  @Override
+  public @NotNull SentryId captureFeedback(@NotNull Feedback feedback, @Nullable Hint hint) {
+    return Sentry.captureFeedback(feedback, hint);
+  }
+
+  @Override
+  public @NotNull SentryId captureFeedback(
+      @NotNull Feedback feedback, @Nullable Hint hint, @Nullable ScopeCallback callback) {
+    return Sentry.captureFeedback(feedback, hint, callback);
   }
 
   @ApiStatus.Internal

@@ -4,6 +4,8 @@
 
 ### Features
 
+- Add new User Feedback API ([#4286](https://github.com/getsentry/sentry-java/pull/4286))
+  - We now introduced Sentry.captureFeedback, which supersedes Sentry.captureUserFeedback
 - Add `SentryWrapper.wrapRunnable` to wrap `Runnable` for use with Sentry ([#4332](https://github.com/getsentry/sentry-java/pull/4332))
 
 ### Fixes
