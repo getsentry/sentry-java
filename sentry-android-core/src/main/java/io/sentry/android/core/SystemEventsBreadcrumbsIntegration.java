@@ -183,13 +183,15 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
   }
 
   private void unregisterReceiver() {
+    final @Nullable SystemEventsBroadcastReceiver receiverRef;
     try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
       isStopped = true;
+      receiverRef = receiver;
+      receiver = null;
     }
 
-    if (receiver != null) {
-      context.unregisterReceiver(receiver);
-      receiver = null;
+    if (receiverRef != null) {
+      context.unregisterReceiver(receiverRef);
     }
   }
 

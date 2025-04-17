@@ -25,7 +25,6 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.transport.RateLimiter
 import org.junit.runner.RunWith
-import org.mockito.kotlin.mock
 import org.robolectric.annotation.Config
 import java.util.LinkedList
 import kotlin.test.BeforeTest
