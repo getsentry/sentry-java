@@ -109,6 +109,8 @@ final class ManifestMetadataReader {
 
   static final String REPLAYS_MASK_ALL_IMAGES = "io.sentry.session-replay.mask-all-images";
 
+  static final String REPLAYS_DEBUG = "io.sentry.session-replay.debug";
+
   static final String FORCE_INIT = "io.sentry.force-init";
 
   static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
@@ -451,6 +453,8 @@ final class ManifestMetadataReader {
         options
             .getSessionReplay()
             .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
+
+        options.getSessionReplay().setDebug(readBool(metadata, logger, REPLAYS_DEBUG, false));
 
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
 

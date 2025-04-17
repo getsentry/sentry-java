@@ -181,9 +181,13 @@ internal class SimpleVideoEncoder(
      * Borrows heavily from https://bigflake.com/mediacodec/EncodeAndMuxTest.java.txt
      */
     private fun drainCodec(endOfStream: Boolean) {
-        options.logger.log(DEBUG, "[Encoder]: drainCodec($endOfStream)")
+        if (options.sessionReplay.isDebug) {
+            options.logger.log(DEBUG, "[Encoder]: drainCodec($endOfStream)")
+        }
         if (endOfStream) {
-            options.logger.log(DEBUG, "[Encoder]: sending EOS to encoder")
+            if (options.sessionReplay.isDebug) {
+                options.logger.log(DEBUG, "[Encoder]: sending EOS to encoder")
+            }
             mediaCodec.signalEndOfInputStream()
         }
         var encoderOutputBuffers: Array<ByteBuffer?>? = mediaCodec.outputBuffers
@@ -193,7 +197,7 @@ internal class SimpleVideoEncoder(
                 // no output available yet
                 if (!endOfStream) {
                     break // out of while
-                } else {
+                } else if (options.sessionReplay.isDebug) {
                     options.logger.log(DEBUG, "[Encoder]: no output available, spinning to await EOS")
                 }
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
@@ -205,12 +209,16 @@ internal class SimpleVideoEncoder(
                     throw RuntimeException("format changed twice")
                 }
                 val newFormat: MediaFormat = mediaCodec.outputFormat
-                options.logger.log(DEBUG, "[Encoder]: encoder output format changed: $newFormat")
+                if (options.sessionReplay.isDebug) {
+                    options.logger.log(DEBUG, "[Encoder]: encoder output format changed: $newFormat")
+                }
 
                 // now that we have the Magic Goodies, start the muxer
                 frameMuxer.start(newFormat)
             } else if (encoderStatus < 0) {
-                options.logger.log(DEBUG, "[Encoder]: unexpected result from encoder.dequeueOutputBuffer: $encoderStatus")
+                if (options.sessionReplay.isDebug) {
+                    options.logger.log(DEBUG, "[Encoder]: unexpected result from encoder.dequeueOutputBuffer: $encoderStatus")
+                }
                 // let's ignore it
             } else {
                 val encodedData = encoderOutputBuffers?.get(encoderStatus)
@@ -218,7 +226,9 @@ internal class SimpleVideoEncoder(
                 if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0) {
                     // The codec config data was pulled out and fed to the muxer when we got
                     // the INFO_OUTPUT_FORMAT_CHANGED status.  Ignore it.
-                    options.logger.log(DEBUG, "[Encoder]: ignoring BUFFER_FLAG_CODEC_CONFIG")
+                    if (options.sessionReplay.isDebug) {
+                        options.logger.log(DEBUG, "[Encoder]: ignoring BUFFER_FLAG_CODEC_CONFIG")
+                    }
                     bufferInfo.size = 0
                 }
                 if (bufferInfo.size != 0) {
@@ -226,14 +236,21 @@ internal class SimpleVideoEncoder(
                         throw RuntimeException("muxer hasn't started")
                     }
                     frameMuxer.muxVideoFrame(encodedData, bufferInfo)
-                    options.logger.log(DEBUG, "[Encoder]: sent ${bufferInfo.size} bytes to muxer")
+                    if (options.sessionReplay.isDebug) {
+                        options.logger.log(DEBUG, "[Encoder]: sent ${bufferInfo.size} bytes to muxer")
+                    }
                 }
                 mediaCodec.releaseOutputBuffer(encoderStatus, false)
                 if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
-                    if (!endOfStream) {
-                        options.logger.log(DEBUG, "[Encoder]: reached end of stream unexpectedly")
-                    } else {
-                        options.logger.log(DEBUG, "[Encoder]: end of stream reached")
+                    if (options.sessionReplay.isDebug) {
+                        if (!endOfStream) {
+                            options.logger.log(
+                                DEBUG,
+                                "[Encoder]: reached end of stream unexpectedly"
+                            )
+                        } else {
+                            options.logger.log(DEBUG, "[Encoder]: end of stream reached")
+                        }
                     }
                     break // out of while
                 }

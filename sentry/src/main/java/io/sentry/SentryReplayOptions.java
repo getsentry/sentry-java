@@ -130,6 +130,12 @@ public final class SentryReplayOptions {
    */
   private @Nullable SdkVersion sdkVersion;
 
+  /**
+   * Turns debug mode on or off for Session Replay-specific code paths. If debug is enabled SDK will
+   * attempt to print out useful debugging information if something goes wrong. Default is disabled.
+   */
+  private boolean debug = false;
+
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
       setMaskAllText(true);
@@ -311,5 +317,23 @@ public final class SentryReplayOptions {
   @ApiStatus.Internal
   public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
     this.sdkVersion = sdkVersion;
+  }
+
+  /**
+   * Check if debug mode is ON Default is OFF
+   *
+   * @return true if ON or false otherwise
+   */
+  public boolean isDebug() {
+    return debug;
+  }
+
+  /**
+   * Sets the debug mode to ON or OFF Default is OFF
+   *
+   * @param debug true if ON or false otherwise
+   */
+  public void setDebug(final boolean debug) {
+    this.debug = debug;
   }
 }

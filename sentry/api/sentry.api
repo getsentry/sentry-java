@@ -1202,6 +1202,7 @@ public final class io/sentry/JsonObjectWriter : io/sentry/ObjectWriter {
 	public synthetic fun endArray ()Lio/sentry/ObjectWriter;
 	public fun endObject ()Lio/sentry/JsonObjectWriter;
 	public synthetic fun endObject ()Lio/sentry/ObjectWriter;
+	public fun getIndent ()Ljava/lang/String;
 	public fun jsonValue (Ljava/lang/String;)Lio/sentry/ObjectWriter;
 	public fun name (Ljava/lang/String;)Lio/sentry/JsonObjectWriter;
 	public synthetic fun name (Ljava/lang/String;)Lio/sentry/ObjectWriter;
@@ -1865,9 +1866,11 @@ public abstract interface class io/sentry/ObjectWriter {
 	public abstract fun beginObject ()Lio/sentry/ObjectWriter;
 	public abstract fun endArray ()Lio/sentry/ObjectWriter;
 	public abstract fun endObject ()Lio/sentry/ObjectWriter;
+	public abstract fun getIndent ()Ljava/lang/String;
 	public abstract fun jsonValue (Ljava/lang/String;)Lio/sentry/ObjectWriter;
 	public abstract fun name (Ljava/lang/String;)Lio/sentry/ObjectWriter;
 	public abstract fun nullValue ()Lio/sentry/ObjectWriter;
+	public abstract fun setIndent (Ljava/lang/String;)V
 	public abstract fun setLenient (Z)V
 	public abstract fun value (D)Lio/sentry/ObjectWriter;
 	public abstract fun value (J)Lio/sentry/ObjectWriter;
@@ -3433,9 +3436,11 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getSessionSegmentDuration ()J
 	public fun getUnmaskViewClasses ()Ljava/util/Set;
 	public fun getUnmaskViewContainerClass ()Ljava/lang/String;
+	public fun isDebug ()Z
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
 	public fun isTrackOrientationChange ()Z
+	public fun setDebug (Z)V
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
 	public fun setMaskViewContainerClass (Ljava/lang/String;)V
@@ -6535,11 +6540,13 @@ public final class io/sentry/util/MapObjectWriter : io/sentry/ObjectWriter {
 	public fun endArray ()Lio/sentry/util/MapObjectWriter;
 	public synthetic fun endObject ()Lio/sentry/ObjectWriter;
 	public fun endObject ()Lio/sentry/util/MapObjectWriter;
+	public fun getIndent ()Ljava/lang/String;
 	public fun jsonValue (Ljava/lang/String;)Lio/sentry/ObjectWriter;
 	public synthetic fun name (Ljava/lang/String;)Lio/sentry/ObjectWriter;
 	public fun name (Ljava/lang/String;)Lio/sentry/util/MapObjectWriter;
 	public synthetic fun nullValue ()Lio/sentry/ObjectWriter;
 	public fun nullValue ()Lio/sentry/util/MapObjectWriter;
+	public fun setIndent (Ljava/lang/String;)V
 	public fun setLenient (Z)V
 	public synthetic fun value (D)Lio/sentry/ObjectWriter;
 	public fun value (D)Lio/sentry/util/MapObjectWriter;
@@ -6783,6 +6790,7 @@ public class io/sentry/vendor/gson/stream/JsonWriter : java/io/Closeable, java/i
 	public fun endArray ()Lio/sentry/vendor/gson/stream/JsonWriter;
 	public fun endObject ()Lio/sentry/vendor/gson/stream/JsonWriter;
 	public fun flush ()V
+	public fun getIndent ()Ljava/lang/String;
 	public final fun getSerializeNulls ()Z
 	public final fun isHtmlSafe ()Z
 	public fun isLenient ()Z

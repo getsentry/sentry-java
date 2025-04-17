@@ -72,13 +72,13 @@ internal class ScreenshotRecorder(
 
     fun capture() {
         if (!isCapturing.get()) {
-            options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
+            if (options.sessionReplay.isDebug) {
+                options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
+            }
             return
         }
 
         if (!contentChanged.get() && lastCaptureSuccessful.get()) {
-            options.logger.log(DEBUG, "Content hasn't changed, repeating last known frame")
-
             screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
             return
         }
