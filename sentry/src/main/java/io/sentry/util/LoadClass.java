@@ -23,7 +23,7 @@ public class LoadClass {
       return Class.forName(clazz);
     } catch (ClassNotFoundException e) {
       if (logger != null) {
-        logger.log(SentryLevel.DEBUG, "Class not available:" + clazz, e);
+        logger.log(SentryLevel.INFO, "Class not available: " + clazz);
       }
     } catch (UnsatisfiedLinkError e) {
       if (logger != null) {
