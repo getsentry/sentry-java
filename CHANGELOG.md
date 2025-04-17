@@ -10,6 +10,8 @@
 
 - Fix TTFD measurement when API called too early ([#4297](https://github.com/getsentry/sentry-java/pull/4297))
 - Reduce debug logs verbosity ([#4341](https://github.com/getsentry/sentry-java/pull/4341))
+- Fix unregister `SystemEventsBroadcastReceiver` when entering background ([#4338](https://github.com/getsentry/sentry-java/pull/4338))
+  - This should reduce ANRs seen with this class in the stack trace for Android 14 and above
 
 ## 8.8.0
 
