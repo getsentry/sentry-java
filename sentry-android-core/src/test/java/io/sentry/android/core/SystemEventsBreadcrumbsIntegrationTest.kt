@@ -3,6 +3,8 @@ package io.sentry.android.core
 import android.content.Context
 import android.content.Intent
 import android.os.BatteryManager
+import android.os.Build
+import android.os.Looper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.IHub
@@ -16,9 +18,13 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
+import java.util.concurrent.CountDownLatch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -26,19 +32,30 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
+@Config(sdk = [Build.VERSION_CODES.TIRAMISU])
 class SystemEventsBreadcrumbsIntegrationTest {
 
     private class Fixture {
         val context = mock<Context>()
         var options = SentryAndroidOptions()
         val hub = mock<IHub>()
+        lateinit var handler: MainLooperHandler
 
-        fun getSut(enableSystemEventBreadcrumbs: Boolean = true, executorService: ISentryExecutorService = ImmediateExecutorService()): SystemEventsBreadcrumbsIntegration {
+        fun getSut(
+            enableSystemEventBreadcrumbs: Boolean = true,
+            executorService: ISentryExecutorService = ImmediateExecutorService(),
+            mockHandler: Boolean = true
+        ): SystemEventsBreadcrumbsIntegration {
+            handler = if (mockHandler) mock() else MainLooperHandler()
             options = SentryAndroidOptions().apply {
                 isEnableSystemEventBreadcrumbs = enableSystemEventBreadcrumbs
                 this.executorService = executorService
             }
-            return SystemEventsBreadcrumbsIntegration(context)
+            return SystemEventsBreadcrumbsIntegration(
+                context,
+                SystemEventsBreadcrumbsIntegration.getDefaultActions().toTypedArray(),
+                handler
+            )
         }
     }
 
@@ -50,7 +67,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
         sut.register(fixture.hub, fixture.options)
 
-        verify(fixture.context).registerReceiver(any(), any())
+        verify(fixture.context).registerReceiver(any(), any(), any())
         assertNotNull(sut.receiver)
     }
 
@@ -69,7 +86,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
 
         sut.register(fixture.hub, fixture.options)
 
-        verify(fixture.context, never()).registerReceiver(any(), any())
+        verify(fixture.context, never()).registerReceiver(any(), any(), any())
         assertNull(sut.receiver)
     }
 
@@ -176,7 +193,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     @Test
     fun `Do not crash if registerReceiver throws exception`() {
         val sut = fixture.getSut()
-        whenever(fixture.context.registerReceiver(any(), any())).thenThrow(SecurityException())
+        whenever(fixture.context.registerReceiver(any(), any(), any())).thenThrow(SecurityException())
 
         sut.register(fixture.hub, fixture.options)
 
@@ -187,7 +204,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     fun `when str has full package, return last string after dot`() {
         val sut = fixture.getSut()
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         assertEquals("DEVICE_IDLE_MODE_CHANGED", sut.receiver?.getStringAfterDotFast("io.sentry.DEVICE_IDLE_MODE_CHANGED"))
         assertEquals("POWER_SAVE_MODE_CHANGED", sut.receiver?.getStringAfterDotFast("io.sentry.POWER_SAVE_MODE_CHANGED"))
@@ -197,7 +214,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     fun `when str is null, return null`() {
         val sut = fixture.getSut()
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         assertNull(sut.receiver?.getStringAfterDotFast(null))
     }
@@ -206,7 +223,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     fun `when str is empty, return the original str`() {
         val sut = fixture.getSut()
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         assertEquals("", sut.receiver?.getStringAfterDotFast(""))
     }
@@ -215,7 +232,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     fun `when str ends with a dot, return empty str`() {
         val sut = fixture.getSut()
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         assertEquals("", sut.receiver?.getStringAfterDotFast("io.sentry."))
     }
@@ -224,8 +241,179 @@ class SystemEventsBreadcrumbsIntegrationTest {
     fun `when str has no dots, return the original str`() {
         val sut = fixture.getSut()
 
-        sut.register(fixture.scopes, fixture.options)
+        sut.register(fixture.hub, fixture.options)
 
         assertEquals("iosentry", sut.receiver?.getStringAfterDotFast("iosentry"))
+    }
+
+    @Test
+    fun `When integration is added, lifecycle handler should be started`() {
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+
+        assertNotNull(sut.lifecycleHandler)
+    }
+
+    @Test
+    fun `When system events breadcrumbs are disabled, lifecycle handler should not be started`() {
+        val sut = fixture.getSut()
+        fixture.options.apply {
+            isEnableSystemEventBreadcrumbs = false
+        }
+
+        sut.register(fixture.hub, fixture.options)
+
+        assertNull(sut.lifecycleHandler)
+    }
+
+    @Test
+    fun `When integration is closed, lifecycle handler should be closed`() {
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+
+        assertNotNull(sut.lifecycleHandler)
+
+        sut.close()
+
+        assertNull(sut.lifecycleHandler)
+    }
+
+    @Test
+    fun `When integration is registered from a background thread, post on the main thread`() {
+        val sut = fixture.getSut()
+        val latch = CountDownLatch(1)
+
+        Thread {
+            sut.register(fixture.hub, fixture.options)
+            latch.countDown()
+        }.start()
+
+        latch.await()
+
+        verify(fixture.handler).post(any())
+    }
+
+    @Test
+    fun `When integration is closed from a background thread, post on the main thread`() {
+        val sut = fixture.getSut()
+        val latch = CountDownLatch(1)
+
+        sut.register(fixture.hub, fixture.options)
+
+        assertNotNull(sut.lifecycleHandler)
+
+        Thread {
+            sut.close()
+            latch.countDown()
+        }.start()
+
+        latch.await()
+
+        verify(fixture.handler).post(any())
+    }
+
+    @Test
+    fun `When integration is closed from a background thread, watcher is set to null`() {
+        val sut = fixture.getSut(mockHandler = false)
+        val latch = CountDownLatch(1)
+
+        sut.register(fixture.hub, fixture.options)
+
+        assertNotNull(sut.lifecycleHandler)
+
+        Thread {
+            sut.close()
+            latch.countDown()
+        }.start()
+
+        latch.await()
+
+        // ensure all messages on main looper got processed
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertNull(sut.lifecycleHandler)
+    }
+
+    @Test
+    fun `when enters background unregisters receiver`() {
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+
+        sut.lifecycleHandler!!.onStop(mock())
+
+        verify(fixture.context).unregisterReceiver(any())
+        assertNull(sut.receiver)
+    }
+
+    @Test
+    fun `when enters foreground registers receiver`() {
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+        verify(fixture.context).registerReceiver(any(), any(), any())
+
+        sut.lifecycleHandler!!.onStop(mock())
+        sut.lifecycleHandler!!.onStart(mock())
+
+        verify(fixture.context, times(2)).registerReceiver(any(), any(), any())
+        assertNotNull(sut.receiver)
+    }
+
+    @Test
+    fun `when enters foreground after register does not recreate the receiver`() {
+        val sut = fixture.getSut()
+
+        sut.register(fixture.hub, fixture.options)
+        verify(fixture.context).registerReceiver(any(), any(), any())
+        val receiver = sut.receiver
+
+        sut.lifecycleHandler!!.onStart(mock())
+        assertEquals(receiver, sut.receiver)
+    }
+
+    @Test
+    fun `when goes background right after entering foreground, receiver is not registered`() {
+        val deferredExecutorService = DeferredExecutorService()
+        val sut = fixture.getSut(executorService = deferredExecutorService)
+        sut.register(fixture.hub, fixture.options)
+        deferredExecutorService.runAll()
+        assertNotNull(sut.receiver)
+
+        sut.lifecycleHandler!!.onStop(mock())
+        sut.lifecycleHandler!!.onStart(mock())
+        assertNull(sut.receiver)
+        sut.lifecycleHandler!!.onStop(mock())
+        deferredExecutorService.runAll()
+        assertNull(sut.receiver)
+    }
+
+    @Test
+    fun `when enters foreground right after closing, receiver is not registered`() {
+        val deferredExecutorService = DeferredExecutorService()
+        val latch = CountDownLatch(1)
+
+        val sut = fixture.getSut(executorService = deferredExecutorService, mockHandler = false)
+        sut.register(fixture.hub, fixture.options)
+        deferredExecutorService.runAll()
+        assertNotNull(sut.receiver)
+
+        Thread {
+            sut.close()
+            latch.countDown()
+        }.start()
+
+        latch.await()
+
+        sut.lifecycleHandler!!.onStart(mock())
+        assertNull(sut.receiver)
+        deferredExecutorService.runAll()
+
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertNull(sut.receiver)
+        assertNull(sut.lifecycleHandler)
     }
 }

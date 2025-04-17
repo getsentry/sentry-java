@@ -7,6 +7,8 @@
 - Compress Screenshots on a background thread ([#4295](https://github.com/getsentry/sentry-java/pull/4295))
 - Improve low memory breadcrumb capturing ([#4325](https://github.com/getsentry/sentry-java/pull/4325))
 - Make `SystemEventsBreadcrumbsIntegration` faster ([#4330](https://github.com/getsentry/sentry-java/pull/4330))
+- Fix unregister `SystemEventsBroadcastReceiver` when entering background ([#4338](https://github.com/getsentry/sentry-java/pull/4338))
+    - This should reduce ANRs seen with this class in the stack trace for Android 14 and above
 
 ## 7.22.5
 

@@ -25,6 +25,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import androidx.annotation.NonNull;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.ProcessLifecycleOwner;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IHub;
@@ -32,6 +36,7 @@ import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
+import io.sentry.android.core.internal.util.AndroidMainThreadChecker;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.util.Objects;
 import io.sentry.util.StringUtils;
@@ -49,13 +54,21 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   private final @NotNull Context context;
 
-  @TestOnly @Nullable SystemEventsBroadcastReceiver receiver;
+  @TestOnly @Nullable volatile SystemEventsBroadcastReceiver receiver;
+
+  @TestOnly @Nullable volatile ReceiverLifecycleHandler lifecycleHandler;
+
+  private final @NotNull MainLooperHandler handler;
 
   private @Nullable SentryAndroidOptions options;
 
+  private @Nullable IHub hub;
+
   private final @NotNull String[] actions;
-  private boolean isClosed = false;
-  private final @NotNull Object startLock = new Object();
+  private volatile boolean isClosed = false;
+  private volatile boolean isStopped = false;
+  private volatile IntentFilter filter = null;
+  private final @NotNull Object receiverLock = new Object();
 
   public SystemEventsBreadcrumbsIntegration(final @NotNull Context context) {
     this(context, getDefaultActionsInternal());
@@ -63,8 +76,16 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   private SystemEventsBreadcrumbsIntegration(
       final @NotNull Context context, final @NotNull String[] actions) {
+    this(context, actions, new MainLooperHandler());
+  }
+
+  SystemEventsBreadcrumbsIntegration(
+      final @NotNull Context context,
+      final @NotNull String[] actions,
+      final @NotNull MainLooperHandler handler) {
     this.context = ContextUtils.getApplicationContext(context);
     this.actions = actions;
+    this.handler = handler;
   }
 
   public SystemEventsBreadcrumbsIntegration(
@@ -72,6 +93,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     this.context = ContextUtils.getApplicationContext(context);
     this.actions = new String[actions.size()];
     actions.toArray(this.actions);
+    this.handler = new MainLooperHandler();
   }
 
   @Override
@@ -81,6 +103,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
+    this.hub = hub;
 
     this.options
         .getLogger()
@@ -90,46 +113,170 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
             this.options.isEnableSystemEventBreadcrumbs());
 
     if (this.options.isEnableSystemEventBreadcrumbs()) {
+      addLifecycleObserver(this.options);
+      registerReceiver(this.hub, this.options, /* reportAsNewIntegration = */ true);
+    }
+  }
 
-      try {
-        options
-            .getExecutorService()
-            .submit(
-                () -> {
-                  synchronized (startLock) {
-                    if (!isClosed) {
-                      startSystemEventsReceiver(hub, (SentryAndroidOptions) options);
+  private void registerReceiver(
+      final @NotNull IHub hub,
+      final @NotNull SentryAndroidOptions options,
+      final boolean reportAsNewIntegration) {
+
+    if (!options.isEnableSystemEventBreadcrumbs()) {
+      return;
+    }
+
+    synchronized (receiverLock) {
+      if (isClosed || isStopped || receiver != null) {
+        return;
+      }
+    }
+
+    try {
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                synchronized (receiverLock) {
+                  if (isClosed || isStopped || receiver != null) {
+                    return;
+                  }
+
+                  receiver = new SystemEventsBroadcastReceiver(hub, options);
+                  if (filter == null) {
+                    filter = new IntentFilter();
+                    for (String item : actions) {
+                      filter.addAction(item);
                     }
                   }
-                });
-      } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Failed to start SystemEventsBreadcrumbsIntegration on executor thread.",
-                e);
+                  try {
+                    // registerReceiver can throw SecurityException but it's not documented in the
+                    // official docs
+                    ContextUtils.registerReceiver(context, options, receiver, filter);
+                    if (reportAsNewIntegration) {
+                      options
+                          .getLogger()
+                          .log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
+                      addIntegrationToSdkVersion("SystemEventsBreadcrumbs");
+                    }
+                  } catch (Throwable e) {
+                    options.setEnableSystemEventBreadcrumbs(false);
+                    options
+                        .getLogger()
+                        .log(
+                            SentryLevel.ERROR,
+                            "Failed to initialize SystemEventsBreadcrumbsIntegration.",
+                            e);
+                  }
+                }
+              });
+    } catch (Throwable e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Failed to start SystemEventsBreadcrumbsIntegration on executor thread.");
+    }
+  }
+
+  private void unregisterReceiver() {
+    final @Nullable SystemEventsBroadcastReceiver receiverRef;
+    synchronized (receiverLock) {
+      isStopped = true;
+      receiverRef = receiver;
+      receiver = null;
+    }
+
+    if (receiverRef != null) {
+      context.unregisterReceiver(receiverRef);
+    }
+  }
+
+  // TODO: this duplicates a lot of AppLifecycleIntegration. We should register once on init
+  //  and multiplex to different listeners rather.
+  private void addLifecycleObserver(final @NotNull SentryAndroidOptions options) {
+    try {
+      Class.forName("androidx.lifecycle.DefaultLifecycleObserver");
+      Class.forName("androidx.lifecycle.ProcessLifecycleOwner");
+      if (AndroidMainThreadChecker.getInstance().isMainThread()) {
+        addObserverInternal(options);
+      } else {
+        // some versions of the androidx lifecycle-process require this to be executed on the main
+        // thread.
+        handler.post(() -> addObserverInternal(options));
+      }
+    } catch (ClassNotFoundException e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "androidx.lifecycle is not available, SystemEventsBreadcrumbsIntegration won't be able"
+                  + " to register/unregister an internal BroadcastReceiver. This may result in an"
+                  + " increased ANR rate on Android 14 and above.");
+    } catch (Throwable e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "SystemEventsBreadcrumbsIntegration could not register lifecycle observer",
+              e);
+    }
+  }
+
+  private void addObserverInternal(final @NotNull SentryAndroidOptions options) {
+    lifecycleHandler = new ReceiverLifecycleHandler();
+
+    try {
+      ProcessLifecycleOwner.get().getLifecycle().addObserver(lifecycleHandler);
+    } catch (Throwable e) {
+      // This is to handle a potential 'AbstractMethodError' gracefully. The error is triggered in
+      // connection with conflicting dependencies of the androidx.lifecycle.
+      // //See the issue here: https://github.com/getsentry/sentry-java/pull/2228
+      lifecycleHandler = null;
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "SystemEventsBreadcrumbsIntegration failed to get Lifecycle and could not install lifecycle observer.",
+              e);
+    }
+  }
+
+  private void removeLifecycleObserver() {
+    if (lifecycleHandler != null) {
+      if (AndroidMainThreadChecker.getInstance().isMainThread()) {
+        removeObserverInternal();
+      } else {
+        // some versions of the androidx lifecycle-process require this to be executed on the main
+        // thread.
+        // avoid method refs on Android due to some issues with older AGP setups
+        // noinspection Convert2MethodRef
+        handler.post(() -> removeObserverInternal());
       }
     }
   }
 
-  private void startSystemEventsReceiver(
-      final @NotNull IHub hub, final @NotNull SentryAndroidOptions options) {
-    receiver = new SystemEventsBroadcastReceiver(hub, options);
-    final IntentFilter filter = new IntentFilter();
-    for (String item : actions) {
-      filter.addAction(item);
+  private void removeObserverInternal() {
+    final @Nullable ReceiverLifecycleHandler watcherRef = lifecycleHandler;
+    if (watcherRef != null) {
+      ProcessLifecycleOwner.get().getLifecycle().removeObserver(watcherRef);
     }
-    try {
-      // registerReceiver can throw SecurityException but it's not documented in the official docs
-      ContextUtils.registerReceiver(context, options, receiver, filter);
-      options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
-      addIntegrationToSdkVersion("SystemEventsBreadcrumbs");
-    } catch (Throwable e) {
-      options.setEnableSystemEventBreadcrumbs(false);
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Failed to initialize SystemEventsBreadcrumbsIntegration.", e);
+    lifecycleHandler = null;
+  }
+
+  @Override
+  public void close() throws IOException {
+    synchronized (receiverLock) {
+      isClosed = true;
+      filter = null;
+    }
+
+    removeLifecycleObserver();
+    unregisterReceiver();
+
+    if (options != null) {
+      options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration remove.");
     }
   }
 
@@ -162,18 +309,23 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     return actions;
   }
 
-  @Override
-  public void close() throws IOException {
-    synchronized (startLock) {
-      isClosed = true;
-    }
-    if (receiver != null) {
-      context.unregisterReceiver(receiver);
-      receiver = null;
-
-      if (options != null) {
-        options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration remove.");
+  final class ReceiverLifecycleHandler implements DefaultLifecycleObserver {
+    @Override
+    public void onStart(@NonNull LifecycleOwner owner) {
+      if (hub == null || options == null) {
+        return;
       }
+
+      synchronized (receiverLock) {
+        isStopped = false;
+      }
+
+      registerReceiver(hub, options, /* reportAsNewIntegration = */ false);
+    }
+
+    @Override
+    public void onStop(@NonNull LifecycleOwner owner) {
+      unregisterReceiver();
     }
   }
 
