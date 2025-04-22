@@ -15,6 +15,10 @@
 - Fix unregister `SystemEventsBroadcastReceiver` when entering background ([#4338](https://github.com/getsentry/sentry-java/pull/4338))
   - This should reduce ANRs seen with this class in the stack trace for Android 14 and above
 
+### Improvements
+
+- Make user interaction tracing faster and do fewer allocations ([#4347](https://github.com/getsentry/sentry-java/pull/4347))
+
 ## 8.8.0
 
 ### Features

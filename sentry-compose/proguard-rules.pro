@@ -13,7 +13,7 @@
 -keepnames class androidx.compose.foundation.CombinedClickableElement
 -keepnames class androidx.compose.foundation.ScrollingLayoutElement
 -keepnames class androidx.compose.ui.platform.TestTagElement { *; }
--keepnames class io.sentry.compose.SentryModifier.SentryTagModifierNodeElement { *; }
+-keepnames class io.sentry.compose.SentryModifier$SentryTagModifierNodeElement { *; }
 
 # R8 will warn about missing classes if people don't have androidx.compose-navigation on their
 # classpath, but this is fine, these classes are used in an internal class which is only used when
