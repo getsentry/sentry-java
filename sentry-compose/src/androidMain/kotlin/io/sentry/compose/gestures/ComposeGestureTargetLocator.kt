@@ -70,7 +70,8 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
                 var isScrollable = false
 
                 val modifiers = node.getModifierInfo()
-                for (modifierInfo in modifiers) {
+                for (index in modifiers.indices) {
+                    val modifierInfo = modifiers[index]
                     val tag = composeHelper!!.extractTag(modifierInfo.modifier)
                     if (tag != null) {
                         lastKnownTag = tag
@@ -93,7 +94,7 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
                     } else {
                         val modifier = modifierInfo.modifier
                         // Newer Jetpack Compose 1.5 uses Node modifiers for clicks/scrolls
-                        val type = modifier.javaClass.canonicalName
+                        val type = modifier.javaClass.name
                         if ("androidx.compose.foundation.ClickableElement" == type ||
                             "androidx.compose.foundation.CombinedClickableElement" == type
                         ) {
