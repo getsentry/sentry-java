@@ -9,6 +9,9 @@
 ### Fixes
 
 - Fix TTFD measurement when API called too early ([#4297](https://github.com/getsentry/sentry-java/pull/4297))
+- Tag sockets traffic originating from Sentry's HttpConnection ([#4340](https://github.com/getsentry/sentry-java/pull/4340))
+  - This should suppress the StrictMode's `UntaggedSocketViolation`
+- Reduce debug logs verbosity ([#4341](https://github.com/getsentry/sentry-java/pull/4341))
 - Fix unregister `SystemEventsBroadcastReceiver` when entering background ([#4338](https://github.com/getsentry/sentry-java/pull/4338))
   - This should reduce ANRs seen with this class in the stack trace for Android 14 and above
 
