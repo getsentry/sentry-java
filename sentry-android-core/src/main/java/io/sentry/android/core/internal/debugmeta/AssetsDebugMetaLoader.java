@@ -41,7 +41,7 @@ public final class AssetsDebugMetaLoader implements IDebugMetaLoader {
       properties.load(is);
       return Collections.singletonList(properties);
     } catch (FileNotFoundException e) {
-      logger.log(SentryLevel.INFO, e, "%s file was not found.", DEBUG_META_PROPERTIES_FILENAME);
+      logger.log(SentryLevel.INFO, "%s file was not found.", DEBUG_META_PROPERTIES_FILENAME);
     } catch (IOException e) {
       logger.log(SentryLevel.ERROR, "Error getting Proguard UUIDs.", e);
     } catch (RuntimeException e) {
