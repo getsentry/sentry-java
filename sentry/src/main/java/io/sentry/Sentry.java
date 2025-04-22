@@ -1225,4 +1225,8 @@ public final class Sentry {
   public static @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     return getCurrentScopes().captureCheckIn(checkIn);
   }
+
+  public static boolean isGlobalHubMode() {
+    return globalHubMode;
+  }
 }

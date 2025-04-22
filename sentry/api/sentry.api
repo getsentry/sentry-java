@@ -2529,6 +2529,7 @@ public final class io/sentry/Sentry {
 	public static fun init (Ljava/lang/String;)V
 	public static fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public static fun isEnabled ()Z
+	public static fun isGlobalHubMode ()Z
 	public static fun isHealthy ()Z
 	public static fun popScope ()V
 	public static fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;

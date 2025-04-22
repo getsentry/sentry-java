@@ -20,9 +20,27 @@ public final class SentryContextWrapper implements Context {
     this.delegate = delegate;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  public <V> V get(final @NotNull ContextKey<V> contextKey) {
-    return delegate.get(contextKey);
+  public <V> @Nullable V get(final @NotNull ContextKey<V> contextKey) {
+    V result = delegate.get(contextKey);
+    if (Sentry.isGlobalHubMode()) {
+      if (result == null
+          || (result instanceof Span && !((Span) result).getSpanContext().isValid())) {
+        if (isOpentelemetrySpan(contextKey)) {
+          IOtelSpanWrapper sentrySpan =
+              SentryWeakSpanStorage.getInstance().getLastKnownUnfinishedRootSpan();
+          if (sentrySpan != null) {
+            try {
+              return (V) sentrySpan.getOpenTelemetrySpan();
+            } catch (Throwable t) {
+              return result;
+            }
+          }
+        }
+      }
+    }
+    return result;
   }
 
   @Override
