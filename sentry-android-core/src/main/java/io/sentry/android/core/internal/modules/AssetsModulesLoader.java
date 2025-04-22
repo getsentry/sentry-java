@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,6 +23,12 @@ public final class AssetsModulesLoader extends ModulesLoader {
   public AssetsModulesLoader(final @NotNull Context context, final @NotNull ILogger logger) {
     super(logger);
     this.context = ContextUtils.getApplicationContext(context);
+
+    // pre-load modules on a bg thread to avoid doing so on the main thread in case of a crash/error
+    final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
+    //noinspection Convert2MethodRef
+    executorService.submit(() -> getOrLoadModules());
+    executorService.shutdown();
   }
 
   @Override
