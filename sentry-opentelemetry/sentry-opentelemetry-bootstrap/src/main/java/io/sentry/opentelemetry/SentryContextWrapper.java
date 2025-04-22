@@ -20,24 +20,38 @@ public final class SentryContextWrapper implements Context {
     this.delegate = delegate;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <V> @Nullable V get(final @NotNull ContextKey<V> contextKey) {
-    V result = delegate.get(contextKey);
-    if (Sentry.isGlobalHubMode()) {
-      if (result == null
-          || (result instanceof Span && !((Span) result).getSpanContext().isValid())) {
-        if (isOpentelemetrySpan(contextKey)) {
-          IOtelSpanWrapper sentrySpan =
-              SentryWeakSpanStorage.getInstance().getLastKnownUnfinishedRootSpan();
-          if (sentrySpan != null) {
-            try {
-              return (V) sentrySpan.getOpenTelemetrySpan();
-            } catch (Throwable t) {
-              return result;
-            }
-          }
-        }
+    final @Nullable V result = delegate.get(contextKey);
+    if (shouldReturnRootSpanInstead(contextKey, result)) {
+      return returnUnfinishedRootSpanIfAvailable(result);
+    }
+    return result;
+  }
+
+  private <V> boolean shouldReturnRootSpanInstead(
+      final @NotNull ContextKey<V> contextKey, final @Nullable V result) {
+    if (!Sentry.isGlobalHubMode()) {
+      return false;
+    }
+    if (!isOpentelemetrySpan(contextKey)) {
+      return false;
+    }
+    if (result == null) {
+      return true;
+    }
+    return result instanceof Span && !((Span) result).getSpanContext().isValid();
+  }
+
+  @SuppressWarnings("unchecked")
+  private <V> @Nullable V returnUnfinishedRootSpanIfAvailable(final @Nullable V result) {
+    final @Nullable IOtelSpanWrapper sentrySpan =
+        SentryWeakSpanStorage.getInstance().getLastKnownUnfinishedRootSpan();
+    if (sentrySpan != null) {
+      try {
+        return (V) sentrySpan.getOpenTelemetrySpan();
+      } catch (Throwable t) {
+        return result;
       }
     }
     return result;
