@@ -18,6 +18,7 @@
 ### Improvements
 
 - Make user interaction tracing faster and do fewer allocations ([#4347](https://github.com/getsentry/sentry-java/pull/4347))
+- Pre-load modules on a background thread upon SDK init ([#4348](https://github.com/getsentry/sentry-java/pull/4348))
 
 ## 8.8.0
 
