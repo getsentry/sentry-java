@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Update profile chunk rate limit and client report ([#4353](https://github.com/getsentry/sentry-java/pull/4353))
+
 ## 8.9.0
 
 ### Features
