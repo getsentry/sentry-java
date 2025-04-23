@@ -5,7 +5,6 @@ import io.opentelemetry.api.trace.SpanContext
 import io.opentelemetry.api.trace.TraceFlags
 import io.opentelemetry.api.trace.TraceState
 import io.opentelemetry.context.Context
-import io.opentelemetry.context.ContextKey
 import io.opentelemetry.sdk.trace.ReadWriteSpan
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.data.StatusData
@@ -160,5 +159,4 @@ class SentryContextWrapperTest {
 
         return otelSpan
     }
-
 }
