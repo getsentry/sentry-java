@@ -63,5 +63,6 @@ public final class SentryWeakSpanStorage {
   @TestOnly
   public void clear() {
     sentrySpans.clear();
+    lastKnownRootSpan.clear();
   }
 }
