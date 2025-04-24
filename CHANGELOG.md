@@ -5,9 +5,12 @@
 ### Features
 
 - Add `SentryWrapper.wrapRunnable` to wrap `Runnable` for use with Sentry ([#4332](https://github.com/getsentry/sentry-java/pull/4332))
-- Support `globalHubMode` for OpenTelemetry
+- Support `globalHubMode` for OpenTelemetry ([#4349](https://github.com/getsentry/sentry-java/pull/4349))
   - Sentry now adds OpenTelemetry spans without a parent to the last known unfinished root span (transaction)
   - Previously those spans would end up in Sentry as separate transactions
+  - Spans created via Sentry API are preferred over those created through OpenTelemetry API or auto instrumentation
+- New option `ignoreStandaloneClientSpans` that prevents Sentry from creating transactions for OpenTelemetry spans with kind `CLIENT` ([#4349](https://github.com/getsentry/sentry-java/pull/4349))
+  - Defaults to `false` meaning standalone OpenTelemetry spans with kind `CLIENT` will be turned into Sentry transactions
 
 ### Fixes
 
