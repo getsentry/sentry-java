@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -42,7 +41,6 @@ import io.sentry.compose.SentryTraced
 import io.sentry.compose.withSentryObservableEffect
 import io.sentry.samples.android.GithubAPI
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import io.sentry.samples.android.R as IR
 
 class ComposeActivity : ComponentActivity() {
@@ -139,7 +137,7 @@ fun Github(
                     user = newText
                 }
             )
-            Text("Random\nrepo")
+            Text("Random repo: $result")
             Button(
                 onClick = {
                     scope.launch {
@@ -154,7 +152,7 @@ fun Github(
                     .testTag("button_list_repos_async")
                     .padding(top = 32.dp)
             ) {
-                Text("Make Request")
+                Text("Make Request", modifier = Modifier.sentryReplayUnmask())
             }
         }
     }

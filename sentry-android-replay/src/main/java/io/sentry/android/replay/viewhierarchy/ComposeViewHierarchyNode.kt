@@ -14,6 +14,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.TextUnit
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
@@ -22,7 +23,6 @@ import io.sentry.android.replay.util.ComposeTextLayout
 import io.sentry.android.replay.util.boundsInWindow
 import io.sentry.android.replay.util.findPainter
 import io.sentry.android.replay.util.findTextAttributes
-import io.sentry.android.replay.util.isBoringLayout
 import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
@@ -65,7 +65,7 @@ internal object ComposeViewHierarchyNode {
     }
 
     private var _rootCoordinates: WeakReference<LayoutCoordinates>? = null
-    
+
     private fun fromComposeNode(
         node: LayoutNode,
         parent: ViewHierarchyNode?,
@@ -106,12 +106,11 @@ internal object ComposeViewHierarchyNode {
                 if (textColor?.isUnspecified == true) {
                     textColor = color
                 }
+                val isLaidOut = textLayoutResult?.layoutInput?.style?.fontSize != TextUnit.Unspecified
                 // TODO: support editable text (currently there's a way to get @Composable's padding only via reflection, and we can't reliably mask input fields based on TextLayout, so we mask the whole view instead)
                 TextViewHierarchyNode(
-                    layout = if (textLayoutResult != null &&
-                        !isEditable &&
-                        !textLayoutResult.isBoringLayout()) {
-                        ComposeTextLayout(textLayoutResults.first(), hasFillModifier)
+                    layout = if (textLayoutResult != null && !isEditable && isLaidOut) {
+                        ComposeTextLayout(textLayoutResult, hasFillModifier)
                     } else {
                         null
                     },

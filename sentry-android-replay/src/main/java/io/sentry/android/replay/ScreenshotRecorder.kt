@@ -10,7 +10,6 @@ import android.graphics.Paint
 import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.RectF
-import android.graphics.drawable.ShapeDrawable
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.view.PixelCopy
@@ -56,7 +55,11 @@ internal class ScreenshotRecorder(
             Bitmap.Config.ARGB_8888
         )
     }
-    private lateinit var screenshot: Bitmap
+    private val screenshot = Bitmap.createBitmap(
+        config.recordingWidth,
+        config.recordingHeight,
+        Bitmap.Config.ARGB_8888
+    )
     private val singlePixelBitmapCanvas: Canvas by lazy(NONE) { Canvas(singlePixelBitmap) }
     private val prescaledMatrix by lazy(NONE) {
         Matrix().apply {
@@ -92,12 +95,6 @@ internal class ScreenshotRecorder(
             return
         }
 
-        screenshot = Bitmap.createBitmap(
-            root.width,
-            root.height,
-            Bitmap.Config.ARGB_8888
-        )
-
         // postAtFrontOfQueue to ensure the view hierarchy and bitmap are ase close in-sync as possible
         mainLooperHandler.post {
             try {
@@ -122,11 +119,10 @@ internal class ScreenshotRecorder(
                         // TODO: disableAllMasking here and dont traverse?
                         val viewHierarchy = ViewHierarchyNode.fromView(root, null, 0, options)
                         root.traverse(viewHierarchy, options)
-                        root.overlay.clear()
 
                         recorder.submitSafely(options, "screenshot_recorder.mask") {
                             val canvas = Canvas(screenshot)
-//                            canvas.setMatrix(prescaledMatrix)
+                            canvas.setMatrix(prescaledMatrix)
                             viewHierarchy.traverse { node ->
                                 if (node.shouldMask && (node.width > 0 && node.height > 0)) {
                                     node.visibleRect ?: return@traverse false
@@ -159,19 +155,9 @@ internal class ScreenshotRecorder(
                                     }
 
                                     maskingPaint.setColor(color)
-                                    mainLooperHandler.post {
-                                        visibleRects.forEach { rect ->
-                                            root.overlay.add(ShapeDrawable().apply {
-                                                paint.color = Color.BLUE
-                                                paint.strokeCap = Paint.Cap.ROUND
-                                                paint.style = Paint.Style.STROKE
-                                                paint.strokeWidth = 5f
-                                                bounds = rect
-                                            })
-    //                                        canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
-                                        }
+                                    visibleRects.forEach { rect ->
+                                        canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
                                     }
-
                                 }
                                 return@traverse true
                             }
@@ -240,14 +226,14 @@ internal class ScreenshotRecorder(
         // TODO: maybe this ceremony can be just simplified to
         // TODO: multiplying the visibleRect by the prescaledMatrix
         val visibleRect = Rect(rect)
-//        val visibleRectF = RectF(visibleRect)
+        val visibleRectF = RectF(visibleRect)
 
         // since we take screenshot with lower scale, we also
         // have to apply the same scale to the visibleRect to get the
         // correct screenshot part to determine the dominant color
-//        prescaledMatrix.mapRect(visibleRectF)
+        prescaledMatrix.mapRect(visibleRectF)
         // round it back to integer values, because drawBitmap below accepts Rect only
-//        visibleRectF.round(visibleRect)
+        visibleRectF.round(visibleRect)
         // draw part of the screenshot (visibleRect) to a single pixel bitmap
         singlePixelBitmapCanvas.drawBitmap(
             this,

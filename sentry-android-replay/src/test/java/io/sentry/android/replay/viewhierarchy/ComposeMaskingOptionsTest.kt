@@ -19,7 +19,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil.compose.AsyncImage
 import io.sentry.SentryOptions
@@ -54,6 +56,7 @@ class ComposeMaskingOptionsTest {
         System.setProperty("robolectric.pixelCopyRenderMode", "hardware")
         ComposeMaskingOptionsActivity.textModifierApplier = null
         ComposeMaskingOptionsActivity.containerModifierApplier = null
+        ComposeMaskingOptionsActivity.fontSizeApplier = null
     }
 
     @Test
@@ -68,12 +71,13 @@ class ComposeMaskingOptionsTest {
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
         assertTrue(textNodes.all { it.shouldMask })
-        // simple text should have a BoringLayout therefore no layout and we use visible rect
+        // no fontSize specified - we don't use the text layout
         assertNull(textNodes.first().layout)
     }
 
     @Test
-    fun `when text is multiline Text nodes have a layout`() {
+    fun `when text is laid out nodes use it`() {
+        ComposeMaskingOptionsActivity.fontSizeApplier = { 20.sp }
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
@@ -82,10 +86,8 @@ class ComposeMaskingOptionsTest {
         }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
-        assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
-        assertTrue(textNodes.all { it.shouldMask })
-        // simple text should have a BoringLayout therefore no layout and we use visible rect
-        assertNull(textNodes.first().layout)
+        // the text should be laid out when fontSize is specified
+        assertEquals("Random repo", (textNodes.first().layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text)
     }
 
     @Test
@@ -230,6 +232,7 @@ private class ComposeMaskingOptionsActivity : ComponentActivity() {
     companion object {
         var textModifierApplier: (() -> Modifier)? = null
         var containerModifierApplier: (() -> Modifier)? = null
+        var fontSizeApplier: (() -> TextUnit)? = null
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -249,11 +252,11 @@ private class ComposeMaskingOptionsActivity : ComponentActivity() {
                     contentDescription = null,
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
+                Text("Random repo", fontSize = fontSizeApplier?.invoke() ?: TextUnit.Unspecified)
                 TextField(
                     value = TextFieldValue("Placeholder"),
                     onValueChange = { _ -> }
                 )
-                Text("Random\nrepo")
                 Button(
                     onClick = {},
                     modifier = Modifier
