@@ -1,7 +1,6 @@
 package io.sentry.opentelemetry;
 
 import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.context.internal.shaded.WeakConcurrentMap;
 import io.sentry.ISentryLifecycleToken;
@@ -71,7 +70,8 @@ public final class SentryWeakSpanStorage {
       return true;
     }
 
-    final @Nullable Boolean isCreatedViaSentryApi = attributes.get(InternalSemanticAttributes.CREATED_VIA_SENTRY_API);
+    final @Nullable Boolean isCreatedViaSentryApi =
+        attributes.get(InternalSemanticAttributes.CREATED_VIA_SENTRY_API);
     return isCreatedViaSentryApi == true;
   }
 

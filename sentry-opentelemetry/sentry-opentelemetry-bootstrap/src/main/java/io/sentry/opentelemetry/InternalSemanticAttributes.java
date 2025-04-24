@@ -21,5 +21,6 @@ public final class InternalSemanticAttributes {
   public static final AttributeKey<String> BAGGAGE = AttributeKey.stringKey("sentry.baggage");
   public static final AttributeKey<Boolean> BAGGAGE_MUTABLE =
       AttributeKey.booleanKey("sentry.baggage_mutable");
-  public static final AttributeKey<Boolean> CREATED_VIA_SENTRY_API = AttributeKey.booleanKey("sentry.is_created_via_sentry_api");
+  public static final AttributeKey<Boolean> CREATED_VIA_SENTRY_API =
+      AttributeKey.booleanKey("sentry.is_created_via_sentry_api");
 }
