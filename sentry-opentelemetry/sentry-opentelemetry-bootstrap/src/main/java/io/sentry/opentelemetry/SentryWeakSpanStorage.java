@@ -72,7 +72,7 @@ public final class SentryWeakSpanStorage {
 
     final @Nullable Boolean isCreatedViaSentryApi =
         attributes.get(InternalSemanticAttributes.CREATED_VIA_SENTRY_API);
-    return isCreatedViaSentryApi == true;
+    return isCreatedViaSentryApi != null && isCreatedViaSentryApi == true;
   }
 
   public @Nullable IOtelSpanWrapper getLastKnownUnfinishedRootSpan() {
