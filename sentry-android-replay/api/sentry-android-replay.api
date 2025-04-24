@@ -50,7 +50,7 @@ public final class io/sentry/android/replay/ReplayCache : java/io/Closeable {
 	public static synthetic fun createVideoOf$default (Lio/sentry/android/replay/ReplayCache;JJIIIIILjava/io/File;ILjava/lang/Object;)Lio/sentry/android/replay/GeneratedVideo;
 }
 
-public final class io/sentry/android/replay/ReplayIntegration : android/content/ComponentCallbacks, io/sentry/IConnectionStatusProvider$IConnectionStatusObserver, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, io/sentry/android/replay/gestures/TouchRecorderCallback, io/sentry/transport/RateLimiter$IRateLimitObserver, java/io/Closeable {
+public final class io/sentry/android/replay/ReplayIntegration : android/content/ComponentCallbacks, io/sentry/IConnectionStatusProvider$IConnectionStatusObserver, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, io/sentry/android/replay/WindowCallback, io/sentry/android/replay/gestures/TouchRecorderCallback, io/sentry/transport/RateLimiter$IRateLimitObserver, java/io/Closeable {
 	public static final field $stable I
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
@@ -68,6 +68,7 @@ public final class io/sentry/android/replay/ReplayIntegration : android/content/
 	public fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
 	public fun onScreenshotRecorded (Ljava/io/File;J)V
 	public fun onTouchEvent (Landroid/view/MotionEvent;)V
+	public fun onWindowSizeChanged (II)V
 	public fun pause ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 	public fun resume ()V
@@ -119,6 +120,10 @@ public final class io/sentry/android/replay/SessionReplayOptionsKt {
 public final class io/sentry/android/replay/ViewExtensionsKt {
 	public static final fun sentryReplayMask (Landroid/view/View;)V
 	public static final fun sentryReplayUnmask (Landroid/view/View;)V
+}
+
+public abstract interface class io/sentry/android/replay/WindowCallback {
+	public abstract fun onWindowSizeChanged (II)V
 }
 
 public abstract interface class io/sentry/android/replay/gestures/TouchRecorderCallback {

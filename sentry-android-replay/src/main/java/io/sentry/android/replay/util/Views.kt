@@ -201,3 +201,7 @@ internal fun View?.removeOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawLis
         // viewTreeObserver is already dead
     }
 }
+
+internal fun View.hasSize(): Boolean {
+    return width != 0 && height != 0
+}
