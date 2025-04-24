@@ -18,6 +18,7 @@ public abstract interface class io/sentry/opentelemetry/IOtelSpanWrapper : io/se
 public final class io/sentry/opentelemetry/InternalSemanticAttributes {
 	public static final field BAGGAGE Lio/opentelemetry/api/common/AttributeKey;
 	public static final field BAGGAGE_MUTABLE Lio/opentelemetry/api/common/AttributeKey;
+	public static final field CREATED_VIA_SENTRY_API Lio/opentelemetry/api/common/AttributeKey;
 	public static final field IS_REMOTE_PARENT Lio/opentelemetry/api/common/AttributeKey;
 	public static final field PARENT_SAMPLED Lio/opentelemetry/api/common/AttributeKey;
 	public static final field PROFILE_SAMPLED Lio/opentelemetry/api/common/AttributeKey;
