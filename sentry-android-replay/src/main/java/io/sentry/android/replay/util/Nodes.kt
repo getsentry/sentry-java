@@ -2,7 +2,9 @@
 
 package io.sentry.android.replay.util
 
+import android.annotation.SuppressLint
 import android.graphics.Rect
+import android.text.BoringLayout
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
@@ -10,7 +12,10 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.text.AndroidParagraph
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.android.InternalPlatformTextApi
+import kotlin.LazyThreadSafetyMode.NONE
 import kotlin.math.roundToInt
 
 internal class ComposeTextLayout(internal val layout: TextLayoutResult, private val hasFillModifier: Boolean) : TextLayout {
@@ -204,4 +209,36 @@ internal fun LayoutCoordinates.boundsInWindow(rootCoordinates: LayoutCoordinates
     val bottom = fastMaxOf(topLeftY, topRightY, bottomLeftY, bottomRightY)
 
     return Rect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
+}
+
+private val layoutField by lazy(NONE) {
+    AndroidParagraph::class.java
+        .getDeclaredField("layout")
+        .apply { isAccessible = true }
+}
+
+/**
+ * BoringLayout returns garbage values for the line count and the line bounds, so we need to check if
+ * this layout is a BoringLayout and use the view bounds instead. BoringLayout is only the case for
+ * single-line simple text.
+ *
+ * This is horrible, but still better visually than just masking the entire view with a single rect
+ */
+@Suppress("OPT_IN_IS_NOT_ENABLED")
+@SuppressLint("VisibleForTests")
+@OptIn(InternalPlatformTextApi::class)
+internal fun TextLayoutResult?.isBoringLayout(): Boolean {
+    try {
+        if (this?.lineCount == 1) {
+            val paragraph = multiParagraph.paragraphInfoList.getOrNull(0)?.paragraph
+            if (paragraph != null) {
+                return layoutField.get(paragraph)?.let {
+                    (it as? androidx.compose.ui.text.android.TextLayout)?.layout is BoringLayout
+                } ?: false
+            }
+        }
+    } catch (e: Throwable) {
+        // ignore
+    }
+    return false
 }

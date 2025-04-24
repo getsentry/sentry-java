@@ -41,6 +41,7 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -67,8 +68,24 @@ class ComposeMaskingOptionsTest {
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
         assertTrue(textNodes.all { it.shouldMask })
-        // just a sanity check for parsing the tree
-        assertEquals("Random repo", (textNodes[1].layout as ComposeTextLayout).layout.layoutInput.text.text)
+        // simple text should have a BoringLayout therefore no layout and we use visible rect
+        assertNull(textNodes.first().layout)
+    }
+
+    @Test
+    fun `when text is multiline Text nodes have a layout`() {
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val options = SentryOptions().apply {
+            sessionReplay.maskAllText = true
+        }
+
+        val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
+        assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
+        assertTrue(textNodes.all { it.shouldMask })
+        // simple text should have a BoringLayout therefore no layout and we use visible rect
+        assertNull(textNodes.first().layout)
     }
 
     @Test
@@ -236,7 +253,7 @@ private class ComposeMaskingOptionsActivity : ComponentActivity() {
                     value = TextFieldValue("Placeholder"),
                     onValueChange = { _ -> }
                 )
-                Text("Random repo")
+                Text("Random\nrepo")
                 Button(
                     onClick = {},
                     modifier = Modifier

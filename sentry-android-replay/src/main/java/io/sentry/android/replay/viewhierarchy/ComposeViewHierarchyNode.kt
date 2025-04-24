@@ -22,6 +22,7 @@ import io.sentry.android.replay.util.ComposeTextLayout
 import io.sentry.android.replay.util.boundsInWindow
 import io.sentry.android.replay.util.findPainter
 import io.sentry.android.replay.util.findTextAttributes
+import io.sentry.android.replay.util.isBoringLayout
 import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
@@ -64,7 +65,7 @@ internal object ComposeViewHierarchyNode {
     }
 
     private var _rootCoordinates: WeakReference<LayoutCoordinates>? = null
-
+    
     private fun fromComposeNode(
         node: LayoutNode,
         parent: ViewHierarchyNode?,
@@ -100,14 +101,20 @@ internal object ComposeViewHierarchyNode {
                     ?.invoke(textLayoutResults)
 
                 val (color, hasFillModifier) = node.findTextAttributes()
-                var textColor = textLayoutResults.firstOrNull()?.layoutInput?.style?.color
+                val textLayoutResult = textLayoutResults.firstOrNull()
+                var textColor = textLayoutResult?.layoutInput?.style?.color
                 if (textColor?.isUnspecified == true) {
                     textColor = color
                 }
-                // TODO: support multiple text layouts
                 // TODO: support editable text (currently there's a way to get @Composable's padding only via reflection, and we can't reliably mask input fields based on TextLayout, so we mask the whole view instead)
                 TextViewHierarchyNode(
-                    layout = if (textLayoutResults.isNotEmpty() && !isEditable) ComposeTextLayout(textLayoutResults.first(), hasFillModifier) else null,
+                    layout = if (textLayoutResult != null &&
+                        !isEditable &&
+                        !textLayoutResult.isBoringLayout()) {
+                        ComposeTextLayout(textLayoutResults.first(), hasFillModifier)
+                    } else {
+                        null
+                    },
                     dominantColor = textColor?.toArgb()?.toOpaque(),
                     x = visibleRect.left.toFloat(),
                     y = visibleRect.top.toFloat(),
