@@ -361,8 +361,7 @@ final class AndroidOptionsInitializer {
     if (ContextUtils.getApplicationContext(context) instanceof Application) {
       final Application application = (Application) ContextUtils.getApplicationContext(context);
       options.addIntegration(
-          new ActivityLifecycleIntegration(
-              application, buildInfoProvider, activityFramesTracker));
+          new ActivityLifecycleIntegration(application, buildInfoProvider, activityFramesTracker));
       options.addIntegration(new ActivityBreadcrumbsIntegration(application));
       options.addIntegration(new CurrentActivityIntegration(application));
       options.addIntegration(new UserInteractionIntegration(application, loadClass));
