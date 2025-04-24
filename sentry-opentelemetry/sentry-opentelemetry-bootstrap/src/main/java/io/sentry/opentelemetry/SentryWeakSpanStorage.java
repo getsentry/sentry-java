@@ -1,5 +1,7 @@
 package io.sentry.opentelemetry;
 
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.context.internal.shaded.WeakConcurrentMap;
 import io.sentry.ISentryLifecycleToken;
@@ -46,10 +48,31 @@ public final class SentryWeakSpanStorage {
 
   public void storeSentrySpan(
       final @NotNull SpanContext otelSpan, final @NotNull IOtelSpanWrapper sentrySpan) {
+    System.out.println("storing span: " + sentrySpan.getOperation());
     this.sentrySpans.put(otelSpan, sentrySpan);
-    if (sentrySpan.isRoot()) {
+    if (shouldStoreSpanAsRootSpan(sentrySpan)) {
+      System.out.println("storing span as last known root: " + sentrySpan.getOperation());
       lastKnownRootSpan = new WeakReference<>(sentrySpan);
     }
+  }
+
+  private boolean shouldStoreSpanAsRootSpan(final @NotNull IOtelSpanWrapper sentrySpan) {
+    if (!sentrySpan.isRoot()) {
+      return false;
+    }
+
+    final @Nullable IOtelSpanWrapper previousRootSpan = getLastKnownUnfinishedRootSpan();
+    if (previousRootSpan == null) {
+      return true;
+    }
+
+    final @Nullable Attributes attributes = previousRootSpan.getOpenTelemetrySpanAttributes();
+    if (attributes == null) {
+      return true;
+    }
+
+    final @Nullable Boolean isCreatedViaSentryApi = attributes.get(InternalSemanticAttributes.CREATED_VIA_SENTRY_API);
+    return isCreatedViaSentryApi == true;
   }
 
   public @Nullable IOtelSpanWrapper getLastKnownUnfinishedRootSpan() {

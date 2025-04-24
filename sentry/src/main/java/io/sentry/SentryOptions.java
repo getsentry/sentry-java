@@ -568,6 +568,8 @@ public class SentryOptions {
 
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
 
+  private boolean ignoreStandaloneClientSpans = false;
+
   /**
    * Adds an event processor
    *
@@ -2845,6 +2847,16 @@ public class SentryOptions {
    */
   public void setSocketTagger(final @Nullable ISocketTagger socketTagger) {
     this.socketTagger = socketTagger != null ? socketTagger : NoOpSocketTagger.getInstance();
+  }
+
+  @ApiStatus.Experimental
+  public void setIgnoreStandaloneClientSpans(final boolean ignoreStandaloneClientSpans) {
+    this.ignoreStandaloneClientSpans = ignoreStandaloneClientSpans;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isIgnoreStandaloneClientSpans() {
+    return ignoreStandaloneClientSpans;
   }
 
   /**
