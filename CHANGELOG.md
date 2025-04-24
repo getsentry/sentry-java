@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
+
 ## 8.9.0
 
 ### Features
