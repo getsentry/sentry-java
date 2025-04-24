@@ -357,23 +357,24 @@ final class AndroidOptionsInitializer {
     // it to set the replayId in case of an ANR
     options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
 
-    // registerActivityLifecycleCallbacks is only available if Context is an AppContext
-    if (context instanceof Application) {
+    // registerActivityLifecycleCallbacks is only available on AppContext
+    if (ContextUtils.getApplicationContext(context) instanceof Application) {
+      final Application application = (Application) ContextUtils.getApplicationContext(context);
       options.addIntegration(
           new ActivityLifecycleIntegration(
-              (Application) context, buildInfoProvider, activityFramesTracker));
-      options.addIntegration(new ActivityBreadcrumbsIntegration((Application) context));
-      options.addIntegration(new CurrentActivityIntegration((Application) context));
-      options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
+              application, buildInfoProvider, activityFramesTracker));
+      options.addIntegration(new ActivityBreadcrumbsIntegration(application));
+      options.addIntegration(new CurrentActivityIntegration(application));
+      options.addIntegration(new UserInteractionIntegration(application, loadClass));
       if (isFragmentAvailable) {
-        options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
+        options.addIntegration(new FragmentLifecycleIntegration(application, true, true));
       }
     } else {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "ActivityLifecycle, FragmentLifecycle and UserInteraction Integrations need an Application class to be installed.");
+              "ActivityLifecycle, FragmentLifecycle and UserInteraction Integrations need context or getApplicationContext() to be an Application class to be installed.");
     }
 
     if (isTimberAvailable) {
