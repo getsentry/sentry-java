@@ -505,7 +505,7 @@ class AndroidContinuousProfilerTest {
     fun `profiler stops when rate limited`() {
         val profiler = fixture.getSut()
         val rateLimiter = mock<RateLimiter>()
-        whenever(rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)).thenReturn(true)
+        whenever(rateLimiter.isActiveForCategory(DataCategory.ProfileChunkUi)).thenReturn(true)
 
         profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
@@ -521,7 +521,7 @@ class AndroidContinuousProfilerTest {
     fun `profiler does not start when rate limited`() {
         val profiler = fixture.getSut()
         val rateLimiter = mock<RateLimiter>()
-        whenever(rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)).thenReturn(true)
+        whenever(rateLimiter.isActiveForCategory(DataCategory.ProfileChunkUi)).thenReturn(true)
         whenever(fixture.scopes.rateLimiter).thenReturn(rateLimiter)
 
         // If the SDK is rate limited, the profiler should never start

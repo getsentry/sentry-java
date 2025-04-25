@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Update profile chunk rate limit and client report ([#4353](https://github.com/getsentry/sentry-java/pull/4353))
 - Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
 
 ## 8.9.0
