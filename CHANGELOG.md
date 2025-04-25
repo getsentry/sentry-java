@@ -14,6 +14,12 @@
 
 - Update profile chunk rate limit and client report ([#4353](https://github.com/getsentry/sentry-java/pull/4353))
 
+### Dependencies
+
+- Bump Native SDK from v0.8.3 to v0.8.4 ([#4343](https://github.com/getsentry/sentry-java/pull/4343))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#084)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.3...0.8.4)
+
 ## 8.9.0
 
 ### Features
