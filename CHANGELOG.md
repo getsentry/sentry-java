@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixes
+
+- Update profile chunk rate limit and client report ([#4353](https://github.com/getsentry/sentry-java/pull/4353))
+
+## 8.9.0
+
 ### Features
 
 - Add `SentryWrapper.wrapRunnable` to wrap `Runnable` for use with Sentry ([#4332](https://github.com/getsentry/sentry-java/pull/4332))
@@ -14,6 +20,11 @@
 - Reduce debug logs verbosity ([#4341](https://github.com/getsentry/sentry-java/pull/4341))
 - Fix unregister `SystemEventsBroadcastReceiver` when entering background ([#4338](https://github.com/getsentry/sentry-java/pull/4338))
   - This should reduce ANRs seen with this class in the stack trace for Android 14 and above
+
+### Improvements
+
+- Make user interaction tracing faster and do fewer allocations ([#4347](https://github.com/getsentry/sentry-java/pull/4347))
+- Pre-load modules on a background thread upon SDK init ([#4348](https://github.com/getsentry/sentry-java/pull/4348))
 
 ## 8.8.0
 

@@ -21,6 +21,10 @@ public final class AssetsModulesLoader extends ModulesLoader {
   public AssetsModulesLoader(final @NotNull Context context, final @NotNull ILogger logger) {
     super(logger);
     this.context = ContextUtils.getApplicationContext(context);
+
+    // pre-load modules on a bg thread to avoid doing so on the main thread in case of a crash/error
+    //noinspection Convert2MethodRef
+    new Thread(() -> getOrLoadModules()).start();
   }
 
   @Override
