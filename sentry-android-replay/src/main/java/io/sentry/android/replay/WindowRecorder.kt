@@ -6,10 +6,10 @@ import android.view.View
 import android.view.ViewTreeObserver
 import io.sentry.SentryOptions
 import io.sentry.android.replay.util.MainLooperHandler
-import io.sentry.android.replay.util.addOnDrawListenerSafe
+import io.sentry.android.replay.util.addOnPreDrawListenerSafe
 import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.hasSize
-import io.sentry.android.replay.util.removeOnDrawListenerSafe
+import io.sentry.android.replay.util.removeOnPreDrawListenerSafe
 import io.sentry.android.replay.util.scheduleAtFixedRateSafely
 import io.sentry.util.AutoClosableReentrantLock
 import java.lang.ref.WeakReference
@@ -71,19 +71,22 @@ internal class WindowRecorder(
                 windowCallback.onWindowSizeChanged(root.width, root.height)
             }
         } else {
-            root.addOnDrawListenerSafe(object : ViewTreeObserver.OnDrawListener {
-                override fun onDraw() {
+            root.addOnPreDrawListenerSafe(object : ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
                     val currentRoot = rootViews.lastOrNull()?.get()
+                    // in case the root changed in the meantime, ignore the preDraw of the outdate root
                     if (root != currentRoot) {
-                        return
+                        root.removeOnPreDrawListenerSafe(this)
+                        return true
                     }
                     if (root.hasSize()) {
+                        root.removeOnPreDrawListenerSafe(this)
                         if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
                             lastKnownWindowSize.set(root.width, root.height)
                             windowCallback.onWindowSizeChanged(root.width, root.height)
                         }
-                        root.removeOnDrawListenerSafe(this)
                     }
+                    return true
                 }
             })
         }
