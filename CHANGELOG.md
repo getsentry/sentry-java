@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Session Replay: Fix masking of non-styled `Text` Composables ([#4361](https://github.com/getsentry/sentry-java/pull/4361))
+
 ## 8.9.0
 
 ### Features
