@@ -1,12 +1,10 @@
 package io.sentry.opentelemetry;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.util.Iterator;
-import java.util.ServiceLoader;
-
 import io.opentelemetry.context.ContextStorage;
 import io.opentelemetry.context.ContextStorageProvider;
+import java.util.Iterator;
+import java.util.ServiceLoader;
+import org.jetbrains.annotations.NotNull;
 
 public final class SentryContextStorageProvider implements ContextStorageProvider {
   @Override
@@ -16,7 +14,8 @@ public final class SentryContextStorageProvider implements ContextStorageProvide
 
   private @NotNull ContextStorage findStorageToWrap() {
     try {
-      ServiceLoader<ContextStorageProvider> serviceLoader = ServiceLoader.load(ContextStorageProvider.class);
+      ServiceLoader<ContextStorageProvider> serviceLoader =
+          ServiceLoader.load(ContextStorageProvider.class);
       Iterator<ContextStorageProvider> iterator = serviceLoader.iterator();
       while (iterator.hasNext()) {
         ContextStorageProvider contextStorageProvider = iterator.next();
