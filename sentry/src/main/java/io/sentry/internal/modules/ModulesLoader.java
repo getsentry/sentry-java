@@ -1,7 +1,9 @@
 package io.sentry.internal.modules;
 
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +23,9 @@ public abstract class ModulesLoader implements IModulesLoader {
 
   public static final String EXTERNAL_MODULES_FILENAME = "sentry-external-modules.txt";
   protected final @NotNull ILogger logger;
-  private @Nullable Map<String, String> cachedModules = null;
+
+  private final @NotNull AutoClosableReentrantLock modulesLock = new AutoClosableReentrantLock();
+  private volatile @Nullable Map<String, String> cachedModules = null;
 
   public ModulesLoader(final @NotNull ILogger logger) {
     this.logger = logger;
@@ -29,10 +33,13 @@ public abstract class ModulesLoader implements IModulesLoader {
 
   @Override
   public @Nullable Map<String, String> getOrLoadModules() {
-    if (cachedModules != null) {
-      return cachedModules;
+    if (cachedModules == null) {
+      try (final @NotNull ISentryLifecycleToken ignored = modulesLock.acquire()) {
+        if (cachedModules == null) {
+          cachedModules = loadModules();
+        }
+      }
     }
-    cachedModules = loadModules();
     return cachedModules;
   }
 

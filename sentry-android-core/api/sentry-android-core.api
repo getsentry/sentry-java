@@ -111,6 +111,12 @@ public class io/sentry/android/core/AndroidProfiler$ProfileStartData {
 	public fun <init> (JJLjava/util/Date;)V
 }
 
+public final class io/sentry/android/core/AndroidSocketTagger : io/sentry/ISocketTagger {
+	public static fun getInstance ()Lio/sentry/android/core/AndroidSocketTagger;
+	public fun tagSockets ()V
+	public fun untagSockets ()V
+}
+
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V

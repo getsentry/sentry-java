@@ -209,7 +209,12 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
       writer.name(JsonKeys.CLIENT_SDK).value(logger, clientSdk);
     }
     if (!measurements.isEmpty()) {
+      // Measurements can be a very long list which will make it hard to read in logs, so we don't
+      // indent it
+      final String prevIndent = writer.getIndent();
+      writer.setIndent("");
       writer.name(JsonKeys.MEASUREMENTS).value(logger, measurements);
+      writer.setIndent(prevIndent);
     }
     writer.name(JsonKeys.PLATFORM).value(logger, platform);
     writer.name(JsonKeys.RELEASE).value(logger, release);

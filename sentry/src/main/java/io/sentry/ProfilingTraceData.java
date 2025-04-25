@@ -434,7 +434,12 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     if (sampledProfile != null) {
       writer.name(JsonKeys.SAMPLED_PROFILE).value(sampledProfile);
     }
+    // Measurements can be a very long list which will make it hard to read in logs, so we don't
+    // indent it
+    final String prevIndent = writer.getIndent();
+    writer.setIndent("");
     writer.name(JsonKeys.MEASUREMENTS).value(logger, measurementsMap);
+    writer.setIndent(prevIndent);
     writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
     if (unknown != null) {
       for (String key : unknown.keySet()) {
