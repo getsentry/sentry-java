@@ -1,12 +1,12 @@
 package io.sentry.util;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,8 +36,6 @@ public final class FileUtils {
     return file.delete();
   }
 
-  private static final ThreadLocal<char[]> sharedBuffer = new ThreadLocal<>();
-
   /**
    * Reads the content of a File into a String. If the file does not exist or is not a file, null is
    * returned. Do not use with large files, as the String is kept in memory!
@@ -51,21 +49,19 @@ public final class FileUtils {
     if (file == null || !file.exists() || !file.isFile() || !file.canRead()) {
       return null;
     }
+    StringBuilder contentBuilder = new StringBuilder();
+    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
 
-    try (Reader fr = new FileReader(file)) {
-      StringBuilder sb = new StringBuilder();
-      char[] buffer = sharedBuffer.get();
-      if (buffer == null) {
-        buffer = new char[8192];
-        sharedBuffer.set(buffer);
+      String line;
+      // The first line doesn't need the leading \n
+      if ((line = br.readLine()) != null) {
+        contentBuilder.append(line);
       }
-
-      int len;
-      while ((len = fr.read(buffer)) != -1) {
-        sb.append(buffer, 0, len);
+      while ((line = br.readLine()) != null) {
+        contentBuilder.append("\n").append(line);
       }
-      return sb.toString();
     }
+    return contentBuilder.toString();
   }
 
   /**
