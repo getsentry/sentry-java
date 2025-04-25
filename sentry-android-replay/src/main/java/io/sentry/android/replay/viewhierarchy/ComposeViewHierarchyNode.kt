@@ -41,7 +41,8 @@ internal object ComposeViewHierarchyNode {
         return when {
             isImage -> SentryReplayOptions.IMAGE_VIEW_CLASS_NAME
             collapsedSemantics?.contains(SemanticsProperties.Text) == true ||
-                collapsedSemantics?.contains(SemanticsActions.SetText) == true -> SentryReplayOptions.TEXT_VIEW_CLASS_NAME
+                collapsedSemantics?.contains(SemanticsActions.SetText) == true ||
+                collapsedSemantics?.contains(SemanticsProperties.EditableText) == true -> SentryReplayOptions.TEXT_VIEW_CLASS_NAME
             else -> "android.view.View"
         }
     }
@@ -87,7 +88,8 @@ internal object ComposeViewHierarchyNode {
         val isVisible = !node.outerCoordinator.isTransparent() &&
             (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
             visibleRect.height() > 0 && visibleRect.width() > 0
-        val isEditable = semantics?.contains(SemanticsActions.SetText) == true
+        val isEditable = semantics?.contains(SemanticsActions.SetText) == true ||
+            semantics?.contains(SemanticsProperties.EditableText) == true
         return when {
             semantics?.contains(SemanticsProperties.Text) == true || isEditable -> {
                 val shouldMask = isVisible && node.shouldMask(isImage = false, options)
