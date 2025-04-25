@@ -4,6 +4,7 @@ import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.profiling.JfrProfile;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +34,8 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
   /** Profile trace encoded with Base64. */
   private @Nullable String sampledProfile = null;
 
+  private @Nullable JfrProfile jfrProfile;
+
   private @Nullable Map<String, Object> unknown;
 
   public ProfileChunk() {
@@ -60,7 +63,28 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     this.clientSdk = options.getSdkVersion();
     this.release = options.getRelease() != null ? options.getRelease() : "";
     this.environment = options.getEnvironment();
-    this.platform = "android";
+    this.platform = "java";
+    this.version = "2";
+    this.timestamp = timestamp;
+  }
+
+  public ProfileChunk(
+    final @NotNull SentryId profilerId,
+    final @NotNull SentryId chunkId,
+    final @NotNull File traceFile,
+    final @NotNull Map<String, ProfileMeasurement> measurements,
+    final @NotNull Double timestamp,
+    final @NotNull String platform,
+    final @NotNull SentryOptions options) {
+    this.profilerId = profilerId;
+    this.chunkId = chunkId;
+    this.traceFile = traceFile;
+    this.measurements = measurements;
+    this.debugMeta = null;
+    this.clientSdk = options.getSdkVersion();
+    this.release = options.getRelease() != null ? options.getRelease() : "";
+    this.environment = options.getEnvironment();
+    this.platform = platform;
     this.version = "2";
     this.timestamp = timestamp;
   }
@@ -121,6 +145,14 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     return version;
   }
 
+  public @Nullable JfrProfile getJfrProfile() {
+    return jfrProfile;
+  }
+
+  public void setJfrProfile(@Nullable JfrProfile jfrProfile) {
+    this.jfrProfile = jfrProfile;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -136,7 +168,8 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
         && Objects.equals(environment, that.environment)
         && Objects.equals(version, that.version)
         && Objects.equals(sampledProfile, that.sampledProfile)
-        && Objects.equals(unknown, that.unknown);
+        && Objects.equals(unknown, that.unknown)
+        && Objects.equals(jfrProfile, that.jfrProfile);
   }
 
   @Override
@@ -152,6 +185,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
         environment,
         version,
         sampledProfile,
+        jfrProfile,
         unknown);
   }
 
@@ -194,6 +228,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     public static final String VERSION = "version";
     public static final String SAMPLED_PROFILE = "sampled_profile";
     public static final String TIMESTAMP = "timestamp";
+    public static final String JRF_PROFILE = "profile";
   }
 
   @Override
@@ -221,6 +256,9 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
       writer.name(JsonKeys.SAMPLED_PROFILE).value(logger, sampledProfile);
     }
     writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
+    if (jfrProfile != null) {
+      writer.name(JsonKeys.JRF_PROFILE).value(logger, jfrProfile);
+    }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
@@ -318,6 +356,12 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
             Double timestamp = reader.nextDoubleOrNull();
             if (timestamp != null) {
               data.timestamp = timestamp;
+            }
+            break;
+          case JsonKeys.JRF_PROFILE:
+            JfrProfile jfrProfile = reader.nextOrNull(logger, new JfrProfile.Deserializer());
+            if (jfrProfile != null) {
+              data.jfrProfile = jfrProfile;
             }
             break;
           default:

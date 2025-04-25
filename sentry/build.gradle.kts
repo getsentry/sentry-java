@@ -20,6 +20,8 @@ dependencies {
     errorprone(Config.CompileOnly.errorprone)
     compileOnly(Config.CompileOnly.jetbrainsAnnotations)
     errorprone(Config.CompileOnly.errorProneNullAway)
+    // https://mvnrepository.com/artifact/tools.profiler/async-profiler
+    implementation("tools.profiler:async-profiler:3.0")
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(Config.TestLibs.kotlinTestJunit)

@@ -7,6 +7,8 @@ import static io.sentry.vendor.Base64.NO_WRAP;
 import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.profiling.JfrProfile;
+import io.sentry.protocol.profiling.JfrToSentryProfileConverter;
 import io.sentry.util.FileUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
@@ -16,6 +18,7 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -282,24 +285,30 @@ public final class SentryEnvelopeItem {
                         "Dropping profile chunk, because the file '%s' doesn't exists",
                         traceFile.getName()));
               }
-              // The payload of the profile item is a json including the trace file encoded with
-              // base64
-              final byte[] traceFileBytes =
+              if(traceFile.getName().endsWith(".jfr")) {
+                JfrProfile profile = new JfrToSentryProfileConverter().convert(traceFile.toPath());
+                profileChunk.setJfrProfile(profile);
+
+              } else {
+                // The payload of the profile item is a json including the trace file encoded with
+                // base64
+                final byte[] traceFileBytes =
                   readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
-              final @NotNull String base64Trace =
+                final @NotNull String base64Trace =
                   Base64.encodeToString(traceFileBytes, NO_WRAP | NO_PADDING);
-              if (base64Trace.isEmpty()) {
-                throw new SentryEnvelopeException("Profiling trace file is empty");
+                if (base64Trace.isEmpty()) {
+                  throw new SentryEnvelopeException("Profiling trace file is empty");
+                }
+                profileChunk.setSampledProfile(base64Trace);
               }
-              profileChunk.setSampledProfile(base64Trace);
 
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                   final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
                 serializer.serialize(profileChunk, writer);
                 return stream.toByteArray();
               } catch (IOException e) {
                 throw new SentryEnvelopeException(
-                    String.format("Failed to serialize profile chunk\n%s", e.getMessage()));
+                  String.format("Failed to serialize profile chunk\n%s", e.getMessage()));
               } finally {
                 // In any case we delete the trace file
                 traceFile.delete();
