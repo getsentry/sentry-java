@@ -1,6 +1,6 @@
 # Changelog
 
-## 8.10.0-alpha.1
+## Unreleased
 
 ### Features
 
@@ -11,9 +11,25 @@
 - New option `ignoreStandaloneClientSpans` that prevents Sentry from creating transactions for OpenTelemetry spans with kind `CLIENT` ([#4349](https://github.com/getsentry/sentry-java/pull/4349))
     - Defaults to `false` meaning standalone OpenTelemetry spans with kind `CLIENT` will be turned into Sentry transactions
 
+## 8.10.0
+
+### Features
+
+- Wrap configured OpenTelemetry `ContextStorageProvider` if available ([#4359](https://github.com/getsentry/sentry-java/pull/4359))
+  - This is only relevant if you see `java.lang.IllegalStateException: Found multiple ContextStorageProvider. Set the io.opentelemetry.context.ContextStorageProvider property to the fully qualified class name of the provider to use. Falling back to default ContextStorage. Found providers: ...` 
+  - Set `-Dio.opentelemetry.context.contextStorageProvider=io.sentry.opentelemetry.SentryContextStorageProvider` on your `java` command
+  - Sentry will then wrap the other `ContextStorageProvider` that has been configured by loading it through SPI
+  - If no other `ContextStorageProvider` is available or there are problems loading it, we fall back to using `SentryOtelThreadLocalStorage`
+
 ### Fixes
 
 - Update profile chunk rate limit and client report ([#4353](https://github.com/getsentry/sentry-java/pull/4353))
+
+### Dependencies
+
+- Bump Native SDK from v0.8.3 to v0.8.4 ([#4343](https://github.com/getsentry/sentry-java/pull/4343))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#084)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.3...0.8.4)
 
 ## 8.9.0
 
