@@ -15,7 +15,7 @@ public enum SentryItemType implements JsonSerializable {
   Attachment("attachment"),
   Transaction("transaction"),
   Profile("profile"),
-  ProfileChunk("profile_chunk"),
+  ProfileChunk("profile_chunk_ui"),
   ClientReport("client_report"),
   ReplayEvent("replay_event"),
   ReplayRecording("replay_recording"),

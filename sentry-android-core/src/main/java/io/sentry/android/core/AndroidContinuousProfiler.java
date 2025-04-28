@@ -178,7 +178,7 @@ public class AndroidContinuousProfiler
       final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
       if (rateLimiter != null
           && (rateLimiter.isActiveForCategory(All)
-              || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk))) {
+              || rateLimiter.isActiveForCategory(DataCategory.ProfileChunkUi))) {
         logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
         // Let's stop and reset profiler id, as the profile is now broken anyway
         stop(false);
@@ -385,7 +385,7 @@ public class AndroidContinuousProfiler
   public void onRateLimitChanged(@NotNull RateLimiter rateLimiter) {
     // We stop the profiler as soon as we are rate limited, to avoid the performance overhead
     if (rateLimiter.isActiveForCategory(All)
-        || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)) {
+        || rateLimiter.isActiveForCategory(DataCategory.ProfileChunkUi)) {
       logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
       stop(false);
     }
