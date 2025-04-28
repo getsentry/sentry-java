@@ -109,6 +109,8 @@ final class ManifestMetadataReader {
 
   static final String REPLAYS_MASK_ALL_IMAGES = "io.sentry.session-replay.mask-all-images";
 
+  static final String REPLAYS_DEBUG = "io.sentry.session-replay.debug";
+
   static final String FORCE_INIT = "io.sentry.force-init";
 
   static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
@@ -335,7 +337,7 @@ final class ManifestMetadataReader {
           final double profileSessionSampleRate =
               readDouble(metadata, logger, PROFILE_SESSION_SAMPLE_RATE);
           if (profileSessionSampleRate != -1) {
-            options.getExperimental().setProfileSessionSampleRate(profileSessionSampleRate);
+            options.setProfileSessionSampleRate(profileSessionSampleRate);
           }
         }
 
@@ -346,20 +348,16 @@ final class ManifestMetadataReader {
                 PROFILE_LIFECYCLE,
                 options.getProfileLifecycle().name().toLowerCase(Locale.ROOT));
         if (profileLifecycle != null) {
-          options
-              .getExperimental()
-              .setProfileLifecycle(
-                  ProfileLifecycle.valueOf(profileLifecycle.toUpperCase(Locale.ROOT)));
+          options.setProfileLifecycle(
+              ProfileLifecycle.valueOf(profileLifecycle.toUpperCase(Locale.ROOT)));
         }
 
-        options
-            .getExperimental()
-            .setStartProfilerOnAppStart(
-                readBool(
-                    metadata,
-                    logger,
-                    PROFILER_START_ON_APP_START,
-                    options.isStartProfilerOnAppStart()));
+        options.setStartProfilerOnAppStart(
+            readBool(
+                metadata,
+                logger,
+                PROFILER_START_ON_APP_START,
+                options.isStartProfilerOnAppStart()));
 
         options.setEnableUserInteractionTracing(
             readBool(metadata, logger, TRACES_UI_ENABLE, options.isEnableUserInteractionTracing()));
@@ -455,6 +453,8 @@ final class ManifestMetadataReader {
         options
             .getSessionReplay()
             .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
+
+        options.getSessionReplay().setDebug(readBool(metadata, logger, REPLAYS_DEBUG, false));
 
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
 

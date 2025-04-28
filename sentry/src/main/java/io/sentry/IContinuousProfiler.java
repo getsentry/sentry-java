@@ -14,8 +14,12 @@ public interface IContinuousProfiler {
 
   void stopProfiler(final @NotNull ProfileLifecycle profileLifecycle);
 
-  /** Cancel the profiler and stops it. Used on SDK close. */
-  void close();
+  /**
+   * Cancel the profiler and stops it.
+   *
+   * @param isTerminating whether the profiler is terminating and won't be restarted or not.
+   */
+  void close(final boolean isTerminating);
 
   void reevaluateSampling();
 

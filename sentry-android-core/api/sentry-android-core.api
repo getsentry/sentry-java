@@ -42,7 +42,7 @@ public final class io/sentry/android/core/ActivityLifecycleIntegration : android
 
 public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
 	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
-	public fun close ()V
+	public fun close (Z)V
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun getRootSpanCounter ()I
 	public fun isRunning ()Z
@@ -109,6 +109,12 @@ public class io/sentry/android/core/AndroidProfiler$ProfileStartData {
 	public final field startNanos J
 	public final field startTimestamp Ljava/util/Date;
 	public fun <init> (JJLjava/util/Date;)V
+}
+
+public final class io/sentry/android/core/AndroidSocketTagger : io/sentry/ISocketTagger {
+	public static fun getInstance ()Lio/sentry/android/core/AndroidSocketTagger;
+	public fun tagSockets ()V
+	public fun untagSockets ()V
 }
 
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {
@@ -185,6 +191,7 @@ public final class io/sentry/android/core/BuildInfoProvider {
 }
 
 public final class io/sentry/android/core/ContextUtils {
+	public static fun appIsLibraryForComposePreview (Landroid/content/Context;)Z
 	public static fun getApplicationContext (Landroid/content/Context;)Landroid/content/Context;
 	public static fun isForegroundImportance ()Z
 }

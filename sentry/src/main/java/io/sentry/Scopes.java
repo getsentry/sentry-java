@@ -405,7 +405,7 @@ public final class Scopes implements IScopes {
         configureScope(ScopeType.ISOLATION, scope -> scope.clear());
         getOptions().getBackpressureMonitor().close();
         getOptions().getTransactionProfiler().close();
-        getOptions().getContinuousProfiler().close();
+        getOptions().getContinuousProfiler().close(true);
         getOptions().getCompositePerformanceCollector().close();
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
         if (isRestarting) {

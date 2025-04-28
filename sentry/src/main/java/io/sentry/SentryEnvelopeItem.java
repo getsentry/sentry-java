@@ -213,6 +213,7 @@ public final class SentryEnvelopeItem {
                 return data;
               } else if (attachment.getSerializable() != null) {
                 final JsonSerializable serializable = attachment.getSerializable();
+                @SuppressWarnings("NullableProblems")
                 final @Nullable byte[] data =
                     JsonSerializationUtils.bytesFrom(serializer, logger, serializable);
 
@@ -223,11 +224,19 @@ public final class SentryEnvelopeItem {
                 }
               } else if (attachment.getPathname() != null) {
                 return readBytesFromFile(attachment.getPathname(), maxAttachmentSize);
+              } else if (attachment.getByteProvider() != null) {
+                @SuppressWarnings("NullableProblems")
+                final @Nullable byte[] data = attachment.getByteProvider().call();
+                if (data != null) {
+                  ensureAttachmentSizeLimit(
+                      data.length, maxAttachmentSize, attachment.getFilename());
+                  return data;
+                }
               }
               throw new SentryEnvelopeException(
                   String.format(
                       "Couldn't attach the attachment %s.\n"
-                          + "Please check that either bytes, serializable or a path is set.",
+                          + "Please check that either bytes, serializable, path or provider is set.",
                       attachment.getFilename()));
             });
 

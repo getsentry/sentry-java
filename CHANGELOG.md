@@ -1,5 +1,121 @@
 # Changelog
 
+## 8.10.0
+
+### Features
+
+- Wrap configured OpenTelemetry `ContextStorageProvider` if available ([#4359](https://github.com/getsentry/sentry-java/pull/4359))
+  - This is only relevant if you see `java.lang.IllegalStateException: Found multiple ContextStorageProvider. Set the io.opentelemetry.context.ContextStorageProvider property to the fully qualified class name of the provider to use. Falling back to default ContextStorage. Found providers: ...` 
+  - Set `-Dio.opentelemetry.context.contextStorageProvider=io.sentry.opentelemetry.SentryContextStorageProvider` on your `java` command
+  - Sentry will then wrap the other `ContextStorageProvider` that has been configured by loading it through SPI
+  - If no other `ContextStorageProvider` is available or there are problems loading it, we fall back to using `SentryOtelThreadLocalStorage`
+
+### Fixes
+
+- Update profile chunk rate limit and client report ([#4353](https://github.com/getsentry/sentry-java/pull/4353))
+
+### Dependencies
+
+- Bump Native SDK from v0.8.3 to v0.8.4 ([#4343](https://github.com/getsentry/sentry-java/pull/4343))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#084)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.3...0.8.4)
+
+## 8.9.0
+
+### Features
+
+- Add `SentryWrapper.wrapRunnable` to wrap `Runnable` for use with Sentry ([#4332](https://github.com/getsentry/sentry-java/pull/4332))
+
+### Fixes
+
+- Fix TTFD measurement when API called too early ([#4297](https://github.com/getsentry/sentry-java/pull/4297))
+- Tag sockets traffic originating from Sentry's HttpConnection ([#4340](https://github.com/getsentry/sentry-java/pull/4340))
+  - This should suppress the StrictMode's `UntaggedSocketViolation`
+- Reduce debug logs verbosity ([#4341](https://github.com/getsentry/sentry-java/pull/4341))
+- Fix unregister `SystemEventsBroadcastReceiver` when entering background ([#4338](https://github.com/getsentry/sentry-java/pull/4338))
+  - This should reduce ANRs seen with this class in the stack trace for Android 14 and above
+
+### Improvements
+
+- Make user interaction tracing faster and do fewer allocations ([#4347](https://github.com/getsentry/sentry-java/pull/4347))
+- Pre-load modules on a background thread upon SDK init ([#4348](https://github.com/getsentry/sentry-java/pull/4348))
+
+## 8.8.0
+
+### Features
+
+- Add `CoroutineExceptionHandler` for reporting uncaught exceptions in coroutines to Sentry ([#4259](https://github.com/getsentry/sentry-java/pull/4259))
+  - This is now part of `sentry-kotlin-extensions` and can be used together with `SentryContext` when launching a coroutine
+  - Any exceptions thrown in a coroutine when using the handler will be captured (not rethrown!) and reported to Sentry
+  - It's also possible to extend `CoroutineExceptionHandler` to implement custom behavior in addition to the one we provide by default
+
+### Fixes
+
+- Use thread context classloader when available ([#4320](https://github.com/getsentry/sentry-java/pull/4320))
+  - This ensures correct resource loading in environments like Spring Boot where the thread context classloader is used for resource loading.
+- Improve low memory breadcrumb capturing ([#4325](https://github.com/getsentry/sentry-java/pull/4325))
+- Fix do not initialize SDK for Jetpack Compose Preview builds ([#4324](https://github.com/getsentry/sentry-java/pull/4324))
+- Fix Synchronize Baggage values ([#4327](https://github.com/getsentry/sentry-java/pull/4327))
+
+### Improvements
+
+- Make `SystemEventsBreadcrumbsIntegration` faster ([#4330](https://github.com/getsentry/sentry-java/pull/4330))
+
+## 8.7.0
+
+### Features
+
+- UI Profiling GA
+
+  Continuous Profiling is now GA, named UI Profiling. To enable it you can use one of the following options. More info can be found at https://docs.sentry.io/platforms/android/profiling/.
+    Note: Both `options.profilesSampler` and `options.profilesSampleRate` must **not** be set to enable UI Profiling.
+    To keep the same transaction-based behaviour, without the 30 seconds limitation, you can use the `trace` lifecycle mode.
+  
+  ```xml
+  <application>
+    <!-- Enable UI profiling, adjust in production env. This is evaluated only once per session -->
+    <meta-data android:name="io.sentry.traces.profiling.session-sample-rate" android:value="1.0" />
+    <!-- Set profiling lifecycle, can be `manual` (controlled through `Sentry.startProfiler()` and `Sentry.stopProfiler()`) or `trace` (automatically starts and stop a profile whenever a sampled trace starts and finishes) -->
+    <meta-data android:name="io.sentry.traces.profiling.lifecycle" android:value="trace" />
+    <!-- Enable profiling on app start. The app start profile will be stopped automatically when the app start root span finishes -->
+    <meta-data android:name="io.sentry.traces.profiling.start-on-app-start" android:value="true" />
+  </application>
+  ```
+  ```java
+  import io.sentry.ProfileLifecycle;
+  import io.sentry.android.core.SentryAndroid;
+  
+  SentryAndroid.init(context, options -> {
+      // Enable UI profiling, adjust in production env. This is evaluated only once per session
+      options.setProfileSessionSampleRate(1.0);
+      // Set profiling lifecycle, can be `manual` (controlled through `Sentry.startProfiler()` and `Sentry.stopProfiler()`) or `trace` (automatically starts and stop a profile whenever a sampled trace starts and finishes)
+      options.setProfileLifecycle(ProfileLifecycle.TRACE);
+      // Enable profiling on app start. The app start profile will be stopped automatically when the app start root span finishes
+      options.setStartProfilerOnAppStart(true);
+    });
+  ```
+  ```kotlin
+  import io.sentry.ProfileLifecycle
+  import io.sentry.android.core.SentryAndroid
+
+  SentryAndroid.init(context, { options ->
+    // Enable UI profiling, adjust in production env. This is evaluated only once per session
+    options.profileSessionSampleRate = 1.0
+    // Set profiling lifecycle, can be `manual` (controlled through `Sentry.startProfiler()` and `Sentry.stopProfiler()`) or `trace` (automatically starts and stop a profile whenever a sampled trace starts and finishes)
+    options.profileLifecycle = ProfileLifecycle.TRACE
+    // Enable profiling on app start. The app start profile will be stopped automatically when the app start root span finishes
+    options.isStartProfilerOnAppStart = true
+    })
+  ```
+
+  - Continuous Profiling - Stop when app goes in background ([#4311](https://github.com/getsentry/sentry-java/pull/4311))
+  - Continuous Profiling - Add delayed stop ([#4293](https://github.com/getsentry/sentry-java/pull/4293))
+  - Continuous Profiling - Out of Experimental ([#4310](https://github.com/getsentry/sentry-java/pull/4310))
+
+### Fixes
+
+- Compress Screenshots on a background thread ([#4295](https://github.com/getsentry/sentry-java/pull/4295))
+
 ## 8.6.0
 
 ### Behavioral Changes

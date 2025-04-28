@@ -1,7 +1,6 @@
 name: 💡 Feature Request - Android
 description: Tell us about a problem our SDK could solve but doesn't.
-labels: ["Platform: Android", "Type: Feature Request"]
-type: Feature
+labels: ["Android", "Feature"]
 body:
   - type: textarea
     id: problem

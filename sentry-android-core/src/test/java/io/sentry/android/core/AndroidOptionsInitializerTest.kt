@@ -11,6 +11,7 @@ import io.sentry.DefaultCompositePerformanceCollector
 import io.sentry.IConnectionStatusProvider
 import io.sentry.IContinuousProfiler
 import io.sentry.ILogger
+import io.sentry.ISocketTagger
 import io.sentry.ITransactionProfiler
 import io.sentry.MainEventProcessor
 import io.sentry.NoOpContinuousProfiler
@@ -446,7 +447,7 @@ class AndroidOptionsInitializerTest {
         assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
 
         // app start profiler is closed, because it will never be used
-        verify(appStartContinuousProfiler).close()
+        verify(appStartContinuousProfiler).close(eq(true))
 
         // AppStartMetrics should be cleared
         assertNull(AppStartMetrics.getInstance().appStartProfiler)
@@ -747,6 +748,13 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
+    fun `AndroidSocketTagger is set to options`() {
+        fixture.initSut()
+
+        assertTrue { fixture.sentryOptions.socketTagger is AndroidSocketTagger }
+    }
+
+    @Test
     fun `does not install ComposeGestureTargetLocator, if sentry-compose is not available`() {
         fixture.initSutWithClassLoader()
 
@@ -859,6 +867,7 @@ class AndroidOptionsInitializerTest {
             setModulesLoader(mock<IModulesLoader>())
             setDebugMetaLoader(mock<IDebugMetaLoader>())
             threadChecker = mock<IThreadChecker>()
+            setSocketTagger(mock<ISocketTagger>())
             compositePerformanceCollector = mock<CompositePerformanceCollector>()
         })
 
@@ -868,6 +877,7 @@ class AndroidOptionsInitializerTest {
         assertFalse { fixture.sentryOptions.modulesLoader is AssetsModulesLoader }
         assertFalse { fixture.sentryOptions.debugMetaLoader is AssetsDebugMetaLoader }
         assertFalse { fixture.sentryOptions.threadChecker is AndroidThreadChecker }
+        assertFalse { fixture.sentryOptions.socketTagger is AndroidSocketTagger }
         assertFalse { fixture.sentryOptions.compositePerformanceCollector is DefaultCompositePerformanceCollector }
     }
 }

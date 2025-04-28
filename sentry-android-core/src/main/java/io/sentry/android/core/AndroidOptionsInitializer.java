@@ -15,6 +15,7 @@ import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpCompositePerformanceCollector;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.NoOpContinuousProfiler;
+import io.sentry.NoOpSocketTagger;
 import io.sentry.NoOpTransactionProfiler;
 import io.sentry.NoopVersionDetector;
 import io.sentry.ScopeType;
@@ -238,6 +239,9 @@ final class AndroidOptionsInitializer {
     if (options.getThreadChecker() instanceof NoOpThreadChecker) {
       options.setThreadChecker(AndroidThreadChecker.getInstance());
     }
+    if (options.getSocketTagger() instanceof NoOpSocketTagger) {
+      options.setSocketTagger(AndroidSocketTagger.getInstance());
+    }
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
       options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
@@ -268,7 +272,7 @@ final class AndroidOptionsInitializer {
       // This is a safeguard, but it should never happen, as the app start profiler should be the
       // continuous one.
       if (appStartContinuousProfiler != null) {
-        appStartContinuousProfiler.close();
+        appStartContinuousProfiler.close(true);
       }
       if (appStartTransactionProfiler != null) {
         options.setTransactionProfiler(appStartTransactionProfiler);
