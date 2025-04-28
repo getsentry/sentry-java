@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Make `RequestDetailsResolver` public ([#4326](https://github.com/getsentry/sentry-java/pull/4326))
+  - `RequestDetailsResolver` is now public and has an additional constructor, making it easier to use a custom `TransportFactory`
+
 ## 8.10.0
 
 ### Features
@@ -9,7 +16,7 @@
   - Set `-Dio.opentelemetry.context.contextStorageProvider=io.sentry.opentelemetry.SentryContextStorageProvider` on your `java` command
   - Sentry will then wrap the other `ContextStorageProvider` that has been configured by loading it through SPI
   - If no other `ContextStorageProvider` is available or there are problems loading it, we fall back to using `SentryOtelThreadLocalStorage`
-
+    
 ### Fixes
 
 - Update profile chunk rate limit and client report ([#4353](https://github.com/getsentry/sentry-java/pull/4353))

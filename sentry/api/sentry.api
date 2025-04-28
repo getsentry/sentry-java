@@ -2185,6 +2185,12 @@ public final class io/sentry/RequestDetails {
 	public fun getUrl ()Ljava/net/URL;
 }
 
+public final class io/sentry/RequestDetailsResolver {
+	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun resolve ()Lio/sentry/RequestDetails;
+}
+
 public final class io/sentry/SamplingContext {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;)V
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/CustomSamplingContext;Ljava/lang/Double;Ljava/util/Map;)V
