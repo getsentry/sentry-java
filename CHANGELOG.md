@@ -7,6 +7,10 @@
 - Make `RequestDetailsResolver` public ([#4326](https://github.com/getsentry/sentry-java/pull/4326))
   - `RequestDetailsResolver` is now public and has an additional constructor, making it easier to use a custom `TransportFactory`
 
+### Fixes
+
+- Session Replay: Fix masking of non-styled `Text` Composables ([#4361](https://github.com/getsentry/sentry-java/pull/4361))
+
 ## 8.10.0
 
 ### Features
