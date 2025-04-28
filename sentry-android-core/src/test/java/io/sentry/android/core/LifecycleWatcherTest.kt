@@ -3,6 +3,7 @@ package io.sentry.android.core
 import androidx.lifecycle.LifecycleOwner
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
+import io.sentry.IContinuousProfiler
 import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.ReplayController
@@ -15,6 +16,7 @@ import io.sentry.transport.ICurrentDateProvider
 import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.timeout
@@ -38,6 +40,7 @@ class LifecycleWatcherTest {
         val dateProvider = mock<ICurrentDateProvider>()
         val options = SentryOptions()
         val replayController = mock<ReplayController>()
+        val continuousProfiler = mock<IContinuousProfiler>()
 
         fun getSUT(
             sessionIntervalMillis: Long = 0L,
@@ -52,6 +55,7 @@ class LifecycleWatcherTest {
                 argumentCaptor.value.run(scope)
             }
             options.setReplayController(replayController)
+            options.setContinuousProfiler(continuousProfiler)
             whenever(scopes.options).thenReturn(options)
 
             return LifecycleWatcher(
@@ -106,6 +110,7 @@ class LifecycleWatcherTest {
         watcher.onStop(fixture.ownerMock)
         verify(fixture.scopes, timeout(10000)).endSession()
         verify(fixture.replayController, timeout(10000)).stop()
+        verify(fixture.continuousProfiler, timeout(10000)).close(eq(false))
     }
 
     @Test
@@ -254,7 +259,7 @@ class LifecycleWatcherTest {
     }
 
     @Test
-    fun `if the hub has already a fresh session running, doesn't resume replay`() {
+    fun `if the hub has already a fresh session running, resumes replay to invalidate isManualPause flag`() {
         val watcher = fixture.getSUT(
             enableAppLifecycleBreadcrumbs = false,
             session = Session(
@@ -276,7 +281,7 @@ class LifecycleWatcherTest {
         )
 
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.replayController, never()).resume()
+        verify(fixture.replayController).resume()
     }
 
     @Test
@@ -293,7 +298,7 @@ class LifecycleWatcherTest {
         verify(fixture.replayController).pause()
 
         watcher.onStart(fixture.ownerMock)
-        verify(fixture.replayController).resume()
+        verify(fixture.replayController, times(2)).resume()
 
         watcher.onStop(fixture.ownerMock)
         verify(fixture.replayController, timeout(10000)).stop()

@@ -11,6 +11,7 @@ import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.context.Context;
 import io.sentry.Baggage;
 import io.sentry.BuildConfig;
+import io.sentry.CompositePerformanceCollector;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ISpanFactory;
@@ -24,7 +25,6 @@ import io.sentry.SpanOptions;
 import io.sentry.TracesSamplingDecision;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
-import io.sentry.TransactionPerformanceCollector;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.SpanUtils;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +51,7 @@ public final class OtelSpanFactory implements ISpanFactory {
       @NotNull TransactionContext context,
       @NotNull IScopes scopes,
       @NotNull TransactionOptions transactionOptions,
-      @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
+      @Nullable CompositePerformanceCollector compositePerformanceCollector) {
     final @Nullable IOtelSpanWrapper span =
         createSpanInternal(
             scopes, transactionOptions, null, context.getSamplingDecision(), context);
@@ -136,6 +136,8 @@ public final class OtelSpanFactory implements ISpanFactory {
       spanBuilder.setAttribute(InternalSemanticAttributes.SAMPLED, samplingDecision.getSampled());
       spanBuilder.setAttribute(
           InternalSemanticAttributes.SAMPLE_RATE, samplingDecision.getSampleRate());
+      spanBuilder.setAttribute(
+          InternalSemanticAttributes.SAMPLE_RAND, samplingDecision.getSampleRand());
       spanBuilder.setAttribute(
           InternalSemanticAttributes.PROFILE_SAMPLED, samplingDecision.getProfileSampled());
       spanBuilder.setAttribute(

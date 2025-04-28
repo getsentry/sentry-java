@@ -23,6 +23,7 @@ import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class OutboxSenderTest {
@@ -38,6 +39,7 @@ class OutboxSenderTest {
             whenever(options.dsn).thenReturn("https://key@sentry.io/proj")
             whenever(options.dateProvider).thenReturn(SentryNanotimeDateProvider())
             whenever(options.threadChecker).thenReturn(NoOpThreadChecker.getInstance())
+            whenever(options.continuousProfiler).thenReturn(NoOpContinuousProfiler.getInstance())
             whenever(scopes.options).thenReturn(this.options)
         }
 
@@ -145,6 +147,63 @@ class OutboxSenderTest {
         transactionContext.description = "fixture-request"
         transactionContext.status = SpanStatus.OK
         transactionContext.setTag("fixture-tag", "fixture-value")
+        transactionContext.samplingDecision = TracesSamplingDecision(true, 0.00000021, 0.021)
+
+        val sentryTracer = SentryTracer(transactionContext, fixture.scopes)
+        val span = sentryTracer.startChild("child")
+        span.finish(SpanStatus.OK)
+        sentryTracer.finish()
+
+        val sentryTracerSpy = spy(sentryTracer)
+        whenever(sentryTracerSpy.eventId).thenReturn(SentryId("3367f5196c494acaae85bbbd535379ac"))
+
+        val expected = SentryTransaction(sentryTracerSpy)
+        whenever(fixture.serializer.deserialize(any(), eq(SentryTransaction::class.java))).thenReturn(expected)
+
+        val sut = fixture.getSut()
+        val path = getTempEnvelope(fileName = "envelope-transaction-with-sample-rand.txt")
+        assertTrue(File(path).exists())
+
+        val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
+        sut.processEnvelopeFile(path, hints)
+
+        verify(fixture.scopes).captureTransaction(
+            check {
+                assertEquals(expected, it)
+                assertTrue(it.isSampled)
+                assertEquals(0.00000021, it.samplingDecision?.sampleRate)
+                assertEquals(0.021, it.samplingDecision?.sampleRand)
+                assertTrue(it.samplingDecision!!.sampled)
+            },
+            check {
+                assertEquals("b156a475de54423d9c1571df97ec7eb6", it.traceId.toString())
+                assertEquals("key", it.publicKey)
+                assertEquals("0.00000021", it.sampleRate)
+                assertEquals("1.0-beta.1", it.release)
+                assertEquals("prod", it.environment)
+                assertEquals("usr1", it.userId)
+                assertEquals("tx1", it.transaction)
+            },
+            any()
+        )
+        assertFalse(File(path).exists())
+
+        // Additionally make sure we have no errors logged
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any(), any<Any>())
+        verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+    }
+
+    @Test
+    fun `backfills sampleRand`() {
+        fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
+        whenever(fixture.options.maxSpans).thenReturn(1000)
+        whenever(fixture.scopes.options).thenReturn(fixture.options)
+        whenever(fixture.options.transactionProfiler).thenReturn(NoOpTransactionProfiler.getInstance())
+
+        val transactionContext = TransactionContext("fixture-name", "http")
+        transactionContext.description = "fixture-request"
+        transactionContext.status = SpanStatus.OK
+        transactionContext.setTag("fixture-tag", "fixture-value")
         transactionContext.samplingDecision = TracesSamplingDecision(true, 0.00000021)
 
         val sentryTracer = SentryTracer(transactionContext, fixture.scopes)
@@ -170,6 +229,7 @@ class OutboxSenderTest {
                 assertEquals(expected, it)
                 assertTrue(it.isSampled)
                 assertEquals(0.00000021, it.samplingDecision?.sampleRate)
+                assertNotNull(it.samplingDecision?.sampleRand)
                 assertTrue(it.samplingDecision!!.sampled)
             },
             check {

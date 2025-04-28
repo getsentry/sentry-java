@@ -10,6 +10,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
+import io.sentry.reactor.SentryReactorUtils;
 import io.sentry.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +41,7 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
         serverWebExchange.getAttributeOrDefault(SentryWebFilter.SENTRY_SCOPES_KEY, null);
     final @NotNull IScopes scopesToUse = requestScopes != null ? requestScopes : scopes;
 
-    return ReactorUtils.withSentryScopes(
+    return SentryReactorUtils.withSentryScopes(
             Mono.just(ex)
                 .map(
                     it -> {

@@ -8,7 +8,9 @@ import io.sentry.protocol.Gpu
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.Response
 import io.sentry.protocol.SentryRuntime
+import io.sentry.protocol.Spring
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -412,6 +414,43 @@ class CombinedContextsViewTest {
     }
 
     @Test
+    fun `prefers spring from current context`() {
+        val combined = fixture.getSut()
+        fixture.current.setSpring(Spring().also { it.activeProfiles = listOf("current").toTypedArray() })
+        fixture.isolation.setSpring(Spring().also { it.activeProfiles = listOf("isolation").toTypedArray() })
+        fixture.global.setSpring(Spring().also { it.activeProfiles = listOf("global").toTypedArray() })
+
+        assertContentEquals(listOf("current").toTypedArray(), combined.spring?.activeProfiles)
+    }
+
+    @Test
+    fun `uses isolation spring if current context does not have it`() {
+        val combined = fixture.getSut()
+        fixture.isolation.setSpring(Spring().also { it.activeProfiles = listOf("isolation").toTypedArray() })
+        fixture.global.setSpring(Spring().also { it.activeProfiles = listOf("global").toTypedArray() })
+
+        assertContentEquals(listOf("isolation").toTypedArray(), combined.spring?.activeProfiles)
+    }
+
+    @Test
+    fun `uses global spring if current and isolation context do not have it`() {
+        val combined = fixture.getSut()
+        fixture.global.setSpring(Spring().also { it.activeProfiles = listOf("global").toTypedArray() })
+
+        assertContentEquals(listOf("global").toTypedArray(), combined.spring?.activeProfiles)
+    }
+
+    @Test
+    fun `sets spring on default context`() {
+        val combined = fixture.getSut()
+        combined.setSpring(Spring().also { it.activeProfiles = listOf("test").toTypedArray() })
+
+        assertNull(fixture.current.spring)
+        assertContentEquals(listOf("test").toTypedArray(), combined.spring?.activeProfiles)
+        assertNull(fixture.global.spring)
+    }
+
+    @Test
     fun `size combines contexts`() {
         val combined = fixture.getSut()
         fixture.current.setTrace(SpanContext("current"))
@@ -564,5 +603,32 @@ class CombinedContextsViewTest {
         assertEquals("current", fixture.current.get("test"))
         assertNull(fixture.isolation.get("test"))
         assertEquals("global", fixture.global.get("test"))
+    }
+
+    @Test
+    fun `set null value on context does not cause exception`() {
+        val combined = fixture.getSut()
+        combined.set("k", null)
+        assertFalse(combined.containsKey("k"))
+    }
+
+    @Test
+    fun `set null key on context does not cause exception`() {
+        val combined = fixture.getSut()
+        combined.set(null, "v")
+        assertFalse(combined.containsKey(null))
+    }
+
+    @Test
+    fun `set null key and value on context does not cause exception`() {
+        val combined = fixture.getSut()
+        combined.set(null, null)
+        assertFalse(combined.containsKey(null))
+    }
+
+    @Test
+    fun `remove null key from context does not cause exception`() {
+        val combined = fixture.getSut()
+        combined.remove(null)
     }
 }

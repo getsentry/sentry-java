@@ -9,6 +9,7 @@ import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISerializer
 import io.sentry.NoOpLogger
+import io.sentry.ProfileChunk
 import io.sentry.ProfilingTraceData
 import io.sentry.ReplayRecording
 import io.sentry.SentryEnvelope
@@ -210,8 +211,9 @@ class RateLimiterTest {
         val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
         val profileItem = SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, fixture.serializer)
         val checkInItem = SentryEnvelopeItem.fromCheckIn(fixture.serializer, CheckIn("monitor-slug-1", CheckInStatus.ERROR))
+        val profileChunkItem = SentryEnvelopeItem.fromProfileChunk(ProfileChunk(), fixture.serializer)
 
-        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem, profileItem, checkInItem))
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem, userFeedbackItem, sessionItem, attachmentItem, profileItem, checkInItem, profileChunkItem))
 
         rateLimiter.updateRetryAfterLimits(null, null, 429)
         val result = rateLimiter.filter(envelope, Hint())
@@ -224,6 +226,7 @@ class RateLimiterTest {
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(attachmentItem))
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileItem))
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(checkInItem))
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileChunkItem))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -330,6 +333,24 @@ class RateLimiterTest {
         assertEquals(1, result.items.toList().size)
 
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(replayItem))
+        verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
+    fun `drop profileChunk items as lost`() {
+        val rateLimiter = fixture.getSUT()
+
+        val profileChunkItem = SentryEnvelopeItem.fromProfileChunk(ProfileChunk(), fixture.serializer)
+        val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(profileChunkItem, attachmentItem))
+
+        rateLimiter.updateRetryAfterLimits("60:profile_chunk_ui:key", null, 1)
+        val result = rateLimiter.filter(envelope, Hint())
+
+        assertNotNull(result)
+        assertEquals(1, result.items.toList().size)
+
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(profileChunkItem))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 

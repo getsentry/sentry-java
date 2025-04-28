@@ -12,6 +12,7 @@ public enum DataCategory {
   Attachment("attachment"),
   Monitor("monitor"),
   Profile("profile"),
+  ProfileChunkUi("profile_chunk_ui"),
   Transaction("transaction"),
   Replay("replay"),
   Span("span"),

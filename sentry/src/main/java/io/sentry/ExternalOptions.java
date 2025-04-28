@@ -53,6 +53,7 @@ public final class ExternalOptions {
   private @Nullable Boolean enableBackpressureHandling;
   private @Nullable Boolean globalHubMode;
   private @Nullable Boolean forceInit;
+  private @Nullable Boolean captureOpenTelemetryEvents;
 
   private @Nullable SentryOptions.Cron cron;
 
@@ -128,7 +129,7 @@ public final class ExternalOptions {
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
 
-    options.setIgnoredErrors(propertiesProvider.getList("ignored-errors"));
+    options.setIgnoredErrors(propertiesProvider.getListOrNull("ignored-errors"));
 
     options.setEnabled(propertiesProvider.getBooleanProperty("enabled"));
 
@@ -138,13 +139,16 @@ public final class ExternalOptions {
     options.setSendModules(propertiesProvider.getBooleanProperty("send-modules"));
     options.setSendDefaultPii(propertiesProvider.getBooleanProperty("send-default-pii"));
 
-    options.setIgnoredCheckIns(propertiesProvider.getList("ignored-checkins"));
-    options.setIgnoredTransactions(propertiesProvider.getList("ignored-transactions"));
+    options.setIgnoredCheckIns(propertiesProvider.getListOrNull("ignored-checkins"));
+    options.setIgnoredTransactions(propertiesProvider.getListOrNull("ignored-transactions"));
 
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
 
     options.setGlobalHubMode(propertiesProvider.getBooleanProperty("global-hub-mode"));
+
+    options.setCaptureOpenTelemetryEvents(
+        propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -503,5 +507,15 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public void setSpotlightConnectionUrl(final @Nullable String spotlightConnectionUrl) {
     this.spotlightConnectionUrl = spotlightConnectionUrl;
+  }
+
+  @ApiStatus.Experimental
+  public void setCaptureOpenTelemetryEvents(final @Nullable Boolean captureOpenTelemetryEvents) {
+    this.captureOpenTelemetryEvents = captureOpenTelemetryEvents;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Boolean isCaptureOpenTelemetryEvents() {
+    return captureOpenTelemetryEvents;
   }
 }

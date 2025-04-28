@@ -1,5 +1,6 @@
 package io.sentry.android.ndk;
 
+import io.sentry.android.core.NdkHandlerStrategy;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.ndk.NativeModuleListLoader;
 import io.sentry.ndk.NdkOptions;
@@ -8,6 +9,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryNdk {
@@ -53,6 +55,23 @@ public final class SentryNdk {
                 options.getDist(),
                 options.getMaxBreadcrumbs(),
                 options.getNativeSdkName());
+
+        final int handlerStrategy = options.getNdkHandlerStrategy();
+        if (handlerStrategy == NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_DEFAULT.getValue()) {
+          ndkOptions.setNdkHandlerStrategy(
+              io.sentry.ndk.NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_DEFAULT);
+        } else if (handlerStrategy
+            == NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START.getValue()) {
+          ndkOptions.setNdkHandlerStrategy(
+              io.sentry.ndk.NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START);
+        }
+
+        final @Nullable Double tracesSampleRate = options.getTracesSampleRate();
+        if (tracesSampleRate == null) {
+          ndkOptions.setTracesSampleRate(0.0f);
+        } else {
+          ndkOptions.setTracesSampleRate(tracesSampleRate.floatValue());
+        }
 
         //noinspection UnstableApiUsage
         io.sentry.ndk.SentryNdk.init(ndkOptions);

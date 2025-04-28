@@ -59,6 +59,12 @@ final class NoOpSentryClient implements ISentryClient {
   }
 
   @Override
+  public @NotNull SentryId captureProfileChunk(
+      final @NotNull ProfileChunk profileChunk, final @Nullable IScope scope) {
+    return SentryId.EMPTY_ID;
+  }
+
+  @Override
   @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(
       @NotNull CheckIn checkIn, @Nullable IScope scope, @Nullable Hint hint) {

@@ -28,6 +28,7 @@ import io.sentry.spring.jakarta.HttpServletRequestSentryUserProvider
 import io.sentry.spring.jakarta.SentryExceptionResolver
 import io.sentry.spring.jakarta.SentryUserFilter
 import io.sentry.spring.jakarta.SentryUserProvider
+import io.sentry.spring.jakarta.SpringProfilesEventProcessor
 import io.sentry.spring.jakarta.SpringSecuritySentryUserProvider
 import io.sentry.spring.jakarta.tracing.SentryTracingFilter
 import io.sentry.spring.jakarta.tracing.SpringServletTransactionNameProvider
@@ -181,6 +182,7 @@ class SentryAutoConfigurationTest {
             "sentry.spotlight-connection-url=http://local.sentry.io:1234",
             "sentry.force-init=true",
             "sentry.global-hub-mode=true",
+            "sentry.capture-open-telemetry-events=true",
             "sentry.cron.default-checkin-margin=10",
             "sentry.cron.default-max-runtime=30",
             "sentry.cron.default-timezone=America/New_York",
@@ -221,6 +223,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
             assertThat(options.isForceInit).isEqualTo(true)
             assertThat(options.isGlobalHubMode).isEqualTo(true)
+            assertThat(options.isCaptureOpenTelemetryEvents).isEqualTo(true)
             assertThat(options.isEnableSpotlight).isEqualTo(true)
             assertThat(options.spotlightConnectionUrl).isEqualTo("http://local.sentry.io:1234")
             assertThat(options.cron).isNotNull
@@ -922,6 +925,14 @@ class SentryAutoConfigurationTest {
                     { it.name == "custom-job-listener" },
                     "is custom job listener"
                 )
+            }
+    }
+
+    @Test
+    fun `registers SpringProfilesEventProcessor on SentryOptions`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).eventProcessors).anyMatch { processor -> processor.javaClass == SpringProfilesEventProcessor::class.java }
             }
     }
 

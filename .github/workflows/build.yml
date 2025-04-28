@@ -14,6 +14,9 @@ jobs:
     name: Build Job ubuntu-latest - Java 17
     runs-on: ubuntu-latest
 
+    env:
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -26,16 +29,24 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      # Workaround for https://github.com/gradle/actions/issues/21 to use config cache
+      - name: Cache buildSrc
+        uses: actions/cache@v4
+        with:
+          path: buildSrc/build
+          key: build-logic-${{ hashFiles('buildSrc/src/**', 'buildSrc/build.gradle.kts','buildSrc/settings.gradle.kts') }}
+
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@8790d96bb8fdd8ae7edfb2eada090c650b257f27 # pin@v3
+        uses: gradle/actions/setup-gradle@06832c7b30a0129d7fb559bcc6e43d26f6374244 # pin@v3
         with:
           gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Run Tests with coverage and Lint
         run: make preMerge
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@1e68e06f1dbfde0e4cefc87efeba9e4643565303 # pin@v4
+        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # pin@v4
         with:
           name: sentry-java
           fail_ci_if_error: false

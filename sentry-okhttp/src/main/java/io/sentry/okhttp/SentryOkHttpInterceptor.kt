@@ -50,14 +50,19 @@ public open class SentryOkHttpInterceptor(
     private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
 ) : Interceptor {
 
+    private companion object {
+        init {
+            SentryIntegrationPackageStorage.getInstance()
+                .addPackage("maven:io.sentry:sentry-okhttp", BuildConfig.VERSION_NAME)
+        }
+    }
+
     public constructor() : this(ScopesAdapter.getInstance())
     public constructor(scopes: IScopes) : this(scopes, null)
     public constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
 
     init {
         addIntegrationToSdkVersion("OkHttp")
-        SentryIntegrationPackageStorage.getInstance()
-            .addPackage("maven:io.sentry:sentry-okhttp", BuildConfig.VERSION_NAME)
     }
 
     @Suppress("LongMethod")
@@ -81,6 +86,7 @@ public open class SentryOkHttpInterceptor(
             val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
             span = parentSpan?.startChild("http.client", "$method $url")
         }
+
         val startTimestamp = CurrentDateProvider.getInstance().currentTimeMillis
 
         span?.spanContext?.origin = TRACE_ORIGIN
@@ -141,6 +147,10 @@ public open class SentryOkHttpInterceptor(
             }
             throw e
         } finally {
+            // interceptors may change the request details, so let's update it here
+            // this only works correctly if SentryOkHttpInterceptor is the last one in the chain
+            okHttpEvent?.setRequest(request)
+
             finishSpan(span, request, response, isFromEventListener, okHttpEvent)
 
             // The SentryOkHttpEventListener will send the breadcrumb itself if used for this call

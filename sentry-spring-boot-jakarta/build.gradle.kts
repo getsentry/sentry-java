@@ -44,6 +44,7 @@ dependencies {
     compileOnly(Config.Libs.OpenTelemetry.otelSdk)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    api(projects.sentryReactor)
 
     annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
@@ -85,6 +86,7 @@ dependencies {
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
+    testImplementation(projects.sentryReactor)
 }
 
 configure<SourceSetContainer> {
@@ -129,5 +131,18 @@ tasks.withType<JavaCompile>().configureEach {
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
+    }
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Sentry-Version-Name" to project.version,
+            "Sentry-SDK-Name" to Config.Sentry.SENTRY_SPRING_BOOT_JAKARTA_SDK_NAME,
+            "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-spring-boot-jakarta",
+            "Implementation-Vendor" to "Sentry",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version
+        )
     }
 }

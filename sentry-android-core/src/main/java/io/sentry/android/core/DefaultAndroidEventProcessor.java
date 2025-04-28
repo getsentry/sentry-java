@@ -239,7 +239,15 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
       String versionCode = ContextUtils.getVersionCode(packageInfo, buildInfoProvider);
 
       setDist(event, versionCode);
-      ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, app);
+
+      @Nullable DeviceInfoUtil deviceInfoUtil = null;
+      try {
+        deviceInfoUtil = this.deviceInfoUtil.get();
+      } catch (Throwable e) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+      }
+
+      ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, deviceInfoUtil, app);
     }
   }
 
@@ -250,7 +258,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   }
 
   private void setAppExtras(final @NotNull App app, final @NotNull Hint hint) {
-    app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+    app.setAppName(ContextUtils.getApplicationName(context));
     final @NotNull TimeSpan appStartTimeSpan =
         AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
     if (appStartTimeSpan.hasStarted()) {

@@ -1,0 +1,50 @@
+public final class io/sentry/apollo4/BuildConfig {
+	public static final field SENTRY_APOLLO4_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
+public final class io/sentry/apollo4/SentryApollo4ClientException : java/lang/Exception {
+	public static final field Companion Lio/sentry/apollo4/SentryApollo4ClientException$Companion;
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class io/sentry/apollo4/SentryApollo4ClientException$Companion {
+}
+
+public final class io/sentry/apollo4/SentryApollo4HttpInterceptor : com/apollographql/apollo/network/http/HttpInterceptor {
+	public static final field Companion Lio/sentry/apollo4/SentryApollo4HttpInterceptor$Companion;
+	public static final field DEFAULT_CAPTURE_FAILED_REQUESTS Z
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IScopes;)V
+	public fun <init> (Lio/sentry/IScopes;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;)V
+	public fun <init> (Lio/sentry/IScopes;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;Z)V
+	public fun <init> (Lio/sentry/IScopes;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;ZLjava/util/List;)V
+	public synthetic fun <init> (Lio/sentry/IScopes;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;ZLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun intercept (Lcom/apollographql/apollo/api/http/HttpRequest;Lcom/apollographql/apollo/network/http/HttpInterceptorChain;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class io/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback {
+	public abstract fun execute (Lio/sentry/ISpan;Lcom/apollographql/apollo/api/http/HttpRequest;Lcom/apollographql/apollo/api/http/HttpResponse;)Lio/sentry/ISpan;
+}
+
+public final class io/sentry/apollo4/SentryApollo4HttpInterceptor$Companion {
+}
+
+public final class io/sentry/apollo4/SentryApollo4Interceptor : com/apollographql/apollo/interceptor/ApolloInterceptor {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/IScopes;)V
+	public synthetic fun <init> (Lio/sentry/IScopes;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun intercept (Lcom/apollographql/apollo/api/ApolloRequest;Lcom/apollographql/apollo/interceptor/ApolloInterceptorChain;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class io/sentry/apollo4/SentryApolloBuilderExtensionsKt {
+	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;Z)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;ZLjava/util/List;)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;ZLjava/util/List;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static final fun sentryTracing (Lcom/apollographql/apollo/ApolloClient$Builder;ZLjava/util/List;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static synthetic fun sentryTracing$default (Lcom/apollographql/apollo/ApolloClient$Builder;Lio/sentry/IScopes;ZLjava/util/List;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;ILjava/lang/Object;)Lcom/apollographql/apollo/ApolloClient$Builder;
+	public static synthetic fun sentryTracing$default (Lcom/apollographql/apollo/ApolloClient$Builder;ZLjava/util/List;Lio/sentry/apollo4/SentryApollo4HttpInterceptor$BeforeSpanCallback;ILjava/lang/Object;)Lcom/apollographql/apollo/ApolloClient$Builder;
+}
+

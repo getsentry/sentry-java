@@ -10,11 +10,6 @@ plugins {
     id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
 }
 
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
     kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
@@ -85,4 +80,17 @@ buildConfig {
     packageName("io.sentry.graphql")
     buildConfigField("String", "SENTRY_GRAPHQL_SDK_NAME", "\"${Config.Sentry.SENTRY_GRAPHQL_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Sentry-Version-Name" to project.version,
+            "Sentry-SDK-Name" to Config.Sentry.SENTRY_GRAPHQL_CORE_SDK_NAME,
+            "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-graphql-core",
+            "Implementation-Vendor" to "Sentry",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version
+        )
+    }
 }

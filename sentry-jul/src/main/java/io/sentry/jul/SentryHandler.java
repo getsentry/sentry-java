@@ -49,9 +49,14 @@ public class SentryHandler extends Handler {
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.SEVERE;
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-jul", BuildConfig.VERSION_NAME);
+  }
+
   /** Creates an instance of SentryHandler. */
   public SentryHandler() {
-    this(new SentryOptions(), true);
+    this(new SentryOptions());
   }
 
   /**
@@ -60,17 +65,32 @@ public class SentryHandler extends Handler {
    * @param options the SentryOptions
    */
   public SentryHandler(final @NotNull SentryOptions options) {
-    this(options, true);
+    this(options, true, true);
+  }
+
+  /**
+   * Creates an instance of SentryHandler.
+   *
+   * @param options the SentryOptions
+   * @param enableExternalConfiguration whether external options like sentry.properties and ENV vars
+   *     should be parsed
+   */
+  public SentryHandler(
+      final @NotNull SentryOptions options, final boolean enableExternalConfiguration) {
+    this(options, true, enableExternalConfiguration);
   }
 
   /** Creates an instance of SentryHandler. */
   @TestOnly
-  SentryHandler(final @NotNull SentryOptions options, final boolean configureFromLogManager) {
+  SentryHandler(
+      final @NotNull SentryOptions options,
+      final boolean configureFromLogManager,
+      final boolean enableExternalConfiguration) {
     setFilter(new DropSentryFilter());
     if (configureFromLogManager) {
       retrieveProperties();
     }
-    options.setEnableExternalConfiguration(true);
+    options.setEnableExternalConfiguration(enableExternalConfiguration);
     options.setInitPriority(InitPriority.LOWEST);
     options.setSdkVersion(createSdkVersion(options));
     Sentry.init(options);
@@ -290,8 +310,6 @@ public class SentryHandler extends Handler {
   }
 
   private void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-jul", BuildConfig.VERSION_NAME);
     SentryIntegrationPackageStorage.getInstance().addIntegration("Jul");
   }
 

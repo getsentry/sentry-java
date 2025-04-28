@@ -5,9 +5,10 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
-import java.util.ArrayList;
+import io.sentry.util.thread.IThreadChecker;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -46,11 +47,10 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull AtomicBoolean isIdleFinishTimerRunning = new AtomicBoolean(false);
   private final @NotNull AtomicBoolean isDeadlineTimerRunning = new AtomicBoolean(false);
 
-  private final @NotNull Baggage baggage;
   private @NotNull TransactionNameSource transactionNameSource;
   private final @NotNull Instrumenter instrumenter;
   private final @NotNull Contexts contexts = new Contexts();
-  private final @Nullable TransactionPerformanceCollector transactionPerformanceCollector;
+  private final @Nullable CompositePerformanceCollector compositePerformanceCollector;
   private final @NotNull TransactionOptions transactionOptions;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IScopes scopes) {
@@ -68,7 +68,7 @@ public final class SentryTracer implements ITransaction {
       final @NotNull TransactionContext context,
       final @NotNull IScopes scopes,
       final @NotNull TransactionOptions transactionOptions,
-      final @Nullable TransactionPerformanceCollector transactionPerformanceCollector) {
+      final @Nullable CompositePerformanceCollector compositePerformanceCollector) {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(scopes, "scopes are required");
 
@@ -77,20 +77,22 @@ public final class SentryTracer implements ITransaction {
     this.name = context.getName();
     this.instrumenter = context.getInstrumenter();
     this.scopes = scopes;
-    this.transactionPerformanceCollector = transactionPerformanceCollector;
+    this.compositePerformanceCollector = compositePerformanceCollector;
     this.transactionNameSource = context.getTransactionNameSource();
     this.transactionOptions = transactionOptions;
 
-    if (context.getBaggage() != null) {
-      this.baggage = context.getBaggage();
-    } else {
-      this.baggage = new Baggage(scopes.getOptions().getLogger());
+    setDefaultSpanData(root);
+
+    final @NotNull SentryId continuousProfilerId =
+        scopes.getOptions().getContinuousProfiler().getProfilerId();
+    if (!continuousProfilerId.equals(SentryId.EMPTY_ID) && Boolean.TRUE.equals(isSampled())) {
+      this.contexts.setProfile(new ProfileContext(continuousProfilerId));
     }
 
     // We are currently sending the performance data only in profiles, but we are always sending
     // performance measurements.
-    if (transactionPerformanceCollector != null) {
-      transactionPerformanceCollector.start(this);
+    if (compositePerformanceCollector != null) {
+      compositePerformanceCollector.start(this);
     }
 
     if (transactionOptions.getIdleTimeout() != null
@@ -162,7 +164,9 @@ public final class SentryTracer implements ITransaction {
     // abort all child-spans first, this ensures the transaction can be finished,
     // even if waitForChildren is true
     // iterate in reverse order to ensure leaf spans are processed before their parents
-    @NotNull final ListIterator<Span> iterator = children.listIterator(children.size());
+    @NotNull
+    final ListIterator<Span> iterator =
+        CollectionUtils.reverseListIterator((CopyOnWriteArrayList<Span>) this.children);
     while (iterator.hasPrevious()) {
       @NotNull final Span span = iterator.previous();
       span.setSpanFinishedCallback(null);
@@ -220,8 +224,8 @@ public final class SentryTracer implements ITransaction {
               finishedCallback.execute(this);
             }
 
-            if (transactionPerformanceCollector != null) {
-              performanceCollectionData.set(transactionPerformanceCollector.stop(this));
+            if (compositePerformanceCollector != null) {
+              performanceCollectionData.set(compositePerformanceCollector.stop(this));
             }
           });
 
@@ -238,6 +242,10 @@ public final class SentryTracer implements ITransaction {
                 .getOptions()
                 .getTransactionProfiler()
                 .onTransactionFinish(this, performanceCollectionData.get(), scopes.getOptions());
+      }
+      if (scopes.getOptions().isContinuousProfilingEnabled()
+          && scopes.getOptions().getProfileLifecycle() == ProfileLifecycle.TRACE) {
+        scopes.getOptions().getContinuousProfiler().stopProfiler(ProfileLifecycle.TRACE);
       }
       if (performanceCollectionData.get() != null) {
         performanceCollectionData.get().clear();
@@ -469,8 +477,8 @@ public final class SentryTracer implements ITransaction {
               spanContext,
               spanOptions,
               finishingSpan -> {
-                if (transactionPerformanceCollector != null) {
-                  transactionPerformanceCollector.onSpanFinished(finishingSpan);
+                if (compositePerformanceCollector != null) {
+                  compositePerformanceCollector.onSpanFinished(finishingSpan);
                 }
                 final FinishStatus finishStatus = this.finishStatus;
                 if (transactionOptions.getIdleTimeout() != null) {
@@ -495,8 +503,8 @@ public final class SentryTracer implements ITransaction {
       //              timestamp,
       //              spanOptions,
       //              finishingSpan -> {
-      //                if (transactionPerformanceCollector != null) {
-      //                  transactionPerformanceCollector.onSpanFinished(finishingSpan);
+      //                if (compositePerformanceCollector != null) {
+      //                  compositePerformanceCollector.onSpanFinished(finishingSpan);
       //                }
       //                final FinishStatus finishStatus = this.finishStatus;
       //                if (transactionOptions.getIdleTimeout() != null) {
@@ -513,16 +521,10 @@ public final class SentryTracer implements ITransaction {
       //                }
       //              });
       //      span.setDescription(description);
-      final long threadId = scopes.getOptions().getThreadChecker().currentThreadSystemId();
-      span.setData(SpanDataConvention.THREAD_ID, String.valueOf(threadId));
-      span.setData(
-          SpanDataConvention.THREAD_NAME,
-          scopes.getOptions().getThreadChecker().isMainThread()
-              ? "main"
-              : Thread.currentThread().getName());
+      setDefaultSpanData(span);
       this.children.add(span);
-      if (transactionPerformanceCollector != null) {
-        transactionPerformanceCollector.onSpanStarted(span);
+      if (compositePerformanceCollector != null) {
+        compositePerformanceCollector.onSpanStarted(span);
       }
       return span;
     } else {
@@ -536,6 +538,19 @@ public final class SentryTracer implements ITransaction {
               description);
       return NoOpSpan.getInstance();
     }
+  }
+
+  /** Sets the default data in the span, including profiler _id, thread id and thread name */
+  private void setDefaultSpanData(final @NotNull ISpan span) {
+    final @NotNull IThreadChecker threadChecker = scopes.getOptions().getThreadChecker();
+    final @NotNull SentryId profilerId =
+        scopes.getOptions().getContinuousProfiler().getProfilerId();
+    if (!profilerId.equals(SentryId.EMPTY_ID) && Boolean.TRUE.equals(span.isSampled())) {
+      span.setData(SpanDataConvention.PROFILER_ID, profilerId.toString());
+    }
+    span.setData(
+        SpanDataConvention.THREAD_ID, String.valueOf(threadChecker.currentThreadSystemId()));
+    span.setData(SpanDataConvention.THREAD_NAME, threadChecker.getCurrentThreadName());
   }
 
   @Override
@@ -642,14 +657,16 @@ public final class SentryTracer implements ITransaction {
   @Override
   public @Nullable TraceContext traceContext() {
     if (scopes.getOptions().isTraceSampling()) {
-      updateBaggageValues();
-      return baggage.toTraceContext();
-    } else {
-      return null;
+      final @Nullable Baggage baggage = getSpanContext().getBaggage();
+      if (baggage != null) {
+        updateBaggageValues(baggage);
+        return baggage.toTraceContext();
+      }
     }
+    return null;
   }
 
-  private void updateBaggageValues() {
+  private void updateBaggageValues(final @NotNull Baggage baggage) {
     try (final @NotNull ISentryLifecycleToken ignored = tracerLock.acquire()) {
       if (baggage.isMutable()) {
         final AtomicReference<SentryId> replayId = new AtomicReference<>();
@@ -672,23 +689,23 @@ public final class SentryTracer implements ITransaction {
   @Override
   public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
     if (scopes.getOptions().isTraceSampling()) {
-      updateBaggageValues();
-
-      return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
-    } else {
-      return null;
+      final @Nullable Baggage baggage = getSpanContext().getBaggage();
+      if (baggage != null) {
+        updateBaggageValues(baggage);
+        return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
+      }
     }
+    return null;
   }
 
   private boolean hasAllChildrenFinished() {
-    final List<Span> spans = new ArrayList<>(this.children);
-    if (!spans.isEmpty()) {
-      for (final Span span : spans) {
-        // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
-        // date
-        if (!span.isFinished() && span.getFinishDate() == null) {
-          return false;
-        }
+    @NotNull final ListIterator<Span> iterator = this.children.listIterator();
+    while (iterator.hasNext()) {
+      @NotNull final Span span = iterator.next();
+      // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
+      // date
+      if (!span.isFinished() && span.getFinishDate() == null) {
+        return false;
       }
     }
     return true;
@@ -781,7 +798,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public void setTag(final @NotNull String key, final @NotNull String value) {
+  public void setTag(final @Nullable String key, final @Nullable String value) {
     if (root.isFinished()) {
       scopes
           .getOptions()
@@ -794,7 +811,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @Nullable String getTag(final @NotNull String key) {
+  public @Nullable String getTag(final @Nullable String key) {
     return this.root.getTag(key);
   }
 
@@ -804,7 +821,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public void setData(@NotNull String key, @NotNull Object value) {
+  public void setData(@Nullable String key, @Nullable Object value) {
     if (root.isFinished()) {
       scopes
           .getOptions()
@@ -818,7 +835,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @Nullable Object getData(@NotNull String key) {
+  public @Nullable Object getData(@Nullable String key) {
     return this.root.getData(key);
   }
 
@@ -913,12 +930,13 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @Nullable ISpan getLatestActiveSpan() {
-    final List<Span> spans = new ArrayList<>(this.children);
-    if (!spans.isEmpty()) {
-      for (int i = spans.size() - 1; i >= 0; i--) {
-        if (!spans.get(i).isFinished()) {
-          return spans.get(i);
-        }
+    @NotNull
+    final ListIterator<Span> iterator =
+        CollectionUtils.reverseListIterator((CopyOnWriteArrayList<Span>) this.children);
+    while (iterator.hasPrevious()) {
+      @NotNull final Span span = iterator.previous();
+      if (!span.isFinished()) {
+        return span;
       }
     }
     return null;
@@ -977,7 +995,7 @@ public final class SentryTracer implements ITransaction {
 
   @ApiStatus.Internal
   @Override
-  public void setContext(final @NotNull String key, final @NotNull Object context) {
+  public void setContext(final @Nullable String key, final @Nullable Object context) {
     contexts.put(key, context);
   }
 

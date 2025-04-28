@@ -52,13 +52,13 @@ internal class ScreenshotRecorder(
         Bitmap.createBitmap(
             1,
             1,
-            Bitmap.Config.RGB_565
+            Bitmap.Config.ARGB_8888
         )
     }
     private val screenshot = Bitmap.createBitmap(
         config.recordingWidth,
         config.recordingHeight,
-        Bitmap.Config.RGB_565
+        Bitmap.Config.ARGB_8888
     )
     private val singlePixelBitmapCanvas: Canvas by lazy(NONE) { Canvas(singlePixelBitmap) }
     private val prescaledMatrix by lazy(NONE) {
@@ -72,13 +72,13 @@ internal class ScreenshotRecorder(
 
     fun capture() {
         if (!isCapturing.get()) {
-            options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
+            if (options.sessionReplay.isDebug) {
+                options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
+            }
             return
         }
 
         if (!contentChanged.get() && lastCaptureSuccessful.get()) {
-            options.logger.log(DEBUG, "Content hasn't changed, repeating last known frame")
-
             screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
             return
         }
@@ -216,7 +216,9 @@ internal class ScreenshotRecorder(
     fun close() {
         unbind(rootView?.get())
         rootView?.clear()
-        screenshot.recycle()
+        if (!screenshot.isRecycled) {
+            screenshot.recycle()
+        }
         isCapturing.set(false)
     }
 
@@ -264,7 +266,7 @@ public data class ScreenshotRecorderConfig(
         bitRate = 0
     )
 
-    companion object {
+    internal companion object {
         /**
          * Since codec block size is 16, so we have to adjust the width and height to it, otherwise
          * the codec might fail to configure on some devices, see https://cs.android.com/android/platform/superproject/+/master:frameworks/base/media/java/android/media/MediaCodecInfo.java;l=1999-2001
@@ -325,7 +327,7 @@ public interface ScreenshotRecorderCallback {
      *
      * @param bitmap a screenshot taken in the form of [android.graphics.Bitmap]
      */
-    fun onScreenshotRecorded(bitmap: Bitmap)
+    public fun onScreenshotRecorded(bitmap: Bitmap)
 
     /**
      * Called whenever a new frame screenshot is available.
@@ -333,5 +335,5 @@ public interface ScreenshotRecorderCallback {
      * @param screenshot file containing the frame screenshot
      * @param frameTimestamp the timestamp when the frame screenshot was taken
      */
-    fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
+    public fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
 }

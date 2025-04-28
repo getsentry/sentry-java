@@ -49,6 +49,7 @@ dependencies {
     compileOnly(projects.sentryQuartz)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
+    api(projects.sentryReactor)
 
     // tests
     testImplementation(projects.sentryTestSupport)
@@ -66,6 +67,7 @@ dependencies {
     testImplementation(Config.Libs.contextPropagation)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.Libs.graphQlJava22)
+    testImplementation(projects.sentryReactor)
 }
 
 tasks.withType<KotlinCompile> {
@@ -117,5 +119,18 @@ tasks.withType<JavaCompile>().configureEach {
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
+    }
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Sentry-Version-Name" to project.version,
+            "Sentry-SDK-Name" to Config.Sentry.SENTRY_SPRING_JAKARTA_SDK_NAME,
+            "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-spring-jakarta",
+            "Implementation-Vendor" to "Sentry",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version
+        )
     }
 }

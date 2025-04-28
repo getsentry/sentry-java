@@ -1,4 +1,4 @@
-import com.android.build.gradle.internal.tasks.LibraryAarJarsTask
+
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.dokka.gradle.DokkaTask
 
@@ -10,6 +10,7 @@ plugins {
     id(Config.QualityPlugins.gradleVersions)
     id(Config.QualityPlugins.detektPlugin)
     id(Config.BuildPlugins.dokkaPluginAlias)
+    id(Config.BuildPlugins.dokkaPluginJavadocAlias)
     `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
 }
 
@@ -41,8 +42,6 @@ kotlin {
             dependencies {
                 compileOnly(compose.runtime)
                 compileOnly(compose.ui)
-
-                compileOnly(projects.sentryComposeHelper)
             }
         }
         val androidMain by getting {
@@ -60,6 +59,11 @@ kotlin {
                 implementation(Config.TestLibs.mockitoKotlin)
                 implementation(Config.TestLibs.mockitoInline)
                 implementation(Config.Libs.composeNavigation)
+                implementation(Config.TestLibs.robolectric)
+                implementation(Config.TestLibs.androidxRunner)
+                implementation(Config.TestLibs.androidxJunit)
+                implementation(Config.TestLibs.androidxTestRules)
+                implementation(Config.TestLibs.composeUiTestJunit4)
             }
         }
     }
@@ -70,7 +74,6 @@ android {
     namespace = "io.sentry.compose"
 
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
         minSdk = Config.Android.minSdkVersion
 
         // for AGP 4.1
@@ -82,7 +85,9 @@ android {
     }
 
     buildTypes {
-        getByName("debug")
+        getByName("debug") {
+            consumerProguardFiles("proguard-rules.pro")
+        }
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }
@@ -104,10 +109,12 @@ android {
         checkReleaseBuilds = false
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    buildFeatures {
+        buildConfig = true
+    }
+
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 
@@ -126,24 +133,4 @@ tasks.withType<DokkaTask>().configureEach {
             suppress.set(true)
         }
     }
-}
-
-/**
- * Due to https://youtrack.jetbrains.com/issue/KT-30878
- * you can not have java sources in a KMP-enabled project which has the android-lib plugin applied.
- * Thus we compile relevant java code in sentry-compose-helper first and embed it in here.
- */
-val embedComposeHelperConfig by configurations.creating {
-    isCanBeConsumed = false
-    isCanBeResolved = true
-}
-
-dependencies {
-    embedComposeHelperConfig(
-        project(":" + projects.sentryComposeHelper.name, "embeddedJar")
-    )
-}
-
-tasks.withType<LibraryAarJarsTask> {
-    mainScopeClassFiles.setFrom(embedComposeHelperConfig)
 }

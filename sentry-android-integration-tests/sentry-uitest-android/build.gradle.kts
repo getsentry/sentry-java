@@ -38,6 +38,7 @@ android {
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -82,10 +83,8 @@ android {
         checkReleaseBuilds = false
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 
@@ -98,7 +97,6 @@ dependencies {
     if (applySentryIntegrations) {
         implementation(projects.sentryAndroid)
         implementation(projects.sentryCompose)
-        implementation(projects.sentryComposeHelper)
     } else {
         implementation(projects.sentryAndroidCore)
     }
@@ -141,8 +139,4 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.withType<Detekt> {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
-}
-
-kotlin {
-    explicitApi()
 }

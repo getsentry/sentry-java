@@ -124,22 +124,22 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
-  public void setTag(@NotNull String key, @NotNull String value) {
+  public void setTag(@Nullable String key, @Nullable String value) {
     Sentry.setTag(key, value);
   }
 
   @Override
-  public void removeTag(@NotNull String key) {
+  public void removeTag(@Nullable String key) {
     Sentry.removeTag(key);
   }
 
   @Override
-  public void setExtra(@NotNull String key, @NotNull String value) {
+  public void setExtra(@Nullable String key, @Nullable String value) {
     Sentry.setExtra(key, value);
   }
 
   @Override
-  public void removeExtra(@NotNull String key) {
+  public void removeExtra(@Nullable String key) {
     Sentry.removeExtra(key);
   }
 
@@ -269,10 +269,25 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
+  public @NotNull SentryId captureProfileChunk(@NotNull ProfileChunk profileChunk) {
+    return Sentry.getCurrentScopes().captureProfileChunk(profileChunk);
+  }
+
+  @Override
   public @NotNull ITransaction startTransaction(
       @NotNull TransactionContext transactionContext,
       @NotNull TransactionOptions transactionOptions) {
     return Sentry.startTransaction(transactionContext, transactionOptions);
+  }
+
+  @Override
+  public void startProfiler() {
+    Sentry.startProfiler();
+  }
+
+  @Override
+  public void stopProfiler() {
+    Sentry.stopProfiler();
   }
 
   @ApiStatus.Internal

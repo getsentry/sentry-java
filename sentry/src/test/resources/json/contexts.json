@@ -106,6 +106,10 @@
     "version": "16534f6b-1670-4bb8-aec2-647a1b97669b",
     "raw_description": "773b5b05-a0f9-4ee6-9f3b-13155c37ad6e"
   },
+  "spring":
+  {
+    "active_profiles": ["some", "profiles"]
+  },
   "trace":
   {
     "trace_id": "afcb46b1140ade5187c4bbb5daa804df",
@@ -123,7 +127,9 @@
     },
     "data":
     {
-      "spanContextDataKey": "spanContextDataValue"
+      "spanContextDataKey": "spanContextDataValue",
+      "thread.name": "test",
+      "thread.id": 10
     }
   }
 }

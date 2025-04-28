@@ -58,6 +58,10 @@ internal interface CaptureStrategy {
     companion object {
         private const val BREADCRUMB_START_OFFSET = 100L
 
+        // 5 minutes, otherwise relay will just drop it. Can prevent the case where the device
+        // time is wrong and the segment is too long.
+        private const val MAX_SEGMENT_DURATION = 1000L * 60 * 5
+
         fun createSegment(
             scopes: IScopes?,
             options: SentryOptions,
@@ -76,7 +80,7 @@ internal interface CaptureStrategy {
             events: Deque<RRWebEvent>
         ): ReplaySegment {
             val generatedVideo = cache?.createVideoOf(
-                duration,
+                minOf(duration, MAX_SEGMENT_DURATION),
                 currentSegmentTimestamp.time,
                 segmentId,
                 height,
@@ -179,7 +183,9 @@ internal interface CaptureStrategy {
                         recordingPayload += rrwebEvent
 
                         // fill in the urls array from navigation breadcrumbs
-                        if ((rrwebEvent as? RRWebBreadcrumbEvent)?.category == "navigation") {
+                        if ((rrwebEvent as? RRWebBreadcrumbEvent)?.category == "navigation" &&
+                            rrwebEvent.data?.getOrElse("to", { null }) is String
+                        ) {
                             urls.add(rrwebEvent.data!!["to"] as String)
                         }
                     }

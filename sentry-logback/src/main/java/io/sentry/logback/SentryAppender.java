@@ -48,6 +48,11 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   private @NotNull Level minimumEventLevel = Level.ERROR;
   private @Nullable Encoder<ILoggingEvent> encoder;
 
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-logback", BuildConfig.VERSION_NAME);
+  }
+
   @Override
   public void start() {
     if (options.getDsn() == null || !options.getDsn().endsWith("_IS_UNDEFINED")) {
@@ -110,14 +115,16 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     event.setLogger(loggingEvent.getLoggerName());
     event.setLevel(formatLevel(loggingEvent.getLevel()));
 
-    final ThrowableProxy throwableInformation = (ThrowableProxy) loggingEvent.getThrowableProxy();
-    if (throwableInformation != null) {
-      final Mechanism mechanism = new Mechanism();
-      mechanism.setType(MECHANISM_TYPE);
-      final Throwable mechanismException =
-          new ExceptionMechanismException(
-              mechanism, throwableInformation.getThrowable(), Thread.currentThread());
-      event.setThrowable(mechanismException);
+    if (loggingEvent.getThrowableProxy() instanceof ThrowableProxy) {
+      final ThrowableProxy throwableInformation = (ThrowableProxy) loggingEvent.getThrowableProxy();
+      if (throwableInformation != null) {
+        final Mechanism mechanism = new Mechanism();
+        mechanism.setType(MECHANISM_TYPE);
+        final Throwable mechanismException =
+            new ExceptionMechanismException(
+                mechanism, throwableInformation.getThrowable(), Thread.currentThread());
+        event.setThrowable(mechanismException);
+      }
     }
 
     if (loggingEvent.getThreadName() != null) {
@@ -222,8 +229,6 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   }
 
   private void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-logback", BuildConfig.VERSION_NAME);
     SentryIntegrationPackageStorage.getInstance().addIntegration("Logback");
   }
 

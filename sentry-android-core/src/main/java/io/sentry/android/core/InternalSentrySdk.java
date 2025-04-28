@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import static io.sentry.Sentry.getCurrentScopes;
 import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.INFO;
 import static io.sentry.SentryLevel.WARNING;
@@ -13,6 +14,7 @@ import io.sentry.IScope;
 import io.sentry.IScopes;
 import io.sentry.ISerializer;
 import io.sentry.ObjectWriter;
+import io.sentry.PropagationContext;
 import io.sentry.ScopeType;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryEnvelope;
@@ -30,6 +32,7 @@ import io.sentry.protocol.Device;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.util.MapObjectWriter;
+import io.sentry.util.TracingUtils;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -110,7 +113,7 @@ public final class InternalSentrySdk {
       if (app == null) {
         app = new App();
       }
-      app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+      app.setAppName(ContextUtils.getApplicationName(context));
 
       final @NotNull TimeSpan appStartTimeSpan =
           AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
@@ -124,7 +127,7 @@ public final class InternalSentrySdk {
           ContextUtils.getPackageInfo(
               context, PackageManager.GET_PERMISSIONS, options.getLogger(), buildInfoProvider);
       if (packageInfo != null) {
-        ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, app);
+        ContextUtils.setAppPackageInfo(packageInfo, buildInfoProvider, deviceInfoUtil, app);
       }
       scope.getContexts().setApp(app);
 
@@ -328,5 +331,23 @@ public final class InternalSentrySdk {
           }
         });
     return sessionRef.get();
+  }
+
+  /**
+   * Allows a Hybrid SDK to set the trace on the native layer
+   *
+   * @param traceId the trace ID
+   * @param spanId the trace origin's span ID
+   * @param sampleRate the sample rate used by the origin of the trace
+   * @param sampleRand the random value used to sample with by the origin of the trace
+   */
+  public static void setTrace(
+      final @NotNull String traceId,
+      final @NotNull String spanId,
+      final @Nullable Double sampleRate,
+      final @Nullable Double sampleRand) {
+    TracingUtils.setTrace(
+        getCurrentScopes(),
+        PropagationContext.fromExistingTrace(traceId, spanId, sampleRate, sampleRand));
   }
 }

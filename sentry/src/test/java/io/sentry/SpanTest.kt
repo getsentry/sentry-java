@@ -547,6 +547,39 @@ class SpanTest {
         span.finish()
     }
 
+    @Test
+    fun `null data`() {
+        val span = fixture.getSut()
+        span.setData("k", "v")
+        span.setData("k", null)
+        span.setData(null, null)
+        assertNull(span.getData("k"))
+        assertNull(span.getData(null))
+        assertTrue(span.data.isEmpty())
+    }
+
+    @Test
+    fun `null tag`() {
+        val span = fixture.getSut()
+        span.setTag("k", "v")
+        span.setTag("k", null)
+        span.setTag(null, null)
+        assertNull(span.getTag("k"))
+        assertNull(span.getTag(null))
+        assertTrue(span.tags.isEmpty())
+    }
+
+    @Test
+    fun `null context`() {
+        val span = fixture.getSut()
+        span.setContext("k", "v")
+        span.setContext("k", null)
+        span.setContext(null, null)
+        assertNull(span.contexts.get("k"))
+        assertNull(span.contexts.get(null))
+        assertTrue(span.contexts.isEmpty)
+    }
+
     private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer {
         return SentryTracer(transactionContext, fixture.scopes)
     }

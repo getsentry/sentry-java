@@ -37,7 +37,6 @@ import io.sentry.util.UrlUtils
 import io.sentry.vendor.Base64
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
-import java.util.Locale
 
 private const val TRACE_ORIGIN = "auto.graphql.apollo3"
 
@@ -54,8 +53,6 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             SentryIntegrationPackageStorage.getInstance()
                 .addIntegration("Apollo3ClientError")
         }
-        SentryIntegrationPackageStorage.getInstance()
-            .addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
     }
 
     private val regex: Regex by lazy {
@@ -177,7 +174,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             variables?.let {
                 setData("variables", it)
             }
-            setData(HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT))
+            setData(HTTP_METHOD_KEY, method.uppercase())
         }
     }
 
@@ -454,5 +451,10 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         const val SENTRY_APOLLO_3_VARIABLES = "SENTRY-APOLLO-3-VARIABLES"
         const val SENTRY_APOLLO_3_OPERATION_TYPE = "SENTRY-APOLLO-3-OPERATION-TYPE"
         const val DEFAULT_CAPTURE_FAILED_REQUESTS = true
+
+        init {
+            SentryIntegrationPackageStorage.getInstance()
+                .addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
+        }
     }
 }
