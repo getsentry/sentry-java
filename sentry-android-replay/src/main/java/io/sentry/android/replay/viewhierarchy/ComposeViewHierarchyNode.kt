@@ -14,6 +14,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.TextUnit
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
@@ -100,14 +101,19 @@ internal object ComposeViewHierarchyNode {
                     ?.invoke(textLayoutResults)
 
                 val (color, hasFillModifier) = node.findTextAttributes()
-                var textColor = textLayoutResults.firstOrNull()?.layoutInput?.style?.color
+                val textLayoutResult = textLayoutResults.firstOrNull()
+                var textColor = textLayoutResult?.layoutInput?.style?.color
                 if (textColor?.isUnspecified == true) {
                     textColor = color
                 }
-                // TODO: support multiple text layouts
+                val isLaidOut = textLayoutResult?.layoutInput?.style?.fontSize != TextUnit.Unspecified
                 // TODO: support editable text (currently there's a way to get @Composable's padding only via reflection, and we can't reliably mask input fields based on TextLayout, so we mask the whole view instead)
                 TextViewHierarchyNode(
-                    layout = if (textLayoutResults.isNotEmpty() && !isEditable) ComposeTextLayout(textLayoutResults.first(), hasFillModifier) else null,
+                    layout = if (textLayoutResult != null && !isEditable && isLaidOut) {
+                        ComposeTextLayout(textLayoutResult, hasFillModifier)
+                    } else {
+                        null
+                    },
                     dominantColor = textColor?.toArgb()?.toOpaque(),
                     x = visibleRect.left.toFloat(),
                     y = visibleRect.top.toFloat(),
