@@ -70,18 +70,21 @@ class AndroidOptionsInitializerTest {
             useRealContext: Boolean = false,
             configureOptions: SentryAndroidOptions.() -> Unit = {},
             configureContext: Context.() -> Unit = {},
-            assets: AssetManager? = null
+            assets: AssetManager? = null,
+            customMockContext: Context? = null,
+            isFragmentAvailable: Boolean = false
         ) {
             sentryOptions.executorService = ImmediateExecutorService()
-            mockContext = if (metadata != null) {
-                ContextUtilsTestHelper.mockMetaData(
-                    mockContext = ContextUtilsTestHelper.createMockContext(hasAppContext),
-                    metaData = metadata,
-                    assets = assets
-                )
-            } else {
-                ContextUtilsTestHelper.createMockContext(hasAppContext)
-            }
+            mockContext = customMockContext
+                ?: if (metadata != null) {
+                    ContextUtilsTestHelper.mockMetaData(
+                        mockContext = ContextUtilsTestHelper.createMockContext(hasAppContext),
+                        metaData = metadata,
+                        assets = assets
+                    )
+                } else {
+                    ContextUtilsTestHelper.createMockContext(hasAppContext)
+                }
             whenever(mockContext.cacheDir).thenReturn(file)
             if (mockContext.applicationContext != null) {
                 whenever(mockContext.applicationContext.cacheDir).thenReturn(file)
@@ -101,7 +104,7 @@ class AndroidOptionsInitializerTest {
                 BuildInfoProvider(AndroidLogger()),
                 loadClass,
                 activityFramesTracker,
-                false,
+                isFragmentAvailable,
                 false,
                 false
             )
@@ -879,5 +882,25 @@ class AndroidOptionsInitializerTest {
         assertFalse { fixture.sentryOptions.threadChecker is AndroidThreadChecker }
         assertFalse { fixture.sentryOptions.socketTagger is AndroidSocketTagger }
         assertFalse { fixture.sentryOptions.compositePerformanceCollector is DefaultCompositePerformanceCollector }
+    }
+
+    @Test
+    fun `When given context which is not instance of Application use applicationContext to initialize activityLifecycleCallbacks integrations`() {
+        fixture.initSut(isFragmentAvailable = true)
+
+        assertNotNull(fixture.sentryOptions.integrations.firstOrNull { it is ActivityBreadcrumbsIntegration })
+        assertNotNull(fixture.sentryOptions.integrations.firstOrNull { it is CurrentActivityIntegration })
+        assertNotNull(fixture.sentryOptions.integrations.firstOrNull { it is UserInteractionIntegration })
+        assertNotNull(fixture.sentryOptions.integrations.firstOrNull { it is FragmentLifecycleIntegration }) // Only when fragment is available
+    }
+
+    @Test
+    fun `When given context applicationContext is not App do not initialize activityLifecycleCallbacks integrations`() {
+        fixture.initSut(customMockContext = mock<Context>())
+
+        assertNull(fixture.sentryOptions.integrations.firstOrNull { it is ActivityBreadcrumbsIntegration })
+        assertNull(fixture.sentryOptions.integrations.firstOrNull { it is CurrentActivityIntegration })
+        assertNull(fixture.sentryOptions.integrations.firstOrNull { it is UserInteractionIntegration })
+        assertNull(fixture.sentryOptions.integrations.firstOrNull { it is FragmentLifecycleIntegration }) // Only when fragment is available
     }
 }
