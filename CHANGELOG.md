@@ -10,6 +10,13 @@
     - Spans created via Sentry API are preferred over those created through OpenTelemetry API or auto instrumentation
 - New option `ignoreStandaloneClientSpans` that prevents Sentry from creating transactions for OpenTelemetry spans with kind `CLIENT` ([#4349](https://github.com/getsentry/sentry-java/pull/4349))
     - Defaults to `false` meaning standalone OpenTelemetry spans with kind `CLIENT` will be turned into Sentry transactions
+- Make `RequestDetailsResolver` public ([#4326](https://github.com/getsentry/sentry-java/pull/4326))
+  - `RequestDetailsResolver` is now public and has an additional constructor, making it easier to use a custom `TransportFactory`
+
+### Fixes
+
+- Session Replay: Fix masking of non-styled `Text` Composables ([#4361](https://github.com/getsentry/sentry-java/pull/4361))
+- Session Replay: Fix masking read-only `TextField` Composables ([#4362](https://github.com/getsentry/sentry-java/pull/4362))
 
 ## 8.10.0
 
@@ -20,7 +27,7 @@
   - Set `-Dio.opentelemetry.context.contextStorageProvider=io.sentry.opentelemetry.SentryContextStorageProvider` on your `java` command
   - Sentry will then wrap the other `ContextStorageProvider` that has been configured by loading it through SPI
   - If no other `ContextStorageProvider` is available or there are problems loading it, we fall back to using `SentryOtelThreadLocalStorage`
-
+    
 ### Fixes
 
 - Update profile chunk rate limit and client report ([#4353](https://github.com/getsentry/sentry-java/pull/4353))
