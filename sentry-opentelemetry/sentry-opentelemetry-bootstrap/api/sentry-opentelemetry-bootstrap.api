@@ -171,6 +171,20 @@ public final class io/sentry/opentelemetry/SentryContextWrapper : io/opentelemet
 	public static fun wrap (Lio/opentelemetry/context/Context;)Lio/sentry/opentelemetry/SentryContextWrapper;
 }
 
+public final class io/sentry/opentelemetry/SentryOtelGlobalHubModeSpan : io/opentelemetry/api/trace/Span {
+	public fun <init> ()V
+	public fun addEvent (Ljava/lang/String;Lio/opentelemetry/api/common/Attributes;)Lio/opentelemetry/api/trace/Span;
+	public fun addEvent (Ljava/lang/String;Lio/opentelemetry/api/common/Attributes;JLjava/util/concurrent/TimeUnit;)Lio/opentelemetry/api/trace/Span;
+	public fun end ()V
+	public fun end (JLjava/util/concurrent/TimeUnit;)V
+	public fun getSpanContext ()Lio/opentelemetry/api/trace/SpanContext;
+	public fun isRecording ()Z
+	public fun recordException (Ljava/lang/Throwable;Lio/opentelemetry/api/common/Attributes;)Lio/opentelemetry/api/trace/Span;
+	public fun setAttribute (Lio/opentelemetry/api/common/AttributeKey;Ljava/lang/Object;)Lio/opentelemetry/api/trace/Span;
+	public fun setStatus (Lio/opentelemetry/api/trace/StatusCode;Ljava/lang/String;)Lio/opentelemetry/api/trace/Span;
+	public fun updateName (Ljava/lang/String;)Lio/opentelemetry/api/trace/Span;
+}
+
 public final class io/sentry/opentelemetry/SentryOtelKeys {
 	public static final field SENTRY_BAGGAGE_KEY Lio/opentelemetry/context/ContextKey;
 	public static final field SENTRY_SCOPES_KEY Lio/opentelemetry/context/ContextKey;

@@ -42,10 +42,11 @@ public final class SentryContextStorage implements ContextStorage {
 
   @Override
   public Context root() {
-    final @NotNull Context originalRoot = ContextStorage.super.root();
+    final @NotNull Context originalRoot = contextStorage.root();
 
     if (Sentry.isGlobalHubMode()) {
-      return SentryContextWrapper.wrap(originalRoot);
+      return new SentryOtelGlobalHubModeSpan()
+          .storeInContext(SentryContextWrapper.wrap(originalRoot));
     }
 
     return originalRoot;

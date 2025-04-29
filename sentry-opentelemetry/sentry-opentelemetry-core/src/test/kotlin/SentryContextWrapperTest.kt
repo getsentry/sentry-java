@@ -18,6 +18,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertNull
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 class SentryContextWrapperTest {
 
@@ -35,7 +36,7 @@ class SentryContextWrapperTest {
     }
 
     @Test
-    fun `returns null if no transaction is available`() {
+    fun `returns global hub span if no transaction is available`() {
         Sentry.init {
             it.dsn = "https://key@sentry.io/proj"
             it.isGlobalHubMode = true
@@ -43,7 +44,7 @@ class SentryContextWrapperTest {
 
         val c = SentryContextWrapper.wrap(Context.root())
         val returnedSpan = Span.fromContextOrNull(c)
-        assertNull(returnedSpan)
+        assertTrue(returnedSpan is SentryOtelGlobalHubModeSpan)
     }
 
     @Test

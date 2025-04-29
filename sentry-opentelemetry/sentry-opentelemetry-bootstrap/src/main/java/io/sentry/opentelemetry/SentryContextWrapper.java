@@ -40,6 +40,9 @@ public final class SentryContextWrapper implements Context {
     if (result == null) {
       return true;
     }
+    if (result instanceof SentryOtelGlobalHubModeSpan) {
+      return true;
+    }
     return result instanceof Span && !((Span) result).getSpanContext().isValid();
   }
 
