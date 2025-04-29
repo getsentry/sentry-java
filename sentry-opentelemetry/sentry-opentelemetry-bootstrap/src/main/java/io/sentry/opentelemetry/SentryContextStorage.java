@@ -3,6 +3,7 @@ package io.sentry.opentelemetry;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.ContextStorage;
 import io.opentelemetry.context.Scope;
+import io.sentry.Sentry;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,5 +38,17 @@ public final class SentryContextStorage implements ContextStorage {
   @Override
   public Context current() {
     return contextStorage.current();
+  }
+
+  @Override
+  public Context root() {
+    final @NotNull Context originalRoot = contextStorage.root();
+
+    if (Sentry.isGlobalHubMode()) {
+      return new SentryOtelGlobalHubModeSpan()
+          .storeInContext(SentryContextWrapper.wrap(originalRoot));
+    }
+
+    return originalRoot;
   }
 }

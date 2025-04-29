@@ -21,8 +21,43 @@ public final class SentryContextWrapper implements Context {
   }
 
   @Override
-  public <V> V get(final @NotNull ContextKey<V> contextKey) {
-    return delegate.get(contextKey);
+  public <V> @Nullable V get(final @NotNull ContextKey<V> contextKey) {
+    final @Nullable V result = delegate.get(contextKey);
+    if (shouldReturnRootSpanInstead(contextKey, result)) {
+      return returnUnfinishedRootSpanIfAvailable(result);
+    }
+    return result;
+  }
+
+  private <V> boolean shouldReturnRootSpanInstead(
+      final @NotNull ContextKey<V> contextKey, final @Nullable V result) {
+    if (!Sentry.isGlobalHubMode()) {
+      return false;
+    }
+    if (!isOpentelemetrySpan(contextKey)) {
+      return false;
+    }
+    if (result == null) {
+      return true;
+    }
+    if (result instanceof SentryOtelGlobalHubModeSpan) {
+      return true;
+    }
+    return result instanceof Span && !((Span) result).getSpanContext().isValid();
+  }
+
+  @SuppressWarnings("unchecked")
+  private <V> @Nullable V returnUnfinishedRootSpanIfAvailable(final @Nullable V result) {
+    final @Nullable IOtelSpanWrapper sentrySpan =
+        SentryWeakSpanStorage.getInstance().getLastKnownUnfinishedRootSpan();
+    if (sentrySpan != null) {
+      try {
+        return (V) sentrySpan.getOpenTelemetrySpan();
+      } catch (Throwable t) {
+        return result;
+      }
+    }
+    return result;
   }
 
   @Override

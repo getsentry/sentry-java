@@ -66,7 +66,7 @@ public final class SentrySampler implements Sampler {
       if (samplingDecision != null) {
         return new SentrySamplingResult(samplingDecision);
       } else {
-        return handleRootOtelSpan(traceId, parentContext, attributes);
+        return handleRootOtelSpan(traceId, parentContext, attributes, spanKind);
       }
     }
   }
@@ -74,9 +74,13 @@ public final class SentrySampler implements Sampler {
   private @NotNull SamplingResult handleRootOtelSpan(
       final @NotNull String traceId,
       final @NotNull Context parentContext,
-      final @NotNull Attributes attributes) {
+      final @NotNull Attributes attributes,
+      final @NotNull SpanKind spanKind) {
     if (!scopes.getOptions().isTracingEnabled()) {
       return SamplingResult.create(SamplingDecision.RECORD_ONLY);
+    }
+    if (scopes.getOptions().isIgnoreStandaloneClientSpans() && SpanKind.CLIENT.equals(spanKind)) {
+      return SamplingResult.create(SamplingDecision.DROP);
     }
     @Nullable Baggage baggage = null;
     @Nullable

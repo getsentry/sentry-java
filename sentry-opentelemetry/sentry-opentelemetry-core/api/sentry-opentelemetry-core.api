@@ -61,6 +61,7 @@ public final class io/sentry/opentelemetry/OtelSpanWrapper : io/sentry/opentelem
 	public fun getDescription ()Ljava/lang/String;
 	public fun getFinishDate ()Lio/sentry/SentryDate;
 	public fun getMeasurements ()Ljava/util/Map;
+	public fun getOpenTelemetrySpan ()Lio/opentelemetry/api/trace/Span;
 	public fun getOpenTelemetrySpanAttributes ()Lio/opentelemetry/api/common/Attributes;
 	public fun getOperation ()Ljava/lang/String;
 	public fun getSamplingDecision ()Lio/sentry/TracesSamplingDecision;
@@ -77,6 +78,7 @@ public final class io/sentry/opentelemetry/OtelSpanWrapper : io/sentry/opentelem
 	public fun isFinished ()Z
 	public fun isNoOp ()Z
 	public fun isProfileSampled ()Ljava/lang/Boolean;
+	public fun isRoot ()Z
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
 	public fun setContext (Ljava/lang/String;Ljava/lang/Object;)V

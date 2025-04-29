@@ -515,6 +515,25 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
     }
   }
 
+  @Override
+  public boolean isRoot() {
+    if (context.getParentSpanId() == null) {
+      return true;
+    }
+
+    final @Nullable ReadWriteSpan readWriteSpan = span.get();
+    if (readWriteSpan != null) {
+      return readWriteSpan.getParentSpanContext().isRemote();
+    }
+
+    return false;
+  }
+
+  @Override
+  public @Nullable Span getOpenTelemetrySpan() {
+    return span.get();
+  }
+
   @SuppressWarnings("MustBeClosedChecker")
   @ApiStatus.Internal
   @Override

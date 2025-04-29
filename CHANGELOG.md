@@ -1,9 +1,15 @@
 # Changelog
 
-## Unreleased
+## 8.11.0-alpha.1
 
 ### Features
 
+- Support `globalHubMode` for OpenTelemetry ([#4349](https://github.com/getsentry/sentry-java/pull/4349))
+    - Sentry now adds OpenTelemetry spans without a parent to the last known unfinished root span (transaction)
+    - Previously those spans would end up in Sentry as separate transactions
+    - Spans created via Sentry API are preferred over those created through OpenTelemetry API or auto instrumentation
+- New option `ignoreStandaloneClientSpans` that prevents Sentry from creating transactions for OpenTelemetry spans with kind `CLIENT` ([#4349](https://github.com/getsentry/sentry-java/pull/4349))
+    - Defaults to `false` meaning standalone OpenTelemetry spans with kind `CLIENT` will be turned into Sentry transactions
 - Make `RequestDetailsResolver` public ([#4326](https://github.com/getsentry/sentry-java/pull/4326))
   - `RequestDetailsResolver` is now public and has an additional constructor, making it easier to use a custom `TransportFactory`
 

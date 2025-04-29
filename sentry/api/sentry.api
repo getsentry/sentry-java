@@ -2535,6 +2535,7 @@ public final class io/sentry/Sentry {
 	public static fun init (Ljava/lang/String;)V
 	public static fun isCrashedLastRun ()Ljava/lang/Boolean;
 	public static fun isEnabled ()Z
+	public static fun isGlobalHubMode ()Z
 	public static fun isHealthy ()Z
 	public static fun popScope ()V
 	public static fun pushIsolationScope ()Lio/sentry/ISentryLifecycleToken;
@@ -3162,6 +3163,7 @@ public class io/sentry/SentryOptions {
 	public fun isEnabled ()Z
 	public fun isForceInit ()Z
 	public fun isGlobalHubMode ()Ljava/lang/Boolean;
+	public fun isIgnoreStandaloneClientSpans ()Z
 	public fun isPrintUncaughtStackTrace ()Z
 	public fun isProfilingEnabled ()Z
 	public fun isSendClientReports ()Z
@@ -3222,6 +3224,7 @@ public class io/sentry/SentryOptions {
 	public fun setGestureTargetLocators (Ljava/util/List;)V
 	public fun setGlobalHubMode (Ljava/lang/Boolean;)V
 	public fun setIdleTimeout (Ljava/lang/Long;)V
+	public fun setIgnoreStandaloneClientSpans (Z)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredErrors (Ljava/util/List;)V
 	public fun setIgnoredSpanOrigins (Ljava/util/List;)V
