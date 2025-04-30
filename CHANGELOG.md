@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Fix Android profile chunk envelope type for UI Profiling ([#4366](https://github.com/getsentry/sentry-java/pull/4366))
 - Hook User Interaction integration into running Activity in case of deferred SDK init ([#4337](https://github.com/getsentry/sentry-java/pull/4337))
 
 ## 8.11.0
