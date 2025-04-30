@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Fix Android profile chunk envelope type ([#4366](https://github.com/getsentry/sentry-java/pull/4366))
+- Fix Android profile chunk envelope type for UI Profiling ([#4366](https://github.com/getsentry/sentry-java/pull/4366))
 
 ## 8.11.0
 
