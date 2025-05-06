@@ -345,9 +345,14 @@ class RateLimiterTest {
         val scopes = mock<IScopes>()
         whenever(scopes.options).thenReturn(SentryOptions())
 
-        val logEventItem = SentryEnvelopeItem.fromLogs(fixture.serializer, SentryLogEvents(listOf(
-            SentryLogEvent(SentryId(), SentryLongDate(0), "hello")
-        )))
+        val logEventItem = SentryEnvelopeItem.fromLogs(
+            fixture.serializer,
+            SentryLogEvents(
+                listOf(
+                    SentryLogEvent(SentryId(), SentryLongDate(0), "hello")
+                )
+            )
+        )
         val envelope = SentryEnvelope(SentryEnvelopeHeader(null), arrayListOf(logEventItem))
 
         rateLimiter.updateRetryAfterLimits("60:log_item:key", null, 1)
