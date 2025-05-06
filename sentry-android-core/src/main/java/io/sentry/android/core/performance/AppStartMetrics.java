@@ -43,7 +43,6 @@ import org.jetbrains.annotations.TestOnly;
  */
 @ApiStatus.Internal
 public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
-
   public enum AppStartType {
     UNKNOWN,
     COLD,
@@ -343,16 +342,11 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-    final long nowUptimeMs = SystemClock.uptimeMillis();
+    CurrentActivityHolder.getInstance().setActivity(activity);
 
     // the first activity determines the app start type
     if (activeActivitiesCounter.incrementAndGet() == 1 && !firstDrawDone.get()) {
-
-      final @Nullable Activity currentKnownActivity =
-          CurrentActivityHolder.getInstance().getActivity();
-      if (currentKnownActivity == null) {
-        CurrentActivityHolder.getInstance().setActivity(activity);
-      }
+      final long nowUptimeMs = SystemClock.uptimeMillis();
 
       // If the app (process) was launched more than 1 minute ago, it's likely wrong
       final long durationSinceAppStartMillis = nowUptimeMs - appStartSpan.getStartUptimeMs();
@@ -375,6 +369,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
 
   @Override
   public void onActivityStarted(@NonNull Activity activity) {
+    CurrentActivityHolder.getInstance().setActivity(activity);
+
     if (firstDrawDone.get()) {
       return;
     }
@@ -387,7 +383,24 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   @Override
+  public void onActivityResumed(@NonNull Activity activity) {
+    CurrentActivityHolder.getInstance().setActivity(activity);
+  }
+
+  @Override
+  public void onActivityPaused(@NonNull Activity activity) {
+    CurrentActivityHolder.getInstance().clearActivity(activity);
+  }
+
+  @Override
+  public void onActivityStopped(@NonNull Activity activity) {
+    CurrentActivityHolder.getInstance().clearActivity(activity);
+  }
+
+  @Override
   public void onActivityDestroyed(@NonNull Activity activity) {
+    CurrentActivityHolder.getInstance().clearActivity(activity);
+
     final int remainingActivities = activeActivitiesCounter.decrementAndGet();
     // if the app is moving into background
     // as the next Activity is considered like a new app start

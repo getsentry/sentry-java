@@ -510,27 +510,58 @@ class AppStartMetricsTest {
     }
 
     @Test
-    fun `when activity is created and CurrentActivityHolder is empty, sets the activity`() {
+    fun `when an activity is created the activity holder provides it`() {
         val metrics = AppStartMetrics.getInstance()
         val activity = mock<Activity>()
-        val currentActivityHolder = CurrentActivityHolder.getInstance()
-        currentActivityHolder.clearActivity()
 
         metrics.onActivityCreated(activity, null)
-
-        assertEquals(activity, currentActivityHolder.getActivity())
+        assertEquals(activity, CurrentActivityHolder.getInstance().activity)
     }
 
     @Test
-    fun `when activity is created and CurrentActivityHolder has activity, does not change it`() {
+    fun `when there is no active activity the holder does not provide an outdated one`() {
         val metrics = AppStartMetrics.getInstance()
-        val existingActivity = mock<Activity>()
-        val newActivity = mock<Activity>()
-        val currentActivityHolder = CurrentActivityHolder.getInstance()
-        currentActivityHolder.setActivity(existingActivity)
+        val activity = mock<Activity>()
 
-        metrics.onActivityCreated(newActivity, null)
+        metrics.onActivityCreated(activity, null)
+        metrics.onActivityDestroyed(activity)
 
-        assertEquals(existingActivity, currentActivityHolder.getActivity())
+        assertNull(CurrentActivityHolder.getInstance().activity)
+    }
+
+    @Test
+    fun `when a second activity is started it gets the current one`() {
+        val metrics = AppStartMetrics.getInstance()
+        val firstActivity = mock<Activity>()
+
+        metrics.onActivityCreated(firstActivity, null)
+        metrics.onActivityStarted(firstActivity)
+        metrics.onActivityResumed(firstActivity)
+
+        val secondActivity = mock<Activity>()
+        metrics.onActivityCreated(secondActivity, null)
+        metrics.onActivityStarted(secondActivity)
+
+        assertEquals(secondActivity, CurrentActivityHolder.getInstance().activity)
+    }
+
+    @Test
+    fun `destroying an old activity keeps the current one`() {
+        val metrics = AppStartMetrics.getInstance()
+        val firstActivity = mock<Activity>()
+
+        metrics.onActivityCreated(firstActivity, null)
+        metrics.onActivityStarted(firstActivity)
+        metrics.onActivityResumed(firstActivity)
+
+        val secondActivity = mock<Activity>()
+        metrics.onActivityCreated(secondActivity, null)
+        metrics.onActivityStarted(secondActivity)
+
+        metrics.onActivityPaused(firstActivity)
+        metrics.onActivityStopped(firstActivity)
+        metrics.onActivityDestroyed(firstActivity)
+
+        assertEquals(secondActivity, CurrentActivityHolder.getInstance().activity)
     }
 }
