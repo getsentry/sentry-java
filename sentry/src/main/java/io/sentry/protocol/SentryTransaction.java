@@ -1,5 +1,7 @@
 package io.sentry.protocol;
 
+import static io.sentry.DateUtils.doubleToBigDecimal;
+
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
@@ -16,8 +18,6 @@ import io.sentry.TracesSamplingDecision;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -214,10 +214,6 @@ public final class SentryTransaction extends SentryBaseEvent
       }
     }
     writer.endObject();
-  }
-
-  private @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
-    return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 
   @Nullable
