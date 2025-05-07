@@ -352,6 +352,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static final field Attachment Lio/sentry/DataCategory;
 	public static final field Default Lio/sentry/DataCategory;
 	public static final field Error Lio/sentry/DataCategory;
+	public static final field LogItem Lio/sentry/DataCategory;
 	public static final field Monitor Lio/sentry/DataCategory;
 	public static final field Profile Lio/sentry/DataCategory;
 	public static final field ProfileChunkUi Lio/sentry/DataCategory;
@@ -462,6 +463,8 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
+	public fun getLogs ()Lio/sentry/SentryOptions$Logs;
+	public fun setLogs (Lio/sentry/SentryOptions$Logs;)V
 }
 
 public final class io/sentry/ExternalOptions {
@@ -489,6 +492,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
+	public fun getLogsSampleRate ()Ljava/lang/Double;
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
@@ -503,6 +507,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun isCaptureOpenTelemetryEvents ()Ljava/lang/Boolean;
 	public fun isEnableBackpressureHandling ()Ljava/lang/Boolean;
+	public fun isEnableLogs ()Ljava/lang/Boolean;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnableSpotlight ()Ljava/lang/Boolean;
 	public fun isEnabled ()Ljava/lang/Boolean;
@@ -517,6 +522,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setDsn (Ljava/lang/String;)V
 	public fun setEnableBackpressureHandling (Ljava/lang/Boolean;)V
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
+	public fun setEnableLogs (Ljava/lang/Boolean;)V
 	public fun setEnablePrettySerializationOutput (Ljava/lang/Boolean;)V
 	public fun setEnableSpotlight (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
@@ -528,6 +534,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredErrors (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
+	public fun setLogsSampleRate (Ljava/lang/Double;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
@@ -991,7 +998,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public abstract fun captureLogs (Lio/sentry/SentryLogEvents;Lio/sentry/IScope;Lio/sentry/Hint;)V
+	public abstract fun captureLog (Lio/sentry/SentryLogEvent;Lio/sentry/IScope;Lio/sentry/Hint;)V
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
@@ -2714,7 +2721,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureCheckIn (Lio/sentry/CheckIn;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureLogs (Lio/sentry/SentryLogEvents;Lio/sentry/IScope;Lio/sentry/Hint;)V
+	public fun captureLog (Lio/sentry/SentryLogEvent;Lio/sentry/IScope;Lio/sentry/Hint;)V
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
 	public fun captureReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Lio/sentry/Hint;)V
@@ -3013,14 +3020,16 @@ public final class io/sentry/SentryLockReason$JsonKeys {
 }
 
 public final class io/sentry/SentryLogEvent : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Ljava/lang/String;)V
-	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/Double;Ljava/lang/String;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/SentryLevel;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/SentryLevel;)V
 	public fun getAttributes ()Ljava/util/Map;
+	public fun getBody ()Ljava/lang/String;
 	public fun getLevel ()Lio/sentry/SentryLevel;
 	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAttributes (Ljava/util/Map;)V
+	public fun setBody (Ljava/lang/String;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
 	public fun setTimestamp (Ljava/lang/Double;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -3399,6 +3408,20 @@ public final class io/sentry/SentryOptions$Cron {
 	public fun setDefaultMaxRuntime (Ljava/lang/Long;)V
 	public fun setDefaultRecoveryThreshold (Ljava/lang/Long;)V
 	public fun setDefaultTimezone (Ljava/lang/String;)V
+}
+
+public final class io/sentry/SentryOptions$Logs {
+	public fun <init> ()V
+	public fun getBeforeSend ()Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;
+	public fun getSampleRate ()Ljava/lang/Double;
+	public fun isEnabled ()Z
+	public fun setBeforeSend (Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;)V
+	public fun setEnabled (Z)V
+	public fun setSampleRate (Ljava/lang/Double;)V
+}
+
+public abstract interface class io/sentry/SentryOptions$Logs$BeforeSendLogCallback {
+	public abstract fun execute (Lio/sentry/SentryLogEvent;Lio/sentry/Hint;)Lio/sentry/SentryLogEvent;
 }
 
 public abstract interface class io/sentry/SentryOptions$ProfilesSamplerCallback {

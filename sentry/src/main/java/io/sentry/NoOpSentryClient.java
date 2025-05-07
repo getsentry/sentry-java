@@ -79,8 +79,8 @@ final class NoOpSentryClient implements ISentryClient {
 
   @ApiStatus.Experimental
   @Override
-  public void captureLogs(
-      @NotNull SentryLogEvents logEvents, @Nullable IScope scope, @Nullable Hint hint) {
+  public void captureLog(
+      @NotNull SentryLogEvent logEvent, @Nullable IScope scope, @Nullable Hint hint) {
     // do nothing
   }
 

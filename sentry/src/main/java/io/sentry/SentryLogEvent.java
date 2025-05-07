@@ -14,27 +14,29 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
 
   private @NotNull SentryId traceId;
   private @NotNull Double timestamp;
-
   private @NotNull String body;
+  private @NotNull SentryLevel level;
 
-  private @Nullable SentryLevel level;
   private @Nullable Map<String, SentryLogEventAttributeValue> attributes;
   private @Nullable Map<String, Object> unknown;
 
   public SentryLogEvent(
       final @NotNull SentryId traceId,
       final @NotNull SentryDate timestamp,
-      final @NotNull String body) {
-    this(traceId, DateUtils.nanosToSeconds(timestamp.nanoTimestamp()), body);
+      final @NotNull String body,
+      final @NotNull SentryLevel level) {
+    this(traceId, DateUtils.nanosToSeconds(timestamp.nanoTimestamp()), body, level);
   }
 
   public SentryLogEvent(
       final @NotNull SentryId traceId,
       final @NotNull Double timestamp,
-      final @NotNull String body) {
+      final @NotNull String body,
+      final @NotNull SentryLevel level) {
     this.traceId = traceId;
     this.timestamp = timestamp;
     this.body = body;
+    this.level = level;
   }
 
   @NotNull
@@ -46,11 +48,19 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
     this.timestamp = timestamp;
   }
 
-  public @Nullable SentryLevel getLevel() {
+  public @NotNull String getBody() {
+    return body;
+  }
+
+  public void setBody(@NotNull String body) {
+    this.body = body;
+  }
+
+  public @NotNull SentryLevel getLevel() {
     return level;
   }
 
-  public void setLevel(final @Nullable SentryLevel level) {
+  public void setLevel(final @NotNull SentryLevel level) {
     this.level = level;
   }
 
@@ -79,9 +89,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
     writer.name(JsonKeys.TIMESTAMP).value(logger, doubleToBigDecimal(timestamp));
     writer.name(JsonKeys.TRACE_ID).value(logger, traceId);
     writer.name(JsonKeys.BODY).value(body);
-    if (level != null) {
-      writer.name(JsonKeys.LEVEL).value(logger, level);
-    }
+    writer.name(JsonKeys.LEVEL).value(logger, level);
     if (attributes != null) {
       writer.name(JsonKeys.ATTRIBUTES).value(logger, attributes);
     }
@@ -169,9 +177,15 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
         throw exception;
       }
 
-      final SentryLogEvent logEvent = new SentryLogEvent(traceId, timestamp, body);
+      if (level == null) {
+        String message = "Missing required field \"" + JsonKeys.LEVEL + "\"";
+        Exception exception = new IllegalStateException(message);
+        logger.log(SentryLevel.ERROR, message, exception);
+        throw exception;
+      }
 
-      logEvent.setLevel(level);
+      final SentryLogEvent logEvent = new SentryLogEvent(traceId, timestamp, body, level);
+
       logEvent.setAttributes(attributes);
       logEvent.setUnknown(unknown);
 

@@ -16,6 +16,7 @@ import io.sentry.util.*;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1011,28 +1012,42 @@ public final class SentryClient implements ISentryClient {
 
   @ApiStatus.Experimental
   @Override
-  public void captureLogs(
-      @NotNull SentryLogEvents logEvents, @Nullable IScope scope, @Nullable Hint hint) {
+  public void captureLog(
+      @Nullable SentryLogEvent logEvent, @Nullable IScope scope, @Nullable Hint hint) {
     if (hint == null) {
       hint = new Hint();
     }
 
-    try {
-      @Nullable TraceContext traceContext = null;
-      if (scope != null) {
-        final @Nullable ITransaction transaction = scope.getTransaction();
-        if (transaction != null) {
-          traceContext = transaction.traceContext();
-        } else {
-          final @NotNull PropagationContext propagationContext =
-              TracingUtils.maybeUpdateBaggage(scope, options);
-          traceContext = propagationContext.traceContext();
-        }
+    @Nullable TraceContext traceContext = null;
+    if (scope != null) {
+      final @Nullable ITransaction transaction = scope.getTransaction();
+      if (transaction != null) {
+        traceContext = transaction.traceContext();
+      } else {
+        final @NotNull PropagationContext propagationContext =
+            TracingUtils.maybeUpdateBaggage(scope, options);
+        traceContext = propagationContext.traceContext();
       }
+    }
 
-      final @NotNull SentryEnvelope envelope = buildEnvelope(logEvents, traceContext);
+    if (logEvent != null) {
+      logEvent = executeBeforeSendLog(logEvent, hint);
+
+      if (logEvent == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Log Event was dropped by beforeSendLog");
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.LogItem);
+        return;
+      }
+    }
+
+    try {
+      final @NotNull SentryEnvelope envelope =
+          buildEnvelope(new SentryLogEvents(Arrays.asList(logEvent)), traceContext);
 
       hint.clear();
+      // TODO buffer
       sendEnvelope(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing log failed.");
@@ -1254,6 +1269,28 @@ public final class SentryClient implements ISentryClient {
                 e);
 
         // drop event in case of an error in beforeSend due to PII concerns
+        event = null;
+      }
+    }
+    return event;
+  }
+
+  private @Nullable SentryLogEvent executeBeforeSendLog(
+      @NotNull SentryLogEvent event, final @NotNull Hint hint) {
+    final SentryOptions.Logs.BeforeSendLogCallback beforeSendLog =
+        options.getExperimental().getLogs().getBeforeSend();
+    if (beforeSendLog != null) {
+      try {
+        event = beforeSendLog.execute(event, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The BeforeSendLog callback threw an exception. Dropping log event.",
+                e);
+
+        // drop event in case of an error in beforeSendLog due to PII concerns
         event = null;
       }
     }
