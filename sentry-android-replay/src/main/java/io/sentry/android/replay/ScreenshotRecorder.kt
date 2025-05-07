@@ -201,6 +201,9 @@ internal class ScreenshotRecorder(
         }
 
         contentChanged.set(true)
+        if (DEBUG_MODE) {
+            debugOverlayDrawable.invalidateSelf()
+        }
     }
 
     fun bind(root: View) {

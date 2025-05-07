@@ -22,7 +22,7 @@ internal class DebugOverlayDrawable : Drawable() {
         paint.strokeWidth = 4f
 
         for (mask in masks) {
-            paint.setColor(Color.BLACK)
+            paint.setColor(Color.argb(128, 255, 20, 20))
             paint.style = Paint.Style.STROKE
             canvas.drawRect(mask, paint)
 
@@ -30,7 +30,7 @@ internal class DebugOverlayDrawable : Drawable() {
             val label = "${mask.left} ${mask.top}"
             paint.getTextBounds(label, 0, label.length, tmpRect)
 
-            paint.setColor(Color.WHITE)
+            paint.setColor(Color.argb(128, 255, 255, 255))
             canvas.drawRect(
                 mask.left.toFloat() + paint.strokeWidth / 2,
                 mask.top.toFloat() + paint.strokeWidth / 2,
