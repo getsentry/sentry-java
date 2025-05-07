@@ -4,6 +4,8 @@
 
 ### Features
 
+- Add new User Feedback API ([#4286](https://github.com/getsentry/sentry-java/pull/4286))
+    - We now introduced Sentry.captureFeedback, which supersedes Sentry.captureUserFeedback
 - Make `RequestDetailsResolver` public ([#4326](https://github.com/getsentry/sentry-java/pull/4326))
   - `RequestDetailsResolver` is now public and has an additional constructor, making it easier to use a custom `TransportFactory`
 
