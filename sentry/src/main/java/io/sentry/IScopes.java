@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.logger.ILoggerApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -703,4 +704,8 @@ public interface IScopes {
 
   @NotNull
   SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint);
+
+  @ApiStatus.Experimental
+  @NotNull
+  ILoggerApi logger();
 }

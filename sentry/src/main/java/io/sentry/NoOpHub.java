@@ -1,5 +1,7 @@
 package io.sentry;
 
+import io.sentry.logger.ILoggerApi;
+import io.sentry.logger.NoOpLoggerApi;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -316,5 +318,11 @@ public final class NoOpHub implements IHub {
   @Override
   public boolean isNoOp() {
     return true;
+  }
+
+  @ApiStatus.Experimental
+  @Override
+  public @NotNull ILoggerApi logger() {
+    return NoOpLoggerApi.getInstance();
   }
 }

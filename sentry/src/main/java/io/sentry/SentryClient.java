@@ -625,6 +625,20 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @NotNull SentryEnvelope buildEnvelope(
+      final @NotNull SentryLogEvents logEvents, final @Nullable TraceContext traceContext) {
+    final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+
+    final SentryEnvelopeItem logItem =
+        SentryEnvelopeItem.fromLogs(options.getSerializer(), logEvents);
+    envelopeItems.add(logItem);
+
+    final SentryEnvelopeHeader envelopeHeader =
+        new SentryEnvelopeHeader(null, options.getSdkVersion(), traceContext);
+
+    return new SentryEnvelope(envelopeHeader, envelopeItems);
+  }
+
+  private @NotNull SentryEnvelope buildEnvelope(
       final @NotNull SentryReplayEvent event,
       final @Nullable ReplayRecording replayRecording,
       final @Nullable TraceContext traceContext,
@@ -993,6 +1007,36 @@ public final class SentryClient implements ISentryClient {
     }
 
     return sentryId;
+  }
+
+  @ApiStatus.Experimental
+  @Override
+  public void captureLogs(
+      @NotNull SentryLogEvents logEvents, @Nullable IScope scope, @Nullable Hint hint) {
+    if (hint == null) {
+      hint = new Hint();
+    }
+
+    try {
+      @Nullable TraceContext traceContext = null;
+      if (scope != null) {
+        final @Nullable ITransaction transaction = scope.getTransaction();
+        if (transaction != null) {
+          traceContext = transaction.traceContext();
+        } else {
+          final @NotNull PropagationContext propagationContext =
+              TracingUtils.maybeUpdateBaggage(scope, options);
+          traceContext = propagationContext.traceContext();
+        }
+      }
+
+      final @NotNull SentryEnvelope envelope = buildEnvelope(logEvents, traceContext);
+
+      hint.clear();
+      sendEnvelope(envelope, hint);
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing log failed.");
+    }
   }
 
   private @Nullable List<Attachment> filterForTransaction(@Nullable List<Attachment> attachments) {

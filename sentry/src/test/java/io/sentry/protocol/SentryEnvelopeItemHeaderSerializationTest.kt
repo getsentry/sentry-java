@@ -24,7 +24,8 @@ class SentryEnvelopeItemHeaderSerializationTest {
             "5def420f-3dac-4d7b-948b-49de6e551aef",
             "54cf4644-8610-4ff3-a535-34ac1f367501",
             "6f49ad85-a017-4d94-a5d7-6477251da602",
-            "android"
+            "android",
+            99
         )
     }
     private val fixture = Fixture()
