@@ -1,7 +1,9 @@
 package io.sentry.logger;
 
 import io.sentry.ISentryClient;
+import io.sentry.ISentryExecutorService;
 import io.sentry.ISentryLifecycleToken;
+import io.sentry.SentryExecutorService;
 import io.sentry.SentryLogEvent;
 import io.sentry.SentryLogEvents;
 import io.sentry.SentryOptions;
@@ -22,6 +24,7 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
   private final @NotNull SentryOptions options;
   private final @NotNull ISentryClient client;
   private final @NotNull Queue<SentryLogEvent> queue;
+  private final @NotNull ISentryExecutorService executorService;
   private volatile @Nullable Future<?> scheduledFlush;
   private static final @NotNull AutoClosableReentrantLock scheduleLock =
       new AutoClosableReentrantLock();
@@ -31,6 +34,7 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
     this.options = options;
     this.client = client;
     this.queue = new ConcurrentLinkedQueue<>();
+    this.executorService = new SentryExecutorService();
   }
 
   @Override
@@ -39,11 +43,14 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
     maybeSchedule(false, false);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   public void close(final boolean isRestarting) {
     if (isRestarting) {
       maybeSchedule(true, true);
+      executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
     } else {
+      executorService.close(options.getShutdownTimeoutMillis());
       while (!queue.isEmpty()) {
         flushBatch();
       }
@@ -58,7 +65,7 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
           || latestScheduledFlush.isDone()
           || latestScheduledFlush.isCancelled()) {
         final int flushAfterMs = immediately ? 0 : FLUSH_AFTER_MS;
-        scheduledFlush = options.getExecutorService().schedule(new BatchRunnable(), flushAfterMs);
+        scheduledFlush = executorService.schedule(new BatchRunnable(), flushAfterMs);
       }
     }
   }
