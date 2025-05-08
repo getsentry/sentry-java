@@ -17,6 +17,10 @@ public final class SentryLogEvents implements JsonUnknown, JsonSerializable {
     this.items = items;
   }
 
+  public @NotNull List<SentryLogEvent> getItems() {
+    return items;
+  }
+
   // region json
   public static final class JsonKeys {
     public static final String ITEMS = "items";

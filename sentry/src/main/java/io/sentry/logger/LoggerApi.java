@@ -32,8 +32,8 @@ public final class LoggerApi implements ILoggerApi {
 
   @Override
   public void trace(final @Nullable String message, final @Nullable Object... args) {
-    // TODO SentryLevel.TRACE does not exists yet
-    //    log(SentryLevel.TRACE, message, args);
+    // TODO SentryLevel.TRACE does not exists yet so we just report it as DEBUG for now
+    log(SentryLevel.DEBUG, message, args);
   }
 
   @Override

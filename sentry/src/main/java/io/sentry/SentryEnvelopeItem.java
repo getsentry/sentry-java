@@ -503,7 +503,7 @@ public final class SentryEnvelopeItem {
             null,
             null,
             null,
-            1);
+            logEvents.getItems().size());
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef

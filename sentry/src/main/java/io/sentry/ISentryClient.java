@@ -295,6 +295,9 @@ public interface ISentryClient {
   @ApiStatus.Experimental
   void captureLog(@NotNull SentryLogEvent logEvent, @Nullable IScope scope, @Nullable Hint hint);
 
+  @ApiStatus.Experimental
+  void captureBatchedLogEvents(@NotNull SentryLogEvents logEvents);
+
   @ApiStatus.Internal
   @Nullable
   RateLimiter getRateLimiter();
