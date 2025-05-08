@@ -18,6 +18,7 @@ plugins {
     id(Config.QualityPlugins.jacocoAndroid) version Config.QualityPlugins.jacocoAndroidVersion apply false
     id(Config.QualityPlugins.kover) version Config.QualityPlugins.koverVersion apply false
     id(Config.BuildPlugins.gradleMavenPublishPlugin) version Config.BuildPlugins.gradleMavenPublishPluginVersion apply false
+    id(Config.BuildPlugins.androidxBenchmark) version Config.androidxBenchmarkVersion apply false
 }
 
 buildscript {
@@ -69,6 +70,7 @@ apiValidation {
             "sentry-samples-spring-boot-webflux-jakarta",
             "sentry-uitest-android",
             "sentry-uitest-android-benchmark",
+            "sentry-uitest-android-microbenchmark",
             "sentry-uitest-android-critical",
             "test-app-plain",
             "test-app-sentry",

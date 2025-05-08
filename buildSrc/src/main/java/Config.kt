@@ -15,6 +15,8 @@ object Config {
     val composeVersion = "1.6.11"
     val androidComposeCompilerVersion = "1.5.14"
 
+    val androidxBenchmarkVersion = "1.3.3"
+
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
         val kotlinGradlePlugin = "gradle-plugin"
@@ -32,6 +34,8 @@ object Config {
         val dokkaPluginJavadocAlias = "org.jetbrains.dokka-javadoc"
         val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
         val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"
+
+        val androidxBenchmark = "androidx.benchmark"
     }
 
     object Android {
@@ -200,6 +204,7 @@ object Config {
         val androidxTestRules = "androidx.test:rules:1.6.1"
         val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
         val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
+        val androidxMicroBenchmark = "androidx.benchmark:benchmark-junit4:1.3.4"
         val androidxTestOrchestrator = "androidx.test:orchestrator:1.5.0"
         val androidxJunit = "androidx.test.ext:junit:1.1.5"
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
