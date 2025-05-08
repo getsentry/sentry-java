@@ -6,6 +6,9 @@ import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
+import io.sentry.logger.ILoggerBatchProcessor;
+import io.sentry.logger.LoggerBatchProcessor;
+import io.sentry.logger.NoOpLoggerBatchProcessor;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SentryId;
@@ -16,7 +19,6 @@ import io.sentry.util.*;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,6 +38,7 @@ public final class SentryClient implements ISentryClient {
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
+  private final @NotNull ILoggerBatchProcessor loggerBatchProcessor;
 
   @Override
   public boolean isEnabled() {
@@ -55,6 +58,11 @@ public final class SentryClient implements ISentryClient {
 
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
+    if (options.getExperimental().getLogs().isEnabled()) {
+      loggerBatchProcessor = new LoggerBatchProcessor(options, this);
+    } else {
+      loggerBatchProcessor = NoOpLoggerBatchProcessor.getInstance();
+    }
   }
 
   private boolean shouldApplyScopeData(
@@ -625,8 +633,7 @@ public final class SentryClient implements ISentryClient {
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
 
-  private @NotNull SentryEnvelope buildEnvelope(
-      final @NotNull SentryLogEvents logEvents, final @Nullable TraceContext traceContext) {
+  private @NotNull SentryEnvelope buildEnvelope(final @NotNull SentryLogEvents logEvents) {
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
 
     final SentryEnvelopeItem logItem =
@@ -634,7 +641,7 @@ public final class SentryClient implements ISentryClient {
     envelopeItems.add(logItem);
 
     final SentryEnvelopeHeader envelopeHeader =
-        new SentryEnvelopeHeader(null, options.getSdkVersion(), traceContext);
+        new SentryEnvelopeHeader(null, options.getSdkVersion(), null);
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
@@ -1018,17 +1025,17 @@ public final class SentryClient implements ISentryClient {
       hint = new Hint();
     }
 
-    @Nullable TraceContext traceContext = null;
-    if (scope != null) {
-      final @Nullable ITransaction transaction = scope.getTransaction();
-      if (transaction != null) {
-        traceContext = transaction.traceContext();
-      } else {
-        final @NotNull PropagationContext propagationContext =
-            TracingUtils.maybeUpdateBaggage(scope, options);
-        traceContext = propagationContext.traceContext();
-      }
-    }
+    //    @Nullable TraceContext traceContext = null;
+    //    if (scope != null) {
+    //      final @Nullable ITransaction transaction = scope.getTransaction();
+    //      if (transaction != null) {
+    //        traceContext = transaction.traceContext();
+    //      } else {
+    //        final @NotNull PropagationContext propagationContext =
+    //            TracingUtils.maybeUpdateBaggage(scope, options);
+    //        traceContext = propagationContext.traceContext();
+    //      }
+    //    }
 
     if (logEvent != null) {
       logEvent = executeBeforeSendLog(logEvent, hint);
@@ -1040,15 +1047,18 @@ public final class SentryClient implements ISentryClient {
             .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.LogItem);
         return;
       }
+
+      loggerBatchProcessor.add(logEvent);
     }
 
-    try {
-      final @NotNull SentryEnvelope envelope =
-          buildEnvelope(new SentryLogEvents(Arrays.asList(logEvent)), traceContext);
+    hint.clear();
+  }
 
-      hint.clear();
-      // TODO buffer
-      sendEnvelope(envelope, hint);
+  @Override
+  public void captureBatchedLogEvents(final @NotNull SentryLogEvents logEvents) {
+    try {
+      final @NotNull SentryEnvelope envelope = buildEnvelope(logEvents);
+      sendEnvelope(envelope, null);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing log failed.");
     }
@@ -1307,6 +1317,7 @@ public final class SentryClient implements ISentryClient {
     options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
     try {
       flush(isRestarting ? 0 : options.getShutdownTimeoutMillis());
+      loggerBatchProcessor.close(isRestarting);
       transport.close(isRestarting);
     } catch (IOException e) {
       options

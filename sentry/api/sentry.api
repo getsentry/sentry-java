@@ -987,6 +987,7 @@ public abstract interface class io/sentry/IScopesStorage {
 }
 
 public abstract interface class io/sentry/ISentryClient {
+	public abstract fun captureBatchedLogEvents (Lio/sentry/SentryLogEvents;)V
 	public abstract fun captureCheckIn (Lio/sentry/CheckIn;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -2718,6 +2719,7 @@ public final class io/sentry/SentryBaseEvent$Serializer {
 
 public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun captureBatchedLogEvents (Lio/sentry/SentryLogEvents;)V
 	public fun captureCheckIn (Lio/sentry/CheckIn;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
@@ -3071,6 +3073,7 @@ public final class io/sentry/SentryLogEventAttributeValue$JsonKeys {
 
 public final class io/sentry/SentryLogEvents : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/util/List;)V
+	public fun getItems ()Ljava/util/List;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -4666,6 +4669,11 @@ public abstract interface class io/sentry/logger/ILoggerApi {
 	public abstract fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
+public abstract interface class io/sentry/logger/ILoggerBatchProcessor {
+	public abstract fun add (Lio/sentry/SentryLogEvent;)V
+	public abstract fun close (Z)V
+}
+
 public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
 	public fun <init> (Lio/sentry/Scopes;)V
 	public fun debug (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -4678,6 +4686,14 @@ public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
+public final class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
+	public static final field FLUSH_AFTER_MS I
+	public static final field MAX_BATCH_SIZE I
+	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
+	public fun add (Lio/sentry/SentryLogEvent;)V
+	public fun close (Z)V
+}
+
 public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi {
 	public fun debug (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun error (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -4688,6 +4704,12 @@ public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi 
 	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
+}
+
+public final class io/sentry/logger/NoOpLoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
+	public fun add (Lio/sentry/SentryLogEvent;)V
+	public fun close (Z)V
+	public static fun getInstance ()Lio/sentry/logger/NoOpLoggerBatchProcessor;
 }
 
 public final class io/sentry/opentelemetry/OpenTelemetryUtil {
