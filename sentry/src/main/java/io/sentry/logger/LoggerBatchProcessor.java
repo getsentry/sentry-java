@@ -28,6 +28,7 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
   private volatile @Nullable Future<?> scheduledFlush;
   private static final @NotNull AutoClosableReentrantLock scheduleLock =
       new AutoClosableReentrantLock();
+  private volatile boolean hasScheduled = false;
 
   public LoggerBatchProcessor(
       final @NotNull SentryOptions options, final @NotNull ISentryClient client) {
@@ -58,12 +59,16 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
   }
 
   private void maybeSchedule(boolean forceSchedule, boolean immediately) {
+    if (hasScheduled && !forceSchedule) {
+      return;
+    }
     try (final @NotNull ISentryLifecycleToken ignored = scheduleLock.acquire()) {
       final @Nullable Future<?> latestScheduledFlush = scheduledFlush;
       if (forceSchedule
           || latestScheduledFlush == null
           || latestScheduledFlush.isDone()
           || latestScheduledFlush.isCancelled()) {
+        hasScheduled = true;
         final int flushAfterMs = immediately ? 0 : FLUSH_AFTER_MS;
         scheduledFlush = executorService.schedule(new BatchRunnable(), flushAfterMs);
       }
@@ -75,6 +80,8 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
     try (final @NotNull ISentryLifecycleToken ignored = scheduleLock.acquire()) {
       if (!queue.isEmpty()) {
         maybeSchedule(true, false);
+      } else {
+        hasScheduled = false;
       }
     }
   }
