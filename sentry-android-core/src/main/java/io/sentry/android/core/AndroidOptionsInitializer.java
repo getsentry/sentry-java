@@ -363,7 +363,6 @@ final class AndroidOptionsInitializer {
           new ActivityLifecycleIntegration(
               (Application) context, buildInfoProvider, activityFramesTracker));
       options.addIntegration(new ActivityBreadcrumbsIntegration((Application) context));
-      options.addIntegration(new CurrentActivityIntegration((Application) context));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
       if (isFragmentAvailable) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));
