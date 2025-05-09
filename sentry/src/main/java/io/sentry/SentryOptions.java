@@ -572,6 +572,8 @@ public class SentryOptions {
    */
   private boolean startProfilerOnAppStart = false;
 
+  private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
+
   /**
    * Adds an event processor
    *
@@ -2849,6 +2851,24 @@ public class SentryOptions {
   @ApiStatus.Experimental
   public boolean isCaptureOpenTelemetryEvents() {
     return captureOpenTelemetryEvents;
+  }
+
+  /**
+   * Returns the SocketTagger
+   *
+   * @return the socket tagger
+   */
+  public @NotNull ISocketTagger getSocketTagger() {
+    return socketTagger;
+  }
+
+  /**
+   * Sets the SocketTagger
+   *
+   * @param socketTagger the socket tagger
+   */
+  public void setSocketTagger(final @Nullable ISocketTagger socketTagger) {
+    this.socketTagger = socketTagger != null ? socketTagger : NoOpSocketTagger.getInstance();
   }
 
   /**

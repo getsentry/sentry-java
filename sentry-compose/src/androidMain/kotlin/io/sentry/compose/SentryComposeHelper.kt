@@ -18,10 +18,10 @@ internal class SentryComposeHelper(logger: ILogger) {
         loadField(logger, "androidx.compose.ui.platform.TestTagElement", "tag")
 
     private val sentryTagElementField: Field? =
-        loadField(logger, "io.sentry.compose.SentryModifier.SentryTagModifierNodeElement", "tag")
+        loadField(logger, "io.sentry.compose.SentryModifier${'$'}SentryTagModifierNodeElement", "tag")
 
     fun extractTag(modifier: Modifier): String? {
-        val type = modifier.javaClass.canonicalName
+        val type = modifier.javaClass.name
         // Newer Jetpack Compose uses TestTagElement as node elements
         // See
         // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/platform/TestTag.kt;l=34;drc=dcaa116fbfda77e64a319e1668056ce3b032469f
@@ -31,7 +31,7 @@ internal class SentryComposeHelper(logger: ILogger) {
             ) {
                 val value = testTagElementField.get(modifier)
                 return value as String?
-            } else if ("io.sentry.compose.SentryModifier.SentryTagModifierNodeElement" == type &&
+            } else if ("io.sentry.compose.SentryModifier${'$'}SentryTagModifierNodeElement" == type &&
                 sentryTagElementField != null
             ) {
                 val value = sentryTagElementField.get(modifier)

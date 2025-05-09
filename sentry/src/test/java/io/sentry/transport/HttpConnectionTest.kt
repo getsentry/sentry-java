@@ -2,6 +2,7 @@ package io.sentry.transport
 
 import io.sentry.ILogger
 import io.sentry.ISerializer
+import io.sentry.ISocketTagger
 import io.sentry.RequestDetails
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
@@ -41,6 +42,7 @@ class HttpConnectionTest {
         val rateLimiter = mock<RateLimiter>()
         var sslSocketFactory: SSLSocketFactory? = null
         val requestDetails = mock<RequestDetails>()
+        val socketTagger = mock<ISocketTagger>()
         val options = SentryOptions()
 
         init {
@@ -58,6 +60,7 @@ class HttpConnectionTest {
             options.setSerializer(serializer)
             options.proxy = proxy
             options.sslSocketFactory = sslSocketFactory
+            options.setSocketTagger(socketTagger)
 
             return HttpConnection(options, requestDetails, authenticatorWrapper, rateLimiter)
         }
@@ -260,6 +263,16 @@ class HttpConnectionTest {
 
         verify(fixture.connection).setRequestProperty("header-name", "header-value")
         verify(fixture.requestDetails.url).openConnection()
+    }
+
+    @Test
+    fun `tags sockets`() {
+        val transport = fixture.getSUT()
+
+        transport.send(createEnvelope())
+
+        verify(fixture.socketTagger).tagSockets()
+        verify(fixture.socketTagger).untagSockets()
     }
 
     private fun createSession(): Session {

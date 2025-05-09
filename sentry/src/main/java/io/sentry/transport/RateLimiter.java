@@ -191,8 +191,11 @@ public final class RateLimiter implements Closeable {
         return DataCategory.Attachment;
       case "profile":
         return DataCategory.Profile;
+        // When we send a profile chunk, we have to check for profile_chunk_ui rate limiting,
+        // because that's what relay returns to rate limit Android. When (if) we will implement JVM
+        // profiling we will have to check both rate limits.
       case "profile_chunk":
-        return DataCategory.ProfileChunk;
+        return DataCategory.ProfileChunkUi;
       case "transaction":
         return DataCategory.Transaction;
       case "check_in":

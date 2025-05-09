@@ -169,7 +169,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       return DataCategory.Profile;
     }
     if (SentryItemType.ProfileChunk.equals(itemType)) {
-      return DataCategory.ProfileChunk;
+      return DataCategory.ProfileChunkUi;
     }
     if (SentryItemType.Attachment.equals(itemType)) {
       return DataCategory.Attachment;

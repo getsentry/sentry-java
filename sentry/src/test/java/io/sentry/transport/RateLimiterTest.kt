@@ -348,7 +348,7 @@ class RateLimiterTest {
         val attachmentItem = SentryEnvelopeItem.fromAttachment(fixture.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000)
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(profileChunkItem, attachmentItem))
 
-        rateLimiter.updateRetryAfterLimits("60:profile_chunk:key", null, 1)
+        rateLimiter.updateRetryAfterLimits("60:profile_chunk_ui:key", null, 1)
         val result = rateLimiter.filter(envelope, Hint())
 
         assertNotNull(result)
