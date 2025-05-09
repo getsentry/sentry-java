@@ -69,7 +69,8 @@ public class ReplayIntegration(
     ReplayController,
     ComponentCallbacks,
     IConnectionStatusObserver,
-    IRateLimitObserver {
+    IRateLimitObserver,
+    WindowCallback {
 
     private companion object {
         init {
@@ -139,7 +140,7 @@ public class ReplayIntegration(
         }
 
         this.scopes = scopes
-        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, mainLooperHandler, replayExecutor)
+        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, this, mainLooperHandler, replayExecutor)
         gestureRecorder = gestureRecorderProvider?.invoke() ?: GestureRecorder(options, this)
         isEnabled.set(true)
 
@@ -183,15 +184,12 @@ public class ReplayIntegration(
                 return
             }
 
-            val recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.sessionReplay)
             captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
                 SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor, replayCacheProvider)
             } else {
                 BufferCaptureStrategy(options, scopes, dateProvider, random, replayExecutor, replayCacheProvider)
             }
 
-            captureStrategy?.start(recorderConfig)
-            recorder?.start(recorderConfig)
             registerRootViewListeners()
             lifecycle.currentState = STARTED
         }
@@ -322,17 +320,16 @@ public class ReplayIntegration(
             return
         }
 
-        recorder?.stop()
-
-        // refresh config based on new device configuration
-        val recorderConfig = recorderConfigProvider?.invoke(true) ?: ScreenshotRecorderConfig.from(context, options.sessionReplay)
-        captureStrategy?.onConfigurationChanged(recorderConfig)
-
-        recorder?.start(recorderConfig)
-        // we have to restart recorder with a new config and pause immediately if the replay is paused
-        if (lifecycle.currentState == PAUSED) {
-            recorder?.pause()
+        captureStrategy?.stop()
+        recorder?.let {
+            it.stop()
+            if (it is ConfigurationChangedListener) {
+                it.onConfigurationChanged()
+            }
         }
+
+        // once the window size is determined
+        // onWindowSizeChanged is triggered and we'll start the actual capturing
     }
 
     override fun onConnectionStatusChanged(status: ConnectionStatus) {
@@ -461,6 +458,31 @@ public class ReplayIntegration(
                 segment.capture(scopes, hint)
             }
             cleanupReplays(unfinishedReplayId = previousReplayIdString) // will be cleaned up after the envelope is assembled
+        }
+    }
+
+    override fun onWindowSizeChanged(width: Int, height: Int) {
+        if (!isEnabled.get() || !isRecording()) {
+            return
+        }
+
+        recorder?.stop()
+
+        val recorderConfig = recorderConfigProvider?.invoke(true) ?: ScreenshotRecorderConfig.fromSize(context, options.sessionReplay, width, height)
+
+        captureStrategy?.let { capture ->
+            if (capture.currentReplayId == SentryId.EMPTY_ID) {
+                capture.start(recorderConfig)
+            } else {
+                capture.onConfigurationChanged(recorderConfig)
+            }
+        }
+        recorder?.start(recorderConfig)
+
+        // we have to restart recorder with a new config and pause immediately if the replay is paused
+        if (lifecycle.currentState == PAUSED) {
+            recorder?.pause()
+            captureStrategy?.pause()
         }
     }
 
