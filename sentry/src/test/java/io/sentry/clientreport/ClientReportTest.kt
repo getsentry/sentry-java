@@ -26,6 +26,7 @@ import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.UserFeedback
 import io.sentry.dsnString
 import io.sentry.hints.Retryable
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
@@ -54,6 +55,7 @@ class ClientReportTest {
         val scopes = mock<IScopes>()
         whenever(scopes.options).thenReturn(opts)
         val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
+        val feedbackEvent = SentryEvent().apply { contexts.setFeedback(Feedback("message")) }
 
         val lostClientReport = ClientReport(
             DateUtils.getCurrentDateTime(),
@@ -73,13 +75,14 @@ class ClientReportTest {
             SentryEnvelopeItem.fromAttachment(opts.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000),
             SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, opts.serializer),
             SentryEnvelopeItem.fromCheckIn(opts.serializer, CheckIn("monitor-slug-1", CheckInStatus.ERROR)),
-            SentryEnvelopeItem.fromReplay(opts.serializer, opts.logger, SentryReplayEvent(), ReplayRecording(), false)
+            SentryEnvelopeItem.fromReplay(opts.serializer, opts.logger, SentryReplayEvent(), ReplayRecording(), false),
+            SentryEnvelopeItem.fromEvent(opts.serializer, feedbackEvent)
         )
 
         clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
 
         val clientReportAtEnd = clientReportRecorder.resetCountsAndGenerateClientReport()
-        testHelper.assertTotalCount(15, clientReportAtEnd)
+        testHelper.assertTotalCount(16, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.SAMPLE_RATE, DataCategory.Error, 3, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.BEFORE_SEND, DataCategory.Error, 2, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.QUEUE_OVERFLOW, DataCategory.Transaction, 1, clientReportAtEnd)
@@ -92,6 +95,7 @@ class ClientReportTest {
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Profile, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Monitor, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Replay, 1, clientReportAtEnd)
+        testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Feedback, 1, clientReportAtEnd)
     }
 
     @Test
@@ -136,7 +140,7 @@ class ClientReportTest {
             DateUtils.getCurrentDateTime(),
             listOf(
                 DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 3),
-                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 2),
+                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 2),
                 DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1),
                 DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Profile.category, 2)
             )
@@ -149,7 +153,7 @@ class ClientReportTest {
         val clientReportAtEnd = clientReportRecorder.resetCountsAndGenerateClientReport()
         testHelper.assertTotalCount(8, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.SAMPLE_RATE, DataCategory.Error, 3, clientReportAtEnd)
-        testHelper.assertCountFor(DiscardReason.BEFORE_SEND, DataCategory.Error, 2, clientReportAtEnd)
+        testHelper.assertCountFor(DiscardReason.BEFORE_SEND, DataCategory.Feedback, 2, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.QUEUE_OVERFLOW, DataCategory.Transaction, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.SAMPLE_RATE, DataCategory.Profile, 2, clientReportAtEnd)
     }
