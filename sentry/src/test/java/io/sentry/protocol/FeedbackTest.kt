@@ -49,4 +49,13 @@ class FeedbackTest {
             assertEquals("unknown", it["unknown"])
         }
     }
+
+    @Test
+    fun `setting a message longer than 4096 characters truncates the message`() {
+        val feedback = fixture.getSut()
+        feedback.message = "X".repeat(4095) + "Y" + "Z"
+        val expectedMessage = "X".repeat(4095) + "Y"
+        assertEquals(expectedMessage, feedback.message)
+        assertEquals(4096, feedback.message.length)
+    }
 }

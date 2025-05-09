@@ -1048,10 +1048,8 @@ public final class SentryClient implements ISentryClient {
       sentryId = event.getEventId();
     }
 
-    final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
-    // if event is backfillable we don't wanna trigger capture replay, because it's an event from
-    // the past. If feedback already has a replayId, we don't want to overwrite it.
-    if (feedback.getReplayId() == null && !isBackfillable) {
+    // If feedback already has a replayId, we don't want to overwrite it.
+    if (feedback.getReplayId() == null) {
       options.getReplayController().captureReplay(false);
       final @NotNull SentryId replayId = scope.getReplayId();
       if (!replayId.equals(SentryId.EMPTY_ID)) {
