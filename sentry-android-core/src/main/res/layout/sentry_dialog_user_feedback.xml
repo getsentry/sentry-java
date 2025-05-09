@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
     android:layout_height="match_parent"
+  tools:ignore="HardcodedText"
     android:padding="24dp">
 
 
@@ -9,12 +11,12 @@
         android:id="@+id/sentry_dialog_user_feedback_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Give Feedback"
+        android:text="Report a Bug"
         style="@android:style/TextAppearance.DialogWindowTitle"
         android:textStyle="bold"
         android:layout_marginBottom="16dp"
         android:layout_alignParentTop="true"
-        android:layout_alignEnd="@+id/sentry_dialog_user_feedback_logo"/>
+        android:layout_alignEnd="@+id/sentry_dialog_user_feedback_logo" />
 
     <ImageView
         android:id="@+id/sentry_dialog_user_feedback_logo"
@@ -29,7 +31,7 @@
         android:id="@+id/sentry_dialog_user_feedback_txt_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Full Name"
+        android:text="Name"
         android:layout_marginTop="4dp"
         style="@android:style/TextAppearance.Widget.TextView"
         android:layout_below="@id/sentry_dialog_user_feedback_title" />
@@ -38,7 +40,7 @@
         android:id="@+id/sentry_dialog_user_feedback_edt_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Full Name"
+        android:hint="Your Name"
         android:inputType="textPersonName"
         style="@android:style/TextAppearance.Widget.EditText"
         android:background="@drawable/edit_text_border"
@@ -50,7 +52,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Email"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="8dp"
         style="@android:style/TextAppearance.Widget.TextView"
         android:layout_below="@id/sentry_dialog_user_feedback_edt_name" />
 
@@ -58,7 +60,7 @@
         android:id="@+id/sentry_dialog_user_feedback_edt_email"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Email"
+        android:hint="your.email@example.org"
         android:inputType="textEmailAddress"
         style="@android:style/TextAppearance.Widget.EditText"
         android:background="@drawable/edit_text_border"
@@ -70,7 +72,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Description (Required)"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="8dp"
         style="@android:style/TextAppearance.Widget.TextView"
         android:layout_below="@id/sentry_dialog_user_feedback_edt_email" />
 
@@ -81,7 +83,7 @@
         android:lines="6"
         android:inputType="textMultiLine"
         android:gravity="top|start"
-        android:hint="What did you expect?"
+        android:hint="What's the bug? What did you expect?"
         style="@android:style/TextAppearance.Widget.EditText"
         android:background="@drawable/edit_text_border"
         android:paddingHorizontal="8dp"
@@ -91,7 +93,7 @@
         android:id="@+id/sentry_dialog_user_feedback_btn_send"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="#362d59"
+        android:backgroundTint="#584AC0"
         android:textColor="@android:color/white"
         android:layout_marginTop="32dp"
         android:text="Send Bug Report"
