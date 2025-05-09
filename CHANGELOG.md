@@ -6,8 +6,30 @@
 
 - Add new User Feedback API ([#4286](https://github.com/getsentry/sentry-java/pull/4286))
     - We now introduced Sentry.captureFeedback, which supersedes Sentry.captureUserFeedback
+
+### Dependencies
+
+- Bump Gradle from v8.13 to v8.14.0 ([#4360](https://github.com/getsentry/sentry-java/pull/4360))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8140)
+  - [diff](https://github.com/gradle/gradle/compare/v8.13...v8.14.0)
+
+## 8.11.1
+
+### Fixes
+
+- Fix Android profile chunk envelope type for UI Profiling ([#4366](https://github.com/getsentry/sentry-java/pull/4366))
+
+## 8.11.0
+
+### Features
+
 - Make `RequestDetailsResolver` public ([#4326](https://github.com/getsentry/sentry-java/pull/4326))
   - `RequestDetailsResolver` is now public and has an additional constructor, making it easier to use a custom `TransportFactory`
+
+### Fixes
+
+- Session Replay: Fix masking of non-styled `Text` Composables ([#4361](https://github.com/getsentry/sentry-java/pull/4361))
+- Session Replay: Fix masking read-only `TextField` Composables ([#4362](https://github.com/getsentry/sentry-java/pull/4362))
 
 ## 8.10.0
 

@@ -31,7 +31,7 @@ public final class Feedback implements JsonUnknown, JsonSerializable {
   private @Nullable Map<String, Object> unknown;
 
   public Feedback(final @NotNull String message) {
-    this.message = message;
+    setMessage(message);
   }
 
   public Feedback(final @NotNull Feedback feedback) {
@@ -89,7 +89,12 @@ public final class Feedback implements JsonUnknown, JsonSerializable {
   }
 
   public void setMessage(final @NotNull String message) {
-    this.message = message;
+    // Sentry limits the message to 4096 characters
+    if (message.length() > 4096) {
+      this.message = message.substring(0, 4096);
+    } else {
+      this.message = message;
+    }
   }
 
   @Override

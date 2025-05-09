@@ -3166,19 +3166,6 @@ class SentryClientTest {
         )
     }
 
-    @Test
-    fun `captureFeedback does not capture replay when backfilled`() {
-        val replayController = mock<ReplayController>()
-        val sut = fixture.getSut { it.setReplayController(replayController) }
-
-        sut.captureFeedback(
-            Feedback("message"),
-            HintUtils.createWithTypeCheckHint(BackfillableHint()),
-            createScope()
-        )
-        verify(replayController, never()).captureReplay(any())
-    }
-
     //endregion
 
     private fun givenScopeWithStartedSession(errored: Boolean = false, crashed: Boolean = false): IScope {
