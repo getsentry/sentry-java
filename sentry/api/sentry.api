@@ -2908,6 +2908,63 @@ public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorSe
 	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
 }
 
+public final class io/sentry/SentryFeedbackOptions {
+	public fun <init> ()V
+	public fun getCancelButtonLabel ()Ljava/lang/String;
+	public fun getConfirmButtonLabel ()Ljava/lang/String;
+	public fun getEmailLabel ()Ljava/lang/String;
+	public fun getEmailPlaceholder ()Ljava/lang/String;
+	public fun getFormTitle ()Ljava/lang/String;
+	public fun getIsRequiredLabel ()Ljava/lang/String;
+	public fun getMessageLabel ()Ljava/lang/String;
+	public fun getMessagePlaceholder ()Ljava/lang/String;
+	public fun getNameLabel ()Ljava/lang/String;
+	public fun getNamePlaceholder ()Ljava/lang/String;
+	public fun getOnFormClose ()Ljava/lang/Runnable;
+	public fun getOnFormOpen ()Ljava/lang/Runnable;
+	public fun getOnSubmitError ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
+	public fun getOnSubmitSuccess ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
+	public fun getSubmitBackgroundHex ()Ljava/lang/String;
+	public fun getSubmitButtonLabel ()Ljava/lang/String;
+	public fun getSubmitForegroundHex ()Ljava/lang/String;
+	public fun getSuccessMessageText ()Ljava/lang/String;
+	public fun isEmailRequired ()Z
+	public fun isNameRequired ()Z
+	public fun isShowBranding ()Z
+	public fun isShowEmail ()Z
+	public fun isShowName ()Z
+	public fun isUseSentryUser ()Z
+	public fun setCancelButtonLabel (Ljava/lang/String;)V
+	public fun setConfirmButtonLabel (Ljava/lang/String;)V
+	public fun setEmailLabel (Ljava/lang/String;)V
+	public fun setEmailPlaceholder (Ljava/lang/String;)V
+	public fun setEmailRequired (Z)V
+	public fun setFormTitle (Ljava/lang/String;)V
+	public fun setIsRequiredLabel (Ljava/lang/String;)V
+	public fun setMessageLabel (Ljava/lang/String;)V
+	public fun setMessagePlaceholder (Ljava/lang/String;)V
+	public fun setNameLabel (Ljava/lang/String;)V
+	public fun setNamePlaceholder (Ljava/lang/String;)V
+	public fun setNameRequired (Z)V
+	public fun setOnFormClose (Ljava/lang/Runnable;)V
+	public fun setOnFormOpen (Ljava/lang/Runnable;)V
+	public fun setOnSubmitError (Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;)V
+	public fun setOnSubmitSuccess (Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;)V
+	public fun setShowBranding (Z)V
+	public fun setShowEmail (Z)V
+	public fun setShowName (Z)V
+	public fun setSubmitBackgroundHex (Ljava/lang/String;)V
+	public fun setSubmitButtonLabel (Ljava/lang/String;)V
+	public fun setSubmitForegroundHex (Ljava/lang/String;)V
+	public fun setSuccessMessageText (Ljava/lang/String;)V
+	public fun setUseSentryUser (Z)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/sentry/SentryFeedbackOptions$SentryFeedbackCallback {
+	public abstract fun call (Lio/sentry/protocol/Feedback;)V
+}
+
 public final class io/sentry/SentryInstantDate : io/sentry/SentryDate {
 	public fun <init> ()V
 	public fun <init> (Ljava/time/Instant;)V
@@ -3095,6 +3152,7 @@ public class io/sentry/SentryOptions {
 	public fun getExecutorService ()Lio/sentry/ISentryExecutorService;
 	public fun getExperimental ()Lio/sentry/ExperimentalOptions;
 	public fun getFatalLogger ()Lio/sentry/ILogger;
+	public fun getFeedbackOptions ()Lio/sentry/SentryFeedbackOptions;
 	public fun getFlushTimeoutMillis ()J
 	public fun getFullyDisplayedReporter ()Lio/sentry/FullyDisplayedReporter;
 	public fun getGestureTargetLocators ()Ljava/util/List;
@@ -3237,6 +3295,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExecutorService (Lio/sentry/ISentryExecutorService;)V
 	public fun setFatalLogger (Lio/sentry/ILogger;)V
+	public fun setFeedbackOptions (Lio/sentry/SentryFeedbackOptions;)V
 	public fun setFlushTimeoutMillis (J)V
 	public fun setForceInit (Z)V
 	public fun setFullyDisplayedReporter (Lio/sentry/FullyDisplayedReporter;)V

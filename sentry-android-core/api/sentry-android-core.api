@@ -397,6 +397,13 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 	public fun shutdown ()V
 }
 
+public final class io/sentry/android/core/SentryUserFeedbackDialog : android/app/AlertDialog {
+	public fun <init> (Landroid/content/Context;)V
+	public fun <init> (Landroid/content/Context;I)V
+	public fun <init> (Landroid/content/Context;ZLandroid/content/DialogInterface$OnCancelListener;)V
+	public fun setCancelable (Z)V
+}
+
 public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerformanceContinuousCollector, io/sentry/android/core/internal/util/SentryFrameMetricsCollector$FrameMetricsCollectorListener {
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
