@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add Sentry Log Feature ([#4372](https://github.com/getsentry/sentry-java/pull/4372))
+  - The feature is disabled by default and needs to be enabled by:
+    - `options.getLogs().setEnabled(true)` in `Sentry.init` / `SentryAndroid.init`
+    - `logs.enabled=true` in `sentry.properties`
+    - `sentry.logs.enabled=true` in `application.properties`
+    - `sentry.logs.enabled: true` in `application.yml`
+  - Logs can be captured using `Sentry.logger().info()` and similar methods.
+  - Logs also take a format string and arguments which we then send through `String.format`.
+  - Please use `options.getLogs().setBeforeSend()` to filter outgoing logs
+
 ## 8.11.1
 
 ### Fixes
