@@ -15,30 +15,44 @@ internal class DebugOverlayDrawable : Drawable() {
     private val tmpRect = Rect()
     private var masks: List<Rect> = emptyList()
 
+    companion object {
+        private val maskBackgroundColor = Color.argb(64, 255, 20, 20)
+        private val maskBorderColor = Color.argb(128, 255, 20, 20)
+        private const val TEXT_COLOR = Color.BLACK
+        private const val TEXT_OUTLINE_COLOR = Color.WHITE
+
+        private const val STROKE_WIDTH = 6f
+        private const val TEXT_SIZE = 32f
+    }
+
     override fun draw(canvas: Canvas) {
-        paint.textSize = 32f
+        paint.textSize = TEXT_SIZE
         paint.setColor(Color.BLACK)
 
-        paint.strokeWidth = 4f
+        paint.strokeWidth = STROKE_WIDTH
 
         for (mask in masks) {
-            paint.setColor(Color.argb(128, 255, 20, 20))
+            paint.setColor(maskBackgroundColor)
+            paint.style = Paint.Style.FILL
+            canvas.drawRect(mask, paint)
+
+            paint.setColor(maskBorderColor)
             paint.style = Paint.Style.STROKE
             canvas.drawRect(mask, paint)
 
-            paint.style = Paint.Style.FILL
             val label = "${mask.left} ${mask.top}"
             paint.getTextBounds(label, 0, label.length, tmpRect)
-
-            paint.setColor(Color.argb(128, 255, 255, 255))
-            canvas.drawRect(
-                mask.left.toFloat() + paint.strokeWidth / 2,
-                mask.top.toFloat() + paint.strokeWidth / 2,
-                mask.left.toFloat() + tmpRect.width() + padding + padding,
-                mask.top.toFloat() + tmpRect.height() + padding + padding,
+            paint.style = Paint.Style.STROKE
+            paint.setColor(TEXT_OUTLINE_COLOR)
+            canvas.drawText(
+                label,
+                mask.left.toFloat() + padding + paint.strokeWidth / 2,
+                mask.top.toFloat() + tmpRect.height() - tmpRect.bottom + padding + paint.strokeWidth / 2,
                 paint
             )
-            paint.setColor(Color.BLACK)
+
+            paint.style = Paint.Style.FILL
+            paint.setColor(TEXT_COLOR)
             canvas.drawText(
                 label,
                 mask.left.toFloat() + padding + paint.strokeWidth / 2,
@@ -61,6 +75,7 @@ internal class DebugOverlayDrawable : Drawable() {
 
     fun update(masks: List<Rect>) {
         this.masks = masks
+
         invalidateSelf()
     }
 }
