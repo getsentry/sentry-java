@@ -7,6 +7,7 @@ import io.sentry.protocol.ReplayRecordingSerializationTest
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryLogsSerializationTest
 import io.sentry.protocol.SentryReplayEventSerializationTest
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
@@ -1494,6 +1495,17 @@ class JsonSerializerTest {
 
         assertEquals(replayEvent, deserializedEvent)
         assertEquals(replayRecording, deserializedRecording)
+    }
+
+    @Test
+    fun `ser deser logs data`() {
+        val logEvent = SentryLogsSerializationTest.Fixture().getSut()
+        val serializedEvent = serializeToString(logEvent)
+
+        val deserializedEvent = fixture.serializer.deserialize(StringReader(serializedEvent), SentryLogEvents::class.java)
+
+        assertNotNull(deserializedEvent)
+        assertEquals(serializedEvent, serializeToString(deserializedEvent))
     }
 
     private fun assertSessionData(expectedSession: Session?, expectedSessionId: String = "c81d4e2e-bcf2-11e6-869b-7df92533d2db") {

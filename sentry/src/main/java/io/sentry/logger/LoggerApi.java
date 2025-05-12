@@ -150,14 +150,16 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull String message, final @NotNull SpanId spanId, final @Nullable Object... args) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
     if (args != null) {
-      attributes.put(
-          "sentry.message.template", new SentryLogEventAttributeValue("string", message));
       int i = 0;
       for (Object arg : args) {
         final @NotNull String type = getType(arg);
         attributes.put(
             "sentry.message.parameter." + i, new SentryLogEventAttributeValue(type, arg));
         i++;
+      }
+      if (i > 0) {
+        attributes.put(
+            "sentry.message.template", new SentryLogEventAttributeValue("string", message));
       }
     }
 
@@ -184,7 +186,7 @@ public final class LoggerApi implements ILoggerApi {
     return attributes;
   }
 
-  private @NotNull String getType(final @NotNull Object arg) {
+  private @NotNull String getType(final @Nullable Object arg) {
     if (arg instanceof Boolean) {
       return "boolean";
     }

@@ -2814,6 +2814,7 @@ public final class io/sentry/SentryEnvelopeItem {
 	public fun getData ()[B
 	public fun getEvent (Lio/sentry/ISerializer;)Lio/sentry/SentryEvent;
 	public fun getHeader ()Lio/sentry/SentryEnvelopeItemHeader;
+	public fun getLogs (Lio/sentry/ISerializer;)Lio/sentry/SentryLogEvents;
 	public fun getTransaction (Lio/sentry/ISerializer;)Lio/sentry/protocol/SentryTransaction;
 }
 

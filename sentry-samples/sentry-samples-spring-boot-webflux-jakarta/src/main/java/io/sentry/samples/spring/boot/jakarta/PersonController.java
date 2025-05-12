@@ -1,5 +1,6 @@
 package io.sentry.samples.spring.boot.jakarta;
 
+import io.sentry.Sentry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +23,9 @@ public class PersonController {
 
   @GetMapping("{id}")
   Person person(@PathVariable Long id) {
+    Sentry.logger().warn("warn Sentry logging");
+    Sentry.logger().error("error Sentry logging");
+    Sentry.logger().info("hello %s %s", "there", "world!");
     LOGGER.info("Loading person with id={}", id);
     throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
   }
