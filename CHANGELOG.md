@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Hook User Interaction integration into running Activity in case of deferred SDK init ([#4337](https://github.com/getsentry/sentry-java/pull/4337))
+
 ### Dependencies
 
 - Bump Gradle from v8.13 to v8.14.0 ([#4360](https://github.com/getsentry/sentry-java/pull/4360))
