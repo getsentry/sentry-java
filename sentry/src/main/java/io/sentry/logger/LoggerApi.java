@@ -1,6 +1,5 @@
 package io.sentry.logger;
 
-import io.sentry.DataCategory;
 import io.sentry.Hint;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
@@ -12,11 +11,8 @@ import io.sentry.SentryLogEventAttributeValue;
 import io.sentry.SentryLogLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanId;
-import io.sentry.clientreport.DiscardReason;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
-import io.sentry.util.Random;
-import io.sentry.util.SentryRandom;
 import java.util.HashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -107,16 +103,6 @@ public final class LoggerApi implements ILoggerApi {
         return;
       }
 
-      if (!sampleLog(options)) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Log Event was dropped due to sampling decision.");
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.LogItem);
-        return;
-      }
-
       final @NotNull SentryDate timestampToUse =
           timestamp == null ? options.getDateProvider().now() : timestamp;
       final @NotNull String messageToUse = args == null ? message : String.format(message, args);
@@ -135,16 +121,6 @@ public final class LoggerApi implements ILoggerApi {
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error while capturing log event", e);
     }
-  }
-
-  private boolean sampleLog(final @NotNull SentryOptions options) {
-    final @Nullable Random random =
-        options.getExperimental().getLogs().getSampleRate() == null ? null : SentryRandom.current();
-    if (options.getExperimental().getLogs().getSampleRate() != null && random != null) {
-      final double sampling = options.getExperimental().getLogs().getSampleRate();
-      return !(sampling < random.nextDouble()); // bad luck
-    }
-    return false;
   }
 
   private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
