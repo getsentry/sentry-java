@@ -1,6 +1,7 @@
 package io.sentry.logger;
 
 import io.sentry.Hint;
+import io.sentry.IScope;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
 import io.sentry.Scopes;
@@ -13,6 +14,7 @@ import io.sentry.SentryOptions;
 import io.sentry.SpanId;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.TracingUtils;
 import java.util.HashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -29,8 +31,7 @@ public final class LoggerApi implements ILoggerApi {
 
   @Override
   public void trace(final @Nullable String message, final @Nullable Object... args) {
-    // TODO SentryLevel.TRACE does not exists yet so we just report it as DEBUG for now
-    log(SentryLogLevel.DEBUG, message, args);
+    log(SentryLogLevel.TRACE, message, args);
   }
 
   @Override
@@ -106,9 +107,13 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull SentryDate timestampToUse =
           timestamp == null ? options.getDateProvider().now() : timestamp;
       final @NotNull String messageToUse = args == null ? message : String.format(message, args);
-      final @NotNull PropagationContext propagationContext =
-          scopes.getCombinedScopeView().getPropagationContext();
-      final @Nullable ISpan span = scopes.getCombinedScopeView().getSpan();
+
+      final @NotNull IScope combinedScope = scopes.getCombinedScopeView();
+      final @NotNull PropagationContext propagationContext = combinedScope.getPropagationContext();
+      final @Nullable ISpan span = combinedScope.getSpan();
+      if (span == null) {
+        TracingUtils.maybeUpdateBaggage(combinedScope, options);
+      }
       final @NotNull SentryId traceId =
           span == null ? propagationContext.getTraceId() : span.getSpanContext().getTraceId();
       final @NotNull SpanId spanId =
@@ -118,7 +123,7 @@ public final class LoggerApi implements ILoggerApi {
       logEvent.setAttributes(createAttributes(message, spanId, args));
       logEvent.setSeverityNumber(level.getSeverityNumber());
 
-      scopes.getClient().captureLog(logEvent, scopes.getCombinedScopeView(), hint);
+      scopes.getClient().captureLog(logEvent, combinedScope, hint);
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error while capturing log event", e);
     }

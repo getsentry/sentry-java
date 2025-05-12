@@ -1025,18 +1025,6 @@ public final class SentryClient implements ISentryClient {
       hint = new Hint();
     }
 
-    //    @Nullable TraceContext traceContext = null;
-    //    if (scope != null) {
-    //      final @Nullable ITransaction transaction = scope.getTransaction();
-    //      if (transaction != null) {
-    //        traceContext = transaction.traceContext();
-    //      } else {
-    //        final @NotNull PropagationContext propagationContext =
-    //            TracingUtils.maybeUpdateBaggage(scope, options);
-    //        traceContext = propagationContext.traceContext();
-    //      }
-    //    }
-
     if (logEvent != null) {
       logEvent = executeBeforeSendLog(logEvent, hint);
 
