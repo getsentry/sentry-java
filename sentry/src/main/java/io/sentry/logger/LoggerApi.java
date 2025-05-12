@@ -9,6 +9,7 @@ import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLogEvent;
 import io.sentry.SentryLogEventAttributeValue;
+import io.sentry.SentryLogLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanId;
 import io.sentry.clientreport.DiscardReason;
@@ -33,37 +34,37 @@ public final class LoggerApi implements ILoggerApi {
   @Override
   public void trace(final @Nullable String message, final @Nullable Object... args) {
     // TODO SentryLevel.TRACE does not exists yet so we just report it as DEBUG for now
-    log(SentryLevel.DEBUG, message, args);
+    log(SentryLogLevel.DEBUG, message, args);
   }
 
   @Override
   public void debug(final @Nullable String message, final @Nullable Object... args) {
-    log(SentryLevel.DEBUG, message, args);
+    log(SentryLogLevel.DEBUG, message, args);
   }
 
   @Override
   public void info(final @Nullable String message, final @Nullable Object... args) {
-    log(SentryLevel.INFO, message, args);
+    log(SentryLogLevel.INFO, message, args);
   }
 
   @Override
   public void warn(final @Nullable String message, final @Nullable Object... args) {
-    log(SentryLevel.WARNING, message, args);
+    log(SentryLogLevel.WARN, message, args);
   }
 
   @Override
   public void error(final @Nullable String message, final @Nullable Object... args) {
-    log(SentryLevel.ERROR, message, args);
+    log(SentryLogLevel.ERROR, message, args);
   }
 
   @Override
   public void fatal(final @Nullable String message, final @Nullable Object... args) {
-    log(SentryLevel.FATAL, message, args);
+    log(SentryLogLevel.FATAL, message, args);
   }
 
   @Override
   public void log(
-      final @NotNull SentryLevel level,
+      final @NotNull SentryLogLevel level,
       final @Nullable String message,
       final @Nullable Object... args) {
     log(level, null, message, null, args);
@@ -71,7 +72,7 @@ public final class LoggerApi implements ILoggerApi {
 
   @Override
   public void log(
-      final @NotNull SentryLevel level,
+      final @NotNull SentryLogLevel level,
       final @Nullable SentryDate timestamp,
       final @Nullable String message,
       final @Nullable Hint hint,
@@ -81,7 +82,7 @@ public final class LoggerApi implements ILoggerApi {
 
   @SuppressWarnings("AnnotateFormatMethod")
   private void captureLog(
-      final @NotNull SentryLevel level,
+      final @NotNull SentryLogLevel level,
       final @Nullable SentryDate timestamp,
       final @Nullable Hint hint,
       final @Nullable String message,

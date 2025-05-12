@@ -6,10 +6,10 @@ import io.sentry.ILogger
 import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
-import io.sentry.SentryLevel
 import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEventAttributeValue
 import io.sentry.SentryLogEvents
+import io.sentry.SentryLogLevel
 import org.junit.Test
 import org.mockito.kotlin.mock
 import java.io.StringReader
@@ -26,7 +26,7 @@ class SentryLogsSerializationTest {
                     SentryId("5c1f73d39486827b9e60ceb1fc23277a"),
                     DateUtils.dateToSeconds(DateUtils.getDateTime("2004-04-10T18:24:03.000Z")),
                     "42e6bd2a-c45e-414d-8066-ed5196fbc686",
-                    SentryLevel.INFO
+                    SentryLogLevel.INFO
                 ).also {
                     it.attributes = mutableMapOf(
                         "sentry.sdk.name" to SentryLogEventAttributeValue("string", "sentry.java.spring-boot.jakarta"),

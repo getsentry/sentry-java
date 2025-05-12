@@ -16,9 +16,9 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
-import io.sentry.SentryLevel
 import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEvents
+import io.sentry.SentryLogLevel
 import io.sentry.SentryLongDate
 import io.sentry.SentryOptions
 import io.sentry.SentryOptionsManipulator
@@ -350,7 +350,7 @@ class RateLimiterTest {
             fixture.serializer,
             SentryLogEvents(
                 listOf(
-                    SentryLogEvent(SentryId(), SentryLongDate(0), "hello", SentryLevel.INFO)
+                    SentryLogEvent(SentryId(), SentryLongDate(0), "hello", SentryLogLevel.INFO)
                 )
             )
         )
