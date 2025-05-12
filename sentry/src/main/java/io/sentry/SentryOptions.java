@@ -566,6 +566,8 @@ public class SentryOptions {
    */
   private boolean startProfilerOnAppStart = false;
 
+  private @NotNull SentryOptions.Logs logs = new SentryOptions.Logs();
+
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
 
   /**
@@ -3179,7 +3181,7 @@ public class SentryOptions {
     }
 
     if (options.isEnableLogs() != null) {
-      getExperimental().getLogs().setEnabled(options.isEnableLogs());
+      getLogs().setEnabled(options.isEnableLogs());
     }
   }
 
@@ -3205,6 +3207,16 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setSpanFactory(final @NotNull ISpanFactory spanFactory) {
     this.spanFactory = spanFactory;
+  }
+
+  @ApiStatus.Experimental
+  public @NotNull SentryOptions.Logs getLogs() {
+    return logs;
+  }
+
+  @ApiStatus.Experimental
+  public void setLogs(@NotNull SentryOptions.Logs logs) {
+    this.logs = logs;
   }
 
   public static final class Proxy {

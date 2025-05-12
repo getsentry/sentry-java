@@ -463,8 +463,6 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
-	public fun getLogs ()Lio/sentry/SentryOptions$Logs;
-	public fun setLogs (Lio/sentry/SentryOptions$Logs;)V
 }
 
 public final class io/sentry/ExternalOptions {
@@ -3203,6 +3201,7 @@ public class io/sentry/SentryOptions {
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getInternalTracesSampler ()Lio/sentry/TracesSampler;
 	public fun getLogger ()Lio/sentry/ILogger;
+	public fun getLogs ()Lio/sentry/SentryOptions$Logs;
 	public fun getMaxAttachmentSize ()J
 	public fun getMaxBreadcrumbs ()I
 	public fun getMaxCacheItems ()I
@@ -3341,6 +3340,7 @@ public class io/sentry/SentryOptions {
 	public fun setInitPriority (Lio/sentry/InitPriority;)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
+	public fun setLogs (Lio/sentry/SentryOptions$Logs;)V
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
 	public fun setMaxCacheItems (I)V
