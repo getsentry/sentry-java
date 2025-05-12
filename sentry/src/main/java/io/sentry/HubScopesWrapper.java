@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -44,6 +45,12 @@ public final class HubScopesWrapper implements IHub {
   public @NotNull SentryId captureMessage(
       @NotNull String message, @NotNull SentryLevel level, @NotNull ScopeCallback callback) {
     return scopes.captureMessage(message, level, callback);
+  }
+
+  @Override
+  public @NotNull SentryId captureFeedback(
+      @NotNull Feedback feedback, @Nullable Hint hint, @Nullable ScopeCallback callback) {
+    return scopes.captureFeedback(feedback, hint, callback);
   }
 
   @Override

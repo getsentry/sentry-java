@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Features
+
+- Add new User Feedback API ([#4286](https://github.com/getsentry/sentry-java/pull/4286))
+    - We now introduced Sentry.captureFeedback, which supersedes Sentry.captureUserFeedback
+
 ### Fixes
 
 - Hook User Interaction integration into running Activity in case of deferred SDK init ([#4337](https://github.com/getsentry/sentry-java/pull/4337))
