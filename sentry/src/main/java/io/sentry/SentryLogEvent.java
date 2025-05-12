@@ -16,6 +16,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
   private @NotNull Double timestamp;
   private @NotNull String body;
   private @NotNull SentryLogLevel level;
+  private @Nullable Integer severityNumber;
 
   private @Nullable Map<String, SentryLogEventAttributeValue> attributes;
   private @Nullable Map<String, Object> unknown;
@@ -72,11 +73,20 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
     this.attributes = attributes;
   }
 
+  public @Nullable Integer getSeverityNumber() {
+    return severityNumber;
+  }
+
+  public void setSeverityNumber(@Nullable Integer severityNumber) {
+    this.severityNumber = severityNumber;
+  }
+
   // region json
   public static final class JsonKeys {
     public static final String TIMESTAMP = "timestamp";
     public static final String TRACE_ID = "trace_id";
     public static final String LEVEL = "level";
+    public static final String SEVERITY_NUMBER = "severity_number";
     public static final String BODY = "body";
     public static final String ATTRIBUTES = "attributes";
   }
@@ -90,6 +100,9 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
     writer.name(JsonKeys.TRACE_ID).value(logger, traceId);
     writer.name(JsonKeys.BODY).value(body);
     writer.name(JsonKeys.LEVEL).value(logger, level);
+    if (severityNumber != null) {
+      writer.name(JsonKeys.SEVERITY_NUMBER).value(logger, severityNumber);
+    }
     if (attributes != null) {
       writer.name(JsonKeys.ATTRIBUTES).value(logger, attributes);
     }
@@ -124,6 +137,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
       @Nullable Double timestamp = null;
       @Nullable String body = null;
       @Nullable SentryLogLevel level = null;
+      @Nullable Integer severityNumber = null;
       @Nullable Map<String, SentryLogEventAttributeValue> attributes = null;
 
       reader.beginObject();
@@ -141,6 +155,9 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.LEVEL:
             level = reader.nextOrNull(logger, new SentryLogLevel.Deserializer());
+            break;
+          case JsonKeys.SEVERITY_NUMBER:
+            severityNumber = reader.nextIntegerOrNull();
             break;
           case JsonKeys.ATTRIBUTES:
             attributes =
@@ -187,6 +204,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
       final SentryLogEvent logEvent = new SentryLogEvent(traceId, timestamp, body, level);
 
       logEvent.setAttributes(attributes);
+      logEvent.setSeverityNumber(severityNumber);
       logEvent.setUnknown(unknown);
 
       return logEvent;
