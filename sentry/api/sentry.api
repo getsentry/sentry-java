@@ -3043,12 +3043,14 @@ public final class io/sentry/SentryLogEvent : io/sentry/JsonSerializable, io/sen
 	public fun getAttributes ()Ljava/util/Map;
 	public fun getBody ()Ljava/lang/String;
 	public fun getLevel ()Lio/sentry/SentryLogLevel;
+	public fun getSeverityNumber ()Ljava/lang/Integer;
 	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAttributes (Ljava/util/Map;)V
 	public fun setBody (Ljava/lang/String;)V
 	public fun setLevel (Lio/sentry/SentryLogLevel;)V
+	public fun setSeverityNumber (Ljava/lang/Integer;)V
 	public fun setTimestamp (Ljava/lang/Double;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
@@ -3063,6 +3065,7 @@ public final class io/sentry/SentryLogEvent$JsonKeys {
 	public static final field ATTRIBUTES Ljava/lang/String;
 	public static final field BODY Ljava/lang/String;
 	public static final field LEVEL Ljava/lang/String;
+	public static final field SEVERITY_NUMBER Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public fun <init> ()V

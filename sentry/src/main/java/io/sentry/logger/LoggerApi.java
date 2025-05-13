@@ -116,6 +116,7 @@ public final class LoggerApi implements ILoggerApi {
       final SentryLogEvent logEvent =
           new SentryLogEvent(traceId, timestampToUse, messageToUse, level);
       logEvent.setAttributes(createAttributes(message, spanId, args));
+      logEvent.setSeverityNumber(level.getSeverityNumber());
 
       scopes.getClient().captureLog(logEvent, scopes.getCombinedScopeView(), hint);
     } catch (Throwable e) {
