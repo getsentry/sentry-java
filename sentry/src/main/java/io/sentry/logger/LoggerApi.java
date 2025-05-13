@@ -1,6 +1,5 @@
 package io.sentry.logger;
 
-import io.sentry.Hint;
 import io.sentry.IScope;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
@@ -64,7 +63,7 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull SentryLogLevel level,
       final @Nullable String message,
       final @Nullable Object... args) {
-    log(level, null, message, null, args);
+    log(level, null, message, args);
   }
 
   @Override
@@ -72,16 +71,14 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull SentryLogLevel level,
       final @Nullable SentryDate timestamp,
       final @Nullable String message,
-      final @Nullable Hint hint,
       final @Nullable Object... args) {
-    captureLog(level, timestamp, hint, message, args);
+    captureLog(level, timestamp, message, args);
   }
 
   @SuppressWarnings("AnnotateFormatMethod")
   private void captureLog(
       final @NotNull SentryLogLevel level,
       final @Nullable SentryDate timestamp,
-      final @Nullable Hint hint,
       final @Nullable String message,
       final @Nullable Object... args) {
     final @NotNull SentryOptions options = scopes.getOptions();
@@ -123,7 +120,7 @@ public final class LoggerApi implements ILoggerApi {
       logEvent.setAttributes(createAttributes(message, spanId, args));
       logEvent.setSeverityNumber(level.getSeverityNumber());
 
-      scopes.getClient().captureLog(logEvent, combinedScope, hint);
+      scopes.getClient().captureLog(logEvent, combinedScope);
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error while capturing log event", e);
     }

@@ -1019,14 +1019,10 @@ public final class SentryClient implements ISentryClient {
 
   @ApiStatus.Experimental
   @Override
-  public void captureLog(
-      @Nullable SentryLogEvent logEvent, @Nullable IScope scope, @Nullable Hint hint) {
-    if (hint == null) {
-      hint = new Hint();
-    }
+  public void captureLog(@Nullable SentryLogEvent logEvent, @Nullable IScope scope) {
 
     if (logEvent != null) {
-      logEvent = executeBeforeSendLog(logEvent, hint);
+      logEvent = executeBeforeSendLog(logEvent);
 
       if (logEvent == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Log Event was dropped by beforeSendLog");
@@ -1038,8 +1034,6 @@ public final class SentryClient implements ISentryClient {
 
       loggerBatchProcessor.add(logEvent);
     }
-
-    hint.clear();
   }
 
   @ApiStatus.Internal
@@ -1274,13 +1268,12 @@ public final class SentryClient implements ISentryClient {
     return event;
   }
 
-  private @Nullable SentryLogEvent executeBeforeSendLog(
-      @NotNull SentryLogEvent event, final @NotNull Hint hint) {
+  private @Nullable SentryLogEvent executeBeforeSendLog(@NotNull SentryLogEvent event) {
     final SentryOptions.Logs.BeforeSendLogCallback beforeSendLog =
         options.getLogs().getBeforeSend();
     if (beforeSendLog != null) {
       try {
-        event = beforeSendLog.execute(event, hint);
+        event = beforeSendLog.execute(event);
       } catch (Throwable e) {
         options
             .getLogger()

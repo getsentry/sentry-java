@@ -3406,11 +3406,10 @@ public class SentryOptions {
        * Mutates or drop a log event before being sent
        *
        * @param event the event
-       * @param hint the hints
        * @return the original log event or the mutated event or null if event was dropped
        */
       @Nullable
-      SentryLogEvent execute(@NotNull SentryLogEvent event, @NotNull Hint hint);
+      SentryLogEvent execute(@NotNull SentryLogEvent event);
     }
   }
 

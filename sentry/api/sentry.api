@@ -995,7 +995,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public abstract fun captureLog (Lio/sentry/SentryLogEvent;Lio/sentry/IScope;Lio/sentry/Hint;)V
+	public abstract fun captureLog (Lio/sentry/SentryLogEvent;Lio/sentry/IScope;)V
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
@@ -2719,7 +2719,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureCheckIn (Lio/sentry/CheckIn;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public fun captureLog (Lio/sentry/SentryLogEvent;Lio/sentry/IScope;Lio/sentry/Hint;)V
+	public fun captureLog (Lio/sentry/SentryLogEvent;Lio/sentry/IScope;)V
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
 	public fun captureReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Lio/sentry/Hint;)V
@@ -3443,7 +3443,7 @@ public final class io/sentry/SentryOptions$Logs {
 }
 
 public abstract interface class io/sentry/SentryOptions$Logs$BeforeSendLogCallback {
-	public abstract fun execute (Lio/sentry/SentryLogEvent;Lio/sentry/Hint;)Lio/sentry/SentryLogEvent;
+	public abstract fun execute (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
 }
 
 public abstract interface class io/sentry/SentryOptions$ProfilesSamplerCallback {
@@ -4682,7 +4682,7 @@ public abstract interface class io/sentry/logger/ILoggerApi {
 	public abstract fun error (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun fatal (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun info (Ljava/lang/String;[Ljava/lang/Object;)V
-	public abstract fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/Hint;[Ljava/lang/Object;)V
+	public abstract fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -4699,7 +4699,7 @@ public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
 	public fun error (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun fatal (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun info (Ljava/lang/String;[Ljava/lang/Object;)V
-	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/Hint;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -4719,7 +4719,7 @@ public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi 
 	public fun fatal (Ljava/lang/String;[Ljava/lang/Object;)V
 	public static fun getInstance ()Lio/sentry/logger/NoOpLoggerApi;
 	public fun info (Ljava/lang/String;[Ljava/lang/Object;)V
-	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/Hint;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
