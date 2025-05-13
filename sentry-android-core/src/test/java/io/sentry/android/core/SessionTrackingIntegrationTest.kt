@@ -192,7 +192,7 @@ class SessionTrackingIntegrationTest {
             TODO("Not yet implemented")
         }
 
-        override fun captureLog(event: SentryLogEvent, scope: IScope?, hint: Hint?) {
+        override fun captureLog(event: SentryLogEvent, scope: IScope?) {
             TODO("Not yet implemented")
         }
 

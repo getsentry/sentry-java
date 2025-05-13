@@ -1132,26 +1132,10 @@ public final class SentryClient implements ISentryClient {
 
   @ApiStatus.Experimental
   @Override
-  public void captureLog(
-      @Nullable SentryLogEvent logEvent, @Nullable IScope scope, @Nullable Hint hint) {
-    if (hint == null) {
-      hint = new Hint();
-    }
-
-    //    @Nullable TraceContext traceContext = null;
-    //    if (scope != null) {
-    //      final @Nullable ITransaction transaction = scope.getTransaction();
-    //      if (transaction != null) {
-    //        traceContext = transaction.traceContext();
-    //      } else {
-    //        final @NotNull PropagationContext propagationContext =
-    //            TracingUtils.maybeUpdateBaggage(scope, options);
-    //        traceContext = propagationContext.traceContext();
-    //      }
-    //    }
+  public void captureLog(@Nullable SentryLogEvent logEvent, @Nullable IScope scope) {
 
     if (logEvent != null) {
-      logEvent = executeBeforeSendLog(logEvent, hint);
+      logEvent = executeBeforeSendLog(logEvent);
 
       if (logEvent == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Log Event was dropped by beforeSendLog");
@@ -1163,10 +1147,9 @@ public final class SentryClient implements ISentryClient {
 
       loggerBatchProcessor.add(logEvent);
     }
-
-    hint.clear();
   }
 
+  @ApiStatus.Internal
   @Override
   public void captureBatchedLogEvents(final @NotNull SentryLogEvents logEvents) {
     try {
@@ -1453,13 +1436,12 @@ public final class SentryClient implements ISentryClient {
     return event;
   }
 
-  private @Nullable SentryLogEvent executeBeforeSendLog(
-      @NotNull SentryLogEvent event, final @NotNull Hint hint) {
+  private @Nullable SentryLogEvent executeBeforeSendLog(@NotNull SentryLogEvent event) {
     final SentryOptions.Logs.BeforeSendLogCallback beforeSendLog =
         options.getLogs().getBeforeSend();
     if (beforeSendLog != null) {
       try {
-        event = beforeSendLog.execute(event, hint);
+        event = beforeSendLog.execute(event);
       } catch (Throwable e) {
         options
             .getLogger()
