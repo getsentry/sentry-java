@@ -5,6 +5,7 @@ import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.logger.LoggerApi;
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -176,7 +177,7 @@ public final class Scopes implements IScopes {
     getCombinedScopeView().assignTraceContext(event);
   }
 
-  private IScope buildLocalScope(
+  private @NotNull IScope buildLocalScope(
       final @NotNull IScope parentScope, final @Nullable ScopeCallback callback) {
     if (callback != null) {
       try {
@@ -233,6 +234,36 @@ public final class Scopes implements IScopes {
       }
     }
     updateLastEventId(sentryId);
+    return sentryId;
+  }
+
+  @Override
+  public @NotNull SentryId captureFeedback(
+      final @NotNull Feedback feedback,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback scopeCallback) {
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureFeedback' call is a no-op.");
+    } else if (feedback.getMessage().isEmpty()) {
+      getOptions()
+          .getLogger()
+          .log(SentryLevel.WARNING, "captureFeedback called with empty message.");
+    } else {
+      try {
+        final @NotNull IScope localScope = buildLocalScope(getCombinedScopeView(), scopeCallback);
+
+        sentryId = getClient().captureFeedback(feedback, hint, localScope);
+      } catch (Throwable e) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error while capturing feedback: " + feedback.getMessage(), e);
+      }
+    }
     return sentryId;
   }
 
