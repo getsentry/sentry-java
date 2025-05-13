@@ -65,6 +65,16 @@
     "processor_frequency": 800.0,
     "cpu_description": "cpu0"
   },
+  "feedback":
+  {
+    "message": "message",
+    "contact_email": "contact@email.com",
+    "name": "name",
+    "associated_event_id": "00000000000000000000000000000002",
+    "replay_id": "00000000000000000000000000000001",
+    "url": "url",
+    "unknown": "unknown"
+  },
   "gpu":
   {
     "name": "d623a6b5-e1ab-4402-931b-c06f5a43a5ae",

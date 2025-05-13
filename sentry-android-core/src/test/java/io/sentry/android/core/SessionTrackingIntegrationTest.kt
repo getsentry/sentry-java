@@ -21,6 +21,7 @@ import io.sentry.SentryReplayEvent
 import io.sentry.Session
 import io.sentry.TraceContext
 import io.sentry.UserFeedback
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.transport.RateLimiter
@@ -144,6 +145,10 @@ class SessionTrackingIntegrationTest {
         }
 
         override fun flush(timeoutMillis: Long) {
+            TODO("Not yet implemented")
+        }
+
+        override fun captureFeedback(feedback: Feedback, hint: Hint?, scope: IScope): SentryId {
             TODO("Not yet implemented")
         }
 
