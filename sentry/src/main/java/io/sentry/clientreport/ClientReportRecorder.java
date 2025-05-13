@@ -162,6 +162,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     if (SentryItemType.UserFeedback.equals(itemType)) {
       return DataCategory.UserReport;
     }
+    if (SentryItemType.Feedback.equals(itemType)) {
+      return DataCategory.Feedback;
+    }
     if (SentryItemType.Profile.equals(itemType)) {
       return DataCategory.Profile;
     }

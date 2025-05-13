@@ -24,6 +24,7 @@ class CombinedContextsViewSerializationTest {
 
             current.setApp(AppSerializationTest.Fixture().getSut())
             current.setBrowser(BrowserSerializationTest.Fixture().getSut())
+            current.setFeedback(FeedbackTest.Fixture().getSut())
             current.setTrace(SpanContextSerializationTest.Fixture().getSut())
 
             isolation.setDevice(DeviceSerializationTest.Fixture().getSut())
