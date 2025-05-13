@@ -8,6 +8,7 @@ public enum DataCategory {
   All("__all__"),
   Default("default"), // same as Error
   Error("error"),
+  Feedback("feedback"),
   Session("session"),
   Attachment("attachment"),
   LogItem("log_item"),
