@@ -1,6 +1,7 @@
 package io.sentry.logger;
 
-import io.sentry.Hint;
+import io.sentry.HostnameCache;
+import io.sentry.IScope;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
 import io.sentry.Scopes;
@@ -13,6 +14,8 @@ import io.sentry.SentryOptions;
 import io.sentry.SpanId;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.Platform;
+import io.sentry.util.TracingUtils;
 import java.util.HashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -29,8 +32,7 @@ public final class LoggerApi implements ILoggerApi {
 
   @Override
   public void trace(final @Nullable String message, final @Nullable Object... args) {
-    // TODO SentryLevel.TRACE does not exists yet so we just report it as DEBUG for now
-    log(SentryLogLevel.DEBUG, message, args);
+    log(SentryLogLevel.TRACE, message, args);
   }
 
   @Override
@@ -63,7 +65,7 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull SentryLogLevel level,
       final @Nullable String message,
       final @Nullable Object... args) {
-    log(level, null, message, null, args);
+    log(level, null, message, args);
   }
 
   @Override
@@ -71,16 +73,14 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull SentryLogLevel level,
       final @Nullable SentryDate timestamp,
       final @Nullable String message,
-      final @Nullable Hint hint,
       final @Nullable Object... args) {
-    captureLog(level, timestamp, hint, message, args);
+    captureLog(level, timestamp, message, args);
   }
 
   @SuppressWarnings("AnnotateFormatMethod")
   private void captureLog(
       final @NotNull SentryLogLevel level,
       final @Nullable SentryDate timestamp,
-      final @Nullable Hint hint,
       final @Nullable String message,
       final @Nullable Object... args) {
     final @NotNull SentryOptions options = scopes.getOptions();
@@ -92,7 +92,7 @@ public final class LoggerApi implements ILoggerApi {
         return;
       }
 
-      if (!options.getExperimental().getLogs().isEnabled()) {
+      if (!options.getLogs().isEnabled()) {
         options
             .getLogger()
             .log(SentryLevel.WARNING, "Sentry Log is disabled and this 'logger' call is a no-op.");
@@ -106,9 +106,13 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull SentryDate timestampToUse =
           timestamp == null ? options.getDateProvider().now() : timestamp;
       final @NotNull String messageToUse = args == null ? message : String.format(message, args);
-      final @NotNull PropagationContext propagationContext =
-          scopes.getCombinedScopeView().getPropagationContext();
-      final @Nullable ISpan span = scopes.getCombinedScopeView().getSpan();
+
+      final @NotNull IScope combinedScope = scopes.getCombinedScopeView();
+      final @NotNull PropagationContext propagationContext = combinedScope.getPropagationContext();
+      final @Nullable ISpan span = combinedScope.getSpan();
+      if (span == null) {
+        TracingUtils.maybeUpdateBaggage(combinedScope, options);
+      }
       final @NotNull SentryId traceId =
           span == null ? propagationContext.getTraceId() : span.getSpanContext().getTraceId();
       final @NotNull SpanId spanId =
@@ -116,8 +120,9 @@ public final class LoggerApi implements ILoggerApi {
       final SentryLogEvent logEvent =
           new SentryLogEvent(traceId, timestampToUse, messageToUse, level);
       logEvent.setAttributes(createAttributes(message, spanId, args));
+      logEvent.setSeverityNumber(level.getSeverityNumber());
 
-      scopes.getClient().captureLog(logEvent, scopes.getCombinedScopeView(), hint);
+      scopes.getClient().captureLog(logEvent, combinedScope);
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error while capturing log event", e);
     }
@@ -160,7 +165,27 @@ public final class LoggerApi implements ILoggerApi {
 
     attributes.put(
         "sentry.trace.parent_span_id", new SentryLogEventAttributeValue("string", spanId));
+
+    if (Platform.isJvm()) {
+      setServerName(attributes);
+    }
+
     return attributes;
+  }
+
+  private void setServerName(
+      final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes) {
+    final @NotNull SentryOptions options = scopes.getOptions();
+    final @Nullable String optionsServerName = options.getServerName();
+    if (optionsServerName != null) {
+      attributes.put(
+          "server.address", new SentryLogEventAttributeValue("string", optionsServerName));
+    } else if (options.isAttachServerName()) {
+      final @Nullable String hostname = HostnameCache.getInstance().getHostname();
+      if (hostname != null) {
+        attributes.put("server.address", new SentryLogEventAttributeValue("string", hostname));
+      }
+    }
   }
 
   private @NotNull String getType(final @Nullable Object arg) {

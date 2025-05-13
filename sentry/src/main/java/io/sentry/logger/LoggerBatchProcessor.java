@@ -87,10 +87,9 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
   }
 
   private void flushInternal() {
-    flushBatch();
-    if (queue.size() >= MAX_BATCH_SIZE) {
-      flushInternal();
-    }
+    do {
+      flushBatch();
+    } while (queue.size() >= MAX_BATCH_SIZE);
   }
 
   private void flushBatch() {

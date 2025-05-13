@@ -151,7 +151,7 @@ public final class ExternalOptions {
     options.setCaptureOpenTelemetryEvents(
         propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
 
-    options.setEnableLogs(propertiesProvider.getBooleanProperty("experimental.logs.enabled"));
+    options.setEnableLogs(propertiesProvider.getBooleanProperty("logs.enabled"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
