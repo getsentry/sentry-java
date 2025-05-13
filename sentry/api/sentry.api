@@ -493,7 +493,6 @@ public final class io/sentry/ExternalOptions {
 	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
-	public fun getLogsSampleRate ()Ljava/lang/Double;
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
@@ -535,7 +534,6 @@ public final class io/sentry/ExternalOptions {
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredErrors (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
-	public fun setLogsSampleRate (Ljava/lang/Double;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
@@ -3457,11 +3455,9 @@ public final class io/sentry/SentryOptions$Cron {
 public final class io/sentry/SentryOptions$Logs {
 	public fun <init> ()V
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;
-	public fun getSampleRate ()Ljava/lang/Double;
 	public fun isEnabled ()Z
 	public fun setBeforeSend (Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;)V
 	public fun setEnabled (Z)V
-	public fun setSampleRate (Ljava/lang/Double;)V
 }
 
 public abstract interface class io/sentry/SentryOptions$Logs$BeforeSendLogCallback {

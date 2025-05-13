@@ -3205,10 +3205,6 @@ public class SentryOptions {
     if (options.isEnableLogs() != null) {
       getExperimental().getLogs().setEnabled(options.isEnableLogs());
     }
-
-    if (options.getLogsSampleRate() != null) {
-      getExperimental().getLogs().setSampleRate(options.getLogsSampleRate());
-    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -3370,13 +3366,6 @@ public class SentryOptions {
     @ApiStatus.Experimental private boolean enable = false;
 
     /**
-     * Configures the sample rate as a percentage of log items to be sent in the range of 0.0 to
-     * 1.0. if 1.0 is set it means that 100% of items are sent. If set to 0.1 only 10% of items will
-     * be sent. Items are picked randomly. Default is 1.0
-     */
-    @ApiStatus.Experimental private @Nullable Double sampleRate = 1.0;
-
-    /**
      * This function is called with an SDK specific log event object and can return a modified event
      * object or nothing to skip reporting the log item
      */
@@ -3420,32 +3409,6 @@ public class SentryOptions {
     @ApiStatus.Experimental
     public void setBeforeSend(@Nullable BeforeSendLogCallback beforeSendLog) {
       this.beforeSend = beforeSendLog;
-    }
-
-    /**
-     * Returns the logs sample rate Default is null (disabled)
-     *
-     * @return the logs sample rate
-     */
-    @ApiStatus.Experimental
-    public @Nullable Double getSampleRate() {
-      return sampleRate;
-    }
-
-    /**
-     * Sets the logsSampleRate Can be anything between 0.0 and 1.0 (default) or null to disable it.
-     *
-     * @param logsSampleRate the sample rate for log events
-     */
-    @ApiStatus.Experimental
-    public void setSampleRate(Double logsSampleRate) {
-      if (!SampleRateUtils.isValidSampleRate(logsSampleRate)) {
-        throw new IllegalArgumentException(
-            "The value "
-                + logsSampleRate
-                + " is not valid. Use null to disable or values >= 0.0 and <= 1.0.");
-      }
-      this.sampleRate = logsSampleRate;
     }
 
     /** The BeforeSendLog callback */

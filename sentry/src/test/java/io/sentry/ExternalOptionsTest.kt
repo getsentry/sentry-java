@@ -382,13 +382,6 @@ class ExternalOptionsTest {
         }
     }
 
-    @Test
-    fun `creates options with logsSampleRate using external properties`() {
-        withPropertiesFile("experimental.logs.sample-rate=0.2") {
-            assertEquals(0.2, it.logsSampleRate)
-        }
-    }
-
     private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()
