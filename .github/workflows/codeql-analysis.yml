@@ -3,9 +3,6 @@ name: 'CodeQL'
 on:
   push:
     branches: [main]
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [main]
   schedule:
     - cron: '17 23 * * 3'
 
@@ -45,7 +42,7 @@ jobs:
 
       - name: Build Java
         run: |
-          ./gradlew buildForCodeQL
+          ./gradlew buildForCodeQL --no-build-cache
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@60168efe1c415ce0f5521ea06d5c2062adbeed1b # pin@v2
