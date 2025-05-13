@@ -1042,6 +1042,7 @@ public final class SentryClient implements ISentryClient {
     hint.clear();
   }
 
+  @ApiStatus.Internal
   @Override
   public void captureBatchedLogEvents(final @NotNull SentryLogEvents logEvents) {
     try {
