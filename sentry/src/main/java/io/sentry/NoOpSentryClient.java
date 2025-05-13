@@ -91,6 +91,12 @@ final class NoOpSentryClient implements ISentryClient {
     // do nothing
   }
 
+  @ApiStatus.Experimental
+  @Override
+  public void captureBatchedLogEvents(@NotNull SentryLogEvents logEvents) {
+    // do nothing
+  }
+
   @Override
   public @Nullable RateLimiter getRateLimiter() {
     return null;
