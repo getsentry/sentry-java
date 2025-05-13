@@ -100,17 +100,6 @@ This repo uses the following ways to release SDK updates:
 * [Sample App. with Sentry Java SDK](https://github.com/getsentry/examples/tree/master/java).
 * [Sample for Development](https://github.com/getsentry/sentry-java/tree/main/sentry-samples).
 
-# Development
-
-This repository includes [`sentry-native`](https://github.com/getsentry/sentry-native/) as a git submodule.
-To build against `sentry-native` checked-out elsewhere in your file system, create a symlink `sentry-android-ndk/sentry-native-local` that points to your `sentry-native` directory.
-For example, if you had `sentry-native` checked-out in a sibling directory to this repo:
-
-`ln -s ../../sentry-native sentry-android-ndk/sentry-native-local`
-
-which will be picked up by `gradle` and used instead of the git submodule.
-This directory is also included in `.gitignore` not to be shown as pending changes.
-
 # Sentry Self Hosted Compatibility
 
 Since version 3.0.0 of this SDK, Sentry version >= v20.6.0 is required. This only applies to self-hosted Sentry, if you are using [sentry.io](http://sentry.io/) no action is needed.

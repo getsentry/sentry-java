@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add new User Feedback API ([#4286](https://github.com/getsentry/sentry-java/pull/4286))
+    - We now introduced Sentry.captureFeedback, which supersedes Sentry.captureUserFeedback
+- Add Sentry Log Feature ([#4372](https://github.com/getsentry/sentry-java/pull/4372))
+    - The feature is disabled by default and needs to be enabled by:
+        - `options.getLogs().setEnabled(true)` in `Sentry.init` / `SentryAndroid.init`
+        - `<meta-data android:name="io.sentry.logs.enabled" android:value="true" />` in `AndroidManifest.xml`
+        - `logs.enabled=true` in `sentry.properties`
+        - `sentry.logs.enabled=true` in `application.properties`
+        - `sentry.logs.enabled: true` in `application.yml`
+    - Logs can be captured using `Sentry.logger().info()` and similar methods.
+    - Logs also take a format string and arguments which we then send through `String.format`.
+    - Please use `options.getLogs().setBeforeSend()` to filter outgoing logs
+
+### Fixes
+
+- Hook User Interaction integration into running Activity in case of deferred SDK init ([#4337](https://github.com/getsentry/sentry-java/pull/4337))
+
+### Dependencies
+
+- Bump Gradle from v8.13 to v8.14.0 ([#4360](https://github.com/getsentry/sentry-java/pull/4360))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8140)
+  - [diff](https://github.com/gradle/gradle/compare/v8.13...v8.14.0)
+
 ## 8.11.1
 
 ### Fixes

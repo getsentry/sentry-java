@@ -15,6 +15,7 @@ import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -758,6 +759,43 @@ public final class Sentry {
       final @NotNull SentryLevel level,
       final @NotNull ScopeCallback callback) {
     return getCurrentScopes().captureMessage(message, level, callback);
+  }
+
+  /**
+   * Captures the feedback.
+   *
+   * @param feedback The feedback to send.
+   * @return The Id (SentryId object) of the event
+   */
+  public static @NotNull SentryId captureFeedback(final @NotNull Feedback feedback) {
+    return getCurrentScopes().captureFeedback(feedback);
+  }
+
+  /**
+   * Captures the feedback.
+   *
+   * @param feedback The feedback to send.
+   * @param hint An optional hint to be applied to the event.
+   * @return The Id (SentryId object) of the event
+   */
+  public static @NotNull SentryId captureFeedback(
+      final @NotNull Feedback feedback, final @Nullable Hint hint) {
+    return getCurrentScopes().captureFeedback(feedback, hint);
+  }
+
+  /**
+   * Captures the feedback.
+   *
+   * @param feedback The feedback to send.
+   * @param hint An optional hint to be applied to the event.
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  public static @NotNull SentryId captureFeedback(
+      final @NotNull Feedback feedback,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback callback) {
+    return getCurrentScopes().captureFeedback(feedback, hint, callback);
   }
 
   /**
