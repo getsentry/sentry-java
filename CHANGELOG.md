@@ -9,6 +9,7 @@
 - Add Sentry Log Feature ([#4372](https://github.com/getsentry/sentry-java/pull/4372))
     - The feature is disabled by default and needs to be enabled by:
         - `options.getLogs().setEnabled(true)` in `Sentry.init` / `SentryAndroid.init`
+        - `<meta-data android:name="io.sentry.logs.enabled" android:value="true" />` in `AndroidManifest.xml`
         - `logs.enabled=true` in `sentry.properties`
         - `sentry.logs.enabled=true` in `application.properties`
         - `sentry.logs.enabled: true` in `application.yml`
