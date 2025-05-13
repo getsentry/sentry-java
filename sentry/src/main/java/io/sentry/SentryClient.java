@@ -59,7 +59,7 @@ public final class SentryClient implements ISentryClient {
 
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
-    if (options.getExperimental().getLogs().isEnabled()) {
+    if (options.getLogs().isEnabled()) {
       loggerBatchProcessor = new LoggerBatchProcessor(options, this);
     } else {
       loggerBatchProcessor = NoOpLoggerBatchProcessor.getInstance();
@@ -1456,7 +1456,7 @@ public final class SentryClient implements ISentryClient {
   private @Nullable SentryLogEvent executeBeforeSendLog(
       @NotNull SentryLogEvent event, final @NotNull Hint hint) {
     final SentryOptions.Logs.BeforeSendLogCallback beforeSendLog =
-        options.getExperimental().getLogs().getBeforeSend();
+        options.getLogs().getBeforeSend();
     if (beforeSendLog != null) {
       try {
         event = beforeSendLog.execute(event, hint);
