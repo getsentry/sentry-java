@@ -1,5 +1,6 @@
 package io.sentry.logger;
 
+import io.sentry.DataCategory;
 import io.sentry.Hint;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
@@ -8,10 +9,13 @@ import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLogEvent;
 import io.sentry.SentryLogEventAttributeValue;
-import io.sentry.SentryLogEvents;
+import io.sentry.SentryOptions;
 import io.sentry.SpanId;
+import io.sentry.clientreport.DiscardReason;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
-import java.util.Arrays;
+import io.sentry.util.Random;
+import io.sentry.util.SentryRandom;
 import java.util.HashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -82,12 +86,19 @@ public final class LoggerApi implements ILoggerApi {
       final @Nullable Hint hint,
       final @Nullable String message,
       final @Nullable Object... args) {
+    final @NotNull SentryOptions options = scopes.getOptions();
     try {
       if (!scopes.isEnabled()) {
-        scopes
-            .getOptions()
+        options
             .getLogger()
             .log(SentryLevel.WARNING, "Instance is disabled and this 'logger' call is a no-op.");
+        return;
+      }
+
+      if (!options.getExperimental().getLogs().isEnabled()) {
+        options
+            .getLogger()
+            .log(SentryLevel.WARNING, "Sentry Log is disabled and this 'logger' call is a no-op.");
         return;
       }
 
@@ -95,8 +106,18 @@ public final class LoggerApi implements ILoggerApi {
         return;
       }
 
+      if (!sampleLog(options)) {
+        options
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Log Event was dropped due to sampling decision.");
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.LogItem);
+        return;
+      }
+
       final @NotNull SentryDate timestampToUse =
-          timestamp == null ? scopes.getOptions().getDateProvider().now() : timestamp;
+          timestamp == null ? options.getDateProvider().now() : timestamp;
       final @NotNull String messageToUse = args == null ? message : String.format(message, args);
       final @NotNull PropagationContext propagationContext =
           scopes.getCombinedScopeView().getPropagationContext();
@@ -105,17 +126,24 @@ public final class LoggerApi implements ILoggerApi {
           span == null ? propagationContext.getTraceId() : span.getSpanContext().getTraceId();
       final @NotNull SpanId spanId =
           span == null ? propagationContext.getSpanId() : span.getSpanContext().getSpanId();
-      final SentryLogEvent logEvent = new SentryLogEvent(traceId, timestampToUse, messageToUse);
-      logEvent.setLevel(level);
+      final SentryLogEvent logEvent =
+          new SentryLogEvent(traceId, timestampToUse, messageToUse, level);
       logEvent.setAttributes(createAttributes(message, spanId, args));
 
-      final SentryLogEvents logEvents = new SentryLogEvents(Arrays.asList(logEvent));
-
-      // TODO buffer
-      scopes.getClient().captureLogs(logEvents, scopes.getCombinedScopeView(), hint);
+      scopes.getClient().captureLog(logEvent, scopes.getCombinedScopeView(), hint);
     } catch (Throwable e) {
-      scopes.getOptions().getLogger().log(SentryLevel.ERROR, "Error while capturing log event", e);
+      options.getLogger().log(SentryLevel.ERROR, "Error while capturing log event", e);
     }
+  }
+
+  private boolean sampleLog(final @NotNull SentryOptions options) {
+    final @Nullable Random random =
+        options.getExperimental().getLogs().getSampleRate() == null ? null : SentryRandom.current();
+    if (options.getExperimental().getLogs().getSampleRate() != null && random != null) {
+      final double sampling = options.getExperimental().getLogs().getSampleRate();
+      return !(sampling < random.nextDouble()); // bad luck
+    }
+    return false;
   }
 
   private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
@@ -128,9 +156,18 @@ public final class LoggerApi implements ILoggerApi {
       for (Object arg : args) {
         final @NotNull String type = getType(arg);
         attributes.put(
-            "sentry.message.parameters." + i, new SentryLogEventAttributeValue(type, arg));
+            "sentry.message.parameter." + i, new SentryLogEventAttributeValue(type, arg));
         i++;
       }
+    }
+
+    final @Nullable SdkVersion sdkVersion = scopes.getOptions().getSdkVersion();
+    if (sdkVersion != null) {
+      attributes.put(
+          "sentry.sdk.name", new SentryLogEventAttributeValue("string", sdkVersion.getName()));
+      attributes.put(
+          "sentry.sdk.version",
+          new SentryLogEventAttributeValue("string", sdkVersion.getVersion()));
     }
 
     final @Nullable String environment = scopes.getOptions().getEnvironment();

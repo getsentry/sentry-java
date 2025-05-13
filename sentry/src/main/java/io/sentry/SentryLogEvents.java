@@ -27,7 +27,16 @@ public final class SentryLogEvents implements JsonUnknown, JsonSerializable {
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
+
     writer.name("items").value(logger, items);
+
+    if (unknown != null) {
+      for (String key : unknown.keySet()) {
+        Object value = unknown.get(key);
+        writer.name(key).value(logger, value);
+      }
+    }
+
     writer.endObject();
   }
 
