@@ -551,6 +551,7 @@ public final class io/sentry/systemtest/util/SentryMockServerClient : io/sentry/
 
 public final class io/sentry/systemtest/util/TestHelper {
 	public fun <init> (Ljava/lang/String;)V
+	public final fun doesContainLogWithBody (Lio/sentry/SentryLogEvents;Ljava/lang/String;)Z
 	public final fun doesTransactionContainSpanWithDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionContainSpanWithOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionHaveOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
@@ -559,6 +560,7 @@ public final class io/sentry/systemtest/util/TestHelper {
 	public final fun ensureEnvelopeReceived (Lkotlin/jvm/functions/Function1;)V
 	public final fun ensureErrorCount (Lcom/apollographql/apollo3/api/ApolloResponse;I)V
 	public final fun ensureErrorReceived (Lkotlin/jvm/functions/Function1;)V
+	public final fun ensureLogsReceived (Lkotlin/jvm/functions/Function2;)V
 	public final fun ensureNoEnvelopeReceived (Lkotlin/jvm/functions/Function1;)V
 	public final fun ensureNoErrors (Lcom/apollographql/apollo3/api/ApolloResponse;)V
 	public final fun ensureNoTransactionReceived (Lkotlin/jvm/functions/Function2;)V

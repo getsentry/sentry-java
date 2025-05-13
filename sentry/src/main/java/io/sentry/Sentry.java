@@ -13,6 +13,7 @@ import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.ManifestModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
+import io.sentry.logger.ILoggerApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
@@ -1262,5 +1263,11 @@ public final class Sentry {
   @ApiStatus.Experimental
   public static @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     return getCurrentScopes().captureCheckIn(checkIn);
+  }
+
+  @ApiStatus.Experimental
+  @NotNull
+  public static ILoggerApi logger() {
+    return getCurrentScopes().logger();
   }
 }

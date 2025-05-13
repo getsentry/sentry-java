@@ -187,7 +187,8 @@ class SentryAutoConfigurationTest {
             "sentry.cron.default-max-runtime=30",
             "sentry.cron.default-timezone=America/New_York",
             "sentry.cron.default-failure-issue-threshold=40",
-            "sentry.cron.default-recovery-threshold=50"
+            "sentry.cron.default-recovery-threshold=50",
+            "sentry.logs.enabled=true"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -232,6 +233,7 @@ class SentryAutoConfigurationTest {
             assertThat(options.cron!!.defaultTimezone).isEqualTo("America/New_York")
             assertThat(options.cron!!.defaultFailureIssueThreshold).isEqualTo(40L)
             assertThat(options.cron!!.defaultRecoveryThreshold).isEqualTo(50L)
+            assertThat(options.logs.isEnabled).isEqualTo(true)
         }
     }
 
