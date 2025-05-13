@@ -313,7 +313,8 @@ public final class SentryEnvelopeItem {
             "application-json",
             traceFile.getName(),
             null,
-            profileChunk.getPlatform());
+            profileChunk.getPlatform(),
+            null);
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
@@ -473,6 +474,36 @@ public final class SentryEnvelopeItem {
     final SentryEnvelopeItemHeader itemHeader =
         new SentryEnvelopeItemHeader(
             SentryItemType.ReplayVideo, () -> cachedItem.getBytes().length, null, null);
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public static SentryEnvelopeItem fromLogs(
+      final @NotNull ISerializer serializer, final @NotNull SentryLogEvents logEvents) {
+    Objects.requireNonNull(serializer, "ISerializer is required.");
+    Objects.requireNonNull(logEvents, "SentryLogEvents is required.");
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(logEvents, writer);
+                return stream.toByteArray();
+              }
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.Log,
+            () -> cachedItem.getBytes().length,
+            "application/vnd.sentry.items.log+json",
+            null,
+            null,
+            null,
+            logEvents.getItems().size());
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
