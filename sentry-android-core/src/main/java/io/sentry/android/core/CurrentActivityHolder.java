@@ -1,11 +1,10 @@
 package io.sentry.android.core;
 
 import android.app.Activity;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public class CurrentActivityHolder {
@@ -16,7 +15,7 @@ public class CurrentActivityHolder {
 
   private @Nullable WeakReference<Activity> currentActivity;
 
-  public static @NonNull CurrentActivityHolder getInstance() {
+  public static @NotNull CurrentActivityHolder getInstance() {
     return instance;
   }
 
@@ -27,7 +26,7 @@ public class CurrentActivityHolder {
     return null;
   }
 
-  public void setActivity(final @NonNull Activity activity) {
+  public void setActivity(final @NotNull Activity activity) {
     if (currentActivity != null && currentActivity.get() == activity) {
       return;
     }
@@ -36,6 +35,13 @@ public class CurrentActivityHolder {
   }
 
   public void clearActivity() {
+    currentActivity = null;
+  }
+
+  public void clearActivity(final @NotNull Activity activity) {
+    if (currentActivity != null && currentActivity.get() != activity) {
+      return;
+    }
     currentActivity = null;
   }
 }
