@@ -32,7 +32,7 @@ public final class SentryLogEvents implements JsonUnknown, JsonSerializable {
       throws IOException {
     writer.beginObject();
 
-    writer.name("items").value(logger, items);
+    writer.name(JsonKeys.ITEMS).value(logger, items);
 
     if (unknown != null) {
       for (String key : unknown.keySet()) {

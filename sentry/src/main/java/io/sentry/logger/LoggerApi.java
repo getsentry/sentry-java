@@ -1,6 +1,5 @@
 package io.sentry.logger;
 
-import io.sentry.DataCategory;
 import io.sentry.Hint;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
@@ -9,13 +8,11 @@ import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLogEvent;
 import io.sentry.SentryLogEventAttributeValue;
+import io.sentry.SentryLogLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanId;
-import io.sentry.clientreport.DiscardReason;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
-import io.sentry.util.Random;
-import io.sentry.util.SentryRandom;
 import java.util.HashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -33,37 +30,37 @@ public final class LoggerApi implements ILoggerApi {
   @Override
   public void trace(final @Nullable String message, final @Nullable Object... args) {
     // TODO SentryLevel.TRACE does not exists yet so we just report it as DEBUG for now
-    log(SentryLevel.DEBUG, message, args);
+    log(SentryLogLevel.DEBUG, message, args);
   }
 
   @Override
   public void debug(final @Nullable String message, final @Nullable Object... args) {
-    log(SentryLevel.DEBUG, message, args);
+    log(SentryLogLevel.DEBUG, message, args);
   }
 
   @Override
   public void info(final @Nullable String message, final @Nullable Object... args) {
-    log(SentryLevel.INFO, message, args);
+    log(SentryLogLevel.INFO, message, args);
   }
 
   @Override
   public void warn(final @Nullable String message, final @Nullable Object... args) {
-    log(SentryLevel.WARNING, message, args);
+    log(SentryLogLevel.WARN, message, args);
   }
 
   @Override
   public void error(final @Nullable String message, final @Nullable Object... args) {
-    log(SentryLevel.ERROR, message, args);
+    log(SentryLogLevel.ERROR, message, args);
   }
 
   @Override
   public void fatal(final @Nullable String message, final @Nullable Object... args) {
-    log(SentryLevel.FATAL, message, args);
+    log(SentryLogLevel.FATAL, message, args);
   }
 
   @Override
   public void log(
-      final @NotNull SentryLevel level,
+      final @NotNull SentryLogLevel level,
       final @Nullable String message,
       final @Nullable Object... args) {
     log(level, null, message, null, args);
@@ -71,7 +68,7 @@ public final class LoggerApi implements ILoggerApi {
 
   @Override
   public void log(
-      final @NotNull SentryLevel level,
+      final @NotNull SentryLogLevel level,
       final @Nullable SentryDate timestamp,
       final @Nullable String message,
       final @Nullable Hint hint,
@@ -81,7 +78,7 @@ public final class LoggerApi implements ILoggerApi {
 
   @SuppressWarnings("AnnotateFormatMethod")
   private void captureLog(
-      final @NotNull SentryLevel level,
+      final @NotNull SentryLogLevel level,
       final @Nullable SentryDate timestamp,
       final @Nullable Hint hint,
       final @Nullable String message,
@@ -106,16 +103,6 @@ public final class LoggerApi implements ILoggerApi {
         return;
       }
 
-      if (!sampleLog(options)) {
-        options
-            .getLogger()
-            .log(SentryLevel.DEBUG, "Log Event was dropped due to sampling decision.");
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.LogItem);
-        return;
-      }
-
       final @NotNull SentryDate timestampToUse =
           timestamp == null ? options.getDateProvider().now() : timestamp;
       final @NotNull String messageToUse = args == null ? message : String.format(message, args);
@@ -136,28 +123,20 @@ public final class LoggerApi implements ILoggerApi {
     }
   }
 
-  private boolean sampleLog(final @NotNull SentryOptions options) {
-    final @Nullable Random random =
-        options.getExperimental().getLogs().getSampleRate() == null ? null : SentryRandom.current();
-    if (options.getExperimental().getLogs().getSampleRate() != null && random != null) {
-      final double sampling = options.getExperimental().getLogs().getSampleRate();
-      return !(sampling < random.nextDouble()); // bad luck
-    }
-    return false;
-  }
-
   private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
       final @NotNull String message, final @NotNull SpanId spanId, final @Nullable Object... args) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
     if (args != null) {
-      attributes.put(
-          "sentry.message.template", new SentryLogEventAttributeValue("string", message));
       int i = 0;
       for (Object arg : args) {
         final @NotNull String type = getType(arg);
         attributes.put(
             "sentry.message.parameter." + i, new SentryLogEventAttributeValue(type, arg));
         i++;
+      }
+      if (i > 0) {
+        attributes.put(
+            "sentry.message.template", new SentryLogEventAttributeValue("string", message));
       }
     }
 
@@ -184,7 +163,7 @@ public final class LoggerApi implements ILoggerApi {
     return attributes;
   }
 
-  private @NotNull String getType(final @NotNull Object arg) {
+  private @NotNull String getType(final @Nullable Object arg) {
     if (arg instanceof Boolean) {
       return "boolean";
     }

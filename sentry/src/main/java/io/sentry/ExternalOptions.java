@@ -25,7 +25,6 @@ public final class ExternalOptions {
   private @Nullable Boolean enableDeduplication;
   private @Nullable Double tracesSampleRate;
   private @Nullable Double profilesSampleRate;
-  private @Nullable Double logsSampleRate;
   private @Nullable SentryOptions.RequestSize maxRequestBodySize;
   private final @NotNull Map<String, @NotNull String> tags = new ConcurrentHashMap<>();
   private @Nullable SentryOptions.Proxy proxy;
@@ -152,8 +151,7 @@ public final class ExternalOptions {
     options.setCaptureOpenTelemetryEvents(
         propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
 
-    options.setEnableLogs(propertiesProvider.getBooleanProperty("logs.enabled"));
-    options.setLogsSampleRate(propertiesProvider.getDoubleProperty("logs.sample-rate"));
+    options.setEnableLogs(propertiesProvider.getBooleanProperty("experimental.logs.enabled"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -532,15 +530,5 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable Boolean isEnableLogs() {
     return enableLogs;
-  }
-
-  @ApiStatus.Experimental
-  public @Nullable Double getLogsSampleRate() {
-    return logsSampleRate;
-  }
-
-  @ApiStatus.Experimental
-  public void setLogsSampleRate(final @Nullable Double logsSampleRate) {
-    this.logsSampleRate = logsSampleRate;
   }
 }
