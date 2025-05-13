@@ -34,6 +34,7 @@ class SentryLogsSerializationTest {
                         "sentry.sdk.version" to SentryLogEventAttributeValue("string", "8.11.1"),
                         "sentry.trace.parent_span_id" to SentryLogEventAttributeValue("string", "f28b86350e534671")
                     )
+                    it.severityNumber = 10
                 }
             )
         )

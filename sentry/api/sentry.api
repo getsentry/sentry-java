@@ -464,8 +464,6 @@ public abstract interface class io/sentry/EventProcessor {
 
 public final class io/sentry/ExperimentalOptions {
 	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
-	public fun getLogs ()Lio/sentry/SentryOptions$Logs;
-	public fun setLogs (Lio/sentry/SentryOptions$Logs;)V
 }
 
 public final class io/sentry/ExternalOptions {
@@ -1006,7 +1004,7 @@ public abstract interface class io/sentry/ISentryClient {
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
 	public fun captureException (Ljava/lang/Throwable;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
-	public abstract fun captureLog (Lio/sentry/SentryLogEvent;Lio/sentry/IScope;Lio/sentry/Hint;)V
+	public abstract fun captureLog (Lio/sentry/SentryLogEvent;Lio/sentry/IScope;)V
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
@@ -2740,7 +2738,7 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureEvent (Lio/sentry/SentryEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
-	public fun captureLog (Lio/sentry/SentryLogEvent;Lio/sentry/IScope;Lio/sentry/Hint;)V
+	public fun captureLog (Lio/sentry/SentryLogEvent;Lio/sentry/IScope;)V
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;Lio/sentry/IScope;)Lio/sentry/protocol/SentryId;
 	public fun captureReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Lio/sentry/Hint;)V
@@ -3045,12 +3043,14 @@ public final class io/sentry/SentryLogEvent : io/sentry/JsonSerializable, io/sen
 	public fun getAttributes ()Ljava/util/Map;
 	public fun getBody ()Ljava/lang/String;
 	public fun getLevel ()Lio/sentry/SentryLogLevel;
+	public fun getSeverityNumber ()Ljava/lang/Integer;
 	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAttributes (Ljava/util/Map;)V
 	public fun setBody (Ljava/lang/String;)V
 	public fun setLevel (Lio/sentry/SentryLogLevel;)V
+	public fun setSeverityNumber (Ljava/lang/Integer;)V
 	public fun setTimestamp (Ljava/lang/Double;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
@@ -3065,6 +3065,7 @@ public final class io/sentry/SentryLogEvent$JsonKeys {
 	public static final field ATTRIBUTES Ljava/lang/String;
 	public static final field BODY Ljava/lang/String;
 	public static final field LEVEL Ljava/lang/String;
+	public static final field SEVERITY_NUMBER Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field TRACE_ID Ljava/lang/String;
 	public fun <init> ()V
@@ -3223,6 +3224,7 @@ public class io/sentry/SentryOptions {
 	public fun getIntegrations ()Ljava/util/List;
 	public fun getInternalTracesSampler ()Lio/sentry/TracesSampler;
 	public fun getLogger ()Lio/sentry/ILogger;
+	public fun getLogs ()Lio/sentry/SentryOptions$Logs;
 	public fun getMaxAttachmentSize ()J
 	public fun getMaxBreadcrumbs ()I
 	public fun getMaxCacheItems ()I
@@ -3362,6 +3364,7 @@ public class io/sentry/SentryOptions {
 	public fun setInitPriority (Lio/sentry/InitPriority;)V
 	public fun setInstrumenter (Lio/sentry/Instrumenter;)V
 	public fun setLogger (Lio/sentry/ILogger;)V
+	public fun setLogs (Lio/sentry/SentryOptions$Logs;)V
 	public fun setMaxAttachmentSize (J)V
 	public fun setMaxBreadcrumbs (I)V
 	public fun setMaxCacheItems (I)V
@@ -3461,7 +3464,7 @@ public final class io/sentry/SentryOptions$Logs {
 }
 
 public abstract interface class io/sentry/SentryOptions$Logs$BeforeSendLogCallback {
-	public abstract fun execute (Lio/sentry/SentryLogEvent;Lio/sentry/Hint;)Lio/sentry/SentryLogEvent;
+	public abstract fun execute (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
 }
 
 public abstract interface class io/sentry/SentryOptions$ProfilesSamplerCallback {
@@ -4700,7 +4703,7 @@ public abstract interface class io/sentry/logger/ILoggerApi {
 	public abstract fun error (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun fatal (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun info (Ljava/lang/String;[Ljava/lang/Object;)V
-	public abstract fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/Hint;[Ljava/lang/Object;)V
+	public abstract fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -4717,7 +4720,7 @@ public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
 	public fun error (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun fatal (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun info (Ljava/lang/String;[Ljava/lang/Object;)V
-	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/Hint;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -4737,7 +4740,7 @@ public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi 
 	public fun fatal (Ljava/lang/String;[Ljava/lang/Object;)V
 	public static fun getInstance ()Lio/sentry/logger/NoOpLoggerApi;
 	public fun info (Ljava/lang/String;[Ljava/lang/Object;)V
-	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/Hint;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V

@@ -459,7 +459,7 @@ class SentryOptionsTest {
         assertTrue(options.isEnableSpotlight)
         assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
         assertTrue(options.isGlobalHubMode!!)
-        assertTrue(options.experimental.logs.isEnabled!!)
+        assertTrue(options.logs.isEnabled!!)
     }
 
     @Test
