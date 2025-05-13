@@ -15,7 +15,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
   private @NotNull SentryId traceId;
   private @NotNull Double timestamp;
   private @NotNull String body;
-  private @NotNull SentryLevel level;
+  private @NotNull SentryLogLevel level;
 
   private @Nullable Map<String, SentryLogEventAttributeValue> attributes;
   private @Nullable Map<String, Object> unknown;
@@ -24,7 +24,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
       final @NotNull SentryId traceId,
       final @NotNull SentryDate timestamp,
       final @NotNull String body,
-      final @NotNull SentryLevel level) {
+      final @NotNull SentryLogLevel level) {
     this(traceId, DateUtils.nanosToSeconds(timestamp.nanoTimestamp()), body, level);
   }
 
@@ -32,7 +32,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
       final @NotNull SentryId traceId,
       final @NotNull Double timestamp,
       final @NotNull String body,
-      final @NotNull SentryLevel level) {
+      final @NotNull SentryLogLevel level) {
     this.traceId = traceId;
     this.timestamp = timestamp;
     this.body = body;
@@ -56,11 +56,11 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
     this.body = body;
   }
 
-  public @NotNull SentryLevel getLevel() {
+  public @NotNull SentryLogLevel getLevel() {
     return level;
   }
 
-  public void setLevel(final @NotNull SentryLevel level) {
+  public void setLevel(final @NotNull SentryLogLevel level) {
     this.level = level;
   }
 
@@ -123,7 +123,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
       @Nullable SentryId traceId = null;
       @Nullable Double timestamp = null;
       @Nullable String body = null;
-      @Nullable SentryLevel level = null;
+      @Nullable SentryLogLevel level = null;
       @Nullable Map<String, SentryLogEventAttributeValue> attributes = null;
 
       reader.beginObject();
@@ -140,7 +140,7 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
             body = reader.nextStringOrNull();
             break;
           case JsonKeys.LEVEL:
-            level = reader.nextOrNull(logger, new SentryLevel.Deserializer());
+            level = reader.nextOrNull(logger, new SentryLogLevel.Deserializer());
             break;
           case JsonKeys.ATTRIBUTES:
             attributes =

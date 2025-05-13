@@ -3042,17 +3042,17 @@ public final class io/sentry/SentryLockReason$JsonKeys {
 }
 
 public final class io/sentry/SentryLogEvent : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/SentryLevel;)V
-	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/SentryLevel;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/SentryLogLevel;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/SentryLogLevel;)V
 	public fun getAttributes ()Ljava/util/Map;
 	public fun getBody ()Ljava/lang/String;
-	public fun getLevel ()Lio/sentry/SentryLevel;
+	public fun getLevel ()Lio/sentry/SentryLogLevel;
 	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setAttributes (Ljava/util/Map;)V
 	public fun setBody (Ljava/lang/String;)V
-	public fun setLevel (Lio/sentry/SentryLevel;)V
+	public fun setLevel (Lio/sentry/SentryLogLevel;)V
 	public fun setTimestamp (Ljava/lang/Double;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
@@ -3108,6 +3108,25 @@ public final class io/sentry/SentryLogEvents$Deserializer : io/sentry/JsonDeseri
 public final class io/sentry/SentryLogEvents$JsonKeys {
 	public static final field ITEMS Ljava/lang/String;
 	public fun <init> ()V
+}
+
+public final class io/sentry/SentryLogLevel : java/lang/Enum, io/sentry/JsonSerializable {
+	public static final field DEBUG Lio/sentry/SentryLogLevel;
+	public static final field ERROR Lio/sentry/SentryLogLevel;
+	public static final field FATAL Lio/sentry/SentryLogLevel;
+	public static final field INFO Lio/sentry/SentryLogLevel;
+	public static final field TRACE Lio/sentry/SentryLogLevel;
+	public static final field WARN Lio/sentry/SentryLogLevel;
+	public fun getSeverityNumber ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryLogLevel;
+	public static fun values ()[Lio/sentry/SentryLogLevel;
+}
+
+public final class io/sentry/SentryLogLevel$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/SentryLogLevel;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
 }
 
 public final class io/sentry/SentryLongDate : io/sentry/SentryDate {
@@ -4685,8 +4704,8 @@ public abstract interface class io/sentry/logger/ILoggerApi {
 	public abstract fun error (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun fatal (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun info (Ljava/lang/String;[Ljava/lang/Object;)V
-	public abstract fun log (Lio/sentry/SentryLevel;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/Hint;[Ljava/lang/Object;)V
-	public abstract fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
+	public abstract fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/Hint;[Ljava/lang/Object;)V
+	public abstract fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
 }
@@ -4702,8 +4721,8 @@ public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
 	public fun error (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun fatal (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun info (Ljava/lang/String;[Ljava/lang/Object;)V
-	public fun log (Lio/sentry/SentryLevel;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/Hint;[Ljava/lang/Object;)V
-	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/Hint;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
 }
@@ -4722,8 +4741,8 @@ public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi 
 	public fun fatal (Ljava/lang/String;[Ljava/lang/Object;)V
 	public static fun getInstance ()Lio/sentry/logger/NoOpLoggerApi;
 	public fun info (Ljava/lang/String;[Ljava/lang/Object;)V
-	public fun log (Lio/sentry/SentryLevel;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/Hint;[Ljava/lang/Object;)V
-	public fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;Lio/sentry/Hint;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
 }

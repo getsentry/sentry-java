@@ -2,7 +2,7 @@ package io.sentry.logger;
 
 import io.sentry.Hint;
 import io.sentry.SentryDate;
-import io.sentry.SentryLevel;
+import io.sentry.SentryLogLevel;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,13 +49,14 @@ public final class NoOpLoggerApi implements ILoggerApi {
   }
 
   @Override
-  public void log(@NotNull SentryLevel level, @Nullable String message, @Nullable Object... args) {
+  public void log(
+      @NotNull SentryLogLevel level, @Nullable String message, @Nullable Object... args) {
     // do nothing
   }
 
   @Override
   public void log(
-      @NotNull SentryLevel level,
+      @NotNull SentryLogLevel level,
       @Nullable SentryDate timestamp,
       @Nullable String message,
       final @Nullable Hint hint,
