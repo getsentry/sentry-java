@@ -1,0 +1,34 @@
+{
+  "items":
+  [
+    {
+      "timestamp": 1081621443.000000,
+      "trace_id": "5c1f73d39486827b9e60ceb1fc23277a",
+      "body": "42e6bd2a-c45e-414d-8066-ed5196fbc686",
+      "level": "info",
+      "attributes":
+      {
+        "sentry.sdk.name":
+        {
+          "type": "string",
+          "value": "sentry.java.spring-boot.jakarta"
+        },
+        "sentry.environment":
+        {
+          "type": "string",
+          "value": "production"
+        },
+        "sentry.sdk.version":
+        {
+          "type": "string",
+          "value": "8.11.1"
+        },
+        "sentry.trace.parent_span_id":
+        {
+          "type": "string",
+          "value": "f28b86350e534671"
+        }
+      }
+    }
+  ]
+}

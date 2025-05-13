@@ -147,6 +147,16 @@ public final class SentryEnvelopeItem {
     }
   }
 
+  public @Nullable SentryLogEvents getLogs(final @NotNull ISerializer serializer) throws Exception {
+    if (header == null || header.getType() != SentryItemType.Log) {
+      return null;
+    }
+    try (final Reader eventReader =
+        new BufferedReader(new InputStreamReader(new ByteArrayInputStream(getData()), UTF_8))) {
+      return serializer.deserialize(eventReader, SentryLogEvents.class);
+    }
+  }
+
   public static SentryEnvelopeItem fromUserFeedback(
       final @NotNull ISerializer serializer, final @NotNull UserFeedback userFeedback) {
     Objects.requireNonNull(serializer, "ISerializer is required.");

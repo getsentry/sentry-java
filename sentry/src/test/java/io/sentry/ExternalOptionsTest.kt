@@ -377,14 +377,14 @@ class ExternalOptionsTest {
 
     @Test
     fun `creates options with enableLogs set to true`() {
-        withPropertiesFile("logs.enabled=true") { options ->
+        withPropertiesFile("experimental.logs.enabled=true") { options ->
             assertTrue(options.isEnableLogs == true)
         }
     }
 
     @Test
     fun `creates options with logsSampleRate using external properties`() {
-        withPropertiesFile("logs.sample-rate=0.2") {
+        withPropertiesFile("experimental.logs.sample-rate=0.2") {
             assertEquals(0.2, it.logsSampleRate)
         }
     }
