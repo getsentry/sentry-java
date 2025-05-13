@@ -10,10 +10,10 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryLogEventAttributeValue implements JsonUnknown, JsonSerializable {
 
   private @NotNull String type;
-  private @NotNull Object value;
+  private @Nullable Object value;
   private @Nullable Map<String, Object> unknown;
 
-  public SentryLogEventAttributeValue(final @NotNull String type, final @NotNull Object value) {
+  public SentryLogEventAttributeValue(final @NotNull String type, final @Nullable Object value) {
     this.type = type;
     this.value = value;
   }
@@ -83,13 +83,6 @@ public final class SentryLogEventAttributeValue implements JsonUnknown, JsonSeri
 
       if (type == null) {
         String message = "Missing required field \"" + JsonKeys.TYPE + "\"";
-        Exception exception = new IllegalStateException(message);
-        logger.log(SentryLevel.ERROR, message, exception);
-        throw exception;
-      }
-
-      if (value == null) {
-        String message = "Missing required field \"" + JsonKeys.VALUE + "\"";
         Exception exception = new IllegalStateException(message);
         logger.log(SentryLevel.ERROR, message, exception);
         throw exception;
