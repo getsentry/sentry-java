@@ -3201,6 +3201,10 @@ public class SentryOptions {
         }
       }
     }
+
+    if (options.isEnableLogs() != null) {
+      getExperimental().getLogs().setEnabled(options.isEnableLogs());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {
@@ -3353,6 +3357,72 @@ public class SentryOptions {
 
     public void setDefaultRecoveryThreshold(@Nullable Long defaultRecoveryThreshold) {
       this.defaultRecoveryThreshold = defaultRecoveryThreshold;
+    }
+  }
+
+  public static final class Logs {
+
+    /** Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry. */
+    @ApiStatus.Experimental private boolean enable = false;
+
+    /**
+     * This function is called with an SDK specific log event object and can return a modified event
+     * object or nothing to skip reporting the log item
+     */
+    @ApiStatus.Experimental private @Nullable BeforeSendLogCallback beforeSend;
+
+    /**
+     * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
+     *
+     * @return true if Sentry Logs should be enabled
+     */
+    @ApiStatus.Experimental
+    public boolean isEnabled() {
+      return enable;
+    }
+
+    /**
+     * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
+     *
+     * @param enableLogs true if Sentry Logs should be enabled
+     */
+    @ApiStatus.Experimental
+    public void setEnabled(boolean enableLogs) {
+      this.enable = enableLogs;
+    }
+
+    /**
+     * Returns the BeforeSendLog callback
+     *
+     * @return the beforeSendLog callback or null if not set
+     */
+    @ApiStatus.Experimental
+    public @Nullable BeforeSendLogCallback getBeforeSend() {
+      return beforeSend;
+    }
+
+    /**
+     * Sets the beforeSendLog callback
+     *
+     * @param beforeSendLog the beforeSendLog callback
+     */
+    @ApiStatus.Experimental
+    public void setBeforeSend(@Nullable BeforeSendLogCallback beforeSendLog) {
+      this.beforeSend = beforeSendLog;
+    }
+
+    /** The BeforeSendLog callback */
+    public interface BeforeSendLogCallback {
+
+      /**
+       * Mutates or drop a log event before being sent
+       *
+       * @param event the event
+       * @param hint the hints
+       * @return the original log event or the mutated event or null if event was dropped
+       */
+      @Nullable
+      SentryLogEvent execute(@NotNull SentryLogEvent event, @NotNull Hint hint);
     }
   }
 

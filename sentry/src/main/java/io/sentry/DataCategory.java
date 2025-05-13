@@ -11,6 +11,7 @@ public enum DataCategory {
   Feedback("feedback"),
   Session("session"),
   Attachment("attachment"),
+  LogItem("log_item"),
   Monitor("monitor"),
   Profile("profile"),
   ProfileChunkUi("profile_chunk_ui"),
