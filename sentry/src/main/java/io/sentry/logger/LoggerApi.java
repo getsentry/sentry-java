@@ -128,7 +128,8 @@ public final class LoggerApi implements ILoggerApi {
     }
   }
 
-  private @NotNull String maybeFormatMessage(final @NotNull String message, final @Nullable Object[] args) {
+  private @NotNull String maybeFormatMessage(
+      final @NotNull String message, final @Nullable Object[] args) {
     if (args == null || args.length == 0) {
       return message;
     }
