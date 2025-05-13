@@ -3059,7 +3059,9 @@ public final class io/sentry/SentryLogEvent$JsonKeys {
 
 public final class io/sentry/SentryLogEventAttributeValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
+	public fun getValue ()Ljava/lang/Object;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }

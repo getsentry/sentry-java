@@ -105,7 +105,7 @@ public final class LoggerApi implements ILoggerApi {
 
       final @NotNull SentryDate timestampToUse =
           timestamp == null ? options.getDateProvider().now() : timestamp;
-      final @NotNull String messageToUse = args == null ? message : String.format(message, args);
+      final @NotNull String messageToUse = maybeFormatMessage(message, args);
 
       final @NotNull IScope combinedScope = scopes.getCombinedScopeView();
       final @NotNull PropagationContext propagationContext = combinedScope.getPropagationContext();
@@ -125,6 +125,22 @@ public final class LoggerApi implements ILoggerApi {
       scopes.getClient().captureLog(logEvent, combinedScope);
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.ERROR, "Error while capturing log event", e);
+    }
+  }
+
+  private @NotNull String maybeFormatMessage(String message, @Nullable Object[] args) {
+    if (args == null || args.length == 0) {
+      return message;
+    }
+
+    try {
+      return String.format(message, args);
+    } catch (Throwable t) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(SentryLevel.ERROR, "Error while running log through String.format", t);
+      return message;
     }
   }
 
