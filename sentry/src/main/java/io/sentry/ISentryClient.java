@@ -304,6 +304,9 @@ public interface ISentryClient {
   @ApiStatus.Experimental
   SentryId captureCheckIn(@NotNull CheckIn checkIn, @Nullable IScope scope, @Nullable Hint hint);
 
+  @ApiStatus.Experimental
+  void captureLogs(@NotNull SentryLogEvents logEvents, @Nullable IScope scope, @Nullable Hint hint);
+
   @ApiStatus.Internal
   @Nullable
   RateLimiter getRateLimiter();

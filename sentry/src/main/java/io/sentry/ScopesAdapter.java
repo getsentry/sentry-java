@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.logger.ILoggerApi;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -378,5 +379,11 @@ public final class ScopesAdapter implements IScopes {
   @Override
   public @NotNull SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint) {
     return Sentry.getCurrentScopes().captureReplay(replay, hint);
+  }
+
+  @ApiStatus.Experimental
+  @Override
+  public @NotNull ILoggerApi logger() {
+    return Sentry.getCurrentScopes().logger();
   }
 }

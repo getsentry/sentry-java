@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.logger.ILoggerApi;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -363,5 +364,11 @@ public final class HubScopesWrapper implements IHub {
   @Override
   public @NotNull SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint) {
     return scopes.captureReplay(replay, hint);
+  }
+
+  @ApiStatus.Experimental
+  @Override
+  public @NotNull ILoggerApi logger() {
+    return scopes.logger();
   }
 }

@@ -1,5 +1,7 @@
 package io.sentry;
 
+import io.sentry.logger.ILoggerApi;
+import io.sentry.logger.NoOpLoggerApi;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -318,5 +320,11 @@ public final class NoOpScopes implements IScopes {
   @Override
   public @NotNull SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
+  }
+
+  @ApiStatus.Experimental
+  @Override
+  public @NotNull ILoggerApi logger() {
+    return NoOpLoggerApi.getInstance();
   }
 }
