@@ -87,7 +87,7 @@ allprojects {
     version = properties[Config.Sentry.versionNameProp].toString()
     description = Config.Sentry.description
     tasks {
-        withType<Test> {
+        withType<Test>().configureEach {
             testLogging.showStandardStreams = true
             testLogging.exceptionFormat = TestExceptionFormat.FULL
             testLogging.events = setOf(
@@ -102,7 +102,7 @@ allprojects {
             maxHeapSize = "2g"
             dependsOn("cleanTest")
         }
-        withType<JavaCompile> {
+        withType<JavaCompile>().configureEach {
             options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try"))
         }
     }
@@ -124,7 +124,7 @@ subprojects {
                 toolVersion = "0.8.10"
             }
 
-            tasks.withType<Test> {
+            tasks.withType<Test>().configureEach {
                 configure<JacocoTaskExtension> {
                     isIncludeNoLocationClasses = true
                     excludes = listOf("jdk.internal.*")
@@ -170,9 +170,9 @@ subprojects {
             // craft only uses zip archives
             this.forEach { dist ->
                 if (dist.name == DistributionPlugin.MAIN_DISTRIBUTION_NAME) {
-                    tasks.getByName("distTar").enabled = false
+                    tasks.named("distTar").configure { enabled = false }
                 } else {
-                    tasks.getByName(dist.name + "DistTar").enabled = false
+                    tasks.named(dist.name + "DistTar").configure { enabled = false }
                 }
             }
         }

@@ -19,8 +19,12 @@ configure<JavaPluginExtension> {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+        languageVersion = Config.kotlinCompatibleLanguageVersion
+        freeCompilerArgs = listOf("-Xjsr305=strict")
+        jvmTarget = JavaVersion.VERSION_17.toString()
+    }
 }
 
 dependencies {
@@ -70,13 +74,6 @@ dependencies {
     testImplementation(projects.sentryReactor)
 }
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-}
-
 configure<SourceSetContainer> {
     test {
         java.srcDir("src/test/java")
@@ -113,9 +110,8 @@ buildConfig {
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
-val generateBuildConfig by tasks
 tasks.withType<JavaCompile>().configureEach {
-    dependsOn(generateBuildConfig)
+    dependsOn(tasks.generateBuildConfig)
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
