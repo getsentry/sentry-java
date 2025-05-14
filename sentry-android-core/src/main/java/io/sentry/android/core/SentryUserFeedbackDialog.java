@@ -2,8 +2,6 @@ package io.sentry.android.core;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -112,9 +110,6 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     edtMessage.setHint(feedbackOptions.getMessagePlaceholder());
     lblTitle.setText(feedbackOptions.getFormTitle());
 
-    btnSend.setBackgroundTintList(
-        ColorStateList.valueOf(Color.parseColor(feedbackOptions.getSubmitBackgroundHex())));
-    btnSend.setTextColor(Color.parseColor(feedbackOptions.getSubmitForegroundHex()));
     btnSend.setText(feedbackOptions.getSubmitButtonLabel());
     btnSend.setOnClickListener(
         v -> {

@@ -50,10 +50,6 @@ public final class SentryFeedbackOptions {
   private @NotNull String messagePlaceholder = "What's the bug? What did you expect?";
   /** The message displayed after a successful feedback submission. */
   private @NotNull String successMessageText = "Thank you for your report!";
-  /** The background color of the submit button, in hexadecimal form (#584AC0). */
-  private @NotNull String submitBackgroundHex = "#584AC0";
-  /** The foreground color of the submit button, in hexadecimal form (#FFFFFF). */
-  private @NotNull String submitForegroundHex = "#FFFFFF";
 
   // Callbacks
   /** Callback called when the feedback form is opened. */
@@ -389,42 +385,6 @@ public final class SentryFeedbackOptions {
    */
   public void setSuccessMessageText(final @NotNull String successMessageText) {
     this.successMessageText = successMessageText;
-  }
-
-  /**
-   * The background color of the submit button, in hexadecimal form (#584AC0).
-   *
-   * @return the background color of the submit button
-   */
-  public @NotNull String getSubmitBackgroundHex() {
-    return submitBackgroundHex;
-  }
-
-  /**
-   * Sets the background color of the submit button, in hexadecimal form (#584AC0).
-   *
-   * @param submitBackgroundHex the background color of the submit button
-   */
-  public void setSubmitBackgroundHex(final @NotNull String submitBackgroundHex) {
-    this.submitBackgroundHex = submitBackgroundHex;
-  }
-
-  /**
-   * The foreground color of the submit button, in hexadecimal form (#FFFFFF).
-   *
-   * @return the foreground color of the submit button
-   */
-  public @NotNull String getSubmitForegroundHex() {
-    return submitForegroundHex;
-  }
-
-  /**
-   * Sets the foreground color of the submit button, in hexadecimal form (#FFFFFF).
-   *
-   * @param submitForegroundHex the foreground color of the submit button
-   */
-  public void setSubmitForegroundHex(final @NotNull String submitForegroundHex) {
-    this.submitForegroundHex = submitForegroundHex;
   }
 
   // Callbacks

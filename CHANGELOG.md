@@ -1,5 +1,50 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add New User Feedback form ([#4384](https://github.com/getsentry/sentry-java/pull/4384))
+    - We now introduce SentryUserFeedbackDialog, which extends AlertDialog, inheriting the show() and cancel() methods, among others.
+      - The dialog integrates with the current dialog theme, so it's compatible with dark mode, and can be customized with a custom xml style.
+        - ```styles.xml or themes.xml
+          <!-- Application theme. -->
+          <style name="MyAppTheme" parent="Theme.AppCompat.DayNight.DarkActionBar">
+            ...
+            current theme customizations
+            ...
+            <!-- Set a dialog theme if not already done. -->
+            <item name="android:dialogTheme">@style/MyAppDialogTheme</item>
+          </style>
+          
+          <!-- Edit application dialog theme. -->
+          <style name="MyAppDialogTheme" parent="Theme.AppCompat.DayNight.Dialog">
+            <!-- Set the style of the feedback dialog title. -->
+            <item name="android:windowTitleStyle">@style/FeedbackFormTitleStyle</item>
+          
+            <!-- Set the color of title, cancel button text, and non editable texts. -->
+            <item name="android:textColor">@color/colorPrimary</item>
+            <!-- Set the color of editable texts. -->
+            <item name="android:editTextColor">@color/colorPrimaryDark</item>
+            <!-- Set the color of the hint of editable texts. -->
+            <item name="android:textColorHint">@color/colorPrimaryDark</item>
+            <!-- Set the color of the send button text. -->
+            <item name="android:textColorPrimaryInverse">@android:color/white</item>
+            
+            <!-- Set the background color of the send button. -->
+            <item name="android:colorPrimary">@color/colorPrimary</item>
+            <!-- Set the background color of the cancel button. -->
+            <item name="android:colorBackground">@android:color/black</item>
+            <!-- Set the color tint of the image logo. -->
+            <item name="android:colorForeground">@color/colorPrimary</item>
+          </style>
+          
+          <style name="FeedbackFormTitleStyle">
+            <!-- Customize your theme here. -->
+            <item name="android:textAppearance">@style/TextAppearance.AppCompat.Title</item>
+          </style>
+        ```
+
 ## 8.12.0
 
 ### Features
@@ -20,11 +65,6 @@
 ### Fixes
 
 - Hook User Interaction integration into running Activity in case of deferred SDK init ([#4337](https://github.com/getsentry/sentry-java/pull/4337))
-
-### Features
-
-- Add new User Feedback API ([#4286](https://github.com/getsentry/sentry-java/pull/4286))
-    - We now introduced Sentry.captureFeedback, which supersedes Sentry.captureUserFeedback
 
 ### Dependencies
 

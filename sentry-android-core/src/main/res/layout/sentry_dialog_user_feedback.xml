@@ -92,8 +92,8 @@
         android:id="@+id/sentry_dialog_user_feedback_btn_send"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="#584AC0"
-        android:textColor="@android:color/white"
+        android:backgroundTint="?android:attr/colorPrimary"
+        android:textColor="?android:attr/textColorPrimaryInverse"
         android:layout_marginTop="32dp"
         android:text="Send Bug Report"
         android:layout_below="@id/sentry_dialog_user_feedback_edt_description" />
