@@ -18,6 +18,14 @@ public final class SentryLogEventAttributeValue implements JsonUnknown, JsonSeri
     this.value = value;
   }
 
+  public @NotNull String getType() {
+    return type;
+  }
+
+  public @Nullable Object getValue() {
+    return value;
+  }
+
   // region json
   public static final class JsonKeys {
     public static final String TYPE = "type";

@@ -13,6 +13,7 @@ import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
+import io.sentry.logger.ILoggerBatchProcessor
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.Mechanism
@@ -25,6 +26,7 @@ import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.protocol.ViewHierarchy
 import io.sentry.test.callMethod
+import io.sentry.test.injectForField
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.util.HintUtils
@@ -246,6 +248,64 @@ class SentryClientTest {
             fixture.sentryOptions.clientReportRecorder,
             listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1))
         )
+    }
+
+    @Test
+    fun `when beforeSendLog is set, callback is invoked`() {
+        val scope = createScope()
+        var invoked = false
+        fixture.sentryOptions.logs.setBeforeSend { l -> invoked = true; l }
+        val sut = fixture.getSut()
+        sut.captureLog(SentryLogEvent(SentryId(), SentryNanotimeDate(), "message", SentryLogLevel.WARN), scope)
+        assertTrue(invoked)
+    }
+
+    @Test
+    fun `when beforeSendLog returns null, log is dropped`() {
+        val scope = createScope()
+        fixture.sentryOptions.logs.setBeforeSend { _: SentryLogEvent -> null }
+        val sut = fixture.getSut()
+        sut.captureLog(SentryLogEvent(SentryId(), SentryNanotimeDate(), "message", SentryLogLevel.WARN), scope)
+        verify(fixture.transport, never()).send(any(), anyOrNull())
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.LogItem.category, 1))
+        )
+    }
+
+    @Test
+    fun `when beforeSendLog throws an exception, log is dropped`() {
+        val scope = createScope()
+        val exception = Exception("test")
+
+        exception.stackTrace.toString()
+        fixture.sentryOptions.logs.setBeforeSend { _ -> throw exception }
+        val sut = fixture.getSut()
+        sut.captureLog(SentryLogEvent(SentryId(), SentryNanotimeDate(), "message", SentryLogLevel.WARN), scope)
+
+        assertClientReport(
+            fixture.sentryOptions.clientReportRecorder,
+            listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.LogItem.category, 1))
+        )
+    }
+
+    @Test
+    fun `when beforeSendLog is returns new instance, new instance is sent`() {
+        val scope = createScope()
+        val expected = SentryLogEvent(SentryId(), SentryNanotimeDate(), "expected message", SentryLogLevel.WARN)
+        fixture.sentryOptions.logs.setBeforeSend { _ -> expected }
+        val sut = fixture.getSut()
+        val batchProcessor = mock<ILoggerBatchProcessor>()
+        sut.injectForField("loggerBatchProcessor", batchProcessor)
+        val actual = SentryLogEvent(SentryId(), SentryNanotimeDate(), "actual message", SentryLogLevel.WARN)
+        sut.captureLog(actual, scope)
+        verify(batchProcessor).add(
+            check {
+                assertEquals("expected message", it.body)
+            }
+        )
+        verifyNoMoreInteractions(batchProcessor)
     }
 
     @Test
