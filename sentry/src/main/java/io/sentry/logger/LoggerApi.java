@@ -17,6 +17,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.util.Platform;
 import io.sentry.util.TracingUtils;
 import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -65,7 +66,7 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull SentryLogLevel level,
       final @Nullable String message,
       final @Nullable Object... args) {
-    log(level, null, message, args);
+    captureLog(null, level, null, message, args);
   }
 
   @Override
@@ -74,11 +75,31 @@ public final class LoggerApi implements ILoggerApi {
       final @Nullable SentryDate timestamp,
       final @Nullable String message,
       final @Nullable Object... args) {
-    captureLog(level, timestamp, message, args);
+    captureLog(null, level, timestamp, message, args);
+  }
+
+  @Override
+  public void log(
+      final @Nullable Map<String, Object> attributes,
+      final @NotNull SentryLogLevel level,
+      final @Nullable SentryDate timestamp,
+      final @Nullable String message,
+      final @Nullable Object... args) {
+    captureLog(attributes, level, timestamp, message, args);
+  }
+
+  @Override
+  public void log(
+      final @Nullable Map<String, Object> attributes,
+      final @NotNull SentryLogLevel level,
+      final @Nullable String message,
+      final @Nullable Object... args) {
+    captureLog(attributes, level, null, message, args);
   }
 
   @SuppressWarnings("AnnotateFormatMethod")
   private void captureLog(
+      final @Nullable Map<String, Object> attributes,
       final @NotNull SentryLogLevel level,
       final @Nullable SentryDate timestamp,
       final @Nullable String message,
@@ -119,7 +140,7 @@ public final class LoggerApi implements ILoggerApi {
           span == null ? propagationContext.getSpanId() : span.getSpanContext().getSpanId();
       final SentryLogEvent logEvent =
           new SentryLogEvent(traceId, timestampToUse, messageToUse, level);
-      logEvent.setAttributes(createAttributes(message, spanId, args));
+      logEvent.setAttributes(createAttributes(attributes, message, spanId, args));
       logEvent.setSeverityNumber(level.getSeverityNumber());
 
       scopes.getClient().captureLog(logEvent, combinedScope);
@@ -146,8 +167,20 @@ public final class LoggerApi implements ILoggerApi {
   }
 
   private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
-      final @NotNull String message, final @NotNull SpanId spanId, final @Nullable Object... args) {
+      final @Nullable Map<String, Object> incomingAttributes,
+      final @NotNull String message,
+      final @NotNull SpanId spanId,
+      final @Nullable Object... args) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
+
+    if (incomingAttributes != null) {
+      for (Map.Entry<String, Object> attributeEntry : incomingAttributes.entrySet()) {
+        final @Nullable Object value = attributeEntry.getValue();
+        final @NotNull String type = getType(value);
+        attributes.put(attributeEntry.getKey(), new SentryLogEventAttributeValue(type, value));
+      }
+    }
+
     if (args != null) {
       int i = 0;
       for (Object arg : args) {
