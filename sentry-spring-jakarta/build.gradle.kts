@@ -23,7 +23,6 @@ tasks.withType<KotlinCompile>().configureEach {
         jvmTarget = JavaVersion.VERSION_17.toString()
         languageVersion = Config.kotlinCompatibleLanguageVersion
         freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 }
 
