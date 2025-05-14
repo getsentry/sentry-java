@@ -589,6 +589,11 @@ public final class io/sentry/Hint {
 	public static fun withAttachments (Ljava/util/List;)Lio/sentry/Hint;
 }
 
+public final class io/sentry/HostnameCache {
+	public fun getHostname ()Ljava/lang/String;
+	public static fun getInstance ()Lio/sentry/HostnameCache;
+}
+
 public final class io/sentry/HttpStatusCodeRange {
 	public static final field DEFAULT_MAX I
 	public static final field DEFAULT_MIN I
@@ -3073,7 +3078,9 @@ public final class io/sentry/SentryLogEvent$JsonKeys {
 
 public final class io/sentry/SentryLogEventAttributeValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> (Ljava/lang/String;Ljava/lang/Object;)V
+	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
+	public fun getValue ()Ljava/lang/Object;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
