@@ -43,6 +43,7 @@ public final class ExternalOptions {
   private @Nullable Boolean enabled;
   private @Nullable Boolean enablePrettySerializationOutput;
   private @Nullable Boolean enableSpotlight;
+  private @Nullable Boolean enableLogs;
   private @Nullable String spotlightConnectionUrl;
 
   private @Nullable List<String> ignoredCheckIns;
@@ -149,6 +150,8 @@ public final class ExternalOptions {
 
     options.setCaptureOpenTelemetryEvents(
         propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
+
+    options.setEnableLogs(propertiesProvider.getBooleanProperty("logs.enabled"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -517,5 +520,15 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable Boolean isCaptureOpenTelemetryEvents() {
     return captureOpenTelemetryEvents;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableLogs(final @Nullable Boolean enableLogs) {
+    this.enableLogs = enableLogs;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Boolean isEnableLogs() {
+    return enableLogs;
   }
 }

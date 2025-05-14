@@ -204,6 +204,8 @@ public final class RateLimiter implements Closeable {
         return DataCategory.Replay;
       case "feedback":
         return DataCategory.Feedback;
+      case "log":
+        return DataCategory.LogItem;
       default:
         return DataCategory.Unknown;
     }

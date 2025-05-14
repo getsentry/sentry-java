@@ -16,6 +16,8 @@ import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
+import io.sentry.SentryLogEvent
+import io.sentry.SentryLogEvents
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.Session
@@ -187,6 +189,14 @@ class SessionTrackingIntegrationTest {
         }
 
         override fun captureCheckIn(checkIn: CheckIn, scope: IScope?, hint: Hint?): SentryId {
+            TODO("Not yet implemented")
+        }
+
+        override fun captureLog(event: SentryLogEvent, scope: IScope?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun captureBatchedLogEvents(logEvents: SentryLogEvents) {
             TODO("Not yet implemented")
         }
 

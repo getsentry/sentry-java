@@ -16,6 +16,10 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
+import io.sentry.SentryLogEvent
+import io.sentry.SentryLogEvents
+import io.sentry.SentryLogLevel
+import io.sentry.SentryLongDate
 import io.sentry.SentryOptions
 import io.sentry.SentryOptionsManipulator
 import io.sentry.SentryReplayEvent
@@ -337,6 +341,31 @@ class RateLimiterTest {
         assertEquals(1, result.items.toList().size)
 
         verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(replayItem))
+        verifyNoMoreInteractions(fixture.clientReportRecorder)
+    }
+
+    @Test
+    fun `drop log items as lost`() {
+        val rateLimiter = fixture.getSUT()
+        val scopes = mock<IScopes>()
+        whenever(scopes.options).thenReturn(SentryOptions())
+
+        val logEventItem = SentryEnvelopeItem.fromLogs(
+            fixture.serializer,
+            SentryLogEvents(
+                listOf(
+                    SentryLogEvent(SentryId(), SentryLongDate(0), "hello", SentryLogLevel.INFO)
+                )
+            )
+        )
+        val envelope = SentryEnvelope(SentryEnvelopeHeader(null), arrayListOf(logEventItem))
+
+        rateLimiter.updateRetryAfterLimits("60:log_item:key", null, 1)
+        val result = rateLimiter.filter(envelope, Hint())
+
+        assertNull(result)
+
+        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelopeItem(eq(DiscardReason.RATELIMIT_BACKOFF), same(logEventItem))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
