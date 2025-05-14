@@ -113,7 +113,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     lblTitle.setText(feedbackOptions.getFormTitle());
 
     btnSend.setBackgroundTintList(
-            ColorStateList.valueOf(Color.parseColor(feedbackOptions.getSubmitBackgroundHex())));
+        ColorStateList.valueOf(Color.parseColor(feedbackOptions.getSubmitBackgroundHex())));
     btnSend.setTextColor(Color.parseColor(feedbackOptions.getSubmitForegroundHex()));
     btnSend.setText(feedbackOptions.getSubmitButtonLabel());
     btnSend.setOnClickListener(
