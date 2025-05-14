@@ -35,7 +35,7 @@ dependencies {
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(Config.Libs.okhttp)
-    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.mockWebserver)

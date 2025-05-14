@@ -55,7 +55,7 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.Libs.springBoot3StarterTest)
