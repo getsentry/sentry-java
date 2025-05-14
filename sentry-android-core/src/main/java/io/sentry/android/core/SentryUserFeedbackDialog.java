@@ -73,7 +73,6 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     } else {
       imgLogo.setVisibility(View.GONE);
     }
-    imgLogo.setImageTintList(ColorStateList.valueOf(lblTitle.getTextColors().getDefaultColor()));
 
     if (!feedbackOptions.isShowName() && !feedbackOptions.isNameRequired()) {
       lblName.setVisibility(View.GONE);
@@ -113,7 +112,8 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     edtMessage.setHint(feedbackOptions.getMessagePlaceholder());
     lblTitle.setText(feedbackOptions.getFormTitle());
 
-    btnSend.setBackgroundColor(Color.parseColor(feedbackOptions.getSubmitBackgroundHex()));
+    btnSend.setBackgroundTintList(
+            ColorStateList.valueOf(Color.parseColor(feedbackOptions.getSubmitBackgroundHex())));
     btnSend.setTextColor(Color.parseColor(feedbackOptions.getSubmitForegroundHex()));
     btnSend.setText(feedbackOptions.getSubmitButtonLabel());
     btnSend.setOnClickListener(

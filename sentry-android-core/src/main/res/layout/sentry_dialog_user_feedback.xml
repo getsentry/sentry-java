@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-  xmlns:tools="http://schemas.android.com/tools"
-  android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
-  tools:ignore="HardcodedText"
+    tools:ignore="HardcodedText"
+    android:theme="?android:attr/dialogTheme"
     android:padding="24dp">
 
 
@@ -12,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Report a Bug"
-        style="@android:style/TextAppearance.DialogWindowTitle"
+        style="?android:attr/windowTitleStyle"
         android:textStyle="bold"
         android:layout_marginBottom="16dp"
         android:layout_alignParentTop="true"
@@ -25,6 +26,7 @@
         android:layout_alignTop="@+id/sentry_dialog_user_feedback_title"
         android:layout_alignBottom="@+id/sentry_dialog_user_feedback_title"
         android:layout_alignParentEnd="true"
+        android:tint="?android:attr/colorForeground"
         android:src="@drawable/sentry_logo_dark_400x352"/>
 
     <TextView
@@ -33,7 +35,7 @@
         android:layout_height="wrap_content"
         android:text="Name"
         android:layout_marginTop="4dp"
-        style="@android:style/TextAppearance.Widget.TextView"
+        android:textStyle="bold"
         android:layout_below="@id/sentry_dialog_user_feedback_title" />
 
     <EditText
@@ -42,7 +44,6 @@
         android:layout_height="wrap_content"
         android:hint="Your Name"
         android:inputType="textPersonName"
-        style="@android:style/TextAppearance.Widget.EditText"
         android:background="@drawable/edit_text_border"
         android:paddingHorizontal="8dp"
         android:layout_below="@id/sentry_dialog_user_feedback_txt_name" />
@@ -53,7 +54,7 @@
         android:layout_height="wrap_content"
         android:text="Email"
         android:layout_marginTop="8dp"
-        style="@android:style/TextAppearance.Widget.TextView"
+        android:textStyle="bold"
         android:layout_below="@id/sentry_dialog_user_feedback_edt_name" />
 
     <EditText
@@ -62,7 +63,6 @@
         android:layout_height="wrap_content"
         android:hint="your.email@example.org"
         android:inputType="textEmailAddress"
-        style="@android:style/TextAppearance.Widget.EditText"
         android:background="@drawable/edit_text_border"
         android:paddingHorizontal="8dp"
         android:layout_below="@id/sentry_dialog_user_feedback_txt_email" />
@@ -73,7 +73,7 @@
         android:layout_height="wrap_content"
         android:text="Description (Required)"
         android:layout_marginTop="8dp"
-        style="@android:style/TextAppearance.Widget.TextView"
+        android:textStyle="bold"
         android:layout_below="@id/sentry_dialog_user_feedback_edt_email" />
 
     <EditText
@@ -84,7 +84,6 @@
         android:inputType="textMultiLine"
         android:gravity="top|start"
         android:hint="What's the bug? What did you expect?"
-        style="@android:style/TextAppearance.Widget.EditText"
         android:background="@drawable/edit_text_border"
         android:paddingHorizontal="8dp"
         android:layout_below="@id/sentry_dialog_user_feedback_txt_description" />
@@ -103,8 +102,8 @@
         android:id="@+id/sentry_dialog_user_feedback_btn_cancel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="#FAF9FD"
         android:layout_marginTop="8dp"
+        android:backgroundTint="?android:attr/colorBackground"
         android:text="Cancel"
         android:layout_below="@id/sentry_dialog_user_feedback_btn_send" />
 
