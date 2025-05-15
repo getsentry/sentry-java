@@ -69,7 +69,7 @@ dependencies {
 
     // tests
     testImplementation(Config.Libs.fragment)
-    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
 }

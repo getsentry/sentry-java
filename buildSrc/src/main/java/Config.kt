@@ -3,7 +3,6 @@ import java.math.BigDecimal
 
 object Config {
     val AGP = System.getenv("VERSION_AGP") ?: "8.6.0"
-    val kotlinVersion = "1.9.24"
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.18"
@@ -17,7 +16,6 @@ object Config {
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
-        val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
         val buildConfigVersion = "5.6.5"
         val springBoot = "org.springframework.boot"
@@ -193,7 +191,6 @@ object Config {
         private val espressoVersion = "3.5.0"
 
         val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
-        val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
         val androidxCore = "androidx.test:core:1.6.1"
         val androidxRunner = "androidx.test:runner:1.6.2"
         val androidxTestCoreKtx = "androidx.test:core-ktx:1.6.1"

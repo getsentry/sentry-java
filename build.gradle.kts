@@ -18,6 +18,7 @@ plugins {
     id(Config.QualityPlugins.jacocoAndroid) version Config.QualityPlugins.jacocoAndroidVersion apply false
     id(Config.QualityPlugins.kover) version Config.QualityPlugins.koverVersion apply false
     id(Config.BuildPlugins.gradleMavenPublishPlugin) version Config.BuildPlugins.gradleMavenPublishPluginVersion apply false
+    alias(libs.plugins.kotlin.android) apply false
 }
 
 buildscript {
@@ -26,7 +27,6 @@ buildscript {
     }
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
-        classpath(kotlin(Config.BuildPlugins.kotlinGradlePlugin, version = Config.kotlinVersion))
         // dokka is required by gradle-maven-publish-plugin.
         classpath(Config.BuildPlugins.dokkaPlugin)
         classpath(Config.QualityPlugins.errorpronePlugin)
@@ -200,7 +200,6 @@ subprojects {
         afterEvaluate {
             apply<MavenPublishPlugin>()
 
-            @Suppress("UnstableApiUsage")
             configure<MavenPublishBaseExtension> {
                 assignAarTypes()
             }
