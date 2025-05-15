@@ -518,15 +518,6 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `CurrentActivityIntegration is added by default`() {
-        fixture.initSut(useRealContext = true)
-
-        val actual =
-            fixture.sentryOptions.integrations.firstOrNull { it is CurrentActivityIntegration }
-        assertNotNull(actual)
-    }
-
-    @Test
     fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be available`() {
         fixture.initSut(
             hasAppContext = true,

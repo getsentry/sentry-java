@@ -9,6 +9,7 @@ import android.os.Looper
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ITransactionProfiler
+import io.sentry.android.core.CurrentActivityHolder
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.SentryShadowProcess
 import org.junit.Before
@@ -453,5 +454,61 @@ class AppStartMetricsTest {
 
         // then the app start is still considered warm
         assertEquals(AppStartMetrics.AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
+    }
+
+    @Test
+    fun `when an activity is created the activity holder provides it`() {
+        val metrics = AppStartMetrics.getInstance()
+        val activity = mock<Activity>()
+
+        metrics.onActivityCreated(activity, null)
+        assertEquals(activity, CurrentActivityHolder.getInstance().activity)
+    }
+
+    @Test
+    fun `when there is no active activity the holder does not provide an outdated one`() {
+        val metrics = AppStartMetrics.getInstance()
+        val activity = mock<Activity>()
+
+        metrics.onActivityCreated(activity, null)
+        metrics.onActivityDestroyed(activity)
+
+        assertNull(CurrentActivityHolder.getInstance().activity)
+    }
+
+    @Test
+    fun `when a second activity is started it gets the current one`() {
+        val metrics = AppStartMetrics.getInstance()
+        val firstActivity = mock<Activity>()
+
+        metrics.onActivityCreated(firstActivity, null)
+        metrics.onActivityStarted(firstActivity)
+        metrics.onActivityResumed(firstActivity)
+
+        val secondActivity = mock<Activity>()
+        metrics.onActivityCreated(secondActivity, null)
+        metrics.onActivityStarted(secondActivity)
+
+        assertEquals(secondActivity, CurrentActivityHolder.getInstance().activity)
+    }
+
+    @Test
+    fun `destroying an old activity keeps the current one`() {
+        val metrics = AppStartMetrics.getInstance()
+        val firstActivity = mock<Activity>()
+
+        metrics.onActivityCreated(firstActivity, null)
+        metrics.onActivityStarted(firstActivity)
+        metrics.onActivityResumed(firstActivity)
+
+        val secondActivity = mock<Activity>()
+        metrics.onActivityCreated(secondActivity, null)
+        metrics.onActivityStarted(secondActivity)
+
+        metrics.onActivityPaused(firstActivity)
+        metrics.onActivityStopped(firstActivity)
+        metrics.onActivityDestroyed(firstActivity)
+
+        assertEquals(secondActivity, CurrentActivityHolder.getInstance().activity)
     }
 }
