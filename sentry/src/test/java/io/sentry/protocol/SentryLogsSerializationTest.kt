@@ -32,7 +32,11 @@ class SentryLogsSerializationTest {
                         "sentry.sdk.name" to SentryLogEventAttributeValue("string", "sentry.java.spring-boot.jakarta"),
                         "sentry.environment" to SentryLogEventAttributeValue("string", "production"),
                         "sentry.sdk.version" to SentryLogEventAttributeValue("string", "8.11.1"),
-                        "sentry.trace.parent_span_id" to SentryLogEventAttributeValue("string", "f28b86350e534671")
+                        "sentry.trace.parent_span_id" to SentryLogEventAttributeValue("string", "f28b86350e534671"),
+                        "custom.boolean" to SentryLogEventAttributeValue("boolean", true),
+                        "custom.double" to SentryLogEventAttributeValue("double", 11.12.toDouble()),
+                        "custom.point" to SentryLogEventAttributeValue("string", Point(20, 30)),
+                        "custom.integer" to SentryLogEventAttributeValue("integer", 10)
                     )
                     it.severityNumber = 10
                 }
@@ -74,5 +78,13 @@ class SentryLogsSerializationTest {
     private fun deserialize(json: String): SentryLogEvents {
         val reader = JsonObjectReader(StringReader(json))
         return SentryLogEvents.Deserializer().deserialize(reader, fixture.logger)
+    }
+
+    companion object {
+        data class Point(val x: Int, val y: Int) {
+            override fun toString(): String {
+                return "Point{x:$x,y:$y}-Hello"
+            }
+        }
     }
 }
