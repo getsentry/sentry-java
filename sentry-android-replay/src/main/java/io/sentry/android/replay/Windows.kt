@@ -118,6 +118,13 @@ internal fun interface OnRootViewsChangedListener {
     )
 }
 
+internal fun interface ConfigurationChangedListener {
+    /**
+     * Called whenever the device configuration changes
+     */
+    fun onConfigurationChanged()
+}
+
 /**
  * A utility that holds the list of root views that WindowManager updates.
  */
