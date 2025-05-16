@@ -9,8 +9,11 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import io.sentry.IScopes;
 import io.sentry.Sentry;
 import io.sentry.SentryFeedbackOptions;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -23,7 +26,6 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
 
   public SentryUserFeedbackDialog(final @NotNull Context context) {
     super(context);
-    isCancelable = false;
   }
 
   public SentryUserFeedbackDialog(
@@ -36,7 +38,6 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
 
   public SentryUserFeedbackDialog(final @NotNull Context context, final int themeResId) {
     super(context, themeResId);
-    isCancelable = false;
   }
 
   @Override
@@ -107,15 +108,35 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     }
 
     lblMessage.setText(feedbackOptions.getMessageLabel());
+    lblMessage.append(feedbackOptions.getIsRequiredLabel());
     edtMessage.setHint(feedbackOptions.getMessagePlaceholder());
     lblTitle.setText(feedbackOptions.getFormTitle());
 
     btnSend.setText(feedbackOptions.getSubmitButtonLabel());
     btnSend.setOnClickListener(
         v -> {
-          final @NotNull Feedback feedback = new Feedback(edtMessage.getText().toString());
-          feedback.setName(edtName.getText().toString());
-          feedback.setContactEmail(edtEmail.getText().toString());
+          final @NotNull String name = edtName.getText().toString().trim();
+          final @NotNull String email = edtEmail.getText().toString().trim();
+          final @NotNull String message = edtMessage.getText().toString().trim();
+          final @NotNull Feedback feedback = new Feedback(message);
+
+          if (name.isEmpty() && feedbackOptions.isNameRequired()) {
+            edtName.setError(lblName.getText());
+            return;
+          }
+
+          if (email.isEmpty() && feedbackOptions.isEmailRequired()) {
+            edtEmail.setError(lblEmail.getText());
+            return;
+          }
+
+          if (message.isEmpty()) {
+            edtMessage.setError(lblMessage.getText());
+            return;
+          }
+
+          feedback.setName(name);
+          feedback.setContactEmail(email);
 
           SentryId id = Sentry.captureFeedback(feedback);
           if (!id.equals(SentryId.EMPTY_ID)) {
@@ -155,5 +176,18 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     if (onFormOpen != null) {
       onFormOpen.run();
     }
+  }
+
+  @Override
+  public void show() {
+    final @NotNull IScopes scopes = Sentry.getCurrentScopes();
+    final @NotNull SentryOptions options = scopes.getOptions();
+    if (!scopes.isEnabled() || !options.isEnabled()) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Sentry is disabled. Feedback dialog won't be shown.");
+      return;
+    }
+    super.show();
   }
 }

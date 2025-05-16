@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/sentry_dialog_user_feedback_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:ignore="HardcodedText"
@@ -26,8 +27,9 @@
         android:layout_alignTop="@+id/sentry_dialog_user_feedback_title"
         android:layout_alignBottom="@+id/sentry_dialog_user_feedback_title"
         android:layout_alignParentEnd="true"
+        android:contentDescription="Logo of the brand"
         android:tint="?android:attr/colorForeground"
-        android:src="@drawable/sentry_logo_dark_400x352"/>
+        android:src="@drawable/sentry_logo_dark"/>
 
     <TextView
         android:id="@+id/sentry_dialog_user_feedback_txt_name"

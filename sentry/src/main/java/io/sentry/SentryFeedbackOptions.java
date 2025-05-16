@@ -32,8 +32,6 @@ public final class SentryFeedbackOptions {
   private @NotNull String submitButtonLabel = "Send Bug Report";
   /** The label of the cancel button. */
   private @NotNull String cancelButtonLabel = "Cancel";
-  /** The label of the confirm button. */
-  private @NotNull String confirmButtonLabel = "Confirm";
   /** The label next to the name input field. */
   private @NotNull String nameLabel = "Name";
   /** The placeholder in the name input field. */
@@ -43,7 +41,7 @@ public final class SentryFeedbackOptions {
   /** The placeholder in the email input field. */
   private @NotNull String emailPlaceholder = "your.email@example.org";
   /** The text to attach to the title label for a required field. */
-  private @NotNull String isRequiredLabel = "(Required)";
+  private @NotNull String isRequiredLabel = " (Required)";
   /** The label of the feedback description input field. */
   private @NotNull String messageLabel = "Description";
   /** The placeholder in the feedback description input field. */
@@ -223,24 +221,6 @@ public final class SentryFeedbackOptions {
    */
   public void setCancelButtonLabel(final @NotNull String cancelButtonLabel) {
     this.cancelButtonLabel = cancelButtonLabel;
-  }
-
-  /**
-   * The label of the confirm button.
-   *
-   * @return the label of the confirm button
-   */
-  public @NotNull String getConfirmButtonLabel() {
-    return confirmButtonLabel;
-  }
-
-  /**
-   * Sets the label of the confirm button.
-   *
-   * @param confirmButtonLabel the label of the confirm button
-   */
-  public void setConfirmButtonLabel(final @NotNull String confirmButtonLabel) {
-    this.confirmButtonLabel = confirmButtonLabel;
   }
 
   /**
@@ -488,9 +468,6 @@ public final class SentryFeedbackOptions {
         + '\''
         + ", cancelButtonLabel='"
         + cancelButtonLabel
-        + '\''
-        + ", confirmButtonLabel='"
-        + confirmButtonLabel
         + '\''
         + ", nameLabel='"
         + nameLabel

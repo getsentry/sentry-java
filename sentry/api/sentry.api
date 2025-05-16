@@ -2937,7 +2937,6 @@ public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorSe
 public final class io/sentry/SentryFeedbackOptions {
 	public fun <init> ()V
 	public fun getCancelButtonLabel ()Ljava/lang/String;
-	public fun getConfirmButtonLabel ()Ljava/lang/String;
 	public fun getEmailLabel ()Ljava/lang/String;
 	public fun getEmailPlaceholder ()Ljava/lang/String;
 	public fun getFormTitle ()Ljava/lang/String;
@@ -2950,9 +2949,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun getOnFormOpen ()Ljava/lang/Runnable;
 	public fun getOnSubmitError ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
 	public fun getOnSubmitSuccess ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
-	public fun getSubmitBackgroundHex ()Ljava/lang/String;
 	public fun getSubmitButtonLabel ()Ljava/lang/String;
-	public fun getSubmitForegroundHex ()Ljava/lang/String;
 	public fun getSuccessMessageText ()Ljava/lang/String;
 	public fun isEmailRequired ()Z
 	public fun isNameRequired ()Z
@@ -2961,7 +2958,6 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun isShowName ()Z
 	public fun isUseSentryUser ()Z
 	public fun setCancelButtonLabel (Ljava/lang/String;)V
-	public fun setConfirmButtonLabel (Ljava/lang/String;)V
 	public fun setEmailLabel (Ljava/lang/String;)V
 	public fun setEmailPlaceholder (Ljava/lang/String;)V
 	public fun setEmailRequired (Z)V
@@ -2979,9 +2975,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun setShowBranding (Z)V
 	public fun setShowEmail (Z)V
 	public fun setShowName (Z)V
-	public fun setSubmitBackgroundHex (Ljava/lang/String;)V
 	public fun setSubmitButtonLabel (Ljava/lang/String;)V
-	public fun setSubmitForegroundHex (Ljava/lang/String;)V
 	public fun setSuccessMessageText (Ljava/lang/String;)V
 	public fun setUseSentryUser (Z)V
 	public fun toString ()Ljava/lang/String;
