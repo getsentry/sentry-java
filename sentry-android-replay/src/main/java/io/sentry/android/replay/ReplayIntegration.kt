@@ -71,10 +71,18 @@ public class ReplayIntegration(
     IConnectionStatusObserver,
     IRateLimitObserver {
 
-    private companion object {
+    public companion object {
         init {
             SentryIntegrationPackageStorage.getInstance()
                 .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
+        }
+
+        public var debugMaskingEnabled: Boolean = false
+            private set
+
+        @JvmStatic
+        public fun enableDebugMasking() {
+            debugMaskingEnabled = true
         }
     }
 

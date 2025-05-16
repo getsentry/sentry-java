@@ -16,7 +16,7 @@ internal class DebugOverlayDrawable : Drawable() {
     private var masks: List<Rect> = emptyList()
 
     companion object {
-        private val maskBackgroundColor = Color.argb(64, 255, 20, 20)
+        private val maskBackgroundColor = Color.argb(32, 255, 20, 20)
         private val maskBorderColor = Color.argb(128, 255, 20, 20)
         private const val TEXT_COLOR = Color.BLACK
         private const val TEXT_OUTLINE_COLOR = Color.WHITE
@@ -40,26 +40,49 @@ internal class DebugOverlayDrawable : Drawable() {
             paint.style = Paint.Style.STROKE
             canvas.drawRect(mask, paint)
 
-            val label = "${mask.left} ${mask.top}"
-            paint.getTextBounds(label, 0, label.length, tmpRect)
-            paint.style = Paint.Style.STROKE
-            paint.setColor(TEXT_OUTLINE_COLOR)
-            canvas.drawText(
-                label,
-                mask.left.toFloat() + padding + paint.strokeWidth / 2,
-                mask.top.toFloat() + tmpRect.height() - tmpRect.bottom + padding + paint.strokeWidth / 2,
-                paint
+            val topLeftLabel = "${mask.left}/${mask.top}"
+            paint.getTextBounds(topLeftLabel, 0, topLeftLabel.length, tmpRect)
+            drawTextWithOutline(
+                canvas,
+                topLeftLabel,
+                mask.left.toFloat(),
+                mask.top.toFloat()
             )
 
-            paint.style = Paint.Style.FILL
-            paint.setColor(TEXT_COLOR)
-            canvas.drawText(
-                label,
-                mask.left.toFloat() + padding + paint.strokeWidth / 2,
-                mask.top.toFloat() + tmpRect.height() - tmpRect.bottom + padding + paint.strokeWidth / 2,
-                paint
+            val bottomRightLabel = "${mask.right}/${mask.bottom}"
+            paint.getTextBounds(bottomRightLabel, 0, bottomRightLabel.length, tmpRect)
+            drawTextWithOutline(
+                canvas,
+                bottomRightLabel,
+                mask.right.toFloat() - tmpRect.width(),
+                mask.bottom.toFloat() + tmpRect.height()
             )
         }
+    }
+
+    private fun drawTextWithOutline(
+        canvas: Canvas,
+        bottomRightLabel: String,
+        x: Float,
+        y: Float
+    ) {
+        paint.setColor(TEXT_OUTLINE_COLOR)
+        paint.style = Paint.Style.STROKE
+        canvas.drawText(
+            bottomRightLabel,
+            x,
+            y,
+            paint
+        )
+
+        paint.setColor(TEXT_COLOR)
+        paint.style = Paint.Style.FILL
+        canvas.drawText(
+            bottomRightLabel,
+            x,
+            y,
+            paint
+        )
     }
 
     override fun setAlpha(alpha: Int) {
@@ -73,9 +96,8 @@ internal class DebugOverlayDrawable : Drawable() {
     @Deprecated("Deprecated in Java")
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 
-    fun update(masks: List<Rect>) {
+    fun updateMasks(masks: List<Rect>) {
         this.masks = masks
-
         invalidateSelf()
     }
 }

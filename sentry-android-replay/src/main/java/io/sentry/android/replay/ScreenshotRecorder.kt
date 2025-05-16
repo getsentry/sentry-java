@@ -49,10 +49,6 @@ internal class ScreenshotRecorder(
     private val screenshotRecorderCallback: ScreenshotRecorderCallback?
 ) : ViewTreeObserver.OnDrawListener {
 
-    private companion object {
-        private const val DEBUG_MODE = false
-    }
-
     private var rootView: WeakReference<View>? = null
     private val maskingPaint by lazy(NONE) { Paint() }
     private val singlePixelBitmap: Bitmap by lazy(NONE) {
@@ -169,15 +165,21 @@ internal class ScreenshotRecorder(
                                     visibleRects.forEach { rect ->
                                         canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
                                     }
-                                    if (DEBUG_MODE) {
+                                    if (ReplayIntegration.debugMaskingEnabled) {
                                         debugMasks.addAll(visibleRects)
                                     }
                                 }
                                 return@traverse true
                             }
 
-                            if (DEBUG_MODE) {
-                                mainLooperHandler.post { debugOverlayDrawable.update(debugMasks) }
+                            if (ReplayIntegration.debugMaskingEnabled) {
+                                mainLooperHandler.post {
+                                    if (debugOverlayDrawable.callback == null) {
+                                        root.overlay.add(debugOverlayDrawable)
+                                    }
+                                    debugOverlayDrawable.updateMasks(debugMasks)
+                                    root.postInvalidate()
+                                }
                             }
                             screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
                             lastCaptureSuccessful.set(true)
@@ -201,9 +203,6 @@ internal class ScreenshotRecorder(
         }
 
         contentChanged.set(true)
-        if (DEBUG_MODE) {
-            debugOverlayDrawable.invalidateSelf()
-        }
     }
 
     fun bind(root: View) {
@@ -214,16 +213,13 @@ internal class ScreenshotRecorder(
         // next bind the new root
         rootView = WeakReference(root)
         root.addOnDrawListenerSafe(this)
-        if (DEBUG_MODE) {
-            root.overlay.add(debugOverlayDrawable)
-        }
 
         // invalidate the flag to capture the first frame after new window is attached
         contentChanged.set(true)
     }
 
     fun unbind(root: View?) {
-        if (DEBUG_MODE) {
+        if (ReplayIntegration.debugMaskingEnabled) {
             root?.overlay?.remove(debugOverlayDrawable)
         }
         root?.removeOnDrawListenerSafe(this)
