@@ -7,6 +7,7 @@
 - Add New User Feedback form ([#4384](https://github.com/getsentry/sentry-java/pull/4384))
     - We now introduce SentryUserFeedbackDialog, which extends AlertDialog, inheriting the show() and cancel() methods, among others.
       To use it, just instantiate it and call show() on the instance (Sentry must be previously initialized).
+      For customization options, please check the [User Feedback documentation](https://docs.sentry.io/platforms/android/user-feedback/configuration/).
       ```java
       import io.sentry.android.core.SentryUserFeedbackDialog;
       
