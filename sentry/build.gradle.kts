@@ -73,9 +73,8 @@ buildConfig {
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
-val generateBuildConfig by tasks
-tasks.withType<JavaCompile>() {
-    dependsOn(generateBuildConfig)
+tasks.withType<JavaCompile>().configureEach {
+    dependsOn(tasks.generateBuildConfig)
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")

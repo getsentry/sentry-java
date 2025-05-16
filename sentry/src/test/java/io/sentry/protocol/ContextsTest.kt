@@ -23,6 +23,7 @@ class ContextsTest {
         contexts.setTrace(SpanContext("op"))
         contexts.profile = ProfileContext(SentryId())
         contexts.setSpring(Spring())
+        contexts.setFeedback(Feedback("message"))
 
         val clone = Contexts(contexts)
 
@@ -38,6 +39,7 @@ class ContextsTest {
         assertNotSame(contexts.profile, clone.profile)
         assertNotSame(contexts.response, clone.response)
         assertNotSame(contexts.spring, clone.spring)
+        assertNotSame(contexts.feedback, clone.feedback)
     }
 
     @Test

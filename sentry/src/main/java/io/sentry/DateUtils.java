@@ -165,4 +165,8 @@ public final class DateUtils {
   public static long secondsToNanos(final @NotNull long seconds) {
     return seconds * (1000L * 1000L * 1000L);
   }
+
+  public static @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
+    return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
+  }
 }

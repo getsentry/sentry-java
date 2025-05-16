@@ -22,13 +22,14 @@ public enum SentryItemType implements JsonSerializable {
   ReplayVideo("replay_video"),
   CheckIn("check_in"),
   Feedback("feedback"),
+  Log("log"),
   Unknown("__unknown__"); // DataCategory.Unknown
 
   private final String itemType;
 
   public static SentryItemType resolve(Object item) {
     if (item instanceof SentryEvent) {
-      return Event;
+      return ((SentryEvent) item).getContexts().getFeedback() == null ? Event : Feedback;
     } else if (item instanceof SentryTransaction) {
       return Transaction;
     } else if (item instanceof Session) {
