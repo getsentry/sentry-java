@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import io.sentry.ILogger
 import io.sentry.IScopes
+import io.sentry.ReplayController
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import org.mockito.Mockito.mockStatic
@@ -22,11 +23,14 @@ class SentryUserFeedbackDialogTest {
         val mockedSentry = mockStatic(Sentry::class.java)
         val mockScopes = mock<IScopes>()
         val mockLogger = mock<ILogger>()
+        val mockReplayController = mock<ReplayController>()
+
         val options = SentryAndroidOptions().apply {
             dsn = mockDsn
             profilesSampleRate = 1.0
             isDebug = true
             setLogger(mockLogger)
+            setReplayController(mockReplayController)
         }
 
         init {
@@ -66,5 +70,15 @@ class SentryUserFeedbackDialogTest {
         val sut = fixture.getSut()
         sut.show()
         verify(fixture.mockLogger).log(eq(SentryLevel.WARNING), eq("Sentry is disabled. Feedback dialog won't be shown."))
+    }
+
+    @Test
+    fun `when feedback dialog is shown, replay is captured`() {
+        fixture.options.isEnabled = true
+        val sut = fixture.getSut()
+        verifyNoInteractions(fixture.mockReplayController)
+        sut.show()
+        sut.onStart()
+        verify(fixture.mockReplayController).captureReplay(eq(false))
     }
 }

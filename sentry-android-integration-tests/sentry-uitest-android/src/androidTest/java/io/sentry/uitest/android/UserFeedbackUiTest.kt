@@ -33,6 +33,7 @@ import org.junit.runner.RunWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -287,6 +288,31 @@ class UserFeedbackUiTest : BaseUiTest() {
     }
 
     @Test
+    fun userFeedbackSetOnDismissListenerNotOverwriteFormClose() {
+        var customListenerCalled = false
+        var formClose = false
+
+        initSentry {
+            it.feedbackOptions.onFormClose = Runnable { formClose = true }
+            it.beforeSendFeedback = SentryOptions.BeforeSendCallback { _, _ -> null }
+        }
+
+        showDialogAndCheck { dialog ->
+            // Set a custom listener. This should not overwrite the form close callback
+            dialog.setOnDismissListener { customListenerCalled = true }
+
+            assertFalse(formClose)
+            assertFalse(customListenerCalled)
+            // When the dialog is dismissed
+            fillFormAndSend()
+            // The form close callback should be called
+            assertTrue(formClose)
+            // The custom listener should be called too
+            assertTrue(customListenerCalled)
+        }
+    }
+
+    @Test
     fun userFeedbackSendError() {
         var formOpen = false
         var submitError = false
@@ -409,7 +435,9 @@ class UserFeedbackUiTest : BaseUiTest() {
             // When sending the feedback we want to wait for relay to receive it.
             // We can't simply increment the idling resource,
             //  because it would block the espresso interactions (button click)
-            it.feedbackOptions.onSubmitSuccess = SentryFeedbackCallback { relayIdlingResource.increment() }
+            it.feedbackOptions.onSubmitSuccess = SentryFeedbackCallback { relayIdlingResource.increment(); relayIdlingResource.increment() }
+            // Let's capture a replay, so we can check the replayId in the feedback
+            it.sessionReplay.sessionSampleRate = 1.0
         }
 
         showDialogAndCheck {
@@ -433,6 +461,9 @@ class UserFeedbackUiTest : BaseUiTest() {
                 assertEquals("Description filled", feedback.message)
                 // The screen name should be set in the url
                 assertEquals("io.sentry.uitest.android.EmptyActivity", feedback.url)
+                // The current replay should be set in the replayId
+                assertNotNull(feedback.replayId)
+                assertEquals(Sentry.getCurrentScopes().options.replayController.replayId, feedback.replayId)
             }
         }
     }
@@ -463,7 +494,7 @@ class UserFeedbackUiTest : BaseUiTest() {
             .perform(click())
     }
 
-    private fun showDialogAndCheck(checker: () -> Unit = {}) {
+    private fun showDialogAndCheck(checker: (dialog: SentryUserFeedbackDialog) -> Unit = {}) {
         lateinit var dialog: SentryUserFeedbackDialog
         val feedbackScenario = launchActivity<EmptyActivity>()
         feedbackScenario.onActivity {
@@ -475,7 +506,7 @@ class UserFeedbackUiTest : BaseUiTest() {
             .inRoot(isDialog())
             .check(matches(isDisplayed()))
 
-        checker()
+        checker(dialog)
 
         feedbackScenario.onActivity {
             dialog.dismiss()

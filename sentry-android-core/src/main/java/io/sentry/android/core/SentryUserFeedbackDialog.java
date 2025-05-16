@@ -23,6 +23,8 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryUserFeedbackDialog extends AlertDialog {
 
   private boolean isCancelable = false;
+  private @Nullable SentryId currentReplayId;
+  private @Nullable OnDismissListener delegate;
 
   public SentryUserFeedbackDialog(final @NotNull Context context) {
     super(context);
@@ -143,6 +145,9 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
           final @NotNull Feedback feedback = new Feedback(message);
           feedback.setName(name);
           feedback.setContactEmail(email);
+          if (currentReplayId != null) {
+            feedback.setReplayId(currentReplayId);
+          }
 
           // Capture the feedback. If the ID is empty, it means that the feedback was not sent
           final @NotNull SentryId id = Sentry.captureFeedback(feedback);
@@ -167,22 +172,40 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
 
     btnCancel.setText(feedbackOptions.getCancelButtonLabel());
     btnCancel.setOnClickListener(v -> cancel());
+    setOnDismissListener(delegate);
+  }
 
-    final @Nullable Runnable onFormClose = feedbackOptions.getOnFormClose();
+  @Override
+  public void setOnDismissListener(final @Nullable OnDismissListener listener) {
+    delegate = listener;
+    // If the user set a custom onDismissListener, we ensure it doesn't override the onFormClose
+    final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
+    final @Nullable Runnable onFormClose = options.getFeedbackOptions().getOnFormClose();
     if (onFormClose != null) {
-      setOnDismissListener(dialog -> onFormClose.run());
+      super.setOnDismissListener(
+          dialog -> {
+            onFormClose.run();
+            currentReplayId = null;
+            if (delegate != null) {
+              delegate.onDismiss(dialog);
+            }
+          });
+    } else {
+      super.setOnDismissListener(delegate);
     }
   }
 
   @Override
   protected void onStart() {
     super.onStart();
-    final @NotNull SentryFeedbackOptions feedbackOptions =
-        Sentry.getCurrentScopes().getOptions().getFeedbackOptions();
+    final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
+    final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
       onFormOpen.run();
     }
+    options.getReplayController().captureReplay(false);
+    currentReplayId = options.getReplayController().getReplayId();
   }
 
   @Override

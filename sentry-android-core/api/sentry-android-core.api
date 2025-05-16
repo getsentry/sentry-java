@@ -390,6 +390,7 @@ public final class io/sentry/android/core/SentryUserFeedbackDialog : android/app
 	public fun <init> (Landroid/content/Context;I)V
 	public fun <init> (Landroid/content/Context;ZLandroid/content/DialogInterface$OnCancelListener;)V
 	public fun setCancelable (Z)V
+	public fun setOnDismissListener (Landroid/content/DialogInterface$OnDismissListener;)V
 	public fun show ()V
 }
 
