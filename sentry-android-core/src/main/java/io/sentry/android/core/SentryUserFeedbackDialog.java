@@ -73,6 +73,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
       imgLogo.setVisibility(View.GONE);
     }
 
+    // If name is required, ignore showName flag
     if (!feedbackOptions.isShowName() && !feedbackOptions.isNameRequired()) {
       lblName.setVisibility(View.GONE);
       edtName.setVisibility(View.GONE);
@@ -86,6 +87,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
       }
     }
 
+    // If email is required, ignore showEmail flag
     if (!feedbackOptions.isShowEmail() && !feedbackOptions.isEmailRequired()) {
       lblEmail.setVisibility(View.GONE);
       edtEmail.setVisibility(View.GONE);
@@ -99,6 +101,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
       }
     }
 
+    // If Sentry user is set, and useSentryUser is true, populate the name and email
     if (feedbackOptions.isUseSentryUser()) {
       final @Nullable User user = Sentry.getCurrentScopes().getScope().getUser();
       if (user != null) {
@@ -115,11 +118,12 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     btnSend.setText(feedbackOptions.getSubmitButtonLabel());
     btnSend.setOnClickListener(
         v -> {
+          // Gather fields and trim them
           final @NotNull String name = edtName.getText().toString().trim();
           final @NotNull String email = edtEmail.getText().toString().trim();
           final @NotNull String message = edtMessage.getText().toString().trim();
-          final @NotNull Feedback feedback = new Feedback(message);
 
+          // If a required field is missing, shows the error label
           if (name.isEmpty() && feedbackOptions.isNameRequired()) {
             edtName.setError(lblName.getText());
             return;
@@ -135,10 +139,13 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
             return;
           }
 
+          // Create the feedback object
+          final @NotNull Feedback feedback = new Feedback(message);
           feedback.setName(name);
           feedback.setContactEmail(email);
 
-          SentryId id = Sentry.captureFeedback(feedback);
+          // Capture the feedback. If the ID is empty, it means that the feedback was not sent
+          final @NotNull SentryId id = Sentry.captureFeedback(feedback);
           if (!id.equals(SentryId.EMPTY_ID)) {
             Toast.makeText(
                     getContext(), feedbackOptions.getSuccessMessageText(), Toast.LENGTH_SHORT)
@@ -180,6 +187,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
 
   @Override
   public void show() {
+    // If Sentry is disabled, don't show the dialog, but log a warning
     final @NotNull IScopes scopes = Sentry.getCurrentScopes();
     final @NotNull SentryOptions options = scopes.getOptions();
     if (!scopes.isEnabled() || !options.isEnabled()) {
@@ -188,6 +196,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
           .log(SentryLevel.WARNING, "Sentry is disabled. Feedback dialog won't be shown.");
       return;
     }
+    // Otherwise, show the dialog
     super.show();
   }
 }
