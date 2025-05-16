@@ -8,8 +8,8 @@ import io.sentry.Attachment;
 import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
+import io.sentry.android.core.SentryUserFeedbackDialog;
 import io.sentry.instrumentation.file.SentryFileOutputStream;
-import io.sentry.protocol.Feedback;
 import io.sentry.protocol.User;
 import io.sentry.samples.android.compose.ComposeActivity;
 import io.sentry.samples.android.databinding.ActivityMainBinding;
@@ -69,12 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
     binding.sendUserFeedback.setOnClickListener(
         view -> {
-          Feedback feedback =
-              new Feedback("It broke on Android. I don't know why, but this happens.");
-          feedback.setContactEmail("john@me.com");
-          feedback.setName("John Me");
-
-          Sentry.captureFeedback(feedback);
+          new SentryUserFeedbackDialog(this).show();
         });
 
     binding.addAttachment.setOnClickListener(
