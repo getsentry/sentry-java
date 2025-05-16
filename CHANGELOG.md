@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add debug mode for Session Replay masking ([#4357](https://github.com/getsentry/sentry-java/pull/4357))
+  Use `ReplayIntegration.enableDebugMasking()` to overlay the screen with the Session Replay masks
+
 ## 8.12.0
 
 ### Features

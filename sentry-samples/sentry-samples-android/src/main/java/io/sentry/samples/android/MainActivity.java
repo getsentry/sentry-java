@@ -8,6 +8,7 @@ import io.sentry.Attachment;
 import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
+import io.sentry.android.replay.ReplayIntegration;
 import io.sentry.instrumentation.file.SentryFileOutputStream;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.User;
@@ -271,6 +272,11 @@ public class MainActivity extends AppCompatActivity {
     binding.throwInCoroutine.setOnClickListener(
         view -> {
           CoroutinesUtil.INSTANCE.throwInCoroutine();
+        });
+
+    binding.enableReplayDebugMode.setOnClickListener(
+        view -> {
+          ReplayIntegration.enableDebugMasking();
         });
 
     setContentView(binding.getRoot());
