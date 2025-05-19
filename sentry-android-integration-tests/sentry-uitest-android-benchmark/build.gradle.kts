@@ -6,7 +6,7 @@ plugins {
     kotlin("android")
     alias(libs.plugins.errorprone)
     alias(libs.plugins.gradle.versions)
-    id(Config.QualityPlugins.detektPlugin)
+    alias(libs.plugins.detekt)
 }
 
 android {

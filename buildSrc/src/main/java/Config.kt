@@ -18,8 +18,6 @@ object Config {
         val springDependencyManagementVersion = "1.0.11.RELEASE"
         val gretty = "org.gretty"
         val grettyVersion = "4.0.0"
-        val gradleMavenPublishPlugin = "com.vanniktech.maven.publish"
-        val gradleMavenPublishPluginVersion = "0.30.0"
         val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"
     }
 
@@ -214,16 +212,9 @@ object Config {
             // TODO [POTEL] add tests and restore
             val minimumCoverage = BigDecimal.valueOf(0.1)
         }
-        val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "6.11.0"
 
-        val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.23.8"
+        // this can be removed when we upgrade to Gradle 8, which allows us to use a getter for the plugin ID
         val detektPlugin = "io.gitlab.arturbosch.detekt"
-        val jacocoAndroid = "com.mxalbert.gradle.jacoco-android"
-        val jacocoAndroidVersion = "0.2.0"
-        val kover = "org.jetbrains.kotlinx.kover"
-        val koverVersion = "0.7.3"
     }
 
     object Sentry {

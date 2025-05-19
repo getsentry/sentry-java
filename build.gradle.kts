@@ -10,14 +10,14 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     `java-library`
-    id(Config.QualityPlugins.spotless) version Config.QualityPlugins.spotlessVersion apply true
+    alias(libs.plugins.spotless)
     jacoco
-    id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
+    alias(libs.plugins.detekt)
     `maven-publish`
     alias(libs.plugins.binary.compatibility.validator)
-    id(Config.QualityPlugins.jacocoAndroid) version Config.QualityPlugins.jacocoAndroidVersion apply false
-    id(Config.QualityPlugins.kover) version Config.QualityPlugins.koverVersion apply false
-    id(Config.BuildPlugins.gradleMavenPublishPlugin) version Config.BuildPlugins.gradleMavenPublishPluginVersion apply false
+    alias(libs.plugins.jacoco.android) apply false
+    alias(libs.plugins.kover) apply false
+    alias(libs.plugins.vanniktech.maven.publish) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.buildconfig) apply false
     // dokka is required by gradle-maven-publish-plugin.
