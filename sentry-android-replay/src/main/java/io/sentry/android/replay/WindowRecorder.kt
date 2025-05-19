@@ -27,7 +27,7 @@ internal class WindowRecorder(
     private val windowCallback: WindowCallback,
     private val mainLooperHandler: MainLooperHandler,
     private val replayExecutor: ScheduledExecutorService
-) : Recorder, OnRootViewsChangedListener, ConfigurationChangedListener {
+) : Recorder, OnRootViewsChangedListener {
 
     internal companion object {
         private const val TAG = "WindowRecorder"
@@ -130,6 +130,14 @@ internal class WindowRecorder(
         recorder?.pause()
     }
 
+    override fun reset() {
+        lastKnownWindowSize.set(0, 0)
+        rootViewsLock.acquire().use {
+            rootViews.forEach { recorder?.unbind(it.get()) }
+            rootViews.clear()
+        }
+    }
+
     override fun stop() {
         recorder?.close()
         recorder = null
@@ -139,17 +147,9 @@ internal class WindowRecorder(
     }
 
     override fun close() {
-        onConfigurationChanged()
+        reset()
         stop()
         capturer.gracefullyShutdown(options)
-    }
-
-    override fun onConfigurationChanged() {
-        lastKnownWindowSize.set(0, 0)
-        rootViewsLock.acquire().use {
-            rootViews.forEach { recorder?.unbind(it.get()) }
-            rootViews.clear()
-        }
     }
 
     private class RecorderExecutorServiceThreadFactory : ThreadFactory {

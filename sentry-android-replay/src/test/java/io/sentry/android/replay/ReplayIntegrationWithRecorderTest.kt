@@ -110,6 +110,10 @@ class ReplayIntegrationWithRecorderTest {
                 state = PAUSED
             }
 
+            override fun reset() {
+                TODO("Not yet implemented")
+            }
+
             override fun stop() {
                 state = STOPPED
             }

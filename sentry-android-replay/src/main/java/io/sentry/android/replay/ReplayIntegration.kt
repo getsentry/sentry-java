@@ -184,14 +184,13 @@ public class ReplayIntegration(
                 return
             }
 
+            lifecycle.currentState = STARTED
             captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
                 SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor, replayCacheProvider)
             } else {
                 BufferCaptureStrategy(options, scopes, dateProvider, random, replayExecutor, replayCacheProvider)
             }
-
             registerRootViewListeners()
-            lifecycle.currentState = STARTED
         }
     }
 
@@ -213,9 +212,9 @@ public class ReplayIntegration(
                 return
             }
 
+            lifecycle.currentState = RESUMED
             captureStrategy?.resume()
             recorder?.resume()
-            lifecycle.currentState = RESUMED
         }
     }
 
@@ -268,6 +267,7 @@ public class ReplayIntegration(
             }
 
             unregisterRootViewListeners()
+            recorder?.reset()
             recorder?.stop()
             gestureRecorder?.stop()
             captureStrategy?.stop()
@@ -320,13 +320,7 @@ public class ReplayIntegration(
             return
         }
 
-        captureStrategy?.stop()
-        recorder?.let {
-            it.stop()
-            if (it is ConfigurationChangedListener) {
-                it.onConfigurationChanged()
-            }
-        }
+        recorder?.stop()
 
         // once the window size is determined
         // onWindowSizeChanged is triggered and we'll start the actual capturing
@@ -482,7 +476,6 @@ public class ReplayIntegration(
         // we have to restart recorder with a new config and pause immediately if the replay is paused
         if (lifecycle.currentState == PAUSED) {
             recorder?.pause()
-            captureStrategy?.pause()
         }
     }
 
