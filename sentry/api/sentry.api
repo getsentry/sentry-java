@@ -5253,6 +5253,7 @@ public final class io/sentry/protocol/Feedback : io/sentry/JsonSerializable, io/
 	public fun setReplayId (Lio/sentry/protocol/SentryId;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setUrl (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/sentry/protocol/Feedback$Deserializer : io/sentry/JsonDeserializer {
