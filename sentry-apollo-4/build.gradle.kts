@@ -36,12 +36,12 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(Config.Libs.coroutinesCore)
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.mockWebserver)
     testImplementation(Config.Libs.apolloKotlin4)
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation(Config.TestLibs.coroutinesTest)
     testImplementation("org.jetbrains.kotlin:kotlin-reflect:2.0.0")
 }
 

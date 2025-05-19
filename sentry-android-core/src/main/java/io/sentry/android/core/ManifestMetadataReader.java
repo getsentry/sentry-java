@@ -109,6 +109,8 @@ final class ManifestMetadataReader {
 
   static final String REPLAYS_MASK_ALL_IMAGES = "io.sentry.session-replay.mask-all-images";
 
+  static final String REPLAYS_DEBUG = "io.sentry.session-replay.debug";
+
   static final String FORCE_INIT = "io.sentry.force-init";
 
   static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
@@ -118,6 +120,8 @@ final class ManifestMetadataReader {
   static final String IN_APP_INCLUDES = "io.sentry.in-app-includes";
 
   static final String IN_APP_EXCLUDES = "io.sentry.in-app-excludes";
+
+  static final String ENABLE_LOGS = "io.sentry.logs.enabled";
 
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
@@ -452,6 +456,8 @@ final class ManifestMetadataReader {
             .getSessionReplay()
             .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
 
+        options.getSessionReplay().setDebug(readBool(metadata, logger, REPLAYS_DEBUG, false));
+
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
 
         final @Nullable List<String> includes = readList(metadata, logger, IN_APP_INCLUDES);
@@ -467,6 +473,10 @@ final class ManifestMetadataReader {
             options.addInAppExclude(exclude);
           }
         }
+
+        options
+            .getLogs()
+            .setEnabled(readBool(metadata, logger, ENABLE_LOGS, options.getLogs().isEnabled()));
       }
       options
           .getLogger()

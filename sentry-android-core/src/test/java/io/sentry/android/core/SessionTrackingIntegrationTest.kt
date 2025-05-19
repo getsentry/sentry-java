@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.Lifecycle.Event.ON_START
 import androidx.lifecycle.Lifecycle.Event.ON_STOP
 import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.CheckIn
@@ -15,16 +16,18 @@ import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
+import io.sentry.SentryLogEvent
+import io.sentry.SentryLogEvents
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.Session
 import io.sentry.TraceContext
 import io.sentry.UserFeedback
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.transport.RateLimiter
 import org.junit.runner.RunWith
-import org.mockito.kotlin.mock
 import org.robolectric.annotation.Config
 import java.util.LinkedList
 import kotlin.test.BeforeTest
@@ -116,7 +119,7 @@ class SessionTrackingIntegrationTest {
     }
 
     private fun setupLifecycle(options: SentryOptions): LifecycleRegistry {
-        val lifecycle = LifecycleRegistry(mock())
+        val lifecycle = LifecycleRegistry(ProcessLifecycleOwner.get())
         val lifecycleWatcher = (
             options.integrations.find {
                 it is AppLifecycleIntegration
@@ -144,6 +147,10 @@ class SessionTrackingIntegrationTest {
         }
 
         override fun flush(timeoutMillis: Long) {
+            TODO("Not yet implemented")
+        }
+
+        override fun captureFeedback(feedback: Feedback, hint: Hint?, scope: IScope): SentryId {
             TODO("Not yet implemented")
         }
 
@@ -182,6 +189,14 @@ class SessionTrackingIntegrationTest {
         }
 
         override fun captureCheckIn(checkIn: CheckIn, scope: IScope?, hint: Hint?): SentryId {
+            TODO("Not yet implemented")
+        }
+
+        override fun captureLog(event: SentryLogEvent, scope: IScope?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun captureBatchedLogEvents(logEvents: SentryLogEvents) {
             TODO("Not yet implemented")
         }
 

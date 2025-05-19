@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.RateLimiter;
@@ -36,6 +37,12 @@ final class NoOpSentryClient implements ISentryClient {
 
   @Override
   public void flush(long timeoutMillis) {}
+
+  @Override
+  public @NotNull SentryId captureFeedback(
+      @NotNull Feedback feedback, @Nullable Hint hint, @NotNull IScope scope) {
+    return SentryId.EMPTY_ID;
+  }
 
   @Override
   public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
@@ -75,6 +82,18 @@ final class NoOpSentryClient implements ISentryClient {
   public @NotNull SentryId captureReplayEvent(
       @NotNull SentryReplayEvent event, @Nullable IScope scope, @Nullable Hint hint) {
     return SentryId.EMPTY_ID;
+  }
+
+  @ApiStatus.Experimental
+  @Override
+  public void captureLog(@NotNull SentryLogEvent logEvent, @Nullable IScope scope) {
+    // do nothing
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public void captureBatchedLogEvents(@NotNull SentryLogEvents logEvents) {
+    // do nothing
   }
 
   @Override

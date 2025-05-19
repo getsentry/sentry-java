@@ -5,7 +5,7 @@ plugins {
     id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
     id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
     kotlin("jvm")
-    kotlin("plugin.spring") version Config.kotlinVersion
+    alias(libs.plugins.kotlin.spring)
     id("war")
     id(Config.BuildPlugins.gretty) version Config.BuildPlugins.grettyVersion
 }
@@ -42,11 +42,11 @@ dependencies {
     }
 }
 
-tasks.withType<Test> {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
-tasks.withType<KotlinCompile> {
+tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
         jvmTarget = JavaVersion.VERSION_1_8.toString()

@@ -3,10 +3,12 @@ package io.sentry
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.profilemeasurements.ProfileMeasurementValue
 import io.sentry.protocol.Device
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.ReplayRecordingSerializationTest
 import io.sentry.protocol.Request
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
+import io.sentry.protocol.SentryLogsSerializationTest
 import io.sentry.protocol.SentryReplayEventSerializationTest
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
@@ -1483,6 +1485,42 @@ class JsonSerializerTest {
     }
 
     @Test
+    fun `serializes feedback`() {
+        val replayId = SentryId("00000000-0000-0000-0000-000000000001")
+        val eventId = SentryId("00000000-0000-0000-0000-000000000002")
+        val feedback = Feedback("message")
+        feedback.name = "name"
+        feedback.contactEmail = "email"
+        feedback.url = "url"
+        feedback.setReplayId(replayId)
+        feedback.setAssociatedEventId(eventId)
+        val actual = serializeToString(feedback)
+        val expected = "{\"message\":\"message\",\"contact_email\":\"email\",\"name\":\"name\",\"associated_event_id\":\"00000000000000000000000000000002\",\"replay_id\":\"00000000000000000000000000000001\",\"url\":\"url\"}"
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `deserializes feedback`() {
+        val json = """{
+            "message":"message",
+            "contact_email":"email",
+            "name":"name",
+            "associated_event_id":"00000000000000000000000000000002",
+            "replay_id":"00000000000000000000000000000001",
+            "url":"url"
+        }"""
+        val feedback = fixture.serializer.deserialize(StringReader(json), Feedback::class.java)
+        val expected = Feedback("message").apply {
+            name = "name"
+            contactEmail = "email"
+            url = "url"
+            setReplayId(SentryId("00000000-0000-0000-0000-000000000001"))
+            setAssociatedEventId(SentryId("00000000-0000-0000-0000-000000000002"))
+        }
+        assertEquals(expected, feedback)
+    }
+
+    @Test
     fun `ser deser replay data`() {
         val replayEvent = SentryReplayEventSerializationTest.Fixture().getSut()
         val replayRecording = ReplayRecordingSerializationTest.Fixture().getSut()
@@ -1494,6 +1532,17 @@ class JsonSerializerTest {
 
         assertEquals(replayEvent, deserializedEvent)
         assertEquals(replayRecording, deserializedRecording)
+    }
+
+    @Test
+    fun `ser deser logs data`() {
+        val logEvent = SentryLogsSerializationTest.Fixture().getSut()
+        val serializedEvent = serializeToString(logEvent)
+
+        val deserializedEvent = fixture.serializer.deserialize(StringReader(serializedEvent), SentryLogEvents::class.java)
+
+        assertNotNull(deserializedEvent)
+        assertEquals(serializedEvent, serializeToString(deserializedEvent))
     }
 
     private fun assertSessionData(expectedSession: Session?, expectedSessionId: String = "c81d4e2e-bcf2-11e6-869b-7df92533d2db") {

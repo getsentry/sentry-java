@@ -111,6 +111,12 @@ public class io/sentry/android/core/AndroidProfiler$ProfileStartData {
 	public fun <init> (JJLjava/util/Date;)V
 }
 
+public final class io/sentry/android/core/AndroidSocketTagger : io/sentry/ISocketTagger {
+	public static fun getInstance ()Lio/sentry/android/core/AndroidSocketTagger;
+	public fun tagSockets ()V
+	public fun untagSockets ()V
+}
+
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V
@@ -185,28 +191,17 @@ public final class io/sentry/android/core/BuildInfoProvider {
 }
 
 public final class io/sentry/android/core/ContextUtils {
+	public static fun appIsLibraryForComposePreview (Landroid/content/Context;)Z
 	public static fun getApplicationContext (Landroid/content/Context;)Landroid/content/Context;
 	public static fun isForegroundImportance ()Z
 }
 
 public class io/sentry/android/core/CurrentActivityHolder {
 	public fun clearActivity ()V
+	public fun clearActivity (Landroid/app/Activity;)V
 	public fun getActivity ()Landroid/app/Activity;
 	public static fun getInstance ()Lio/sentry/android/core/CurrentActivityHolder;
 	public fun setActivity (Landroid/app/Activity;)V
-}
-
-public final class io/sentry/android/core/CurrentActivityIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
-	public fun <init> (Landroid/app/Application;)V
-	public fun close ()V
-	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
-	public fun onActivityDestroyed (Landroid/app/Activity;)V
-	public fun onActivityPaused (Landroid/app/Activity;)V
-	public fun onActivityResumed (Landroid/app/Activity;)V
-	public fun onActivitySaveInstanceState (Landroid/app/Activity;Landroid/os/Bundle;)V
-	public fun onActivityStarted (Landroid/app/Activity;)V
-	public fun onActivityStopped (Landroid/app/Activity;)V
-	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
 public final class io/sentry/android/core/DeviceInfoUtil {
@@ -495,7 +490,10 @@ public class io/sentry/android/core/performance/AppStartMetrics : io/sentry/andr
 	public fun isAppLaunchedInForeground ()Z
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
+	public fun onActivityPaused (Landroid/app/Activity;)V
+	public fun onActivityResumed (Landroid/app/Activity;)V
 	public fun onActivityStarted (Landroid/app/Activity;)V
+	public fun onActivityStopped (Landroid/app/Activity;)V
 	public fun onAppStartSpansSent ()V
 	public static fun onApplicationCreate (Landroid/app/Application;)V
 	public static fun onApplicationPostCreate (Landroid/app/Application;)V

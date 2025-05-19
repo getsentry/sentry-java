@@ -11,6 +11,7 @@ import io.sentry.DefaultCompositePerformanceCollector
 import io.sentry.IConnectionStatusProvider
 import io.sentry.IContinuousProfiler
 import io.sentry.ILogger
+import io.sentry.ISocketTagger
 import io.sentry.ITransactionProfiler
 import io.sentry.MainEventProcessor
 import io.sentry.NoOpContinuousProfiler
@@ -634,15 +635,6 @@ class AndroidOptionsInitializerTest {
     }
 
     @Test
-    fun `CurrentActivityIntegration is added by default`() {
-        fixture.initSut(useRealContext = true)
-
-        val actual =
-            fixture.sentryOptions.integrations.firstOrNull { it is CurrentActivityIntegration }
-        assertNotNull(actual)
-    }
-
-    @Test
     fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be unavailable`() {
         fixture.initSut(
             hasAppContext = true,
@@ -744,6 +736,13 @@ class AndroidOptionsInitializerTest {
         fixture.initSut()
 
         assertTrue { fixture.sentryOptions.threadChecker is AndroidThreadChecker }
+    }
+
+    @Test
+    fun `AndroidSocketTagger is set to options`() {
+        fixture.initSut()
+
+        assertTrue { fixture.sentryOptions.socketTagger is AndroidSocketTagger }
     }
 
     @Test
@@ -859,6 +858,7 @@ class AndroidOptionsInitializerTest {
             setModulesLoader(mock<IModulesLoader>())
             setDebugMetaLoader(mock<IDebugMetaLoader>())
             threadChecker = mock<IThreadChecker>()
+            setSocketTagger(mock<ISocketTagger>())
             compositePerformanceCollector = mock<CompositePerformanceCollector>()
         })
 
@@ -868,6 +868,7 @@ class AndroidOptionsInitializerTest {
         assertFalse { fixture.sentryOptions.modulesLoader is AssetsModulesLoader }
         assertFalse { fixture.sentryOptions.debugMetaLoader is AssetsDebugMetaLoader }
         assertFalse { fixture.sentryOptions.threadChecker is AndroidThreadChecker }
+        assertFalse { fixture.sentryOptions.socketTagger is AndroidSocketTagger }
         assertFalse { fixture.sentryOptions.compositePerformanceCollector is DefaultCompositePerformanceCollector }
     }
 }

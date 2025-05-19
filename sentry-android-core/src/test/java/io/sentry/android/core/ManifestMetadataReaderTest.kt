@@ -1590,4 +1590,29 @@ class ManifestMetadataReaderTest {
         // Assert
         assertTrue(fixture.options.inAppExcludes.isEmpty())
     }
+
+    @Test
+    fun `applyMetadata reads logs enabled and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.logs.isEnabled)
+    }
+
+    @Test
+    fun `applyMetadata reads logs enabled to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.ENABLE_LOGS to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.logs.isEnabled)
+    }
 }

@@ -1,3 +1,8 @@
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.impl.VariantImpl
+import org.apache.tools.ant.taskdefs.condition.Os
+import org.gradle.internal.extensions.stdlib.capitalized
+
 plugins {
     id("com.android.application")
     kotlin("android")
@@ -109,6 +114,22 @@ android {
         it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 
+    androidComponents.onVariants { variant ->
+        val taskName = "toggle${variant.name.capitalized()}NativeLogging"
+        val toggleNativeLoggingTask = project.tasks.register<ToggleNativeLoggingTask>(taskName) {
+            mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+            rootDir.set(project.rootDir.absolutePath)
+        }
+        project.afterEvaluate {
+            (variant as? VariantImpl<*>)?.taskContainer?.assembleTask?.configure {
+                finalizedBy(toggleNativeLoggingTask)
+            }
+            (variant as? VariantImpl<*>)?.taskContainer?.installTask?.configure {
+                finalizedBy(toggleNativeLoggingTask)
+            }
+        }
+    }
+
     @Suppress("UnstableApiUsage")
     packagingOptions {
         jniLibs {
@@ -118,8 +139,6 @@ android {
 }
 
 dependencies {
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
     implementation(projects.sentryAndroid)
@@ -150,5 +169,45 @@ dependencies {
     implementation(Config.Libs.composeCoil)
     implementation(Config.Libs.sentryNativeNdk)
 
+    implementation(projects.sentryKotlinExtensions)
+    implementation(Config.Libs.coroutinesAndroid)
+
     debugImplementation(Config.Libs.leakCanary)
+}
+
+abstract class ToggleNativeLoggingTask : Exec() {
+
+    @get:Input
+    abstract val rootDir: Property<String>
+
+    @get:InputFile
+    abstract val mergedManifest: RegularFileProperty
+
+    override fun exec() {
+        isIgnoreExitValue = true
+        val manifestFile = mergedManifest.get().asFile
+        val manifestContent = manifestFile.readText()
+        val match = regex.find(manifestContent)
+
+        if (match != null) {
+            val value = match.groupValues[1].toBooleanStrictOrNull()
+            if (value != null) {
+                val args = mutableListOf<String>()
+                if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                    args.add(0, "cmd")
+                    args.add(1, "/c")
+                }
+                args.add("${rootDir.get()}/scripts/toggle-codec-logs.sh")
+                args.add(if (value) "enable" else "disable")
+                commandLine(args)
+                super.exec()
+            }
+        }
+    }
+
+    companion object {
+        private val regex = Regex(
+            """<meta-data\s+[^>]*android:name="io\.sentry\.session-replay\.debug"[^>]*android:value="([^"]+)""""
+        )
+    }
 }

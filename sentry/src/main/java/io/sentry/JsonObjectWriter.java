@@ -114,7 +114,14 @@ public final class JsonObjectWriter implements ObjectWriter {
     jsonWriter.setLenient(lenient);
   }
 
-  public void setIndent(final @NotNull String indent) {
+  @Override
+  public void setIndent(final @Nullable String indent) {
     jsonWriter.setIndent(indent);
+  }
+
+  @Override
+  @Nullable
+  public String getIndent() {
+    return jsonWriter.getIndent();
   }
 }

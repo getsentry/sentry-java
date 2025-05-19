@@ -101,7 +101,7 @@ public class ReplayIntegration(
         this.mainLooperHandler = mainLooperHandler ?: MainLooperHandler()
         this.gestureRecorderProvider = gestureRecorderProvider
     }
-
+    private var debugMaskingEnabled: Boolean = false
     private lateinit var options: SentryOptions
     private var scopes: IScopes? = null
     private var recorder: Recorder? = null
@@ -151,8 +151,7 @@ public class ReplayIntegration(
             } catch (e: Throwable) {
                 options.logger.log(
                     INFO,
-                    "ComponentCallbacks is not available, orientation changes won't be handled by Session replay",
-                    e
+                    "ComponentCallbacks is not available, orientation changes won't be handled by Session replay"
                 )
             }
         }
@@ -251,6 +250,16 @@ public class ReplayIntegration(
         isManualPause.set(true)
         pauseInternal()
     }
+
+    override fun enableDebugMaskingOverlay() {
+        debugMaskingEnabled = true
+    }
+
+    override fun disableDebugMaskingOverlay() {
+        debugMaskingEnabled = false
+    }
+
+    override fun isDebugMaskingOverlayEnabled(): Boolean = debugMaskingEnabled
 
     private fun pauseInternal() {
         lifecycleLock.acquire().use {

@@ -148,6 +148,18 @@
       android:layout_height="wrap_content"
       android:text="@string/open_frame_data_for_spans"/>
 
+    <Button
+      android:id="@+id/throw_in_coroutine"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/throw_in_coroutine"/>
+
+    <Button
+      android:id="@+id/enable_replay_debug_mode"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/enable_replay_debug_mode"/>
+
   </LinearLayout>
 
 </ScrollView>

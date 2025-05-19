@@ -71,7 +71,7 @@ dependencies {
     // tests
     testImplementation(Config.Libs.navigationRuntime)
 
-    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
 
@@ -82,7 +82,7 @@ dependencies {
     testImplementation(Config.TestLibs.androidxCoreKtx)
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
 }

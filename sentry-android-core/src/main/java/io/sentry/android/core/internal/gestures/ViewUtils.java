@@ -8,6 +8,7 @@ import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.internal.gestures.GestureTargetLocator;
 import io.sentry.internal.gestures.UiElement;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -60,6 +61,7 @@ public final class ViewUtils {
       final float y,
       final UiElement.Type targetType) {
 
+    final List<GestureTargetLocator> locators = options.getGestureTargetLocators();
     final Queue<View> queue = new LinkedList<>();
     queue.add(decorView);
 
@@ -79,7 +81,8 @@ public final class ViewUtils {
         }
       }
 
-      for (GestureTargetLocator locator : options.getGestureTargetLocators()) {
+      for (int i = 0; i < locators.size(); i++) {
+        final GestureTargetLocator locator = locators.get(i);
         final @Nullable UiElement newTarget = locator.locate(view, x, y, targetType);
         if (newTarget != null) {
           if (targetType == UiElement.Type.CLICKABLE) {

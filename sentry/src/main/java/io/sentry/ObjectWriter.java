@@ -35,4 +35,9 @@ public interface ObjectWriter {
       throws IOException;
 
   void setLenient(boolean lenient);
+
+  void setIndent(final @Nullable String indent);
+
+  @Nullable
+  String getIndent();
 }

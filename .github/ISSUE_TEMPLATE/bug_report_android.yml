@@ -1,7 +1,6 @@
 name: 🐞 Bug Report - Android
 description: Tell us about something that's not working the way we (probably) intend.
-labels: ["Platform: Android", "Type: Bug"]
-type: Bug
+labels: ["Android", "Bug"]
 body:
   - type: dropdown
     id: integration
