@@ -8,7 +8,6 @@ import io.sentry.Attachment;
 import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
-import io.sentry.android.core.SentryAndroid;
 import io.sentry.instrumentation.file.SentryFileOutputStream;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.User;
@@ -276,7 +275,7 @@ public class MainActivity extends AppCompatActivity {
 
     binding.enableReplayDebugMode.setOnClickListener(
         view -> {
-          SentryAndroid.replay().enableDebugMaskingOverlay();
+          Sentry.replay().enableDebugMaskingOverlay();
         });
 
     setContentView(binding.getRoot());

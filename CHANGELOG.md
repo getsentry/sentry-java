@@ -5,7 +5,7 @@
 ### Features
 
 - Add debug mode for Session Replay masking ([#4357](https://github.com/getsentry/sentry-java/pull/4357))
-    - Use `SentryAndroid.replay().enableDebugMaskingOverlay()` to overlay the screen with the Session Replay masks.
+    - Use `Sentry.replay().enableDebugMaskingOverlay()` to overlay the screen with the Session Replay masks.
     - The masks will be invalidated at most once per `frameRate` (default 1 fps).
 
 ## 8.12.0

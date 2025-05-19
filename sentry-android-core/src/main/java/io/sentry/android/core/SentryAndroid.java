@@ -6,7 +6,6 @@ import android.content.Context;
 import android.os.Process;
 import android.os.SystemClock;
 import io.sentry.ILogger;
-import io.sentry.IReplayApi;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
@@ -254,10 +253,5 @@ public final class SentryAndroid {
         options.getIntegrations().remove(integration);
       }
     }
-  }
-
-  @NotNull
-  public static IReplayApi replay() {
-    return Sentry.getCurrentScopes().getScope().getOptions().getReplayController();
   }
 }

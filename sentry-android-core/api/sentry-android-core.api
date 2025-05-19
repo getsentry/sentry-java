@@ -280,7 +280,6 @@ public final class io/sentry/android/core/SentryAndroid {
 	public static fun init (Landroid/content/Context;Lio/sentry/ILogger;)V
 	public static fun init (Landroid/content/Context;Lio/sentry/ILogger;Lio/sentry/Sentry$OptionsConfiguration;)V
 	public static fun init (Landroid/content/Context;Lio/sentry/Sentry$OptionsConfiguration;)V
-	public static fun replay ()Lio/sentry/IReplayApi;
 }
 
 public final class io/sentry/android/core/SentryAndroidDateProvider : io/sentry/SentryDateProvider {

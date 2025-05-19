@@ -1443,6 +1443,20 @@ class SentryTest {
         verify(profiler, never()).stopProfiler(eq(ProfileLifecycle.MANUAL))
     }
 
+    @Test
+    fun `replay debug masking is forwarded to replay controller`() {
+        val replayController = mock<ReplayController>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setReplayController(replayController)
+        }
+        Sentry.replay().enableDebugMaskingOverlay()
+        verify(replayController).enableDebugMaskingOverlay()
+
+        Sentry.replay().disableDebugMaskingOverlay()
+        verify(replayController).disableDebugMaskingOverlay()
+    }
+
     private class InMemoryOptionsObserver : IOptionsObserver {
         var release: String? = null
             private set
