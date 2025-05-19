@@ -17,7 +17,7 @@ plugins {
 kotlin {
     explicitApi()
 
-    android {
+    androidTarget {
         publishLibraryVariants("release")
         compilations.all {
             kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
@@ -55,7 +55,7 @@ kotlin {
         }
         val androidUnitTest by getting {
             dependencies {
-                implementation(Config.TestLibs.kotlinTestJunit)
+                implementation(libs.kotlin.test.junit)
                 implementation(Config.TestLibs.mockitoKotlin)
                 implementation(Config.TestLibs.mockitoInline)
                 implementation(Config.Libs.composeNavigation)
@@ -118,7 +118,7 @@ android {
     }
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
 }

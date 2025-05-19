@@ -69,12 +69,12 @@ dependencies {
 
     // tests
     testImplementation(Config.Libs.fragment)
-    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
 }

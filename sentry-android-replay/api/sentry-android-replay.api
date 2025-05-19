@@ -57,9 +57,12 @@ public final class io/sentry/android/replay/ReplayIntegration : android/content/
 	public synthetic fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun captureReplay (Ljava/lang/Boolean;)V
 	public fun close ()V
+	public fun disableDebugMaskingOverlay ()V
+	public fun enableDebugMaskingOverlay ()V
 	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public final fun getReplayCacheDir ()Ljava/io/File;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
+	public fun isDebugMaskingOverlayEnabled ()Z
 	public fun isRecording ()Z
 	public fun onConfigurationChanged (Landroid/content/res/Configuration;)V
 	public fun onConnectionStatusChanged (Lio/sentry/IConnectionStatusProvider$ConnectionStatus;)V

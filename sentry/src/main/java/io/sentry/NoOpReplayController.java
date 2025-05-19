@@ -46,4 +46,15 @@ public final class NoOpReplayController implements ReplayController {
   public @NotNull ReplayBreadcrumbConverter getBreadcrumbConverter() {
     return NoOpReplayBreadcrumbConverter.getInstance();
   }
+
+  @Override
+  public boolean isDebugMaskingOverlayEnabled() {
+    return false;
+  }
+
+  @Override
+  public void enableDebugMaskingOverlay() {}
+
+  @Override
+  public void disableDebugMaskingOverlay() {}
 }
