@@ -9,6 +9,7 @@ import java.lang.reflect.Array;
 import java.util.HashMap;
 
 public class Index<T> extends HashMap<T, Integer> {
+    private static final long serialVersionUID = 1L;
     private final Class<T> cls;
 
     public Index(Class<T> cls, T empty) {

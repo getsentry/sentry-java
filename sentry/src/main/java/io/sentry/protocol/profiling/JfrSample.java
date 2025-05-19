@@ -24,18 +24,18 @@ public final class JfrSample implements JsonUnknown, JsonSerializable {
 
   public static final class JsonKeys {
     public static final String TIMESTAMP = "timestamp";
-    public static final String STACK_ID = "stackId";
-    public static final String THREAD_ID = "threadId";
+    public static final String STACK_ID = "stack_id";
+    public static final String THREAD_ID = "thread_id";
   }
 
   @Override
   public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
     writer.beginObject();
-    writer.name(JfrSample.JsonKeys.TIMESTAMP).value(logger, timestamp);
-    writer.name(JfrSample.JsonKeys.STACK_ID).value(logger, stackId);
+    writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
+    writer.name(JsonKeys.STACK_ID).value(logger, stackId);
 
     if(threadId != null) {
-      writer.name(JfrFrame.JsonKeys.FILENAME).value(logger, threadId);
+      writer.name(JsonKeys.THREAD_ID).value(logger, threadId);
     }
 
     writer.endObject();

@@ -32,6 +32,7 @@ public final class JfrFrame implements JsonUnknown, JsonSerializable {
     public static final String MODULE = "module";
     public static final String FILENAME = "filename";
     public static final String LINE_NO = "lineno";
+    public static final String RAW_FUNCTION = "raw_function";
   }
 
   @Override
@@ -41,9 +42,11 @@ public final class JfrFrame implements JsonUnknown, JsonSerializable {
     if(function != null) {
       writer.name(JsonKeys.FUNCTION).value(logger, function);
     }
+
     if(module != null) {
       writer.name(JsonKeys.MODULE).value(logger, module);
     }
+
     if(filename != null) {
       writer.name(JsonKeys.FILENAME).value(logger, filename);
     }

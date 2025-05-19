@@ -8,6 +8,7 @@ package io.sentry.protocol.jfr.convert;
 import java.util.HashMap;
 
 public class Frame extends HashMap<Integer, Frame> {
+  private static final long serialVersionUID = 1L;
     public static final byte TYPE_INTERPRETED = 0;
     public static final byte TYPE_JIT_COMPILED = 1;
     public static final byte TYPE_INLINED = 2;

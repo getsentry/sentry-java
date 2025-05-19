@@ -15,6 +15,7 @@ public enum DataCategory {
   Monitor("monitor"),
   Profile("profile"),
   ProfileChunkUi("profile_chunk_ui"),
+  ProfileChunk("profile_chunk"),
   Transaction("transaction"),
   Replay("replay"),
   Span("span"),
