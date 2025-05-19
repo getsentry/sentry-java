@@ -1,7 +1,7 @@
 plugins {
     id("com.android.library")
     kotlin("android")
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.gradle.versions)
 }
 
 android {

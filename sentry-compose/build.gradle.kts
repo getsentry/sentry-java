@@ -7,10 +7,10 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.compose")
     id(Config.QualityPlugins.kover)
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.gradle.versions)
     id(Config.QualityPlugins.detektPlugin)
-    id(Config.BuildPlugins.dokkaPluginAlias)
-    id(Config.BuildPlugins.dokkaPluginJavadocAlias)
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.dokka.javadoc)
     `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
 }
 

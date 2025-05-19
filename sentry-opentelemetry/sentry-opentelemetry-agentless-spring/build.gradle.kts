@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
+    alias(libs.plugins.buildconfig)
 }
 
 dependencies {
