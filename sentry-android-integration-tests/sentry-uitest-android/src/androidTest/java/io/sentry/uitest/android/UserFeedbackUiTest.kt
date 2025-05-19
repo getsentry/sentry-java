@@ -313,6 +313,49 @@ class UserFeedbackUiTest : BaseUiTest() {
     }
 
     @Test
+    fun userFeedbackCancel() {
+        var formOpen = false
+        var submitError = false
+        var submitSuccess = false
+        var formClose = false
+
+        initSentry {
+            it.feedbackOptions.onFormOpen = Runnable { formOpen = true }
+            it.feedbackOptions.onSubmitError = SentryFeedbackCallback { submitError = true }
+            it.feedbackOptions.onSubmitSuccess = SentryFeedbackCallback { submitSuccess = true }
+            it.feedbackOptions.onFormClose = Runnable { formClose = true }
+
+            // Let's drop the feedback to test the submit error callback
+            it.beforeSendFeedback = SentryOptions.BeforeSendCallback { _, _ -> null }
+        }
+
+        assertFalse(formOpen)
+        // Open the dialog, and call the onFormOpen callback
+        showDialogAndCheck {
+            assertTrue(formOpen)
+
+            assertFalse(formClose)
+            assertFalse(submitError)
+            assertFalse(submitSuccess)
+
+            // Let's click on the cancel button
+            onView(withId(R.id.sentry_dialog_user_feedback_btn_cancel))
+                .perform(click())
+
+            // The form close callback should be called
+            assertTrue(formClose)
+            // But the submit callbacks should not
+            assertFalse(submitError)
+            assertFalse(submitSuccess)
+
+            // And the dialog should be dismissed
+            onView(withId(R.id.sentry_dialog_user_feedback_layout))
+                .check(doesNotExist())
+        }
+
+    }
+
+    @Test
     fun userFeedbackSendError() {
         var formOpen = false
         var submitError = false
@@ -507,13 +550,6 @@ class UserFeedbackUiTest : BaseUiTest() {
             .check(matches(isDisplayed()))
 
         checker(dialog)
-
-        feedbackScenario.onActivity {
-            dialog.dismiss()
-        }
-
-        onView(withId(R.id.sentry_dialog_user_feedback_layout))
-            .check(doesNotExist())
     }
 
     fun withError(expectedError: String): Matcher<View> {
