@@ -87,7 +87,7 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryAndroidCore)
     testImplementation(Config.TestLibs.robolectric)
-    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.androidxRunner)
     testImplementation(Config.TestLibs.androidxJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
