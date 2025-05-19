@@ -352,7 +352,6 @@ class UserFeedbackUiTest : BaseUiTest() {
             onView(withId(R.id.sentry_dialog_user_feedback_layout))
                 .check(doesNotExist())
         }
-
     }
 
     @Test
