@@ -25,7 +25,7 @@ dependencies {
 
     // tests
     implementation(kotlin(Config.kotlinStdLib))
-    implementation(Config.TestLibs.kotlinTestJunit)
+    implementation(libs.kotlin.test.junit)
     implementation(Config.TestLibs.mockitoKotlin)
 }
 
