@@ -7,46 +7,57 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class SentryFeedbackOptions {
-
   // User and Form
-  /** Requires the name field on the feedback form to be filled in. */
+  /** Requires the name field on the feedback form to be filled in. Defaults to false. */
   private boolean isNameRequired = false;
-  /** Displays the name field on the feedback form. Ignored if isNameRequired is true. */
+  /**
+   * Displays the name field on the feedback form. Ignored if isNameRequired is true. Defaults to
+   * true.
+   */
   private boolean showName = true;
-  /** Requires the email field on the feedback form to be filled in. */
+  /** Requires the email field on the feedback form to be filled in. Defaults to false. */
   private boolean isEmailRequired = false;
-  /** Displays the email field on the feedback form. Ignored if isEmailRequired is true. */
+  /**
+   * Displays the email field on the feedback form. Ignored if isEmailRequired is true. Defaults to
+   * true.
+   */
   private boolean showEmail = true;
   /**
    * Sets the email and name fields to the corresponding Sentry SDK user fields that were called
-   * with SentrySDK.setUser.
+   * with SentrySDK.setUser. Defaults to true.
    */
   private boolean useSentryUser = true;
-  /** Displays the Sentry logo inside of the form */
+  /** Displays the Sentry logo inside of the form. Defaults to true. */
   private boolean showBranding = true;
 
   // Text Customization
-  /** The title of the feedback form. */
+  /** The title of the feedback form. Defaults to "Report a Bug". */
   private @NotNull String formTitle = "Report a Bug";
-  /** The label of the submit button. */
+  /** The label of the submit button. Defaults to "Send Bug Report". */
   private @NotNull String submitButtonLabel = "Send Bug Report";
-  /** The label of the cancel button. */
+  /** The label of the cancel button. Defaults to "Cancel". */
   private @NotNull String cancelButtonLabel = "Cancel";
-  /** The label next to the name input field. */
+  /** The label next to the name input field. Defaults to "Name". */
   private @NotNull String nameLabel = "Name";
-  /** The placeholder in the name input field. */
+  /** The placeholder in the name input field. Defaults to "Your Name". */
   private @NotNull String namePlaceholder = "Your Name";
-  /** The label next to the email input field. */
+  /** The label next to the email input field. Defaults to "Email". */
   private @NotNull String emailLabel = "Email";
-  /** The placeholder in the email input field. */
+  /** The placeholder in the email input field. Defaults to "your.email@example.org". */
   private @NotNull String emailPlaceholder = "your.email@example.org";
-  /** The text to attach to the title label for a required field. */
+  /** The text to attach to the title label for a required field. Defaults to " (Required)". */
   private @NotNull String isRequiredLabel = " (Required)";
-  /** The label of the feedback description input field. */
+  /** The label of the feedback description input field. Defaults to "Description". */
   private @NotNull String messageLabel = "Description";
-  /** The placeholder in the feedback description input field. */
+  /**
+   * The placeholder in the feedback description input field. Defaults to "What's the bug? What did
+   * you expect?".
+   */
   private @NotNull String messagePlaceholder = "What's the bug? What did you expect?";
-  /** The message displayed after a successful feedback submission. */
+  /**
+   * The message displayed after a successful feedback submission. Defaults to "Thank you for your
+   * report!".
+   */
   private @NotNull String successMessageText = "Thank you for your report!";
 
   // Callbacks
@@ -60,7 +71,7 @@ public final class SentryFeedbackOptions {
   private @Nullable SentryFeedbackCallback onSubmitError;
 
   /**
-   * Requires the name field on the feedback form to be filled in.
+   * Requires the name field on the feedback form to be filled in. Defaults to false.
    *
    * @return true if the name field is required
    */
@@ -69,7 +80,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * Sets whether the name field on the feedback form is required.
+   * Sets whether the name field on the feedback form is required. Defaults to false.
    *
    * @param isNameRequired true if the name field is required
    */
@@ -78,7 +89,8 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * Displays the name field on the feedback form. Ignored if isNameRequired is true.
+   * Displays the name field on the feedback form. Ignored if isNameRequired is true. Defaults to
+   * true.
    *
    * @return true if the name field is shown
    */
@@ -88,6 +100,7 @@ public final class SentryFeedbackOptions {
 
   /**
    * Sets whether the name field on the feedback form is shown. Ignored if isNameRequired is true.
+   * Defaults to true.
    *
    * @param showName true if the name field is shown
    */
@@ -96,7 +109,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * Requires the email field on the feedback form to be filled in.
+   * Requires the email field on the feedback form to be filled in. Defaults to false.
    *
    * @return true if the email field is required
    */
@@ -105,7 +118,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * Sets whether the email field on the feedback form is required.
+   * Sets whether the email field on the feedback form is required. Defaults to false.
    *
    * @param isEmailRequired true if the email field is required
    */
@@ -114,7 +127,8 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * Displays the email field on the feedback form. Ignored if isEmailRequired is true.
+   * Displays the email field on the feedback form. Ignored if isEmailRequired is true. Defaults to
+   * true.
    *
    * @return true if the email field is shown
    */
@@ -124,6 +138,7 @@ public final class SentryFeedbackOptions {
 
   /**
    * Sets whether the email field on the feedback form is shown. Ignored if isEmailRequired is true.
+   * Defaults to true.
    *
    * @param showEmail true if the email field is shown
    */
@@ -133,7 +148,7 @@ public final class SentryFeedbackOptions {
 
   /**
    * Sets the email and name fields to the corresponding Sentry SDK user fields that were called
-   * with SentrySDK.setUser.
+   * with SentrySDK.setUser. Defaults to true.
    *
    * @return true if the email and name fields are set to the Sentry SDK user fields
    */
@@ -143,7 +158,7 @@ public final class SentryFeedbackOptions {
 
   /**
    * Sets whether the email and name fields are set to the corresponding Sentry SDK user fields that
-   * were called with SentrySDK.setUser.
+   * were called with SentrySDK.setUser. Defaults to true.
    *
    * @param useSentryUser true if the email and name fields are set to the Sentry SDK user fields
    */
@@ -152,7 +167,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * Displays the Sentry logo inside of the form.
+   * Displays the Sentry logo inside of the form. Defaults to true.
    *
    * @return true if the Sentry logo is shown
    */
@@ -161,7 +176,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * Sets whether the Sentry logo is shown inside of the form.
+   * Sets whether the Sentry logo is shown inside of the form. Defaults to true.
    *
    * @param showBranding true if the Sentry logo is shown
    */
@@ -170,7 +185,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * The title of the feedback form.
+   * The title of the feedback form. Defaults to "Report a Bug".
    *
    * @return the title of the feedback form
    */
@@ -188,7 +203,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * The label of the submit button.
+   * The label of the submit button. Defaults to "Send Bug Report".
    *
    * @return the label of the submit button
    */
@@ -197,7 +212,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * Sets the label of the submit button.
+   * Sets the label of the submit button. Defaults to "Send Bug Report".
    *
    * @param submitButtonLabel the label of the submit button
    */
@@ -206,7 +221,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * The label of the cancel button.
+   * The label of the cancel button. Defaults to "Cancel".
    *
    * @return the label of the cancel button
    */
@@ -224,7 +239,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * The label next to the name input field.
+   * The label next to the name input field. Defaults to "Name".
    *
    * @return the label next to the name input field
    */
@@ -242,7 +257,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * The placeholder in the name input field.
+   * The placeholder in the name input field. Defaults to "Your Name".
    *
    * @return the placeholder in the name input field
    */
@@ -260,7 +275,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * The label next to the email input field.
+   * The label next to the email input field. Defaults to "Email".
    *
    * @return the label next to the email input field
    */
@@ -278,7 +293,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * The placeholder in the email input field.
+   * The placeholder in the email input field. Defaults to "your.email@example.org".
    *
    * @return the placeholder in the email input field
    */
@@ -296,7 +311,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * The text to attach to the title label for a required field.
+   * The text to attach to the title label for a required field. Defaults to " (Required)".
    *
    * @return the text to attach to the title label for a required field
    */
@@ -314,7 +329,7 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * The label of the feedback description input field.
+   * The label of the feedback description input field. Defaults to "Description".
    *
    * @return the label of the feedback description input field
    */
@@ -332,7 +347,8 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * The placeholder in the feedback description input field.
+   * The placeholder in the feedback description input field. Defaults to "What's the bug? What did
+   * you expect?".
    *
    * @return the placeholder in the feedback description input field
    */
@@ -350,7 +366,8 @@ public final class SentryFeedbackOptions {
   }
 
   /**
-   * The message displayed after a successful feedback submission.
+   * The message displayed after a successful feedback submission. Defaults to "Thank you for your
+   * report!".
    *
    * @return the message displayed after a successful feedback submission
    */
