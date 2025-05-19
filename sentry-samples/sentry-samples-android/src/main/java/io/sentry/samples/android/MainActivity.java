@@ -273,6 +273,11 @@ public class MainActivity extends AppCompatActivity {
           CoroutinesUtil.INSTANCE.throwInCoroutine();
         });
 
+    binding.enableReplayDebugMode.setOnClickListener(
+        view -> {
+          Sentry.replay().enableDebugMaskingOverlay();
+        });
+
     setContentView(binding.getRoot());
   }
 
