@@ -15,6 +15,7 @@ import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.ISentryClient
+import io.sentry.ReplayController
 import io.sentry.Sentry
 import io.sentry.Sentry.OptionsConfiguration
 import io.sentry.SentryEnvelope
@@ -538,6 +539,21 @@ class SentryAndroidTest {
 
         assertTrue(optionsRef.eventProcessors.any { it is DefaultAndroidEventProcessor })
         assertTrue(optionsRef.eventProcessors.any { it is AnrV2EventProcessor })
+    }
+
+    @Test
+    fun `replay debug masking is forwarded to replay controller`() {
+        val replayController = mock<ReplayController>()
+        fixture.initSut(context = mock<Application>()) { options ->
+            options.dsn = "https://key@sentry.io/123"
+            options.setReplayController(replayController)
+        }
+
+        SentryAndroid.replay().enableDebugMaskingOverlay()
+        verify(replayController).enableDebugMaskingOverlay()
+
+        SentryAndroid.replay().disableDebugMaskingOverlay()
+        verify(replayController).disableDebugMaskingOverlay()
     }
 
     private fun prefillScopeCache(options: SentryOptions, cacheDir: String) {

@@ -817,6 +817,11 @@ public abstract interface class io/sentry/IPerformanceSnapshotCollector : io/sen
 	public abstract fun setup ()V
 }
 
+public abstract interface class io/sentry/IReplayApi {
+	public abstract fun disableDebugMaskingOverlay ()V
+	public abstract fun enableDebugMaskingOverlay ()V
+}
+
 public abstract interface class io/sentry/IScope {
 	public abstract fun addAttachment (Lio/sentry/Attachment;)V
 	public abstract fun addBreadcrumb (Lio/sentry/Breadcrumb;)V
@@ -1567,9 +1572,12 @@ public final class io/sentry/NoOpReplayBreadcrumbConverter : io/sentry/ReplayBre
 
 public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
 	public fun captureReplay (Ljava/lang/Boolean;)V
+	public fun disableDebugMaskingOverlay ()V
+	public fun enableDebugMaskingOverlay ()V
 	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public static fun getInstance ()Lio/sentry/NoOpReplayController;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
+	public fun isDebugMaskingOverlayEnabled ()Z
 	public fun isRecording ()Z
 	public fun pause ()V
 	public fun resume ()V
@@ -2170,10 +2178,11 @@ public abstract interface class io/sentry/ReplayBreadcrumbConverter {
 	public abstract fun convert (Lio/sentry/Breadcrumb;)Lio/sentry/rrweb/RRWebEvent;
 }
 
-public abstract interface class io/sentry/ReplayController {
+public abstract interface class io/sentry/ReplayController : io/sentry/IReplayApi {
 	public abstract fun captureReplay (Ljava/lang/Boolean;)V
 	public abstract fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public abstract fun getReplayId ()Lio/sentry/protocol/SentryId;
+	public abstract fun isDebugMaskingOverlayEnabled ()Z
 	public abstract fun isRecording ()Z
 	public abstract fun pause ()V
 	public abstract fun resume ()V

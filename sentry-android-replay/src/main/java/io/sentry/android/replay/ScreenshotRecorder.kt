@@ -165,14 +165,14 @@ internal class ScreenshotRecorder(
                                     visibleRects.forEach { rect ->
                                         canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
                                     }
-                                    if (ReplayIntegration.debugMaskingEnabled) {
+                                    if (options.replayController.isDebugMaskingOverlayEnabled()) {
                                         debugMasks.addAll(visibleRects)
                                     }
                                 }
                                 return@traverse true
                             }
 
-                            if (ReplayIntegration.debugMaskingEnabled) {
+                            if (options.replayController.isDebugMaskingOverlayEnabled()) {
                                 mainLooperHandler.post {
                                     if (debugOverlayDrawable.callback == null) {
                                         root.overlay.add(debugOverlayDrawable)
@@ -219,7 +219,7 @@ internal class ScreenshotRecorder(
     }
 
     fun unbind(root: View?) {
-        if (ReplayIntegration.debugMaskingEnabled) {
+        if (options.replayController.isDebugMaskingOverlayEnabled()) {
             root?.overlay?.remove(debugOverlayDrawable)
         }
         root?.removeOnDrawListenerSafe(this)
