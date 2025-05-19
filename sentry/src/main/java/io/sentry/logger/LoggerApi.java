@@ -3,6 +3,7 @@ package io.sentry.logger;
 import io.sentry.HostnameCache;
 import io.sentry.IScope;
 import io.sentry.ISpan;
+import io.sentry.JsonReflectionObjectSerializer;
 import io.sentry.PropagationContext;
 import io.sentry.Scopes;
 import io.sentry.SentryAttribute;
@@ -20,6 +21,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.util.Platform;
 import io.sentry.util.TracingUtils;
 import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -170,7 +172,9 @@ public final class LoggerApi implements ILoggerApi {
         final @Nullable Object value = attribute.getValue();
         final @NotNull SentryAttributeType type =
             attribute.getType() == null ? getType(value) : attribute.getType();
-        attributes.put(attribute.getName(), new SentryLogEventAttributeValue(type, value));
+        final @Nullable Object convertedValue =
+            maybeConvertValue(attribute.getName(), value, attribute.getFlattenDepth(), attributes);
+        attributes.put(attribute.getName(), new SentryLogEventAttributeValue(type, convertedValue));
       }
     }
 
@@ -214,6 +218,37 @@ public final class LoggerApi implements ILoggerApi {
     }
 
     return attributes;
+  }
+
+  private @Nullable Object maybeConvertValue(
+      final @Nullable Object name,
+      final @Nullable Object value,
+      final int flattenDepth,
+      final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes) {
+    if (value == null) {
+      return null;
+    }
+
+    if (flattenDepth > 0) {
+      JsonReflectionObjectSerializer serializer = new JsonReflectionObjectSerializer(1);
+      try {
+        Map<String, Object> stringObjectMap =
+            serializer.serializeObject(value, scopes.getOptions().getLogger());
+        for (final @NotNull Map.Entry<String, Object> entry : stringObjectMap.entrySet()) {
+          attributes.put(
+              name + "." + entry.getKey(),
+              new SentryLogEventAttributeValue(getType(entry.getValue()), entry.getValue()));
+        }
+        return value;
+      } catch (Exception e) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(SentryLevel.DEBUG, "Unable to flatten log attribute value", e);
+      }
+    }
+
+    return value;
   }
 
   private void setServerName(
