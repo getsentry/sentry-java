@@ -71,7 +71,7 @@ dependencies {
     // tests
     testImplementation(Config.Libs.navigationRuntime)
 
-    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
 
