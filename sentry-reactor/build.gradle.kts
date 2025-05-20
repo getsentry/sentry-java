@@ -35,7 +35,7 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(libs.mockito.kotlin)
 
     testImplementation(Config.Libs.reactorCore)
     testImplementation(Config.Libs.contextPropagation)

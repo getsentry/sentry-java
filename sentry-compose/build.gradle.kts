@@ -56,10 +56,10 @@ kotlin {
         val androidUnitTest by getting {
             dependencies {
                 implementation(libs.kotlin.test.junit)
-                implementation(Config.TestLibs.mockitoKotlin)
-                implementation(Config.TestLibs.mockitoInline)
+                implementation(libs.mockito.kotlin)
+                implementation(libs.mockito.inline)
                 implementation(Config.Libs.composeNavigation)
-                implementation(Config.TestLibs.robolectric)
+                implementation(libs.roboelectric)
                 implementation(Config.TestLibs.androidxRunner)
                 implementation(Config.TestLibs.androidxJunit)
                 implementation(Config.TestLibs.androidxTestRules)

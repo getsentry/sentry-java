@@ -186,13 +186,8 @@ object Config {
         val androidxTestOrchestrator = "androidx.test:orchestrator:1.5.0"
         val androidxJunit = "androidx.test.ext:junit:1.1.5"
         val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
-        val robolectric = "org.robolectric:robolectric:4.14"
-        val mockitoKotlin = "org.mockito.kotlin:mockito-kotlin:4.1.0"
-        val mockitoInline = "org.mockito:mockito-inline:4.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
         val awaitility3 = "org.awaitility:awaitility-kotlin:3.1.6" // need this due to a conflict of awaitility4+ and espresso on hamcrest
-        val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
-        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.32.0"
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
         val javaFaker = "com.github.javafaker:javafaker:1.0.2"
         val msgpack = "org.msgpack:msgpack-core:0.9.8"

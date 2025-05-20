@@ -89,6 +89,6 @@ dependencies {
 
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(libs.mockito.kotlin)
     testImplementation(projects.sentryTestSupport)
 }

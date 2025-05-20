@@ -23,8 +23,8 @@ dependencies {
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.TestLibs.javaFaker)
     testImplementation(Config.TestLibs.msgpack)

@@ -95,14 +95,14 @@ dependencies {
 
     // tests
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-    testImplementation(Config.TestLibs.robolectric)
+    testImplementation(libs.roboelectric)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.androidxCore)
     testImplementation(Config.TestLibs.androidxRunner)
     testImplementation(Config.TestLibs.androidxJunit)
     testImplementation(Config.TestLibs.androidxCoreKtx)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
     testImplementation(Config.TestLibs.awaitility)
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryAndroidFragment)

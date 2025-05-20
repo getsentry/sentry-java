@@ -28,7 +28,7 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(libs.mockito.kotlin)
     testImplementation(Config.Libs.logbackClassic)
     testImplementation(Config.Libs.slf4jApi)
 }

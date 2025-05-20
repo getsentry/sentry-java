@@ -72,10 +72,10 @@ dependencies {
     testImplementation(Config.Libs.navigationRuntime)
 
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
 
-    testImplementation(Config.TestLibs.robolectric)
+    testImplementation(libs.roboelectric)
     testImplementation(Config.TestLibs.androidxCore)
     testImplementation(Config.TestLibs.androidxRunner)
     testImplementation(Config.TestLibs.androidxJunit)

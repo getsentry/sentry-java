@@ -65,8 +65,8 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.okhttp.mockwebserver)
 
     testImplementation(Config.Libs.okhttp)
     testImplementation(Config.Libs.springBoot3Starter)

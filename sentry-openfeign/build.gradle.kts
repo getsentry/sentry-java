@@ -28,9 +28,9 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(libs.mockito.kotlin)
     testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(libs.okhttp.mockwebserver)
     testImplementation(Config.Libs.feignCore)
 }
 
