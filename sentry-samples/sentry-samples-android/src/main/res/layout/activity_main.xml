@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Example Text in the Background test test test"
+    android:layout_gravity="center" />
+<ScrollView
   android:layout_width="match_parent"
   android:layout_height="match_parent"
   tools:context=".MainActivity">
@@ -169,3 +179,5 @@
   </LinearLayout>
 
 </ScrollView>
+
+</FrameLayout>
