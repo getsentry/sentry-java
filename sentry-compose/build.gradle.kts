@@ -6,9 +6,9 @@ plugins {
     kotlin("multiplatform")
     id("com.android.library")
     id("org.jetbrains.compose")
-    id(Config.QualityPlugins.kover)
+    alias(libs.plugins.kover)
     alias(libs.plugins.gradle.versions)
-    id(Config.QualityPlugins.detektPlugin)
+    alias(libs.plugins.detekt)
     alias(libs.plugins.dokka)
     alias(libs.plugins.dokka.javadoc)
     `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts

@@ -14,6 +14,11 @@ binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibil
 compose-compiler = { id = "org.jetbrains.compose", version.ref = "composeVersion" }
 errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
 gradle-versions = {id = "com.github.ben-manes.versions", version = "0.42.0" }
+spotless = { id = "com.diffplug.spotless", version = "6.11.0" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8"}
+jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.0" }
+kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.3" }
+vanniktech-maven-publish = { id =  "com.vanniktech.maven.publish", version = "0.30.0" }
 
 [libraries]
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }

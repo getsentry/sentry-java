@@ -7,7 +7,7 @@ plugins {
     jacoco
     alias(libs.plugins.errorprone)
     alias(libs.plugins.gradle.versions)
-    id(Config.QualityPlugins.detektPlugin)
+    alias(libs.plugins.detekt)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
