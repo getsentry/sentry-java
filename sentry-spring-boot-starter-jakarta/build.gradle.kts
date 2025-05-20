@@ -8,7 +8,7 @@ plugins {
     jacoco
     alias(libs.plugins.errorprone)
     alias(libs.plugins.gradle.versions)
-    id(Config.BuildPlugins.springBoot) version Config.springBoot3Version apply false
+    alias(libs.plugins.spring.boot.three) apply false
 }
 
 configure<JavaPluginExtension> {

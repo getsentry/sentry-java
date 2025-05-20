@@ -13,9 +13,6 @@ object Config {
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
-        val springBoot = "org.springframework.boot"
-        val springDependencyManagement = "io.spring.dependency-management"
-        val springDependencyManagementVersion = "1.0.11.RELEASE"
         val gretty = "org.gretty"
         val grettyVersion = "4.0.0"
         val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"

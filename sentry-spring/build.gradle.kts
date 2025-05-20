@@ -10,7 +10,7 @@ plugins {
     alias(libs.plugins.errorprone)
     alias(libs.plugins.gradle.versions)
     alias(libs.plugins.buildconfig)
-    id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
+    alias(libs.plugins.spring.boot.two) apply false
 }
 
 tasks.withType<KotlinCompile>().configureEach {
