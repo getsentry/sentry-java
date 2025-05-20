@@ -14,11 +14,18 @@ plugins {
     jacoco
     id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
     `maven-publish`
-    id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion
+    alias(libs.plugins.binary.compatibility.validator)
     id(Config.QualityPlugins.jacocoAndroid) version Config.QualityPlugins.jacocoAndroidVersion apply false
     id(Config.QualityPlugins.kover) version Config.QualityPlugins.koverVersion apply false
     id(Config.BuildPlugins.gradleMavenPublishPlugin) version Config.BuildPlugins.gradleMavenPublishPluginVersion apply false
     alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.buildconfig) apply false
+    // dokka is required by gradle-maven-publish-plugin.
+    alias(libs.plugins.dokka) apply false
+    alias(libs.plugins.dokka.javadoc) apply false
+    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.errorprone) apply false
+    alias(libs.plugins.gradle.versions) apply false
 }
 
 buildscript {
@@ -27,16 +34,10 @@ buildscript {
     }
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
-        // dokka is required by gradle-maven-publish-plugin.
-        classpath(Config.BuildPlugins.dokkaPlugin)
-        classpath(Config.QualityPlugins.errorpronePlugin)
-        classpath(Config.QualityPlugins.gradleVersionsPlugin)
 
         // add classpath of sentry android gradle plugin
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
-        classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
-        classpath(Config.BuildPlugins.composeGradlePlugin)
         classpath(Config.BuildPlugins.commonsCompressOverride)
     }
 }

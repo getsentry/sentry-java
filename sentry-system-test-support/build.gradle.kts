@@ -2,8 +2,8 @@ plugins {
     `java-library`
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
     id("com.apollographql.apollo3") version "3.8.2"
 }
 

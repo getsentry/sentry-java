@@ -7,7 +7,7 @@ plugins {
     kotlin("android")
     jacoco
     id(Config.QualityPlugins.jacocoAndroid)
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.gradle.versions)
     // TODO: enable it later
 //    id(Config.QualityPlugins.detektPlugin)
 }
