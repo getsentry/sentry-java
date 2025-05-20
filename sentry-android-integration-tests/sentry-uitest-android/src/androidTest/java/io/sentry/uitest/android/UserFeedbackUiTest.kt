@@ -479,7 +479,9 @@ class UserFeedbackUiTest : BaseUiTest() {
             //  because it would block the espresso interactions (button click)
             it.feedbackOptions.onSubmitSuccess = SentryFeedbackCallback { relayIdlingResource.increment(); relayIdlingResource.increment() }
             // Let's capture a replay, so we can check the replayId in the feedback
-            it.sessionReplay.sessionSampleRate = 1.0
+
+            // GH actions emulator don't allow capturing screenshots properly
+            it.sessionReplay.sessionSampleRate = if (BuildConfig.ENVIRONMENT != "github") 1.0 else 0.0
         }
 
         showDialogAndCheck {
@@ -503,9 +505,13 @@ class UserFeedbackUiTest : BaseUiTest() {
                 assertEquals("Description filled", feedback.message)
                 // The screen name should be set in the url
                 assertEquals("io.sentry.uitest.android.EmptyActivity", feedback.url)
-                // The current replay should be set in the replayId
-                assertNotNull(feedback.replayId)
-                assertEquals(Sentry.getCurrentScopes().options.replayController.replayId, feedback.replayId)
+
+                // GH actions emulator don't allow capturing screenshots properly
+                if (BuildConfig.ENVIRONMENT != "github") {
+                    // The current replay should be set in the replayId
+                    assertNotNull(feedback.replayId)
+                    assertEquals(Sentry.getCurrentScopes().options.replayController.replayId, feedback.replayId)
+                }
             }
         }
     }
