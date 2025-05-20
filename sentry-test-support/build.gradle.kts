@@ -26,7 +26,7 @@ dependencies {
     // tests
     implementation(kotlin(Config.kotlinStdLib))
     implementation(libs.kotlin.test.junit)
-    implementation(Config.TestLibs.mockitoKotlin)
+    implementation(libs.mockito.kotlin)
 }
 
 configure<SourceSetContainer> {

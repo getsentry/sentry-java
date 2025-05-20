@@ -78,8 +78,8 @@ dependencies {
     testImplementation(Config.Libs.timber)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.androidxJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
 }
 
 tasks.withType<Detekt>().configureEach {

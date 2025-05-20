@@ -36,9 +36,9 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(Config.Libs.okhttp)
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.okhttp.mockwebserver)
 }
 
 configure<SourceSetContainer> {
