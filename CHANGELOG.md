@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
+
 ### Features
 
 - Add debug mode for Session Replay masking ([#4357](https://github.com/getsentry/sentry-java/pull/4357))
@@ -66,7 +70,6 @@
 ### Fixes
 
 - Update profile chunk rate limit and client report ([#4353](https://github.com/getsentry/sentry-java/pull/4353))
-- Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
 
 ### Dependencies
 
