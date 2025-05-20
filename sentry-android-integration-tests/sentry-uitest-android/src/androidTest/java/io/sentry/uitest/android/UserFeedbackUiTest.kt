@@ -473,15 +473,17 @@ class UserFeedbackUiTest : BaseUiTest() {
 
     @Test
     fun userFeedbackSendEnvelope() {
+        // GH actions emulator don't allow capturing screenshots properly
+        val enableReplay = BuildConfig.ENVIRONMENT != "github"
         initSentry(true) {
             // When sending the feedback we want to wait for relay to receive it.
             // We can't simply increment the idling resource,
             //  because it would block the espresso interactions (button click)
-            it.feedbackOptions.onSubmitSuccess = SentryFeedbackCallback { relayIdlingResource.increment(); relayIdlingResource.increment() }
+            it.feedbackOptions.onSubmitSuccess = SentryFeedbackCallback { relayIdlingResource.increment() }
             // Let's capture a replay, so we can check the replayId in the feedback
-
-            // GH actions emulator don't allow capturing screenshots properly
-            it.sessionReplay.sessionSampleRate = if (BuildConfig.ENVIRONMENT != "github") 1.0 else 0.0
+            if (enableReplay) {
+                it.sessionReplay.sessionSampleRate = 1.0
+            }
         }
 
         showDialogAndCheck {
@@ -506,8 +508,7 @@ class UserFeedbackUiTest : BaseUiTest() {
                 // The screen name should be set in the url
                 assertEquals("io.sentry.uitest.android.EmptyActivity", feedback.url)
 
-                // GH actions emulator don't allow capturing screenshots properly
-                if (BuildConfig.ENVIRONMENT != "github") {
+                if (enableReplay) {
                     // The current replay should be set in the replayId
                     assertNotNull(feedback.replayId)
                     assertEquals(Sentry.getCurrentScopes().options.replayController.replayId, feedback.replayId)
