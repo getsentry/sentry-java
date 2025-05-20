@@ -29,7 +29,7 @@ dependencies {
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.Libs.log4j2Api)
     testImplementation(Config.Libs.log4j2Core)
@@ -71,9 +71,8 @@ buildConfig {
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
-val generateBuildConfig by tasks
 tasks.withType<JavaCompile>().configureEach {
-    dependsOn(generateBuildConfig)
+    dependsOn(tasks.generateBuildConfig)
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")

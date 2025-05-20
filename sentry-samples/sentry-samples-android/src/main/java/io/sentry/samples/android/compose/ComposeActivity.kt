@@ -158,7 +158,11 @@ fun Github(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(perPage) {
-        result = GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
+        result = try {
+            GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
+        } catch (e: Throwable) {
+            "error"
+        }
     }
 
     SentryTraced("github-$user") {
@@ -185,12 +189,15 @@ fun Github(
                     user = newText
                 }
             )
-            Text("Random repo $result")
+            Text("Random repo: $result")
             Button(
                 onClick = {
                     scope.launch {
-                        result =
+                        result = try {
                             GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
+                        } catch (e: Throwable) {
+                            "error"
+                        }
                     }
                 },
                 modifier = Modifier

@@ -6,6 +6,7 @@ import io.sentry.JsonSerializer
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEvent
 import io.sentry.SentryItemType
+import io.sentry.SentryLogEvents
 import io.sentry.SentryOptions
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
@@ -81,6 +82,46 @@ class TestHelper(backendUrl: String) {
         ensureNoEnvelopeReceived { envelopeString ->
             checkIfTransactionMatches(envelopeString, callback)
         }
+    }
+
+    fun ensureLogsReceived(callback: ((SentryLogEvents, SentryEnvelopeHeader) -> Boolean)) {
+        ensureEnvelopeReceived { envelopeString ->
+            checkIfLogsMatch(envelopeString, callback)
+        }
+    }
+
+    private fun checkIfLogsMatch(envelopeString: String, callback: ((SentryLogEvents, SentryEnvelopeHeader) -> Boolean)): Boolean {
+        val deserializeEnvelope =
+            jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
+        if (deserializeEnvelope == null) {
+            return false
+        }
+
+        val envelopeHeader = deserializeEnvelope.header
+
+        val logsItem =
+            deserializeEnvelope.items.firstOrNull { it.header.type == SentryItemType.Log }
+        if (logsItem == null) {
+            return false
+        }
+
+        val logs = logsItem.getLogs(jsonSerializer)
+        if (logs == null) {
+            return false
+        }
+
+        return callback(logs, envelopeHeader)
+    }
+
+    fun doesContainLogWithBody(logs: SentryLogEvents, body: String): Boolean {
+        val logItem = logs.items.firstOrNull { logItem -> logItem.body == body }
+        if (logItem == null) {
+            println("Unable to find log item with body $body in logs:")
+            logObject(logs)
+            return false
+        }
+
+        return true
     }
 
     private fun checkIfTransactionMatches(envelopeString: String, callback: ((SentryTransaction, SentryEnvelopeHeader) -> Boolean)): Boolean {

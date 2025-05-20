@@ -22,7 +22,7 @@ dependencies {
     errorprone(Config.CompileOnly.errorProneNullAway)
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.mockitoKotlin)
     testImplementation(Config.TestLibs.mockitoInline)
     testImplementation(Config.TestLibs.awaitility)
@@ -73,9 +73,8 @@ buildConfig {
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
-val generateBuildConfig by tasks
-tasks.withType<JavaCompile>() {
-    dependsOn(generateBuildConfig)
+tasks.withType<JavaCompile>().configureEach {
+    dependsOn(tasks.generateBuildConfig)
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")

@@ -116,7 +116,7 @@ dependencies {
     errorprone(Config.CompileOnly.errorProneNullAway)
 
     androidTestImplementation(projects.sentryTestSupport)
-    androidTestImplementation(Config.TestLibs.kotlinTestJunit)
+    androidTestImplementation(libs.kotlin.test.junit)
     androidTestImplementation(Config.TestLibs.espressoCore)
     androidTestImplementation(Config.TestLibs.androidxRunner)
     androidTestImplementation(Config.TestLibs.androidxTestRules)
@@ -136,7 +136,7 @@ tasks.withType<JavaCompile>().configureEach {
     }
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
 }

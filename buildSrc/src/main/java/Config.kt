@@ -3,7 +3,6 @@ import java.math.BigDecimal
 
 object Config {
     val AGP = System.getenv("VERSION_AGP") ?: "8.6.0"
-    val kotlinVersion = "1.9.24"
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.18"
@@ -17,9 +16,8 @@ object Config {
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
-        val kotlinGradlePlugin = "gradle-plugin"
         val buildConfig = "com.github.gmazzo.buildconfig"
-        val buildConfigVersion = "3.0.3"
+        val buildConfigVersion = "5.6.5"
         val springBoot = "org.springframework.boot"
         val springDependencyManagement = "io.spring.dependency-management"
         val springDependencyManagementVersion = "1.0.11.RELEASE"
@@ -163,7 +161,7 @@ object Config {
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
         val apolloKotlin4 = "com.apollographql.apollo:apollo-runtime:4.1.1"
 
-        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.8.3"
+        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.8.4"
 
         object OpenTelemetry {
             val otelVersion = "1.44.1"
@@ -193,7 +191,6 @@ object Config {
         private val espressoVersion = "3.5.0"
 
         val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
-        val kotlinTestJunit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
         val androidxCore = "androidx.test:core:1.6.1"
         val androidxRunner = "androidx.test:runner:1.6.2"
         val androidxTestCoreKtx = "androidx.test:core-ktx:1.6.1"
@@ -233,7 +230,7 @@ object Config {
         val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.42.0"
         val gradleVersions = "com.github.ben-manes.versions"
         val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.23.5"
+        val detektVersion = "1.23.8"
         val detektPlugin = "io.gitlab.arturbosch.detekt"
         val binaryCompatibilityValidatorVersion = "0.13.0"
         val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"

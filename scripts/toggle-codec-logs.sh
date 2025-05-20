@@ -45,6 +45,10 @@ case "$ACTION" in
         adb shell setprop log.tag.BufferQueueProducer D
         adb shell setprop log.tag.ReflectedParamUpdater D
         adb shell setprop log.tag.hw-BpHwBinder D
+        adb shell setprop log.tag.ACodec D
+        adb shell setprop log.tag.VideoCapabilities D
+        adb shell setprop log.tag.OMXUtils D
+        adb shell setprop log.tag.OMXClient D
         echo "✅ Logs ENABLED"
         ;;
     disable)
@@ -67,6 +71,10 @@ case "$ACTION" in
         adb shell setprop log.tag.BufferQueueProducer SILENT
         adb shell setprop log.tag.ReflectedParamUpdater SILENT
         adb shell setprop log.tag.hw-BpHwBinder SILENT
+        adb shell setprop log.tag.ACodec SILENT
+        adb shell setprop log.tag.VideoCapabilities SILENT
+        adb shell setprop log.tag.OMXUtils SILENT
+        adb shell setprop log.tag.OMXClient SILENT
         echo "🚫 Logs DISABLED"
         ;;
     *)
