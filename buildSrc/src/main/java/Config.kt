@@ -9,26 +9,12 @@ object Config {
     val springBoot3Version = "3.4.2"
     val kotlinCompatibleLanguageVersion = "1.6"
 
-    // see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
-    // see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
-    val composeVersion = "1.6.11"
     val androidComposeCompilerVersion = "1.5.14"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
-        val buildConfig = "com.github.gmazzo.buildconfig"
-        val buildConfigVersion = "5.6.5"
-        val springBoot = "org.springframework.boot"
-        val springDependencyManagement = "io.spring.dependency-management"
-        val springDependencyManagementVersion = "1.0.11.RELEASE"
         val gretty = "org.gretty"
         val grettyVersion = "4.0.0"
-        val gradleMavenPublishPlugin = "com.vanniktech.maven.publish"
-        val gradleMavenPublishPluginVersion = "0.30.0"
-        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:2.0.0"
-        val dokkaPluginAlias = "org.jetbrains.dokka"
-        val dokkaPluginJavadocAlias = "org.jetbrains.dokka-javadoc"
-        val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
         val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"
     }
 
@@ -223,22 +209,9 @@ object Config {
             // TODO [POTEL] add tests and restore
             val minimumCoverage = BigDecimal.valueOf(0.1)
         }
-        val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "6.11.0"
-        val errorProne = "net.ltgt.errorprone"
-        val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:3.0.1"
-        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.42.0"
-        val gradleVersions = "com.github.ben-manes.versions"
-        val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.23.8"
+
+        // this can be removed when we upgrade to Gradle 8, which allows us to use a getter for the plugin ID
         val detektPlugin = "io.gitlab.arturbosch.detekt"
-        val binaryCompatibilityValidatorVersion = "0.13.0"
-        val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
-        val binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator"
-        val jacocoAndroid = "com.mxalbert.gradle.jacoco-android"
-        val jacocoAndroidVersion = "0.2.0"
-        val kover = "org.jetbrains.kotlinx.kover"
-        val koverVersion = "0.7.3"
     }
 
     object Sentry {

@@ -4,8 +4,8 @@ plugins {
     id("com.android.library")
     kotlin("android")
     jacoco
-    id(Config.QualityPlugins.jacocoAndroid)
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.jacoco.android)
+    alias(libs.plugins.gradle.versions)
 }
 
 android {

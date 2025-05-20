@@ -4,9 +4,9 @@ import net.ltgt.gradle.errorprone.errorprone
 plugins {
     id("com.android.application")
     kotlin("android")
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.QualityPlugins.detektPlugin)
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.detekt)
 }
 
 android {
