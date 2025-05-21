@@ -1,6 +1,7 @@
 package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
+import io.sentry.DateUtils
 import io.sentry.IScopes
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
@@ -60,6 +61,7 @@ internal class SessionCaptureStrategy(
             if (segment is ReplaySegment.Created) {
                 segment.capture(scopes)
             }
+            currentSegment = -1
             FileUtils.deleteRecursively(replayCacheDir)
         }
         scopes?.configureScope { it.replayId = SentryId.EMPTY_ID }
@@ -142,14 +144,13 @@ internal class SessionCaptureStrategy(
     private fun createCurrentSegment(taskName: String, onSegmentCreated: (ReplaySegment) -> Unit) {
         val now = dateProvider.currentTimeMillis
         val currentSegmentTimestamp = segmentTimestamp ?: return
-        val segmentId = currentSegment
         val duration = now - currentSegmentTimestamp.time
         val replayId = currentReplayId
         val height = recorderConfig.recordingHeight
         val width = recorderConfig.recordingWidth
         replayExecutor.submitSafely(options, "$TAG.$taskName") {
             val segment =
-                createSegmentInternal(duration, currentSegmentTimestamp, replayId, segmentId, height, width)
+                createSegmentInternal(duration, currentSegmentTimestamp, replayId, currentSegment, height, width)
             onSegmentCreated(segment)
         }
     }
