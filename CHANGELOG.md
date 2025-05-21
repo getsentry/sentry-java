@@ -10,7 +10,7 @@
 
 ### Fixes
 
-- Overly broad Proguard rule in `sentry-android-ndk` keeping all native methods.
+- Overly broad Proguard rule in `sentry-android-ndk` keeping all native methods. ([#4427](https://github.com/getsentry/sentry-java/pull/4427))
 
 ## 8.12.0
 
