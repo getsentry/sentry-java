@@ -1,6 +1,8 @@
 package io.sentry.samples.android;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import androidx.appcompat.app.AlertDialog;
@@ -284,7 +286,14 @@ public class MainActivity extends AppCompatActivity {
               .setPositiveButton(
                   "Close",
                   (dialog, which) -> {
-                    dialog.dismiss();
+                    int currentOrientation = getResources().getConfiguration().orientation;
+                    if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
+                      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                    } else if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+                      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                    }
+
+                    //dialog.dismiss();
                   })
               .show();
         });

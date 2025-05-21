@@ -464,7 +464,7 @@ public final class SentryEnvelopeItem {
                   if (cleanupReplayFolder) {
                     FileUtils.deleteRecursively(replayVideo.getParentFile());
                   } else {
-                    replayVideo.delete();
+                    //replayVideo.delete();
                   }
                 }
               }

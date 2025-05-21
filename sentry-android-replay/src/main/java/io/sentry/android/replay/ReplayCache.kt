@@ -108,6 +108,8 @@ public class ReplayCache(
         frames += frame
     }
 
+    private var failed = false
+
     /**
      * Creates a video out of currently stored [frames] given the start time and duration using the
      * on-device codecs [android.media.MediaCodec]. The generated video will be stored in
@@ -182,7 +184,7 @@ public class ReplayCache(
 
             // we either encode a new frame within the step bounds or replicate the last known frame
             // to respect the video duration
-            if (encode(lastFrame)) {
+            if (encode(lastFrame) /* && (segmentId != 1 || failed)*/) {
                 frameCount++
             } else if (lastFrame != null) {
                 // if we failed to encode the frame, we delete the screenshot right away as the
@@ -194,6 +196,7 @@ public class ReplayCache(
         }
 
         if (frameCount == 0) {
+            failed = true
             options.logger.log(
                 DEBUG,
                 "Generated a video with no frames, not capturing a replay segment"

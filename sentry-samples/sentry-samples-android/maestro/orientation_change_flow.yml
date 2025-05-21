@@ -1,0 +1,36 @@
+appId: io.sentry.samples.android
+
+---
+- launchApp
+- scrollUntilVisible:
+    element:
+      id: "show_dialog"
+- tapOn: Show Dialog
+- tapOn: Close
+- scrollUntilVisible:
+    element:
+      id: "open_compose_activity"
+- tapOn: Open Compose Activity
+- extendedWaitUntil:
+    visible: randText  # Any random text that does not exist in the UI
+    optional: true  # This should be true so that the test won't fail
+    timeout: 2000
+- tapOn: Show Dialog
+- tapOn:
+    point: 25%, 25%
+- tapOn: "Navigate to Github"
+- extendedWaitUntil:
+    visible: randText  # Any random text that does not exist in the UI
+    optional: true  # This should be true so that the test won't fail
+    timeout: 2000
+- back
+- tapOn: Show Dialog
+- tapOn:
+    point: 25%, 25%
+- back
+- extendedWaitUntil:
+    visible: randText  # Any random text that does not exist in the UI
+    optional: true  # This should be true so that the test won't fail
+    timeout: 2000
+- back
+- back
