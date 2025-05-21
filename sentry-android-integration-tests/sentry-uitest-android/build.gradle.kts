@@ -101,7 +101,7 @@ dependencies {
         implementation(projects.sentryAndroidCore)
     }
     implementation(Config.Libs.appCompat)
-    implementation(Config.Libs.androidxCore)
+    implementation(libs.androidx.core)
     implementation(Config.Libs.composeActivity)
     implementation(Config.Libs.composeFoundation)
     implementation(Config.Libs.composeMaterial)

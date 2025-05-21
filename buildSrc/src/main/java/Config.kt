@@ -43,7 +43,6 @@ object Config {
         private val lifecycleVersion = "2.2.0"
         val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
         val lifecycleCommonJava8 = "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
-        val androidxCore = "androidx.core:core:1.3.2"
         val androidxSqlite = "androidx.sqlite:sqlite:2.3.1"
         val androidxRecylerView = "androidx.recyclerview:recyclerview:1.2.1"
         val androidxAnnotation = "androidx.annotation:annotation:1.9.1"
