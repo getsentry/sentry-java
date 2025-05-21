@@ -6,8 +6,8 @@ plugins {
     `java-library`
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -29,7 +29,7 @@ dependencies {
     testImplementation(Config.Libs.apacheHttpClient)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.mockitoKotlin)
 }
 

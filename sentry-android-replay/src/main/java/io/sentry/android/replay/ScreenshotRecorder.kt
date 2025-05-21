@@ -1,5 +1,6 @@
 package io.sentry.android.replay
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.content.Context
 import android.graphics.Bitmap
@@ -17,6 +18,7 @@ import io.sentry.SentryLevel.INFO
 import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
+import io.sentry.android.replay.util.DebugOverlayDrawable
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.addOnDrawListenerSafe
 import io.sentry.android.replay.util.getVisibleRects
@@ -33,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
 import kotlin.math.roundToInt
 
+@SuppressLint("UseKtx")
 @TargetApi(26)
 internal class ScreenshotRecorder(
     val config: ScreenshotRecorderConfig,
@@ -65,6 +68,8 @@ internal class ScreenshotRecorder(
     private val contentChanged = AtomicBoolean(false)
     private val isCapturing = AtomicBoolean(true)
     private val lastCaptureSuccessful = AtomicBoolean(false)
+
+    private val debugOverlayDrawable = DebugOverlayDrawable()
 
     fun capture() {
         if (!isCapturing.get()) {
@@ -117,6 +122,8 @@ internal class ScreenshotRecorder(
                         root.traverse(viewHierarchy, options)
 
                         recorder.submitSafely(options, "screenshot_recorder.mask") {
+                            val debugMasks = mutableListOf<Rect>()
+
                             val canvas = Canvas(screenshot)
                             canvas.setMatrix(prescaledMatrix)
                             viewHierarchy.traverse { node ->
@@ -154,10 +161,22 @@ internal class ScreenshotRecorder(
                                     visibleRects.forEach { rect ->
                                         canvas.drawRoundRect(RectF(rect), 10f, 10f, maskingPaint)
                                     }
+                                    if (options.replayController.isDebugMaskingOverlayEnabled()) {
+                                        debugMasks.addAll(visibleRects)
+                                    }
                                 }
                                 return@traverse true
                             }
 
+                            if (options.replayController.isDebugMaskingOverlayEnabled()) {
+                                mainLooperHandler.post {
+                                    if (debugOverlayDrawable.callback == null) {
+                                        root.overlay.add(debugOverlayDrawable)
+                                    }
+                                    debugOverlayDrawable.updateMasks(debugMasks)
+                                    root.postInvalidate()
+                                }
+                            }
                             screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
                             lastCaptureSuccessful.set(true)
                             contentChanged.set(false)
@@ -193,11 +212,15 @@ internal class ScreenshotRecorder(
         // next bind the new root
         rootView = WeakReference(root)
         root.addOnDrawListenerSafe(this)
+
         // invalidate the flag to capture the first frame after new window is attached
         contentChanged.set(true)
     }
 
     fun unbind(root: View?) {
+        if (options.replayController.isDebugMaskingOverlayEnabled()) {
+            root?.overlay?.remove(debugOverlayDrawable)
+        }
         root?.removeOnDrawListenerSafe(this)
     }
 

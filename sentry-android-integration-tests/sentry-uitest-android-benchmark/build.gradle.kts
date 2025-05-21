@@ -4,9 +4,9 @@ import net.ltgt.gradle.errorprone.errorprone
 plugins {
     id("com.android.application")
     kotlin("android")
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.QualityPlugins.detektPlugin)
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.detekt)
 }
 
 android {
@@ -100,7 +100,7 @@ dependencies {
     errorprone(Config.CompileOnly.errorProneNullAway)
 
     androidTestImplementation(projects.sentryTestSupport)
-    androidTestImplementation(Config.TestLibs.kotlinTestJunit)
+    androidTestImplementation(libs.kotlin.test.junit)
     androidTestImplementation(Config.TestLibs.espressoCore)
     androidTestImplementation(Config.TestLibs.androidxTestCoreKtx)
     androidTestImplementation(Config.TestLibs.androidxRunner)
@@ -117,7 +117,7 @@ tasks.withType<JavaCompile>().configureEach {
     }
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
 }

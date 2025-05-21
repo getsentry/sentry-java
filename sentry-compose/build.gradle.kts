@@ -6,18 +6,18 @@ plugins {
     kotlin("multiplatform")
     id("com.android.library")
     id("org.jetbrains.compose")
-    id(Config.QualityPlugins.kover)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.QualityPlugins.detektPlugin)
-    id(Config.BuildPlugins.dokkaPluginAlias)
-    id(Config.BuildPlugins.dokkaPluginJavadocAlias)
+    alias(libs.plugins.kover)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.dokka.javadoc)
     `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
 }
 
 kotlin {
     explicitApi()
 
-    android {
+    androidTarget {
         publishLibraryVariants("release")
         compilations.all {
             kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
@@ -55,7 +55,7 @@ kotlin {
         }
         val androidUnitTest by getting {
             dependencies {
-                implementation(Config.TestLibs.kotlinTestJunit)
+                implementation(libs.kotlin.test.junit)
                 implementation(Config.TestLibs.mockitoKotlin)
                 implementation(Config.TestLibs.mockitoInline)
                 implementation(Config.Libs.composeNavigation)
@@ -118,7 +118,7 @@ android {
     }
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
 }

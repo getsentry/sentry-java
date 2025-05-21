@@ -102,7 +102,7 @@ public class ReplayIntegration(
         this.mainLooperHandler = mainLooperHandler ?: MainLooperHandler()
         this.gestureRecorderProvider = gestureRecorderProvider
     }
-
+    private var debugMaskingEnabled: Boolean = false
     private lateinit var options: SentryOptions
     private var scopes: IScopes? = null
     private var recorder: Recorder? = null
@@ -247,6 +247,16 @@ public class ReplayIntegration(
         isManualPause.set(true)
         pauseInternal()
     }
+
+    override fun enableDebugMaskingOverlay() {
+        debugMaskingEnabled = true
+    }
+
+    override fun disableDebugMaskingOverlay() {
+        debugMaskingEnabled = false
+    }
+
+    override fun isDebugMaskingOverlayEnabled(): Boolean = debugMaskingEnabled
 
     private fun pauseInternal() {
         lifecycleLock.acquire().use {

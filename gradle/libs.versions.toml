@@ -1,0 +1,29 @@
+[versions]
+kotlin = "1.9.24"
+# see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
+# see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
+composeVersion = "1.6.11"
+springTwo = "2.7.18"
+springThree = "3.4.2"
+
+[plugins]
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+buildconfig = { id = "com.github.gmazzo.buildconfig", version = "5.6.5" }
+dokka = { id = "org.jetbrains.dokka", version = "2.0.0" }
+dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version = "2.0.0" }
+binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.13.0" }
+compose-compiler = { id = "org.jetbrains.compose", version.ref = "composeVersion" }
+errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
+gradle-versions = {id = "com.github.ben-manes.versions", version = "0.42.0" }
+spotless = { id = "com.diffplug.spotless", version = "6.11.0" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8"}
+jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.0" }
+kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.3" }
+vanniktech-maven-publish = { id =  "com.vanniktech.maven.publish", version = "0.30.0" }
+spring-boot-two = { id = "org.springframework.boot", version.ref = "springTwo" }
+spring-boot-three = { id = "org.springframework.boot", version.ref = "springThree" }
+spring-dependency-management = { id = "io.spring.dependency-management", version = "1.0.11.RELEASE"}
+
+[libraries]
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }

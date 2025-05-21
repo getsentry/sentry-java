@@ -121,6 +121,8 @@ final class ManifestMetadataReader {
 
   static final String IN_APP_EXCLUDES = "io.sentry.in-app-excludes";
 
+  static final String ENABLE_LOGS = "io.sentry.logs.enabled";
+
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
 
@@ -471,6 +473,10 @@ final class ManifestMetadataReader {
             options.addInAppExclude(exclude);
           }
         }
+
+        options
+            .getLogs()
+            .setEnabled(readBool(metadata, logger, ENABLE_LOGS, options.getLogs().isEnabled()));
       }
       options
           .getLogger()

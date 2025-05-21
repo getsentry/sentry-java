@@ -53,6 +53,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -201,23 +202,6 @@ class ReplayIntegrationTest {
     }
 
     @Test
-    fun `starting two times does nothing`() {
-        val captureStrategy = mock<CaptureStrategy>()
-        val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
-
-        replay.register(fixture.scopes, fixture.options)
-        replay.start()
-        replay.start()
-
-        verify(captureStrategy, times(1)).start(
-            any(),
-            eq(0),
-            argThat { this != SentryId.EMPTY_ID },
-            anyOrNull()
-        )
-    }
-
-    @Test
     fun `does not start replay when session is not sampled`() {
         val captureStrategy = mock<CaptureStrategy>()
         val replay = fixture.getSut(context, onErrorSampleRate = 0.0, sessionSampleRate = 0.0, replayCaptureStrategyProvider = { captureStrategy })
@@ -235,11 +219,14 @@ class ReplayIntegrationTest {
 
     @Test
     fun `still starts replay when errorsSampleRate is set`() {
-        val captureStrategy = mock<CaptureStrategy>()
+        val captureStrategy = mock<CaptureStrategy> {
+            on { currentReplayId } doReturn SentryId.EMPTY_ID
+        }
         val replay = fixture.getSut(context, sessionSampleRate = 0.0, replayCaptureStrategyProvider = { captureStrategy })
 
         replay.register(fixture.scopes, fixture.options)
         replay.start()
+        replay.onWindowSizeChanged(416, 912)
 
         verify(captureStrategy, times(1)).start(
             any(),
@@ -256,6 +243,7 @@ class ReplayIntegrationTest {
 
         replay.register(fixture.scopes, fixture.options)
         replay.start()
+        replay.onWindowSizeChanged(416, 912)
 
         verify(recorder).start(any())
     }
@@ -431,7 +419,20 @@ class ReplayIntegrationTest {
     }
 
     @Test
-    fun `onConfigurationChanged stops and restarts recorder with a new recorder config`() {
+    fun `onConfigurationChanged stops the recorder`() {
+        val captureStrategy = mock<CaptureStrategy>()
+        val recorder = mock<Recorder>()
+        val replay = fixture.getSut(context, recorderProvider = { recorder }, replayCaptureStrategyProvider = { captureStrategy })
+
+        replay.register(fixture.scopes, fixture.options)
+        replay.start()
+        replay.onConfigurationChanged(mock())
+
+        verify(recorder).stop()
+    }
+
+    @Test
+    fun `onWindowSizeChanged stops and restarts recorder with a new recorder config`() {
         var configChanged = false
         val recorderConfig = mock<ScreenshotRecorderConfig>()
         val captureStrategy = mock<CaptureStrategy>()
@@ -445,11 +446,11 @@ class ReplayIntegrationTest {
 
         replay.register(fixture.scopes, fixture.options)
         replay.start()
-        replay.onConfigurationChanged(mock())
+        replay.onWindowSizeChanged(416, 912)
 
         verify(recorder).stop()
         verify(captureStrategy).onConfigurationChanged(eq(recorderConfig))
-        verify(recorder, times(2)).start(eq(recorderConfig))
+        verify(recorder).start(eq(recorderConfig))
         assertTrue(configChanged)
     }
 
@@ -599,6 +600,7 @@ class ReplayIntegrationTest {
 
         replay.register(fixture.scopes, fixture.options)
         replay.start()
+        replay.onWindowSizeChanged(416, 912)
         replay.onScreenshotRecorded(mock<Bitmap>())
 
         verify(recorder).pause()
@@ -617,6 +619,7 @@ class ReplayIntegrationTest {
 
         replay.register(fixture.scopes, fixture.options)
         replay.start()
+        replay.onWindowSizeChanged(416, 912)
         replay.onScreenshotRecorded(mock<Bitmap>())
 
         verify(recorder).pause()
@@ -712,7 +715,9 @@ class ReplayIntegrationTest {
     fun `if recording is paused in configChanges re-pauses it again`() {
         var configChanged = false
         val recorderConfig = mock<ScreenshotRecorderConfig>()
-        val captureStrategy = mock<CaptureStrategy>()
+        val captureStrategy = mock<CaptureStrategy> {
+            on { currentReplayId } doAnswer { if (configChanged) SentryId() else SentryId.EMPTY_ID }
+        }
         val recorder = mock<Recorder>()
         val replay = fixture.getSut(
             context,
@@ -725,10 +730,10 @@ class ReplayIntegrationTest {
         replay.start()
         replay.pause()
         replay.onConfigurationChanged(mock())
+        replay.onWindowSizeChanged(912, 416)
 
-        verify(recorder).stop()
         verify(captureStrategy).onConfigurationChanged(eq(recorderConfig))
-        verify(recorder, times(2)).start(eq(recorderConfig))
+        verify(recorder, times(1)).start(eq(recorderConfig))
         verify(recorder, times(2)).pause()
         assertTrue(configChanged)
     }
@@ -865,6 +870,26 @@ class ReplayIntegrationTest {
         replay.resume()
 
         verify(recorder).resume()
+    }
+
+    @Test
+    fun `debug masking is disabled by default`() {
+        val replay = fixture.getSut(
+            context
+        )
+        assertFalse(replay.isDebugMaskingOverlayEnabled)
+    }
+
+    @Test
+    fun `debug masking can be enabled and disabled`() {
+        val replay = fixture.getSut(
+            context
+        )
+        replay.enableDebugMaskingOverlay()
+        assertTrue(replay.isDebugMaskingOverlayEnabled)
+
+        replay.disableDebugMaskingOverlay()
+        assertFalse(replay.isDebugMaskingOverlayEnabled)
     }
 
     private fun getSessionCaptureStrategy(options: SentryOptions): SessionCaptureStrategy {

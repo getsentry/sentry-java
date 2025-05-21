@@ -2,8 +2,8 @@ plugins {
     `java-library`
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
 }
 
 configure<JavaPluginExtension> {
@@ -25,7 +25,7 @@ dependencies {
 
     // tests
     implementation(kotlin(Config.kotlinStdLib))
-    implementation(Config.TestLibs.kotlinTestJunit)
+    implementation(libs.kotlin.test.junit)
     implementation(Config.TestLibs.mockitoKotlin)
 }
 

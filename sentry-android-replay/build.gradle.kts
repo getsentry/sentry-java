@@ -6,10 +6,10 @@ plugins {
     id("com.android.library")
     kotlin("android")
     jacoco
-    id(Config.QualityPlugins.jacocoAndroid)
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.jacoco.android)
+    alias(libs.plugins.gradle.versions)
     // TODO: enable it later
-//    id(Config.QualityPlugins.detektPlugin)
+//    alias(libs.plugins.detekt)
 }
 
 android {
@@ -87,7 +87,7 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryAndroidCore)
     testImplementation(Config.TestLibs.robolectric)
-    testImplementation(Config.TestLibs.kotlinTestJunit)
+    testImplementation(libs.kotlin.test.junit)
     testImplementation(Config.TestLibs.androidxRunner)
     testImplementation(Config.TestLibs.androidxJunit)
     testImplementation(Config.TestLibs.mockitoKotlin)
@@ -101,7 +101,7 @@ dependencies {
     testImplementation(Config.Libs.composeMaterial)
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
