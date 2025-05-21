@@ -37,6 +37,7 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 @Config(
@@ -110,9 +111,7 @@ class ReplayIntegrationWithRecorderTest {
                 state = PAUSED
             }
 
-            override fun reset() {
-                TODO("Not yet implemented")
-            }
+            override fun reset() = Unit
 
             override fun stop() {
                 state = STOPPED
@@ -129,6 +128,9 @@ class ReplayIntegrationWithRecorderTest {
         assertEquals(INITALIZED, recorder.state)
 
         replay.start()
+        assertTrue(replay.isRecording)
+        // the actual start will be called in onWindowSizeChanged
+        replay.onWindowSizeChanged(recorderConfig.recordingWidth, recorderConfig.recordingHeight)
         assertEquals(STARTED, recorder.state)
 
         replay.pause()
@@ -142,6 +144,7 @@ class ReplayIntegrationWithRecorderTest {
 
         // start again and capture some frames
         replay.start()
+        replay.onWindowSizeChanged(recorderConfig.recordingWidth, recorderConfig.recordingHeight)
 
         // have to access 'replayCacheDir' after calling replay.start(), BUT can already be accessed
         // inside recorder.start()
