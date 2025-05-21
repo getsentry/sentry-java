@@ -57,6 +57,7 @@ internal class BufferCaptureStrategy(
         val replayCacheDir = cache?.replayCacheDir
         replayExecutor.submitSafely(options, "$TAG.stop") {
             FileUtils.deleteRecursively(replayCacheDir)
+            currentSegment = -1
         }
         super.stop()
     }
