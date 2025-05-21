@@ -66,10 +66,10 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
-    compileOnly(Config.Libs.navigationRuntime)
+    compileOnly(libs.androidx.navigation.runtime)
 
     // tests
-    testImplementation(Config.Libs.navigationRuntime)
+    testImplementation(libs.androidx.navigation.runtime)
 
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
