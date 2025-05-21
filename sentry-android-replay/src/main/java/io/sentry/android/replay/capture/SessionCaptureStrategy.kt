@@ -1,7 +1,6 @@
 package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
-import io.sentry.DateUtils
 import io.sentry.IScopes
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
