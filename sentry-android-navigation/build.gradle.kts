@@ -76,10 +76,10 @@ dependencies {
     testImplementation(libs.mockito.inline)
 
     testImplementation(libs.roboelectric)
-    testImplementation(Config.TestLibs.androidxCore)
-    testImplementation(Config.TestLibs.androidxRunner)
-    testImplementation(Config.TestLibs.androidxJunit)
-    testImplementation(Config.TestLibs.androidxCoreKtx)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.core.ktx)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.androidx.test.runner)
 }
 
 tasks.withType<Detekt>().configureEach {

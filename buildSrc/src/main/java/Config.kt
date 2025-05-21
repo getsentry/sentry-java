@@ -174,18 +174,7 @@ object Config {
     }
 
     object TestLibs {
-        private val espressoVersion = "3.5.0"
-
         val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
-        val androidxCore = "androidx.test:core:1.6.1"
-        val androidxRunner = "androidx.test:runner:1.6.2"
-        val androidxTestCoreKtx = "androidx.test:core-ktx:1.6.1"
-        val androidxTestRules = "androidx.test:rules:1.6.1"
-        val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
-        val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
-        val androidxTestOrchestrator = "androidx.test:orchestrator:1.5.0"
-        val androidxJunit = "androidx.test.ext:junit:1.1.5"
-        val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
         val awaitility3 = "org.awaitility:awaitility-kotlin:3.1.6" // need this due to a conflict of awaitility4+ and espresso on hamcrest
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
@@ -194,7 +183,6 @@ object Config {
         val leakCanaryInstrumentation = "com.squareup.leakcanary:leakcanary-android-instrumentation:2.14"
         val composeUiTestJunit4 = "androidx.compose.ui:ui-test-junit4:1.6.8"
         val okio = "com.squareup.okio:okio:1.13.0"
-        val coroutinesTest = "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.1"
     }
 
     object QualityPlugins {

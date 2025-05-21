@@ -28,9 +28,9 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockito.kotlin)
     testImplementation(Config.Libs.coroutinesCore)
-    testImplementation(Config.TestLibs.coroutinesTest)
 }
 
 configure<SourceSetContainer> {
