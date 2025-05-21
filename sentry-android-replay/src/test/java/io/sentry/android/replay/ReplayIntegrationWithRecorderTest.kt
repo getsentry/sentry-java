@@ -111,7 +111,7 @@ class ReplayIntegrationWithRecorderTest {
             }
 
             override fun reset() {
-                TODO("Not yet implemented")
+                state = STOPPED
             }
 
             override fun stop() {
@@ -129,6 +129,7 @@ class ReplayIntegrationWithRecorderTest {
         assertEquals(INITALIZED, recorder.state)
 
         replay.start()
+        replay.onWindowSizeChanged(640, 480)
         assertEquals(STARTED, recorder.state)
 
         replay.pause()
@@ -142,6 +143,7 @@ class ReplayIntegrationWithRecorderTest {
 
         // start again and capture some frames
         replay.start()
+        replay.onWindowSizeChanged(640, 480)
 
         // have to access 'replayCacheDir' after calling replay.start(), BUT can already be accessed
         // inside recorder.start()
