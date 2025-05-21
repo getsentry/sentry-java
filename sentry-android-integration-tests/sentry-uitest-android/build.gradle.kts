@@ -115,12 +115,12 @@ dependencies {
     errorprone(Config.CompileOnly.errorprone)
     errorprone(Config.CompileOnly.errorProneNullAway)
 
+    androidTestUtil(libs.androidx.test.orchestrator)
     androidTestImplementation(projects.sentryTestSupport)
     androidTestImplementation(libs.kotlin.test.junit)
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.test.ext.junit)
-    androidTestImplementation(libs.androidx.test.orchestrator)
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.okhttp.mockwebserver)
