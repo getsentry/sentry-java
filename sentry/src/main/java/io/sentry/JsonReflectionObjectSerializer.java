@@ -33,7 +33,7 @@ public final class JsonReflectionObjectSerializer {
   private final Set<Object> visiting = new HashSet<>();
   private final int maxDepth;
 
-  JsonReflectionObjectSerializer(int maxDepth) {
+  public JsonReflectionObjectSerializer(int maxDepth) {
     this.maxDepth = maxDepth;
   }
 

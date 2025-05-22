@@ -2,6 +2,12 @@ package io.sentry.samples.spring.boot.jakarta;
 
 import io.sentry.ISpan;
 import io.sentry.Sentry;
+import io.sentry.SentryAttribute;
+import io.sentry.SentryAttributes;
+import io.sentry.SentryLogLevel;
+import io.sentry.logger.SentryLogParameters;
+import java.awt.Point;
+import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +35,29 @@ public class PersonController {
       Sentry.logger().warn("warn Sentry logging");
       Sentry.logger().error("error Sentry logging");
       Sentry.logger().info("hello %s %s", "there", "world!");
+      Sentry.logger()
+          .log(
+              SentryLogLevel.ERROR,
+              SentryLogParameters.create(
+                  null,
+                  SentryAttributes.fromMap(Collections.singletonMap("extra-attr", "attr-value"))),
+              "hello %s %s",
+              "there",
+              "world!");
+      Sentry.logger()
+          .log(
+              SentryLogLevel.ERROR,
+              SentryLogParameters.create(
+                  SentryAttributes.of(
+                      SentryAttribute.booleanAttribute("boolattr", true),
+                      SentryAttribute.integerAttribute("intattr", 17),
+                      SentryAttribute.doubleAttribute("doubleattr", 0.8),
+                      SentryAttribute.stringAttribute("strattr", "strval"),
+                      SentryAttribute.named("namedAttr", new Point(10, 20)),
+                      SentryAttribute.flattened("flattenedAttr", new Point(10, 20)))),
+              "hello %s %s",
+              "there",
+              "world!");
       LOGGER.error("Trying person with id={}", id, new RuntimeException("error while loading"));
       throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
     } finally {
