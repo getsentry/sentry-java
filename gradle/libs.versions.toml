@@ -49,6 +49,7 @@ androidx-navigation-runtime = { module = "androidx.navigation:navigation-runtime
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.6.0" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+commons-compress = { module = "org.apache.commons:commons-compress", version = "1.25.0" }
 
 # test libraries
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }

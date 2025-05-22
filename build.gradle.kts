@@ -33,6 +33,12 @@ plugins {
     // id("io.sentry.android.gradle") version "5.6.0" apply false
 }
 
+buildscript {
+    dependencies {
+        classpath(libs.commons.compress)
+    }
+}
+
 apiValidation {
     ignoredPackages.addAll(
         setOf(
