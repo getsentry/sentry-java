@@ -28,6 +28,24 @@
         {
           "type": "string",
           "value": "f28b86350e534671"
+        },
+        "custom.boolean":
+        {
+          "type": "boolean",
+          "value": true
+        },
+        "custom.double": {
+          "type": "double",
+          "value": 11.12
+        },
+        "custom.point": {
+          "type": "string",
+          "value": "Point{x:20,y:30}-Hello"
+        },
+        "custom.integer":
+        {
+          "type": "integer",
+          "value": 10
         }
       }
     }
