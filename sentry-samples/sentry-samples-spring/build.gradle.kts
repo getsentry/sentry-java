@@ -7,7 +7,7 @@ plugins {
     kotlin("jvm")
     alias(libs.plugins.kotlin.spring)
     id("war")
-    id(Config.BuildPlugins.gretty) version Config.BuildPlugins.grettyVersion
+    alias(libs.plugins.gretty)
 }
 
 group = "io.sentry.sample.spring"

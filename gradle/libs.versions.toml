@@ -10,6 +10,10 @@ kotlin = "1.9.24"
 okhttp = "4.9.2"
 springTwo = "2.7.18"
 springThree = "3.4.2"
+targetSdk = "34"
+compileSdk = "34"
+minSdk = "21"
+jacoco = "0.8.7"
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -29,6 +33,7 @@ vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.3
 spring-boot-two = { id = "org.springframework.boot", version.ref = "springTwo" }
 spring-boot-three = { id = "org.springframework.boot", version.ref = "springThree" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.0.11.RELEASE" }
+gretty = { id = "org.gretty", version = "4.0.0" }
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.8.2" }

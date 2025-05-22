@@ -1,4 +1,3 @@
-
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
@@ -9,7 +8,7 @@ plugins {
     kotlin("jvm")
     alias(libs.plugins.kotlin.spring)
     id("war")
-    id(Config.BuildPlugins.gretty) version Config.BuildPlugins.grettyVersion
+    alias(libs.plugins.gretty)
 }
 
 group = "io.sentry.sample.spring-jakarta"
