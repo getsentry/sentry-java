@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    alias(libs.plugins.spring.boot.three)
+    alias(libs.plugins.springboot3)
     alias(libs.plugins.spring.dependency.management)
     kotlin("jvm")
     alias(libs.plugins.kotlin.spring)
@@ -18,9 +18,9 @@ repositories {
 }
 
 dependencies {
-    implementation(Config.Libs.springBoot3StarterWebflux)
-    implementation(Config.Libs.springBoot3StarterGraphql)
-    implementation(Config.Libs.springBoot3StarterActuator)
+    implementation(libs.springboot3.starter.actuator)
+    implementation(libs.springboot3.starter.graphql)
+    implementation(libs.springboot3.starter.webflux)
     implementation(Config.Libs.contextPropagation)
     implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
@@ -30,7 +30,7 @@ dependencies {
     implementation(projects.sentryGraphql22)
 
     testImplementation(projects.sentrySystemTestSupport)
-    testImplementation(Config.Libs.springBoot3StarterTest) {
+    testImplementation(libs.springboot3.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
     testImplementation(kotlin(Config.kotlinStdLib))
