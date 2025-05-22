@@ -5,9 +5,9 @@ plugins {
     `java-library`
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.QualityPlugins.detektPlugin)
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.detekt)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -28,9 +28,9 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockito.kotlin)
     testImplementation(Config.Libs.coroutinesCore)
-    testImplementation(Config.TestLibs.coroutinesTest)
 }
 
 configure<SourceSetContainer> {
@@ -40,7 +40,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

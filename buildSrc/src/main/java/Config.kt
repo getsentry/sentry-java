@@ -9,36 +9,14 @@ object Config {
     val springBoot3Version = "3.4.2"
     val kotlinCompatibleLanguageVersion = "1.6"
 
-    // see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
-    // see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
-    val composeVersion = "1.6.11"
     val androidComposeCompilerVersion = "1.5.14"
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
-        val buildConfig = "com.github.gmazzo.buildconfig"
-        val buildConfigVersion = "5.6.5"
-        val springBoot = "org.springframework.boot"
-        val springDependencyManagement = "io.spring.dependency-management"
-        val springDependencyManagementVersion = "1.0.11.RELEASE"
-        val gretty = "org.gretty"
-        val grettyVersion = "4.0.0"
-        val gradleMavenPublishPlugin = "com.vanniktech.maven.publish"
-        val gradleMavenPublishPluginVersion = "0.30.0"
-        val dokkaPlugin = "org.jetbrains.dokka:dokka-gradle-plugin:2.0.0"
-        val dokkaPluginAlias = "org.jetbrains.dokka"
-        val dokkaPluginJavadocAlias = "org.jetbrains.dokka-javadoc"
-        val composeGradlePlugin = "org.jetbrains.compose:compose-gradle-plugin:$composeVersion"
         val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"
     }
 
     object Android {
-        private val sdkVersion = 34
-
-        val minSdkVersion = 21
-        val targetSdkVersion = sdkVersion
-        val compileSdkVersion = sdkVersion
-
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
 
         fun shouldSkipDebugVariant(name: String?): Boolean {
@@ -57,7 +35,6 @@ object Config {
         private val lifecycleVersion = "2.2.0"
         val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
         val lifecycleCommonJava8 = "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
-        val androidxCore = "androidx.core:core:1.3.2"
         val androidxSqlite = "androidx.sqlite:sqlite:2.3.1"
         val androidxRecylerView = "androidx.recyclerview:recyclerview:1.2.1"
         val androidxAnnotation = "androidx.annotation:annotation:1.9.1"
@@ -144,20 +121,6 @@ object Config {
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
         val kotlinStdLib = "org.jetbrains.kotlin:kotlin-stdlib"
 
-        private val navigationVersion = "2.4.2"
-        val navigationRuntime = "androidx.navigation:navigation-runtime:$navigationVersion"
-
-        // compose deps
-        val composeNavigation = "androidx.navigation:navigation-compose:$navigationVersion"
-        val composeActivity = "androidx.activity:activity-compose:1.8.2"
-        val composeFoundation = "androidx.compose.foundation:foundation:1.6.3"
-        val composeUi = "androidx.compose.ui:ui:1.6.3"
-        val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:1.6.3"
-        val composeMaterial = "androidx.compose.material3:material3:1.2.1"
-
-        val composeUiReplay = "androidx.compose.ui:ui:1.5.0" // Note: don't change without testing forwards compatibility
-        val composeCoil = "io.coil-kt:coil-compose:2.6.0"
-
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
         val apolloKotlin4 = "com.apollographql.apollo:apollo-runtime:4.1.1"
 
@@ -188,57 +151,25 @@ object Config {
     }
 
     object TestLibs {
-        private val espressoVersion = "3.5.0"
-
         val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
-        val androidxCore = "androidx.test:core:1.6.1"
-        val androidxRunner = "androidx.test:runner:1.6.2"
-        val androidxTestCoreKtx = "androidx.test:core-ktx:1.6.1"
-        val androidxTestRules = "androidx.test:rules:1.6.1"
-        val espressoCore = "androidx.test.espresso:espresso-core:$espressoVersion"
-        val espressoIdlingResource = "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
-        val androidxTestOrchestrator = "androidx.test:orchestrator:1.5.0"
-        val androidxJunit = "androidx.test.ext:junit:1.1.5"
-        val androidxCoreKtx = "androidx.core:core-ktx:1.7.0"
-        val robolectric = "org.robolectric:robolectric:4.14"
-        val mockitoKotlin = "org.mockito.kotlin:mockito-kotlin:4.1.0"
-        val mockitoInline = "org.mockito:mockito-inline:4.8.0"
         val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
         val awaitility3 = "org.awaitility:awaitility-kotlin:3.1.6" // need this due to a conflict of awaitility4+ and espresso on hamcrest
-        val mockWebserver = "com.squareup.okhttp3:mockwebserver:${Libs.okHttpVersion}"
-        val jsonUnit = "net.javacrumbs.json-unit:json-unit:2.32.0"
         val hsqldb = "org.hsqldb:hsqldb:2.6.1"
         val javaFaker = "com.github.javafaker:javafaker:1.0.2"
         val msgpack = "org.msgpack:msgpack-core:0.9.8"
         val leakCanaryInstrumentation = "com.squareup.leakcanary:leakcanary-android-instrumentation:2.14"
         val composeUiTestJunit4 = "androidx.compose.ui:ui-test-junit4:1.6.8"
         val okio = "com.squareup.okio:okio:1.13.0"
-        val coroutinesTest = "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.1"
     }
 
     object QualityPlugins {
         object Jacoco {
-            val version = "0.8.7"
-
             // TODO [POTEL] add tests and restore
             val minimumCoverage = BigDecimal.valueOf(0.1)
         }
-        val spotless = "com.diffplug.spotless"
-        val spotlessVersion = "6.11.0"
-        val errorProne = "net.ltgt.errorprone"
-        val errorpronePlugin = "net.ltgt.gradle:gradle-errorprone-plugin:3.0.1"
-        val gradleVersionsPlugin = "com.github.ben-manes:gradle-versions-plugin:0.42.0"
-        val gradleVersions = "com.github.ben-manes.versions"
-        val detekt = "io.gitlab.arturbosch.detekt"
-        val detektVersion = "1.23.8"
+
+        // this can be removed when we upgrade to Gradle 8, which allows us to use a getter for the plugin ID
         val detektPlugin = "io.gitlab.arturbosch.detekt"
-        val binaryCompatibilityValidatorVersion = "0.13.0"
-        val binaryCompatibilityValidatorPlugin = "org.jetbrains.kotlinx:binary-compatibility-validator:$binaryCompatibilityValidatorVersion"
-        val binaryCompatibilityValidator = "org.jetbrains.kotlinx.binary-compatibility-validator"
-        val jacocoAndroid = "com.mxalbert.gradle.jacoco-android"
-        val jacocoAndroidVersion = "0.2.0"
-        val kover = "org.jetbrains.kotlinx.kover"
-        val koverVersion = "0.7.3"
     }
 
     object Sentry {

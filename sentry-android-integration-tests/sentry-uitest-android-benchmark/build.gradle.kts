@@ -4,19 +4,19 @@ import net.ltgt.gradle.errorprone.errorprone
 plugins {
     id("com.android.application")
     kotlin("android")
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.QualityPlugins.detektPlugin)
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.detekt)
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.uitest.android.benchmark"
 
     defaultConfig {
         applicationId = "io.sentry.uitest.android.benchmark"
-        minSdk = Config.Android.minSdkVersion
-        targetSdk = Config.Android.targetSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0.0"
 
@@ -89,24 +89,24 @@ dependencies {
 
     implementation(projects.sentryAndroid)
     implementation(Config.Libs.appCompat)
-    implementation(Config.Libs.androidxCore)
+    implementation(libs.androidx.core)
     implementation(Config.Libs.androidxRecylerView)
     implementation(Config.Libs.constraintLayout)
-    implementation(Config.TestLibs.espressoIdlingResource)
+    implementation(libs.androidx.test.espresso.idling.resource)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
     errorprone(Config.CompileOnly.errorprone)
     errorprone(Config.CompileOnly.errorProneNullAway)
 
+    androidTestUtil(libs.androidx.test.orchestrator)
     androidTestImplementation(projects.sentryTestSupport)
     androidTestImplementation(libs.kotlin.test.junit)
-    androidTestImplementation(Config.TestLibs.espressoCore)
-    androidTestImplementation(Config.TestLibs.androidxTestCoreKtx)
-    androidTestImplementation(Config.TestLibs.androidxRunner)
-    androidTestImplementation(Config.TestLibs.androidxTestRules)
-    androidTestImplementation(Config.TestLibs.androidxJunit)
-    androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.runner)
 }
 
 tasks.withType<JavaCompile>().configureEach {

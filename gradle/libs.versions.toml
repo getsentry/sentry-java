@@ -1,9 +1,66 @@
 [versions]
+androidxNavigation = "2.4.2"
+androidxTestCore = "1.6.1"
+androidxComposeVersion = "1.6.3"
+jetbrainsComposeVersion = "1.6.11"
+espresso = "3.5.0"
 kotlin = "1.9.24"
+# see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
+# see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
+okhttp = "4.9.2"
+springTwo = "2.7.18"
+springThree = "3.4.2"
+targetSdk = "34"
+compileSdk = "34"
+minSdk = "21"
+jacoco = "0.8.7"
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+buildconfig = { id = "com.github.gmazzo.buildconfig", version = "5.6.5" }
+dokka = { id = "org.jetbrains.dokka", version = "2.0.0" }
+dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version = "2.0.0" }
+binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.13.0" }
+compose-compiler = { id = "org.jetbrains.compose", version.ref = "jetbrainsComposeVersion" }
+errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
+gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
+spotless = { id = "com.diffplug.spotless", version = "6.11.0" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8" }
+jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.0" }
+kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.3" }
+vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.30.0" }
+spring-boot-two = { id = "org.springframework.boot", version.ref = "springTwo" }
+spring-boot-three = { id = "org.springframework.boot", version.ref = "springThree" }
+spring-dependency-management = { id = "io.spring.dependency-management", version = "1.0.11.RELEASE" }
+gretty = { id = "org.gretty", version = "4.0.0" }
 
 [libraries]
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.8.2" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "androidxComposeVersion" }
+androidx-compose-foundation-layout = { module = "androidx.compose.foundation:foundation-layout", version.ref = "androidxComposeVersion" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version = "1.2.1" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidxComposeVersion" }
+# Note: don't change without testing forwards compatibility
+androidx-compose-ui-replay = { module = "androidx.compose.ui:ui", version = "1.5.0" }
+androidx-core = { module = "androidx.core:core", version = "1.3.2"}
+androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.7.0" }
+androidx-navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "androidxNavigation" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
+coil-compose = { module = "io.coil-kt:coil-compose", version = "2.6.0" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+
+# test libraries
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
+androidx-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "androidxTestCore" }
+androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
+androidx-test-espresso-idling-resource = { module = "androidx.test.espresso:espresso-idling-resource", version.ref = "espresso" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version = "1.1.5" }
+androidx-test-orchestrator = { module = "androidx.test:orchestrator", version = "1.5.0" }
+androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidxTestCore" }
+androidx-test-runner = { module = "androidx.test:runner", version = "1.6.2" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version = "1.6.1" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version = "4.1.0" }
+mockito-inline = { module = "org.mockito:mockito-inline", version = "4.8.0" }
+okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
+roboelectric = { module = "org.robolectric:robolectric", version = "4.14" }

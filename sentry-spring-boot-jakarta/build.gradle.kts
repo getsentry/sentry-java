@@ -6,10 +6,10 @@ plugins {
     `java-library`
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
-    id(Config.BuildPlugins.springBoot) version Config.springBoot3Version apply false
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.buildconfig)
+    alias(libs.plugins.spring.boot.three)
 }
 
 configure<JavaPluginExtension> {
@@ -65,8 +65,8 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.okhttp.mockwebserver)
 
     testImplementation(Config.Libs.okhttp)
     testImplementation(Config.Libs.springBoot3Starter)
@@ -96,7 +96,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

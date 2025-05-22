@@ -3,8 +3,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.run.BootRun
 
 plugins {
-    id(Config.BuildPlugins.springBoot) version Config.springBoot3Version
-    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
+    alias(libs.plugins.spring.boot.three)
+    alias(libs.plugins.spring.dependency.management)
     kotlin("jvm")
     alias(libs.plugins.kotlin.spring)
 }

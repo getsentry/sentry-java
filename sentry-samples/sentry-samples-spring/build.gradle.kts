@@ -2,12 +2,12 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
-    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
+    alias(libs.plugins.spring.boot.two) apply false
+    alias(libs.plugins.spring.dependency.management)
     kotlin("jvm")
     alias(libs.plugins.kotlin.spring)
     id("war")
-    id(Config.BuildPlugins.gretty) version Config.BuildPlugins.grettyVersion
+    alias(libs.plugins.gretty)
 }
 
 group = "io.sentry.sample.spring"

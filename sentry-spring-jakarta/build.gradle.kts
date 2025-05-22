@@ -7,10 +7,10 @@ plugins {
     `java-library`
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
-    id(Config.BuildPlugins.springBoot) version Config.springBoot3Version apply false
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.buildconfig)
+    alias(libs.plugins.spring.boot.three) apply false
 }
 
 configure<JavaPluginExtension> {
@@ -59,8 +59,8 @@ dependencies {
     testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
     testImplementation(Config.Libs.springBoot3StarterTest)
     testImplementation(Config.Libs.springBoot3StarterWeb)
     testImplementation(Config.Libs.springBoot3StarterWebflux)
@@ -80,7 +80,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

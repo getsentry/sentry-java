@@ -6,11 +6,11 @@ plugins {
     kotlin("multiplatform")
     id("com.android.library")
     id("org.jetbrains.compose")
-    id(Config.QualityPlugins.kover)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.QualityPlugins.detektPlugin)
-    id(Config.BuildPlugins.dokkaPluginAlias)
-    id(Config.BuildPlugins.dokkaPluginJavadocAlias)
+    alias(libs.plugins.kover)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.dokka.javadoc)
     `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
 }
 
@@ -49,20 +49,20 @@ kotlin {
                 api(projects.sentry)
                 api(projects.sentryAndroidNavigation)
 
-                compileOnly(Config.Libs.composeNavigation)
+                compileOnly(libs.androidx.navigation.compose)
                 implementation(Config.Libs.lifecycleCommonJava8)
             }
         }
         val androidUnitTest by getting {
             dependencies {
                 implementation(libs.kotlin.test.junit)
-                implementation(Config.TestLibs.mockitoKotlin)
-                implementation(Config.TestLibs.mockitoInline)
-                implementation(Config.Libs.composeNavigation)
-                implementation(Config.TestLibs.robolectric)
-                implementation(Config.TestLibs.androidxRunner)
-                implementation(Config.TestLibs.androidxJunit)
-                implementation(Config.TestLibs.androidxTestRules)
+                implementation(libs.mockito.kotlin)
+                implementation(libs.mockito.inline)
+                implementation(libs.androidx.navigation.compose)
+                implementation(libs.roboelectric)
+                implementation(libs.androidx.test.rules)
+                implementation(libs.androidx.test.runner)
+                implementation(libs.androidx.test.ext.junit)
                 implementation(Config.TestLibs.composeUiTestJunit4)
             }
         }
@@ -70,11 +70,11 @@ kotlin {
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.compose"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")

@@ -4,18 +4,18 @@ import net.ltgt.gradle.errorprone.errorprone
 plugins {
     id("com.android.application")
     kotlin("android")
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.QualityPlugins.detektPlugin)
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.detekt)
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.uitest.android"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersion
-        targetSdk = Config.Android.targetSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.compileSdk.get().toInt()
         versionCode = 1
         versionName = "1.0.0"
 
@@ -101,13 +101,13 @@ dependencies {
         implementation(projects.sentryAndroidCore)
     }
     implementation(Config.Libs.appCompat)
-    implementation(Config.Libs.androidxCore)
-    implementation(Config.Libs.composeActivity)
-    implementation(Config.Libs.composeFoundation)
-    implementation(Config.Libs.composeMaterial)
+    implementation(libs.androidx.core)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.material3)
     implementation(Config.Libs.androidxRecylerView)
     implementation(Config.Libs.constraintLayout)
-    implementation(Config.TestLibs.espressoIdlingResource)
+    implementation(libs.androidx.test.espresso.idling.resource)
     implementation(Config.Libs.leakCanary)
 
     compileOnly(Config.CompileOnly.nopen)
@@ -115,17 +115,17 @@ dependencies {
     errorprone(Config.CompileOnly.errorprone)
     errorprone(Config.CompileOnly.errorProneNullAway)
 
+    androidTestUtil(libs.androidx.test.orchestrator)
     androidTestImplementation(projects.sentryTestSupport)
     androidTestImplementation(libs.kotlin.test.junit)
-    androidTestImplementation(Config.TestLibs.espressoCore)
-    androidTestImplementation(Config.TestLibs.androidxRunner)
-    androidTestImplementation(Config.TestLibs.androidxTestRules)
-    androidTestImplementation(Config.TestLibs.androidxTestCoreKtx)
-    androidTestImplementation(Config.TestLibs.mockWebserver)
-    androidTestImplementation(Config.TestLibs.androidxJunit)
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(Config.TestLibs.leakCanaryInstrumentation)
     androidTestImplementation(Config.TestLibs.awaitility3)
-    androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
 }
 
 tasks.withType<JavaCompile>().configureEach {

@@ -2,8 +2,8 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id(Config.BuildPlugins.springBoot) version Config.springBootVersion
-    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
+    alias(libs.plugins.spring.boot.two)
+    alias(libs.plugins.spring.dependency.management)
     kotlin("jvm")
     alias(libs.plugins.kotlin.spring)
 }
