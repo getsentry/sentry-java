@@ -11,11 +11,6 @@ object Config {
 
     val androidComposeCompilerVersion = "1.5.14"
 
-    object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:$AGP"
-        val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"
-    }
-
     object Android {
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
 

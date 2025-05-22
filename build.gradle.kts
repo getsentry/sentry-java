@@ -27,20 +27,10 @@ plugins {
     alias(libs.plugins.errorprone) apply false
     alias(libs.plugins.gradle.versions) apply false
     alias(libs.plugins.spring.dependency.management) apply false
-}
-
-buildscript {
-    repositories {
-        google()
-    }
-    dependencies {
-        classpath(Config.BuildPlugins.androidGradle)
-
-        // add classpath of sentry android gradle plugin
-        // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
-
-        classpath(Config.BuildPlugins.commonsCompressOverride)
-    }
+    id("com.android.library") version Config.AGP apply false
+    id("com.android.application") version Config.AGP apply false
+    // add classpath of sentry android gradle plugin
+    // id("io.sentry.android.gradle") version "5.6.0" apply false
 }
 
 apiValidation {
