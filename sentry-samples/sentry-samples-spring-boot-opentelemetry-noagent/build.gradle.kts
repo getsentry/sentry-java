@@ -72,7 +72,7 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom(Config.Libs.OpenTelemetry.otelInstrumentationBom)
+        mavenBom(libs.otel.instrumentation.bom.get().toString())
     }
 }
 

@@ -76,7 +76,6 @@ object Config {
         val springBoot3StarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBoot3Version"
         val springBoot3StarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBoot3Version"
         val springBoot3StarterActuator = "org.springframework.boot:spring-boot-starter-actuator:$springBoot3Version"
-        val springBoot3StarterOpenTelemetry = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter:${OpenTelemetry.otelInstrumentationVersion}"
 
         val springWeb = "org.springframework:spring-webmvc"
         val springWebflux = "org.springframework:spring-webflux"
@@ -125,24 +124,6 @@ object Config {
         val apolloKotlin4 = "com.apollographql.apollo:apollo-runtime:4.1.1"
 
         val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.8.4"
-
-        object OpenTelemetry {
-            val otelVersion = "1.44.1"
-            val otelAlphaVersion = "$otelVersion-alpha"
-            val otelInstrumentationVersion = "2.10.0"
-            val otelInstrumentationAlphaVersion = "$otelInstrumentationVersion-alpha"
-            val otelSemanticConvetionsVersion = "1.28.0-alpha" // check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
-
-            val otelSdk = "io.opentelemetry:opentelemetry-sdk:$otelVersion"
-            val otelSemconv = "io.opentelemetry.semconv:opentelemetry-semconv:$otelSemanticConvetionsVersion"
-            val otelSemconvIncubating = "io.opentelemetry.semconv:opentelemetry-semconv-incubating:$otelSemanticConvetionsVersion"
-            val otelJavaAgent = "io.opentelemetry.javaagent:opentelemetry-javaagent:$otelInstrumentationVersion"
-            val otelJavaAgentExtensionApi = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api:$otelInstrumentationAlphaVersion"
-            val otelJavaAgentTooling = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling:$otelInstrumentationAlphaVersion"
-            val otelExtensionAutoconfigureSpi = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:$otelVersion"
-            val otelExtensionAutoconfigure = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:$otelVersion"
-            val otelInstrumentationBom = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:$otelInstrumentationVersion"
-        }
     }
 
     object AnnotationProcessors {
