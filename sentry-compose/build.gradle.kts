@@ -49,7 +49,7 @@ kotlin {
                 api(projects.sentry)
                 api(projects.sentryAndroidNavigation)
 
-                compileOnly(Config.Libs.composeNavigation)
+                compileOnly(libs.androidx.navigation.compose)
                 implementation(Config.Libs.lifecycleCommonJava8)
             }
         }
@@ -58,7 +58,7 @@ kotlin {
                 implementation(libs.kotlin.test.junit)
                 implementation(libs.mockito.kotlin)
                 implementation(libs.mockito.inline)
-                implementation(Config.Libs.composeNavigation)
+                implementation(libs.androidx.navigation.compose)
                 implementation(libs.roboelectric)
                 implementation(libs.androidx.test.rules)
                 implementation(libs.androidx.test.runner)

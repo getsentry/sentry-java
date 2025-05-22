@@ -129,20 +129,6 @@ object Config {
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
         val kotlinStdLib = "org.jetbrains.kotlin:kotlin-stdlib"
 
-        private val navigationVersion = "2.4.2"
-        val navigationRuntime = "androidx.navigation:navigation-runtime:$navigationVersion"
-
-        // compose deps
-        val composeNavigation = "androidx.navigation:navigation-compose:$navigationVersion"
-        val composeActivity = "androidx.activity:activity-compose:1.8.2"
-        val composeFoundation = "androidx.compose.foundation:foundation:1.6.3"
-        val composeUi = "androidx.compose.ui:ui:1.6.3"
-        val composeFoundationLayout = "androidx.compose.foundation:foundation-layout:1.6.3"
-        val composeMaterial = "androidx.compose.material3:material3:1.2.1"
-
-        val composeUiReplay = "androidx.compose.ui:ui:1.5.0" // Note: don't change without testing forwards compatibility
-        val composeCoil = "io.coil-kt:coil-compose:2.6.0"
-
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
         val apolloKotlin4 = "com.apollographql.apollo:apollo-runtime:4.1.1"
 
