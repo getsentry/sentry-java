@@ -85,7 +85,7 @@ dependencies {
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)
     implementation(Config.Libs.lifecycleCommonJava8)
-    implementation(Config.Libs.androidxCore)
+    implementation(libs.androidx.core)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -97,10 +97,10 @@ dependencies {
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(libs.roboelectric)
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.androidxCore)
-    testImplementation(Config.TestLibs.androidxRunner)
-    testImplementation(Config.TestLibs.androidxJunit)
-    testImplementation(Config.TestLibs.androidxCoreKtx)
+    testImplementation(libs.androidx.core.ktx)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.androidx.test.runner)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
     testImplementation(Config.TestLibs.awaitility)

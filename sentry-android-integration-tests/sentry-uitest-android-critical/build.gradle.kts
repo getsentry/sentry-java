@@ -49,7 +49,7 @@ android {
 
 dependencies {
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
-    implementation(Config.Libs.androidxCore)
+    implementation(libs.androidx.core)
     implementation(Config.Libs.composeActivity)
     implementation(Config.Libs.composeFoundation)
     implementation(Config.Libs.composeMaterial)

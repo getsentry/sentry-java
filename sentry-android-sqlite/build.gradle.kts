@@ -74,7 +74,7 @@ dependencies {
     // tests
     testImplementation(Config.Libs.androidxSqlite)
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.androidxJunit)
+    testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
 }

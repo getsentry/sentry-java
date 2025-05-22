@@ -89,24 +89,24 @@ dependencies {
 
     implementation(projects.sentryAndroid)
     implementation(Config.Libs.appCompat)
-    implementation(Config.Libs.androidxCore)
+    implementation(libs.androidx.core)
     implementation(Config.Libs.androidxRecylerView)
     implementation(Config.Libs.constraintLayout)
-    implementation(Config.TestLibs.espressoIdlingResource)
+    implementation(libs.androidx.test.espresso.idling.resource)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
     errorprone(Config.CompileOnly.errorprone)
     errorprone(Config.CompileOnly.errorProneNullAway)
 
+    androidTestUtil(libs.androidx.test.orchestrator)
     androidTestImplementation(projects.sentryTestSupport)
     androidTestImplementation(libs.kotlin.test.junit)
-    androidTestImplementation(Config.TestLibs.espressoCore)
-    androidTestImplementation(Config.TestLibs.androidxTestCoreKtx)
-    androidTestImplementation(Config.TestLibs.androidxRunner)
-    androidTestImplementation(Config.TestLibs.androidxTestRules)
-    androidTestImplementation(Config.TestLibs.androidxJunit)
-    androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.runner)
 }
 
 tasks.withType<JavaCompile>().configureEach {
