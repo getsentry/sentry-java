@@ -31,7 +31,7 @@ spring-boot-three = { id = "org.springframework.boot", version.ref = "springThre
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.0.11.RELEASE" }
 
 [libraries]
-androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxComposeVersion" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "1.8.2" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "androidxComposeVersion" }
 androidx-compose-foundation-layout = { module = "androidx.compose.foundation:foundation-layout", version.ref = "androidxComposeVersion" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3", version = "1.2.1" }
