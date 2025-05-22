@@ -58,6 +58,7 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(libs.awaitility.kotlin)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
@@ -68,7 +69,6 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterAop)
     testImplementation(Config.Libs.springBoot3StarterGraphql)
     testImplementation(Config.Libs.contextPropagation)
-    testImplementation(Config.TestLibs.awaitility)
     testImplementation(Config.Libs.graphQlJava22)
     testImplementation(projects.sentryReactor)
 }

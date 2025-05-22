@@ -150,18 +150,6 @@ object Config {
         val springBootConfiguration = "org.springframework.boot:spring-boot-configuration-processor"
     }
 
-    object TestLibs {
-        val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
-        val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
-        val awaitility3 = "org.awaitility:awaitility-kotlin:3.1.6" // need this due to a conflict of awaitility4+ and espresso on hamcrest
-        val hsqldb = "org.hsqldb:hsqldb:2.6.1"
-        val javaFaker = "com.github.javafaker:javafaker:1.0.2"
-        val msgpack = "org.msgpack:msgpack-core:0.9.8"
-        val leakCanaryInstrumentation = "com.squareup.leakcanary:leakcanary-android-instrumentation:2.14"
-        val composeUiTestJunit4 = "androidx.compose.ui:ui-test-junit4:1.6.8"
-        val okio = "com.squareup.okio:okio:1.13.0"
-    }
-
     object QualityPlugins {
         object Jacoco {
             // TODO [POTEL] add tests and restore

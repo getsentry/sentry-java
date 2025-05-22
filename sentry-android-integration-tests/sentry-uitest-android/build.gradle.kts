@@ -19,7 +19,7 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
-        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Runs each test in its own instance of Instrumentation. This way they are isolated from
         // one another and get their own Application instance.
         // https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner#enable-gradle
@@ -117,15 +117,15 @@ dependencies {
 
     androidTestUtil(libs.androidx.test.orchestrator)
     androidTestImplementation(projects.sentryTestSupport)
-    androidTestImplementation(libs.kotlin.test.junit)
     androidTestImplementation(libs.androidx.test.core.ktx)
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.awaitility3.kotlin)
+    androidTestImplementation(libs.kotlin.test.junit)
+    androidTestImplementation(libs.leakcanary.instrumentation)
     androidTestImplementation(libs.okhttp.mockwebserver)
-    androidTestImplementation(Config.TestLibs.leakCanaryInstrumentation)
-    androidTestImplementation(Config.TestLibs.awaitility3)
 }
 
 tasks.withType<JavaCompile>().configureEach {
