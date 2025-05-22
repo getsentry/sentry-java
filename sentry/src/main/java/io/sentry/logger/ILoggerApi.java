@@ -2,7 +2,6 @@ package io.sentry.logger;
 
 import io.sentry.SentryDate;
 import io.sentry.SentryLogLevel;
-import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,15 +30,8 @@ public interface ILoggerApi {
       @Nullable Object... args);
 
   void log(
-      @Nullable Map<String, Object> attributes,
       @NotNull SentryLogLevel level,
-      @Nullable String message,
-      @Nullable Object... args);
-
-  void log(
-      @Nullable Map<String, Object> attributes,
-      @NotNull SentryLogLevel level,
-      @Nullable SentryDate timestamp,
+      @NotNull SentryLogParameters params,
       @Nullable String message,
       @Nullable Object... args);
 }

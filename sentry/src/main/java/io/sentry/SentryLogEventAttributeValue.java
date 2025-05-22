@@ -22,6 +22,12 @@ public final class SentryLogEventAttributeValue implements JsonUnknown, JsonSeri
     }
   }
 
+  public SentryLogEventAttributeValue(
+      final @NotNull SentryAttributeType type, final @Nullable Object value) {
+    this.type = type.apiName();
+    this.value = value;
+  }
+
   public @NotNull String getType() {
     return type;
   }
