@@ -36,6 +36,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import java.awt.Point
 import java.io.File
 import java.nio.file.Files
 import java.util.Queue
@@ -2687,7 +2688,8 @@ class ScopesTest {
                     SentryAttribute.named("namedstrattr", "namedstrval"),
                     SentryAttribute.named("namedboolattr", false),
                     SentryAttribute.named("namedintattr", 18),
-                    SentryAttribute.named("nameddoubleattr", 4.9)
+                    SentryAttribute.named("nameddoubleattr", 4.9),
+                    SentryAttribute.flattened("flattenedpoint", Point(10, 20))
                 )
             ),
             "log message"
@@ -2730,6 +2732,18 @@ class ScopesTest {
                 val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
                 assertEquals(4.9, nameddoubleattr.value)
                 assertEquals("double", nameddoubleattr.type)
+
+                val flattenedpoint = it.attributes?.get("flattenedpoint")!!
+                assertEquals("java.awt.Point[x=10,y=20]", flattenedpoint.value)
+                assertEquals("string", flattenedpoint.type)
+
+                val flattenedpointx = it.attributes?.get("flattenedpoint.x")!!
+                assertEquals(10, flattenedpointx.value)
+                assertEquals("integer", flattenedpointx.type)
+
+                val flattenedpointy = it.attributes?.get("flattenedpoint.y")!!
+                assertEquals(20, flattenedpointy.value)
+                assertEquals("integer", flattenedpointy.type)
             },
             anyOrNull()
         )

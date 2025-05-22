@@ -47,11 +47,6 @@ public final class SentryAttribute {
     return new SentryAttribute(name, null, value, 1);
   }
 
-  public static @NotNull SentryAttribute flattened(
-      final @NotNull String name, final @Nullable Object value, final int flattenDepth) {
-    return new SentryAttribute(name, null, value, flattenDepth);
-  }
-
   public static @NotNull SentryAttribute booleanAttribute(
       final @NotNull String name, final @Nullable Boolean value) {
     return new SentryAttribute(name, SentryAttributeType.BOOLEAN, value, 0);

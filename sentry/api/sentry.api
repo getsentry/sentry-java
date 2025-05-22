@@ -2663,7 +2663,6 @@ public final class io/sentry/SentryAttribute {
 	public static fun booleanAttribute (Ljava/lang/String;Ljava/lang/Boolean;)Lio/sentry/SentryAttribute;
 	public static fun doubleAttribute (Ljava/lang/String;Ljava/lang/Double;)Lio/sentry/SentryAttribute;
 	public static fun flattened (Ljava/lang/String;Ljava/lang/Object;)Lio/sentry/SentryAttribute;
-	public static fun flattened (Ljava/lang/String;Ljava/lang/Object;I)Lio/sentry/SentryAttribute;
 	public fun getFlattenDepth ()I
 	public fun getName ()Ljava/lang/String;
 	public fun getType ()Lio/sentry/SentryAttributeType;
