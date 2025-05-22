@@ -27,6 +27,7 @@ plugins {
     alias(libs.plugins.errorprone) apply false
     alias(libs.plugins.gradle.versions) apply false
     alias(libs.plugins.spring.dependency.management) apply false
+    alias(libs.plugins.gretty) apply false
 }
 
 buildscript {
