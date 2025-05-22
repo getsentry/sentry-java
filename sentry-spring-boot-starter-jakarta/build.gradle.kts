@@ -6,9 +6,9 @@ plugins {
     `java-library`
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.BuildPlugins.springBoot) version Config.springBoot3Version apply false
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.spring.boot.three) apply false
 }
 
 configure<JavaPluginExtension> {
@@ -43,7 +43,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

@@ -5,9 +5,9 @@ plugins {
     `java-library`
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.buildconfig)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -29,10 +29,10 @@ dependencies {
     testImplementation(projects.sentry)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.okhttp.mockwebserver)
     testImplementation(Config.Libs.okhttp)
     testImplementation(Config.Libs.springBootStarterGraphql)
     testImplementation("com.netflix.graphql.dgs:graphql-error-types:4.9.2")
@@ -46,7 +46,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

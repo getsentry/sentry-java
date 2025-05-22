@@ -5,17 +5,17 @@ plugins {
     id("com.android.library")
     kotlin("android")
     jacoco
-    id(Config.QualityPlugins.jacocoAndroid)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.QualityPlugins.detektPlugin)
+    alias(libs.plugins.jacoco.android)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.detekt)
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.android.timber"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
 
         testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
 
@@ -76,13 +76,13 @@ dependencies {
 
     // tests
     testImplementation(Config.Libs.timber)
-    testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.TestLibs.androidxJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
 }

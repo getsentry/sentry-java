@@ -1270,4 +1270,9 @@ public final class Sentry {
   public static ILoggerApi logger() {
     return getCurrentScopes().logger();
   }
+
+  @NotNull
+  public static IReplayApi replay() {
+    return getCurrentScopes().getScope().getOptions().getReplayController();
+  }
 }

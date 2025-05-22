@@ -1,7 +1,7 @@
 plugins {
     java
     application
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.gradle.versions)
 }
 
 application {

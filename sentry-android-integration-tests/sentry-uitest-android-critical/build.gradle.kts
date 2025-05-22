@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.uitest.android.critical"
 
     signingConfigs {
@@ -17,8 +17,8 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.uitest.android.critical"
-        minSdk = Config.Android.minSdkVersion
-        targetSdk = Config.Android.targetSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
     }
@@ -49,15 +49,15 @@ android {
 
 dependencies {
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
-    implementation(Config.Libs.androidxCore)
-    implementation(Config.Libs.composeActivity)
-    implementation(Config.Libs.composeFoundation)
-    implementation(Config.Libs.composeMaterial)
+    implementation(libs.androidx.core)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.material3)
     implementation(Config.Libs.constraintLayout)
     implementation(projects.sentryAndroidCore)
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
