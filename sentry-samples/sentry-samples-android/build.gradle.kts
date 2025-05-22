@@ -9,13 +9,13 @@ plugins {
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.samples.android"
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
-        minSdk = Config.Android.minSdkVersion
-        targetSdk = Config.Android.targetSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 2
         versionName = project.version.toString()
 

@@ -13,18 +13,10 @@ object Config {
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
-        val gretty = "org.gretty"
-        val grettyVersion = "4.0.0"
         val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"
     }
 
     object Android {
-        private val sdkVersion = 34
-
-        val minSdkVersion = 21
-        val targetSdkVersion = sdkVersion
-        val compileSdkVersion = sdkVersion
-
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
 
         fun shouldSkipDebugVariant(name: String?): Boolean {
@@ -160,8 +152,6 @@ object Config {
 
     object QualityPlugins {
         object Jacoco {
-            val version = "0.8.7"
-
             // TODO [POTEL] add tests and restore
             val minimumCoverage = BigDecimal.valueOf(0.1)
         }

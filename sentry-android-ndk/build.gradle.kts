@@ -9,11 +9,11 @@ plugins {
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.android.ndk"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

@@ -7,6 +7,19 @@
 - Add debug mode for Session Replay masking ([#4357](https://github.com/getsentry/sentry-java/pull/4357))
     - Use `Sentry.replay().enableDebugMaskingOverlay()` to overlay the screen with the Session Replay masks.
     - The masks will be invalidated at most once per `frameRate` (default 1 fps).
+- Extend Logs API to allow passing in `attributes` ([#4402](https://github.com/getsentry/sentry-java/pull/4402))
+  - `Sentry.logger.log` now takes a `SentryLogParameters`
+  - Use `SentryLogParameters.create(SentryAttributes.of(...))` to pass attributes
+    - Attribute values may be of type `string`, `boolean`, `integer` or `double`.
+    - Other types will be converted to `string`. Currently we simply call `toString()` but we might offer more in the future.
+    - You may manually flatten complex types into multiple separate attributes of simple types.
+      - e.g. intead of `SentryAttribute.named("point", Point(10, 20))` you may store it as `SentryAttribute.integerAttribute("point.x", point.x)` and `SentryAttribute.integerAttribute("point.y", point.y)`
+    - `SentryAttribute.named()` will automatically infer the type or fall back to `string`.
+    - `SentryAttribute.booleanAttribute()` takes a `Boolean` value
+    - `SentryAttribute.integerAttribute()` takes a `Integer` value
+    - `SentryAttribute.doubleAttribute()` takes a `Double` value
+    - `SentryAttribute.stringAttribute()` takes a `String` value
+  - We opted for handling parameters via `SentryLogParameters` to avoid creating tons of overloads that are ambiguous.
 
 ## 8.12.0
 

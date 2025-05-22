@@ -2668,6 +2668,34 @@ public final class io/sentry/SentryAppStartProfilingOptions$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/SentryAttribute {
+	public static fun booleanAttribute (Ljava/lang/String;Ljava/lang/Boolean;)Lio/sentry/SentryAttribute;
+	public static fun doubleAttribute (Ljava/lang/String;Ljava/lang/Double;)Lio/sentry/SentryAttribute;
+	public fun getName ()Ljava/lang/String;
+	public fun getType ()Lio/sentry/SentryAttributeType;
+	public fun getValue ()Ljava/lang/Object;
+	public static fun integerAttribute (Ljava/lang/String;Ljava/lang/Integer;)Lio/sentry/SentryAttribute;
+	public static fun named (Ljava/lang/String;Ljava/lang/Object;)Lio/sentry/SentryAttribute;
+	public static fun stringAttribute (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/SentryAttribute;
+}
+
+public final class io/sentry/SentryAttributeType : java/lang/Enum {
+	public static final field BOOLEAN Lio/sentry/SentryAttributeType;
+	public static final field DOUBLE Lio/sentry/SentryAttributeType;
+	public static final field INTEGER Lio/sentry/SentryAttributeType;
+	public static final field STRING Lio/sentry/SentryAttributeType;
+	public fun apiName ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/SentryAttributeType;
+	public static fun values ()[Lio/sentry/SentryAttributeType;
+}
+
+public final class io/sentry/SentryAttributes {
+	public fun add (Lio/sentry/SentryAttribute;)V
+	public static fun fromMap (Ljava/util/Map;)Lio/sentry/SentryAttributes;
+	public fun getAttributes ()Ljava/util/Map;
+	public static fun of ([Lio/sentry/SentryAttribute;)Lio/sentry/SentryAttributes;
+}
+
 public final class io/sentry/SentryAutoDateProvider : io/sentry/SentryDateProvider {
 	public fun <init> ()V
 	public fun now ()Lio/sentry/SentryDate;
@@ -3087,6 +3115,7 @@ public final class io/sentry/SentryLogEvent$JsonKeys {
 }
 
 public final class io/sentry/SentryLogEventAttributeValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Lio/sentry/SentryAttributeType;Ljava/lang/Object;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun getType ()Ljava/lang/String;
 	public fun getUnknown ()Ljava/util/Map;
@@ -4721,6 +4750,7 @@ public abstract interface class io/sentry/logger/ILoggerApi {
 	public abstract fun fatal (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun info (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;[Ljava/lang/Object;)V
+	public abstract fun log (Lio/sentry/SentryLogLevel;Lio/sentry/logger/SentryLogParameters;Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -4738,6 +4768,7 @@ public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
 	public fun fatal (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun info (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/logger/SentryLogParameters;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -4758,6 +4789,7 @@ public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi 
 	public static fun getInstance ()Lio/sentry/logger/NoOpLoggerApi;
 	public fun info (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/SentryDate;Ljava/lang/String;[Ljava/lang/Object;)V
+	public fun log (Lio/sentry/SentryLogLevel;Lio/sentry/logger/SentryLogParameters;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
@@ -4767,6 +4799,16 @@ public final class io/sentry/logger/NoOpLoggerBatchProcessor : io/sentry/logger/
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
 	public static fun getInstance ()Lio/sentry/logger/NoOpLoggerBatchProcessor;
+}
+
+public final class io/sentry/logger/SentryLogParameters {
+	public fun <init> ()V
+	public static fun create (Lio/sentry/SentryAttributes;)Lio/sentry/logger/SentryLogParameters;
+	public static fun create (Lio/sentry/SentryDate;Lio/sentry/SentryAttributes;)Lio/sentry/logger/SentryLogParameters;
+	public fun getAttributes ()Lio/sentry/SentryAttributes;
+	public fun getTimestamp ()Lio/sentry/SentryDate;
+	public fun setAttributes (Lio/sentry/SentryAttributes;)V
+	public fun setTimestamp (Lio/sentry/SentryDate;)V
 }
 
 public final class io/sentry/opentelemetry/OpenTelemetryUtil {
