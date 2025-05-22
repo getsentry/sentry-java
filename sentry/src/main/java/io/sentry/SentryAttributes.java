@@ -1,17 +1,15 @@
 package io.sentry;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryAttributes {
 
-  private final @NotNull List<SentryAttribute> attributes;
+  private final @NotNull Map<String, SentryAttribute> attributes;
 
-  private SentryAttributes(final @NotNull List<SentryAttribute> attributes) {
+  private SentryAttributes(final @NotNull Map<String, SentryAttribute> attributes) {
     this.attributes = attributes;
   }
 
@@ -19,24 +17,36 @@ public final class SentryAttributes {
     if (attribute == null) {
       return;
     }
-    attributes.add(attribute);
+    attributes.put(attribute.getName(), attribute);
   }
 
-  public @NotNull List<SentryAttribute> getAttributes() {
+  public @NotNull Map<String, SentryAttribute> getAttributes() {
     return attributes;
   }
 
-  public static @NotNull SentryAttributes of(SentryAttribute... attributes) {
-    return new SentryAttributes(Arrays.asList(attributes));
+  public static @NotNull SentryAttributes of(final @Nullable SentryAttribute... attributes) {
+    if (attributes == null) {
+      return new SentryAttributes(new ConcurrentHashMap<>());
+    }
+    final @NotNull SentryAttributes sentryAttributes =
+        new SentryAttributes(new ConcurrentHashMap<>(attributes.length));
+    for (SentryAttribute attribute : attributes) {
+      sentryAttributes.add(attribute);
+    }
+    return sentryAttributes;
   }
 
   public static @NotNull SentryAttributes fromMap(final @Nullable Map<String, Object> attributes) {
     if (attributes == null) {
-      return new SentryAttributes(new ArrayList<>());
+      return new SentryAttributes(new ConcurrentHashMap<>());
     }
-    SentryAttributes sentryAttributes = new SentryAttributes(new ArrayList<>(attributes.size()));
+    final @NotNull SentryAttributes sentryAttributes =
+        new SentryAttributes(new ConcurrentHashMap<>(attributes.size()));
     for (Map.Entry<String, Object> attribute : attributes.entrySet()) {
-      sentryAttributes.add(SentryAttribute.named(attribute.getKey(), attribute.getValue()));
+      final @Nullable String key = attribute.getKey();
+      if (key != null) {
+        sentryAttributes.add(SentryAttribute.named(key, attribute.getValue()));
+      }
     }
 
     return sentryAttributes;

@@ -5,7 +5,7 @@ import io.sentry.SentryDate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class LogParams {
+public final class SentryLogParameters {
 
   private @Nullable SentryDate timestamp;
   private @Nullable SentryAttributes attributes;
@@ -26,9 +26,9 @@ public final class LogParams {
     this.attributes = attributes;
   }
 
-  public static @NotNull LogParams create(
+  public static @NotNull SentryLogParameters create(
       final @Nullable SentryDate timestamp, final @Nullable SentryAttributes attributes) {
-    final @NotNull LogParams params = new LogParams();
+    final @NotNull SentryLogParameters params = new SentryLogParameters();
 
     params.setTimestamp(timestamp);
     params.setAttributes(attributes);
@@ -36,7 +36,7 @@ public final class LogParams {
     return params;
   }
 
-  public static @NotNull LogParams create(final @Nullable SentryAttributes attributes) {
+  public static @NotNull SentryLogParameters create(final @Nullable SentryAttributes attributes) {
     return create(null, attributes);
   }
 }
