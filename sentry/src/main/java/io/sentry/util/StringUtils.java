@@ -107,7 +107,11 @@ public final class StringUtils {
   }
 
   /**
-   * Calculates the SHA-1 String hash
+   * Calculates the SHA-1 String hash.
+   *
+   * As of now this is only used to determine the 
+   * local SDK cache folder name based on the project DSN and has no
+   * other cryptographic related use. 
    *
    * @param str the String
    * @param logger the Logger
