@@ -7,6 +7,7 @@ import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
+import io.sentry.logger.SentryLogParameters
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
@@ -2648,12 +2649,12 @@ class ScopesTest {
     }
 
     @Test
-    fun `creating log with attributes works`() {
+    fun `creating log with attributes from map works`() {
         val (sut, mockClient) = getEnabledScopes {
             it.logs.isEnabled = true
         }
 
-        sut.logger().log(mapOf("attrname1" to "attrval1"), SentryLogLevel.WARN, "log message")
+        sut.logger().log(SentryLogLevel.WARN, SentryLogParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))), "log message")
 
         verify(mockClient).captureLog(
             check {
@@ -2670,12 +2671,77 @@ class ScopesTest {
     }
 
     @Test
+    fun `creating log with attributes works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().log(
+            SentryLogLevel.WARN,
+            SentryLogParameters.create(
+                SentryAttributes.of(
+                    SentryAttribute.stringAttribute("strattr", "strval"),
+                    SentryAttribute.booleanAttribute("boolattr", true),
+                    SentryAttribute.integerAttribute("intattr", 17),
+                    SentryAttribute.doubleAttribute("doubleattr", 3.8),
+                    SentryAttribute.named("namedstrattr", "namedstrval"),
+                    SentryAttribute.named("namedboolattr", false),
+                    SentryAttribute.named("namedintattr", 18),
+                    SentryAttribute.named("nameddoubleattr", 4.9)
+                )
+            ),
+            "log message"
+        )
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("log message", it.body)
+                assertEquals(SentryLogLevel.WARN, it.level)
+                assertEquals(13, it.severityNumber)
+
+                val strattr = it.attributes?.get("strattr")!!
+                assertEquals("strval", strattr.value)
+                assertEquals("string", strattr.type)
+
+                val boolattr = it.attributes?.get("boolattr")!!
+                assertEquals(true, boolattr.value)
+                assertEquals("boolean", boolattr.type)
+
+                val intattr = it.attributes?.get("intattr")!!
+                assertEquals(17, intattr.value)
+                assertEquals("integer", intattr.type)
+
+                val doubleattr = it.attributes?.get("doubleattr")!!
+                assertEquals(3.8, doubleattr.value)
+                assertEquals("double", doubleattr.type)
+
+                val namedstrattr = it.attributes?.get("namedstrattr")!!
+                assertEquals("namedstrval", namedstrattr.value)
+                assertEquals("string", namedstrattr.type)
+
+                val namedboolattr = it.attributes?.get("namedboolattr")!!
+                assertEquals(false, namedboolattr.value)
+                assertEquals("boolean", namedboolattr.type)
+
+                val namedintattr = it.attributes?.get("namedintattr")!!
+                assertEquals(18, namedintattr.value)
+                assertEquals("integer", namedintattr.type)
+
+                val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
+                assertEquals(4.9, nameddoubleattr.value)
+                assertEquals("double", nameddoubleattr.type)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
     fun `creating log with attributes and timestamp works`() {
         val (sut, mockClient) = getEnabledScopes {
             it.logs.isEnabled = true
         }
 
-        sut.logger().log(mapOf("attrname1" to "attrval1"), SentryLogLevel.WARN, SentryLongDate(123), "log message")
+        sut.logger().log(SentryLogLevel.WARN, SentryLogParameters.create(SentryLongDate(123), SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1"))), "log message")
 
         verify(mockClient).captureLog(
             check {
@@ -2698,7 +2764,7 @@ class ScopesTest {
             it.logs.isEnabled = true
         }
 
-        sut.logger().log(mapOf("attrname1" to "attrval1"), SentryLogLevel.WARN, SentryLongDate(123), "log %s %d %b %.0f", "message", 1, true, 3.2)
+        sut.logger().log(SentryLogLevel.WARN, SentryLogParameters.create(SentryLongDate(123), SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1"))), "log %s %d %b %.0f", "message", 1, true, 3.2)
 
         verify(mockClient).captureLog(
             check {

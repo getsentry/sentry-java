@@ -70,7 +70,7 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull SentryLogLevel level,
       final @Nullable String message,
       final @Nullable Object... args) {
-    captureLog(level, LogParams.create(null, null), message, args);
+    captureLog(level, SentryLogParameters.create(null, null), message, args);
   }
 
   @Override
@@ -79,13 +79,13 @@ public final class LoggerApi implements ILoggerApi {
       final @Nullable SentryDate timestamp,
       final @Nullable String message,
       final @Nullable Object... args) {
-    captureLog(level, LogParams.create(timestamp, null), message, args);
+    captureLog(level, SentryLogParameters.create(timestamp, null), message, args);
   }
 
   @Override
   public void log(
       final @NotNull SentryLogLevel level,
-      final @NotNull LogParams params,
+      final @NotNull SentryLogParameters params,
       final @Nullable String message,
       final @Nullable Object... args) {
     captureLog(level, params, message, args);
@@ -94,7 +94,7 @@ public final class LoggerApi implements ILoggerApi {
   @SuppressWarnings("AnnotateFormatMethod")
   private void captureLog(
       final @NotNull SentryLogLevel level,
-      final @NotNull LogParams params,
+      final @NotNull SentryLogParameters params,
       final @Nullable String message,
       final @Nullable Object... args) {
     final @NotNull SentryOptions options = scopes.getOptions();
@@ -168,7 +168,7 @@ public final class LoggerApi implements ILoggerApi {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
 
     if (incomingAttributes != null) {
-      for (SentryAttribute attribute : incomingAttributes.getAttributes()) {
+      for (SentryAttribute attribute : incomingAttributes.getAttributes().values()) {
         final @Nullable Object value = attribute.getValue();
         final @NotNull SentryAttributeType type =
             attribute.getType() == null ? getType(value) : attribute.getType();
