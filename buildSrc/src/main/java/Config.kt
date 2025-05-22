@@ -158,15 +158,6 @@ object Config {
         val springBootConfiguration = "org.springframework.boot:spring-boot-configuration-processor"
     }
 
-//    object TestLibs {
-////        val hsqldb = "org.hsqldb:hsqldb:2.6.1"
-////        val javaFaker = "com.github.javafaker:javafaker:1.0.2"
-////        val msgpack = "org.msgpack:msgpack-core:0.9.8"
-////        val leakCanaryInstrumentation = "com.squareup.leakcanary:leakcanary-android-instrumentation:2.14"
-////        val composeUiTestJunit4 = "androidx.compose.ui:ui-test-junit4:1.6.8"
-//        val okio = "com.squareup.okio:okio:1.13.0"
-//    }
-
     object QualityPlugins {
         object Jacoco {
             val version = "0.8.7"
