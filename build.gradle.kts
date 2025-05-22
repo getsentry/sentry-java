@@ -27,7 +27,6 @@ plugins {
     alias(libs.plugins.errorprone) apply false
     alias(libs.plugins.gradle.versions) apply false
     alias(libs.plugins.spring.dependency.management) apply false
-    alias(libs.plugins.spring.boot.two) apply false
     id("com.android.library") version Config.AGP apply false
     id("com.android.application") version Config.AGP apply false
     // add classpath of sentry android gradle plugin
