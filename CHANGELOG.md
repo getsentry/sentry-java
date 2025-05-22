@@ -7,6 +7,20 @@
 - Add debug mode for Session Replay masking ([#4357](https://github.com/getsentry/sentry-java/pull/4357))
     - Use `Sentry.replay().enableDebugMaskingOverlay()` to overlay the screen with the Session Replay masks.
     - The masks will be invalidated at most once per `frameRate` (default 1 fps).
+- Add New User Feedback form ([#4384](https://github.com/getsentry/sentry-java/pull/4384))
+    - We now introduce SentryUserFeedbackDialog, which extends AlertDialog, inheriting the show() and cancel() methods, among others.
+      To use it, just instantiate it and call show() on the instance (Sentry must be previously initialized).
+      For customization options, please check the [User Feedback documentation](https://docs.sentry.io/platforms/android/user-feedback/configuration/).
+      ```java
+      import io.sentry.android.core.SentryUserFeedbackDialog;
+      
+      new SentryUserFeedbackDialog(context).show();
+      ```
+      ```kotlin
+      import io.sentry.android.core.SentryUserFeedbackDialog
+    
+      SentryUserFeedbackDialog(context).show()
+      ```
 
 ## 8.12.0
 
