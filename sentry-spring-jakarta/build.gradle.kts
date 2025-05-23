@@ -69,7 +69,7 @@ dependencies {
     testImplementation(Config.Libs.springBoot3StarterAop)
     testImplementation(Config.Libs.springBoot3StarterGraphql)
     testImplementation(Config.Libs.contextPropagation)
-    testImplementation(Config.Libs.graphQlJava22)
+    testImplementation(Config.Libs.graphQlJavaNew)
     testImplementation(projects.sentryReactor)
 }
 
