@@ -10,14 +10,23 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     `java-library`
-    id(Config.QualityPlugins.spotless) version Config.QualityPlugins.spotlessVersion apply true
+    alias(libs.plugins.spotless)
     jacoco
-    id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
+    alias(libs.plugins.detekt)
     `maven-publish`
-    id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion
-    id(Config.QualityPlugins.jacocoAndroid) version Config.QualityPlugins.jacocoAndroidVersion apply false
-    id(Config.QualityPlugins.kover) version Config.QualityPlugins.koverVersion apply false
-    id(Config.BuildPlugins.gradleMavenPublishPlugin) version Config.BuildPlugins.gradleMavenPublishPluginVersion apply false
+    alias(libs.plugins.binary.compatibility.validator)
+    alias(libs.plugins.jacoco.android) apply false
+    alias(libs.plugins.kover) apply false
+    alias(libs.plugins.vanniktech.maven.publish) apply false
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.buildconfig) apply false
+    // dokka is required by gradle-maven-publish-plugin.
+    alias(libs.plugins.dokka) apply false
+    alias(libs.plugins.dokka.javadoc) apply false
+    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.errorprone) apply false
+    alias(libs.plugins.gradle.versions) apply false
+    alias(libs.plugins.spring.dependency.management) apply false
 }
 
 buildscript {
@@ -27,17 +36,10 @@ buildscript {
     }
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
-        classpath(kotlin(Config.BuildPlugins.kotlinGradlePlugin, version = Config.kotlinVersion))
-        // dokka is required by gradle-maven-publish-plugin.
-        classpath(Config.BuildPlugins.dokkaPlugin)
-        classpath(Config.QualityPlugins.errorpronePlugin)
-        classpath(Config.QualityPlugins.gradleVersionsPlugin)
 
         // add classpath of sentry android gradle plugin
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
-        classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
-        classpath(Config.BuildPlugins.composeGradlePlugin)
         classpath(Config.BuildPlugins.commonsCompressOverride)
     }
 }
@@ -89,7 +91,7 @@ allprojects {
     version = properties[Config.Sentry.versionNameProp].toString()
     description = Config.Sentry.description
     tasks {
-        withType<Test> {
+        withType<Test>().configureEach {
             testLogging.showStandardStreams = true
             testLogging.exceptionFormat = TestExceptionFormat.FULL
             testLogging.events = setOf(
@@ -104,7 +106,7 @@ allprojects {
             maxHeapSize = "2g"
             dependsOn("cleanTest")
         }
-        withType<JavaCompile> {
+        withType<JavaCompile>().configureEach {
             options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try"))
         }
     }
@@ -126,7 +128,7 @@ subprojects {
                 toolVersion = "0.8.10"
             }
 
-            tasks.withType<Test> {
+            tasks.withType<Test>().configureEach {
                 configure<JacocoTaskExtension> {
                     isIncludeNoLocationClasses = true
                     excludes = listOf("jdk.internal.*")
@@ -172,9 +174,9 @@ subprojects {
             // craft only uses zip archives
             this.forEach { dist ->
                 if (dist.name == DistributionPlugin.MAIN_DISTRIBUTION_NAME) {
-                    tasks.getByName("distTar").enabled = false
+                    tasks.named("distTar").configure { enabled = false }
                 } else {
-                    tasks.getByName(dist.name + "DistTar").enabled = false
+                    tasks.named(dist.name + "DistTar").configure { enabled = false }
                 }
             }
         }
@@ -207,7 +209,6 @@ subprojects {
         afterEvaluate {
             apply<MavenPublishPlugin>()
 
-            @Suppress("UnstableApiUsage")
             configure<MavenPublishBaseExtension> {
                 assignAarTypes()
             }

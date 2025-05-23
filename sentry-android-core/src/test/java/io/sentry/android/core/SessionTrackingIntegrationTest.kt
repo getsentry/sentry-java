@@ -16,11 +16,14 @@ import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
+import io.sentry.SentryLogEvent
+import io.sentry.SentryLogEvents
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.Session
 import io.sentry.TraceContext
 import io.sentry.UserFeedback
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.transport.RateLimiter
@@ -147,6 +150,10 @@ class SessionTrackingIntegrationTest {
             TODO("Not yet implemented")
         }
 
+        override fun captureFeedback(feedback: Feedback, hint: Hint?, scope: IScope): SentryId {
+            TODO("Not yet implemented")
+        }
+
         override fun captureReplayEvent(
             event: SentryReplayEvent,
             scope: IScope?,
@@ -182,6 +189,14 @@ class SessionTrackingIntegrationTest {
         }
 
         override fun captureCheckIn(checkIn: CheckIn, scope: IScope?, hint: Hint?): SentryId {
+            TODO("Not yet implemented")
+        }
+
+        override fun captureLog(event: SentryLogEvent, scope: IScope?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun captureBatchedLogEvents(logEvents: SentryLogEvents) {
             TODO("Not yet implemented")
         }
 

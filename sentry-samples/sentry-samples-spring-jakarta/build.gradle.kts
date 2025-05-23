@@ -1,15 +1,14 @@
-
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
-    id(Config.BuildPlugins.springBoot) version Config.springBoot3Version apply false
-    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
+    alias(libs.plugins.spring.boot.three) apply false
+    alias(libs.plugins.spring.dependency.management)
     kotlin("jvm")
-    kotlin("plugin.spring") version Config.kotlinVersion
+    alias(libs.plugins.kotlin.spring)
     id("war")
-    id(Config.BuildPlugins.gretty) version Config.BuildPlugins.grettyVersion
+    alias(libs.plugins.gretty)
 }
 
 group = "io.sentry.sample.spring-jakarta"
@@ -23,7 +22,7 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+        mavenBom(SpringBootPlugin.BOM_COORDINATES)
     }
 }
 
@@ -46,11 +45,11 @@ dependencies {
     }
 }
 
-tasks.withType<Test> {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
-tasks.withType<KotlinCompile> {
+tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
         jvmTarget = JavaVersion.VERSION_17.toString()

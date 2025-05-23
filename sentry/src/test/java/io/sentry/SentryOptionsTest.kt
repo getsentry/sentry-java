@@ -414,6 +414,7 @@ class SentryOptionsTest {
         externalOptions.isEnableSpotlight = true
         externalOptions.spotlightConnectionUrl = "http://local.sentry.io:1234"
         externalOptions.isGlobalHubMode = true
+        externalOptions.isEnableLogs = true
 
         val options = SentryOptions()
 
@@ -458,6 +459,7 @@ class SentryOptionsTest {
         assertTrue(options.isEnableSpotlight)
         assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
         assertTrue(options.isGlobalHubMode!!)
+        assertTrue(options.logs.isEnabled!!)
     }
 
     @Test

@@ -8,6 +8,14 @@ pluginManagement {
     }
 }
 
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        mavenLocal()
+    }
+}
+
 rootProject.name = "sentry-root"
 rootProject.buildFileName = "build.gradle.kts"
 

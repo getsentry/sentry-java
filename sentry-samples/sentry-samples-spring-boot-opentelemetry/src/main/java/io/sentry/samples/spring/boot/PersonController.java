@@ -31,6 +31,9 @@ public class PersonController {
   Person person(@PathVariable Long id) {
     Span span = tracer.spanBuilder("spanCreatedThroughOtelApi").startSpan();
     try (final @NotNull Scope spanScope = span.makeCurrent()) {
+      Sentry.logger().warn("warn Sentry logging");
+      Sentry.logger().error("error Sentry logging");
+      Sentry.logger().info("hello %s %s", "there", "world!");
       ISpan currentSpan = Sentry.getSpan();
       ISpan sentrySpan = currentSpan.startChild("spanCreatedThroughSentryApi");
       try {

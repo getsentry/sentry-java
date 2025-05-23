@@ -16,10 +16,15 @@ import androidx.compose.material3.TextField
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.editableText
 import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil.compose.AsyncImage
 import io.sentry.SentryOptions
@@ -41,6 +46,7 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -52,7 +58,9 @@ class ComposeMaskingOptionsTest {
         System.setProperty("robolectric.areWindowsMarkedVisible", "true")
         System.setProperty("robolectric.pixelCopyRenderMode", "hardware")
         ComposeMaskingOptionsActivity.textModifierApplier = null
+        ComposeMaskingOptionsActivity.textFieldModifierApplier = null
         ComposeMaskingOptionsActivity.containerModifierApplier = null
+        ComposeMaskingOptionsActivity.fontSizeApplier = null
     }
 
     @Test
@@ -67,8 +75,40 @@ class ComposeMaskingOptionsTest {
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
         assertTrue(textNodes.all { it.shouldMask })
-        // just a sanity check for parsing the tree
-        assertEquals("Random repo", (textNodes[1].layout as ComposeTextLayout).layout.layoutInput.text.text)
+        // no fontSize specified - we don't use the text layout
+        assertNull(textNodes.first().layout)
+    }
+
+    @Test
+    fun `when text is laid out nodes use it`() {
+        ComposeMaskingOptionsActivity.fontSizeApplier = { 20.sp }
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val options = SentryOptions().apply {
+            sessionReplay.maskAllText = true
+        }
+
+        val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
+        // the text should be laid out when fontSize is specified
+        assertEquals("Random repo", (textNodes.first().layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text)
+    }
+
+    @Test
+    fun `when text input field is readOnly still masks it`() {
+        ComposeMaskingOptionsActivity.textFieldModifierApplier = {
+            // newer versions of compose basically do this when a TextField is readOnly
+            Modifier.clearAndSetSemantics { editableText = AnnotatedString("Placeholder") }
+        }
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        val options = SentryOptions().apply {
+            sessionReplay.maskAllText = true
+        }
+
+        val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
+        assertTrue(textNodes[1].shouldMask)
     }
 
     @Test
@@ -212,7 +252,9 @@ private class ComposeMaskingOptionsActivity : ComponentActivity() {
 
     companion object {
         var textModifierApplier: (() -> Modifier)? = null
+        var textFieldModifierApplier: (() -> Modifier)? = null
         var containerModifierApplier: (() -> Modifier)? = null
+        var fontSizeApplier: (() -> TextUnit)? = null
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -232,11 +274,12 @@ private class ComposeMaskingOptionsActivity : ComponentActivity() {
                     contentDescription = null,
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
+                Text("Random repo", fontSize = fontSizeApplier?.invoke() ?: TextUnit.Unspecified)
                 TextField(
+                    modifier = textFieldModifierApplier?.invoke() ?: Modifier,
                     value = TextFieldValue("Placeholder"),
                     onValueChange = { _ -> }
                 )
-                Text("Random repo")
                 Button(
                     onClick = {},
                     modifier = Modifier

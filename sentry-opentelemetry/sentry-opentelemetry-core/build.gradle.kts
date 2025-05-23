@@ -5,8 +5,8 @@ plugins {
     `java-library`
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -36,9 +36,9 @@ dependencies {
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.awaitility)
+    testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.mockito.kotlin)
 
     testImplementation(Config.Libs.OpenTelemetry.otelSdk)
     testImplementation(Config.Libs.OpenTelemetry.otelSemconv)
@@ -52,7 +52,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

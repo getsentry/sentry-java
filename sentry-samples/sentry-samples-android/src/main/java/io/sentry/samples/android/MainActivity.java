@@ -8,9 +8,8 @@ import io.sentry.Attachment;
 import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
-import io.sentry.UserFeedback;
 import io.sentry.instrumentation.file.SentryFileOutputStream;
-import io.sentry.protocol.SentryId;
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.User;
 import io.sentry.samples.android.compose.ComposeActivity;
 import io.sentry.samples.android.databinding.ActivityMainBinding;
@@ -70,13 +69,12 @@ public class MainActivity extends AppCompatActivity {
 
     binding.sendUserFeedback.setOnClickListener(
         view -> {
-          SentryId sentryId = Sentry.captureException(new Exception("I have feedback"));
+          Feedback feedback =
+              new Feedback("It broke on Android. I don't know why, but this happens.");
+          feedback.setContactEmail("john@me.com");
+          feedback.setName("John Me");
 
-          UserFeedback userFeedback = new UserFeedback(sentryId);
-          userFeedback.setComments("It broke on Android. I don't know why, but this happens.");
-          userFeedback.setEmail("john@me.com");
-          userFeedback.setName("John Me");
-          Sentry.captureUserFeedback(userFeedback);
+          Sentry.captureFeedback(feedback);
         });
 
     binding.addAttachment.setOnClickListener(
@@ -273,6 +271,11 @@ public class MainActivity extends AppCompatActivity {
     binding.throwInCoroutine.setOnClickListener(
         view -> {
           CoroutinesUtil.INSTANCE.throwInCoroutine();
+        });
+
+    binding.enableReplayDebugMode.setOnClickListener(
+        view -> {
+          Sentry.replay().enableDebugMaskingOverlay();
         });
 
     setContentView(binding.getRoot());

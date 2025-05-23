@@ -7,6 +7,8 @@ import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
+import io.sentry.logger.SentryLogParameters
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
@@ -603,6 +605,108 @@ class ScopesTest {
         )
 
         verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+    }
+
+    //endregion
+
+    //region captureFeedback tests
+    @Test
+    fun `when captureFeedback is called and message is empty, client is never called`() {
+        val (sut, mockClient) = getEnabledScopes()
+        sut.captureFeedback(Feedback(""))
+        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
+        verify(mockClient, never()).captureFeedback(any(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `when captureFeedback is called, lastEventId is not updated`() {
+        val (sut, mockClient) = getEnabledScopes()
+        sut.captureFeedback(Feedback("message"))
+        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
+        verify(mockClient).captureFeedback(any(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `when captureFeedback is called on disabled client, do nothing`() {
+        val (sut, mockClient) = getEnabledScopes()
+        sut.close()
+
+        sut.captureFeedback(mock())
+        verify(mockClient, never()).captureFeedback(any(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `when captureFeedback is called with a valid message, captureFeedback on the client should be called`() {
+        val (sut, mockClient) = getEnabledScopes()
+
+        sut.captureFeedback(Feedback("test"))
+        verify(mockClient).captureFeedback(any(), anyOrNull(), anyOrNull())
+    }
+
+    @Test
+    fun `when captureFeedback is called with a ScopeCallback then the modified scope is sent to the client`() {
+        val (sut, mockClient) = getEnabledScopes()
+
+        sut.captureFeedback(Feedback("test"), null) {
+            it.setTag("test", "testValue")
+        }
+
+        verify(mockClient).captureFeedback(
+            any(),
+            eq(null),
+            check {
+                assertEquals("testValue", it.tags["test"])
+            }
+        )
+    }
+
+    @Test
+    fun `when captureFeedback is called with a ScopeCallback then subsequent calls to captureFeedback send the unmodified Scope to the client`() {
+        val (sut, mockClient) = getEnabledScopes()
+        val argumentCaptor = argumentCaptor<IScope>()
+
+        sut.captureFeedback(Feedback("testMessage"), null) {
+            it.setTag("test", "testValue")
+        }
+
+        sut.captureFeedback(Feedback("test"))
+
+        verify(mockClient, times(2)).captureFeedback(
+            any(),
+            anyOrNull(),
+            argumentCaptor.capture()
+        )
+
+        assertEquals("testValue", argumentCaptor.allValues[0].tags["test"])
+        assertNull(argumentCaptor.allValues[1].tags["test"])
+    }
+
+    @Test
+    fun `when captureFeedback is called with a ScopeCallback that crashes then the feedback should still be captured`() {
+        val (sut, mockClient, logger) = getEnabledScopes()
+
+        val exception = Exception("scope callback exception")
+        sut.captureFeedback(Feedback("Hello World"), null) {
+            throw exception
+        }
+
+        verify(mockClient).captureFeedback(
+            any(),
+            anyOrNull(),
+            anyOrNull()
+        )
+
+        verify(logger).log(eq(SentryLevel.ERROR), any(), eq(exception))
+    }
+
+    @Test
+    fun `when captureFeedback is called with a Hint, it is passed to the client`() {
+        val (sut, mockClient) = getEnabledScopes()
+        val hint = Hint()
+
+        sut.captureFeedback(Feedback("Hello World"), hint)
+
+        verify(mockClient).captureFeedback(any(), eq(hint), anyOrNull())
     }
 
     //endregion
@@ -2327,6 +2431,428 @@ class ScopesTest {
 
     //endregion
 
+    //region logs
+
+    @Test
+    fun `when captureLog is called on disabled client, do nothing`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+        sut.close()
+
+        sut.logger().warn("test message")
+        verify(mockClient, never()).captureLog(any(), anyOrNull())
+    }
+
+    @Test
+    fun `when logging is not enabled, do nothing`() {
+        val (sut, mockClient) = getEnabledScopes()
+
+        sut.logger().warn("test message")
+        verify(mockClient, never()).captureLog(any(), anyOrNull())
+    }
+
+    @Test
+    fun `capturing null log does nothing`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().warn(null)
+        verify(mockClient, never()).captureLog(any(), anyOrNull())
+    }
+
+    @Test
+    fun `creating trace log works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().trace("trace log message")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("trace log message", it.body)
+                assertEquals(SentryLogLevel.TRACE, it.level)
+                assertEquals(1, it.severityNumber)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating debug log works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().debug("debug log message")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("debug log message", it.body)
+                assertEquals(SentryLogLevel.DEBUG, it.level)
+                assertEquals(5, it.severityNumber)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating a info log works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().info("info log message")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("info log message", it.body)
+                assertEquals(SentryLogLevel.INFO, it.level)
+                assertEquals(9, it.severityNumber)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating warn log works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().warn("warn log message")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("warn log message", it.body)
+                assertEquals(SentryLogLevel.WARN, it.level)
+                assertEquals(13, it.severityNumber)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating error log works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().error("error log message")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("error log message", it.body)
+                assertEquals(SentryLogLevel.ERROR, it.level)
+                assertEquals(17, it.severityNumber)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating fatal log works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().fatal("fatal log message")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("fatal log message", it.body)
+                assertEquals(SentryLogLevel.FATAL, it.level)
+                assertEquals(21, it.severityNumber)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating log works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().log(SentryLogLevel.WARN, "log message")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("log message", it.body)
+                assertEquals(SentryLogLevel.WARN, it.level)
+                assertEquals(13, it.severityNumber)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating log with format string works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+            it.environment = "testenv"
+            it.release = "1.0"
+            it.serverName = "srv1"
+        }
+
+        sut.logger().log(SentryLogLevel.WARN, "log %s", "arg1")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("log arg1", it.body)
+                assertEquals(SentryLogLevel.WARN, it.level)
+                assertEquals(13, it.severityNumber)
+
+                val template = it.attributes?.get("sentry.message.template")!!
+                assertEquals("log %s", template.value)
+                assertEquals("string", template.type)
+
+                val param0 = it.attributes?.get("sentry.message.parameter.0")!!
+                assertEquals("arg1", param0.value)
+                assertEquals("string", param0.type)
+
+                val environment = it.attributes?.get("sentry.environment")!!
+                assertEquals("testenv", environment.value)
+                assertEquals("string", environment.type)
+
+                val release = it.attributes?.get("sentry.release")!!
+                assertEquals("1.0", release.value)
+                assertEquals("string", release.type)
+
+                val server = it.attributes?.get("server.address")!!
+                assertEquals("srv1", server.value)
+                assertEquals("string", server.type)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating log with timestamp works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().log(SentryLogLevel.WARN, SentryLongDate(123), "log message")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("log message", it.body)
+                assertEquals(0.000000123, it.timestamp)
+                assertEquals(SentryLogLevel.WARN, it.level)
+                assertEquals(13, it.severityNumber)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating log with attributes from map works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().log(SentryLogLevel.WARN, SentryLogParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))), "log message")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("log message", it.body)
+                assertEquals(SentryLogLevel.WARN, it.level)
+                assertEquals(13, it.severityNumber)
+
+                val attr1 = it.attributes?.get("attrname1")!!
+                assertEquals("attrval1", attr1.value)
+                assertEquals("string", attr1.type)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating log with attributes works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().log(
+            SentryLogLevel.WARN,
+            SentryLogParameters.create(
+                SentryAttributes.of(
+                    SentryAttribute.stringAttribute("strattr", "strval"),
+                    SentryAttribute.booleanAttribute("boolattr", true),
+                    SentryAttribute.integerAttribute("intattr", 17),
+                    SentryAttribute.doubleAttribute("doubleattr", 3.8),
+                    SentryAttribute.named("namedstrattr", "namedstrval"),
+                    SentryAttribute.named("namedboolattr", false),
+                    SentryAttribute.named("namedintattr", 18),
+                    SentryAttribute.named("nameddoubleattr", 4.9)
+                )
+            ),
+            "log message"
+        )
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("log message", it.body)
+                assertEquals(SentryLogLevel.WARN, it.level)
+                assertEquals(13, it.severityNumber)
+
+                val strattr = it.attributes?.get("strattr")!!
+                assertEquals("strval", strattr.value)
+                assertEquals("string", strattr.type)
+
+                val boolattr = it.attributes?.get("boolattr")!!
+                assertEquals(true, boolattr.value)
+                assertEquals("boolean", boolattr.type)
+
+                val intattr = it.attributes?.get("intattr")!!
+                assertEquals(17, intattr.value)
+                assertEquals("integer", intattr.type)
+
+                val doubleattr = it.attributes?.get("doubleattr")!!
+                assertEquals(3.8, doubleattr.value)
+                assertEquals("double", doubleattr.type)
+
+                val namedstrattr = it.attributes?.get("namedstrattr")!!
+                assertEquals("namedstrval", namedstrattr.value)
+                assertEquals("string", namedstrattr.type)
+
+                val namedboolattr = it.attributes?.get("namedboolattr")!!
+                assertEquals(false, namedboolattr.value)
+                assertEquals("boolean", namedboolattr.type)
+
+                val namedintattr = it.attributes?.get("namedintattr")!!
+                assertEquals(18, namedintattr.value)
+                assertEquals("integer", namedintattr.type)
+
+                val nameddoubleattr = it.attributes?.get("nameddoubleattr")!!
+                assertEquals(4.9, nameddoubleattr.value)
+                assertEquals("double", nameddoubleattr.type)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating log with attributes and timestamp works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().log(SentryLogLevel.WARN, SentryLogParameters.create(SentryLongDate(123), SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1"))), "log message")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("log message", it.body)
+                assertEquals(0.000000123, it.timestamp)
+                assertEquals(SentryLogLevel.WARN, it.level)
+                assertEquals(13, it.severityNumber)
+
+                val attr1 = it.attributes?.get("attrname1")!!
+                assertEquals("attrval1", attr1.value)
+                assertEquals("string", attr1.type)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating log with attributes and timestamp and format string works`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().log(SentryLogLevel.WARN, SentryLogParameters.create(SentryLongDate(123), SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1"))), "log %s %d %b %.0f", "message", 1, true, 3.2)
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("log message 1 true 3", it.body)
+                assertEquals(0.000000123, it.timestamp)
+                assertEquals(SentryLogLevel.WARN, it.level)
+                assertEquals(13, it.severityNumber)
+
+                val attr1 = it.attributes?.get("attrname1")!!
+                assertEquals("attrval1", attr1.value)
+                assertEquals("string", attr1.type)
+
+                val template = it.attributes?.get("sentry.message.template")!!
+                assertEquals("log %s %d %b %.0f", template.value)
+                assertEquals("string", template.type)
+
+                val param0 = it.attributes?.get("sentry.message.parameter.0")!!
+                assertEquals("message", param0.value)
+                assertEquals("string", param0.type)
+
+                val param1 = it.attributes?.get("sentry.message.parameter.1")!!
+                assertEquals(1, param1.value)
+                assertEquals("integer", param1.type)
+
+                val param2 = it.attributes?.get("sentry.message.parameter.2")!!
+                assertEquals(true, param2.value)
+                assertEquals("boolean", param2.type)
+
+                val param3 = it.attributes?.get("sentry.message.parameter.3")!!
+                assertEquals(3.2, param3.value)
+                assertEquals("double", param3.type)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `creating log with without args does not add template attribute`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().log(SentryLogLevel.WARN, "log %s")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("log %s", it.body)
+                assertEquals(SentryLogLevel.WARN, it.level)
+                assertEquals(13, it.severityNumber)
+
+                val template = it.attributes?.get("sentry.message.template")
+                assertNull(template)
+
+                val param0 = it.attributes?.get("sentry.message.parameter.0")
+                assertNull(param0)
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `captures format string on format error`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+        }
+
+        sut.logger().log(SentryLogLevel.WARN, "log %d", "arg1")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("log %d", it.body)
+                assertEquals(SentryLogLevel.WARN, it.level)
+                assertEquals(13, it.severityNumber)
+
+                val template = it.attributes?.get("sentry.message.template")!!
+                assertEquals("log %d", template.value)
+                assertEquals("string", template.type)
+
+                val param0 = it.attributes?.get("sentry.message.parameter.0")!!
+                assertEquals("arg1", param0.value)
+                assertEquals("string", param0.type)
+            },
+            anyOrNull()
+        )
+    }
+
+    //endregion
+
     @Test
     fun `null tags do not cause NPE`() {
         val scopes = generateScopes()
@@ -2364,7 +2890,7 @@ class ScopesTest {
         return createScopes(options)
     }
 
-    private fun getEnabledScopes(): Triple<Scopes, ISentryClient, ILogger> {
+    private fun getEnabledScopes(optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null): Triple<Scopes, ISentryClient, ILogger> {
         val logger = mock<ILogger>()
 
         val options = SentryOptions()
@@ -2374,6 +2900,7 @@ class ScopesTest {
         options.tracesSampleRate = 1.0
         options.isDebug = true
         options.setLogger(logger)
+        optionsConfiguration?.configure(options)
 
         val sut = createScopes(options)
         val mockClient = createSentryClientMock()

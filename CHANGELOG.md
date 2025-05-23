@@ -4,8 +4,67 @@
 
 ### Features
 
+- Add debug mode for Session Replay masking ([#4357](https://github.com/getsentry/sentry-java/pull/4357))
+    - Use `Sentry.replay().enableDebugMaskingOverlay()` to overlay the screen with the Session Replay masks.
+    - The masks will be invalidated at most once per `frameRate` (default 1 fps).
+- Extend Logs API to allow passing in `attributes` ([#4402](https://github.com/getsentry/sentry-java/pull/4402))
+  - `Sentry.logger.log` now takes a `SentryLogParameters`
+  - Use `SentryLogParameters.create(SentryAttributes.of(...))` to pass attributes
+    - Attribute values may be of type `string`, `boolean`, `integer` or `double`.
+    - Other types will be converted to `string`. Currently we simply call `toString()` but we might offer more in the future.
+    - You may manually flatten complex types into multiple separate attributes of simple types.
+      - e.g. intead of `SentryAttribute.named("point", Point(10, 20))` you may store it as `SentryAttribute.integerAttribute("point.x", point.x)` and `SentryAttribute.integerAttribute("point.y", point.y)`
+    - `SentryAttribute.named()` will automatically infer the type or fall back to `string`.
+    - `SentryAttribute.booleanAttribute()` takes a `Boolean` value
+    - `SentryAttribute.integerAttribute()` takes a `Integer` value
+    - `SentryAttribute.doubleAttribute()` takes a `Double` value
+    - `SentryAttribute.stringAttribute()` takes a `String` value
+  - We opted for handling parameters via `SentryLogParameters` to avoid creating tons of overloads that are ambiguous.
+
+## 8.12.0
+
+### Features
+
+- Add new User Feedback API ([#4286](https://github.com/getsentry/sentry-java/pull/4286))
+    - We now introduced Sentry.captureFeedback, which supersedes Sentry.captureUserFeedback
+- Add Sentry Log Feature ([#4372](https://github.com/getsentry/sentry-java/pull/4372))
+    - The feature is disabled by default and needs to be enabled by:
+        - `options.getLogs().setEnabled(true)` in `Sentry.init` / `SentryAndroid.init`
+        - `<meta-data android:name="io.sentry.logs.enabled" android:value="true" />` in `AndroidManifest.xml`
+        - `logs.enabled=true` in `sentry.properties`
+        - `sentry.logs.enabled=true` in `application.properties`
+        - `sentry.logs.enabled: true` in `application.yml`
+    - Logs can be captured using `Sentry.logger().info()` and similar methods.
+    - Logs also take a format string and arguments which we then send through `String.format`.
+    - Please use `options.getLogs().setBeforeSend()` to filter outgoing logs
+
+### Fixes
+
+- Hook User Interaction integration into running Activity in case of deferred SDK init ([#4337](https://github.com/getsentry/sentry-java/pull/4337))
+
+### Dependencies
+
+- Bump Gradle from v8.13 to v8.14.0 ([#4360](https://github.com/getsentry/sentry-java/pull/4360))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8140)
+  - [diff](https://github.com/gradle/gradle/compare/v8.13...v8.14.0)
+
+## 8.11.1
+
+### Fixes
+
+- Fix Android profile chunk envelope type for UI Profiling ([#4366](https://github.com/getsentry/sentry-java/pull/4366))
+
+## 8.11.0
+
+### Features
+
 - Make `RequestDetailsResolver` public ([#4326](https://github.com/getsentry/sentry-java/pull/4326))
   - `RequestDetailsResolver` is now public and has an additional constructor, making it easier to use a custom `TransportFactory`
+
+### Fixes
+
+- Session Replay: Fix masking of non-styled `Text` Composables ([#4361](https://github.com/getsentry/sentry-java/pull/4361))
+- Session Replay: Fix masking read-only `TextField` Composables ([#4362](https://github.com/getsentry/sentry-java/pull/4362))
 
 ## 8.10.0
 

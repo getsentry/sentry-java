@@ -867,6 +867,26 @@ class ReplayIntegrationTest {
         verify(recorder).resume()
     }
 
+    @Test
+    fun `debug masking is disabled by default`() {
+        val replay = fixture.getSut(
+            context
+        )
+        assertFalse(replay.isDebugMaskingOverlayEnabled)
+    }
+
+    @Test
+    fun `debug masking can be enabled and disabled`() {
+        val replay = fixture.getSut(
+            context
+        )
+        replay.enableDebugMaskingOverlay()
+        assertTrue(replay.isDebugMaskingOverlayEnabled)
+
+        replay.disableDebugMaskingOverlay()
+        assertFalse(replay.isDebugMaskingOverlayEnabled)
+    }
+
     private fun getSessionCaptureStrategy(options: SentryOptions): SessionCaptureStrategy {
         return SessionCaptureStrategy(
             options,
