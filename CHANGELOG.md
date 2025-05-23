@@ -21,6 +21,13 @@
     - `SentryAttribute.stringAttribute()` takes a `String` value
   - We opted for handling parameters via `SentryLogParameters` to avoid creating tons of overloads that are ambiguous.
 
+### Fixes
+
+- Isolation scope is now forked in `OtelSentrySpanProcessor` instead of `OtelSentryPropagator` ([#4434](https://github.com/getsentry/sentry-java/pull/4434))
+  - Since propagator may never be invoked we moved the location where isolation scope is forked.
+  - Not invoking `OtelSentryPropagator.extract` or having a `sentry-trace` header that failed to parse would cause isolation scope not to be forked.
+  - This in turn caused data to bleed between scopes, e.g. from one request into another
+
 ## 8.12.0
 
 ### Features
