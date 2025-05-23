@@ -151,7 +151,7 @@ public class AndroidContinuousProfiler
     }
   }
 
-  private void start() {
+  private void initScopes() {
     if ((scopes == null || scopes == NoOpScopes.getInstance())
         && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
       this.scopes = Sentry.getCurrentScopes();
@@ -162,6 +162,10 @@ public class AndroidContinuousProfiler
         rateLimiter.addRateLimitObserver(this);
       }
     }
+  }
+
+  private void start() {
+    initScopes();
 
     // Debug.startMethodTracingSampling() is only available since Lollipop, but Android Profiler
     // causes crashes on api 21 -> https://github.com/getsentry/sentry-java/issues/3392
@@ -252,6 +256,7 @@ public class AndroidContinuousProfiler
   }
 
   private void stop(final boolean restartProfiler) {
+    initScopes();
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (stopFuture != null) {
         stopFuture.cancel(true);
