@@ -711,6 +711,7 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun getParentScopes ()Lio/sentry/IScopes;
 	public fun getRateLimiter ()Lio/sentry/transport/RateLimiter;
 	public fun getScope ()Lio/sentry/IScope;
+	public fun getScopes ()Lio/sentry/IScopes;
 	public fun getSpan ()Lio/sentry/ISpan;
 	public fun getTraceparent ()Lio/sentry/SentryTraceHeader;
 	public fun getTransaction ()Lio/sentry/ITransaction;
@@ -6919,6 +6920,11 @@ public final class io/sentry/util/SampleRateUtils {
 	public static fun isValidSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;)Z
 	public static fun isValidTracesSampleRate (Ljava/lang/Double;Z)Z
+}
+
+public final class io/sentry/util/ScopesUtil {
+	public fun <init> ()V
+	public static fun printScopesChain (Lio/sentry/IScopes;)V
 }
 
 public final class io/sentry/util/SentryRandom {
