@@ -10,6 +10,7 @@ import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.opentelemetry.sdk.trace.data.EventData;
 import io.opentelemetry.sdk.trace.data.ExceptionEventData;
+import io.opentelemetry.sdk.trace.data.SpanData;
 import io.sentry.Baggage;
 import io.sentry.DateUtils;
 import io.sentry.IScopes;
@@ -48,11 +49,7 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
       return;
     }
 
-    final @Nullable IScopes scopesFromContext = parentContext.get(SENTRY_SCOPES_KEY);
-    final @NotNull IScopes scopes =
-        scopesFromContext != null
-            ? scopesFromContext.forkedCurrentScope("spanprocessor")
-            : Sentry.forkedRootScopes("spanprocessor");
+    final @NotNull IScopes scopes = forkScopes(parentContext, otelSpan.toSpanData());
 
     final @Nullable IOtelSpanWrapper sentryParentSpan =
         spanStorage.getSentrySpan(otelSpan.getParentSpanContext());
@@ -109,6 +106,22 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
             baggage);
     sentrySpan.getSpanContext().setOrigin(SentrySpanExporter.TRACE_ORIGIN);
     spanStorage.storeSentrySpan(spanContext, sentrySpan);
+  }
+
+  private IScopes forkScopes(final @NotNull Context context, final @NotNull SpanData span) {
+    final @Nullable IScopes scopesFromContext = context.get(SENTRY_SCOPES_KEY);
+    if (scopesFromContext == null) {
+      return Sentry.forkedRootScopes("spanprocessor.new");
+    }
+    if (isRootSpan(span)) {
+      return scopesFromContext.forkedScopes("spanprocessor.rootspan");
+    }
+
+    return scopesFromContext.forkedCurrentScope("spanprocessor.nonrootspan");
+  }
+
+  private boolean isRootSpan(SpanData otelSpan) {
+    return !otelSpan.getParentSpanContext().isValid() || otelSpan.getParentSpanContext().isRemote();
   }
 
   private @Nullable Boolean isSampled(
