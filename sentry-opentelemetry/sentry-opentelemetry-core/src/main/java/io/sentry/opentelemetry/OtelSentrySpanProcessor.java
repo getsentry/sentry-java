@@ -111,13 +111,13 @@ public final class OtelSentrySpanProcessor implements SpanProcessor {
   private IScopes forkScopes(final @NotNull Context context, final @NotNull SpanData span) {
     final @Nullable IScopes scopesFromContext = context.get(SENTRY_SCOPES_KEY);
     if (scopesFromContext == null) {
-      return Sentry.forkedRootScopes("spanprocessor");
+      return Sentry.forkedRootScopes("spanprocessor.new");
     }
     if (isRootSpan(span)) {
-      return scopesFromContext.forkedScopes("spanprocessor.root");
+      return scopesFromContext.forkedScopes("spanprocessor.rootspan");
     }
 
-    return scopesFromContext.forkedCurrentScope("spanprocessor.nonroot");
+    return scopesFromContext.forkedCurrentScope("spanprocessor.nonrootspan");
   }
 
   private boolean isRootSpan(SpanData otelSpan) {
