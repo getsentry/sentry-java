@@ -31,6 +31,9 @@
 ### Dependencies
 
 - Bump Spring Boot to `3.5.0` ([#4111](https://github.com/getsentry/sentry-java/pull/4111))
+- Bump Gradle from v8.14 to v8.14.1 ([#4437](https://github.com/getsentry/sentry-java/pull/4437))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8141)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14...v8.14.1)
 
 ## 8.12.0
 
