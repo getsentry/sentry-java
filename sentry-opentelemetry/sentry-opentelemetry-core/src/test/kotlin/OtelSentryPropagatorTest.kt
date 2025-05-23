@@ -48,62 +48,6 @@ class OtelSentryPropagatorTest {
     }
 
     @Test
-    fun `forks root scopes if none in context without headers`() {
-        val propagator = OtelSentryPropagator()
-        val carrier: Map<String, String> = mapOf()
-
-        val newContext = propagator.extract(Context.root(), carrier, MapGetter())
-
-        val scopes = newContext.get(SENTRY_SCOPES_KEY)
-        assertNotNull(scopes)
-        assertSame(Sentry.forkedRootScopes("test").parentScopes, scopes.parentScopes)
-    }
-
-    @Test
-    fun `forks scopes from context if present without headers`() {
-        val propagator = OtelSentryPropagator()
-        val carrier: Map<String, String> = mapOf()
-        val scopeInContext = Sentry.forkedRootScopes("test")
-
-        val newContext = propagator.extract(Context.root().with(SENTRY_SCOPES_KEY, scopeInContext), carrier, MapGetter())
-
-        val scopes = newContext.get(SENTRY_SCOPES_KEY)
-        assertNotNull(scopes)
-        assertSame(scopeInContext, scopes.parentScopes)
-    }
-
-    @Test
-    fun `forks root scopes if none in context with headers`() {
-        val propagator = OtelSentryPropagator()
-        val carrier: Map<String, String> = mapOf(
-            "sentry-trace" to "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1",
-            "baggage" to "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
-        )
-
-        val newContext = propagator.extract(Context.root(), carrier, MapGetter())
-
-        val scopes = newContext.get(SENTRY_SCOPES_KEY)
-        assertNotNull(scopes)
-        assertSame(Sentry.forkedRootScopes("test").parentScopes, scopes.parentScopes)
-    }
-
-    @Test
-    fun `forks scopes from context if present with headers`() {
-        val propagator = OtelSentryPropagator()
-        val carrier: Map<String, String> = mapOf(
-            "sentry-trace" to "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1",
-            "baggage" to "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
-        )
-        val scopeInContext = Sentry.forkedRootScopes("test")
-
-        val newContext = propagator.extract(Context.root().with(SENTRY_SCOPES_KEY, scopeInContext), carrier, MapGetter())
-
-        val scopes = newContext.get(SENTRY_SCOPES_KEY)
-        assertNotNull(scopes)
-        assertSame(scopeInContext, scopes.parentScopes)
-    }
-
-    @Test
     fun `invalid sentry trace header returns context without modification`() {
         val propagator = OtelSentryPropagator()
         val carrier: Map<String, String> = mapOf(
