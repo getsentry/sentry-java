@@ -12,7 +12,7 @@ otel = "1.44.1"
 otelInstrumentation = "2.10.0"
 otelInstrumentationAlpha = "2.10.0-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
-otelSemanticConvetions = "1.28.0-alpha"
+otelSemanticConventions = "1.28.0-alpha"
 springTwo = "2.7.18"
 springThree = "3.4.2"
 targetSdk = "34"
@@ -61,8 +61,8 @@ otel-instrumentation-bom = { module = "io.opentelemetry.instrumentation:opentele
 otel-javaagent = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent", version.ref = "otelInstrumentation" }
 otel-javaagent-tooling = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling", version.ref = "otelInstrumentationAlpha" }
 otel-javaagent-extension-api = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api", version.ref = "otelInstrumentationAlpha" }
-otel-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", version.ref = "otelSemanticConvetions" }
-otel-semconv-incubating = { module = "io.opentelemetry.semconv:opentelemetry-semconv-incubating", version.ref = "otelSemanticConvetions" }
+otel-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", version.ref = "otelSemanticConventions" }
+otel-semconv-incubating = { module = "io.opentelemetry.semconv:opentelemetry-semconv-incubating", version.ref = "otelSemanticConventions" }
 springboot3-otel = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "otelInstrumentation" }
 
 # test libraries
