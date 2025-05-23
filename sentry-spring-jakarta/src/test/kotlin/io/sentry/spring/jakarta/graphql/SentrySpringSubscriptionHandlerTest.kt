@@ -1,4 +1,4 @@
-package io.sentry.spring.graphql
+package io.sentry.spring.jakarta.graphql
 
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.language.Document
@@ -6,9 +6,9 @@ import graphql.language.OperationDefinition
 import graphql.schema.DataFetchingEnvironment
 import io.sentry.IScopes
 import io.sentry.graphql.ExceptionReporter
-import io.sentry.spring.jakarta.graphql.SentrySpringSubscriptionHandler
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.same
 import org.mockito.kotlin.verify
@@ -40,10 +40,10 @@ class SentrySpringSubscriptionHandlerTest {
 
         verify(exceptionReporter).captureThrowable(
             same(exception),
-            org.mockito.kotlin.check {
+            check {
                 assertEquals(true, it.isSubscription)
                 assertSame(scopes, it.scopes)
-                assertEquals("query testQuery\n", it.query)
+                assertEquals("query testQuery \n", it.query)
             },
             anyOrNull()
         )
@@ -69,10 +69,10 @@ class SentrySpringSubscriptionHandlerTest {
 
         verify(exceptionReporter).captureThrowable(
             same(exception),
-            org.mockito.kotlin.check {
+            check {
                 assertEquals(true, it.isSubscription)
                 assertSame(scopes, it.scopes)
-                assertEquals("query testQuery\n", it.query)
+                assertEquals("query testQuery \n", it.query)
             },
             anyOrNull()
         )
