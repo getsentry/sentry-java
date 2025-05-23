@@ -14,5 +14,7 @@ public interface Recorder : Closeable {
 
     public fun pause()
 
+    public fun reset()
+
     public fun stop()
 }
