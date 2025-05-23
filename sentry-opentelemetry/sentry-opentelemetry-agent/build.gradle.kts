@@ -50,7 +50,7 @@ dependencies {
     bootstrapLibs(projects.sentry)
     bootstrapLibs(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
     javaagentLibs(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
-    upstreamAgent(Config.Libs.OpenTelemetry.otelJavaAgent)
+    upstreamAgent(libs.otel.javaagent)
 }
 
 fun isolateClasses(jars: Iterable<File>): CopySpec {
@@ -148,12 +148,12 @@ tasks {
             attributes.put("Implementation-Vendor", "Sentry")
             attributes.put("Implementation-Title", project.name)
             attributes.put("Implementation-Version", project.version)
-            attributes.put("Sentry-Version-Name", "sentry-${project.version}-otel-${Config.Libs.OpenTelemetry.otelInstrumentationVersion}")
+            attributes.put("Sentry-Version-Name", "sentry-${project.version}-otel-${libs.versions.otelInstrumentation.get()}")
             attributes.put("Sentry-SDK-Name", Config.Sentry.SENTRY_OPENTELEMETRY_AGENT_SDK_NAME)
             attributes.put("Sentry-SDK-Package-Name", "maven:io.sentry:sentry-opentelemetry-agent")
             attributes.put("Sentry-Opentelemetry-SDK-Name", Config.Sentry.SENTRY_OPENTELEMETRY_AGENT_SDK_NAME)
-            attributes.put("Sentry-Opentelemetry-Version-Name", Config.Libs.OpenTelemetry.otelVersion)
-            attributes.put("Sentry-Opentelemetry-Javaagent-Version-Name", Config.Libs.OpenTelemetry.otelInstrumentationVersion)
+            attributes.put("Sentry-Opentelemetry-Version-Name", libs.versions.otel.get())
+            attributes.put("Sentry-Opentelemetry-Javaagent-Version-Name", libs.versions.otelInstrumentation.get())
         }
     }
 

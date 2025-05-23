@@ -38,7 +38,7 @@ dependencies {
     compileOnly(Config.Libs.servletApiJakarta)
     compileOnly(Config.Libs.slf4jApi)
     compileOnly(Config.Libs.contextPropagation)
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
+    compileOnly(libs.otel)
 
     compileOnly(Config.Libs.springWebflux)
 

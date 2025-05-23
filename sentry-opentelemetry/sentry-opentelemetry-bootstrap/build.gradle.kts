@@ -16,7 +16,7 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
     compileOnly(projects.sentry)
 
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
+    compileOnly(libs.otel)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -31,9 +31,9 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
 
-    testImplementation(Config.Libs.OpenTelemetry.otelSdk)
-    testImplementation(Config.Libs.OpenTelemetry.otelSemconv)
-    testImplementation(Config.Libs.OpenTelemetry.otelSemconvIncubating)
+    testImplementation(libs.otel)
+    testImplementation(libs.otel.semconv)
+    testImplementation(libs.otel.semconv.incubating)
 }
 
 configure<SourceSetContainer> {
