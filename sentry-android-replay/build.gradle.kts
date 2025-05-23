@@ -19,7 +19,7 @@ android {
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
 
-        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
@@ -91,9 +91,9 @@ dependencies {
     testImplementation(libs.androidx.activity.compose)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.androidx.test.runner)
+    testImplementation(libs.awaitility.kotlin)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
-    testImplementation(Config.TestLibs.awaitility)
     testImplementation(libs.androidx.compose.ui)
     testImplementation(libs.androidx.compose.foundation)
     testImplementation(libs.androidx.compose.foundation.layout)
