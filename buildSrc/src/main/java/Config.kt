@@ -6,7 +6,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.18"
-    val springBoot3Version = "3.4.2"
+    val springBoot3Version = "3.5.0"
     val kotlinCompatibleLanguageVersion = "1.6"
 
     val androidComposeCompilerVersion = "1.5.14"
@@ -53,30 +53,6 @@ object Config {
         val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind:2.18.3"
         val jacksonKotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3"
 
-        val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
-        val springBootStarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBootVersion"
-        val springBootStarterQuartz = "org.springframework.boot:spring-boot-starter-quartz:$springBootVersion"
-        val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-        val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
-        val springBootStarterWebsocket = "org.springframework.boot:spring-boot-starter-websocket:$springBootVersion"
-        val springBootStarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
-        val springBootStarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBootVersion"
-        val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
-        val springBootStarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
-        val springBootStarterActuator = "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
-
-        val springBoot3Starter = "org.springframework.boot:spring-boot-starter:$springBoot3Version"
-        val springBoot3StarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBoot3Version"
-        val springBoot3StarterQuartz = "org.springframework.boot:spring-boot-starter-quartz:$springBoot3Version"
-        val springBoot3StarterTest = "org.springframework.boot:spring-boot-starter-test:$springBoot3Version"
-        val springBoot3StarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBoot3Version"
-        val springBoot3StarterWebsocket = "org.springframework.boot:spring-boot-starter-websocket:$springBoot3Version"
-        val springBoot3StarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBoot3Version"
-        val springBoot3StarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBoot3Version"
-        val springBoot3StarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBoot3Version"
-        val springBoot3StarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBoot3Version"
-        val springBoot3StarterActuator = "org.springframework.boot:spring-boot-starter-actuator:$springBoot3Version"
-
         val springWeb = "org.springframework:spring-webmvc"
         val springWebflux = "org.springframework:spring-webflux"
         val springSecurityWeb = "org.springframework.security:spring-security-web"
@@ -114,6 +90,7 @@ object Config {
 
         val graphQlJava = "com.graphql-java:graphql-java:17.3"
         val graphQlJava22 = "com.graphql-java:graphql-java:22.1"
+        val graphQlJavaNew = "com.graphql-java:graphql-java:24.0"
 
         val quartz = "org.quartz-scheduler:quartz:2.3.0"
 

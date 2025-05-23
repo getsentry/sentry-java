@@ -20,6 +20,7 @@ class TaskCreatorController {
     // using mapped BatchLoader to not have to deal with correct ordering of items
     batchLoaderRegistry
         .forTypePair(String.class, ProjectController.Creator.class)
+        .withOptions((builder) -> builder.setBatchingEnabled(true))
         .registerMappedBatchLoader(
             (Set<String> keys, BatchLoaderEnvironment env) -> {
               return Mono.fromCallable(

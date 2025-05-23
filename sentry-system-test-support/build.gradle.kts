@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.utils.addToStdlib.safeAs
+
 plugins {
     `java-library`
     kotlin("jvm")
@@ -18,10 +20,10 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 
 dependencies {
     api(projects.sentry)
-    compileOnly(Config.Libs.springBoot3StarterTest) {
+    compileOnly(libs.springboot3.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
-    compileOnly(Config.Libs.springBoot3StarterWeb)
+    compileOnly(libs.springboot3.starter.web)
     api(Config.Libs.apolloKotlin)
     implementation(Config.Libs.jacksonKotlin)
     implementation(Config.Libs.jacksonDatabind)
