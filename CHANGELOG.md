@@ -473,6 +473,7 @@ If you would like to keep some of the default broadcast events as breadcrumbs, c
 
 ### Dependencies
 
+- Bump Spring Boot to `3.4.2` ([#4081](https://github.com/getsentry/sentry-java/pull/4081))
 - Bump Native SDK from v0.7.14 to v0.7.19 ([#4076](https://github.com/getsentry/sentry-java/pull/4076))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0719)
   - [diff](https://github.com/getsentry/sentry-native/compare/v0.7.14...0.7.19)
