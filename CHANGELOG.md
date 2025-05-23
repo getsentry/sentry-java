@@ -21,6 +21,10 @@
     - `SentryAttribute.stringAttribute()` takes a `String` value
   - We opted for handling parameters via `SentryLogParameters` to avoid creating tons of overloads that are ambiguous.
 
+### Dependencies
+
+- Bump Spring Boot to `3.5.0` ([#4111](https://github.com/getsentry/sentry-java/pull/4111))
+
 ## 8.12.0
 
 ### Features
