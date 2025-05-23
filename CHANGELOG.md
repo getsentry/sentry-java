@@ -28,6 +28,10 @@
   - Not invoking `OtelSentryPropagator.extract` or having a `sentry-trace` header that failed to parse would cause isolation scope not to be forked.
   - This in turn caused data to bleed between scopes, e.g. from one request into another
 
+### Dependencies
+
+- Bump Spring Boot to `3.5.0` ([#4111](https://github.com/getsentry/sentry-java/pull/4111))
+
 ## 8.12.0
 
 ### Features
