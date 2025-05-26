@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix SDK init crash if initialized from background thread while an activiy is resumed ([#4449](https://github.com/getsentry/sentry-java/pull/4449))
+
 ### Dependencies
 
 - Bump Gradle from v8.14 to v8.14.1 ([#4437](https://github.com/getsentry/sentry-java/pull/4437))
