@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Fix SDK init crash if initialized from background thread while an activiy is resumed ([#4449](https://github.com/getsentry/sentry-java/pull/4449))
+
 ## 8.13.0
 
 ### Features
