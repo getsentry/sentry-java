@@ -17,7 +17,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "sentry-root"
 rootProject.buildFileName = "build.gradle.kts"
-
+includeBuild("build-logic")
 include(
     "sentry",
     "sentry-kotlin-extensions",
