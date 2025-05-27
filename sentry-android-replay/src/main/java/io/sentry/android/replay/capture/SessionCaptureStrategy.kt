@@ -29,12 +29,11 @@ internal class SessionCaptureStrategy(
     }
 
     override fun start(
-        recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int,
         replayId: SentryId,
         replayType: ReplayType?
     ) {
-        super.start(recorderConfig, segmentId, replayId, replayType)
+        super.start(segmentId, replayId, replayType)
         // only set replayId on the scope if it's a full session, otherwise all events will be
         // tagged with the replay that might never be sent when we're recording in buffer mode
         scopes?.configureScope {
@@ -80,8 +79,6 @@ internal class SessionCaptureStrategy(
         // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
         // reflecting the exact time of when it was captured
         val frameTimestamp = dateProvider.currentTimeMillis
-        val height = recorderConfig.recordingHeight
-        val width = recorderConfig.recordingWidth
         replayExecutor.submitSafely(options, "$TAG.add_frame") {
             cache?.store(frameTimestamp)
 
@@ -98,20 +95,24 @@ internal class SessionCaptureStrategy(
 
             val now = dateProvider.currentTimeMillis
             if ((now - currentSegmentTimestamp.time >= options.sessionReplay.sessionSegmentDuration)) {
-                val segment =
-                    createSegmentInternal(
-                        options.sessionReplay.sessionSegmentDuration,
-                        currentSegmentTimestamp,
-                        currentReplayId,
-                        currentSegment,
-                        height,
-                        width
-                    )
-                if (segment is ReplaySegment.Created) {
-                    segment.capture(scopes)
-                    currentSegment++
-                    // set next segment timestamp as close to the previous one as possible to avoid gaps
-                    segmentTimestamp = segment.replay.timestamp
+                recorderConfig?.let { config ->
+                    val segment =
+                        createSegmentInternal(
+                            options.sessionReplay.sessionSegmentDuration,
+                            currentSegmentTimestamp,
+                            currentReplayId,
+                            currentSegment,
+                            config.recordingHeight,
+                            config.recordingWidth,
+                            config.frameRate,
+                            config.bitRate
+                        )
+                    if (segment is ReplaySegment.Created) {
+                        segment.capture(scopes)
+                        currentSegment++
+                        // set next segment timestamp as close to the previous one as possible to avoid gaps
+                        segmentTimestamp = segment.replay.timestamp
+                    }
                 }
             }
 
@@ -140,17 +141,26 @@ internal class SessionCaptureStrategy(
     override fun convert(): CaptureStrategy = this
 
     private fun createCurrentSegment(taskName: String, onSegmentCreated: (ReplaySegment) -> Unit) {
-        val now = dateProvider.currentTimeMillis
-        val currentSegmentTimestamp = segmentTimestamp ?: return
-        val segmentId = currentSegment
-        val duration = now - currentSegmentTimestamp.time
-        val replayId = currentReplayId
-        val height = recorderConfig.recordingHeight
-        val width = recorderConfig.recordingWidth
-        replayExecutor.submitSafely(options, "$TAG.$taskName") {
-            val segment =
-                createSegmentInternal(duration, currentSegmentTimestamp, replayId, segmentId, height, width)
-            onSegmentCreated(segment)
+        recorderConfig?.let { config ->
+            val now = dateProvider.currentTimeMillis
+            val currentSegmentTimestamp = segmentTimestamp ?: return
+            val segmentId = currentSegment
+            val duration = now - currentSegmentTimestamp.time
+            val replayId = currentReplayId
+            replayExecutor.submitSafely(options, "$TAG.$taskName") {
+                val segment =
+                    createSegmentInternal(
+                        duration,
+                        currentSegmentTimestamp,
+                        replayId,
+                        segmentId,
+                        config.recordingHeight,
+                        config.recordingWidth,
+                        config.frameRate,
+                        config.bitRate
+                    )
+                onSegmentCreated(segment)
+            }
         }
     }
 }
