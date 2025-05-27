@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Fix SDK init crash if initialized from background thread while an activiy is resumed ([#4449](https://github.com/getsentry/sentry-java/pull/4449))
+- Fix `SentryAndroid.init` crash if SDK is initialized from a background thread while an `Activity` is in resumed state ([#4449](https://github.com/getsentry/sentry-java/pull/4449))
 
 ### Dependencies
 
