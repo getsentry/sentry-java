@@ -92,8 +92,12 @@ internal class WindowRecorder(
         }
     }
 
-    override fun start(recorderConfig: ScreenshotRecorderConfig) {
-        if (isRecording.getAndSet(true)) {
+    override fun start() {
+        isRecording.getAndSet(true)
+    }
+
+    override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
+        if (!isRecording.get()) {
             return
         }
 

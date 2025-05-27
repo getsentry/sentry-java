@@ -131,7 +131,7 @@ internal class BufferCaptureStrategy(
         }
         // we hand over replayExecutor to the new strategy to preserve order of execution
         val captureStrategy = SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor)
-        captureStrategy.start(recorderConfig, segmentId = currentSegment, replayId = currentReplayId, replayType = BUFFER)
+        captureStrategy.start(segmentId = currentSegment, replayId = currentReplayId, replayType = BUFFER)
         return captureStrategy
     }
 
@@ -189,24 +189,33 @@ internal class BufferCaptureStrategy(
     }
 
     private fun createCurrentSegment(taskName: String, onSegmentCreated: (ReplaySegment) -> Unit) {
-        val errorReplayDuration = options.sessionReplay.errorReplayDuration
-        val now = dateProvider.currentTimeMillis
-        val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
-            // in buffer mode we have to set the timestamp of the first frame as the actual start
-            DateUtils.getDateTime(cache!!.frames.first().timestamp)
-        } else {
-            DateUtils.getDateTime(now - errorReplayDuration)
-        }
-        val segmentId = currentSegment
-        val duration = now - currentSegmentTimestamp.time
-        val replayId = currentReplayId
-        val height = this.recorderConfig.recordingHeight
-        val width = this.recorderConfig.recordingWidth
+        recorderConfig?.let { config ->
+            val errorReplayDuration = options.sessionReplay.errorReplayDuration
+            val now = dateProvider.currentTimeMillis
+            val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
+                // in buffer mode we have to set the timestamp of the first frame as the actual start
+                DateUtils.getDateTime(cache!!.frames.first().timestamp)
+            } else {
+                DateUtils.getDateTime(now - errorReplayDuration)
+            }
+            val segmentId = currentSegment
+            val duration = now - currentSegmentTimestamp.time
+            val replayId = currentReplayId
 
-        replayExecutor.submitSafely(options, "$TAG.$taskName") {
-            val segment =
-                createSegmentInternal(duration, currentSegmentTimestamp, replayId, segmentId, height, width)
-            onSegmentCreated(segment)
+            replayExecutor.submitSafely(options, "$TAG.$taskName") {
+                val segment =
+                    createSegmentInternal(
+                        duration,
+                        currentSegmentTimestamp,
+                        replayId,
+                        segmentId,
+                        config.recordingHeight,
+                        config.recordingWidth,
+                        config.frameRate,
+                        config.bitRate
+                    )
+                onSegmentCreated(segment)
+            }
         }
     }
 }

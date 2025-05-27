@@ -98,8 +98,12 @@ class ReplayIntegrationWithRecorderTest {
         val recorder = object : Recorder {
             var state: LifecycleState = INITALIZED
 
-            override fun start(recorderConfig: ScreenshotRecorderConfig) {
+            override fun start() {
                 state = STARTED
+            }
+
+            override fun onConfigurationChanged(config: ScreenshotRecorderConfig) {
+                // no-op
             }
 
             override fun resume() {
