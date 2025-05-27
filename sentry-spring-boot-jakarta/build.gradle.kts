@@ -9,7 +9,7 @@ plugins {
     alias(libs.plugins.errorprone)
     alias(libs.plugins.gradle.versions)
     alias(libs.plugins.buildconfig)
-    alias(libs.plugins.spring.boot.three)
+    alias(libs.plugins.spring.boot.three) apply false
 }
 
 configure<JavaPluginExtension> {
