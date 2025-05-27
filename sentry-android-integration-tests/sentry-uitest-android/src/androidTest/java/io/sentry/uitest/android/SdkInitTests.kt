@@ -8,6 +8,7 @@ import io.sentry.Sentry
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.android.core.AndroidLogger
 import io.sentry.android.core.CurrentActivityHolder
+import io.sentry.android.core.NdkIntegration
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeTransaction
 import io.sentry.protocol.SentryTransaction
@@ -262,11 +263,10 @@ class SdkInitTests : BaseUiTest() {
     }
 
     private fun assertDefaultIntegrations() {
-        for (integration in listOf(
+        val integrations = mutableListOf(
             "UncaughtExceptionHandler",
             "ShutdownHook",
             "SendCachedEnvelope",
-            "Ndk",
             "AppLifecycle",
             "EnvelopeFileObserver",
             "AnrV2",
@@ -275,7 +275,17 @@ class SdkInitTests : BaseUiTest() {
             "UserInteraction",
             "AppComponentsBreadcrumbs",
             "NetworkBreadcrumbs"
-        )) {
+        )
+
+        // NdkIntegration is not always available, so we check for its presence
+        try {
+            Class.forName(NdkIntegration.SENTRY_NDK_CLASS_NAME)
+            integrations.add("Ndk")
+        } catch (_: ClassNotFoundException) {
+            // ignored, in case the app is build without NDK support
+        }
+
+        for (integration in integrations) {
             assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains(integration), "Integration $integration was expected, but was not registered")
         }
     }
