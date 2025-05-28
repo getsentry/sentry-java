@@ -62,6 +62,7 @@ import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.util.UUID
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -203,10 +204,13 @@ class ReplayIntegrationTest {
     @Test
     fun `starting two times does nothing`() {
         val captureStrategy = mock<CaptureStrategy>()
+        whenever(captureStrategy.currentReplayId).thenReturn(SentryId.EMPTY_ID)
+
         val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
         replay.register(fixture.scopes, fixture.options)
         replay.start()
+        replay.onWindowSizeChanged(640, 480)
         replay.start()
 
         verify(captureStrategy, times(1)).start(
@@ -236,10 +240,13 @@ class ReplayIntegrationTest {
     @Test
     fun `still starts replay when errorsSampleRate is set`() {
         val captureStrategy = mock<CaptureStrategy>()
+        whenever(captureStrategy.currentReplayId).thenReturn(SentryId.EMPTY_ID)
+
         val replay = fixture.getSut(context, sessionSampleRate = 0.0, replayCaptureStrategyProvider = { captureStrategy })
 
         replay.register(fixture.scopes, fixture.options)
         replay.start()
+        replay.onWindowSizeChanged(640, 480)
 
         verify(captureStrategy, times(1)).start(
             any(),
@@ -256,6 +263,7 @@ class ReplayIntegrationTest {
 
         replay.register(fixture.scopes, fixture.options)
         replay.start()
+        replay.onWindowSizeChanged(640, 480)
 
         verify(recorder).start(any())
     }
@@ -445,10 +453,13 @@ class ReplayIntegrationTest {
 
         replay.register(fixture.scopes, fixture.options)
         replay.start()
-        replay.onConfigurationChanged(mock())
+        replay.onWindowSizeChanged(480, 640)
 
-        verify(recorder).stop()
-        verify(captureStrategy).onConfigurationChanged(eq(recorderConfig))
+        replay.onConfigurationChanged(mock())
+        replay.onWindowSizeChanged(640, 480)
+
+        verify(recorder, times(3)).stop()
+        verify(captureStrategy, times(2)).onConfigurationChanged(eq(recorderConfig))
         verify(recorder, times(2)).start(eq(recorderConfig))
         assertTrue(configChanged)
     }
@@ -599,6 +610,8 @@ class ReplayIntegrationTest {
 
         replay.register(fixture.scopes, fixture.options)
         replay.start()
+        replay.onWindowSizeChanged(640, 480)
+
         replay.onScreenshotRecorded(mock<Bitmap>())
 
         verify(recorder).pause()
@@ -617,6 +630,7 @@ class ReplayIntegrationTest {
 
         replay.register(fixture.scopes, fixture.options)
         replay.start()
+        replay.onWindowSizeChanged(640, 480)
         replay.onScreenshotRecorded(mock<Bitmap>())
 
         verify(recorder).pause()
@@ -713,6 +727,8 @@ class ReplayIntegrationTest {
         var configChanged = false
         val recorderConfig = mock<ScreenshotRecorderConfig>()
         val captureStrategy = mock<CaptureStrategy>()
+        whenever(captureStrategy.currentReplayId).thenReturn(SentryId(UUID.randomUUID()))
+
         val recorder = mock<Recorder>()
         val replay = fixture.getSut(
             context,
@@ -723,11 +739,14 @@ class ReplayIntegrationTest {
 
         replay.register(fixture.scopes, fixture.options)
         replay.start()
+        replay.onWindowSizeChanged(640, 480)
+
         replay.pause()
         replay.onConfigurationChanged(mock())
+        replay.onWindowSizeChanged(480, 640)
 
-        verify(recorder).stop()
-        verify(captureStrategy).onConfigurationChanged(eq(recorderConfig))
+        verify(recorder, times(3)).stop()
+        verify(captureStrategy, times(2)).onConfigurationChanged(eq(recorderConfig))
         verify(recorder, times(2)).start(eq(recorderConfig))
         verify(recorder, times(2)).pause()
         assertTrue(configChanged)
