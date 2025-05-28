@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+- Republish Javadoc [#4457](https://github.com/getsentry/sentry-java/pull/4457)
+
 ## 8.13.2
 
 ### Fixes
