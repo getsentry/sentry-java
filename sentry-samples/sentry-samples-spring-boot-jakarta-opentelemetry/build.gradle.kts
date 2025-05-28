@@ -52,7 +52,7 @@ dependencies {
     implementation(projects.sentryLogback)
     implementation(projects.sentryGraphql22)
     implementation(projects.sentryQuartz)
-    implementation(Config.Libs.OpenTelemetry.otelSdk)
+    implementation(libs.otel)
 
     // database query tracing
     implementation(projects.sentryJdbc)
