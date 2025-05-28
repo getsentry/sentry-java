@@ -14,7 +14,7 @@ otelInstrumentationAlpha = "2.10.0-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
 otelSemanticConventions = "1.28.0-alpha"
 springTwo = "2.7.18"
-springThree = "3.4.2"
+springThree = "3.5.0"
 targetSdk = "34"
 compileSdk = "34"
 minSdk = "21"

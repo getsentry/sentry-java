@@ -1,6 +1,25 @@
 # Changelog
 
-## Unreleased
+## 8.13.2
+
+### Fixes
+
+- Don't apply Spring Boot plugin in `sentry-spring-boot-jakarta` ([#4456](https://github.com/getsentry/sentry-java/pull/4456))
+  - The jar for `io.sentry:sentry-spring-boot-jakarta` is now correctly being built and published to Maven Central.
+
+## 8.13.1
+
+### Fixes
+
+- Fix `SentryAndroid.init` crash if SDK is initialized from a background thread while an `Activity` is in resumed state ([#4449](https://github.com/getsentry/sentry-java/pull/4449))
+
+### Dependencies
+
+- Bump Gradle from v8.14 to v8.14.1 ([#4437](https://github.com/getsentry/sentry-java/pull/4437))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8141)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14...v8.14.1)
+
+## 8.13.0
 
 ### Features
 
@@ -20,6 +39,17 @@
     - `SentryAttribute.doubleAttribute()` takes a `Double` value
     - `SentryAttribute.stringAttribute()` takes a `String` value
   - We opted for handling parameters via `SentryLogParameters` to avoid creating tons of overloads that are ambiguous.
+
+### Fixes
+
+- Isolation scope is now forked in `OtelSentrySpanProcessor` instead of `OtelSentryPropagator` ([#4434](https://github.com/getsentry/sentry-java/pull/4434))
+  - Since propagator may never be invoked we moved the location where isolation scope is forked.
+  - Not invoking `OtelSentryPropagator.extract` or having a `sentry-trace` header that failed to parse would cause isolation scope not to be forked.
+  - This in turn caused data to bleed between scopes, e.g. from one request into another
+
+### Dependencies
+
+- Bump Spring Boot to `3.5.0` ([#4111](https://github.com/getsentry/sentry-java/pull/4111))
 
 ## 8.12.0
 
