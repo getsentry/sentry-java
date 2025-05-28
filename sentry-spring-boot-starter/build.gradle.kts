@@ -8,7 +8,7 @@ plugins {
     jacoco
     alias(libs.plugins.errorprone)
     alias(libs.plugins.gradle.versions)
-    alias(libs.plugins.spring.boot.two) apply false
+    alias(libs.plugins.springboot2) apply false
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -18,7 +18,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentrySpringBoot)
-    api(Config.Libs.springBootStarter)
+    api(libs.springboot.starter)
 
     annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
