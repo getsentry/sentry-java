@@ -10,6 +10,7 @@ import io.sentry.hints.SessionEnd;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
@@ -27,6 +28,8 @@ public final class UncaughtExceptionHandlerIntegration
     implements Integration, Thread.UncaughtExceptionHandler, Closeable {
   /** Reference to the pre-existing uncaught exception handler. */
   private @Nullable Thread.UncaughtExceptionHandler defaultExceptionHandler;
+
+  private static final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   private @Nullable IScopes scopes;
   private @Nullable SentryOptions options;
@@ -65,27 +68,33 @@ public final class UncaughtExceptionHandlerIntegration
             this.options.isEnableUncaughtExceptionHandler());
 
     if (this.options.isEnableUncaughtExceptionHandler()) {
-      final Thread.UncaughtExceptionHandler currentHandler =
-          threadAdapter.getDefaultUncaughtExceptionHandler();
-      if (currentHandler != null) {
-        this.options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "default UncaughtExceptionHandler class='"
-                    + currentHandler.getClass().getName()
-                    + "'");
-
-        if (currentHandler instanceof UncaughtExceptionHandlerIntegration) {
-          final UncaughtExceptionHandlerIntegration currentHandlerIntegration =
-              (UncaughtExceptionHandlerIntegration) currentHandler;
-          defaultExceptionHandler = currentHandlerIntegration.defaultExceptionHandler;
-        } else {
-          defaultExceptionHandler = currentHandler;
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        final Thread.UncaughtExceptionHandler currentHandler =
+            threadAdapter.getDefaultUncaughtExceptionHandler();
+        if (currentHandler != null) {
+          this.options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "default UncaughtExceptionHandler class='"
+                      + currentHandler.getClass().getName()
+                      + "'");
+          if (currentHandler instanceof UncaughtExceptionHandlerIntegration) {
+            final UncaughtExceptionHandlerIntegration currentHandlerIntegration =
+                (UncaughtExceptionHandlerIntegration) currentHandler;
+            if (currentHandlerIntegration.scopes != null
+                && scopes.getGlobalScope() == currentHandlerIntegration.scopes.getGlobalScope()) {
+              defaultExceptionHandler = currentHandlerIntegration.defaultExceptionHandler;
+            } else {
+              defaultExceptionHandler = currentHandler;
+            }
+          } else {
+            defaultExceptionHandler = currentHandler;
+          }
         }
-      }
 
-      threadAdapter.setDefaultUncaughtExceptionHandler(this);
+        threadAdapter.setDefaultUncaughtExceptionHandler(this);
+      }
 
       this.options
           .getLogger()
@@ -159,11 +168,36 @@ public final class UncaughtExceptionHandlerIntegration
 
   @Override
   public void close() {
-    if (this == threadAdapter.getDefaultUncaughtExceptionHandler()) {
-      threadAdapter.setDefaultUncaughtExceptionHandler(defaultExceptionHandler);
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (this == threadAdapter.getDefaultUncaughtExceptionHandler()) {
+        threadAdapter.setDefaultUncaughtExceptionHandler(defaultExceptionHandler);
 
-      if (options != null) {
-        options.getLogger().log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration removed.");
+        if (options != null) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration removed.");
+        }
+      } else {
+        removeFromHandlerTree(threadAdapter.getDefaultUncaughtExceptionHandler());
+      }
+    }
+  }
+
+  private void removeFromHandlerTree(@Nullable Thread.UncaughtExceptionHandler currentHandler) {
+    if (currentHandler instanceof UncaughtExceptionHandlerIntegration) {
+      final UncaughtExceptionHandlerIntegration currentHandlerIntegration =
+          (UncaughtExceptionHandlerIntegration) currentHandler;
+      if (this == currentHandlerIntegration.defaultExceptionHandler) {
+        currentHandlerIntegration.defaultExceptionHandler = defaultExceptionHandler;
+
+        if (options != null) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "UncaughtExceptionHandlerIntegration removed.");
+        }
+
+      } else {
+        removeFromHandlerTree(currentHandlerIntegration.defaultExceptionHandler);
       }
     }
   }
