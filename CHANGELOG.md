@@ -1,5 +1,12 @@
 # Changelog
 
+## 8.13.2
+
+### Fixes
+
+- Don't apply Spring Boot plugin in `sentry-spring-boot-jakarta` ([#4456](https://github.com/getsentry/sentry-java/pull/4456))
+  - The jar for `io.sentry:sentry-spring-boot-jakarta` is now correctly being built and published to Maven Central.
+
 ## 8.13.1
 
 ### Fixes
