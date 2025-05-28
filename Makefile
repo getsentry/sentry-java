@@ -1,6 +1,6 @@
-.PHONY: all clean compile dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical check preMerge publish
 
-all: stop clean compile createCoverageReports
+all: stop clean javadocs compile createCoverageReports
 assembleBenchmarks: assembleBenchmarkTestRelease
 assembleUiTests: assembleUiTestRelease
 preMerge: check createCoverageReports
@@ -15,9 +15,12 @@ clean:
 compile:
 	./gradlew build
 
+javadocs:
+	./gradlew aggregateJavadocs
+
 # do a dry release (like a local deploy)
 dryRelease:
-	./gradlew distZip --no-build-cache --no-configuration-cache
+	./gradlew aggregateJavadocs distZip --no-build-cache --no-configuration-cache
 
 # check for dependencies update
 update:
