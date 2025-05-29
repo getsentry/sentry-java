@@ -110,11 +110,11 @@ dependencies {
     implementation(libs.androidx.test.espresso.idling.resource)
     implementation(Config.Libs.leakCanary)
 
-    compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.nopen.annotations)
 
     errorprone(libs.errorprone.core)
     errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     androidTestUtil(libs.androidx.test.orchestrator)
     androidTestImplementation(projects.sentryTestSupport)
