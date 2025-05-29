@@ -36,6 +36,8 @@ dependencies {
     compileOnly(Config.Libs.servletApiJakarta)
     compileOnly(Config.Libs.reactorCore)
     compileOnly(Config.Libs.contextPropagation)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
     compileOnly(libs.otel)
     compileOnly(libs.springboot3.starter)
     compileOnly(libs.springboot3.starter.aop)
@@ -50,11 +52,9 @@ dependencies {
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryLogback)

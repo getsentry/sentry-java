@@ -19,10 +19,10 @@ dependencies {
     api(projects.sentry)
     compileOnly(Config.Libs.coroutinesCore)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
 
     // tests
     testImplementation(projects.sentryTestSupport)

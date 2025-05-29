@@ -36,23 +36,23 @@ dependencies {
     compileOnly(Config.Libs.servletApiJakarta)
     compileOnly(Config.Libs.slf4jApi)
     compileOnly(Config.Libs.contextPropagation)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
     compileOnly(libs.otel)
     compileOnly(libs.springboot3.starter.graphql)
     compileOnly(libs.springboot3.starter.quartz)
 
     compileOnly(Config.Libs.springWebflux)
-
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
     compileOnly(projects.sentryGraphql)
     compileOnly(projects.sentryGraphql22)
     compileOnly(projects.sentryQuartz)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
     api(projects.sentryReactor)
+
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryTestSupport)

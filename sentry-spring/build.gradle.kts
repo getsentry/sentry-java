@@ -31,17 +31,17 @@ dependencies {
     compileOnly(Config.Libs.springWebflux)
     compileOnly(projects.sentryGraphql)
     compileOnly(projects.sentryQuartz)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
     compileOnly(libs.otel)
     compileOnly(libs.springboot.starter.graphql)
     compileOnly(libs.springboot.starter.quartz)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryTestSupport)

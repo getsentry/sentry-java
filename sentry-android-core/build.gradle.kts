@@ -60,7 +60,7 @@ android {
 
     // needed because of Kotlin 1.4.x
     configurations.all {
-        resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
+        resolutionStrategy.force(libs.jetbrains.annotations.get())
     }
 
     androidComponents.beforeVariants {
@@ -77,6 +77,8 @@ tasks.withType<JavaCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
     compileOnly(projects.sentryAndroidFragment)
     compileOnly(projects.sentryAndroidTimber)
     compileOnly(projects.sentryAndroidReplay)
@@ -87,11 +89,9 @@ dependencies {
     implementation(Config.Libs.lifecycleCommonJava8)
     implementation(libs.androidx.core)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
