@@ -67,12 +67,12 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
-    compileOnly(Config.Libs.androidxSqlite)
+    compileOnly(libs.androidx.sqlite)
 
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     // tests
-    testImplementation(Config.Libs.androidxSqlite)
+    testImplementation(libs.androidx.sqlite)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.mockito.kotlin)

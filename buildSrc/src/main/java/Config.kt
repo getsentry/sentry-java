@@ -24,18 +24,9 @@ object Config {
 
     object Libs {
         val okHttpVersion = "4.9.2"
-        val appCompat = "androidx.appcompat:appcompat:1.3.0"
         val timber = "com.jakewharton.timber:timber:4.7.1"
         val okhttp = "com.squareup.okhttp3:okhttp:$okHttpVersion"
         val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.14"
-        val constraintLayout = "androidx.constraintlayout:constraintlayout:2.1.3"
-
-        private val lifecycleVersion = "2.2.0"
-        val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
-        val lifecycleCommonJava8 = "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
-        val androidxSqlite = "androidx.sqlite:sqlite:2.3.1"
-        val androidxRecylerView = "androidx.recyclerview:recyclerview:1.2.1"
-        val androidxAnnotation = "androidx.annotation:annotation:1.9.1"
 
         val slf4jApi = "org.slf4j:slf4j-api:1.7.30"
         val slf4jApi2 = "org.slf4j:slf4j-api:2.0.5"
@@ -70,8 +61,6 @@ object Config {
         val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1"
 
         val coroutinesAndroid = "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1"
-
-        val fragment = "androidx.fragment:fragment-ktx:1.3.5"
 
         val reactorCore = "io.projectreactor:reactor-core:3.5.3"
         val contextPropagation = "io.micrometer:context-propagation:1.1.0"

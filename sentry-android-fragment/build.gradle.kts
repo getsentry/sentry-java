@@ -65,10 +65,10 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
-    compileOnly(Config.Libs.fragment)
+    compileOnly(libs.androidx.fragment)
 
     // tests
-    testImplementation(Config.Libs.fragment)
+    testImplementation(libs.androidx.fragment)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)

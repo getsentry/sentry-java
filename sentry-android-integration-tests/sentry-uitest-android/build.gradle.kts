@@ -100,13 +100,13 @@ dependencies {
     } else {
         implementation(projects.sentryAndroidCore)
     }
-    implementation(Config.Libs.appCompat)
-    implementation(libs.androidx.core)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
-    implementation(Config.Libs.androidxRecylerView)
-    implementation(Config.Libs.constraintLayout)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.core)
+    implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.test.espresso.idling.resource)
     implementation(Config.Libs.leakCanary)
 

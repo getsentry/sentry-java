@@ -86,10 +86,10 @@ android {
 dependencies {
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
     implementation(projects.sentryAndroid)
-    implementation(Config.Libs.appCompat)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core)
-    implementation(Config.Libs.androidxRecylerView)
-    implementation(Config.Libs.constraintLayout)
+    implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.test.espresso.idling.resource)
 
     compileOnly(libs.nopen.annotations)

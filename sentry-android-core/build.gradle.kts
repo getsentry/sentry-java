@@ -85,8 +85,8 @@ dependencies {
     compileOnly(projects.sentryCompose)
 
     // lifecycle processor, session tracking
-    implementation(Config.Libs.lifecycleProcess)
-    implementation(Config.Libs.lifecycleCommonJava8)
+    implementation(libs.androidx.lifecycle.common.java8)
+    implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.core)
 
     errorprone(libs.errorprone.core)
@@ -111,6 +111,6 @@ dependencies {
     testImplementation(projects.sentryCompose)
     testImplementation(projects.sentryAndroidNdk)
     testRuntimeOnly(libs.androidx.compose.ui)
+    testRuntimeOnly(libs.androidx.fragment)
     testRuntimeOnly(Config.Libs.timber)
-    testRuntimeOnly(Config.Libs.fragment)
 }

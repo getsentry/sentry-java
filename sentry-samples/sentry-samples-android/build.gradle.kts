@@ -145,8 +145,8 @@ dependencies {
     implementation(projects.sentryAndroidFragment)
     implementation(projects.sentryAndroidTimber)
     implementation(projects.sentryCompose)
+    implementation(projects.sentryKotlinExtensions)
     implementation(projects.sentryOkhttp)
-    implementation(Config.Libs.fragment)
     implementation(Config.Libs.timber)
 
 //    how to exclude androidx if release health feature is disabled
@@ -156,21 +156,20 @@ dependencies {
 //        exclude(group = "androidx.core", module = "core")
 //    }
 
-    implementation(Config.Libs.appCompat)
-    implementation(Config.Libs.androidxRecylerView)
+    implementation(Config.Libs.coroutinesAndroid)
     implementation(Config.Libs.retrofit2)
     implementation(Config.Libs.retrofit2Gson)
-
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.foundation.layout)
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.coil.compose)
     implementation(Config.Libs.sentryNativeNdk)
 
-    implementation(projects.sentryKotlinExtensions)
-    implementation(Config.Libs.coroutinesAndroid)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.fragment)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.foundation.layout)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.coil.compose)
 
     debugImplementation(Config.Libs.leakCanary)
 }
