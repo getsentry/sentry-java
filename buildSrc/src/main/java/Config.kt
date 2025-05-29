@@ -6,7 +6,7 @@ object Config {
     val kotlinStdLib = "stdlib-jdk8"
 
     val springBootVersion = "2.7.18"
-    val springBoot3Version = "3.4.2"
+    val springBoot3Version = "3.5.0"
     val kotlinCompatibleLanguageVersion = "1.6"
 
     val androidComposeCompilerVersion = "1.5.14"
@@ -53,31 +53,6 @@ object Config {
         val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind:2.18.3"
         val jacksonKotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3"
 
-        val springBootStarter = "org.springframework.boot:spring-boot-starter:$springBootVersion"
-        val springBootStarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBootVersion"
-        val springBootStarterQuartz = "org.springframework.boot:spring-boot-starter-quartz:$springBootVersion"
-        val springBootStarterTest = "org.springframework.boot:spring-boot-starter-test:$springBootVersion"
-        val springBootStarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBootVersion"
-        val springBootStarterWebsocket = "org.springframework.boot:spring-boot-starter-websocket:$springBootVersion"
-        val springBootStarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBootVersion"
-        val springBootStarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBootVersion"
-        val springBootStarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBootVersion"
-        val springBootStarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBootVersion"
-        val springBootStarterActuator = "org.springframework.boot:spring-boot-starter-actuator:$springBootVersion"
-
-        val springBoot3Starter = "org.springframework.boot:spring-boot-starter:$springBoot3Version"
-        val springBoot3StarterGraphql = "org.springframework.boot:spring-boot-starter-graphql:$springBoot3Version"
-        val springBoot3StarterQuartz = "org.springframework.boot:spring-boot-starter-quartz:$springBoot3Version"
-        val springBoot3StarterTest = "org.springframework.boot:spring-boot-starter-test:$springBoot3Version"
-        val springBoot3StarterWeb = "org.springframework.boot:spring-boot-starter-web:$springBoot3Version"
-        val springBoot3StarterWebsocket = "org.springframework.boot:spring-boot-starter-websocket:$springBoot3Version"
-        val springBoot3StarterWebflux = "org.springframework.boot:spring-boot-starter-webflux:$springBoot3Version"
-        val springBoot3StarterAop = "org.springframework.boot:spring-boot-starter-aop:$springBoot3Version"
-        val springBoot3StarterSecurity = "org.springframework.boot:spring-boot-starter-security:$springBoot3Version"
-        val springBoot3StarterJdbc = "org.springframework.boot:spring-boot-starter-jdbc:$springBoot3Version"
-        val springBoot3StarterActuator = "org.springframework.boot:spring-boot-starter-actuator:$springBoot3Version"
-        val springBoot3StarterOpenTelemetry = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter:${OpenTelemetry.otelInstrumentationVersion}"
-
         val springWeb = "org.springframework:spring-webmvc"
         val springWebflux = "org.springframework:spring-webflux"
         val springSecurityWeb = "org.springframework.security:spring-security-web"
@@ -115,6 +90,7 @@ object Config {
 
         val graphQlJava = "com.graphql-java:graphql-java:17.3"
         val graphQlJava22 = "com.graphql-java:graphql-java:22.1"
+        val graphQlJavaNew = "com.graphql-java:graphql-java:24.0"
 
         val quartz = "org.quartz-scheduler:quartz:2.3.0"
 
@@ -125,41 +101,11 @@ object Config {
         val apolloKotlin4 = "com.apollographql.apollo:apollo-runtime:4.1.1"
 
         val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.8.4"
-
-        object OpenTelemetry {
-            val otelVersion = "1.44.1"
-            val otelAlphaVersion = "$otelVersion-alpha"
-            val otelInstrumentationVersion = "2.10.0"
-            val otelInstrumentationAlphaVersion = "$otelInstrumentationVersion-alpha"
-            val otelSemanticConvetionsVersion = "1.28.0-alpha" // check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
-
-            val otelSdk = "io.opentelemetry:opentelemetry-sdk:$otelVersion"
-            val otelSemconv = "io.opentelemetry.semconv:opentelemetry-semconv:$otelSemanticConvetionsVersion"
-            val otelSemconvIncubating = "io.opentelemetry.semconv:opentelemetry-semconv-incubating:$otelSemanticConvetionsVersion"
-            val otelJavaAgent = "io.opentelemetry.javaagent:opentelemetry-javaagent:$otelInstrumentationVersion"
-            val otelJavaAgentExtensionApi = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api:$otelInstrumentationAlphaVersion"
-            val otelJavaAgentTooling = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling:$otelInstrumentationAlphaVersion"
-            val otelExtensionAutoconfigureSpi = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:$otelVersion"
-            val otelExtensionAutoconfigure = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:$otelVersion"
-            val otelInstrumentationBom = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:$otelInstrumentationVersion"
-        }
     }
 
     object AnnotationProcessors {
         val springBootAutoConfigure = "org.springframework.boot:spring-boot-autoconfigure-processor"
         val springBootConfiguration = "org.springframework.boot:spring-boot-configuration-processor"
-    }
-
-    object TestLibs {
-        val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"
-        val awaitility = "org.awaitility:awaitility-kotlin:4.1.1"
-        val awaitility3 = "org.awaitility:awaitility-kotlin:3.1.6" // need this due to a conflict of awaitility4+ and espresso on hamcrest
-        val hsqldb = "org.hsqldb:hsqldb:2.6.1"
-        val javaFaker = "com.github.javafaker:javafaker:1.0.2"
-        val msgpack = "org.msgpack:msgpack-core:0.9.8"
-        val leakCanaryInstrumentation = "com.squareup.leakcanary:leakcanary-android-instrumentation:2.14"
-        val composeUiTestJunit4 = "androidx.compose.ui:ui-test-junit4:1.6.8"
-        val okio = "com.squareup.okio:okio:1.13.0"
     }
 
     object QualityPlugins {

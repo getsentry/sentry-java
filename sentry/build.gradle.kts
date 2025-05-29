@@ -22,13 +22,13 @@ dependencies {
     errorprone(Config.CompileOnly.errorProneNullAway)
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.javafaker)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
-    testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.TestLibs.javaFaker)
-    testImplementation(Config.TestLibs.msgpack)
-    testImplementation(Config.TestLibs.okio)
+    testImplementation(libs.msgpack)
+    testImplementation(libs.okio)
     testImplementation(projects.sentryTestSupport)
 }
 

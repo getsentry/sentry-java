@@ -15,7 +15,7 @@ android {
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
 
-        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
             abiFilters.addAll(Config.Android.abiFilters)

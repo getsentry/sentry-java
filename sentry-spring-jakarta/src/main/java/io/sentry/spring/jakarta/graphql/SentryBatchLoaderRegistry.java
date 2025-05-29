@@ -76,7 +76,7 @@ public final class SentryBatchLoaderRegistry implements BatchLoaderRegistry {
 
     @Override
     public BatchLoaderRegistry.RegistrationSpec<K, V> withOptions(
-        Consumer<DataLoaderOptions> optionsConsumer) {
+        Consumer<DataLoaderOptions.Builder> optionsConsumer) {
       return delegate.withOptions(optionsConsumer);
     }
 
