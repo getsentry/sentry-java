@@ -11,11 +11,11 @@ plugins {
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.android.sqlite"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
@@ -74,9 +74,9 @@ dependencies {
     // tests
     testImplementation(Config.Libs.androidxSqlite)
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.androidxJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
 }
 
 tasks.withType<Detekt>().configureEach {

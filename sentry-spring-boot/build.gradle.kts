@@ -9,7 +9,7 @@ plugins {
     alias(libs.plugins.errorprone)
     alias(libs.plugins.gradle.versions)
     alias(libs.plugins.buildconfig)
-    alias(libs.plugins.spring.boot.two) apply false
+    alias(libs.plugins.springboot2) apply false
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -22,15 +22,15 @@ dependencies {
     api(projects.sentrySpring)
     compileOnly(projects.sentryLogback)
     compileOnly(projects.sentryApacheHttpClient5)
-    compileOnly(Config.Libs.springBootStarter)
+    compileOnly(libs.springboot.starter)
+    compileOnly(libs.springboot.starter.aop)
+    compileOnly(libs.springboot.starter.graphql)
+    compileOnly(libs.springboot.starter.quartz)
+    compileOnly(libs.springboot.starter.security)
     compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springWebflux)
     compileOnly(Config.Libs.servletApi)
-    compileOnly(Config.Libs.springBootStarterAop)
-    compileOnly(Config.Libs.springBootStarterSecurity)
-    compileOnly(Config.Libs.springBootStarterGraphql)
-    compileOnly(Config.Libs.springBootStarterQuartz)
     compileOnly(Config.Libs.reactorCore)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
     compileOnly(projects.sentryGraphql)
@@ -53,19 +53,19 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.okhttp.mockwebserver)
     testImplementation(Config.Libs.okhttp)
-    testImplementation(Config.Libs.springBootStarter)
-    testImplementation(Config.Libs.springBootStarterTest)
-    testImplementation(Config.Libs.springBootStarterWeb)
-    testImplementation(Config.Libs.springBootStarterWebflux)
-    testImplementation(Config.Libs.springBootStarterSecurity)
-    testImplementation(Config.Libs.springBootStarterAop)
-    testImplementation(Config.Libs.springBootStarterQuartz)
-    testImplementation(Config.Libs.OpenTelemetry.otelSdk)
-    testImplementation(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)
-    testImplementation(Config.Libs.springBoot3StarterOpenTelemetry)
+    testImplementation(libs.otel)
+    testImplementation(libs.otel.extension.autoconfigure.spi)
+    testImplementation(libs.springboot.starter)
+    testImplementation(libs.springboot.starter.aop)
+    testImplementation(libs.springboot.starter.quartz)
+    testImplementation(libs.springboot.starter.security)
+    testImplementation(libs.springboot.starter.test)
+    testImplementation(libs.springboot.starter.web)
+    testImplementation(libs.springboot.starter.webflux)
+    testImplementation(libs.springboot3.otel)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
@@ -79,7 +79,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

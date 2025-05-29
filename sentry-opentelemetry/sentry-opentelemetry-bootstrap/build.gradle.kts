@@ -16,7 +16,7 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
     compileOnly(projects.sentry)
 
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
+    compileOnly(libs.otel)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -27,13 +27,13 @@ dependencies {
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(libs.awaitility.kotlin)
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.awaitility)
+    testImplementation(libs.mockito.kotlin)
 
-    testImplementation(Config.Libs.OpenTelemetry.otelSdk)
-    testImplementation(Config.Libs.OpenTelemetry.otelSemconv)
-    testImplementation(Config.Libs.OpenTelemetry.otelSemconvIncubating)
+    testImplementation(libs.otel)
+    testImplementation(libs.otel.semconv)
+    testImplementation(libs.otel.semconv.incubating)
 }
 
 configure<SourceSetContainer> {
@@ -43,7 +43,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

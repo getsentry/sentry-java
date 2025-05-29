@@ -27,10 +27,10 @@ dependencies {
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(libs.awaitility.kotlin)
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.okhttp.mockwebserver)
     testImplementation(Config.Libs.feignCore)
 }
 
@@ -41,7 +41,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

@@ -9,13 +9,13 @@ plugins {
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.samples.android"
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
-        minSdk = Config.Android.minSdkVersion
-        targetSdk = Config.Android.targetSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 2
         versionName = project.version.toString()
 
@@ -161,12 +161,12 @@ dependencies {
     implementation(Config.Libs.retrofit2)
     implementation(Config.Libs.retrofit2Gson)
 
-    implementation(Config.Libs.composeActivity)
-    implementation(Config.Libs.composeFoundation)
-    implementation(Config.Libs.composeFoundationLayout)
-    implementation(Config.Libs.composeNavigation)
-    implementation(Config.Libs.composeMaterial)
-    implementation(Config.Libs.composeCoil)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.foundation.layout)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.coil.compose)
     implementation(Config.Libs.sentryNativeNdk)
 
     implementation(projects.sentryKotlinExtensions)

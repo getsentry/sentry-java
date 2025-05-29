@@ -21,10 +21,10 @@ dependencies {
     }
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
-    compileOnly(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)
-    compileOnly(Config.Libs.OpenTelemetry.otelJavaAgentExtensionApi)
-    compileOnly(Config.Libs.OpenTelemetry.otelJavaAgentTooling)
+    compileOnly(libs.otel)
+    compileOnly(libs.otel.extension.autoconfigure.spi)
+    compileOnly(libs.otel.javaagent.extension.api)
+    compileOnly(libs.otel.javaagent.tooling)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -35,9 +35,9 @@ dependencies {
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(libs.awaitility.kotlin)
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.awaitility)
+    testImplementation(libs.mockito.kotlin)
 }
 
 configure<SourceSetContainer> {
@@ -47,7 +47,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

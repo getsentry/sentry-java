@@ -30,11 +30,11 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.TestLibs.mockWebserver)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.springboot.starter.graphql)
     testImplementation(Config.Libs.okhttp)
-    testImplementation(Config.Libs.springBootStarterGraphql)
     testImplementation("com.netflix.graphql.dgs:graphql-error-types:4.9.2")
     testImplementation(Config.Libs.graphQlJava)
 }
@@ -46,7 +46,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

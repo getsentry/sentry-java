@@ -22,13 +22,13 @@ dependencies {
     errorprone(Config.CompileOnly.errorProneNullAway)
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.javafaker)
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.TestLibs.javaFaker)
-    testImplementation(Config.TestLibs.msgpack)
-    testImplementation(Config.TestLibs.okio)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.msgpack)
+    testImplementation(libs.okio)
     testImplementation(projects.sentryTestSupport)
 }
 
@@ -39,7 +39,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

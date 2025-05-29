@@ -18,10 +18,10 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 
 dependencies {
     api(projects.sentry)
-    compileOnly(Config.Libs.springBoot3StarterTest) {
+    compileOnly(libs.springboot3.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
-    compileOnly(Config.Libs.springBoot3StarterWeb)
+    compileOnly(libs.springboot3.starter.web)
     api(Config.Libs.apolloKotlin)
     implementation(Config.Libs.jacksonKotlin)
     implementation(Config.Libs.jacksonDatabind)
@@ -36,7 +36,7 @@ dependencies {
     // tests
     implementation(kotlin(Config.kotlinStdLib))
     implementation(libs.kotlin.test.junit)
-    implementation(Config.TestLibs.mockitoKotlin)
+    implementation(libs.mockito.kotlin)
 }
 
 configure<SourceSetContainer> {

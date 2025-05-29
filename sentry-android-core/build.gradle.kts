@@ -11,13 +11,13 @@ plugins {
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.android.core"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
 
-        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "SENTRY_ANDROID_SDK_NAME", "\"${Config.Sentry.SENTRY_ANDROID_SDK_NAME}\"")
 
@@ -85,7 +85,7 @@ dependencies {
     // lifecycle processor, session tracking
     implementation(Config.Libs.lifecycleProcess)
     implementation(Config.Libs.lifecycleCommonJava8)
-    implementation(Config.Libs.androidxCore)
+    implementation(libs.androidx.core)
 
     compileOnly(Config.CompileOnly.nopen)
     errorprone(Config.CompileOnly.nopenChecker)
@@ -95,22 +95,22 @@ dependencies {
 
     // tests
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-    testImplementation(Config.TestLibs.robolectric)
+    testImplementation(libs.roboelectric)
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.androidxCore)
-    testImplementation(Config.TestLibs.androidxRunner)
-    testImplementation(Config.TestLibs.androidxJunit)
-    testImplementation(Config.TestLibs.androidxCoreKtx)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.TestLibs.awaitility)
+    testImplementation(libs.androidx.core.ktx)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.androidx.test.runner)
+    testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryAndroidFragment)
     testImplementation(projects.sentryAndroidTimber)
     testImplementation(projects.sentryAndroidReplay)
     testImplementation(projects.sentryCompose)
     testImplementation(projects.sentryAndroidNdk)
-    testRuntimeOnly(Config.Libs.composeUi)
+    testRuntimeOnly(libs.androidx.compose.ui)
     testRuntimeOnly(Config.Libs.timber)
     testRuntimeOnly(Config.Libs.fragment)
 }

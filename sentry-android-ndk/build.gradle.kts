@@ -9,13 +9,13 @@ plugins {
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.android.ndk"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
 
-        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
             abiFilters.addAll(Config.Android.abiFilters)
@@ -89,6 +89,6 @@ dependencies {
 
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(libs.mockito.kotlin)
     testImplementation(projects.sentryTestSupport)
 }
