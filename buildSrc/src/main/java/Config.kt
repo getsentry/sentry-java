@@ -155,16 +155,6 @@ object Config {
         val versionNameProp = "versionName"
     }
 
-    object CompileOnly {
-//        private val nopenVersion = "1.0.1"
-//
-//        val jetbrainsAnnotations = "org.jetbrains:annotations:23.0.0"
-//        val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
-//        val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
-//        val errorprone = "com.google.errorprone:error_prone_core:2.11.0"
-//        val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.5"
-    }
-
     object BuildScript {
         val androidLibs = setOf(
             "sentry-android-core",
