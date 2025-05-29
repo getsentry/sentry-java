@@ -28,4 +28,10 @@ public interface ILoggerApi {
       @Nullable SentryDate timestamp,
       @Nullable String message,
       @Nullable Object... args);
+
+  void log(
+      @NotNull SentryLogLevel level,
+      @NotNull SentryLogParameters params,
+      @Nullable String message,
+      @Nullable Object... args);
 }

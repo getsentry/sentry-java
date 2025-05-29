@@ -125,6 +125,27 @@ class SentryTest {
         verify(integration2).close()
     }
 
+    @Test
+    fun `if a single integration crashes, the SDK and other integrations are still initialized`() {
+        val goodIntegrationInitialized = AtomicBoolean(false)
+        val goodIntegration = Integration { scopes, options ->
+            // no-op
+            goodIntegrationInitialized.set(true)
+        }
+
+        val badIntegration = Integration { scopes, options -> throw IllegalStateException("bad integration") }
+
+        Sentry.init {
+            it.dsn = dsn
+            it.integrations.clear()
+            it.integrations.add(badIntegration)
+            it.integrations.add(goodIntegration)
+        }
+
+        assertTrue(Sentry.isEnabled())
+        assertTrue(goodIntegrationInitialized.get())
+    }
+
     interface CloseableIntegration : Integration, Closeable
 
     @Test

@@ -246,31 +246,6 @@ spotless {
     }
 }
 
-tasks.register("aggregateJavadocs", Javadoc::class.java) {
-    setDestinationDir(project.layout.buildDirectory.file("docs/javadoc").get().asFile)
-    title = "${project.name} $version API"
-    val opts = options as StandardJavadocDocletOptions
-    opts.quiet()
-    opts.encoding = "UTF-8"
-    opts.memberLevel = JavadocMemberLevel.PROTECTED
-    opts.stylesheetFile(file("$projectDir/docs/stylesheet.css"))
-    opts.links = listOf(
-        "https://docs.oracle.com/javase/8/docs/api/",
-        "https://docs.spring.io/spring-framework/docs/current/javadoc-api/",
-        "https://docs.spring.io/spring-boot/docs/current/api/"
-    )
-    subprojects
-        .filter { !it.name.contains("sample") && !it.name.contains("integration-tests") }
-        .forEach { proj ->
-            proj.tasks.withType<Javadoc>().forEach { javadocTask ->
-                source += javadocTask.source
-                classpath += javadocTask.classpath
-                excludes += javadocTask.excludes
-                includes += javadocTask.includes
-            }
-        }
-}
-
 tasks.register("buildForCodeQL") {
     subprojects
         .filter {

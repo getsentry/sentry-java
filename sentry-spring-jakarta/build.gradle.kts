@@ -10,7 +10,7 @@ plugins {
     alias(libs.plugins.errorprone)
     alias(libs.plugins.gradle.versions)
     alias(libs.plugins.buildconfig)
-    alias(libs.plugins.spring.boot.three) apply false
+    alias(libs.plugins.springboot3) apply false
 }
 
 configure<JavaPluginExtension> {
@@ -32,13 +32,13 @@ dependencies {
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springAop)
     compileOnly(Config.Libs.springSecurityWeb)
-    compileOnly(Config.Libs.springBoot3StarterGraphql)
-    compileOnly(Config.Libs.springBoot3StarterQuartz)
     compileOnly(Config.Libs.aspectj)
     compileOnly(Config.Libs.servletApiJakarta)
     compileOnly(Config.Libs.slf4jApi)
     compileOnly(Config.Libs.contextPropagation)
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
+    compileOnly(libs.otel)
+    compileOnly(libs.springboot3.starter.graphql)
+    compileOnly(libs.springboot3.starter.quartz)
 
     compileOnly(Config.Libs.springWebflux)
 
@@ -58,18 +58,18 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(libs.awaitility.kotlin)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
-    testImplementation(Config.Libs.springBoot3StarterTest)
-    testImplementation(Config.Libs.springBoot3StarterWeb)
-    testImplementation(Config.Libs.springBoot3StarterWebflux)
-    testImplementation(Config.Libs.springBoot3StarterSecurity)
-    testImplementation(Config.Libs.springBoot3StarterAop)
-    testImplementation(Config.Libs.springBoot3StarterGraphql)
+    testImplementation(libs.springboot3.starter.aop)
+    testImplementation(libs.springboot3.starter.graphql)
+    testImplementation(libs.springboot3.starter.security)
+    testImplementation(libs.springboot3.starter.test)
+    testImplementation(libs.springboot3.starter.web)
+    testImplementation(libs.springboot3.starter.webflux)
     testImplementation(Config.Libs.contextPropagation)
-    testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.Libs.graphQlJava22)
+    testImplementation(Config.Libs.graphQlJavaNew)
     testImplementation(projects.sentryReactor)
 }
 
