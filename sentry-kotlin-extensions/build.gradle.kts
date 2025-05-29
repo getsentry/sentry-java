@@ -17,8 +17,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-    compileOnly(Config.Libs.coroutinesCore)
-
+    compileOnly(libs.kotlinx.coroutines)
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.nopen.annotations)
     errorprone(libs.errorprone.core)
@@ -28,9 +27,9 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.kotlinx.coroutines)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockito.kotlin)
-    testImplementation(Config.Libs.coroutinesCore)
 }
 
 configure<SourceSetContainer> {

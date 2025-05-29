@@ -68,9 +68,9 @@ dependencies {
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.okhttp.mockwebserver)
 
-    testImplementation(Config.Libs.okhttp)
     testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
     testImplementation(Config.Libs.contextPropagation)
+    testImplementation(libs.okhttp)
     testImplementation(libs.otel)
     testImplementation(libs.otel.extension.autoconfigure.spi)
     testImplementation(libs.springboot3.otel)

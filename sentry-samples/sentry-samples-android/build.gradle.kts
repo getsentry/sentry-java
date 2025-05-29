@@ -147,7 +147,6 @@ dependencies {
     implementation(projects.sentryCompose)
     implementation(projects.sentryKotlinExtensions)
     implementation(projects.sentryOkhttp)
-    implementation(Config.Libs.timber)
 
 //    how to exclude androidx if release health feature is disabled
 //    implementation(projects.sentryAndroid) {
@@ -156,9 +155,6 @@ dependencies {
 //        exclude(group = "androidx.core", module = "core")
 //    }
 
-    implementation(Config.Libs.coroutinesAndroid)
-    implementation(Config.Libs.retrofit2)
-    implementation(Config.Libs.retrofit2Gson)
     implementation(Config.Libs.sentryNativeNdk)
 
     implementation(libs.androidx.activity.compose)
@@ -170,8 +166,12 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.recyclerview)
     implementation(libs.coil.compose)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.timber)
 
-    debugImplementation(Config.Libs.leakCanary)
+    debugImplementation(libs.leakcanary)
 }
 
 abstract class ToggleNativeLoggingTask : Exec() {

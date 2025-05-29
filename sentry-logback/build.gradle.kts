@@ -16,7 +16,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-    compileOnly(Config.Libs.logbackClassic)
+    compileOnly(libs.logback.classic)
 
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.nopen.annotations)
@@ -28,8 +28,8 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.logback.classic)
     testImplementation(libs.mockito.kotlin)
-    testImplementation(Config.Libs.logbackClassic)
 }
 
 configure<SourceSetContainer> {

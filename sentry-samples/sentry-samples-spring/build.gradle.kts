@@ -32,11 +32,11 @@ dependencies {
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springSecurityWeb)
     implementation(Config.Libs.springSecurityConfig)
-    implementation(Config.Libs.logbackClassic)
     implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpring)
     implementation(projects.sentryLogback)
+    implementation(libs.logback.classic)
     testImplementation(libs.springboot.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }

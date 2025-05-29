@@ -58,15 +58,15 @@ dependencies {
     implementation(projects.sentryJdbc)
     runtimeOnly(libs.hsqldb)
 
+    testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(projects.sentrySystemTestSupport)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.slf4j2.api)
     testImplementation(libs.springboot3.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
-    testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(libs.kotlin.test.junit)
     testImplementation("ch.qos.logback:logback-classic:1.5.16")
     testImplementation("ch.qos.logback:logback-core:1.5.16")
-    testImplementation(Config.Libs.slf4jApi2)
     testImplementation(Config.Libs.apolloKotlin)
 }
 

@@ -23,25 +23,6 @@ object Config {
     }
 
     object Libs {
-        val okHttpVersion = "4.9.2"
-        val timber = "com.jakewharton.timber:timber:4.7.1"
-        val okhttp = "com.squareup.okhttp3:okhttp:$okHttpVersion"
-        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.14"
-
-        val slf4jApi = "org.slf4j:slf4j-api:1.7.30"
-        val slf4jApi2 = "org.slf4j:slf4j-api:2.0.5"
-        val slf4jJdk14 = "org.slf4j:slf4j-jdk14:1.7.30"
-        val logbackVersion = "1.2.9"
-        val logbackClassic = "ch.qos.logback:logback-classic:$logbackVersion"
-        val logbackCore = "ch.qos.logback:logback-core:$logbackVersion"
-
-        val log4j2Version = "2.20.0"
-        val log4j2Api = "org.apache.logging.log4j:log4j-api:$log4j2Version"
-        val log4j2Core = "org.apache.logging.log4j:log4j-core:$log4j2Version"
-
-        val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind:2.18.3"
-        val jacksonKotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3"
-
         val springWeb = "org.springframework:spring-webmvc"
         val springWebflux = "org.springframework:spring-webflux"
         val springSecurityWeb = "org.springframework.security:spring-security-web"
@@ -52,15 +33,6 @@ object Config {
         val servletApiJakarta = "jakarta.servlet:jakarta.servlet-api:5.0.0"
 
         val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.4"
-
-        private val retrofit2Version = "2.9.0"
-        private val retrofit2Group = "com.squareup.retrofit2"
-        val retrofit2 = "$retrofit2Group:retrofit:$retrofit2Version"
-        val retrofit2Gson = "$retrofit2Group:converter-gson:$retrofit2Version"
-
-        val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1"
-
-        val coroutinesAndroid = "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1"
 
         val reactorCore = "io.projectreactor:reactor-core:3.5.3"
         val contextPropagation = "io.micrometer:context-propagation:1.1.0"
