@@ -1,11 +1,32 @@
 <resources>
 
   <!-- Base application theme. -->
-  <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+  <style name="AppTheme" parent="Theme.AppCompat.DayNight.DarkActionBar">
     <!-- Customize your theme here. -->
     <item name="colorPrimary">@color/colorPrimary</item>
     <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
     <item name="colorAccent">@color/colorAccent</item>
+    <!-- Set a custom theme for dialogs, to customize user feedback dialog -->
+    <!--<item name="android:dialogTheme">@style/AppThemeDialog</item>-->
+  </style>
+
+  <!-- Base application theme. -->
+  <style name="AppThemeDialog" parent="Theme.AppCompat.DayNight.Dialog">
+    <!-- Customize your theme here. -->
+    <item name="android:colorPrimary">@color/colorPrimary</item>
+    <item name="android:colorBackground">@android:color/black</item>
+    <item name="android:textColorPrimaryInverse">@android:color/white</item>
+    <item name="android:textColor">@color/colorPrimary</item>
+    <item name="android:editTextColor">@color/colorPrimaryDark</item>
+    <item name="android:textColorHint">@color/colorPrimaryDark</item>
+    <item name="android:colorForeground">@color/colorPrimary</item>
+    <item name="android:windowTitleStyle">@style/WindowTitleStyle</item>
+  </style>
+
+  <!-- Base application theme. -->
+  <style name="WindowTitleStyle">
+    <!-- Customize your theme here. -->
+    <item name="android:textAppearance">@style/TextAppearance.AppCompat.Title</item>
   </style>
 
 </resources>

@@ -545,6 +545,8 @@ public class SentryOptions {
 
   private @NotNull SentryReplayOptions sessionReplay;
 
+  private @NotNull SentryFeedbackOptions feedbackOptions;
+
   @ApiStatus.Experimental private boolean captureOpenTelemetryEvents = false;
 
   private @NotNull IVersionDetector versionDetector = NoopVersionDetector.getInstance();
@@ -2845,6 +2847,14 @@ public class SentryOptions {
     this.sessionReplay = sessionReplayOptions;
   }
 
+  public @NotNull SentryFeedbackOptions getFeedbackOptions() {
+    return feedbackOptions;
+  }
+
+  public void setFeedbackOptions(final @NotNull SentryFeedbackOptions feedbackOptions) {
+    this.feedbackOptions = feedbackOptions;
+  }
+
   @ApiStatus.Experimental
   public void setCaptureOpenTelemetryEvents(final boolean captureOpenTelemetryEvents) {
     this.captureOpenTelemetryEvents = captureOpenTelemetryEvents;
@@ -3025,6 +3035,7 @@ public class SentryOptions {
     final @NotNull SdkVersion sdkVersion = createSdkVersion();
     experimental = new ExperimentalOptions(empty, sdkVersion);
     sessionReplay = new SentryReplayOptions(empty, sdkVersion);
+    feedbackOptions = new SentryFeedbackOptions();
     if (!empty) {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
       // SentryExecutorService should be initialized before any
