@@ -21,7 +21,7 @@ configure<JavaPluginExtension> {
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
-        languageVersion = Config.kotlinCompatibleLanguageVersion
+        languageVersion = libs.versions.kotlin.compatible.version.get()
         freeCompilerArgs = listOf("-Xjsr305=strict")
     }
 }
@@ -33,11 +33,11 @@ dependencies {
     compileOnly(Config.Libs.springAop)
     compileOnly(Config.Libs.springSecurityWeb)
     compileOnly(Config.Libs.aspectj)
-    compileOnly(Config.Libs.servletApiJakarta)
-    compileOnly(Config.Libs.contextPropagation)
+    compileOnly(libs.context.propagation)
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.nopen.annotations)
     compileOnly(libs.otel)
+    compileOnly(libs.servlet.jakarta.api)
     compileOnly(libs.slf4j.api)
     compileOnly(libs.springboot3.starter.graphql)
     compileOnly(libs.springboot3.starter.quartz)
@@ -59,6 +59,8 @@ dependencies {
     testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.context.propagation)
+    testImplementation(libs.graphql.java24)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
@@ -68,8 +70,6 @@ dependencies {
     testImplementation(libs.springboot3.starter.test)
     testImplementation(libs.springboot3.starter.web)
     testImplementation(libs.springboot3.starter.webflux)
-    testImplementation(Config.Libs.contextPropagation)
-    testImplementation(Config.Libs.graphQlJavaNew)
     testImplementation(projects.sentryReactor)
 }
 

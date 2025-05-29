@@ -14,7 +14,7 @@ plugins {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+    kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
 }
 
 dependencies {
@@ -24,6 +24,8 @@ dependencies {
     compileOnly(projects.sentryApacheHttpClient5)
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.nopen.annotations)
+    compileOnly(libs.reactor.core)
+    compileOnly(libs.servlet.api)
     compileOnly(libs.springboot.starter)
     compileOnly(libs.springboot.starter.aop)
     compileOnly(libs.springboot.starter.graphql)
@@ -32,8 +34,6 @@ dependencies {
     compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springWebflux)
-    compileOnly(Config.Libs.servletApi)
-    compileOnly(Config.Libs.reactorCore)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
     compileOnly(projects.sentryGraphql)
     compileOnly(projects.sentryQuartz)

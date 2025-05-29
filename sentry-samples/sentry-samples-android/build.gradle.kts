@@ -57,7 +57,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
 
     dependenciesInfo {
@@ -155,8 +155,6 @@ dependencies {
 //        exclude(group = "androidx.core", module = "core")
 //    }
 
-    implementation(Config.Libs.sentryNativeNdk)
-
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.fragment.ktx)
@@ -169,6 +167,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
+    implementation(libs.sentry.native.ndk)
     implementation(libs.timber)
 
     debugImplementation(libs.leakcanary)

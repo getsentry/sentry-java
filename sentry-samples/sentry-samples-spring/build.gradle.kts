@@ -26,7 +26,6 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation(Config.Libs.servletApi)
     implementation(Config.Libs.springWeb)
     implementation(Config.Libs.springAop)
     implementation(Config.Libs.aspectj)
@@ -37,6 +36,7 @@ dependencies {
     implementation(projects.sentrySpring)
     implementation(projects.sentryLogback)
     implementation(libs.logback.classic)
+    implementation(libs.servlet.api)
     testImplementation(libs.springboot.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }

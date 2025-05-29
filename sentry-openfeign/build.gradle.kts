@@ -16,8 +16,8 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-    compileOnly(Config.Libs.feignCore)
 
+    compileOnly(libs.feign.core)
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.nopen.annotations)
     errorprone(libs.errorprone.core)
@@ -28,10 +28,10 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.feign.core)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.okhttp.mockwebserver)
-    testImplementation(Config.Libs.feignCore)
 }
 
 configure<SourceSetContainer> {

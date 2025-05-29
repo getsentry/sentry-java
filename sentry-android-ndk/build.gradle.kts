@@ -83,9 +83,9 @@ dependencies {
     api(projects.sentry)
     api(projects.sentryAndroidCore)
 
-    implementation(Config.Libs.sentryNativeNdk)
-
     compileOnly(libs.jetbrains.annotations)
+
+    implementation(libs.sentry.native.ndk)
 
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(libs.kotlin.test.junit)

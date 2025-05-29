@@ -19,13 +19,15 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 dependencies {
     api(projects.sentry)
     api(projects.sentryTestSupport)
-    api(Config.Libs.apolloKotlin)
+    api(libs.apollo3.kotlin)
+
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.nopen.annotations)
     compileOnly(libs.springboot3.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
     compileOnly(libs.springboot3.starter.web)
+
     implementation(libs.jackson.databind)
     implementation(libs.jackson.kotlin)
     implementation(libs.okhttp)
