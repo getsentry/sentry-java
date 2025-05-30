@@ -56,7 +56,7 @@ android {
 
     // needed because of Kotlin 1.4.x
     configurations.all {
-        resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
+        resolutionStrategy.force(libs.jetbrains.annotations.get())
     }
 
     buildFeatures {
@@ -85,7 +85,7 @@ dependencies {
 
     implementation(Config.Libs.sentryNativeNdk)
 
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    compileOnly(libs.jetbrains.annotations)
 
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(libs.kotlin.test.junit)

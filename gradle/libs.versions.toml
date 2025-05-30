@@ -1,15 +1,21 @@
 [versions]
 androidxNavigation = "2.4.2"
 androidxTestCore = "1.6.1"
-androidxComposeVersion = "1.6.3"
-jetbrainsComposeVersion = "1.6.11"
+androidxCompose = "1.6.3"
+jetbrainsCompose = "1.6.11"
 espresso = "3.5.0"
 kotlin = "1.9.24"
+nopen = "1.0.1"
 # see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
 # see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 okhttp = "4.9.2"
-springTwo = "2.7.18"
-springThree = "3.5.0"
+otel = "1.44.1"
+otelInstrumentation = "2.10.0"
+otelInstrumentationAlpha = "2.10.0-alpha"
+# check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
+otelSemanticConventions = "1.28.0-alpha"
+springboot2 = "2.7.18"
+springboot3 = "3.5.0"
 targetSdk = "34"
 compileSdk = "34"
 minSdk = "21"
@@ -22,7 +28,7 @@ buildconfig = { id = "com.github.gmazzo.buildconfig", version = "5.6.5" }
 dokka = { id = "org.jetbrains.dokka", version = "2.0.0" }
 dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version = "2.0.0" }
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.13.0" }
-compose-compiler = { id = "org.jetbrains.compose", version.ref = "jetbrainsComposeVersion" }
+compose-compiler = { id = "org.jetbrains.compose", version.ref = "jetbrainsCompose" }
 errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
 gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
 spotless = { id = "com.diffplug.spotless", version = "6.11.0" }
@@ -30,17 +36,17 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8" }
 jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.0" }
 kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.3" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.30.0" }
-spring-boot-two = { id = "org.springframework.boot", version.ref = "springTwo" }
-spring-boot-three = { id = "org.springframework.boot", version.ref = "springThree" }
+springboot2 = { id = "org.springframework.boot", version.ref = "springboot2" }
+springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.0.11.RELEASE" }
 gretty = { id = "org.gretty", version = "4.0.0" }
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.8.2" }
-androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "androidxComposeVersion" }
-androidx-compose-foundation-layout = { module = "androidx.compose.foundation:foundation-layout", version.ref = "androidxComposeVersion" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "androidxCompose" }
+androidx-compose-foundation-layout = { module = "androidx.compose.foundation:foundation-layout", version.ref = "androidxCompose" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3", version = "1.2.1" }
-androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidxComposeVersion" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidxCompose" }
 # Note: don't change without testing forwards compatibility
 androidx-compose-ui-replay = { module = "androidx.compose.ui:ui", version = "1.5.0" }
 androidx-core = { module = "androidx.core:core", version = "1.3.2" }
@@ -48,7 +54,44 @@ androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.7.0" }
 androidx-navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "androidxNavigation" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.6.0" }
+errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.11.0" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.0"}
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+nopen-annotations = { module = "com.jakewharton.nopen:nopen-annotations", version.ref = "nopen"}
+nopen-checker = { module = "com.jakewharton.nopen:nopen-checker", version.ref = "nopen"}
+nullaway = { module = "com.uber.nullaway:nullaway", version = "0.9.5" }
+otel = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "otel" }
+otel-extension-autoconfigure = { module = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure", version.ref = "otel" }
+otel-extension-autoconfigure-spi = { module = "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi", version.ref = "otel" }
+otel-instrumentation-bom = { module = "io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom", version.ref = "otelInstrumentation" }
+otel-javaagent = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent", version.ref = "otelInstrumentation" }
+otel-javaagent-tooling = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent-tooling", version.ref = "otelInstrumentationAlpha" }
+otel-javaagent-extension-api = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent-extension-api", version.ref = "otelInstrumentationAlpha" }
+otel-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", version.ref = "otelSemanticConventions" }
+otel-semconv-incubating = { module = "io.opentelemetry.semconv:opentelemetry-semconv-incubating", version.ref = "otelSemanticConventions" }
+springboot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot2" }
+springboot-starter-graphql = { module = "org.springframework.boot:spring-boot-starter-graphql", version.ref = "springboot2" }
+springboot-starter-quartz = { module = "org.springframework.boot:spring-boot-starter-quartz", version.ref = "springboot2" }
+springboot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springboot2" }
+springboot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "springboot2" }
+springboot-starter-websocket = { module = "org.springframework.boot:spring-boot-starter-websocket", version.ref = "springboot2" }
+springboot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "springboot2" }
+springboot-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop", version.ref = "springboot2" }
+springboot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springboot2" }
+springboot-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot2" }
+springboot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot2" }
+springboot3-otel = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "otelInstrumentation" }
+springboot3-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot3" }
+springboot3-starter-graphql = { module = "org.springframework.boot:spring-boot-starter-graphql", version.ref = "springboot3" }
+springboot3-starter-quartz = { module = "org.springframework.boot:spring-boot-starter-quartz", version.ref = "springboot3" }
+springboot3-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springboot3" }
+springboot3-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "springboot3" }
+springboot3-starter-websocket = { module = "org.springframework.boot:spring-boot-starter-websocket", version.ref = "springboot3" }
+springboot3-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "springboot3" }
+springboot3-starter-aop = { module = "org.springframework.boot:spring-boot-starter-aop", version.ref = "springboot3" }
+springboot3-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springboot3" }
+springboot3-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot3" }
+springboot3-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot3" }
 
 # test libraries
 androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version = "1.6.8" }

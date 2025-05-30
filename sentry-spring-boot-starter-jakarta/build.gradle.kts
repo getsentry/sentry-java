@@ -8,7 +8,7 @@ plugins {
     jacoco
     alias(libs.plugins.errorprone)
     alias(libs.plugins.gradle.versions)
-    alias(libs.plugins.spring.boot.three) apply false
+    alias(libs.plugins.springboot2) apply false
 }
 
 configure<JavaPluginExtension> {
@@ -23,17 +23,18 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentrySpringBootJakarta)
-    api(Config.Libs.springBoot3Starter)
+    api(libs.springboot.starter)
 
     annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 }
 
 configure<SourceSetContainer> {

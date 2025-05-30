@@ -10,7 +10,7 @@ plugins {
     alias(libs.plugins.errorprone)
     alias(libs.plugins.gradle.versions)
     alias(libs.plugins.buildconfig)
-    alias(libs.plugins.spring.boot.two) apply false
+    alias(libs.plugins.springboot2) apply false
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -29,19 +29,19 @@ dependencies {
     compileOnly(Config.Libs.servletApi)
     compileOnly(Config.Libs.slf4jApi)
     compileOnly(Config.Libs.springWebflux)
-    compileOnly(Config.Libs.springBootStarterGraphql)
     compileOnly(projects.sentryGraphql)
-    compileOnly(Config.Libs.springBootStarterQuartz)
     compileOnly(projects.sentryQuartz)
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    compileOnly(libs.otel)
+    compileOnly(libs.springboot.starter.graphql)
+    compileOnly(libs.springboot.starter.quartz)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryTestSupport)
@@ -51,12 +51,12 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
-    testImplementation(Config.Libs.springBootStarterTest)
-    testImplementation(Config.Libs.springBootStarterWeb)
-    testImplementation(Config.Libs.springBootStarterWebflux)
-    testImplementation(Config.Libs.springBootStarterSecurity)
-    testImplementation(Config.Libs.springBootStarterAop)
-    testImplementation(Config.Libs.springBootStarterGraphql)
+    testImplementation(libs.springboot.starter.aop)
+    testImplementation(libs.springboot.starter.graphql)
+    testImplementation(libs.springboot.starter.security)
+    testImplementation(libs.springboot.starter.test)
+    testImplementation(libs.springboot.starter.web)
+    testImplementation(libs.springboot.starter.webflux)
     testImplementation(Config.Libs.graphQlJava)
 }
 

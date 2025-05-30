@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
-    alias(libs.plugins.spring.boot.three) apply false
+    alias(libs.plugins.springboot3) apply false
     alias(libs.plugins.spring.dependency.management)
     kotlin("jvm")
     alias(libs.plugins.kotlin.spring)
@@ -40,7 +40,7 @@ dependencies {
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringJakarta)
     implementation(projects.sentryLogback)
-    testImplementation(Config.Libs.springBootStarterTest) {
+    testImplementation(libs.springboot.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
 }

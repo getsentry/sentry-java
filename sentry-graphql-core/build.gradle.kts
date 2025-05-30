@@ -19,11 +19,11 @@ dependencies {
     api(projects.sentry)
     compileOnly(Config.Libs.graphQlJava)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentry)
@@ -33,8 +33,8 @@ dependencies {
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
     testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.springboot.starter.graphql)
     testImplementation(Config.Libs.okhttp)
-    testImplementation(Config.Libs.springBootStarterGraphql)
     testImplementation("com.netflix.graphql.dgs:graphql-error-types:4.9.2")
     testImplementation(Config.Libs.graphQlJava)
 }
