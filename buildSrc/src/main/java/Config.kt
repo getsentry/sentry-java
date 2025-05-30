@@ -59,7 +59,7 @@ object Config {
         val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
         val apolloKotlin4 = "com.apollographql.apollo:apollo-runtime:4.1.1"
 
-        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.8.4"
+        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.8.5"
     }
 
     object AnnotationProcessors {
