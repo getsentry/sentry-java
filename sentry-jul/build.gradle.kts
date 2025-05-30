@@ -16,7 +16,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-    compileOnly(Config.Libs.slf4jApi)
+    compileOnly(libs.slf4j.api)
 
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.nopen.annotations)
@@ -28,9 +28,9 @@ dependencies {
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.logback.classic)
     testImplementation(libs.mockito.kotlin)
-    testImplementation(Config.Libs.logbackClassic)
-    testImplementation(Config.Libs.slf4jApi)
+    testImplementation(libs.slf4j.api)
 }
 
 configure<SourceSetContainer> {

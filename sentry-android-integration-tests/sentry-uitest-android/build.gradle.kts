@@ -108,7 +108,7 @@ dependencies {
     implementation(libs.androidx.core)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.test.espresso.idling.resource)
-    implementation(Config.Libs.leakCanary)
+    implementation(libs.leakcanary)
 
     compileOnly(libs.nopen.annotations)
 

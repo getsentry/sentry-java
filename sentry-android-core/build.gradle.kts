@@ -112,5 +112,5 @@ dependencies {
     testImplementation(projects.sentryAndroidNdk)
     testRuntimeOnly(libs.androidx.compose.ui)
     testRuntimeOnly(libs.androidx.fragment.ktx)
-    testRuntimeOnly(Config.Libs.timber)
+    testRuntimeOnly(libs.timber)
 }

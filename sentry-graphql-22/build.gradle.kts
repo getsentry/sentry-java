@@ -33,9 +33,9 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
+    testImplementation(libs.okhttp)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.springboot.starter.graphql)
-    testImplementation(Config.Libs.okhttp)
     testImplementation("com.netflix.graphql.dgs:graphql-error-types:4.9.2")
     testImplementation(Config.Libs.graphQlJava22)
 }

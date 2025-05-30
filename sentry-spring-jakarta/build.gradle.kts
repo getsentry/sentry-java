@@ -34,11 +34,11 @@ dependencies {
     compileOnly(Config.Libs.springSecurityWeb)
     compileOnly(Config.Libs.aspectj)
     compileOnly(Config.Libs.servletApiJakarta)
-    compileOnly(Config.Libs.slf4jApi)
     compileOnly(Config.Libs.contextPropagation)
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.nopen.annotations)
     compileOnly(libs.otel)
+    compileOnly(libs.slf4j.api)
     compileOnly(libs.springboot3.starter.graphql)
     compileOnly(libs.springboot3.starter.quartz)
 
