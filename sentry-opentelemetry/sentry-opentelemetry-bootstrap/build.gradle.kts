@@ -15,14 +15,13 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     compileOnly(projects.sentry)
-
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
     compileOnly(libs.otel)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
-    errorprone(Config.CompileOnly.errorProneNullAway)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryTestSupport)

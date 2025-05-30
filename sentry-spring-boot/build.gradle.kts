@@ -22,6 +22,8 @@ dependencies {
     api(projects.sentrySpring)
     compileOnly(projects.sentryLogback)
     compileOnly(projects.sentryApacheHttpClient5)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
     compileOnly(libs.springboot.starter)
     compileOnly(libs.springboot.starter.aop)
     compileOnly(libs.springboot.starter.graphql)
@@ -40,11 +42,9 @@ dependencies {
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryLogback)

@@ -84,9 +84,7 @@ android {
 }
 
 dependencies {
-
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
-
     implementation(projects.sentryAndroid)
     implementation(Config.Libs.appCompat)
     implementation(libs.androidx.core)
@@ -94,10 +92,11 @@ dependencies {
     implementation(Config.Libs.constraintLayout)
     implementation(libs.androidx.test.espresso.idling.resource)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
+    compileOnly(libs.nopen.annotations)
+
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     androidTestUtil(libs.androidx.test.orchestrator)
     androidTestImplementation(projects.sentryTestSupport)
