@@ -22,7 +22,6 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
-
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     compileOnly(libs.jetbrains.annotations)
