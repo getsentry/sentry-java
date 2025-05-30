@@ -12,15 +12,14 @@ plugins {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+    kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
 }
 
 dependencies {
     api(projects.sentry)
     api(projects.sentryKotlinExtensions)
 
-    compileOnly(Config.Libs.apolloKotlin)
-
+    compileOnly(libs.apollo3.kotlin)
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.nopen.annotations)
     errorprone(libs.errorprone.core)
@@ -30,12 +29,12 @@ dependencies {
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(libs.apollo3.kotlin)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.kotlinx.coroutines)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
     testImplementation(libs.okhttp.mockwebserver)
-    testImplementation(Config.Libs.apolloKotlin)
 }
 
 configure<SourceSetContainer> {

@@ -12,12 +12,12 @@ plugins {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+    kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
 }
 
 dependencies {
     api(projects.sentry)
-    api(Config.Libs.apacheHttpClient)
+    api(libs.apache.httpclient)
 
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.nopen.annotations)
@@ -26,7 +26,7 @@ dependencies {
     errorprone(libs.nullaway)
 
     // tests
-    testImplementation(Config.Libs.apacheHttpClient)
+    testImplementation(libs.apache.httpclient)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)

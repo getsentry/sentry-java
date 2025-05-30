@@ -40,7 +40,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
     androidComponents.beforeVariants {
         it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)

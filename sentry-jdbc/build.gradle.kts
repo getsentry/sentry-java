@@ -16,7 +16,7 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-    api(Config.Libs.p6spy)
+    api(libs.p6spy)
 
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.nopen.annotations)
