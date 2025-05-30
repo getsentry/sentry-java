@@ -6,6 +6,12 @@
 
 - Send UI Profiling app start chunk when it finishes ([#4423](https://github.com/getsentry/sentry-java/pull/4423))
 
+### Dependencies
+
+- Bump Native SDK from v0.8.4 to v0.8.5 ([#4406](https://github.com/getsentry/sentry-java/pull/4406))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#085)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.4...0.8.5)
+
 ## 8.13.2
 
 ### Fixes
