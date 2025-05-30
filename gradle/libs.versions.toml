@@ -71,7 +71,7 @@ androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.6.0" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.11.0" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
-jackson-kotlin = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-kotlin = { module = "com.fasterxml.jackson.core:jackson-kotlin", version.ref = "jackson" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.0" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
