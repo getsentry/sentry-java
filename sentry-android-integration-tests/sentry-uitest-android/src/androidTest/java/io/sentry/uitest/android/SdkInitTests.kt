@@ -5,7 +5,10 @@ import androidx.test.core.app.launchActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.android.core.AndroidLogger
+import io.sentry.android.core.CurrentActivityHolder
+import io.sentry.android.core.NdkIntegration
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeTransaction
 import io.sentry.protocol.SentryTransaction
@@ -15,6 +18,7 @@ import org.junit.runner.RunWith
 import shark.AndroidReferenceMatchers
 import shark.IgnoredReferenceMatcher
 import shark.ReferencePattern
+import java.util.concurrent.CountDownLatch
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -214,5 +218,75 @@ class SdkInitTests : BaseUiTest() {
         activityScenario.moveToState(Lifecycle.State.DESTROYED)
 
         LeakAssertions.assertNoLeaks()
+    }
+
+    @Test
+    fun foregroundInitInstallsDefaultIntegrations() {
+        val activityScenario = launchActivity<ComposeActivity>()
+        activityScenario.moveToState(Lifecycle.State.RESUMED)
+        activityScenario.onActivity { activity ->
+            // Our SentryInitProvider does not run in this test
+            // so we need to set the current activity manually
+            CurrentActivityHolder.getInstance().setActivity(activity)
+            initSentry(false) { options: SentryAndroidOptions ->
+                options.tracesSampleRate = 1.0
+                options.profilesSampleRate = 1.0
+            }
+        }
+        activityScenario.moveToState(Lifecycle.State.DESTROYED)
+        assertDefaultIntegrations()
+    }
+
+    @Test
+    fun backgroundInitInstallsDefaultIntegrations() {
+        val initLatch = CountDownLatch(1)
+
+        val activityScenario = launchActivity<ComposeActivity>()
+        activityScenario.moveToState(Lifecycle.State.RESUMED)
+        activityScenario.onActivity { activity ->
+            // Our SentryInitProvider does not run in this test
+            // so we need to set the current activity manually
+            CurrentActivityHolder.getInstance().setActivity(activity)
+            Thread {
+                initSentry(false) { options: SentryAndroidOptions ->
+                    options.tracesSampleRate = 1.0
+                    options.profilesSampleRate = 1.0
+                }
+                initLatch.countDown()
+            }.start()
+        }
+        initLatch.await()
+
+        activityScenario.moveToState(Lifecycle.State.DESTROYED)
+
+        assertDefaultIntegrations()
+    }
+
+    private fun assertDefaultIntegrations() {
+        val integrations = mutableListOf(
+            "UncaughtExceptionHandler",
+            "ShutdownHook",
+            "SendCachedEnvelope",
+            "AppLifecycle",
+            "EnvelopeFileObserver",
+            "AnrV2",
+            "ActivityLifecycle",
+            "ActivityBreadcrumbs",
+            "UserInteraction",
+            "AppComponentsBreadcrumbs",
+            "NetworkBreadcrumbs"
+        )
+
+        // NdkIntegration is not always available, so we check for its presence
+        try {
+            Class.forName(NdkIntegration.SENTRY_NDK_CLASS_NAME)
+            integrations.add("Ndk")
+        } catch (_: ClassNotFoundException) {
+            // ignored, in case the app is build without NDK support
+        }
+
+        for (integration in integrations) {
+            assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains(integration), "Integration $integration was expected, but was not registered")
+        }
     }
 }
