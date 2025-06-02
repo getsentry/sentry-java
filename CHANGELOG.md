@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Fixes
+
 - Send UI Profiling app start chunk when it finishes ([#4423](https://github.com/getsentry/sentry-java/pull/4423))
 - Republish Javadoc [#4457](https://github.com/getsentry/sentry-java/pull/4457)
 

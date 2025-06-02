@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    id("sentry.javadoc")
+    id("io.sentry.javadoc")
     alias(libs.plugins.buildconfig)
 }
 

@@ -2,7 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     `java-library`
-    id("sentry.javadoc")
+    id("io.sentry.javadoc")
     id("com.gradleup.shadow") version "8.3.6"
 }
 

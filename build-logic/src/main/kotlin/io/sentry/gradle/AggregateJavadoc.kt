@@ -17,6 +17,10 @@ abstract class AggregateJavadoc @Inject constructor(
     @get:InputFiles
     abstract val javadocFiles: Property<FileCollection>
 
+    // Marked as Internal since this is only used to relativize the paths for the output directories
+    @get:Internal
+    abstract val rootDir: DirectoryProperty
+
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
 
@@ -24,12 +28,13 @@ abstract class AggregateJavadoc @Inject constructor(
     fun aggregate() {
         javadocFiles.get().forEach { file ->
             fs.copy {
-                // Get the third to last part (project name) to use as the directory name for the output
-                val parts = file.path.split('/')
-                val projectName = parts[parts.size - 4]
+                // Get the relative path of the project directory to the root directory
+                val relativePath = file.relativeTo(rootDir.get().asFile)
+                // Remove the 'build/docs/javadoc' part from the path
+                val projectPath = relativePath.path.replace("build/docs/javadoc", "")
                 from(file)
                 // Use the project name as the output directory name so that each javadoc goes into its own directory
-                into(outputDir.get().file(projectName))
+                into(outputDir.get().file(projectPath))
             }
         }
     }

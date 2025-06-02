@@ -5,7 +5,7 @@ import org.gradle.kotlin.dsl.creating
 import org.gradle.kotlin.dsl.getValue
 import org.gradle.kotlin.dsl.named
 
-val javadocConsumer by configurations.creating {
+val javadocPublisher by configurations.creating {
     isCanBeConsumed = false
     isCanBeResolved = true
     attributes {
@@ -15,14 +15,15 @@ val javadocConsumer by configurations.creating {
 }
 
 subprojects {
-    javadocConsumer.dependencies.add(dependencies.create(this))
+    javadocPublisher.dependencies.add(dependencies.create(this))
 }
 
-val javadocCollection = javadocConsumer.incoming.artifactView { lenient(true) }.files
+val javadocCollection = javadocPublisher.incoming.artifactView { lenient(true) }.files
 
 tasks.register("aggregateJavadoc", AggregateJavadoc::class) {
     group = "documentation"
     description = "Aggregates Javadocs from all subprojects into a single directory."
     javadocFiles.set(javadocCollection)
+    rootDir.set(layout.projectDirectory)
     outputDir.set(layout.buildDirectory.dir("docs/javadoc"))
 }
