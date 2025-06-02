@@ -22,15 +22,15 @@ dependencies {
      */
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
-    implementation(Config.Libs.OpenTelemetry.otelSdk)
-    compileOnly(Config.Libs.OpenTelemetry.otelSemconv)
-    compileOnly(Config.Libs.OpenTelemetry.otelSemconvIncubating)
+    implementation(libs.otel)
+    compileOnly(libs.otel.semconv)
+    compileOnly(libs.otel.semconv.incubating)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
-    errorprone(Config.CompileOnly.errorProneNullAway)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
@@ -40,9 +40,9 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
 
-    testImplementation(Config.Libs.OpenTelemetry.otelSdk)
-    testImplementation(Config.Libs.OpenTelemetry.otelSemconv)
-    testImplementation(Config.Libs.OpenTelemetry.otelSemconvIncubating)
+    testImplementation(libs.otel)
+    testImplementation(libs.otel.semconv)
+    testImplementation(libs.otel.semconv.incubating)
 }
 
 configure<SourceSetContainer> {

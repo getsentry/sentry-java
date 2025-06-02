@@ -30,7 +30,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
         useLiveLiterals = false
     }
 
@@ -45,7 +45,7 @@ android {
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
-        kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+        kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
     }
 
     testOptions {

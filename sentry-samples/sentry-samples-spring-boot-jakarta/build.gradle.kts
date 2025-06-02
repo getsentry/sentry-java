@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    alias(libs.plugins.spring.boot.three)
+    alias(libs.plugins.springboot3)
     alias(libs.plugins.spring.dependency.management)
     kotlin("jvm")
     alias(libs.plugins.kotlin.spring)
@@ -34,18 +34,18 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    implementation(Config.Libs.springBoot3StarterSecurity)
-    implementation(Config.Libs.springBoot3StarterActuator)
-    implementation(Config.Libs.springBoot3StarterWeb)
-    implementation(Config.Libs.springBoot3StarterWebsocket)
-    implementation(Config.Libs.springBoot3StarterGraphql)
-    implementation(Config.Libs.springBoot3StarterQuartz)
-    implementation(Config.Libs.springBoot3StarterWebflux)
-    implementation(Config.Libs.springBoot3StarterAop)
+    implementation(libs.springboot3.starter)
+    implementation(libs.springboot3.starter.actuator)
+    implementation(libs.springboot3.starter.aop)
+    implementation(libs.springboot3.starter.graphql)
+    implementation(libs.springboot3.starter.jdbc)
+    implementation(libs.springboot3.starter.quartz)
+    implementation(libs.springboot3.starter.security)
+    implementation(libs.springboot3.starter.web)
+    implementation(libs.springboot3.starter.webflux)
+    implementation(libs.springboot3.starter.websocket)
     implementation(Config.Libs.aspectj)
-    implementation(Config.Libs.springBoot3Starter)
     implementation(Config.Libs.kotlinReflect)
-    implementation(Config.Libs.springBoot3StarterJdbc)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
@@ -56,17 +56,17 @@ dependencies {
     implementation(projects.sentryJdbc)
     runtimeOnly(libs.hsqldb)
 
+    testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(projects.sentry)
     testImplementation(projects.sentrySystemTestSupport)
-    testImplementation(Config.Libs.springBoot3StarterTest) {
+    testImplementation(libs.apollo3.kotlin)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.slf4j2.api)
+    testImplementation(libs.springboot3.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
-    testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(libs.kotlin.test.junit)
     testImplementation("ch.qos.logback:logback-classic:1.5.16")
     testImplementation("ch.qos.logback:logback-core:1.5.16")
-    testImplementation(Config.Libs.slf4jApi2)
-    testImplementation(Config.Libs.apolloKotlin)
-    testImplementation(projects.sentry)
 }
 
 configure<SourceSetContainer> {

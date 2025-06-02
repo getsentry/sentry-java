@@ -50,7 +50,7 @@ kotlin {
                 api(projects.sentryAndroidNavigation)
 
                 compileOnly(libs.androidx.navigation.compose)
-                implementation(Config.Libs.lifecycleCommonJava8)
+                implementation(libs.androidx.lifecycle.common.java8)
             }
         }
         val androidUnitTest by getting {

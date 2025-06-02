@@ -21,16 +21,16 @@ dependencies {
     }
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
-    compileOnly(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)
-    compileOnly(Config.Libs.OpenTelemetry.otelJavaAgentExtensionApi)
-    compileOnly(Config.Libs.OpenTelemetry.otelJavaAgentTooling)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    compileOnly(libs.otel)
+    compileOnly(libs.otel.extension.autoconfigure.spi)
+    compileOnly(libs.otel.javaagent.extension.api)
+    compileOnly(libs.otel.javaagent.tooling)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
-    errorprone(Config.CompileOnly.errorProneNullAway)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryTestSupport)

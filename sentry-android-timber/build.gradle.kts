@@ -35,7 +35,7 @@ android {
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
-        kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+        kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
     }
 
     testOptions {
@@ -70,12 +70,12 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
-    compileOnly(Config.Libs.timber)
+    compileOnly(libs.timber)
 
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     // tests
-    testImplementation(Config.Libs.timber)
+    testImplementation(libs.timber)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.mockito.kotlin)
