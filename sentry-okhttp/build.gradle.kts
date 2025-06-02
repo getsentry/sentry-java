@@ -6,6 +6,7 @@ plugins {
     `java-library`
     kotlin("jvm")
     jacoco
+    id("io.sentry.javadoc")
     alias(libs.plugins.errorprone)
     alias(libs.plugins.gradle.versions)
     alias(libs.plugins.buildconfig)

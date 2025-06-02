@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
     alias(libs.plugins.errorprone)
