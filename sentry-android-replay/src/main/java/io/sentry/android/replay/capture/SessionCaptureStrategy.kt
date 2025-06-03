@@ -78,6 +78,7 @@ internal class SessionCaptureStrategy(
     override fun onScreenshotRecorded(bitmap: Bitmap?, store: ReplayCache.(frameTimestamp: Long) -> Unit) {
         // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
         // reflecting the exact time of when it was captured
+        val currentConfig = recorderConfig
         val frameTimestamp = dateProvider.currentTimeMillis
         replayExecutor.submitSafely(options, "$TAG.add_frame") {
             cache?.store(frameTimestamp)
@@ -93,26 +94,32 @@ internal class SessionCaptureStrategy(
                 return@submitSafely
             }
 
+            if (currentConfig == null) {
+                options.logger.log(
+                    DEBUG,
+                    "Recorder config is not set, not recording frame"
+                )
+                return@submitSafely
+            }
+
             val now = dateProvider.currentTimeMillis
             if ((now - currentSegmentTimestamp.time >= options.sessionReplay.sessionSegmentDuration)) {
-                recorderConfig?.let { config ->
-                    val segment =
-                        createSegmentInternal(
-                            options.sessionReplay.sessionSegmentDuration,
-                            currentSegmentTimestamp,
-                            currentReplayId,
-                            currentSegment,
-                            config.recordingHeight,
-                            config.recordingWidth,
-                            config.frameRate,
-                            config.bitRate
-                        )
-                    if (segment is ReplaySegment.Created) {
-                        segment.capture(scopes)
-                        currentSegment++
-                        // set next segment timestamp as close to the previous one as possible to avoid gaps
-                        segmentTimestamp = segment.replay.timestamp
-                    }
+                val segment =
+                    createSegmentInternal(
+                        options.sessionReplay.sessionSegmentDuration,
+                        currentSegmentTimestamp,
+                        currentReplayId,
+                        currentSegment,
+                        currentConfig.recordingHeight,
+                        currentConfig.recordingWidth,
+                        currentConfig.frameRate,
+                        currentConfig.bitRate
+                    )
+                if (segment is ReplaySegment.Created) {
+                    segment.capture(scopes)
+                    currentSegment++
+                    // set next segment timestamp as close to the previous one as possible to avoid gaps
+                    segmentTimestamp = segment.replay.timestamp
                 }
             }
 

@@ -277,6 +277,7 @@ class SessionCaptureStrategyTest {
             }
         )
         strategy.start()
+        strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) {}
 
