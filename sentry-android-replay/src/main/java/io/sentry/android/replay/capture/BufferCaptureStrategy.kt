@@ -224,5 +224,4 @@ internal class BufferCaptureStrategy(
             onSegmentCreated(segment)
         }
     }
-
 }
