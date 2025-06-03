@@ -189,33 +189,40 @@ internal class BufferCaptureStrategy(
     }
 
     private fun createCurrentSegment(taskName: String, onSegmentCreated: (ReplaySegment) -> Unit) {
-        recorderConfig?.let { config ->
-            val errorReplayDuration = options.sessionReplay.errorReplayDuration
-            val now = dateProvider.currentTimeMillis
-            val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
-                // in buffer mode we have to set the timestamp of the first frame as the actual start
-                DateUtils.getDateTime(cache!!.frames.first().timestamp)
-            } else {
-                DateUtils.getDateTime(now - errorReplayDuration)
-            }
-            val segmentId = currentSegment
-            val duration = now - currentSegmentTimestamp.time
-            val replayId = currentReplayId
+        val currentConfig = recorderConfig
+        if (currentConfig == null) {
+            options.logger.log(
+                DEBUG,
+                "Recorder config is not set, not creating segment for task: $taskName"
+            )
+            return
+        }
+        val errorReplayDuration = options.sessionReplay.errorReplayDuration
+        val now = dateProvider.currentTimeMillis
+        val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
+            // in buffer mode we have to set the timestamp of the first frame as the actual start
+            DateUtils.getDateTime(cache!!.frames.first().timestamp)
+        } else {
+            DateUtils.getDateTime(now - errorReplayDuration)
+        }
+        val segmentId = currentSegment
+        val duration = now - currentSegmentTimestamp.time
+        val replayId = currentReplayId
 
-            replayExecutor.submitSafely(options, "$TAG.$taskName") {
-                val segment =
-                    createSegmentInternal(
-                        duration,
-                        currentSegmentTimestamp,
-                        replayId,
-                        segmentId,
-                        config.recordingHeight,
-                        config.recordingWidth,
-                        config.frameRate,
-                        config.bitRate
-                    )
-                onSegmentCreated(segment)
-            }
+        replayExecutor.submitSafely(options, "$TAG.$taskName") {
+            val segment =
+                createSegmentInternal(
+                    duration,
+                    currentSegmentTimestamp,
+                    replayId,
+                    segmentId,
+                    currentConfig.recordingHeight,
+                    currentConfig.recordingWidth,
+                    currentConfig.frameRate,
+                    currentConfig.bitRate
+                )
+            onSegmentCreated(segment)
         }
     }
+
 }

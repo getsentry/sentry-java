@@ -141,26 +141,33 @@ internal class SessionCaptureStrategy(
     override fun convert(): CaptureStrategy = this
 
     private fun createCurrentSegment(taskName: String, onSegmentCreated: (ReplaySegment) -> Unit) {
-        recorderConfig?.let { config ->
-            val now = dateProvider.currentTimeMillis
-            val currentSegmentTimestamp = segmentTimestamp ?: return
-            val segmentId = currentSegment
-            val duration = now - currentSegmentTimestamp.time
-            val replayId = currentReplayId
-            replayExecutor.submitSafely(options, "$TAG.$taskName") {
-                val segment =
-                    createSegmentInternal(
-                        duration,
-                        currentSegmentTimestamp,
-                        replayId,
-                        segmentId,
-                        config.recordingHeight,
-                        config.recordingWidth,
-                        config.frameRate,
-                        config.bitRate
-                    )
-                onSegmentCreated(segment)
-            }
+        val currentConfig = recorderConfig
+        if (currentConfig == null) {
+            options.logger.log(
+                DEBUG,
+                "Recorder config is not set, not creating segment for task: $taskName"
+            )
+            return
+        }
+
+        val now = dateProvider.currentTimeMillis
+        val currentSegmentTimestamp = segmentTimestamp ?: return
+        val segmentId = currentSegment
+        val duration = now - currentSegmentTimestamp.time
+        val replayId = currentReplayId
+        replayExecutor.submitSafely(options, "$TAG.$taskName") {
+            val segment =
+                createSegmentInternal(
+                    duration,
+                    currentSegmentTimestamp,
+                    replayId,
+                    segmentId,
+                    currentConfig.recordingHeight,
+                    currentConfig.recordingWidth,
+                    currentConfig.frameRate,
+                    currentConfig.bitRate
+                )
+            onSegmentCreated(segment)
         }
     }
 }
