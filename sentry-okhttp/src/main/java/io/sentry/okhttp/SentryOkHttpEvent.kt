@@ -27,7 +27,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
     internal val callSpan: ISpan?
     private var response: Response? = null
     private var clientErrorResponse: Response? = null
-    private val isEventFinished = AtomicBoolean(false)
+    internal val isEventFinished = AtomicBoolean(false)
     private var url: String
     private var method: String
 
