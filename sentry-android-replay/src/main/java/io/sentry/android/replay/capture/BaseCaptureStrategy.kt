@@ -61,7 +61,7 @@ internal abstract class BaseCaptureStrategy(
 
     protected val isTerminating = AtomicBoolean(false)
     protected var cache: ReplayCache? = null
-    protected var recorderConfig: ScreenshotRecorderConfig? by persistableAtomic { _, _, newValue ->
+    protected var recorderConfig by persistableAtomicNullable<ScreenshotRecorderConfig> { _, _, newValue ->
         if (newValue == null) {
             // recorderConfig is only nullable on init, but never after
             return@persistableAtomic
