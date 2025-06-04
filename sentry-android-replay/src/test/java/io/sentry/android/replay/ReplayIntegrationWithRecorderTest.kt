@@ -130,6 +130,8 @@ class ReplayIntegrationWithRecorderTest {
 
         assertEquals(INITALIZED, recorder.state)
 
+        replay.start()
+
         // have to access 'replayCacheDir' after calling replay.start(), BUT can already be accessed
         // inside recorder.start()
         val screenshot = File(replay.replayCacheDir, "1.jpg").also { it.createNewFile() }
@@ -138,8 +140,6 @@ class ReplayIntegrationWithRecorderTest {
             Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
             it.flush()
         }
-
-        replay.start()
 
         replay.onWindowSizeChanged(640, 480)
         assertEquals(STARTED, recorder.state)
