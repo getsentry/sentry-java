@@ -192,6 +192,7 @@ public open class SentryOkHttpInterceptor(
 
     private fun finishSpan(span: ISpan?, request: Request, response: Response?, isFromEventListener: Boolean, okHttpEvent: SentryOkHttpEvent?) {
         if (span == null) {
+            okHttpEvent?.finish()
             return
         }
         if (beforeSpan != null) {
