@@ -192,6 +192,7 @@ public open class SentryOkHttpInterceptor(
 
     private fun finishSpan(span: ISpan?, request: Request, response: Response?, isFromEventListener: Boolean, okHttpEvent: SentryOkHttpEvent?) {
         if (span == null) {
+            // tracing can be disabled, or there can be no active span, but we still want to finalize the OkHttpEvent when both SentryOkHttpInterceptor and SentryOkHttpEventListener are used
             okHttpEvent?.finish()
             return
         }
