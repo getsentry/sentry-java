@@ -21,6 +21,10 @@ public final class HubScopesWrapper implements IHub {
     this.scopes = scopes;
   }
 
+  public @NotNull IScopes getScopes() {
+    return scopes;
+  }
+
   @Override
   public boolean isEnabled() {
     return scopes.isEnabled();

@@ -17,5 +17,5 @@ configure<JavaPluginExtension> {
 
 dependencies {
     implementation(projects.sentryJul)
-    implementation(Config.Libs.slf4jJdk14)
+    implementation(libs.slf4j.jdk14)
 }

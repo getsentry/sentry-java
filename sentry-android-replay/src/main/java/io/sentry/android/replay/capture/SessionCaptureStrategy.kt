@@ -29,12 +29,11 @@ internal class SessionCaptureStrategy(
     }
 
     override fun start(
-        recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int,
         replayId: SentryId,
         replayType: ReplayType?
     ) {
-        super.start(recorderConfig, segmentId, replayId, replayType)
+        super.start(segmentId, replayId, replayType)
         // only set replayId on the scope if it's a full session, otherwise all events will be
         // tagged with the replay that might never be sent when we're recording in buffer mode
         scopes?.configureScope {
@@ -80,9 +79,8 @@ internal class SessionCaptureStrategy(
     override fun onScreenshotRecorded(bitmap: Bitmap?, store: ReplayCache.(frameTimestamp: Long) -> Unit) {
         // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
         // reflecting the exact time of when it was captured
+        val currentConfig = recorderConfig
         val frameTimestamp = dateProvider.currentTimeMillis
-        val height = recorderConfig.recordingHeight
-        val width = recorderConfig.recordingWidth
         replayExecutor.submitSafely(options, "$TAG.add_frame") {
             cache?.store(frameTimestamp)
 
@@ -97,6 +95,14 @@ internal class SessionCaptureStrategy(
                 return@submitSafely
             }
 
+            if (currentConfig == null) {
+                options.logger.log(
+                    DEBUG,
+                    "Recorder config is not set, not recording frame"
+                )
+                return@submitSafely
+            }
+
             val now = dateProvider.currentTimeMillis
             if ((now - currentSegmentTimestamp.time >= options.sessionReplay.sessionSegmentDuration)) {
                 val segment =
@@ -105,8 +111,10 @@ internal class SessionCaptureStrategy(
                         currentSegmentTimestamp,
                         currentReplayId,
                         currentSegment,
-                        height,
-                        width
+                        currentConfig.recordingHeight,
+                        currentConfig.recordingWidth,
+                        currentConfig.frameRate,
+                        currentConfig.bitRate
                     )
                 if (segment is ReplaySegment.Created) {
                     segment.capture(scopes)
@@ -141,15 +149,31 @@ internal class SessionCaptureStrategy(
     override fun convert(): CaptureStrategy = this
 
     private fun createCurrentSegment(taskName: String, onSegmentCreated: (ReplaySegment) -> Unit) {
+        val currentConfig = recorderConfig
+        if (currentConfig == null) {
+            options.logger.log(
+                DEBUG,
+                "Recorder config is not set, not creating segment for task: $taskName"
+            )
+            return
+        }
+
         val now = dateProvider.currentTimeMillis
         val currentSegmentTimestamp = segmentTimestamp ?: return
         val duration = now - currentSegmentTimestamp.time
         val replayId = currentReplayId
-        val height = recorderConfig.recordingHeight
-        val width = recorderConfig.recordingWidth
         replayExecutor.submitSafely(options, "$TAG.$taskName") {
             val segment =
-                createSegmentInternal(duration, currentSegmentTimestamp, replayId, currentSegment, height, width)
+                createSegmentInternal(
+                    duration,
+                    currentSegmentTimestamp,
+                    replayId,
+                    currentSegment,
+                    currentConfig.recordingHeight,
+                    currentConfig.recordingWidth,
+                    currentConfig.frameRate,
+                    currentConfig.bitRate
+                )
             onSegmentCreated(segment)
         }
     }

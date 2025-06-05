@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
     alias(libs.plugins.errorprone)
@@ -18,15 +19,16 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 dependencies {
     api(projects.sentry)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
 
     // tests
     implementation(kotlin(Config.kotlinStdLib))
     implementation(libs.kotlin.test.junit)
-    implementation(Config.TestLibs.mockitoKotlin)
+    implementation(libs.mockito.kotlin)
 }
 
 configure<SourceSetContainer> {

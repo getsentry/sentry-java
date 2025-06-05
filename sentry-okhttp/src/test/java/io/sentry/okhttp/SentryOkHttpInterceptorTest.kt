@@ -650,4 +650,15 @@ class SentryOkHttpInterceptorTest {
         val okHttpEvent = SentryOkHttpEventListener.eventMap[call]!!
         assertEquals(fixture.server.url("/hello/v1").toUrl().toString(), okHttpEvent.callSpan!!.getData("url"))
     }
+
+    @Test
+    fun `when no active http span still finalizes okHttpEvent`() {
+        val client = fixture.getSut(isSpanActive = false, eventListener = SentryOkHttpEventListener(fixture.scopes))
+        val request = getRequest("/hello/")
+        val call = client.newCall(request)
+        call.execute()
+
+        val okHttpEvent = SentryOkHttpEventListener.eventMap[call]!!
+        assertTrue(okHttpEvent.isEventFinished.get())
+    }
 }
