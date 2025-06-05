@@ -57,6 +57,7 @@ internal class BufferCaptureStrategy(
         val replayCacheDir = cache?.replayCacheDir
         replayExecutor.submitSafely(options, "$TAG.stop") {
             FileUtils.deleteRecursively(replayCacheDir)
+            currentSegment = -1
         }
         super.stop()
     }
@@ -197,7 +198,6 @@ internal class BufferCaptureStrategy(
         } else {
             DateUtils.getDateTime(now - errorReplayDuration)
         }
-        val segmentId = currentSegment
         val duration = now - currentSegmentTimestamp.time
         val replayId = currentReplayId
         val height = this.recorderConfig.recordingHeight
@@ -205,7 +205,7 @@ internal class BufferCaptureStrategy(
 
         replayExecutor.submitSafely(options, "$TAG.$taskName") {
             val segment =
-                createSegmentInternal(duration, currentSegmentTimestamp, replayId, segmentId, height, width)
+                createSegmentInternal(duration, currentSegmentTimestamp, replayId, currentSegment, height, width)
             onSegmentCreated(segment)
         }
     }
