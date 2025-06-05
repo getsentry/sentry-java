@@ -53,6 +53,7 @@ import io.sentry.android.replay.sentryReplayUnmask
 import io.sentry.compose.SentryTraced
 import io.sentry.compose.withSentryObservableEffect
 import io.sentry.samples.android.GithubAPI
+import io.sentry.samples.android.SharedState
 import kotlinx.coroutines.launch
 import io.sentry.samples.android.R as IR
 
@@ -125,11 +126,17 @@ fun Landing(
             if (showDialog) {
                 BasicAlertDialog(
                     onDismissRequest = {
-                        val orientation = activity.resources.configuration.orientation
-                        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-                            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                        } else if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                        if (SharedState.isOrientationChange) {
+                            val orientation = activity.resources.configuration.orientation
+                            if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                                activity.requestedOrientation =
+                                    ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                            } else if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                                activity.requestedOrientation =
+                                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                            }
+                        } else {
+                            showDialog = false
                         }
                     },
                     content = {

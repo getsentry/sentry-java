@@ -1,7 +1,9 @@
 appId: io.sentry.samples.android
 
 ---
-- launchApp
+- launchApp:
+    arguments:
+      isOrientationChange: true
 - scrollUntilVisible:
     element:
       id: "show_dialog"
