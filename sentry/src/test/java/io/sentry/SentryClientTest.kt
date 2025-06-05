@@ -2992,6 +2992,29 @@ class SentryClientTest {
     }
 
     @Test
+    fun `does not captureReplay for cached events`() {
+        var called = false
+        fixture.sentryOptions.setReplayController(object : ReplayController by NoOpReplayController.getInstance() {
+            override fun captureReplay(isTerminating: Boolean?) {
+                called = true
+            }
+        })
+        val sut = fixture.getSut()
+
+        sut.captureEvent(
+            SentryEvent().apply {
+                exceptions = listOf(
+                    SentryException().apply {
+                        mechanism = Mechanism().apply { isHandled = false }
+                    }
+                )
+            },
+            HintUtils.createWithTypeCheckHint(CachedHint())
+        )
+        assertFalse(called)
+    }
+
+    @Test
     fun `when beforeSendReplay is set, callback is invoked`() {
         var invoked = false
         fixture.sentryOptions.setBeforeSendReplay { replay: SentryReplayEvent, _: Hint -> invoked = true; replay }
@@ -3502,6 +3525,8 @@ class SentryClientTest {
     private class BackfillableHint : Backfillable {
         override fun shouldEnrich(): Boolean = false
     }
+
+    private class CachedHint : Cached {}
 }
 
 class DropEverythingEventProcessor : EventProcessor {

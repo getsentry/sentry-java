@@ -3,7 +3,9 @@ package io.sentry;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
+import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Backfillable;
+import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.logger.ILoggerBatchProcessor;
@@ -210,9 +212,10 @@ public final class SentryClient implements ISentryClient {
     }
 
     final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
-    // if event is backfillable we don't wanna trigger capture replay, because it's an event from
-    // the past
-    if (event != null && !isBackfillable && (event.isErrored() || event.isCrashed())) {
+    final boolean isCached = HintUtils.hasType(hint, Cached.class);
+    // if event is backfillable or cached we don't wanna trigger capture replay, because it's
+    // an event from the past
+    if (event != null && !isBackfillable && !isCached && (event.isErrored() || event.isCrashed())) {
       options.getReplayController().captureReplay(event.isCrashed());
     }
 
