@@ -3526,7 +3526,7 @@ class SentryClientTest {
         override fun shouldEnrich(): Boolean = false
     }
 
-    private class CachedHint : Cached {}
+    private class CachedHint : Cached
 }
 
 class DropEverythingEventProcessor : EventProcessor {
