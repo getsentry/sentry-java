@@ -10,6 +10,12 @@
 - Session Replay: Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
 - Session Replay: Fix inconsistent `segment_id` ([#4471](https://github.com/getsentry/sentry-java/pull/4471))
 
+### Dependencies
+
+- Bump Native SDK from v0.8.4 to v0.8.5 ([#4406](https://github.com/getsentry/sentry-java/pull/4406))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#085)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.4...0.8.5)
+
 ## 8.13.2
 
 ### Fixes
