@@ -9,13 +9,13 @@ plugins {
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.samples.android"
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
-        minSdk = Config.Android.minSdkVersion
-        targetSdk = Config.Android.targetSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 2
         versionName = project.version.toString()
 
@@ -57,7 +57,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
 
     dependenciesInfo {
@@ -139,17 +139,14 @@ android {
 }
 
 dependencies {
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
     implementation(projects.sentryAndroid)
     implementation(projects.sentryAndroidFragment)
     implementation(projects.sentryAndroidTimber)
     implementation(projects.sentryCompose)
+    implementation(projects.sentryKotlinExtensions)
     implementation(projects.sentryOkhttp)
-    implementation(Config.Libs.fragment)
-    implementation(Config.Libs.timber)
 
 //    how to exclude androidx if release health feature is disabled
 //    implementation(projects.sentryAndroid) {
@@ -158,23 +155,22 @@ dependencies {
 //        exclude(group = "androidx.core", module = "core")
 //    }
 
-    implementation(Config.Libs.appCompat)
-    implementation(Config.Libs.androidxRecylerView)
-    implementation(Config.Libs.retrofit2)
-    implementation(Config.Libs.retrofit2Gson)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.foundation.layout)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.coil.compose)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.sentry.native.ndk)
+    implementation(libs.timber)
 
-    implementation(Config.Libs.composeActivity)
-    implementation(Config.Libs.composeFoundation)
-    implementation(Config.Libs.composeFoundationLayout)
-    implementation(Config.Libs.composeNavigation)
-    implementation(Config.Libs.composeMaterial)
-    implementation(Config.Libs.composeCoil)
-    implementation(Config.Libs.sentryNativeNdk)
-
-    implementation(projects.sentryKotlinExtensions)
-    implementation(Config.Libs.coroutinesAndroid)
-
-    debugImplementation(Config.Libs.leakCanary)
+    debugImplementation(libs.leakcanary)
 }
 
 abstract class ToggleNativeLoggingTask : Exec() {

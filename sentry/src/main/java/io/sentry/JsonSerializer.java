@@ -9,6 +9,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Device;
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.Geo;
 import io.sentry.protocol.Gpu;
 import io.sentry.protocol.MeasurementValue;
@@ -84,6 +85,7 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(Device.class, new Device.Deserializer());
     deserializersByClass.put(
         Device.DeviceOrientation.class, new Device.DeviceOrientation.Deserializer());
+    deserializersByClass.put(Feedback.class, new Feedback.Deserializer());
     deserializersByClass.put(Gpu.class, new Gpu.Deserializer());
     deserializersByClass.put(MeasurementValue.class, new MeasurementValue.Deserializer());
     deserializersByClass.put(Mechanism.class, new Mechanism.Deserializer());
@@ -117,6 +119,7 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(SentryItemType.class, new SentryItemType.Deserializer());
     deserializersByClass.put(SentryLevel.class, new SentryLevel.Deserializer());
     deserializersByClass.put(SentryLockReason.class, new SentryLockReason.Deserializer());
+    deserializersByClass.put(SentryLogEvents.class, new SentryLogEvents.Deserializer());
     deserializersByClass.put(SentryPackage.class, new SentryPackage.Deserializer());
     deserializersByClass.put(SentryRuntime.class, new SentryRuntime.Deserializer());
     deserializersByClass.put(SentryReplayEvent.class, new SentryReplayEvent.Deserializer());

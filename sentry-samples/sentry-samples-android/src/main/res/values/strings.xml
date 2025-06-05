@@ -27,6 +27,7 @@
   <string name="open_metrics">Delightful Developer Metrics</string>
   <string name="test_timber_integration">Test Timber</string>
   <string name="throw_in_coroutine">Throw exception in coroutine</string>
+  <string name="enable_replay_debug_mode">Enable Replay Debug Mode</string>
   <string name="show_dialog">Show Dialog</string>
   <string name="back_main">Back to Main Activity</string>
   <string name="tap_me">text</string>

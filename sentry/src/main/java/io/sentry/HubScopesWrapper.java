@@ -1,5 +1,7 @@
 package io.sentry;
 
+import io.sentry.logger.ILoggerApi;
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -17,6 +19,10 @@ public final class HubScopesWrapper implements IHub {
 
   public HubScopesWrapper(final @NotNull IScopes scopes) {
     this.scopes = scopes;
+  }
+
+  public @NotNull IScopes getScopes() {
+    return scopes;
   }
 
   @Override
@@ -44,6 +50,12 @@ public final class HubScopesWrapper implements IHub {
   public @NotNull SentryId captureMessage(
       @NotNull String message, @NotNull SentryLevel level, @NotNull ScopeCallback callback) {
     return scopes.captureMessage(message, level, callback);
+  }
+
+  @Override
+  public @NotNull SentryId captureFeedback(
+      @NotNull Feedback feedback, @Nullable Hint hint, @Nullable ScopeCallback callback) {
+    return scopes.captureFeedback(feedback, hint, callback);
   }
 
   @Override
@@ -356,5 +368,11 @@ public final class HubScopesWrapper implements IHub {
   @Override
   public @NotNull SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint) {
     return scopes.captureReplay(replay, hint);
+  }
+
+  @ApiStatus.Experimental
+  @Override
+  public @NotNull ILoggerApi logger() {
+    return scopes.logger();
   }
 }

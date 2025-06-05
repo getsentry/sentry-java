@@ -5,12 +5,13 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
-    id(Config.BuildPlugins.springBoot) version Config.springBoot3Version apply false
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.buildconfig)
+    alias(libs.plugins.springboot3) apply false
 }
 
 configure<JavaPluginExtension> {
@@ -19,8 +20,11 @@ configure<JavaPluginExtension> {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+        languageVersion = libs.versions.kotlin.compatible.version.get()
+        freeCompilerArgs = listOf("-Xjsr305=strict")
+    }
 }
 
 dependencies {
@@ -29,21 +33,17 @@ dependencies {
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springAop)
     compileOnly(Config.Libs.springSecurityWeb)
-    compileOnly(Config.Libs.springBoot3StarterGraphql)
-    compileOnly(Config.Libs.springBoot3StarterQuartz)
     compileOnly(Config.Libs.aspectj)
-    compileOnly(Config.Libs.servletApiJakarta)
-    compileOnly(Config.Libs.slf4jApi)
-    compileOnly(Config.Libs.contextPropagation)
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
+    compileOnly(libs.context.propagation)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    compileOnly(libs.otel)
+    compileOnly(libs.servlet.jakarta.api)
+    compileOnly(libs.slf4j.api)
+    compileOnly(libs.springboot3.starter.graphql)
+    compileOnly(libs.springboot3.starter.quartz)
 
     compileOnly(Config.Libs.springWebflux)
-
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
     compileOnly(projects.sentryGraphql)
     compileOnly(projects.sentryGraphql22)
     compileOnly(projects.sentryQuartz)
@@ -51,30 +51,27 @@ dependencies {
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
     api(projects.sentryReactor)
 
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
+
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.Libs.springBoot3StarterTest)
-    testImplementation(Config.Libs.springBoot3StarterWeb)
-    testImplementation(Config.Libs.springBoot3StarterWebflux)
-    testImplementation(Config.Libs.springBoot3StarterSecurity)
-    testImplementation(Config.Libs.springBoot3StarterAop)
-    testImplementation(Config.Libs.springBoot3StarterGraphql)
-    testImplementation(Config.Libs.contextPropagation)
-    testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.Libs.graphQlJava22)
+    testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.context.propagation)
+    testImplementation(libs.graphql.java24)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.springboot3.starter.aop)
+    testImplementation(libs.springboot3.starter.graphql)
+    testImplementation(libs.springboot3.starter.security)
+    testImplementation(libs.springboot3.starter.test)
+    testImplementation(libs.springboot3.starter.web)
+    testImplementation(libs.springboot3.starter.webflux)
     testImplementation(projects.sentryReactor)
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
 }
 
 configure<SourceSetContainer> {
@@ -84,7 +81,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {
@@ -113,9 +110,8 @@ buildConfig {
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
-val generateBuildConfig by tasks
 tasks.withType<JavaCompile>().configureEach {
-    dependsOn(generateBuildConfig)
+    dependsOn(tasks.generateBuildConfig)
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")

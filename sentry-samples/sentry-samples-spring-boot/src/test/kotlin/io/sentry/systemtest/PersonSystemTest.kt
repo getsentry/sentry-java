@@ -24,6 +24,14 @@ class PersonSystemTest {
         testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
             testHelper.doesTransactionHaveOp(transaction, "http.server")
         }
+
+        Thread.sleep(10000)
+
+        testHelper.ensureLogsReceived { logs, envelopeHeader ->
+            testHelper.doesContainLogWithBody(logs, "warn Sentry logging") &&
+                testHelper.doesContainLogWithBody(logs, "error Sentry logging") &&
+                testHelper.doesContainLogWithBody(logs, "hello there world!")
+        }
     }
 
     @Test

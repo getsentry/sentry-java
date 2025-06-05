@@ -1,5 +1,7 @@
 package io.sentry;
 
+import io.sentry.logger.ILoggerApi;
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -107,6 +109,42 @@ public interface IScopes {
       @NotNull String message, @NotNull ScopeCallback callback) {
     return captureMessage(message, SentryLevel.INFO, callback);
   }
+
+  /**
+   * Captures the feedback.
+   *
+   * @param feedback The feedback to send.
+   * @return The Id (SentryId object) of the event
+   */
+  default @NotNull SentryId captureFeedback(final @NotNull Feedback feedback) {
+    return captureFeedback(feedback, null);
+  }
+
+  /**
+   * Captures the feedback.
+   *
+   * @param feedback The feedback to send.
+   * @param hint An optional hint to be applied to the event.
+   * @return The Id (SentryId object) of the event
+   */
+  default @NotNull SentryId captureFeedback(
+      final @NotNull Feedback feedback, final @Nullable Hint hint) {
+    return captureFeedback(feedback, hint, null);
+  }
+
+  /**
+   * Captures the feedback.
+   *
+   * @param feedback The feedback to send.
+   * @param hint An optional hint to be applied to the event.
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  @NotNull
+  SentryId captureFeedback(
+      final @NotNull Feedback feedback,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback callback);
 
   /**
    * Captures an envelope.
@@ -703,4 +741,8 @@ public interface IScopes {
 
   @NotNull
   SentryId captureReplay(@NotNull SentryReplayEvent replay, @Nullable Hint hint);
+
+  @ApiStatus.Experimental
+  @NotNull
+  ILoggerApi logger();
 }

@@ -4,8 +4,127 @@
 
 ### Fixes
 
+- Send UI Profiling app start chunk when it finishes ([#4423](https://github.com/getsentry/sentry-java/pull/4423))
+- Republish Javadoc [#4457](https://github.com/getsentry/sentry-java/pull/4457)
+- Finalize `OkHttpEvent` even if no active span in `SentryOkHttpInterceptor` [#4469](https://github.com/getsentry/sentry-java/pull/4469)
+- Session Replay: Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
+- Session Replay: Fix inconsistent `segment_id` ([#4471](https://github.com/getsentry/sentry-java/pull/4471))
+
+## 8.13.2
+
+### Fixes
+
+- Don't apply Spring Boot plugin in `sentry-spring-boot-jakarta` ([#4456](https://github.com/getsentry/sentry-java/pull/4456))
+  - The jar for `io.sentry:sentry-spring-boot-jakarta` is now correctly being built and published to Maven Central.
+
+## 8.13.1
+
+### Fixes
+
+- Fix `SentryAndroid.init` crash if SDK is initialized from a background thread while an `Activity` is in resumed state ([#4449](https://github.com/getsentry/sentry-java/pull/4449))
+
+### Dependencies
+
+- Bump Gradle from v8.14 to v8.14.1 ([#4437](https://github.com/getsentry/sentry-java/pull/4437))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8141)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14...v8.14.1)
+
+## 8.13.0
+
+### Features
+
+- Add debug mode for Session Replay masking ([#4357](https://github.com/getsentry/sentry-java/pull/4357))
+    - Use `Sentry.replay().enableDebugMaskingOverlay()` to overlay the screen with the Session Replay masks.
+    - The masks will be invalidated at most once per `frameRate` (default 1 fps).
+- Extend Logs API to allow passing in `attributes` ([#4402](https://github.com/getsentry/sentry-java/pull/4402))
+  - `Sentry.logger.log` now takes a `SentryLogParameters`
+  - Use `SentryLogParameters.create(SentryAttributes.of(...))` to pass attributes
+    - Attribute values may be of type `string`, `boolean`, `integer` or `double`.
+    - Other types will be converted to `string`. Currently we simply call `toString()` but we might offer more in the future.
+    - You may manually flatten complex types into multiple separate attributes of simple types.
+      - e.g. intead of `SentryAttribute.named("point", Point(10, 20))` you may store it as `SentryAttribute.integerAttribute("point.x", point.x)` and `SentryAttribute.integerAttribute("point.y", point.y)`
+    - `SentryAttribute.named()` will automatically infer the type or fall back to `string`.
+    - `SentryAttribute.booleanAttribute()` takes a `Boolean` value
+    - `SentryAttribute.integerAttribute()` takes a `Integer` value
+    - `SentryAttribute.doubleAttribute()` takes a `Double` value
+    - `SentryAttribute.stringAttribute()` takes a `String` value
+  - We opted for handling parameters via `SentryLogParameters` to avoid creating tons of overloads that are ambiguous.
+
+### Fixes
+
+- Isolation scope is now forked in `OtelSentrySpanProcessor` instead of `OtelSentryPropagator` ([#4434](https://github.com/getsentry/sentry-java/pull/4434))
+  - Since propagator may never be invoked we moved the location where isolation scope is forked.
+  - Not invoking `OtelSentryPropagator.extract` or having a `sentry-trace` header that failed to parse would cause isolation scope not to be forked.
+  - This in turn caused data to bleed between scopes, e.g. from one request into another
+
+### Dependencies
+
+- Bump Spring Boot to `3.5.0` ([#4111](https://github.com/getsentry/sentry-java/pull/4111))
+
+## 8.12.0
+
+### Features
+
+- Add new User Feedback API ([#4286](https://github.com/getsentry/sentry-java/pull/4286))
+    - We now introduced Sentry.captureFeedback, which supersedes Sentry.captureUserFeedback
+- Add Sentry Log Feature ([#4372](https://github.com/getsentry/sentry-java/pull/4372))
+    - The feature is disabled by default and needs to be enabled by:
+        - `options.getLogs().setEnabled(true)` in `Sentry.init` / `SentryAndroid.init`
+        - `<meta-data android:name="io.sentry.logs.enabled" android:value="true" />` in `AndroidManifest.xml`
+        - `logs.enabled=true` in `sentry.properties`
+        - `sentry.logs.enabled=true` in `application.properties`
+        - `sentry.logs.enabled: true` in `application.yml`
+    - Logs can be captured using `Sentry.logger().info()` and similar methods.
+    - Logs also take a format string and arguments which we then send through `String.format`.
+    - Please use `options.getLogs().setBeforeSend()` to filter outgoing logs
+
+### Fixes
+
+- Hook User Interaction integration into running Activity in case of deferred SDK init ([#4337](https://github.com/getsentry/sentry-java/pull/4337))
+
+### Dependencies
+
+- Bump Gradle from v8.13 to v8.14.0 ([#4360](https://github.com/getsentry/sentry-java/pull/4360))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8140)
+  - [diff](https://github.com/gradle/gradle/compare/v8.13...v8.14.0)
+
+## 8.11.1
+
+### Fixes
+
+- Fix Android profile chunk envelope type for UI Profiling ([#4366](https://github.com/getsentry/sentry-java/pull/4366))
+
+## 8.11.0
+
+### Features
+
+- Make `RequestDetailsResolver` public ([#4326](https://github.com/getsentry/sentry-java/pull/4326))
+  - `RequestDetailsResolver` is now public and has an additional constructor, making it easier to use a custom `TransportFactory`
+
+### Fixes
+
+- Session Replay: Fix masking of non-styled `Text` Composables ([#4361](https://github.com/getsentry/sentry-java/pull/4361))
+- Session Replay: Fix masking read-only `TextField` Composables ([#4362](https://github.com/getsentry/sentry-java/pull/4362))
+
+## 8.10.0
+
+### Features
+
+- Wrap configured OpenTelemetry `ContextStorageProvider` if available ([#4359](https://github.com/getsentry/sentry-java/pull/4359))
+  - This is only relevant if you see `java.lang.IllegalStateException: Found multiple ContextStorageProvider. Set the io.opentelemetry.context.ContextStorageProvider property to the fully qualified class name of the provider to use. Falling back to default ContextStorage. Found providers: ...` 
+  - Set `-Dio.opentelemetry.context.contextStorageProvider=io.sentry.opentelemetry.SentryContextStorageProvider` on your `java` command
+  - Sentry will then wrap the other `ContextStorageProvider` that has been configured by loading it through SPI
+  - If no other `ContextStorageProvider` is available or there are problems loading it, we fall back to using `SentryOtelThreadLocalStorage`
+    
+### Fixes
+
 - Update profile chunk rate limit and client report ([#4353](https://github.com/getsentry/sentry-java/pull/4353))
-- Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
+
+### Dependencies
+
+- Bump Native SDK from v0.8.3 to v0.8.4 ([#4343](https://github.com/getsentry/sentry-java/pull/4343))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#084)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.3...0.8.4)
 
 ## 8.9.0
 

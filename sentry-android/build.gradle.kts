@@ -1,15 +1,15 @@
 plugins {
     id("com.android.library")
     kotlin("android")
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.gradle.versions)
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.android"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
     }
 
     buildFeatures {

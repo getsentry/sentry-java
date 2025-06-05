@@ -11,6 +11,7 @@ import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader
 import io.sentry.internal.modules.CompositeModulesLoader
 import io.sentry.internal.modules.IModulesLoader
 import io.sentry.internal.modules.NoOpModulesLoader
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryThread
@@ -122,6 +123,27 @@ class SentryTest {
 
         Sentry.close()
         verify(integration2).close()
+    }
+
+    @Test
+    fun `if a single integration crashes, the SDK and other integrations are still initialized`() {
+        val goodIntegrationInitialized = AtomicBoolean(false)
+        val goodIntegration = Integration { scopes, options ->
+            // no-op
+            goodIntegrationInitialized.set(true)
+        }
+
+        val badIntegration = Integration { scopes, options -> throw IllegalStateException("bad integration") }
+
+        Sentry.init {
+            it.dsn = dsn
+            it.integrations.clear()
+            it.integrations.add(badIntegration)
+            it.integrations.add(goodIntegration)
+        }
+
+        assertTrue(Sentry.isEnabled())
+        assertTrue(goodIntegrationInitialized.get())
     }
 
     interface CloseableIntegration : Integration, Closeable
@@ -960,6 +982,33 @@ class SentryTest {
     }
 
     @Test
+    fun `captureFeedback gets forwarded to client`() {
+        initForTest { it.dsn = dsn }
+
+        val client = createSentryClientMock()
+        Sentry.getCurrentScopes().bindClient(client)
+
+        val feedback = Feedback("message")
+        val hint = Hint()
+
+        Sentry.captureFeedback(feedback)
+        Sentry.captureFeedback(feedback, hint)
+        Sentry.captureFeedback(feedback, hint) { it.setTag("testKey", "testValue") }
+
+        verify(client).captureFeedback(eq(feedback), eq(null), anyOrNull())
+        verify(client).captureFeedback(
+            eq(feedback),
+            eq(hint),
+            check { assertFalse(it.tags.containsKey("testKey")) }
+        )
+        verify(client).captureFeedback(
+            eq(feedback),
+            eq(hint),
+            check { assertEquals("testValue", it.tags["testKey"]) }
+        )
+    }
+
+    @Test
     fun `captureCheckIn gets forwarded to client`() {
         initForTest { it.dsn = dsn }
 
@@ -1413,6 +1462,20 @@ class SentryTest {
         }
         Sentry.stopProfiler()
         verify(profiler, never()).stopProfiler(eq(ProfileLifecycle.MANUAL))
+    }
+
+    @Test
+    fun `replay debug masking is forwarded to replay controller`() {
+        val replayController = mock<ReplayController>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setReplayController(replayController)
+        }
+        Sentry.replay().enableDebugMaskingOverlay()
+        verify(replayController).enableDebugMaskingOverlay()
+
+        Sentry.replay().disableDebugMaskingOverlay()
+        verify(replayController).disableDebugMaskingOverlay()
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {
