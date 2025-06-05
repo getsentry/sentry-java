@@ -42,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
 
     SharedState.INSTANCE.setOrientationChange(getIntent().getBooleanExtra("isOrientationChange", false));
-    Log.e("MainActivity", "isMaestroTest: " + SharedState.INSTANCE.isOrientationChange());
     final ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
 
     final File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
