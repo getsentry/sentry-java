@@ -8,6 +8,7 @@
 - Republish Javadoc [#4457](https://github.com/getsentry/sentry-java/pull/4457)
 - Finalize `OkHttpEvent` even if no active span in `SentryOkHttpInterceptor` [#4469](https://github.com/getsentry/sentry-java/pull/4469)
 - Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
+- Session Replay: Do not capture replays for cached events from the past ([#4474](https://github.com/getsentry/sentry-java/pull/4474))
 
 ## 8.13.2
 
