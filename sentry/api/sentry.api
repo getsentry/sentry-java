@@ -3640,7 +3640,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun isDebug ()Z
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
-	public fun isTrackOrientationChange ()Z
+	public fun isTrackConfiguration ()Z
 	public fun setDebug (Z)V
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
@@ -3649,7 +3649,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
-	public fun setTrackOrientationChange (Z)V
+	public fun setTrackConfiguration (Z)V
 	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
 }
 
