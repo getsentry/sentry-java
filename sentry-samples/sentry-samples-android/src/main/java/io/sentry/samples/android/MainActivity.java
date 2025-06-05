@@ -5,7 +5,6 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
@@ -41,7 +40,8 @@ public class MainActivity extends AppCompatActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    SharedState.INSTANCE.setOrientationChange(getIntent().getBooleanExtra("isOrientationChange", false));
+    SharedState.INSTANCE.setOrientationChange(
+        getIntent().getBooleanExtra("isOrientationChange", false));
     final ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
 
     final File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
