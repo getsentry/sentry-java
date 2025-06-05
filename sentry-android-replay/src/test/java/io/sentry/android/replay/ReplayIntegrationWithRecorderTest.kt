@@ -57,14 +57,12 @@ class ReplayIntegrationWithRecorderTest {
         fun getSut(
             context: Context,
             recorder: Recorder,
-            recorderConfig: ScreenshotRecorderConfig,
             dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance()
         ): ReplayIntegration {
             return ReplayIntegration(
                 context,
                 dateProvider,
-                recorderProvider = { recorder },
-                recorderConfigProvider = { recorderConfig }
+                recorderProvider = { recorder }
             )
         }
     }
@@ -90,16 +88,20 @@ class ReplayIntegrationWithRecorderTest {
             System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
         }
 
+        fixture.options.sessionReplay.isTrackConfiguration = false
         fixture.options.sessionReplay.sessionSampleRate = 1.0
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
         val replay: ReplayIntegration
-        val recorderConfig = ScreenshotRecorderConfig(100, 200, 1f, 1f, 1, 20_000)
         val recorder = object : Recorder {
             var state: LifecycleState = INITALIZED
 
-            override fun start(recorderConfig: ScreenshotRecorderConfig) {
+            override fun start() {
                 state = STARTED
+            }
+
+            override fun onConfigurationChanged(config: ScreenshotRecorderConfig) {
+                // no-op
             }
 
             override fun resume() {
@@ -108,6 +110,10 @@ class ReplayIntegrationWithRecorderTest {
 
             override fun pause() {
                 state = PAUSED
+            }
+
+            override fun reset() {
+                state = STOPPED
             }
 
             override fun stop() {
@@ -119,24 +125,11 @@ class ReplayIntegrationWithRecorderTest {
             }
         }
 
-        replay = fixture.getSut(context, recorder, recorderConfig, dateProvider)
+        replay = fixture.getSut(context, recorder, dateProvider)
         replay.register(fixture.hub, fixture.options)
 
         assertEquals(INITALIZED, recorder.state)
 
-        replay.start()
-        assertEquals(STARTED, recorder.state)
-
-        replay.pause()
-        assertEquals(PAUSED, recorder.state)
-
-        replay.resume()
-        assertEquals(RESUMED, recorder.state)
-
-        replay.stop()
-        assertEquals(STOPPED, recorder.state)
-
-        // start again and capture some frames
         replay.start()
 
         // have to access 'replayCacheDir' after calling replay.start(), BUT can already be accessed
@@ -147,6 +140,29 @@ class ReplayIntegrationWithRecorderTest {
             Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
             it.flush()
         }
+
+        replay.onWindowSizeChanged(640, 480)
+        assertEquals(STARTED, recorder.state)
+
+        replay.pause()
+        assertEquals(PAUSED, recorder.state)
+
+        replay.resume()
+        assertEquals(RESUMED, recorder.state)
+
+        // this should be ignored, as no manual onConfigurationChanged was called so far
+        replay.onScreenshotRecorded(screenshot, frameTimestamp = 1)
+
+        replay.stop()
+        assertEquals(STOPPED, recorder.state)
+
+        // start again and capture some frames
+        replay.start()
+
+        // E.g. Flutter will trigger onConfigurationChanged
+        val flutterConfig = ScreenshotRecorderConfig(100, 200, 1f, 1f, 1, 20_000)
+        replay.onConfigurationChanged(flutterConfig)
+
         replay.onScreenshotRecorded(screenshot, frameTimestamp = 1)
 
         // verify
@@ -161,12 +177,12 @@ class ReplayIntegrationWithRecorderTest {
             },
             check {
                 val metaEvents = it.replayRecording?.payload?.filterIsInstance<RRWebMetaEvent>()
-                assertEquals(200, metaEvents?.first()?.height)
-                assertEquals(100, metaEvents?.first()?.width)
+                assertEquals(flutterConfig.recordingHeight, metaEvents?.first()?.height)
+                assertEquals(flutterConfig.recordingWidth, metaEvents?.first()?.width)
 
                 val videoEvents = it.replayRecording?.payload?.filterIsInstance<RRWebVideoEvent>()
-                assertEquals(200, videoEvents?.first()?.height)
-                assertEquals(100, videoEvents?.first()?.width)
+                assertEquals(flutterConfig.recordingHeight, videoEvents?.first()?.height)
+                assertEquals(flutterConfig.recordingWidth, videoEvents?.first()?.width)
                 assertEquals(5000, videoEvents?.first()?.durationMs)
                 assertEquals(5, videoEvents?.first()?.frameCount)
                 assertEquals(1, videoEvents?.first()?.frameRate)

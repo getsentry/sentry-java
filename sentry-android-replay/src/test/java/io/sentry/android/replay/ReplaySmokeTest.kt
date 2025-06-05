@@ -78,7 +78,6 @@ class ReplaySmokeTest {
                 context,
                 dateProvider,
                 recorderProvider = null,
-                recorderConfigProvider = null,
                 replayCaptureStrategyProvider = null,
                 replayCacheProvider = null,
                 mainLooperHandler = mock {

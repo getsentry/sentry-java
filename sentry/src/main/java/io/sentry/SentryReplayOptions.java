@@ -119,10 +119,13 @@ public final class SentryReplayOptions {
   private long sessionDuration = 60 * 60 * 1000L;
 
   /**
-   * Whether to track orientation changes in session replay. Used in Flutter as it has its own
-   * callbacks to determine the orientation change.
+   * Whether to track the screen configuration (e.g. window size, orientation, etc.) automatically.
+   * A valid configuration is required to capture a session replay. If set to false,
+   * ReplayIntegration.onConfigurationChanged() must be called manually to update the configuration.
+   *
+   * <p>Defaults to true.
    */
-  private boolean trackOrientationChange = true;
+  private boolean trackConfiguration = true;
 
   /**
    * SdkVersion object that contains the Sentry Client Name and its version. This object is only
@@ -294,13 +297,13 @@ public final class SentryReplayOptions {
   }
 
   @ApiStatus.Internal
-  public boolean isTrackOrientationChange() {
-    return trackOrientationChange;
+  public boolean isTrackConfiguration() {
+    return trackConfiguration;
   }
 
   @ApiStatus.Internal
-  public void setTrackOrientationChange(final boolean trackOrientationChange) {
-    this.trackOrientationChange = trackOrientationChange;
+  public void setTrackConfiguration(final boolean trackConfiguration) {
+    this.trackConfiguration = trackConfiguration;
   }
 
   @ApiStatus.Internal

@@ -1,8 +1,6 @@
 package io.sentry.android.replay
 
-import android.content.ComponentCallbacks
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Build
 import android.view.MotionEvent
@@ -59,22 +57,20 @@ public class ReplayIntegration(
     private val context: Context,
     private val dateProvider: ICurrentDateProvider,
     private val recorderProvider: (() -> Recorder)? = null,
-    private val recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)? = null,
     private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
 ) : Integration,
     Closeable,
     ScreenshotRecorderCallback,
     TouchRecorderCallback,
     ReplayController,
-    ComponentCallbacks,
     IConnectionStatusObserver,
-    IRateLimitObserver {
+    IRateLimitObserver,
+    WindowCallback {
 
     // needed for the Java's call site
     constructor(context: Context, dateProvider: ICurrentDateProvider) : this(
         context.appContext(),
         dateProvider,
-        null,
         null,
         null
     )
@@ -83,12 +79,11 @@ public class ReplayIntegration(
         context: Context,
         dateProvider: ICurrentDateProvider,
         recorderProvider: (() -> Recorder)?,
-        recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)?,
         replayCacheProvider: ((replayId: SentryId) -> ReplayCache)?,
         replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
         mainLooperHandler: MainLooperHandler? = null,
         gestureRecorderProvider: (() -> GestureRecorder)? = null
-    ) : this(context.appContext(), dateProvider, recorderProvider, recorderConfigProvider, replayCacheProvider) {
+    ) : this(context.appContext(), dateProvider, recorderProvider, replayCacheProvider) {
         this.replayCaptureStrategyProvider = replayCaptureStrategyProvider
         this.mainLooperHandler = mainLooperHandler ?: MainLooperHandler()
         this.gestureRecorderProvider = gestureRecorderProvider
@@ -130,23 +125,12 @@ public class ReplayIntegration(
         }
 
         this.hub = hub
-        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, mainLooperHandler, replayExecutor)
+        recorder = recorderProvider?.invoke() ?: WindowRecorder(options, this, this, mainLooperHandler, replayExecutor)
         gestureRecorder = gestureRecorderProvider?.invoke() ?: GestureRecorder(options, this)
         isEnabled.set(true)
 
         options.connectionStatusProvider.addConnectionStatusObserver(this)
         hub.rateLimiter?.addRateLimitObserver(this)
-        if (options.sessionReplay.isTrackOrientationChange) {
-            try {
-                context.registerComponentCallbacks(this)
-            } catch (e: Throwable) {
-                options.logger.log(
-                    INFO,
-                    "ComponentCallbacks is not available, orientation changes won't be handled by Session replay",
-                    e
-                )
-            }
-        }
 
         addIntegrationToSdkVersion("Replay")
         SentryIntegrationPackageStorage.getInstance()
@@ -177,17 +161,16 @@ public class ReplayIntegration(
             return
         }
 
-        val recorderConfig = recorderConfigProvider?.invoke(false) ?: ScreenshotRecorderConfig.from(context, options.sessionReplay)
+        lifecycle.currentState = STARTED
         captureStrategy = replayCaptureStrategyProvider?.invoke(isFullSession) ?: if (isFullSession) {
             SessionCaptureStrategy(options, hub, dateProvider, replayExecutor, replayCacheProvider)
         } else {
             BufferCaptureStrategy(options, hub, dateProvider, random, replayExecutor, replayCacheProvider)
         }
+        recorder?.start()
+        captureStrategy?.start()
 
-        captureStrategy?.start(recorderConfig)
-        recorder?.start(recorderConfig)
         registerRootViewListeners()
-        lifecycle.currentState = STARTED
     }
 
     override fun resume() {
@@ -208,9 +191,9 @@ public class ReplayIntegration(
             return
         }
 
+        lifecycle.currentState = RESUMED
         captureStrategy?.resume()
         recorder?.resume()
-        lifecycle.currentState = RESUMED
     }
 
     @Synchronized
@@ -262,6 +245,7 @@ public class ReplayIntegration(
         }
 
         unregisterRootViewListeners()
+        recorder?.reset()
         recorder?.stop()
         gestureRecorder?.stop()
         captureStrategy?.stop()
@@ -293,36 +277,13 @@ public class ReplayIntegration(
 
         options.connectionStatusProvider.removeConnectionStatusObserver(this)
         hub?.rateLimiter?.removeRateLimitObserver(this)
-        if (options.sessionReplay.isTrackOrientationChange) {
-            try {
-                context.unregisterComponentCallbacks(this)
-            } catch (ignored: Throwable) {
-            }
-        }
+
         stop()
         recorder?.close()
         recorder = null
         rootViewsSpy.close()
         replayExecutor.gracefullyShutdown(options)
         lifecycle.currentState = CLOSED
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        if (!isEnabled.get() || !isRecording()) {
-            return
-        }
-
-        recorder?.stop()
-
-        // refresh config based on new device configuration
-        val recorderConfig = recorderConfigProvider?.invoke(true) ?: ScreenshotRecorderConfig.from(context, options.sessionReplay)
-        captureStrategy?.onConfigurationChanged(recorderConfig)
-
-        recorder?.start(recorderConfig)
-        // we have to restart recorder with a new config and pause immediately if the replay is paused
-        if (lifecycle.currentState == PAUSED) {
-            recorder?.pause()
-        }
     }
 
     override fun onConnectionStatusChanged(status: ConnectionStatus) {
@@ -351,8 +312,6 @@ public class ReplayIntegration(
             resumeInternal()
         }
     }
-
-    override fun onLowMemory() = Unit
 
     override fun onTouchEvent(event: MotionEvent) {
         if (!isEnabled.get() || !lifecycle.isTouchRecordingAllowed()) {
@@ -451,6 +410,30 @@ public class ReplayIntegration(
                 segment.capture(hub, hint)
             }
             cleanupReplays(unfinishedReplayId = previousReplayIdString) // will be cleaned up after the envelope is assembled
+        }
+    }
+
+    override fun onWindowSizeChanged(width: Int, height: Int) {
+        if (!isEnabled.get() || !isRecording()) {
+            return
+        }
+        if (options.sessionReplay.isTrackConfiguration) {
+            val recorderConfig =
+                ScreenshotRecorderConfig.fromSize(context, options.sessionReplay, width, height)
+            onConfigurationChanged(recorderConfig)
+        }
+    }
+
+    public fun onConfigurationChanged(config: ScreenshotRecorderConfig) {
+        if (!isEnabled.get() || !isRecording()) {
+            return
+        }
+        captureStrategy?.onConfigurationChanged(config)
+        recorder?.onConfigurationChanged(config)
+
+        // we have to restart recorder with a new config and pause immediately if the replay is paused
+        if (lifecycle.currentState == PAUSED) {
+            recorder?.pause()
         }
     }
 
