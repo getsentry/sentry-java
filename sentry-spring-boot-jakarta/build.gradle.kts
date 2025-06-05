@@ -4,12 +4,13 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
     alias(libs.plugins.errorprone)
     alias(libs.plugins.gradle.versions)
     alias(libs.plugins.buildconfig)
-    alias(libs.plugins.spring.boot.three)
+    alias(libs.plugins.springboot3) apply false
 }
 
 configure<JavaPluginExtension> {
@@ -19,7 +20,7 @@ configure<JavaPluginExtension> {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+    kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
 }
 
 dependencies {
@@ -27,21 +28,23 @@ dependencies {
     api(projects.sentrySpringJakarta)
     compileOnly(projects.sentryLogback)
     compileOnly(projects.sentryApacheHttpClient5)
-    compileOnly(Config.Libs.springBoot3Starter)
     compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
     compileOnly(projects.sentryGraphql)
     compileOnly(projects.sentryGraphql22)
     compileOnly(projects.sentryQuartz)
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springWebflux)
-    compileOnly(Config.Libs.servletApiJakarta)
-    compileOnly(Config.Libs.springBoot3StarterAop)
-    compileOnly(Config.Libs.springBoot3StarterSecurity)
-    compileOnly(Config.Libs.springBoot3StarterGraphql)
-    compileOnly(Config.Libs.springBoot3StarterQuartz)
-    compileOnly(Config.Libs.reactorCore)
-    compileOnly(Config.Libs.contextPropagation)
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
+    compileOnly(libs.context.propagation)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    compileOnly(libs.otel)
+    compileOnly(libs.reactor.core)
+    compileOnly(libs.servlet.jakarta.api)
+    compileOnly(libs.springboot3.starter)
+    compileOnly(libs.springboot3.starter.aop)
+    compileOnly(libs.springboot3.starter.graphql)
+    compileOnly(libs.springboot3.starter.quartz)
+    compileOnly(libs.springboot3.starter.security)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     api(projects.sentryReactor)
@@ -50,43 +53,40 @@ dependencies {
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryLogback)
-    testImplementation(projects.sentryQuartz)
+    testImplementation(projects.sentryApacheHttpClient5)
     testImplementation(projects.sentryGraphql)
     testImplementation(projects.sentryGraphql22)
-    testImplementation(projects.sentryApacheHttpClient5)
-    testImplementation(projects.sentryTestSupport)
-    testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockWebserver)
-
-    testImplementation(Config.Libs.okhttp)
-    testImplementation(Config.Libs.springBoot3Starter)
-    testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
-    testImplementation(Config.Libs.springBoot3StarterTest)
-    testImplementation(Config.Libs.springBoot3StarterWeb)
-    testImplementation(Config.Libs.springBoot3StarterWebflux)
-    testImplementation(Config.Libs.springBoot3StarterSecurity)
-    testImplementation(Config.Libs.springBoot3StarterAop)
-    testImplementation(Config.Libs.springBoot3StarterQuartz)
-    testImplementation(Config.Libs.springBoot3StarterGraphql)
-    testImplementation(Config.Libs.contextPropagation)
-    testImplementation(Config.Libs.OpenTelemetry.otelSdk)
-    testImplementation(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)
-    testImplementation(Config.Libs.springBoot3StarterOpenTelemetry)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryCore)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
+    testImplementation(projects.sentryQuartz)
     testImplementation(projects.sentryReactor)
+    testImplementation(projects.sentryTestSupport)
+    testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
+    testImplementation(libs.context.propagation)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.okhttp)
+    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.otel)
+    testImplementation(libs.otel.extension.autoconfigure.spi)
+    testImplementation(libs.springboot3.otel)
+    testImplementation(libs.springboot3.starter)
+    testImplementation(libs.springboot3.starter.aop)
+    testImplementation(libs.springboot3.starter.graphql)
+    testImplementation(libs.springboot3.starter.quartz)
+    testImplementation(libs.springboot3.starter.security)
+    testImplementation(libs.springboot3.starter.test)
+    testImplementation(libs.springboot3.starter.web)
+    testImplementation(libs.springboot3.starter.webflux)
 }
 
 configure<SourceSetContainer> {
@@ -96,7 +96,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

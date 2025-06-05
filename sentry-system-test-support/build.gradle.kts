@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
     alias(libs.plugins.errorprone)
@@ -18,25 +19,27 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 
 dependencies {
     api(projects.sentry)
-    compileOnly(Config.Libs.springBoot3StarterTest) {
+    api(projects.sentryTestSupport)
+    api(libs.apollo3.kotlin)
+
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    compileOnly(libs.springboot3.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
-    compileOnly(Config.Libs.springBoot3StarterWeb)
-    api(Config.Libs.apolloKotlin)
-    implementation(Config.Libs.jacksonKotlin)
-    implementation(Config.Libs.jacksonDatabind)
-    api(projects.sentryTestSupport)
-    implementation(Config.Libs.okhttp)
+    compileOnly(libs.springboot3.starter.web)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.kotlin)
+    implementation(libs.okhttp)
+
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
 
     // tests
     implementation(kotlin(Config.kotlinStdLib))
     implementation(libs.kotlin.test.junit)
-    implementation(Config.TestLibs.mockitoKotlin)
+    implementation(libs.mockito.kotlin)
 }
 
 configure<SourceSetContainer> {

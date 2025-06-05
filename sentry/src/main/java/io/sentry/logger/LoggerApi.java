@@ -5,6 +5,9 @@ import io.sentry.IScope;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
 import io.sentry.Scopes;
+import io.sentry.SentryAttribute;
+import io.sentry.SentryAttributeType;
+import io.sentry.SentryAttributes;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLogEvent;
@@ -65,7 +68,7 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull SentryLogLevel level,
       final @Nullable String message,
       final @Nullable Object... args) {
-    log(level, null, message, args);
+    captureLog(level, SentryLogParameters.create(null, null), message, args);
   }
 
   @Override
@@ -74,13 +77,22 @@ public final class LoggerApi implements ILoggerApi {
       final @Nullable SentryDate timestamp,
       final @Nullable String message,
       final @Nullable Object... args) {
-    captureLog(level, timestamp, message, args);
+    captureLog(level, SentryLogParameters.create(timestamp, null), message, args);
+  }
+
+  @Override
+  public void log(
+      final @NotNull SentryLogLevel level,
+      final @NotNull SentryLogParameters params,
+      final @Nullable String message,
+      final @Nullable Object... args) {
+    captureLog(level, params, message, args);
   }
 
   @SuppressWarnings("AnnotateFormatMethod")
   private void captureLog(
       final @NotNull SentryLogLevel level,
-      final @Nullable SentryDate timestamp,
+      final @NotNull SentryLogParameters params,
       final @Nullable String message,
       final @Nullable Object... args) {
     final @NotNull SentryOptions options = scopes.getOptions();
@@ -103,6 +115,7 @@ public final class LoggerApi implements ILoggerApi {
         return;
       }
 
+      final @Nullable SentryDate timestamp = params.getTimestamp();
       final @NotNull SentryDate timestampToUse =
           timestamp == null ? options.getDateProvider().now() : timestamp;
       final @NotNull String messageToUse = maybeFormatMessage(message, args);
@@ -119,7 +132,7 @@ public final class LoggerApi implements ILoggerApi {
           span == null ? propagationContext.getSpanId() : span.getSpanContext().getSpanId();
       final SentryLogEvent logEvent =
           new SentryLogEvent(traceId, timestampToUse, messageToUse, level);
-      logEvent.setAttributes(createAttributes(message, spanId, args));
+      logEvent.setAttributes(createAttributes(params.getAttributes(), message, spanId, args));
       logEvent.setSeverityNumber(level.getSeverityNumber());
 
       scopes.getClient().captureLog(logEvent, combinedScope);
@@ -146,12 +159,25 @@ public final class LoggerApi implements ILoggerApi {
   }
 
   private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
-      final @NotNull String message, final @NotNull SpanId spanId, final @Nullable Object... args) {
+      final @Nullable SentryAttributes incomingAttributes,
+      final @NotNull String message,
+      final @NotNull SpanId spanId,
+      final @Nullable Object... args) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
+
+    if (incomingAttributes != null) {
+      for (SentryAttribute attribute : incomingAttributes.getAttributes().values()) {
+        final @Nullable Object value = attribute.getValue();
+        final @NotNull SentryAttributeType type =
+            attribute.getType() == null ? getType(value) : attribute.getType();
+        attributes.put(attribute.getName(), new SentryLogEventAttributeValue(type, value));
+      }
+    }
+
     if (args != null) {
       int i = 0;
       for (Object arg : args) {
-        final @NotNull String type = getType(arg);
+        final @NotNull SentryAttributeType type = getType(arg);
         attributes.put(
             "sentry.message.parameter." + i, new SentryLogEventAttributeValue(type, arg));
         i++;
@@ -205,16 +231,16 @@ public final class LoggerApi implements ILoggerApi {
     }
   }
 
-  private @NotNull String getType(final @Nullable Object arg) {
+  private @NotNull SentryAttributeType getType(final @Nullable Object arg) {
     if (arg instanceof Boolean) {
-      return "boolean";
+      return SentryAttributeType.BOOLEAN;
     }
     if (arg instanceof Integer) {
-      return "integer";
+      return SentryAttributeType.INTEGER;
     }
     if (arg instanceof Number) {
-      return "double";
+      return SentryAttributeType.DOUBLE;
     }
-    return "string";
+    return SentryAttributeType.STRING;
   }
 }
