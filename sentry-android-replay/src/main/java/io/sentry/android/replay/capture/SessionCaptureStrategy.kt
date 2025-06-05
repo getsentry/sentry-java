@@ -59,6 +59,7 @@ internal class SessionCaptureStrategy(
             if (segment is ReplaySegment.Created) {
                 segment.capture(scopes)
             }
+            currentSegment = -1
             FileUtils.deleteRecursively(replayCacheDir)
         }
         scopes?.configureScope { it.replayId = SentryId.EMPTY_ID }
@@ -159,7 +160,6 @@ internal class SessionCaptureStrategy(
 
         val now = dateProvider.currentTimeMillis
         val currentSegmentTimestamp = segmentTimestamp ?: return
-        val segmentId = currentSegment
         val duration = now - currentSegmentTimestamp.time
         val replayId = currentReplayId
         replayExecutor.submitSafely(options, "$TAG.$taskName") {
@@ -168,7 +168,7 @@ internal class SessionCaptureStrategy(
                     duration,
                     currentSegmentTimestamp,
                     replayId,
-                    segmentId,
+                    currentSegment,
                     currentConfig.recordingHeight,
                     currentConfig.recordingWidth,
                     currentConfig.frameRate,

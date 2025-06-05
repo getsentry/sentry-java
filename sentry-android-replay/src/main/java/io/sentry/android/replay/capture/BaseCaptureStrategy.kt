@@ -107,7 +107,6 @@ internal abstract class BaseCaptureStrategy(
 
     override fun stop() {
         cache?.close()
-        currentSegment = -1
         replayStartTimestamp.set(0)
         segmentTimestamp = null
         currentReplayId = SentryId.EMPTY_ID
