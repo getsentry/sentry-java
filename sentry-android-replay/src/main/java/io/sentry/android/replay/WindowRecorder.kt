@@ -92,13 +92,17 @@ internal class WindowRecorder(
         }
     }
 
-    override fun start(recorderConfig: ScreenshotRecorderConfig) {
-        if (isRecording.getAndSet(true)) {
+    override fun start() {
+        isRecording.getAndSet(true)
+    }
+
+    override fun onConfigurationChanged(config: ScreenshotRecorderConfig) {
+        if (!isRecording.get()) {
             return
         }
 
         recorder = ScreenshotRecorder(
-            recorderConfig,
+            config,
             options,
             mainLooperHandler,
             replayExecutor,
@@ -115,7 +119,7 @@ internal class WindowRecorder(
             options,
             "$TAG.capture",
             100L, // delay the first run by a bit, to allow root view listener to register
-            1000L / recorderConfig.frameRate,
+            1000L / config.frameRate,
             MILLISECONDS
         ) {
             recorder?.capture()
