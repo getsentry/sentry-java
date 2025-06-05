@@ -61,10 +61,10 @@ internal abstract class BaseCaptureStrategy(
 
     protected val isTerminating = AtomicBoolean(false)
     protected var cache: ReplayCache? = null
-    protected var recorderConfig by persistableAtomicNullable<ScreenshotRecorderConfig> { _, _, newValue ->
+    protected var recorderConfig: ScreenshotRecorderConfig? by persistableAtomicNullable(propertyName = "") { _, _, newValue ->
         if (newValue == null) {
             // recorderConfig is only nullable on init, but never after
-            return@persistableAtomic
+            return@persistableAtomicNullable
         }
         cache?.persistSegmentValues(SEGMENT_KEY_HEIGHT, newValue.recordingHeight.toString())
         cache?.persistSegmentValues(SEGMENT_KEY_WIDTH, newValue.recordingWidth.toString())
@@ -210,9 +210,4 @@ internal abstract class BaseCaptureStrategy(
         }
     ): ReadWriteProperty<Any?, T> =
         persistableAtomicNullable<T>(initialValue, propertyName, onChange) as ReadWriteProperty<Any?, T>
-
-    private inline fun <T> persistableAtomic(
-        crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit
-    ): ReadWriteProperty<Any?, T> =
-        persistableAtomicNullable<T>(null, "", onChange) as ReadWriteProperty<Any?, T>
 }
