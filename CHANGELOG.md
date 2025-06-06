@@ -11,6 +11,12 @@
 - Session Replay: Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
 - Session Replay: Fix inconsistent `segment_id` ([#4471](https://github.com/getsentry/sentry-java/pull/4471))
 
+### Dependencies
+
+- Bump Gradle from v8.14.1 to v8.14.2 ([#4473](https://github.com/getsentry/sentry-java/pull/4473))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8142)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.1...v8.14.2)
+
 ## 8.13.2
 
 ### Fixes
