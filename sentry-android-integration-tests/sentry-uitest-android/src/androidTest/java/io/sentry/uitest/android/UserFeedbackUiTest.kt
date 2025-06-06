@@ -48,7 +48,7 @@ class UserFeedbackUiTest : BaseUiTest() {
     @Test
     fun userFeedbackNotShownWhenSdkDisabled() {
         launchActivity<EmptyActivity>().onActivity {
-            SentryUserFeedbackDialog(it).show()
+            SentryUserFeedbackDialog.Builder(it).create().show()
         }
         onView(withId(R.id.sentry_dialog_user_feedback_title))
             .check(doesNotExist())
@@ -642,7 +642,7 @@ class UserFeedbackUiTest : BaseUiTest() {
         lateinit var dialog: SentryUserFeedbackDialog
         val feedbackScenario = launchActivity<EmptyActivity>()
         feedbackScenario.onActivity {
-            dialog = SentryUserFeedbackDialog(it)
+            dialog = SentryUserFeedbackDialog.Builder(it).create()
             dialog.show()
         }
 

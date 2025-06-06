@@ -57,6 +57,7 @@ internal class BufferCaptureStrategy(
         val replayCacheDir = cache?.replayCacheDir
         replayExecutor.submitSafely(options, "$TAG.stop") {
             FileUtils.deleteRecursively(replayCacheDir)
+            currentSegment = -1
         }
         super.stop()
     }
@@ -131,7 +132,7 @@ internal class BufferCaptureStrategy(
         }
         // we hand over replayExecutor to the new strategy to preserve order of execution
         val captureStrategy = SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor)
-        captureStrategy.start(recorderConfig, segmentId = currentSegment, replayId = currentReplayId, replayType = BUFFER)
+        captureStrategy.start(segmentId = currentSegment, replayId = currentReplayId, replayType = BUFFER)
         return captureStrategy
     }
 
@@ -189,6 +190,14 @@ internal class BufferCaptureStrategy(
     }
 
     private fun createCurrentSegment(taskName: String, onSegmentCreated: (ReplaySegment) -> Unit) {
+        val currentConfig = recorderConfig
+        if (currentConfig == null) {
+            options.logger.log(
+                DEBUG,
+                "Recorder config is not set, not creating segment for task: $taskName"
+            )
+            return
+        }
         val errorReplayDuration = options.sessionReplay.errorReplayDuration
         val now = dateProvider.currentTimeMillis
         val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
@@ -197,15 +206,21 @@ internal class BufferCaptureStrategy(
         } else {
             DateUtils.getDateTime(now - errorReplayDuration)
         }
-        val segmentId = currentSegment
         val duration = now - currentSegmentTimestamp.time
         val replayId = currentReplayId
-        val height = this.recorderConfig.recordingHeight
-        val width = this.recorderConfig.recordingWidth
 
         replayExecutor.submitSafely(options, "$TAG.$taskName") {
             val segment =
-                createSegmentInternal(duration, currentSegmentTimestamp, replayId, segmentId, height, width)
+                createSegmentInternal(
+                    duration,
+                    currentSegmentTimestamp,
+                    replayId,
+                    currentSegment,
+                    currentConfig.recordingHeight,
+                    currentConfig.recordingWidth,
+                    currentConfig.frameRate,
+                    currentConfig.bitRate
+                )
             onSegmentCreated(segment)
         }
     }

@@ -2,15 +2,27 @@
 
 package io.sentry.samples.android.compose
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -25,6 +37,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
@@ -40,6 +53,7 @@ import io.sentry.android.replay.sentryReplayUnmask
 import io.sentry.compose.SentryTraced
 import io.sentry.compose.withSentryObservableEffect
 import io.sentry.samples.android.GithubAPI
+import io.sentry.samples.android.SharedState
 import kotlinx.coroutines.launch
 import io.sentry.samples.android.R as IR
 
@@ -55,11 +69,16 @@ class ComposeActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Landing(
     navigateGithub: () -> Unit,
     navigateGithubWithArgs: () -> Unit
 ) {
+    var showDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val activity = context as? Activity ?: return
+
     SentryTraced(tag = "buttons_page") {
         Column(
             verticalArrangement = Arrangement.Center,
@@ -91,6 +110,57 @@ fun Landing(
                 ) {
                     Text("Crash from Compose")
                 }
+            }
+            SentryTraced(tag = "button_dialog") {
+                Button(
+                    onClick = {
+                        showDialog = true
+                    },
+                    modifier = Modifier
+                        .testTag("button_show_dialog")
+                        .padding(top = 32.dp)
+                ) {
+                    Text("Show Dialog", modifier = Modifier.sentryReplayUnmask())
+                }
+            }
+            if (showDialog) {
+                BasicAlertDialog(
+                    onDismissRequest = {
+                        if (SharedState.isOrientationChange) {
+                            val orientation = activity.resources.configuration.orientation
+                            if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                                activity.requestedOrientation =
+                                    ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                            } else if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                                activity.requestedOrientation =
+                                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                            }
+                        } else {
+                            showDialog = false
+                        }
+                    },
+                    content = {
+                        Surface(
+                            modifier = Modifier
+                                .wrapContentWidth()
+                                .wrapContentHeight(),
+                            shape = MaterialTheme.shapes.large,
+                            tonalElevation = AlertDialogDefaults.TonalElevation
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(20.dp),
+                                content = {
+                                    Text(
+                                        "Dialog Title",
+                                        style = MaterialTheme.typography.titleLarge
+                                    )
+                                    Spacer(Modifier.size(20.dp))
+                                    Text("Dialog Content")
+                                }
+                            )
+                        }
+                    }
+                )
             }
         }
     }

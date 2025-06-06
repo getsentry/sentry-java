@@ -8,11 +8,15 @@ public interface Recorder : Closeable {
      * at which the screenshots should be taken, and the screenshots size/resolution, which can
      * change e.g. in the case of orientation change or window size change
      */
-    public fun start(recorderConfig: ScreenshotRecorderConfig)
+    public fun start()
+
+    public fun onConfigurationChanged(config: ScreenshotRecorderConfig)
 
     public fun resume()
 
     public fun pause()
+
+    public fun reset()
 
     public fun stop()
 }

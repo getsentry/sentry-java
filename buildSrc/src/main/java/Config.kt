@@ -5,15 +5,8 @@ object Config {
     val AGP = System.getenv("VERSION_AGP") ?: "8.6.0"
     val kotlinStdLib = "stdlib-jdk8"
 
-    val springBootVersion = "2.7.18"
-    val springBoot3Version = "3.5.0"
-    val kotlinCompatibleLanguageVersion = "1.6"
-
-    val androidComposeCompilerVersion = "1.5.14"
-
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
-        val commonsCompressOverride = "org.apache.commons:commons-compress:1.25.0"
     }
 
     object Android {
@@ -25,82 +18,15 @@ object Config {
     }
 
     object Libs {
-        val okHttpVersion = "4.9.2"
-        val appCompat = "androidx.appcompat:appcompat:1.3.0"
-        val timber = "com.jakewharton.timber:timber:4.7.1"
-        val okhttp = "com.squareup.okhttp3:okhttp:$okHttpVersion"
-        val leakCanary = "com.squareup.leakcanary:leakcanary-android:2.14"
-        val constraintLayout = "androidx.constraintlayout:constraintlayout:2.1.3"
-
-        private val lifecycleVersion = "2.2.0"
-        val lifecycleProcess = "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
-        val lifecycleCommonJava8 = "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
-        val androidxSqlite = "androidx.sqlite:sqlite:2.3.1"
-        val androidxRecylerView = "androidx.recyclerview:recyclerview:1.2.1"
-        val androidxAnnotation = "androidx.annotation:annotation:1.9.1"
-
-        val slf4jApi = "org.slf4j:slf4j-api:1.7.30"
-        val slf4jApi2 = "org.slf4j:slf4j-api:2.0.5"
-        val slf4jJdk14 = "org.slf4j:slf4j-jdk14:1.7.30"
-        val logbackVersion = "1.2.9"
-        val logbackClassic = "ch.qos.logback:logback-classic:$logbackVersion"
-        val logbackCore = "ch.qos.logback:logback-core:$logbackVersion"
-
-        val log4j2Version = "2.20.0"
-        val log4j2Api = "org.apache.logging.log4j:log4j-api:$log4j2Version"
-        val log4j2Core = "org.apache.logging.log4j:log4j-core:$log4j2Version"
-
-        val jacksonDatabind = "com.fasterxml.jackson.core:jackson-databind:2.18.3"
-        val jacksonKotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3"
-
         val springWeb = "org.springframework:spring-webmvc"
         val springWebflux = "org.springframework:spring-webflux"
         val springSecurityWeb = "org.springframework.security:spring-security-web"
         val springSecurityConfig = "org.springframework.security:spring-security-config"
         val springAop = "org.springframework:spring-aop"
         val aspectj = "org.aspectj:aspectjweaver"
-        val servletApi = "javax.servlet:javax.servlet-api:3.1.0"
-        val servletApiJakarta = "jakarta.servlet:jakarta.servlet-api:5.0.0"
-
-        val apacheHttpClient = "org.apache.httpcomponents.client5:httpclient5:5.0.4"
-
-        private val retrofit2Version = "2.9.0"
-        private val retrofit2Group = "com.squareup.retrofit2"
-        val retrofit2 = "$retrofit2Group:retrofit:$retrofit2Version"
-        val retrofit2Gson = "$retrofit2Group:converter-gson:$retrofit2Version"
-
-        val coroutinesCore = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1"
-
-        val coroutinesAndroid = "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1"
-
-        val fragment = "androidx.fragment:fragment-ktx:1.3.5"
-
-        val reactorCore = "io.projectreactor:reactor-core:3.5.3"
-        val contextPropagation = "io.micrometer:context-propagation:1.1.0"
-
-        private val feignVersion = "11.6"
-        val feignCore = "io.github.openfeign:feign-core:$feignVersion"
-        val feignGson = "io.github.openfeign:feign-gson:$feignVersion"
-
-        private val apolloVersion = "2.5.9"
-        val apolloAndroid = "com.apollographql.apollo:apollo-runtime:$apolloVersion"
-        val apolloCoroutines = "com.apollographql.apollo:apollo-coroutines-support:$apolloVersion"
-
-        val p6spy = "p6spy:p6spy:3.9.1"
-
-        val graphQlJava = "com.graphql-java:graphql-java:17.3"
-        val graphQlJava22 = "com.graphql-java:graphql-java:22.1"
-        val graphQlJavaNew = "com.graphql-java:graphql-java:24.0"
-
-        val quartz = "org.quartz-scheduler:quartz:2.3.0"
 
         val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
         val kotlinStdLib = "org.jetbrains.kotlin:kotlin-stdlib"
-
-        val apolloKotlin = "com.apollographql.apollo3:apollo-runtime:3.8.2"
-        val apolloKotlin4 = "com.apollographql.apollo:apollo-runtime:4.1.1"
-
-        val sentryNativeNdk = "io.sentry:sentry-native-ndk:0.8.4"
     }
 
     object AnnotationProcessors {
@@ -155,16 +81,6 @@ object Config {
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val versionNameProp = "versionName"
-    }
-
-    object CompileOnly {
-        private val nopenVersion = "1.0.1"
-
-        val jetbrainsAnnotations = "org.jetbrains:annotations:23.0.0"
-        val nopen = "com.jakewharton.nopen:nopen-annotations:$nopenVersion"
-        val nopenChecker = "com.jakewharton.nopen:nopen-checker:$nopenVersion"
-        val errorprone = "com.google.errorprone:error_prone_core:2.11.0"
-        val errorProneNullAway = "com.uber.nullaway:nullaway:0.9.5"
     }
 
     object BuildScript {

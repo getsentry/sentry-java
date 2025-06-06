@@ -4,6 +4,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
     alias(libs.plugins.errorprone)
@@ -14,7 +15,7 @@ plugins {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+    kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
 }
 
 dependencies {
@@ -22,6 +23,10 @@ dependencies {
     api(projects.sentrySpring)
     compileOnly(projects.sentryLogback)
     compileOnly(projects.sentryApacheHttpClient5)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    compileOnly(libs.reactor.core)
+    compileOnly(libs.servlet.api)
     compileOnly(libs.springboot.starter)
     compileOnly(libs.springboot.starter.aop)
     compileOnly(libs.springboot.starter.graphql)
@@ -30,8 +35,6 @@ dependencies {
     compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
     compileOnly(Config.Libs.springWeb)
     compileOnly(Config.Libs.springWebflux)
-    compileOnly(Config.Libs.servletApi)
-    compileOnly(Config.Libs.reactorCore)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryCore)
     compileOnly(projects.sentryGraphql)
     compileOnly(projects.sentryQuartz)
@@ -40,11 +43,9 @@ dependencies {
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryLogback)
@@ -54,8 +55,8 @@ dependencies {
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.okhttp)
     testImplementation(libs.okhttp.mockwebserver)
-    testImplementation(Config.Libs.okhttp)
     testImplementation(libs.otel)
     testImplementation(libs.otel.extension.autoconfigure.spi)
     testImplementation(libs.springboot.starter)
