@@ -11,6 +11,7 @@
     - This should reduce ANRs seen with this class in the stack trace for Android 14 and above
 - Pre-load modules on a background thread upon SDK init ([#4348](https://github.com/getsentry/sentry-java/pull/4348))
 - Session Replay: Fix inconsistent `segment_id` ([#4471](https://github.com/getsentry/sentry-java/pull/4471))
+- Session Replay: Do not capture current replay for cached events from the past ([#4474](https://github.com/getsentry/sentry-java/pull/4474))
 
 ## 7.22.5
 
