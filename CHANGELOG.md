@@ -11,12 +11,12 @@
       ```java
       import io.sentry.android.core.SentryUserFeedbackDialog;
       
-      new SentryUserFeedbackDialog(context).show();
+      new SentryUserFeedbackDialog.Builder(context).create().show();
       ```
       ```kotlin
       import io.sentry.android.core.SentryUserFeedbackDialog
     
-      SentryUserFeedbackDialog(context).show()
+      SentryUserFeedbackDialog.Builder(context).create().show()
       ```
 
 ### Fixes
