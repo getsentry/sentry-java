@@ -354,11 +354,11 @@ public final class SentrySpanExporter implements SpanExporter {
     final @NotNull Attributes attributes = span.getAttributes();
     final @Nullable Long threadId = attributes.get(ThreadIncubatingAttributes.THREAD_ID);
     if (threadId != null) {
-     sentryTransaction.setData(ThreadIncubatingAttributes.THREAD_ID.getKey(), threadId);
+      sentryTransaction.setData(ThreadIncubatingAttributes.THREAD_ID.getKey(), threadId);
     }
     final @Nullable String threadName = attributes.get(ThreadIncubatingAttributes.THREAD_NAME);
     if (threadName != null) {
-     sentryTransaction.setData(ThreadIncubatingAttributes.THREAD_NAME.getKey(), threadName);
+      sentryTransaction.setData(ThreadIncubatingAttributes.THREAD_NAME.getKey(), threadName);
     }
   }
 
