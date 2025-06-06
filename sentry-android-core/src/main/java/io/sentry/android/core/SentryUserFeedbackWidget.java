@@ -112,7 +112,7 @@ public class SentryUserFeedbackWidget extends Button {
     delegate = listener;
     super.setOnClickListener(
         v -> {
-          new SentryUserFeedbackDialog(getContext()).show();
+          new SentryUserFeedbackDialog.Builder(getContext()).create().show();
           if (delegate != null) {
             delegate.onClick(v);
           }
