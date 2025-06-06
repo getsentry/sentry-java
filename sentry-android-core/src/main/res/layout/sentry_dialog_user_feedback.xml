@@ -4,7 +4,7 @@
     android:id="@+id/sentry_dialog_user_feedback_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:ignore="HardcodedText"
+    tools:ignore="HardcodedText,RtlHardcoded"
     android:theme="?android:attr/dialogTheme"
     android:padding="24dp">
 
@@ -18,7 +18,7 @@
         android:textStyle="bold"
         android:layout_marginBottom="16dp"
         android:layout_alignParentTop="true"
-        android:layout_alignEnd="@+id/sentry_dialog_user_feedback_logo" />
+        android:layout_alignRight="@+id/sentry_dialog_user_feedback_logo" />
 
     <ImageView
         android:id="@+id/sentry_dialog_user_feedback_logo"
@@ -26,10 +26,10 @@
         android:layout_height="32dp"
         android:layout_alignTop="@+id/sentry_dialog_user_feedback_title"
         android:layout_alignBottom="@+id/sentry_dialog_user_feedback_title"
-        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
         android:contentDescription="Logo of the brand"
         android:tint="?android:attr/colorForeground"
-        android:src="@drawable/sentry_logo_dark"/>
+        android:src="@drawable/sentry_logo_dark" />
 
     <TextView
         android:id="@+id/sentry_dialog_user_feedback_txt_name"
@@ -84,7 +84,7 @@
         android:layout_height="wrap_content"
         android:lines="6"
         android:inputType="textMultiLine"
-        android:gravity="top|start"
+        android:gravity="top|left"
         android:hint="What's the bug? What did you expect?"
         android:background="@drawable/edit_text_border"
         android:paddingHorizontal="8dp"

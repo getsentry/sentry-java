@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
     binding.sendUserFeedback.setOnClickListener(
         view -> {
-          new SentryUserFeedbackDialog(this).show();
+          new SentryUserFeedbackDialog.Builder(this).create().show();
         });
 
     binding.addAttachment.setOnClickListener(

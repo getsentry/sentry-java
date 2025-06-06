@@ -70,6 +70,33 @@ public final class SentryFeedbackOptions {
   /** Callback called when there is an error submitting feedback via the prepared form. */
   private @Nullable SentryFeedbackCallback onSubmitError;
 
+  public SentryFeedbackOptions() {}
+
+  /** Creates a copy of the passed {@link SentryFeedbackOptions}. */
+  public SentryFeedbackOptions(final @NotNull SentryFeedbackOptions other) {
+    this.isNameRequired = other.isNameRequired;
+    this.showName = other.showName;
+    this.isEmailRequired = other.isEmailRequired;
+    this.showEmail = other.showEmail;
+    this.useSentryUser = other.useSentryUser;
+    this.showBranding = other.showBranding;
+    this.formTitle = other.formTitle;
+    this.submitButtonLabel = other.submitButtonLabel;
+    this.cancelButtonLabel = other.cancelButtonLabel;
+    this.nameLabel = other.nameLabel;
+    this.namePlaceholder = other.namePlaceholder;
+    this.emailLabel = other.emailLabel;
+    this.emailPlaceholder = other.emailPlaceholder;
+    this.isRequiredLabel = other.isRequiredLabel;
+    this.messageLabel = other.messageLabel;
+    this.messagePlaceholder = other.messagePlaceholder;
+    this.successMessageText = other.successMessageText;
+    this.onFormOpen = other.onFormOpen;
+    this.onFormClose = other.onFormClose;
+    this.onSubmitSuccess = other.onSubmitSuccess;
+    this.onSubmitError = other.onSubmitError;
+  }
+
   /**
    * Requires the name field on the feedback form to be filled in. Defaults to false.
    *

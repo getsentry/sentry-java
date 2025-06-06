@@ -1,10 +1,16 @@
 package io.sentry.android.core
 
+import android.content.Context
+import android.widget.TextView
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
+import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.ReplayController
 import io.sentry.Sentry
 import io.sentry.SentryLevel
+import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -14,13 +20,18 @@ import org.mockito.kotlin.whenever
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
+@RunWith(AndroidJUnit4::class)
 class SentryUserFeedbackDialogTest {
 
     class Fixture {
+        val application: Context = ApplicationProvider.getApplicationContext()
         private val mockDsn = "http://key@localhost/proj"
 
         val mockedSentry = mockStatic(Sentry::class.java)
+        val mockScope = mock<IScope>()
         val mockScopes = mock<IScopes>()
         val mockLogger = mock<ILogger>()
         val mockReplayController = mock<ReplayController>()
@@ -34,12 +45,14 @@ class SentryUserFeedbackDialogTest {
         }
 
         init {
+            whenever(mockScope.user).thenReturn(mock())
+            whenever(mockScopes.scope).thenReturn(mockScope)
             whenever(mockScopes.options).thenReturn(options)
             whenever(mockScopes.isEnabled).thenReturn(true)
         }
 
-        fun getSut(): SentryUserFeedbackDialog {
-            return SentryUserFeedbackDialog(mock())
+        fun getSut(configuration: SentryUserFeedbackDialog.OptionsConfiguration? = null): SentryUserFeedbackDialog {
+            return SentryUserFeedbackDialog(application, 0, configuration)
         }
     }
 
@@ -78,7 +91,20 @@ class SentryUserFeedbackDialogTest {
         val sut = fixture.getSut()
         verifyNoInteractions(fixture.mockReplayController)
         sut.show()
-        sut.onStart()
         verify(fixture.mockReplayController).captureReplay(eq(false))
+    }
+
+    @Test
+    fun `when configuration is passed, it is applied to the current dialog only`() {
+        fixture.options.isEnabled = true
+        val sut = fixture.getSut { context, options ->
+            options.formTitle = "custom title"
+        }
+        assertNotEquals("custom title", fixture.options.feedbackOptions.formTitle)
+        sut.show()
+        // After showing the dialog, the title should be set
+        assertEquals("custom title", sut.findViewById<TextView>(R.id.sentry_dialog_user_feedback_title).text)
+        // And the original options should not be modified
+        assertNotEquals("custom title", fixture.options.feedbackOptions.formTitle)
     }
 }

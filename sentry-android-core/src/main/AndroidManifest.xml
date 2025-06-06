@@ -2,8 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <uses-permission android:name="android.permission.INTERNET"/>
 
-  <application
-    android:supportsRtl="true">
+  <application>
     <!-- 'android:authorities' must be unique in the device, across all apps -->
     <provider
       android:name=".SentryInitProvider"

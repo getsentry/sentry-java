@@ -26,20 +26,14 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
   private @Nullable SentryId currentReplayId;
   private @Nullable OnDismissListener delegate;
 
-  public SentryUserFeedbackDialog(final @NotNull Context context) {
-    super(context);
-  }
+  private final @Nullable OptionsConfiguration configuration;
 
-  public SentryUserFeedbackDialog(
+  SentryUserFeedbackDialog(
       final @NotNull Context context,
-      final boolean cancelable,
-      @Nullable final OnCancelListener cancelListener) {
-    super(context, cancelable, cancelListener);
-    isCancelable = cancelable;
-  }
-
-  public SentryUserFeedbackDialog(final @NotNull Context context, final int themeResId) {
+      final int themeResId,
+      final @Nullable OptionsConfiguration configuration) {
     super(context, themeResId);
+    this.configuration = configuration;
   }
 
   @Override
@@ -55,7 +49,10 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     setCancelable(isCancelable);
 
     final @NotNull SentryFeedbackOptions feedbackOptions =
-        Sentry.getCurrentScopes().getOptions().getFeedbackOptions();
+        new SentryFeedbackOptions(Sentry.getCurrentScopes().getOptions().getFeedbackOptions());
+    if (configuration != null) {
+      configuration.configure(getContext(), feedbackOptions);
+    }
     final @NotNull TextView lblTitle = findViewById(R.id.sentry_dialog_user_feedback_title);
     final @NotNull ImageView imgLogo = findViewById(R.id.sentry_dialog_user_feedback_logo);
     final @NotNull TextView lblName = findViewById(R.id.sentry_dialog_user_feedback_txt_name);
@@ -221,5 +218,121 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     }
     // Otherwise, show the dialog
     super.show();
+  }
+
+  public static class Builder {
+
+    @Nullable OptionsConfiguration configuration;
+    final @NotNull Context context;
+    final int themeResId;
+
+    /**
+     * Creates a builder for a {@link SentryUserFeedbackDialog} that uses the default alert dialog
+     * theme.
+     *
+     * <p>The default alert dialog theme is defined by {@link android.R.attr#alertDialogTheme}
+     * within the parent {@code context}'s theme.
+     *
+     * @param context the parent context
+     */
+    public Builder(final @NotNull Context context) {
+      this(context, 0);
+    }
+
+    /**
+     * Creates a builder for a {@link SentryUserFeedbackDialog} that uses an explicit theme
+     * resource.
+     *
+     * <p>The specified theme resource ({@code themeResId}) is applied on top of the parent {@code
+     * context}'s theme. It may be specified as a style resource containing a fully-populated theme,
+     * such as {@link android.R.style#Theme_Material_Dialog}, to replace all attributes in the
+     * parent {@code context}'s theme including primary and accent colors.
+     *
+     * <p>To preserve attributes such as primary and accent colors, the {@code themeResId} may
+     * instead be specified as an overlay theme such as {@link
+     * android.R.style#ThemeOverlay_Material_Dialog}. This will override only the window attributes
+     * necessary to style the alert window as a dialog.
+     *
+     * <p>Alternatively, the {@code themeResId} may be specified as {@code 0} to use the parent
+     * {@code context}'s resolved value for {@link android.R.attr#alertDialogTheme}.
+     *
+     * @param context the parent context
+     * @param themeResId the resource ID of the theme against which to inflate this dialog, or
+     *     {@code 0} to use the parent {@code context}'s default alert dialog theme
+     */
+    public Builder(Context context, int themeResId) {
+      this(context, themeResId, null);
+    }
+    /**
+     * Creates a builder for a {@link SentryUserFeedbackDialog} that uses the default alert dialog
+     * theme. The {@code configuration} can be used to configure the feedback options for this
+     * specific dialog.
+     *
+     * <p>The default alert dialog theme is defined by {@link android.R.attr#alertDialogTheme}
+     * within the parent {@code context}'s theme.
+     *
+     * @param context the parent context
+     * @param configuration the configuration for the feedback options, can be {@code null} to use
+     *     the global feedback options.
+     */
+    public Builder(
+        final @NotNull Context context, final @Nullable OptionsConfiguration configuration) {
+      this(context, 0, configuration);
+    }
+
+    /**
+     * Creates a builder for a {@link SentryUserFeedbackDialog} that uses an explicit theme
+     * resource. The {@code configuration} can be used to configure the feedback options for this
+     * specific dialog.
+     *
+     * <p>The specified theme resource ({@code themeResId}) is applied on top of the parent {@code
+     * context}'s theme. It may be specified as a style resource containing a fully-populated theme,
+     * such as {@link android.R.style#Theme_Material_Dialog}, to replace all attributes in the
+     * parent {@code context}'s theme including primary and accent colors.
+     *
+     * <p>To preserve attributes such as primary and accent colors, the {@code themeResId} may
+     * instead be specified as an overlay theme such as {@link
+     * android.R.style#ThemeOverlay_Material_Dialog}. This will override only the window attributes
+     * necessary to style the alert window as a dialog.
+     *
+     * <p>Alternatively, the {@code themeResId} may be specified as {@code 0} to use the parent
+     * {@code context}'s resolved value for {@link android.R.attr#alertDialogTheme}.
+     *
+     * @param context the parent context
+     * @param themeResId the resource ID of the theme against which to inflate this dialog, or
+     *     {@code 0} to use the parent {@code context}'s default alert dialog theme
+     * @param configuration the configuration for the feedback options, can be {@code null} to use
+     *     the global feedback options.
+     */
+    public Builder(
+        final @NotNull Context context,
+        final int themeResId,
+        final @Nullable OptionsConfiguration configuration) {
+      this.context = context;
+      this.themeResId = themeResId;
+      this.configuration = configuration;
+    }
+
+    /**
+     * Builds a new {@link SentryUserFeedbackDialog} with the specified context, theme, and
+     * configuration.
+     *
+     * @return a new instance of {@link SentryUserFeedbackDialog}
+     */
+    public SentryUserFeedbackDialog create() {
+      return new SentryUserFeedbackDialog(context, themeResId, configuration);
+    }
+  }
+
+  /** Configuration callback for feedback options. */
+  public interface OptionsConfiguration {
+
+    /**
+     * configure the feedback options
+     *
+     * @param context the context of the feedback dialog
+     * @param options the feedback options
+     */
+    void configure(final @NotNull Context context, final @NotNull SentryFeedbackOptions options);
   }
 }
