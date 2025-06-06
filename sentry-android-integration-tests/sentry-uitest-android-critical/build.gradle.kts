@@ -40,7 +40,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
     androidComponents.beforeVariants {
         it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
@@ -49,11 +49,11 @@ android {
 
 dependencies {
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
-    implementation(libs.androidx.core)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
-    implementation(Config.Libs.constraintLayout)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.core)
     implementation(projects.sentryAndroidCore)
 }
 

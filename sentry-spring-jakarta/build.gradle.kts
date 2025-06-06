@@ -5,6 +5,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
     alias(libs.plugins.errorprone)
@@ -21,7 +22,7 @@ configure<JavaPluginExtension> {
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
-        languageVersion = Config.kotlinCompatibleLanguageVersion
+        languageVersion = libs.versions.kotlin.compatible.version.get()
         freeCompilerArgs = listOf("-Xjsr305=strict")
     }
 }
@@ -33,20 +34,16 @@ dependencies {
     compileOnly(Config.Libs.springAop)
     compileOnly(Config.Libs.springSecurityWeb)
     compileOnly(Config.Libs.aspectj)
-    compileOnly(Config.Libs.servletApiJakarta)
-    compileOnly(Config.Libs.slf4jApi)
-    compileOnly(Config.Libs.contextPropagation)
+    compileOnly(libs.context.propagation)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
     compileOnly(libs.otel)
+    compileOnly(libs.servlet.jakarta.api)
+    compileOnly(libs.slf4j.api)
     compileOnly(libs.springboot3.starter.graphql)
     compileOnly(libs.springboot3.starter.quartz)
 
     compileOnly(Config.Libs.springWebflux)
-
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
     compileOnly(projects.sentryGraphql)
     compileOnly(projects.sentryGraphql22)
     compileOnly(projects.sentryQuartz)
@@ -54,11 +51,17 @@ dependencies {
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
     api(projects.sentryReactor)
 
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
+
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.context.propagation)
+    testImplementation(libs.graphql.java24)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
@@ -68,8 +71,6 @@ dependencies {
     testImplementation(libs.springboot3.starter.test)
     testImplementation(libs.springboot3.starter.web)
     testImplementation(libs.springboot3.starter.webflux)
-    testImplementation(Config.Libs.contextPropagation)
-    testImplementation(Config.Libs.graphQlJavaNew)
     testImplementation(projects.sentryReactor)
 }
 

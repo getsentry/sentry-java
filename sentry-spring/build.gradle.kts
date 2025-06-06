@@ -5,6 +5,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
     alias(libs.plugins.errorprone)
@@ -15,7 +16,7 @@ plugins {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+    kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
 }
 
 dependencies {
@@ -26,28 +27,29 @@ dependencies {
     compileOnly(Config.Libs.springAop)
     compileOnly(Config.Libs.springSecurityWeb)
     compileOnly(Config.Libs.aspectj)
-    compileOnly(Config.Libs.servletApi)
-    compileOnly(Config.Libs.slf4jApi)
     compileOnly(Config.Libs.springWebflux)
     compileOnly(projects.sentryGraphql)
     compileOnly(projects.sentryQuartz)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
     compileOnly(libs.otel)
+    compileOnly(libs.servlet.api)
+    compileOnly(libs.slf4j.api)
     compileOnly(libs.springboot.starter.graphql)
     compileOnly(libs.springboot.starter.quartz)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.graphql.java17)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
@@ -57,7 +59,6 @@ dependencies {
     testImplementation(libs.springboot.starter.test)
     testImplementation(libs.springboot.starter.web)
     testImplementation(libs.springboot.starter.webflux)
-    testImplementation(Config.Libs.graphQlJava)
 }
 
 configure<SourceSetContainer> {

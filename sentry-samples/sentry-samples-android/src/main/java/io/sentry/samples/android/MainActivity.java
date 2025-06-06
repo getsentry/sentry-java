@@ -1,8 +1,11 @@
 package io.sentry.samples.android;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
 import io.sentry.ISpan;
@@ -37,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    SharedState.INSTANCE.setOrientationChange(
+        getIntent().getBooleanExtra("isOrientationChange", false));
     final ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
 
     final File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
@@ -266,6 +271,28 @@ public class MainActivity extends AppCompatActivity {
     binding.throwInCoroutine.setOnClickListener(
         view -> {
           CoroutinesUtil.INSTANCE.throwInCoroutine();
+        });
+
+    binding.showDialog.setOnClickListener(
+        view -> {
+          new AlertDialog.Builder(MainActivity.this)
+              .setTitle("Example Title")
+              .setMessage("Example Message")
+              .setPositiveButton(
+                  "Close",
+                  (dialog, which) -> {
+                    if (SharedState.INSTANCE.isOrientationChange()) {
+                      int currentOrientation = getResources().getConfiguration().orientation;
+                      if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                      } else if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                      }
+                    } else {
+                      dialog.dismiss();
+                    }
+                  })
+              .show();
         });
 
     binding.enableReplayDebugMode.setOnClickListener(

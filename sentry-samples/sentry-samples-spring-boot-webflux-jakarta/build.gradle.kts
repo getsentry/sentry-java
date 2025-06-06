@@ -18,27 +18,27 @@ repositories {
 }
 
 dependencies {
-    implementation(libs.springboot3.starter.actuator)
-    implementation(libs.springboot3.starter.graphql)
-    implementation(libs.springboot3.starter.webflux)
-    implementation(Config.Libs.contextPropagation)
     implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarterJakarta)
     implementation(projects.sentryLogback)
     implementation(projects.sentryJdbc)
     implementation(projects.sentryGraphql22)
+    implementation(libs.context.propagation)
+    implementation(libs.springboot3.starter.actuator)
+    implementation(libs.springboot3.starter.graphql)
+    implementation(libs.springboot3.starter.webflux)
 
+    testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(projects.sentrySystemTestSupport)
+    testImplementation(libs.apollo3.kotlin)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.slf4j2.api)
     testImplementation(libs.springboot3.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
-    testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(libs.kotlin.test.junit)
     testImplementation("ch.qos.logback:logback-classic:1.5.16")
     testImplementation("ch.qos.logback:logback-core:1.5.16")
-    testImplementation(Config.Libs.slf4jApi2)
-    testImplementation(Config.Libs.apolloKotlin)
 }
 
 configure<SourceSetContainer> {
