@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
+import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
@@ -211,9 +212,11 @@ public final class SentryClient implements ISentryClient {
     }
 
     final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
-    final boolean isCached = HintUtils.hasType(hint, Cached.class);
+    final boolean isCached =
+        HintUtils.hasType(hint, Cached.class) && !HintUtils.hasType(hint, ApplyScopeData.class);
     // if event is backfillable or cached we don't wanna trigger capture replay, because it's
-    // an event from the past
+    // an event from the past. If it's cached, but with ApplyScopeData, it comes from the outbox
+    // folder and we still want to capture replay (e.g. a native captureException error)
     if (event != null && !isBackfillable && !isCached && (event.isErrored() || event.isCrashed())) {
       options.getReplayController().captureReplay(event.isCrashed());
     }
