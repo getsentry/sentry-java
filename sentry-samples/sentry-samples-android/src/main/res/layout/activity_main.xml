@@ -22,6 +22,10 @@
       android:layout_height="wrap_content"
       android:text="@string/send_message" />
 
+    <io.sentry.android.core.SentryUserFeedbackWidget
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"/>
+
     <Button
       android:id="@+id/send_user_feedback"
       android:layout_width="wrap_content"
