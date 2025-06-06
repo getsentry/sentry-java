@@ -1,6 +1,8 @@
 package io.sentry.android.core.internal.gestures;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.Window;
 import androidx.core.view.GestureDetectorCompat;
@@ -27,7 +29,7 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
       final @Nullable SentryOptions options) {
     this(
         delegate,
-        new GestureDetectorCompat(context, gestureListener),
+        new GestureDetectorCompat(context, gestureListener, new Handler(Looper.getMainLooper())),
         gestureListener,
         options,
         new MotionEventObtainer() {});

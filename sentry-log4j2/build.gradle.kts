@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
     alias(libs.plugins.errorprone)
@@ -16,23 +17,23 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-    compileOnly(Config.Libs.log4j2Api)
-    compileOnly(Config.Libs.log4j2Core)
-    annotationProcessor(Config.Libs.log4j2Core)
+    compileOnly(libs.log4j.api)
+    compileOnly(libs.log4j.core)
+    annotationProcessor(libs.log4j.core)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.log4j.api)
+    testImplementation(libs.log4j.core)
     testImplementation(libs.mockito.kotlin)
-    testImplementation(Config.Libs.log4j2Api)
-    testImplementation(Config.Libs.log4j2Core)
 }
 
 configure<SourceSetContainer> {
@@ -42,7 +43,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

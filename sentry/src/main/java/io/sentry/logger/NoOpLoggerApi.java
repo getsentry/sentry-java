@@ -61,4 +61,13 @@ public final class NoOpLoggerApi implements ILoggerApi {
       @Nullable Object... args) {
     // do nothing
   }
+
+  @Override
+  public void log(
+      @NotNull SentryLogLevel level,
+      @NotNull SentryLogParameters params,
+      @Nullable String message,
+      @Nullable Object... args) {
+    // do nothing
+  }
 }

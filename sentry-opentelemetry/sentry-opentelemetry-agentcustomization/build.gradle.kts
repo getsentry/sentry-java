@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
     alias(libs.plugins.errorprone)
@@ -21,23 +22,23 @@ dependencies {
     }
     compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
-    compileOnly(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)
-    compileOnly(Config.Libs.OpenTelemetry.otelJavaAgentExtensionApi)
-    compileOnly(Config.Libs.OpenTelemetry.otelJavaAgentTooling)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    compileOnly(libs.otel)
+    compileOnly(libs.otel.extension.autoconfigure.spi)
+    compileOnly(libs.otel.javaagent.extension.api)
+    compileOnly(libs.otel.javaagent.tooling)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
-    errorprone(Config.CompileOnly.errorProneNullAway)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(libs.awaitility.kotlin)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
-    testImplementation(Config.TestLibs.awaitility)
 }
 
 configure<SourceSetContainer> {
@@ -47,7 +48,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

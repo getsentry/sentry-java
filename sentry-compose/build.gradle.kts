@@ -49,32 +49,32 @@ kotlin {
                 api(projects.sentry)
                 api(projects.sentryAndroidNavigation)
 
-                compileOnly(Config.Libs.composeNavigation)
-                implementation(Config.Libs.lifecycleCommonJava8)
+                compileOnly(libs.androidx.navigation.compose)
+                implementation(libs.androidx.lifecycle.common.java8)
             }
         }
         val androidUnitTest by getting {
             dependencies {
+                implementation(libs.androidx.compose.ui.test.junit4)
+                implementation(libs.androidx.navigation.compose)
+                implementation(libs.androidx.test.ext.junit)
+                implementation(libs.androidx.test.rules)
+                implementation(libs.androidx.test.runner)
                 implementation(libs.kotlin.test.junit)
-                implementation(libs.mockito.kotlin)
                 implementation(libs.mockito.inline)
-                implementation(Config.Libs.composeNavigation)
+                implementation(libs.mockito.kotlin)
                 implementation(libs.roboelectric)
-                implementation(Config.TestLibs.androidxRunner)
-                implementation(Config.TestLibs.androidxJunit)
-                implementation(Config.TestLibs.androidxTestRules)
-                implementation(Config.TestLibs.composeUiTestJunit4)
             }
         }
     }
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.compose"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")

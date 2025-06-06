@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
     alias(libs.plugins.errorprone)
@@ -15,20 +16,20 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
-    errorprone(Config.CompileOnly.errorProneNullAway)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.javafaker)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
-    testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.TestLibs.javaFaker)
-    testImplementation(Config.TestLibs.msgpack)
-    testImplementation(Config.TestLibs.okio)
+    testImplementation(libs.msgpack)
+    testImplementation(libs.okio)
     testImplementation(projects.sentryTestSupport)
 }
 
@@ -39,7 +40,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

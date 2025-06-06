@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    alias(libs.plugins.spring.boot.two)
+    alias(libs.plugins.springboot2)
     alias(libs.plugins.spring.dependency.management)
     kotlin("jvm")
     alias(libs.plugins.kotlin.spring)
@@ -34,18 +34,18 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    implementation(Config.Libs.springBootStarterSecurity)
-    implementation(Config.Libs.springBootStarterWeb)
-    implementation(Config.Libs.springBootStarterWebsocket)
-    implementation(Config.Libs.springBootStarterWebflux)
-    implementation(Config.Libs.springBootStarterGraphql)
-    implementation(Config.Libs.springBootStarterQuartz)
-    implementation(Config.Libs.springBootStarterAop)
-    implementation(Config.Libs.springBootStarterActuator)
+    implementation(libs.springboot.starter)
+    implementation(libs.springboot.starter.actuator)
+    implementation(libs.springboot.starter.aop)
+    implementation(libs.springboot.starter.graphql)
+    implementation(libs.springboot.starter.jdbc)
+    implementation(libs.springboot.starter.quartz)
+    implementation(libs.springboot.starter.security)
+    implementation(libs.springboot.starter.web)
+    implementation(libs.springboot.starter.webflux)
+    implementation(libs.springboot.starter.websocket)
     implementation(Config.Libs.aspectj)
-    implementation(Config.Libs.springBootStarter)
     implementation(Config.Libs.kotlinReflect)
-    implementation(Config.Libs.springBootStarterJdbc)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarter)
     implementation(projects.sentryLogback)
@@ -55,24 +55,24 @@ dependencies {
 
     // database query tracing
     implementation(projects.sentryJdbc)
-    runtimeOnly(Config.TestLibs.hsqldb)
+    runtimeOnly(libs.hsqldb)
 
+    testImplementation(kotlin(Config.kotlinStdLib))
     testImplementation(projects.sentrySystemTestSupport)
-    testImplementation(Config.Libs.springBootStarterTest) {
+    testImplementation(libs.apollo3.kotlin)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.slf4j2.api)
+    testImplementation(libs.springboot.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
-    testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(libs.kotlin.test.junit)
     testImplementation("ch.qos.logback:logback-classic:1.5.16")
     testImplementation("ch.qos.logback:logback-core:1.5.16")
-    testImplementation(Config.Libs.slf4jApi2)
-    testImplementation(Config.Libs.apolloKotlin)
     testImplementation("org.apache.httpcomponents:httpclient")
 }
 
 dependencyManagement {
     imports {
-        mavenBom(Config.Libs.OpenTelemetry.otelInstrumentationBom)
+        mavenBom(libs.otel.instrumentation.bom.get().toString())
     }
 }
 

@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
     alias(libs.plugins.errorprone)
@@ -12,30 +13,29 @@ plugins {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+    kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
 }
 
 dependencies {
     api(projects.sentry)
     api(projects.sentryKotlinExtensions)
 
-    compileOnly(Config.Libs.apolloKotlin)
-
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    compileOnly(libs.apollo3.kotlin)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryTestSupport)
-    testImplementation(Config.Libs.coroutinesCore)
     testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(libs.apollo3.kotlin)
     testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.kotlinx.coroutines)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
     testImplementation(libs.okhttp.mockwebserver)
-    testImplementation(Config.Libs.apolloKotlin)
 }
 
 configure<SourceSetContainer> {
@@ -45,7 +45,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

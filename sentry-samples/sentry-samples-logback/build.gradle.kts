@@ -15,5 +15,5 @@ configure<JavaPluginExtension> {
 
 dependencies {
     implementation(projects.sentryLogback)
-    implementation(Config.Libs.logbackClassic)
+    implementation(libs.logback.classic)
 }

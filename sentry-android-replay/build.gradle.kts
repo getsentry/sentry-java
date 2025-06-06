@@ -13,13 +13,13 @@ plugins {
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.android.replay"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
 
-        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
@@ -30,7 +30,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
         useLiveLiterals = false
     }
 
@@ -45,7 +45,7 @@ android {
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
-        kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+        kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
     }
 
     testOptions {
@@ -80,7 +80,7 @@ kotlin {
 dependencies {
     api(projects.sentry)
 
-    compileOnly(Config.Libs.composeUiReplay)
+    compileOnly(libs.androidx.compose.ui.replay)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
 
     // tests
@@ -88,17 +88,17 @@ dependencies {
     testImplementation(projects.sentryAndroidCore)
     testImplementation(libs.roboelectric)
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.androidxRunner)
-    testImplementation(Config.TestLibs.androidxJunit)
+    testImplementation(libs.androidx.activity.compose)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.androidx.test.runner)
+    testImplementation(libs.awaitility.kotlin)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.mockito.inline)
-    testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.Libs.composeActivity)
-    testImplementation(Config.Libs.composeUi)
-    testImplementation(Config.Libs.composeCoil)
-    testImplementation(Config.Libs.composeFoundation)
-    testImplementation(Config.Libs.composeFoundationLayout)
-    testImplementation(Config.Libs.composeMaterial)
+    testImplementation(libs.androidx.compose.ui)
+    testImplementation(libs.androidx.compose.foundation)
+    testImplementation(libs.androidx.compose.foundation.layout)
+    testImplementation(libs.androidx.compose.material3)
+    testImplementation(libs.coil.compose)
 }
 
 tasks.withType<Detekt>().configureEach {
