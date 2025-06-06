@@ -12,6 +12,7 @@ import io.opentelemetry.sdk.trace.data.StatusData;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.incubating.ProcessIncubatingAttributes;
+import io.opentelemetry.semconv.incubating.ThreadIncubatingAttributes;
 import io.sentry.Baggage;
 import io.sentry.DateUtils;
 import io.sentry.DefaultSpanFactory;
@@ -339,12 +340,26 @@ public final class SentrySpanExporter implements SpanExporter {
     setOtelInstrumentationInfo(span, sentryTransaction);
     setOtelSpanKind(span, sentryTransaction);
     transferSpanDetails(sentrySpanMaybe, sentryTransaction);
+    maybeTransferOtelThreadAttributes(span, sentryTransaction);
 
     scopesToUse.configureScope(
         ScopeType.CURRENT,
         scope -> attributesExtractor.extract(span, scope, scopesToUse.getOptions()));
 
     return sentryTransaction;
+  }
+
+  private void maybeTransferOtelThreadAttributes(
+      final @NotNull SpanData span, final @NotNull ITransaction sentryTransaction) {
+    final @NotNull Attributes attributes = span.getAttributes();
+    final @Nullable Long threadId = attributes.get(ThreadIncubatingAttributes.THREAD_ID);
+    if (threadId != null) {
+     sentryTransaction.setData(ThreadIncubatingAttributes.THREAD_ID.getKey(), threadId);
+    }
+    final @Nullable String threadName = attributes.get(ThreadIncubatingAttributes.THREAD_NAME);
+    if (threadName != null) {
+     sentryTransaction.setData(ThreadIncubatingAttributes.THREAD_NAME.getKey(), threadName);
+    }
   }
 
   private List<SpanNode> findCompletedRootNodes(final @NotNull List<SpanNode> grouped) {
