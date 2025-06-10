@@ -3,9 +3,9 @@ package io.sentry.android.replay.util
 import android.os.Build
 
 internal object SystemProperties {
-    enum class Property(val key: String) {
-        SOC_MODEL("ro.soc.model"),
-        SOC_MANUFACTURER("ro.soc.manufacturer")
+    enum class Property {
+        SOC_MODEL,
+        SOC_MANUFACTURER
     }
 
     fun get(key: Property, defaultValue: String = ""): String {
