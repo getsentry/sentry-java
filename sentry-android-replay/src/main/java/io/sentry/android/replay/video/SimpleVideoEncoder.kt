@@ -169,7 +169,7 @@ internal class SimpleVideoEncoder(
         val canvas = if (
             Build.MANUFACTURER.contains("xiaomi", ignoreCase = true) ||
             Build.MANUFACTURER.contains("motorola", ignoreCase = true) ||
-            SystemProperties.get(SystemProperties.SOC_MODEL).equals("T606", ignoreCase = true)
+            SystemProperties.get(SystemProperties.Property.SOC_MODEL).equals("T606", ignoreCase = true)
         ) {
             surface?.lockCanvas(null)
         } else {
