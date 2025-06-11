@@ -20,7 +20,7 @@ subprojects {
 
 val javadocCollection = javadocPublisher.incoming.artifactView { lenient(true) }.files
 
-tasks.register("aggregateJavadoc", AggregateJavadoc::class) {
+tasks.register("aggregateJavadocs", AggregateJavadoc::class) {
     group = "documentation"
     description = "Aggregates Javadocs from all subprojects into a single directory."
     javadocFiles.set(javadocCollection)
