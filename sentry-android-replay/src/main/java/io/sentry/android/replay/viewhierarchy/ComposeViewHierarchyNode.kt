@@ -11,10 +11,12 @@ import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.TextUnit
+import io.sentry.ILogger
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
@@ -29,26 +31,55 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHiera
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import java.lang.ref.WeakReference
+import java.lang.reflect.Method
 
 @TargetApi(26)
 internal object ComposeViewHierarchyNode {
+
+    private val getSemanticsConfigurationMethod: Method? by lazy {
+        try {
+            return@lazy LayoutNode::class.java.getDeclaredMethod("getSemanticsConfiguration").apply {
+                isAccessible = true
+            }
+        } catch (_: Throwable) {
+            // ignore, as this method may not be available
+        }
+        return@lazy null
+    }
+
+    private fun LayoutNode.retrieveSemanticsConfiguration(logger: ILogger): SemanticsConfiguration? {
+        // Jetpack Compose 1.8 or newer provides SemanticsConfiguration via SemanticsInfo
+        // See https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/LayoutNode.kt
+        // and https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/semantics/SemanticsInfo.kt
+        try {
+            getSemanticsConfigurationMethod?.let {
+                return it.invoke(this) as SemanticsConfiguration?
+            }
+        } catch (_: Throwable) {
+            logger.log(
+                SentryLevel.WARNING,
+                "Failed to invoke LayoutNode.getSemanticsConfiguration"
+            )
+        }
+
+        // for backwards compatibility
+        return collapsedSemantics
+    }
 
     /**
      * Since Compose doesn't have a concept of a View class (they are all composable functions),
      * we need to map the semantics node to a corresponding old view system class.
      */
-    private fun LayoutNode.getProxyClassName(isImage: Boolean): String {
+    private fun SemanticsConfiguration.getProxyClassName(isImage: Boolean): String {
         return when {
             isImage -> SentryReplayOptions.IMAGE_VIEW_CLASS_NAME
-            collapsedSemantics?.contains(SemanticsProperties.Text) == true ||
-                collapsedSemantics?.contains(SemanticsActions.SetText) == true ||
-                collapsedSemantics?.contains(SemanticsProperties.EditableText) == true -> SentryReplayOptions.TEXT_VIEW_CLASS_NAME
+            contains(SemanticsProperties.Text) || contains(SemanticsActions.SetText) || contains(SemanticsProperties.EditableText) -> SentryReplayOptions.TEXT_VIEW_CLASS_NAME
             else -> "android.view.View"
         }
     }
 
-    private fun LayoutNode.shouldMask(isImage: Boolean, options: SentryOptions): Boolean {
-        val sentryPrivacyModifier = collapsedSemantics?.getOrNull(SentryReplayModifiers.SentryPrivacy)
+    private fun SemanticsConfiguration?.shouldMask(isImage: Boolean, options: SentryOptions): Boolean {
+        val sentryPrivacyModifier = this?.getOrNull(SentryReplayModifiers.SentryPrivacy)
         if (sentryPrivacyModifier == "unmask") {
             return false
         }
@@ -57,7 +88,7 @@ internal object ComposeViewHierarchyNode {
             return true
         }
 
-        val className = getProxyClassName(isImage)
+        val className = this?.getProxyClassName(isImage)
         if (options.sessionReplay.unmaskViewClasses.contains(className)) {
             return false
         }
@@ -83,7 +114,7 @@ internal object ComposeViewHierarchyNode {
             _rootCoordinates = WeakReference(node.coordinates.findRootCoordinates())
         }
 
-        val semantics = node.collapsedSemantics
+        val semantics = node.retrieveSemanticsConfiguration(options.logger)
         val visibleRect = node.coordinates.boundsInWindow(_rootCoordinates?.get())
         val isVisible = !node.outerCoordinator.isTransparent() &&
             (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
@@ -92,7 +123,7 @@ internal object ComposeViewHierarchyNode {
             semantics?.contains(SemanticsProperties.EditableText) == true
         return when {
             semantics?.contains(SemanticsProperties.Text) == true || isEditable -> {
-                val shouldMask = isVisible && node.shouldMask(isImage = false, options)
+                val shouldMask = isVisible && semantics.shouldMask(isImage = false, options)
 
                 parent?.setImportantForCaptureToAncestors(true)
                 // TODO: if we get reports that it's slow, we can drop this, and just mask
@@ -133,7 +164,7 @@ internal object ComposeViewHierarchyNode {
             else -> {
                 val painter = node.findPainter()
                 if (painter != null) {
-                    val shouldMask = isVisible && node.shouldMask(isImage = true, options)
+                    val shouldMask = isVisible && semantics.shouldMask(isImage = true, options)
 
                     parent?.setImportantForCaptureToAncestors(true)
                     ImageViewHierarchyNode(
@@ -150,7 +181,7 @@ internal object ComposeViewHierarchyNode {
                         visibleRect = visibleRect
                     )
                 } else {
-                    val shouldMask = isVisible && node.shouldMask(isImage = false, options)
+                    val shouldMask = isVisible && semantics.shouldMask(isImage = false, options)
 
                     // TODO: this currently does not support embedded AndroidViews, we'd have to
                     // TODO: traverse the ViewHierarchyNode here again. For now we can recommend
