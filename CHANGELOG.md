@@ -12,6 +12,7 @@
 - Session Replay: Do not capture current replay for cached events from the past ([#4474](https://github.com/getsentry/sentry-java/pull/4474))
 - Session Replay: Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
 - Session Replay: Fix inconsistent `segment_id` ([#4471](https://github.com/getsentry/sentry-java/pull/4471))
+- Session Replay: Fix crash on devices with the Unisoc/Spreadtrum T606 chipset ([#4477](https://github.com/getsentry/sentry-java/pull/4477))
 
 ## 8.13.2
 
