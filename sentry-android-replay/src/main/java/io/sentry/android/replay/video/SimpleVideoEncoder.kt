@@ -39,6 +39,7 @@ import android.os.Build
 import android.view.Surface
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryOptions
+import io.sentry.android.replay.util.SystemProperties
 import java.io.File
 import java.nio.ByteBuffer
 import kotlin.LazyThreadSafetyMode.NONE
@@ -155,11 +156,20 @@ internal class SimpleVideoEncoder(
     }
 
     fun encode(image: Bitmap) {
-        // it seems that Xiaomi devices have problems with hardware canvas, so we have to use
-        // lockCanvas instead https://stackoverflow.com/a/73520742
+        /** it seems that Xiaomi devices have problems with hardware canvas, so we have to use
+         * lockCanvas instead https://stackoverflow.com/a/73520742
+         * ---
+         * Same for Motorola devices.
+         * ---
+         * As for the T606, it's a Spreadtrum/Unisoc chipset and can be spread across various
+         * devices, so we have to check the SOC_MODEL property, as the manufacturer name might have
+         * changed.
+         * https://github.com/getsentry/sentry-android-gradle-plugin/issues/861#issuecomment-2867021256
+         */
         val canvas = if (
             Build.MANUFACTURER.contains("xiaomi", ignoreCase = true) ||
-            Build.MANUFACTURER.contains("motorola", ignoreCase = true)
+            Build.MANUFACTURER.contains("motorola", ignoreCase = true) ||
+            SystemProperties.get(SystemProperties.Property.SOC_MODEL).equals("T606", ignoreCase = true)
         ) {
             surface?.lockCanvas(null)
         } else {
