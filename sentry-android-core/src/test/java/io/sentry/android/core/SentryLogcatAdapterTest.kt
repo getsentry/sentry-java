@@ -11,7 +11,6 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.performance.AppStartMetrics
 import org.junit.runner.RunWith
 import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
