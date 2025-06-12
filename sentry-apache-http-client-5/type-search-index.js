@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"io.sentry.transport.apache","l":"ApacheHttpClientTransport"},{"p":"io.sentry.transport.apache","l":"ApacheHttpClientTransportFactory"}];updateSearchResults();

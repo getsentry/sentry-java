@@ -1,0 +1,1 @@
+memberSearchIndex = [{"p":"io.sentry.okhttp","c":"BuildConfig","l":"SENTRY_OKHTTP_SDK_NAME"},{"p":"io.sentry.okhttp","c":"BuildConfig","l":"VERSION_NAME"}];updateSearchResults();
