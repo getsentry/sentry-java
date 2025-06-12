@@ -47,23 +47,36 @@ internal object ComposeViewHierarchyNode {
         return@lazy null
     }
 
-    private fun LayoutNode.retrieveSemanticsConfiguration(logger: ILogger): SemanticsConfiguration? {
+    private var semanticsRetrievalErrorLogged: Boolean = false
+
+    internal fun retrieveSemanticsConfiguration(node: LayoutNode, logger: ILogger): SemanticsConfiguration? {
         // Jetpack Compose 1.8 or newer provides SemanticsConfiguration via SemanticsInfo
         // See https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/LayoutNode.kt
         // and https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/semantics/SemanticsInfo.kt
         try {
             getSemanticsConfigurationMethod?.let {
-                return it.invoke(this) as SemanticsConfiguration?
+                return it.invoke(node) as SemanticsConfiguration?
             }
-        } catch (_: Throwable) {
-            logger.log(
-                SentryLevel.WARNING,
-                "Failed to invoke LayoutNode.getSemanticsConfiguration"
-            )
-        }
 
-        // for backwards compatibility
-        return collapsedSemantics
+            // for backwards compatibility
+            return node.collapsedSemantics
+        } catch (t: Throwable) {
+            if (!semanticsRetrievalErrorLogged) {
+                semanticsRetrievalErrorLogged = true
+                logger.log(
+                    SentryLevel.ERROR,
+                    t,
+                    """
+                Error retrieving semantics information from Compose tree. Most likely you're using
+                an unsupported version of androidx.compose.ui:ui. The supported
+                version range is 1.5.0 - 1.8.0.
+                If you're using a newer version, please open a github issue with the version
+                you're using, so we can add support for it.
+                    """.trimIndent()
+                )
+            }
+        }
+        return null
     }
 
     /**
@@ -114,23 +127,41 @@ internal object ComposeViewHierarchyNode {
             _rootCoordinates = WeakReference(node.coordinates.findRootCoordinates())
         }
 
-        // TODO: if semantics are null and masking is enabled, we simply should mask the whole node
-        val semantics = node.retrieveSemanticsConfiguration(options.logger)
+        val semantics = retrieveSemanticsConfiguration(node, options.logger)
         val visibleRect = node.coordinates.boundsInWindow(_rootCoordinates?.get())
         val isVisible = !node.outerCoordinator.isTransparent() &&
             (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
             visibleRect.height() > 0 && visibleRect.width() > 0
         val isEditable = semantics?.contains(SemanticsActions.SetText) == true ||
             semantics?.contains(SemanticsProperties.EditableText) == true
+
+        // If we're unable to retrieve the semantics configuration
+        // we should play safe and mask the whole node.
+        if (semantics == null) {
+            return GenericViewHierarchyNode(
+                x = visibleRect.left.toFloat(),
+                y = visibleRect.top.toFloat(),
+                width = node.width,
+                height = node.height,
+                elevation = (parent?.elevation ?: 0f),
+                distance = distance,
+                parent = parent,
+                shouldMask = true,
+                isImportantForContentCapture = false, /* will be set by children */
+                isVisible = isVisible,
+                visibleRect = visibleRect
+            )
+        }
+
         return when {
-            semantics?.contains(SemanticsProperties.Text) == true || isEditable -> {
+            semantics.contains(SemanticsProperties.Text) || isEditable -> {
                 val shouldMask = isVisible && semantics.shouldMask(isImage = false, options)
 
                 parent?.setImportantForCaptureToAncestors(true)
                 // TODO: if we get reports that it's slow, we can drop this, and just mask
                 // TODO: the whole view instead of per-line
                 val textLayoutResults = mutableListOf<TextLayoutResult>()
-                semantics?.getOrNull(SemanticsActions.GetTextLayoutResult)
+                semantics.getOrNull(SemanticsActions.GetTextLayoutResult)
                     ?.action
                     ?.invoke(textLayoutResults)
 

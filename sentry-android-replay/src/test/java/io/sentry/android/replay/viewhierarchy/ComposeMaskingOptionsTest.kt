@@ -1,9 +1,13 @@
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+
 package io.sentry.android.replay.viewhierarchy
 
 import android.app.Activity
 import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +19,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.editableText
 import androidx.compose.ui.semantics.invisibleToUser
@@ -27,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import coil.compose.AsyncImage
+import io.sentry.ILogger
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.replay.maskAllImages
 import io.sentry.android.replay.maskAllText
@@ -39,6 +47,13 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarc
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import org.junit.Before
 import org.junit.runner.RunWith
+import org.mockito.Mockito
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric.buildActivity
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
@@ -46,8 +61,10 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.use
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
@@ -137,6 +154,45 @@ class ComposeMaskingOptionsTest {
         val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
         assertEquals(1, imageNodes.size) // [AsyncImage]
         assertTrue(imageNodes.all { it.shouldMask })
+    }
+
+    @Test
+    fun `when retrieving the semantics fails, a node should be masked`() {
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
+        val options = SentryOptions()
+
+        Mockito.mockStatic(ComposeViewHierarchyNode::class.java).use { utils ->
+            utils.`when`<SemanticsConfiguration> { ComposeViewHierarchyNode.retrieveSemanticsConfiguration(any<LayoutNode>(), any()) }.thenReturn(null)
+
+            val root = activity.get().window.decorView
+            val composeView = root.lookupComposeView()
+            assertNotNull(composeView)
+
+            val rootNode = GenericViewHierarchyNode(0f, 0f, 0, 0, 1.0f, -1, shouldMask = true)
+            ComposeViewHierarchyNode.fromView(composeView, rootNode, options)
+
+            assertEquals(1, rootNode.children?.size)
+
+            rootNode.traverse { node ->
+                assertTrue(node.shouldMask)
+                true
+            }
+        }
+    }
+
+    @Test
+    fun `when retrieving the semantics fails, an error is logged once`() {
+        val logger = mock<ILogger>()
+
+        val node = mock<LayoutNode>()
+        whenever(node.collapsedSemantics).thenThrow(RuntimeException("Compose Runtime Error"))
+
+        ComposeViewHierarchyNode.retrieveSemanticsConfiguration(node, logger)
+        verify(logger).log(eq(SentryLevel.ERROR), any<RuntimeException>(), any<String>())
+
+        ComposeViewHierarchyNode.retrieveSemanticsConfiguration(node, logger)
+        verifyNoMoreInteractions(logger)
     }
 
     @Test
@@ -245,6 +301,22 @@ class ComposeMaskingOptionsTest {
             return@traverse true
         }
         return nodes
+    }
+
+    private fun View.lookupComposeView(): View? {
+        if (this.javaClass.name.contains("AndroidComposeView")) {
+            return this
+        }
+        if (this is ViewGroup) {
+            for (i in 0 until childCount) {
+                val child = getChildAt(i)
+                val composeView = child.lookupComposeView()
+                if (composeView != null) {
+                    return composeView
+                }
+            }
+        }
+        return null
     }
 }
 
