@@ -93,12 +93,10 @@ allprojects {
                 TestLogEvent.PASSED,
                 TestLogEvent.FAILED
             )
-            maxParallelForks = 1
 
             // Cap JVM args per test
             minHeapSize = "256m"
             maxHeapSize = "2g"
-            dependsOn("cleanTest")
         }
         withType<JavaCompile>().configureEach {
             options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try"))
