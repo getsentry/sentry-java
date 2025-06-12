@@ -4,18 +4,18 @@ plugins {
     id("com.android.library")
     kotlin("android")
     jacoco
-    id(Config.QualityPlugins.jacocoAndroid)
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.jacoco.android)
+    alias(libs.plugins.gradle.versions)
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.android.ndk"
 
     defaultConfig {
-        minSdk = Config.Android.minSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
 
-        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
             abiFilters.addAll(Config.Android.abiFilters)
@@ -56,7 +56,7 @@ android {
 
     // needed because of Kotlin 1.4.x
     configurations.all {
-        resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
+        resolutionStrategy.force(libs.jetbrains.annotations.get())
     }
 
     buildFeatures {
@@ -83,12 +83,12 @@ dependencies {
     api(projects.sentry)
     api(projects.sentryAndroidCore)
 
-    implementation(Config.Libs.sentryNativeNdk)
+    compileOnly(libs.jetbrains.annotations)
 
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    implementation(libs.sentry.native.ndk)
 
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     testImplementation(libs.kotlin.test.junit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(libs.mockito.kotlin)
     testImplementation(projects.sentryTestSupport)
 }

@@ -1,7 +1,7 @@
 plugins {
     java
     application
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.gradle.versions)
 }
 
 application {
@@ -15,5 +15,5 @@ configure<JavaPluginExtension> {
 
 dependencies {
     implementation(projects.sentryLogback)
-    implementation(Config.Libs.logbackClassic)
+    implementation(libs.logback.classic)
 }

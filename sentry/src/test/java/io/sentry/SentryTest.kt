@@ -125,6 +125,27 @@ class SentryTest {
         verify(integration2).close()
     }
 
+    @Test
+    fun `if a single integration crashes, the SDK and other integrations are still initialized`() {
+        val goodIntegrationInitialized = AtomicBoolean(false)
+        val goodIntegration = Integration { scopes, options ->
+            // no-op
+            goodIntegrationInitialized.set(true)
+        }
+
+        val badIntegration = Integration { scopes, options -> throw IllegalStateException("bad integration") }
+
+        Sentry.init {
+            it.dsn = dsn
+            it.integrations.clear()
+            it.integrations.add(badIntegration)
+            it.integrations.add(goodIntegration)
+        }
+
+        assertTrue(Sentry.isEnabled())
+        assertTrue(goodIntegrationInitialized.get())
+    }
+
     interface CloseableIntegration : Integration, Closeable
 
     @Test
@@ -1441,6 +1462,20 @@ class SentryTest {
         }
         Sentry.stopProfiler()
         verify(profiler, never()).stopProfiler(eq(ProfileLifecycle.MANUAL))
+    }
+
+    @Test
+    fun `replay debug masking is forwarded to replay controller`() {
+        val replayController = mock<ReplayController>()
+        Sentry.init {
+            it.dsn = dsn
+            it.setReplayController(replayController)
+        }
+        Sentry.replay().enableDebugMaskingOverlay()
+        verify(replayController).enableDebugMaskingOverlay()
+
+        Sentry.replay().disableDebugMaskingOverlay()
+        verify(replayController).disableDebugMaskingOverlay()
     }
 
     private class InMemoryOptionsObserver : IOptionsObserver {

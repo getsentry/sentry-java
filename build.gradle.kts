@@ -10,15 +10,24 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     `java-library`
-    id(Config.QualityPlugins.spotless) version Config.QualityPlugins.spotlessVersion apply true
+    alias(libs.plugins.spotless)
     jacoco
-    id(Config.QualityPlugins.detekt) version Config.QualityPlugins.detektVersion
+    alias(libs.plugins.detekt)
     `maven-publish`
-    id(Config.QualityPlugins.binaryCompatibilityValidator) version Config.QualityPlugins.binaryCompatibilityValidatorVersion
-    id(Config.QualityPlugins.jacocoAndroid) version Config.QualityPlugins.jacocoAndroidVersion apply false
-    id(Config.QualityPlugins.kover) version Config.QualityPlugins.koverVersion apply false
-    id(Config.BuildPlugins.gradleMavenPublishPlugin) version Config.BuildPlugins.gradleMavenPublishPluginVersion apply false
+    alias(libs.plugins.binary.compatibility.validator)
+    alias(libs.plugins.jacoco.android) apply false
+    alias(libs.plugins.kover) apply false
+    alias(libs.plugins.vanniktech.maven.publish) apply false
     alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.buildconfig) apply false
+    // dokka is required by gradle-maven-publish-plugin.
+    alias(libs.plugins.dokka) apply false
+    alias(libs.plugins.dokka.javadoc) apply false
+    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.errorprone) apply false
+    alias(libs.plugins.gradle.versions) apply false
+    alias(libs.plugins.spring.dependency.management) apply false
+    id("io.sentry.javadoc.aggregate")
 }
 
 buildscript {
@@ -27,17 +36,11 @@ buildscript {
     }
     dependencies {
         classpath(Config.BuildPlugins.androidGradle)
-        // dokka is required by gradle-maven-publish-plugin.
-        classpath(Config.BuildPlugins.dokkaPlugin)
-        classpath(Config.QualityPlugins.errorpronePlugin)
-        classpath(Config.QualityPlugins.gradleVersionsPlugin)
 
         // add classpath of sentry android gradle plugin
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
-        classpath(Config.QualityPlugins.binaryCompatibilityValidatorPlugin)
-        classpath(Config.BuildPlugins.composeGradlePlugin)
-        classpath(Config.BuildPlugins.commonsCompressOverride)
+        classpath(libs.commons.compress)
     }
 }
 
@@ -235,38 +238,13 @@ spotless {
     kotlin {
         target("**/*.kt")
         ktlint()
-        targetExclude("**/sentry-native/**")
+        targetExclude("**/sentry-native/**", "**/build/**")
     }
     kotlinGradle {
         target("**/*.kts")
         ktlint()
         targetExclude("**/sentry-native/**")
     }
-}
-
-tasks.register("aggregateJavadocs", Javadoc::class.java) {
-    setDestinationDir(project.layout.buildDirectory.file("docs/javadoc").get().asFile)
-    title = "${project.name} $version API"
-    val opts = options as StandardJavadocDocletOptions
-    opts.quiet()
-    opts.encoding = "UTF-8"
-    opts.memberLevel = JavadocMemberLevel.PROTECTED
-    opts.stylesheetFile(file("$projectDir/docs/stylesheet.css"))
-    opts.links = listOf(
-        "https://docs.oracle.com/javase/8/docs/api/",
-        "https://docs.spring.io/spring-framework/docs/current/javadoc-api/",
-        "https://docs.spring.io/spring-boot/docs/current/api/"
-    )
-    subprojects
-        .filter { !it.name.contains("sample") && !it.name.contains("integration-tests") }
-        .forEach { proj ->
-            proj.tasks.withType<Javadoc>().forEach { javadocTask ->
-                source += javadocTask.source
-                classpath += javadocTask.classpath
-                excludes += javadocTask.excludes
-                includes += javadocTask.includes
-            }
-        }
 }
 
 tasks.register("buildForCodeQL") {

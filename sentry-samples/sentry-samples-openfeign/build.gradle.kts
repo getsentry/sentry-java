@@ -1,7 +1,7 @@
 plugins {
     java
     application
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.gradle.versions)
 }
 
 application {
@@ -16,6 +16,6 @@ configure<JavaPluginExtension> {
 dependencies {
     implementation(projects.sentry)
     implementation(projects.sentryOpenfeign)
-    implementation(Config.Libs.feignCore)
-    implementation(Config.Libs.feignGson)
+    implementation(libs.feign.core)
+    implementation(libs.feign.gson)
 }

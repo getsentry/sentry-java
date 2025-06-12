@@ -1,7 +1,5 @@
 package io.sentry.opentelemetry;
 
-import static io.sentry.opentelemetry.SentryOtelKeys.SENTRY_SCOPES_KEY;
-
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
@@ -15,7 +13,6 @@ import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
 import io.sentry.ScopesAdapter;
-import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
@@ -105,16 +102,10 @@ public final class OtelSentryPropagator implements TextMapPropagator {
   @Override
   public <C> Context extract(
       final Context context, final C carrier, final TextMapGetter<C> getter) {
-    final @Nullable IScopes scopesFromParentContext = context.get(SENTRY_SCOPES_KEY);
-    final @NotNull IScopes scopesToUse =
-        scopesFromParentContext != null
-            ? scopesFromParentContext.forkedScopes("propagator")
-            : Sentry.forkedRootScopes("propagator");
-
     final @Nullable String sentryTraceString =
         getter.get(carrier, SentryTraceHeader.SENTRY_TRACE_HEADER);
     if (sentryTraceString == null) {
-      return context.with(SENTRY_SCOPES_KEY, scopesToUse);
+      return context;
     }
 
     try {
@@ -136,7 +127,6 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       final @NotNull Context modifiedContext =
           context
               .with(wrappedSpan)
-              .with(SENTRY_SCOPES_KEY, scopesToUse)
               .with(SentryOtelKeys.SENTRY_TRACE_KEY, sentryTraceHeader)
               .with(SentryOtelKeys.SENTRY_BAGGAGE_KEY, baggage);
 

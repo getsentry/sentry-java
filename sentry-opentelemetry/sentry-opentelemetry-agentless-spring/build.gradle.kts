@@ -1,17 +1,19 @@
 plugins {
     `java-library`
-    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
+    id("io.sentry.javadoc")
+    alias(libs.plugins.buildconfig)
 }
 
 dependencies {
     api(projects.sentry)
     implementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
     implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
-    api(Config.Libs.OpenTelemetry.otelSdk)
-    api(Config.Libs.OpenTelemetry.otelSemconv)
-    api(Config.Libs.OpenTelemetry.otelSemconvIncubating)
-    api(Config.Libs.OpenTelemetry.otelExtensionAutoconfigure)
-    api(Config.Libs.springBoot3StarterOpenTelemetry)
+
+    api(libs.otel)
+    api(libs.otel.semconv)
+    api(libs.otel.semconv.incubating)
+    api(libs.otel.extension.autoconfigure)
+    api(libs.springboot3.otel)
 }
 
 buildConfig {

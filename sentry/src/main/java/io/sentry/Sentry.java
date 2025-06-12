@@ -345,7 +345,16 @@ public final class Sentry {
         // and Scopes was still NoOp.
         // Registering integrations here make sure that Scopes is already created.
         for (final Integration integration : options.getIntegrations()) {
-          integration.register(ScopesAdapter.getInstance(), options);
+          try {
+            integration.register(ScopesAdapter.getInstance(), options);
+          } catch (Throwable t) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "Failed to register the integration " + integration.getClass().getName(),
+                    t);
+          }
         }
 
         notifyOptionsObservers(options);
@@ -1269,5 +1278,10 @@ public final class Sentry {
   @NotNull
   public static ILoggerApi logger() {
     return getCurrentScopes().logger();
+  }
+
+  @NotNull
+  public static IReplayApi replay() {
+    return getCurrentScopes().getScope().getOptions().getReplayController();
   }
 }

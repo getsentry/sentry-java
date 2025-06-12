@@ -154,6 +154,18 @@
       android:layout_height="wrap_content"
       android:text="@string/throw_in_coroutine"/>
 
+    <Button
+      android:id="@+id/show_dialog"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/show_dialog"/>
+
+    <Button
+      android:id="@+id/enable_replay_debug_mode"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/enable_replay_debug_mode"/>
+
   </LinearLayout>
 
 </ScrollView>

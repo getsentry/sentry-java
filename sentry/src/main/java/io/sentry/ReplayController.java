@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public interface ReplayController {
+public interface ReplayController extends IReplayApi {
   void start();
 
   void stop();
@@ -26,4 +26,6 @@ public interface ReplayController {
 
   @NotNull
   ReplayBreadcrumbConverter getBreadcrumbConverter();
+
+  boolean isDebugMaskingOverlayEnabled();
 }
