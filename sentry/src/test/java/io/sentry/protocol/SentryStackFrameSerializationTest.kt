@@ -42,6 +42,15 @@ class SentryStackFrameSerializationTest {
                 type = SentryLockReason.BLOCKED
                 threadId = 11
             }
+            preContext = listOf<String>(
+                "f46ad4c7-a286-4936-a56c-825088227c88",
+                "feeda7f3-1530-45c2-b8d8-5d201aaf6ce0"
+            )
+            postContext = listOf<String>(
+                "2153c99d-2f17-45f1-a173-69e08cc6a219",
+                "0a959b53-6bdf-45d1-93ca-936281d7897a",
+                "4e6085a3-1e44-4aa2-b3d9-9b79dca970ed"
+            )
         }
     }
     private val fixture = Fixture()
