@@ -70,10 +70,10 @@ internal object ComposeViewHierarchyNode {
      * Since Compose doesn't have a concept of a View class (they are all composable functions),
      * we need to map the semantics node to a corresponding old view system class.
      */
-    private fun SemanticsConfiguration.getProxyClassName(isImage: Boolean): String {
+    private fun getProxyClassName(isImage: Boolean, config: SemanticsConfiguration?): String {
         return when {
             isImage -> SentryReplayOptions.IMAGE_VIEW_CLASS_NAME
-            contains(SemanticsProperties.Text) || contains(SemanticsActions.SetText) || contains(SemanticsProperties.EditableText) -> SentryReplayOptions.TEXT_VIEW_CLASS_NAME
+            config != null && (config.contains(SemanticsProperties.Text) || config.contains(SemanticsActions.SetText) || config.contains(SemanticsProperties.EditableText)) -> SentryReplayOptions.TEXT_VIEW_CLASS_NAME
             else -> "android.view.View"
         }
     }
@@ -88,7 +88,7 @@ internal object ComposeViewHierarchyNode {
             return true
         }
 
-        val className = this?.getProxyClassName(isImage)
+        val className = getProxyClassName(isImage, this)
         if (options.sessionReplay.unmaskViewClasses.contains(className)) {
             return false
         }
@@ -114,6 +114,7 @@ internal object ComposeViewHierarchyNode {
             _rootCoordinates = WeakReference(node.coordinates.findRootCoordinates())
         }
 
+        // TODO: if semantics are null and masking is enabled, we simply should mask the whole node
         val semantics = node.retrieveSemanticsConfiguration(options.logger)
         val visibleRect = node.coordinates.boundsInWindow(_rootCoordinates?.get())
         val isVisible = !node.outerCoordinator.isTransparent() &&
