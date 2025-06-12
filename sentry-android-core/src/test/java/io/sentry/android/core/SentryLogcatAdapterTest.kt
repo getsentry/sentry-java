@@ -50,20 +50,13 @@ class SentryLogcatAdapterTest {
 
     private val fixture = Fixture()
 
-    @BeforeTest
-    fun `set up`() {
-        Sentry.close()
-        AppStartMetrics.getInstance().clear()
-        ContextUtils.resetInstance()
-        fixture.breadcrumbs.clear()
-        fixture.logs.clear()
-    }
-
     @AfterTest
     fun `clean up`() {
         AppStartMetrics.getInstance().clear()
         ContextUtils.resetInstance()
         Sentry.close()
+        fixture.breadcrumbs.clear()
+        fixture.logs.clear()
     }
 
     @Test
