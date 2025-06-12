@@ -17,6 +17,7 @@ import io.sentry.SentryOptions;
 import io.sentry.SpanId;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.User;
 import io.sentry.util.Platform;
 import io.sentry.util.TracingUtils;
 import java.util.HashMap;
@@ -213,6 +214,10 @@ public final class LoggerApi implements ILoggerApi {
       setServerName(attributes);
     }
 
+    if (scopes.getOptions().isSendDefaultPii()) {
+      setUser(attributes);
+    }
+
     return attributes;
   }
 
@@ -227,6 +232,24 @@ public final class LoggerApi implements ILoggerApi {
       final @Nullable String hostname = HostnameCache.getInstance().getHostname();
       if (hostname != null) {
         attributes.put("server.address", new SentryLogEventAttributeValue("string", hostname));
+      }
+    }
+  }
+
+  private void setUser(final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes) {
+    final @Nullable User user = scopes.getCombinedScopeView().getUser();
+    if (user != null) {
+      final @Nullable String id = user.getId();
+      if (id != null) {
+        attributes.put("user.id", new SentryLogEventAttributeValue("string", id));
+      }
+      final @Nullable String username = user.getUsername();
+      if (username != null) {
+        attributes.put("user.name", new SentryLogEventAttributeValue("string", username));
+      }
+      final @Nullable String email = user.getEmail();
+      if (email != null) {
+        attributes.put("user.email", new SentryLogEventAttributeValue("string", email));
       }
     }
   }
