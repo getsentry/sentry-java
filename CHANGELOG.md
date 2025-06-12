@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.13.3
 
 - Fix Session Replay masking for newer versions of Jetpack Compose (1.8+) ([#4485](https://github.com/getsentry/sentry-java/pull/4485))
 
