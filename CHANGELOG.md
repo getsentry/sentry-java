@@ -10,6 +10,13 @@
 - Session Replay: Do not capture current replay for cached events from the past ([#4474](https://github.com/getsentry/sentry-java/pull/4474))
 - Session Replay: Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
 - Session Replay: Fix inconsistent `segment_id` ([#4471](https://github.com/getsentry/sentry-java/pull/4471))
+- Limit ProGuard keep rules for native methods within `sentry-android-ndk` to the `io.sentry.**` namespace. ([#4427](https://github.com/getsentry/sentry-java/pull/4427))
+  - If you relied on the Sentry SDK to keep native method names for JNI compatibility within your namespace, please review your ProGuard rules and ensure the configuration still works. Especially when you're not consuming any of the default Android proguard rules (`proguard-android.txt` or `proguard-android-optimize.txt`) the following config should be present:
+  ```
+  -keepclasseswithmembernames class * {
+    native <methods>;
+  }
+  ```
 
 ## 8.13.2
 
@@ -61,10 +68,6 @@
 ### Dependencies
 
 - Bump Spring Boot to `3.5.0` ([#4111](https://github.com/getsentry/sentry-java/pull/4111))
-
-### Fixes
-
-- Overly broad Proguard rule in `sentry-android-ndk` keeping all native methods. ([#4427](https://github.com/getsentry/sentry-java/pull/4427))
 
 ## 8.12.0
 
