@@ -43,7 +43,7 @@ class SentryTimberIntegrationTest {
         val sut = fixture.getSut()
         sut.register(fixture.scopes, fixture.options)
 
-        assertEquals(1, Timber.treeCount())
+        assertEquals(1, Timber.treeCount)
 
         val trees = Timber.forest()
         val first = trees.first()
@@ -64,10 +64,10 @@ class SentryTimberIntegrationTest {
         val sut = fixture.getSut()
         sut.register(fixture.scopes, fixture.options)
 
-        assertEquals(1, Timber.treeCount())
+        assertEquals(1, Timber.treeCount)
 
         sut.close()
-        assertEquals(0, Timber.treeCount())
+        assertEquals(0, Timber.treeCount)
     }
 
     @Test
@@ -75,7 +75,7 @@ class SentryTimberIntegrationTest {
         val sut = fixture.getSut()
         sut.close()
 
-        assertEquals(0, Timber.treeCount())
+        assertEquals(0, Timber.treeCount)
     }
 
     @Test
