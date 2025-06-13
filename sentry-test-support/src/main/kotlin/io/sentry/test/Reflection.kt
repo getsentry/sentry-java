@@ -1,6 +1,7 @@
 package io.sentry.test
 
 import java.lang.reflect.Constructor
+import java.lang.reflect.Field
 
 inline fun <reified T : Any> T.injectForField(name: String, value: Any?) {
     T::class.java.getDeclaredField(name)
@@ -46,14 +47,22 @@ fun Class<*>.containsMethod(name: String, parameterTypes: Class<*>): Boolean =
 
 inline fun <reified T> Any.getProperty(name: String): T = this.getProperty(this::class.java, name)
 
-inline fun <reified T> Any.getProperty(clz: Class<*>, name: String): T =
-    try {
-        clz.getDeclaredField(name)
-    } catch (_: NoSuchFieldException) {
-        clz.superclass.getDeclaredField(name)
-    }.apply {
-        this.isAccessible = true
+inline fun <reified T> Any.getProperty(clz: Class<*>, name: String): T {
+    var currentClz: Class<*>? = clz
+    var field: Field? = null
+    while (field == null && currentClz != null) {
+        try {
+            field = currentClz.getDeclaredField(name)
+        } catch (_: NoSuchFieldException) {}
+        currentClz = currentClz.superclass
+    }
+    if (field == null) {
+        throw NoSuchFieldException("Field '$name' not found in class hierarchy of ${clz.name}")
+    }
+    return field.apply {
+        isAccessible = true
     }.get(this) as T
+}
 
 fun String.getCtor(ctorTypes: Array<Class<*>>): Constructor<*> {
     val clazz = Class.forName(this)
