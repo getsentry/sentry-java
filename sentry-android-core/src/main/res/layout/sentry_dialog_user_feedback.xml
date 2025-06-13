@@ -46,7 +46,7 @@
         android:layout_height="wrap_content"
         android:hint="Your Name"
         android:inputType="textPersonName"
-        android:background="@drawable/edit_text_border"
+        android:background="@drawable/sentry_edit_text_border"
         android:paddingHorizontal="8dp"
         android:layout_below="@id/sentry_dialog_user_feedback_txt_name" />
 
@@ -65,7 +65,7 @@
         android:layout_height="wrap_content"
         android:hint="your.email@example.org"
         android:inputType="textEmailAddress"
-        android:background="@drawable/edit_text_border"
+        android:background="@drawable/sentry_edit_text_border"
         android:paddingHorizontal="8dp"
         android:layout_below="@id/sentry_dialog_user_feedback_txt_email" />
 
@@ -86,7 +86,7 @@
         android:inputType="textMultiLine"
         android:gravity="top|left"
         android:hint="What's the bug? What did you expect?"
-        android:background="@drawable/edit_text_border"
+        android:background="@drawable/sentry_edit_text_border"
         android:paddingHorizontal="8dp"
         android:layout_below="@id/sentry_dialog_user_feedback_txt_description" />
 
