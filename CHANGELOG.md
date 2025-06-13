@@ -5,7 +5,7 @@
 ### Features
 
 - Add New User Feedback Widget ([#4450](https://github.com/getsentry/sentry-java/pull/4450))
-  - This widget is a custom button that can be used to show the user feedback form
+    - This widget is a custom button that can be used to show the user feedback form
 - Add New User Feedback form ([#4384](https://github.com/getsentry/sentry-java/pull/4384))
     - We now introduce SentryUserFeedbackDialog, which extends AlertDialog, inheriting the show() and cancel() methods, among others.
       To use it, just instantiate it and call show() on the instance (Sentry must be previously initialized).
@@ -21,6 +21,8 @@
       SentryUserFeedbackDialog.Builder(context).create().show()
       ```
 
+## 8.13.3
+
 ### Fixes
 
 - Send UI Profiling app start chunk when it finishes ([#4423](https://github.com/getsentry/sentry-java/pull/4423))
@@ -29,6 +31,7 @@
 - Session Replay: Do not capture current replay for cached events from the past ([#4474](https://github.com/getsentry/sentry-java/pull/4474))
 - Session Replay: Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
 - Session Replay: Fix inconsistent `segment_id` ([#4471](https://github.com/getsentry/sentry-java/pull/4471))
+- Session Replay: Fix crash on devices with the Unisoc/Spreadtrum T606 chipset ([#4477](https://github.com/getsentry/sentry-java/pull/4477))
 
 ## 8.13.2
 
