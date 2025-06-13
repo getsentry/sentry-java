@@ -19,6 +19,12 @@
       SentryUserFeedbackDialog.Builder(context).create().show()
       ```
 
+### Dependencies
+
+- Bump Native SDK from v0.8.4 to v0.9.0 ([#4475](https://github.com/getsentry/sentry-java/pull/4475))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#090)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.4...0.9.0)
+
 ## 8.13.3
 
 ### Fixes
