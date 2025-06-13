@@ -4,6 +4,9 @@
 
 ### Features
 
+- Send Timber logs through Sentry Logs ([#4490](https://github.com/getsentry/sentry-java/pull/4490))
+  - Enable the Logs feature in your `SentryOptions` or with the `io.sentry.logs.enabled` manifest option and the SDK will automatically send Timber logs to Sentry, if the TimberIntegration is enabled.
+  - The SDK will automatically detect Timber and use it to send logs to Sentry.
 - Send logcat through Sentry Logs ([#4487](https://github.com/getsentry/sentry-java/pull/4487))
   - Enable the Logs feature in your `SentryOptions` or with the `io.sentry.logs.enabled` manifest option and the SDK will automatically send logcat logs to Sentry, if the Sentry Android Gradle plugin is applied.
 
