@@ -5,6 +5,7 @@ import io.sentry.IScopes
 import io.sentry.Integration
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
+import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.android.timber.BuildConfig.VERSION_NAME
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
@@ -16,7 +17,8 @@ import java.io.Closeable
  */
 public class SentryTimberIntegration(
     public val minEventLevel: SentryLevel = SentryLevel.ERROR,
-    public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO
+    public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
+    public val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO
 ) : Integration, Closeable {
     private lateinit var tree: SentryTimberTree
     private lateinit var logger: ILogger
@@ -31,7 +33,7 @@ public class SentryTimberIntegration(
     override fun register(scopes: IScopes, options: SentryOptions) {
         logger = options.logger
 
-        tree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel)
+        tree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel)
         Timber.plant(tree)
 
         logger.log(SentryLevel.DEBUG, "SentryTimberIntegration installed.")
