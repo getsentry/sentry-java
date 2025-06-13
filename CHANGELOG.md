@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix Session Replay masking for newer versions of Jetpack Compose (1.8+) ([#4485](https://github.com/getsentry/sentry-java/pull/4485))
+
 ### Features
 
 - Add New User Feedback form ([#4384](https://github.com/getsentry/sentry-java/pull/4384))
