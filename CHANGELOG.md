@@ -1,6 +1,6 @@
 # Changelog
 
-## 8.13.3
+## Unreleased
 
 ### Features
 
@@ -18,6 +18,8 @@
     
       SentryUserFeedbackDialog.Builder(context).create().show()
       ```
+
+## 8.13.3
 
 ### Fixes
 
