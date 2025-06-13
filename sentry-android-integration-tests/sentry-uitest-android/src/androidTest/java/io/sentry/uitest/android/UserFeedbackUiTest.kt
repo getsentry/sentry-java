@@ -541,7 +541,7 @@ class UserFeedbackUiTest : BaseUiTest() {
 
             assertFalse(widget.isAllCaps)
 
-            assertEquals(R.drawable.oval_button_ripple_background, widget.getProperty<Int>("mBackgroundResource"))
+            assertEquals(R.drawable.sentry_oval_button_ripple_background, widget.getProperty<Int>("mBackgroundResource"))
 
             assertEquals((densityScale * 12).toInt(), widget.paddingStart)
             assertEquals((densityScale * 12).toInt(), widget.paddingEnd)

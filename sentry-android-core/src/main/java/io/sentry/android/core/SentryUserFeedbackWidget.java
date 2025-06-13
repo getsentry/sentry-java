@@ -68,7 +68,7 @@ public class SentryUserFeedbackWidget extends Button {
 
       // If the drawable start is not set, set it to the default drawable
       if (drawableStart == -1) {
-        setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.baseline_campaign_24, 0, 0, 0);
+        setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.sentry_campaign_24, 0, 0, 0);
       }
 
       // Set the text all caps
@@ -76,7 +76,7 @@ public class SentryUserFeedbackWidget extends Button {
 
       // If the background is not set, set it to the default background
       if (background == -1) {
-        setBackgroundResource(R.drawable.oval_button_ripple_background);
+        setBackgroundResource(R.drawable.sentry_oval_button_ripple_background);
       }
 
       // If the padding is not set, set it to 12dp
