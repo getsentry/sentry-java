@@ -270,6 +270,45 @@ class SentryTimberTreeTest {
     }
 
     @Test
+    fun `Tree adds tag to breadcrumb data`() {
+        val sut = fixture.getSut()
+        Timber.plant(sut)
+
+        // when a tag is set via tag API
+        Timber.tag("errorTag")
+        sut.e("error")
+
+        // it should be added to the breadcrumb
+        verify(fixture.scopes).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("error", it.message)
+                assertEquals("errorTag", it.data["tag"])
+            }
+        )
+
+        // when a tag is set via method chaining
+        Timber.tag("warnTag").w("warn")
+
+        // it should be added to the breadcrumb
+        verify(fixture.scopes).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("warn", it.message)
+                assertEquals("warnTag", it.data["tag"])
+            }
+        )
+
+        // when no tag is set
+        Timber.w("warn without tag")
+        // it should not have a tag in the breadcrumb
+        verify(fixture.scopes).addBreadcrumb(
+            check<Breadcrumb> {
+                assertEquals("warn without tag", it.message)
+                assertNull(it.data["tag"])
+            }
+        )
+    }
+
+    @Test
     fun `Tree does not add a breadcrumb, if no message provided`() {
         val sut = fixture.getSut()
         sut.e(Throwable())

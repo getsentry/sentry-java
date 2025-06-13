@@ -1,3 +1,5 @@
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+
 package io.sentry.android.timber
 
 import android.util.Log
@@ -17,23 +19,15 @@ public class SentryTimberTree(
     private val minEventLevel: SentryLevel,
     private val minBreadcrumbLevel: SentryLevel
 ) : Timber.Tree() {
-    private val pendingTag = ThreadLocal<String?>()
-
-    private fun retrieveTag(): String? {
-        val tag = pendingTag.get()
-        if (tag != null) {
-            this.pendingTag.remove()
-        }
-        return tag
-    }
 
     /** Log a verbose message with optional format args. */
     override fun v(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.v(message, *args)
-        logWithSentry(Log.VERBOSE, null, message, *args)
+        logWithSentry(Log.VERBOSE, null, message, tag, *args)
     }
 
     /** Log a verbose exception and a message with optional format args. */
@@ -42,14 +36,16 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.v(t, message, *args)
-        logWithSentry(Log.VERBOSE, t, message, *args)
+        logWithSentry(Log.VERBOSE, t, message, tag, *args)
     }
 
     /** Log a verbose exception. */
     override fun v(t: Throwable?) {
+        val tag = explicitTag.get()
         super.v(t)
-        logWithSentry(Log.VERBOSE, t, null)
+        logWithSentry(Log.VERBOSE, t, null, tag, null)
     }
 
     /** Log a debug message with optional format args. */
@@ -57,8 +53,9 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.d(message, *args)
-        logWithSentry(Log.DEBUG, null, message, *args)
+        logWithSentry(Log.DEBUG, null, message, tag, *args)
     }
 
     /** Log a debug exception and a message with optional format args. */
@@ -67,14 +64,16 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.d(t, message, *args)
-        logWithSentry(Log.DEBUG, t, message, *args)
+        logWithSentry(Log.DEBUG, t, message, tag, *args)
     }
 
     /** Log a debug exception. */
     override fun d(t: Throwable?) {
+        val tag = explicitTag.get()
         super.d(t)
-        logWithSentry(Log.DEBUG, t, null)
+        logWithSentry(Log.DEBUG, t, null, tag, null)
     }
 
     /** Log an info message with optional format args. */
@@ -82,8 +81,9 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.d(message, *args)
-        logWithSentry(Log.INFO, null, message, *args)
+        logWithSentry(Log.INFO, null, message, tag, *args)
     }
 
     /** Log an info exception and a message with optional format args. */
@@ -92,14 +92,16 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.i(t, message, *args)
-        logWithSentry(Log.INFO, t, message, *args)
+        logWithSentry(Log.INFO, t, message, tag, *args)
     }
 
     /** Log an info exception. */
     override fun i(t: Throwable?) {
+        val tag = explicitTag.get()
         super.i(t)
-        logWithSentry(Log.INFO, t, null)
+        logWithSentry(Log.INFO, t, null, tag, null)
     }
 
     /** Log a warning message with optional format args. */
@@ -107,8 +109,9 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.w(message, *args)
-        logWithSentry(Log.WARN, null, message, *args)
+        logWithSentry(Log.WARN, null, message, tag, *args)
     }
 
     /** Log a warning exception and a message with optional format args. */
@@ -117,14 +120,16 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.w(t, message, *args)
-        logWithSentry(Log.WARN, t, message, *args)
+        logWithSentry(Log.WARN, t, message, tag, *args)
     }
 
     /** Log a warning exception. */
     override fun w(t: Throwable?) {
+        val tag = explicitTag.get()
         super.w(t)
-        logWithSentry(Log.WARN, t, null)
+        logWithSentry(Log.WARN, t, null, tag, null)
     }
 
     /** Log an error message with optional format args. */
@@ -132,8 +137,9 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.e(message, *args)
-        logWithSentry(Log.ERROR, null, message, *args)
+        logWithSentry(Log.ERROR, null, message, tag, *args)
     }
 
     /** Log an error exception and a message with optional format args. */
@@ -142,14 +148,16 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.e(t, message, *args)
-        logWithSentry(Log.ERROR, t, message, *args)
+        logWithSentry(Log.ERROR, t, message, tag, *args)
     }
 
     /** Log an error exception. */
     override fun e(t: Throwable?) {
+        val tag = explicitTag.get()
         super.e(t)
-        logWithSentry(Log.ERROR, t, null)
+        logWithSentry(Log.ERROR, t, null, tag, null)
     }
 
     /** Log an assert message with optional format args. */
@@ -157,8 +165,9 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.wtf(message, *args)
-        logWithSentry(Log.ASSERT, null, message, *args)
+        logWithSentry(Log.ASSERT, null, message, tag, *args)
     }
 
     /** Log an assert exception and a message with optional format args. */
@@ -167,14 +176,16 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.wtf(t, message, *args)
-        logWithSentry(Log.ASSERT, t, message, *args)
+        logWithSentry(Log.ASSERT, t, message, tag, *args)
     }
 
     /** Log an assert exception. */
     override fun wtf(t: Throwable?) {
+        val tag = explicitTag.get()
         super.wtf(t)
-        logWithSentry(Log.ASSERT, t, null)
+        logWithSentry(Log.ASSERT, t, null, tag, null)
     }
 
     /** Log at `priority` a message with optional format args. */
@@ -183,8 +194,9 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.log(priority, message, *args)
-        logWithSentry(priority, null, message, *args)
+        logWithSentry(priority, null, message, tag, *args)
     }
 
     /** Log at `priority` an exception and a message with optional format args. */
@@ -194,8 +206,9 @@ public class SentryTimberTree(
         message: String?,
         vararg args: Any?
     ) {
+        val tag = explicitTag.get()
         super.log(priority, t, message, *args)
-        logWithSentry(priority, t, message, *args)
+        logWithSentry(priority, t, message, tag, *args)
     }
 
     /** Log at `priority` an exception. */
@@ -204,26 +217,16 @@ public class SentryTimberTree(
         t: Throwable?
     ) {
         super.log(priority, t)
-        logWithSentry(priority, t, null)
-    }
-
-    override fun log(
-        priority: Int,
-        tag: String?,
-        message: String,
-        t: Throwable?
-    ) {
-        pendingTag.set(tag)
+        logWithSentry(priority, t, null, tag, null)
     }
 
     private fun logWithSentry(
         priority: Int,
         throwable: Throwable?,
         message: String?,
+        tag: String?,
         vararg args: Any?
     ) {
-        val tag = retrieveTag()
-
         if (message.isNullOrEmpty() && throwable == null) {
             return // Swallow message if it's null and there's no throwable
         }
@@ -238,7 +241,7 @@ public class SentryTimberTree(
         }
 
         captureEvent(level, tag, sentryMessage, throwable)
-        addBreadcrumb(level, sentryMessage, throwable)
+        addBreadcrumb(level, sentryMessage, tag, throwable)
     }
 
     /**
@@ -279,6 +282,7 @@ public class SentryTimberTree(
     private fun addBreadcrumb(
         sentryLevel: SentryLevel,
         msg: Message,
+        tag: String?,
         throwable: Throwable?
     ) {
         // checks the breadcrumb level
@@ -289,6 +293,9 @@ public class SentryTimberTree(
                     level = sentryLevel
                     category = "Timber"
                     message = msg.formatted ?: msg.message
+                    tag?.let { t ->
+                        setData("tag", t)
+                    }
                 }
                 throwableMsg != null -> Breadcrumb.error(throwableMsg).apply {
                     category = "exception"
@@ -298,6 +305,15 @@ public class SentryTimberTree(
 
             breadCrumb?.let { scopes.addBreadcrumb(it) }
         }
+    }
+
+    override fun log(
+        priority: Int,
+        tag: String?,
+        message: String,
+        t: Throwable?
+    ) {
+        // no-op
     }
 
     /**
