@@ -6,6 +6,23 @@
 
 - Fix Session Replay masking for newer versions of Jetpack Compose (1.8+) ([#4485](https://github.com/getsentry/sentry-java/pull/4485))
 
+### Features
+
+- Add New User Feedback form ([#4384](https://github.com/getsentry/sentry-java/pull/4384))
+    - We now introduce SentryUserFeedbackDialog, which extends AlertDialog, inheriting the show() and cancel() methods, among others.
+      To use it, just instantiate it and call show() on the instance (Sentry must be previously initialized).
+      For customization options, please check the [User Feedback documentation](https://docs.sentry.io/platforms/android/user-feedback/configuration/).
+      ```java
+      import io.sentry.android.core.SentryUserFeedbackDialog;
+      
+      new SentryUserFeedbackDialog.Builder(context).create().show();
+      ```
+      ```kotlin
+      import io.sentry.android.core.SentryUserFeedbackDialog
+    
+      SentryUserFeedbackDialog.Builder(context).create().show()
+      ```
+
 ## 8.13.3
 
 ### Fixes
