@@ -288,22 +288,23 @@ public class SentryTimberTree(
         // checks the breadcrumb level
         if (isLoggable(sentryLevel, minBreadcrumbLevel)) {
             val throwableMsg = throwable?.message
-            val breadCrumb = when {
+            val breadcrumb = when {
                 msg.message != null -> Breadcrumb().apply {
                     level = sentryLevel
                     category = "Timber"
                     message = msg.formatted ?: msg.message
-                    tag?.let { t ->
-                        setData("tag", t)
-                    }
                 }
                 throwableMsg != null -> Breadcrumb.error(throwableMsg).apply {
                     category = "exception"
                 }
                 else -> null
             }
-
-            breadCrumb?.let { scopes.addBreadcrumb(it) }
+            if (breadcrumb != null) {
+                if (tag != null) {
+                    breadcrumb.setData("tag", tag)
+                }
+                scopes.addBreadcrumb(breadcrumb)
+            }
         }
     }
 
