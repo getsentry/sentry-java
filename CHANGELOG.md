@@ -18,6 +18,7 @@
     
       SentryUserFeedbackDialog.Builder(context).create().show()
       ```
+- Add `user.id`, `user.name` and `user.email` to log attributes ([#4486](https://github.com/getsentry/sentry-java/pull/4486))
 
 ## 8.13.3
 
