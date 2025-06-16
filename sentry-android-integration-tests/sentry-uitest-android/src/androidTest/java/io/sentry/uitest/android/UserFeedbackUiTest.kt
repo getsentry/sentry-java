@@ -567,7 +567,7 @@ class UserFeedbackUiTest : BaseUiTest() {
             widget.compoundDrawablePadding = 1
             widget.setCompoundDrawables(null, null, null, null)
             widget.isAllCaps = true
-            widget.setBackgroundResource(R.drawable.edit_text_border)
+            widget.setBackgroundResource(R.drawable.sentry_edit_text_border)
             widget.setTextColor(Color.RED)
             widget.text = "My custom text"
             widget.setPadding(0, 0, 0, 0)
@@ -582,7 +582,7 @@ class UserFeedbackUiTest : BaseUiTest() {
 
             assertTrue(widget.isAllCaps)
 
-            assertEquals(R.drawable.edit_text_border, widget.getProperty<Int>("mBackgroundResource"))
+            assertEquals(R.drawable.sentry_edit_text_border, widget.getProperty<Int>("mBackgroundResource"))
 
             assertEquals((densityScale * 0).toInt(), widget.paddingStart)
             assertEquals((densityScale * 0).toInt(), widget.paddingEnd)
