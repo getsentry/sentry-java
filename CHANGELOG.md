@@ -2,7 +2,26 @@
 
 ## Unreleased
 
+<<<<<<< markushi/fix/timber-tag-handling
 - Fix tag extraction logic for Timber ([#4489](https://github.com/getsentry/sentry-java/pull/4489))
+=======
+### Features
+
+- Add New User Feedback form ([#4384](https://github.com/getsentry/sentry-java/pull/4384))
+    - We now introduce SentryUserFeedbackDialog, which extends AlertDialog, inheriting the show() and cancel() methods, among others.
+      To use it, just instantiate it and call show() on the instance (Sentry must be previously initialized).
+      For customization options, please check the [User Feedback documentation](https://docs.sentry.io/platforms/android/user-feedback/configuration/).
+      ```java
+      import io.sentry.android.core.SentryUserFeedbackDialog;
+      
+      new SentryUserFeedbackDialog.Builder(context).create().show();
+      ```
+      ```kotlin
+      import io.sentry.android.core.SentryUserFeedbackDialog
+    
+      SentryUserFeedbackDialog.Builder(context).create().show()
+      ```
+>>>>>>> main
 
 ## 8.13.3
 
