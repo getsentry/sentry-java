@@ -142,7 +142,7 @@ internal object ComposeViewHierarchyNode {
                 parent = parent,
                 shouldMask = true,
                 isImportantForContentCapture = false, /* will be set by children */
-                isVisible = !node.outerCoordinator.isTransparent(),
+                isVisible = !node.outerCoordinator.isTransparent() && visibleRect.height() > 0 && visibleRect.width() > 0,
                 visibleRect = visibleRect
             )
         }
