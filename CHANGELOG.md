@@ -4,9 +4,6 @@
 
 ### Features
 
-<<<<<<< lcian/feat/serialize-frame-context -- Incoming Change
-- Serialize `preContext` and `postContext` in `SentryStackFrame` ([#4482](https://github.com/getsentry/sentry-java/pull/4482))
-=======
 - Add New User Feedback form ([#4384](https://github.com/getsentry/sentry-java/pull/4384))
     - We now introduce SentryUserFeedbackDialog, which extends AlertDialog, inheriting the show() and cancel() methods, among others.
       To use it, just instantiate it and call show() on the instance (Sentry must be previously initialized).
@@ -21,9 +18,9 @@
     
       SentryUserFeedbackDialog.Builder(context).create().show()
       ```
+- Serialize `preContext` and `postContext` in `SentryStackFrame` ([#4482](https://github.com/getsentry/sentry-java/pull/4482))
 
 ## 8.13.3
->>>>>>> main -- Current Change
 
 ### Fixes
 
