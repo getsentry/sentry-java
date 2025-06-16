@@ -185,14 +185,16 @@ public final class LoggerApi implements ILoggerApi {
       }
       if (i > 0) {
         attributes.put(
-            "sentry.message.template", new SentryLogEventAttributeValue(SentryAttributeType.STRING, message));
+            "sentry.message.template",
+            new SentryLogEventAttributeValue(SentryAttributeType.STRING, message));
       }
     }
 
     final @Nullable SdkVersion sdkVersion = scopes.getOptions().getSdkVersion();
     if (sdkVersion != null) {
       attributes.put(
-          "sentry.sdk.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, sdkVersion.getName()));
+          "sentry.sdk.name",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, sdkVersion.getName()));
       attributes.put(
           "sentry.sdk.version",
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, sdkVersion.getVersion()));
@@ -200,15 +202,19 @@ public final class LoggerApi implements ILoggerApi {
 
     final @Nullable String environment = scopes.getOptions().getEnvironment();
     if (environment != null) {
-      attributes.put("sentry.environment", new SentryLogEventAttributeValue(SentryAttributeType.STRING, environment));
+      attributes.put(
+          "sentry.environment",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, environment));
     }
     final @Nullable String release = scopes.getOptions().getRelease();
     if (release != null) {
-      attributes.put("sentry.release", new SentryLogEventAttributeValue(SentryAttributeType.STRING, release));
+      attributes.put(
+          "sentry.release", new SentryLogEventAttributeValue(SentryAttributeType.STRING, release));
     }
 
     attributes.put(
-        "sentry.trace.parent_span_id", new SentryLogEventAttributeValue(SentryAttributeType.STRING, spanId));
+        "sentry.trace.parent_span_id",
+        new SentryLogEventAttributeValue(SentryAttributeType.STRING, spanId));
 
     if (Platform.isJvm()) {
       setServerName(attributes);
@@ -225,11 +231,14 @@ public final class LoggerApi implements ILoggerApi {
     final @Nullable String optionsServerName = options.getServerName();
     if (optionsServerName != null) {
       attributes.put(
-          "server.address", new SentryLogEventAttributeValue(SentryAttributeType.STRING, optionsServerName));
+          "server.address",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, optionsServerName));
     } else if (options.isAttachServerName()) {
       final @Nullable String hostname = HostnameCache.getInstance().getHostname();
       if (hostname != null) {
-        attributes.put("server.address", new SentryLogEventAttributeValue(SentryAttributeType.STRING, hostname));
+        attributes.put(
+            "server.address",
+            new SentryLogEventAttributeValue(SentryAttributeType.STRING, hostname));
       }
     }
   }
@@ -243,11 +252,13 @@ public final class LoggerApi implements ILoggerApi {
       }
       final @Nullable String username = user.getUsername();
       if (username != null) {
-        attributes.put("user.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, username));
+        attributes.put(
+            "user.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, username));
       }
       final @Nullable String email = user.getEmail();
       if (email != null) {
-        attributes.put("user.email", new SentryLogEventAttributeValue(SentryAttributeType.STRING, email));
+        attributes.put(
+            "user.email", new SentryLogEventAttributeValue(SentryAttributeType.STRING, email));
       }
     }
   }
