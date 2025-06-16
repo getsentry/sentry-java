@@ -3,6 +3,7 @@ import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.SentryStackFrame;
 import io.sentry.vendor.gson.stream.JsonToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +27,7 @@ public final class JfrProfile implements JsonUnknown, JsonSerializable {
 
   public @Nullable List<List<Integer>> stacks; // List of frame indices
 
-  public @Nullable List<JfrFrame> frames;
+  public @Nullable List<SentryStackFrame> frames;
 
   public @Nullable Map<String, ThreadMetadata> threadMetadata; // Key is Thread ID (String)
 

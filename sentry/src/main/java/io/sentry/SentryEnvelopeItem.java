@@ -7,8 +7,9 @@ import static io.sentry.vendor.Base64.NO_WRAP;
 import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.protocol.jfr.convert.JfrAsyncProfilerToSentryProfileConverter;
 import io.sentry.protocol.profiling.JfrProfile;
-import io.sentry.protocol.profiling.JfrToSentryProfileConverter;
+//import io.sentry.protocol.profiling.JfrToSentryProfileConverter;
 import io.sentry.util.FileUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
@@ -296,7 +297,8 @@ public final class SentryEnvelopeItem {
                         traceFile.getName()));
               }
               if(traceFile.getName().endsWith(".jfr")) {
-                JfrProfile profile = new JfrToSentryProfileConverter().convert(traceFile.toPath());
+//                JfrProfile profile = new JfrToSentryProfileConverter().convert(traceFile.toPath());
+                JfrProfile profile = JfrAsyncProfilerToSentryProfileConverter.convertFromFile(traceFile.toPath());
                 profileChunk.setJfrProfile(profile);
 
               } else {
@@ -321,7 +323,7 @@ public final class SentryEnvelopeItem {
                   String.format("Failed to serialize profile chunk\n%s", e.getMessage()));
               } finally {
                 // In any case we delete the trace file
-                traceFile.delete();
+//                traceFile.delete();
               }
             });
 

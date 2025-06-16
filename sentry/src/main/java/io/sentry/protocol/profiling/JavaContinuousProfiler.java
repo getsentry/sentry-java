@@ -175,6 +175,7 @@ public final class JavaContinuousProfiler
     filename = SentryUUID.generateSentryId() + ".jfr";
     final String startData;
     try {
+//      System.out.println("### Starting profiler with start,jfr,event=wall,file");
       startData = profiler.execute("start,jfr,event=cpu,alloc,file=" + filename);
     } catch (IOException e) {
       throw new RuntimeException(e);

@@ -1,12 +1,15 @@
 package io.sentry.protocol.jfr.convert;
 
+import io.sentry.Sentry;
+import io.sentry.SentryStackTraceFactory;
+import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.jfr.jfr.JfrReader;
 import io.sentry.protocol.jfr.jfr.StackTrace;
 import io.sentry.protocol.jfr.jfr.event.Event;
 import io.sentry.protocol.profiling.JfrFrame;
 import io.sentry.protocol.profiling.JfrProfile;
 import io.sentry.protocol.profiling.JfrSample;
-import io.sentry.protocol.profiling.JfrToSentryProfileConverter;
+//import io.sentry.protocol.profiling.JfrToSentryProfileConverter;
 import io.sentry.protocol.profiling.ThreadMetadata;
 
 import java.io.IOException;
@@ -16,9 +19,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter {
-  private JfrProfile jfrProfile = new JfrProfile();
+  private final JfrProfile jfrProfile = new JfrProfile();
 
   public JfrAsyncProfilerToSentryProfileConverter(JfrReader jfr, Arguments args) {
     super(jfr, args);
@@ -26,9 +30,9 @@ public class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter {
 
   public static void main(String[] args) throws IOException {
 
-    Path jfrPath = Paths.get("/Users/lukasbloder/development/projects/sentry/sentry-java/197d8e97cb514418b15e5578026f39f2.jfr");
+    Path jfrPath = Paths.get("/Users/lukasbloder/development/projects/sentry/sentry-java/ff3cb6b172fc45c4ae16d65fb1fc83fe.jfr");
     JfrProfile profile = JfrAsyncProfilerToSentryProfileConverter.convertFromFile(jfrPath);
-    JfrProfile profile2 = new JfrToSentryProfileConverter().convert(jfrPath);
+//    JfrProfile profile2 = new JfrToSentryProfileConverter().convert(jfrPath);
     System.out.println("Done");
   }
 
@@ -56,7 +60,10 @@ public class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter {
               jfrProfile.threadMetadata = new HashMap<>();
             }
 
-            jfrProfile.threadMetadata.computeIfAbsent(String.valueOf(event.tid), k -> {
+
+            long threadIdToUse = jfr.threads.get(event.tid) != null ? jfr.javaThreads.get(event.tid) : event.tid;
+
+            jfrProfile.threadMetadata.computeIfAbsent(String.valueOf(threadIdToUse), k -> {
                 ThreadMetadata metadata = new ThreadMetadata();
                 metadata.name = getThreadName(event.tid);
                 metadata.priority = 0;
@@ -77,31 +84,37 @@ public class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter {
           int currentFrame = jfrProfile.frames.size();
           for (int i = 0; i < methods.length; i++) {
 //          for (int i = methods.length; --i >= 0; ) {
-            JfrFrame frame = new JfrFrame();
+            SentryStackFrame frame = new SentryStackFrame();
             StackTraceElement element = getStackTraceElement(methods[i], types[i], locations[i]);
             final String classNameWithLambdas = element.getClassName().replace("/", ".");
-            frame.function = classNameWithLambdas + "." + element.getMethodName();
+            frame.setFunction(element.getMethodName());
 
-            int lastDot = classNameWithLambdas.lastIndexOf('.');
             int firstDollar = classNameWithLambdas.indexOf('$');
-            if (lastDot > 0 && lastDot > firstDollar) {
-              frame.module = classNameWithLambdas.substring(0, lastDot);
-            } else if (firstDollar > 0) {
-              frame.module = classNameWithLambdas.substring(0, firstDollar);
-            } else if (!classNameWithLambdas.startsWith("[")) {
-              frame.module = "";
+            String sanitizedClassName = classNameWithLambdas;
+            if(firstDollar != -1) {
+              sanitizedClassName = classNameWithLambdas.substring(0, firstDollar);
             }
-            frame.lineno = (element.getLineNumber() != 0) ? element.getLineNumber() : null;
-            frame.filename = classNameWithLambdas;
+
+
+            int lastDot = sanitizedClassName.lastIndexOf('.');
+            if (lastDot > 0) {
+              frame.setModule(sanitizedClassName);
+            } else if (!classNameWithLambdas.startsWith("[")) {
+              frame.setModule("");
+            }
+
+            if(element.isNativeMethod() || classNameWithLambdas.isEmpty()) {
+              frame.setInApp(false);
+            } else {
+              frame.setInApp(new SentryStackTraceFactory(Sentry.getGlobalScope().getOptions()).isInApp(sanitizedClassName));
+            }
+
+            frame.setLineno((element.getLineNumber() != 0) ? element.getLineNumber() : null);
+            frame.setFilename(classNameWithLambdas);
 
             jfrProfile.frames.add(frame);
             stack.add(currentFrame);
             currentFrame++;
-
-            System.out.println(element.getMethodName());
-            System.out.println(element.getClassName());
-            System.out.println(element.getLineNumber());
-            System.out.println(element.getFileName());
           }
 
 
@@ -113,7 +126,8 @@ public class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter {
           double timestampDouble = instant.getEpochSecond() + instant.getNano() / 1_000_000_000.0;
 
           sample.timestamp = timestampDouble;
-          sample.threadId = String.valueOf(event.tid);
+//          sample.threadId = String.valueOf(event.tid);
+          sample.threadId = String.valueOf(jfr.threads.get(event.tid) != null ? jfr.javaThreads.get(event.tid) : event.tid);
           sample.stackId = currentStack;
           jfrProfile.samples.add(sample);
 
