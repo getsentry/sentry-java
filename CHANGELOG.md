@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Serialize `preContext` and `postContext` in `SentryStackFrame` ([#4482](https://github.com/getsentry/sentry-java/pull/4482))
+
 ### Fixes
 
 - Send UI Profiling app start chunk when it finishes ([#4423](https://github.com/getsentry/sentry-java/pull/4423))
