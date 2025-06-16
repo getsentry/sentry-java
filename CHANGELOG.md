@@ -22,6 +22,7 @@
     
       SentryUserFeedbackDialog.Builder(context).create().show()
       ```
+- Serialize `preContext` and `postContext` in `SentryStackFrame` ([#4482](https://github.com/getsentry/sentry-java/pull/4482))
 
 ## 8.13.3
 
