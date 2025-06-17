@@ -43,6 +43,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.sentry_dialog_user_feedback);

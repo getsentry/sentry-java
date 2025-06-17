@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <declare-styleable name="SentryUserFeedbackWidget" >
+  <declare-styleable name="SentryUserFeedbackButton" >
     <attr name="android:drawableStart" format="reference" />
     <attr name="android:drawablePadding" format="dimension" />
     <attr name="android:padding" format="dimension" />

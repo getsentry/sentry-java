@@ -10,26 +10,26 @@ import android.widget.Button;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class SentryUserFeedbackWidget extends Button {
+public class SentryUserFeedbackButton extends Button {
 
   private @Nullable OnClickListener delegate;
 
-  public SentryUserFeedbackWidget(Context context) {
+  public SentryUserFeedbackButton(Context context) {
     super(context);
     init(context, null, 0, 0);
   }
 
-  public SentryUserFeedbackWidget(Context context, AttributeSet attrs) {
+  public SentryUserFeedbackButton(Context context, AttributeSet attrs) {
     super(context, attrs);
     init(context, attrs, 0, 0);
   }
 
-  public SentryUserFeedbackWidget(Context context, AttributeSet attrs, int defStyleAttr) {
+  public SentryUserFeedbackButton(Context context, AttributeSet attrs, int defStyleAttr) {
     super(context, attrs, defStyleAttr);
     init(context, attrs, defStyleAttr, 0);
   }
 
-  public SentryUserFeedbackWidget(
+  public SentryUserFeedbackButton(
       Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
     super(context, attrs, defStyleAttr, defStyleRes);
     init(context, attrs, defStyleAttr, defStyleRes);
@@ -44,22 +44,22 @@ public class SentryUserFeedbackWidget extends Button {
       final int defStyleRes) {
     try (final @NotNull TypedArray typedArray =
             context.obtainStyledAttributes(
-                attrs, R.styleable.SentryUserFeedbackWidget, defStyleAttr, defStyleRes)) {
+                attrs, R.styleable.SentryUserFeedbackButton, defStyleAttr, defStyleRes)) {
       final float dimensionScale = context.getResources().getDisplayMetrics().density;
       final float drawablePadding =
-          typedArray.getDimension(R.styleable.SentryUserFeedbackWidget_android_drawablePadding, -1);
+          typedArray.getDimension(R.styleable.SentryUserFeedbackButton_android_drawablePadding, -1);
       final int drawableStart =
-          typedArray.getResourceId(R.styleable.SentryUserFeedbackWidget_android_drawableStart, -1);
+          typedArray.getResourceId(R.styleable.SentryUserFeedbackButton_android_drawableStart, -1);
       final boolean textAllCaps =
-          typedArray.getBoolean(R.styleable.SentryUserFeedbackWidget_android_textAllCaps, false);
+          typedArray.getBoolean(R.styleable.SentryUserFeedbackButton_android_textAllCaps, false);
       final int background =
-          typedArray.getResourceId(R.styleable.SentryUserFeedbackWidget_android_background, -1);
+          typedArray.getResourceId(R.styleable.SentryUserFeedbackButton_android_background, -1);
       final float padding =
-          typedArray.getDimension(R.styleable.SentryUserFeedbackWidget_android_padding, -1);
+          typedArray.getDimension(R.styleable.SentryUserFeedbackButton_android_padding, -1);
       final int textColor =
-          typedArray.getColor(R.styleable.SentryUserFeedbackWidget_android_textColor, -1);
+          typedArray.getColor(R.styleable.SentryUserFeedbackButton_android_textColor, -1);
       final @Nullable String text =
-          typedArray.getString(R.styleable.SentryUserFeedbackWidget_android_text);
+          typedArray.getString(R.styleable.SentryUserFeedbackButton_android_text);
 
       // If the drawable padding is not set, set it to 4dp
       if (drawablePadding == -1) {
@@ -68,7 +68,8 @@ public class SentryUserFeedbackWidget extends Button {
 
       // If the drawable start is not set, set it to the default drawable
       if (drawableStart == -1) {
-        setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.sentry_campaign_24, 0, 0, 0);
+        setCompoundDrawablesRelativeWithIntrinsicBounds(
+            R.drawable.sentry_user_feedback_button_logo_24, 0, 0, 0);
       }
 
       // Set the text all caps
