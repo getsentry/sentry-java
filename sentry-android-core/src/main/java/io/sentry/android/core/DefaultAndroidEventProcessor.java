@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-
 import io.sentry.DateUtils;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
@@ -49,7 +48,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull Future<DeviceInfoUtil> deviceInfoUtil;
-  private final @NotNull LazyEvaluator<String> deviceFamily = new LazyEvaluator<>(() -> ContextUtils.getFamily(NoOpLogger.getInstance()));
+  private final @NotNull LazyEvaluator<String> deviceFamily =
+      new LazyEvaluator<>(() -> ContextUtils.getFamily(NoOpLogger.getInstance()));
 
   public DefaultAndroidEventProcessor(
       final @NotNull Context context,
@@ -233,8 +233,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private void setOs(final @NotNull SentryLogEvent event) {
     try {
       event.setAttribute(
-          "os.name",
-          new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));
+          "os.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));
       event.setAttribute(
           "os.version",
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.VERSION.RELEASE));
