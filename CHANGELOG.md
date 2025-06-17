@@ -22,6 +22,7 @@
     
       SentryUserFeedbackDialog.Builder(context).create().show()
       ```
+- Add `user.id`, `user.name` and `user.email` to log attributes ([#4486](https://github.com/getsentry/sentry-java/pull/4486))
 - Serialize `preContext` and `postContext` in `SentryStackFrame` ([#4482](https://github.com/getsentry/sentry-java/pull/4482))
 
 ## 8.13.3
