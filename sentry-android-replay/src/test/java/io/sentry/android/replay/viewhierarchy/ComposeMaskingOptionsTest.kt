@@ -1,8 +1,13 @@
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+
 package io.sentry.android.replay.viewhierarchy
 
 import android.app.Activity
 import android.net.Uri
 import android.os.Bundle
+import android.os.Looper
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.editableText
@@ -36,14 +42,22 @@ import io.sentry.android.replay.util.traverse
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.runner.RunWith
+import org.mockito.MockedStatic
+import org.mockito.Mockito
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric.buildActivity
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -131,6 +145,44 @@ class ComposeMaskingOptionsTest {
         val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
         assertEquals(1, imageNodes.size) // [AsyncImage]
         assertTrue(imageNodes.all { it.shouldMask })
+    }
+
+    @Test
+    fun `when retrieving the semantics fails, a node should be masked`() {
+        val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
+        shadowOf(Looper.getMainLooper()).idle()
+        val options = SentryOptions()
+
+        Mockito.mockStatic(ComposeViewHierarchyNode.javaClass)
+            .use { mock: MockedStatic<ComposeViewHierarchyNode> ->
+                mock.`when`<Any> {
+                    ComposeViewHierarchyNode.retrieveSemanticsConfiguration(any<LayoutNode>())
+                }.thenThrow(RuntimeException())
+
+                val root = activity.get().window.decorView
+                val composeView = root.lookupComposeView()
+                assertNotNull(composeView)
+
+                val rootNode = GenericViewHierarchyNode(0f, 0f, 0, 0, 1.0f, -1, shouldMask = true)
+                ComposeViewHierarchyNode.fromView(composeView, rootNode, options)
+
+                assertEquals(1, rootNode.children?.size)
+
+                rootNode.traverse { node ->
+                    assertTrue(node.shouldMask)
+                    true
+                }
+            }
+    }
+
+    @Test
+    fun `when retrieving the semantics fails, an error is thrown`() {
+        val node = mock<LayoutNode>()
+        whenever(node.collapsedSemantics).thenThrow(RuntimeException("Compose Runtime Error"))
+
+        assertThrows(RuntimeException::class.java) {
+            ComposeViewHierarchyNode.retrieveSemanticsConfiguration(node)
+        }
     }
 
     @Test
@@ -234,6 +286,22 @@ class ComposeMaskingOptionsTest {
             return@traverse true
         }
         return nodes
+    }
+
+    private fun View.lookupComposeView(): View? {
+        if (this.javaClass.name.contains("AndroidComposeView")) {
+            return this
+        }
+        if (this is ViewGroup) {
+            for (i in 0 until childCount) {
+                val child = getChildAt(i)
+                val composeView = child.lookupComposeView()
+                if (composeView != null) {
+                    return composeView
+                }
+            }
+        }
+        return null
     }
 }
 
