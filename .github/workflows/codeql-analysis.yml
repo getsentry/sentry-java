@@ -3,9 +3,6 @@ name: 'CodeQL'
 on:
   push:
     branches: [main]
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [main]
   schedule:
     - cron: '17 23 * * 3'
 
@@ -16,12 +13,10 @@ concurrency:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ubuntu-latest
+    runs-on: macos-15
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ['cpp', 'java']
+    env:
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
       - name: Checkout Repo
@@ -36,23 +31,18 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@707359876a764dbcdb9da0b0ed08291818310c3d # pin@v3
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326
         with:
-          gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@662472033e021d55d94146f66f6058822b0b39fd # pin@v2
+        uses: github/codeql-action/init@ff0a06e83cb2de871e5a09832bc6a81e7276941f # pin@v2
         with:
-          languages: ${{ matrix.language }}
+          languages: 'java'
 
-      - if: matrix.language == 'cpp'
-        name: Build Cpp
+      - name: Build Java
         run: |
-          ./gradlew sentry-android-ndk:buildCMakeRelWithDebInfo
-      - if: matrix.language == 'java'
-        name: Build Java
-        run: |
-          ./gradlew buildForCodeQL
+          ./gradlew buildForCodeQL --no-build-cache
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@662472033e021d55d94146f66f6058822b0b39fd # pin@v2
+        uses: github/codeql-action/analyze@ff0a06e83cb2de871e5a09832bc6a81e7276941f # pin@v2

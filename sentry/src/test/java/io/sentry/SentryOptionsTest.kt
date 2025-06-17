@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.SentryOptions.RequestSize
 import io.sentry.util.StringUtils
 import org.mockito.kotlin.mock
 import java.io.File
@@ -12,7 +13,6 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryOptionsTest {
@@ -131,28 +131,8 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when enableTracing is set to true tracing is considered enabled`() {
-        val options = SentryOptions().apply {
-            this.enableTracing = true
-        }
-
-        assertTrue(options.isTracingEnabled)
-    }
-
-    @Test
     fun `by default tracing is considered disabled`() {
         val options = SentryOptions()
-
-        assertFalse(options.isTracingEnabled)
-    }
-
-    @Test
-    fun `when enableTracing is set to false tracing is considered disabled`() {
-        val options = SentryOptions().apply {
-            this.enableTracing = false
-            this.tracesSampleRate = 1.0
-            this.tracesSampler = SentryOptions.TracesSamplerCallback { _ -> 1.0 }
-        }
 
         assertFalse(options.isTracingEnabled)
     }
@@ -213,42 +193,64 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options is initialized, isProfilingEnabled is false`() {
+    fun `when options is initialized, isProfilingEnabled is false and isContinuousProfilingEnabled is true`() {
         assertFalse(SentryOptions().isProfilingEnabled)
+        assertFalse(SentryOptions().isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampleRate is null and profilesSampler is null, isProfilingEnabled is false`() {
+    fun `when profilesSampleRate is null and profilesSampler is null, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
             this.profilesSampleRate = null
             this.profilesSampler = null
         }
         assertFalse(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampleRate is 0 and profilesSampler is null, isProfilingEnabled is false`() {
+    fun `when profilesSampleRate is 0 and profilesSampler is null, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
             this.profilesSampleRate = 0.0
             this.profilesSampler = null
         }
         assertFalse(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampleRate is set to a value higher than 0, isProfilingEnabled is true`() {
+    fun `when profilesSampleRate is set to a value higher than 0, isProfilingEnabled is true and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
             this.profilesSampleRate = 0.1
         }
         assertTrue(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
     }
 
     @Test
-    fun `when profilesSampler is set to a value, isProfilingEnabled is true`() {
+    fun `when profilesSampler is set to a value, isProfilingEnabled is true and isContinuousProfilingEnabled is false`() {
         val options = SentryOptions().apply {
             this.profilesSampler = SentryOptions.ProfilesSamplerCallback { 1.0 }
         }
         assertTrue(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
+    }
+
+    @Test
+    fun `when profileSessionSampleRate is set to 0, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
+        val options = SentryOptions().apply {
+            this.profileSessionSampleRate = 0.0
+        }
+        assertFalse(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
+    }
+
+    @Test
+    fun `when profileSessionSampleRate is null, isProfilingEnabled is false and isContinuousProfilingEnabled is false`() {
+        val options = SentryOptions()
+        assertNull(options.profileSessionSampleRate)
+        assertFalse(options.isProfilingEnabled)
+        assertFalse(options.isContinuousProfilingEnabled)
     }
 
     @Test
@@ -270,37 +272,64 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when profilingEnabled is set to true, profilesSampleRate is set to 1`() {
-        val options = SentryOptions()
-        options.isProfilingEnabled = true
-        assertEquals(1.0, options.profilesSampleRate)
+    fun `when profileSessionSampleRate is set to exactly 0, value is set`() {
+        val options = SentryOptions().apply {
+            this.profileSessionSampleRate = 0.0
+        }
+        assertEquals(0.0, options.profileSessionSampleRate)
     }
 
     @Test
-    fun `when profilingEnabled is set to false, profilesSampleRate is set to null`() {
-        val options = SentryOptions()
-        options.isProfilingEnabled = false
-        assertNull(options.profilesSampleRate)
+    fun `when profileSessionSampleRate is set to higher than 1_0, setter throws`() {
+        assertFailsWith<IllegalArgumentException> { SentryOptions().profileSessionSampleRate = 1.0000000000001 }
     }
 
     @Test
-    fun `when profilesSampleRate is set, setting profilingEnabled is ignored`() {
-        val options = SentryOptions()
-        options.profilesSampleRate = 0.2
-        options.isProfilingEnabled = true
-        assertEquals(0.2, options.profilesSampleRate)
-        options.isProfilingEnabled = false
-        assertEquals(0.2, options.profilesSampleRate)
+    fun `when profileSessionSampleRate is set to lower than 0, setter throws`() {
+        assertFailsWith<IllegalArgumentException> { SentryOptions().profileSessionSampleRate = -0.0000000000001 }
     }
 
     @Test
-    fun `when options is initialized, transactionPerformanceCollector is set`() {
-        assertIs<TransactionPerformanceCollector>(SentryOptions().transactionPerformanceCollector)
+    fun `when profileLifecycleSessionSampleRate is set to a value, value is set`() {
+        val options = SentryOptions().apply {
+            this.profileLifecycle = ProfileLifecycle.TRACE
+        }
+        assertEquals(ProfileLifecycle.TRACE, options.profileLifecycle)
+    }
+
+    @Test
+    fun `profileLifecycleSessionSampleRate defaults to MANUAL`() {
+        val options = SentryOptions()
+        assertEquals(ProfileLifecycle.MANUAL, options.profileLifecycle)
+    }
+
+    @Test
+    fun `when isStartProfilerOnAppStart is set to a value, value is set`() {
+        val options = SentryOptions().apply {
+            this.isStartProfilerOnAppStart = true
+        }
+        assertTrue(options.isStartProfilerOnAppStart)
+    }
+
+    @Test
+    fun `isStartProfilerOnAppStart defaults to false`() {
+        val options = SentryOptions()
+        assertFalse(options.isStartProfilerOnAppStart)
+    }
+
+    @Test
+    fun `when options is initialized, compositePerformanceCollector is set`() {
+        assertIs<CompositePerformanceCollector>(SentryOptions().compositePerformanceCollector)
     }
 
     @Test
     fun `when options is initialized, transactionProfiler is noop`() {
         assert(SentryOptions().transactionProfiler == NoOpTransactionProfiler.getInstance())
+    }
+
+    @Test
+    fun `when options is initialized, continuousProfiler is noop`() {
+        assert(SentryOptions().continuousProfiler == NoOpContinuousProfiler.getInstance())
     }
 
     @Test
@@ -354,7 +383,6 @@ class SentryOptionsTest {
         externalOptions.setTag("tag1", "value1")
         externalOptions.setTag("tag2", "value2")
         externalOptions.enableUncaughtExceptionHandler = false
-        externalOptions.enableTracing = true
         externalOptions.tracesSampleRate = 0.5
         externalOptions.profilesSampleRate = 0.5
         externalOptions.addInAppInclude("com.app")
@@ -370,7 +398,12 @@ class SentryOptionsTest {
         externalOptions.isEnablePrettySerializationOutput = false
         externalOptions.isSendModules = false
         externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
+        externalOptions.ignoredTransactions = listOf("transactionName1", "transaction-name-B")
+        externalOptions.ignoredErrors = listOf("Some error", "Another .*")
         externalOptions.isEnableBackpressureHandling = false
+        externalOptions.maxRequestBodySize = SentryOptions.RequestSize.MEDIUM
+        externalOptions.isSendDefaultPii = true
+        externalOptions.isForceInit = true
         externalOptions.cron = SentryOptions.Cron().apply {
             defaultCheckinMargin = 10L
             defaultMaxRuntime = 30L
@@ -378,6 +411,10 @@ class SentryOptionsTest {
             defaultFailureIssueThreshold = 40L
             defaultRecoveryThreshold = 50L
         }
+        externalOptions.isEnableSpotlight = true
+        externalOptions.spotlightConnectionUrl = "http://local.sentry.io:1234"
+        externalOptions.isGlobalHubMode = true
+        externalOptions.isEnableLogs = true
 
         val options = SentryOptions()
 
@@ -394,7 +431,6 @@ class SentryOptionsTest {
         assertEquals(java.net.Proxy.Type.SOCKS, options.proxy!!.type)
         assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
         assertFalse(options.isEnableUncaughtExceptionHandler)
-        assertEquals(true, options.enableTracing)
         assertEquals(0.5, options.tracesSampleRate)
         assertEquals(0.5, options.profilesSampleRate)
         assertEquals(listOf("com.app"), options.inAppIncludes)
@@ -407,14 +443,23 @@ class SentryOptionsTest {
         assertFalse(options.isEnabled)
         assertFalse(options.isEnablePrettySerializationOutput)
         assertFalse(options.isSendModules)
-        assertEquals(listOf("slug1", "slug-B"), options.ignoredCheckIns)
+        assertEquals(listOf(FilterString("slug1"), FilterString("slug-B")), options.ignoredCheckIns)
+        assertEquals(listOf(FilterString("transactionName1"), FilterString("transaction-name-B")), options.ignoredTransactions)
+        assertEquals(listOf(FilterString("Some error"), FilterString("Another .*")), options.ignoredErrors)
         assertFalse(options.isEnableBackpressureHandling)
+        assertTrue(options.isForceInit)
         assertNotNull(options.cron)
         assertEquals(10L, options.cron?.defaultCheckinMargin)
         assertEquals(30L, options.cron?.defaultMaxRuntime)
         assertEquals(40L, options.cron?.defaultFailureIssueThreshold)
         assertEquals(50L, options.cron?.defaultRecoveryThreshold)
         assertEquals("America/New_York", options.cron?.defaultTimezone)
+        assertTrue(options.isSendDefaultPii)
+        assertEquals(RequestSize.MEDIUM, options.maxRequestBodySize)
+        assertTrue(options.isEnableSpotlight)
+        assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
+        assertTrue(options.isGlobalHubMode!!)
+        assertTrue(options.logs.isEnabled!!)
     }
 
     @Test
@@ -500,16 +545,16 @@ class SentryOptionsTest {
     }
 
     @Test
-    fun `when options are initialized, TransactionPerformanceCollector is a NoOp`() {
-        assertEquals(SentryOptions().transactionPerformanceCollector, NoOpTransactionPerformanceCollector.getInstance())
+    fun `when options are initialized, CompositePerformanceCollector is a NoOp`() {
+        assertEquals(SentryOptions().compositePerformanceCollector, NoOpCompositePerformanceCollector.getInstance())
     }
 
     @Test
-    fun `when setTransactionPerformanceCollector is called, overrides default`() {
-        val performanceCollector = mock<TransactionPerformanceCollector>()
+    fun `when setCompositePerformanceCollector is called, overrides default`() {
+        val performanceCollector = mock<CompositePerformanceCollector>()
         val options = SentryOptions()
-        options.transactionPerformanceCollector = performanceCollector
-        assertEquals(performanceCollector, options.transactionPerformanceCollector)
+        options.compositePerformanceCollector = performanceCollector
+        assertEquals(performanceCollector, options.compositePerformanceCollector)
     }
 
     @Test
@@ -569,8 +614,23 @@ class SentryOptionsTest {
     }
 
     @Test
+    fun `when options are initialized, enableSpotlight is set to false by default`() {
+        assertFalse(SentryOptions().isEnableSpotlight)
+    }
+
+    @Test
+    fun `when options are initialized, spotlightConnectionUrl is not set by default`() {
+        assertNull(SentryOptions().spotlightConnectionUrl)
+    }
+
+    @Test
     fun `when options are initialized, enableAppStartProfiling is set to false by default`() {
         assertFalse(SentryOptions().isEnableAppStartProfiling)
+    }
+
+    @Test
+    fun `when options are initialized, isGlobalHubMode is set to null by default`() {
+        assertNull(SentryOptions().isGlobalHubMode)
     }
 
     @Test
@@ -585,8 +645,16 @@ class SentryOptionsTest {
     fun `when profiling is disabled, isEnableAppStartProfiling is always false`() {
         val options = SentryOptions()
         options.isEnableAppStartProfiling = true
-        options.profilesSampleRate = 0.0
+        options.profileSessionSampleRate = 0.0
         assertFalse(options.isEnableAppStartProfiling)
+    }
+
+    @Test
+    fun `when setEnableAppStartProfiling is called and continuous profiling is enabled, isEnableAppStartProfiling is true`() {
+        val options = SentryOptions()
+        options.isEnableAppStartProfiling = true
+        options.profileSessionSampleRate = 1.0
+        assertTrue(options.isEnableAppStartProfiling)
     }
 
     @Test
@@ -621,49 +689,6 @@ class SentryOptionsTest {
     @Test
     fun `when options are initialized, enableScopePersistence is set to true by default`() {
         assertEquals(true, SentryOptions().isEnableScopePersistence)
-    }
-
-    @Test
-    fun `when options are initialized, metrics is disabled by default`() {
-        assertFalse(SentryOptions().isEnableMetrics)
-        assertFalse(SentryOptions().isEnableDefaultTagsForMetrics)
-        assertFalse(SentryOptions().isEnableSpanLocalMetricAggregation)
-    }
-
-    @Test
-    fun `when metrics is enabled, getters reflect that`() {
-        val options = SentryOptions().apply {
-            isEnableMetrics = true
-        }
-        assertTrue(options.isEnableMetrics)
-        assertTrue(options.isEnableDefaultTagsForMetrics)
-        assertTrue(options.isEnableSpanLocalMetricAggregation)
-    }
-
-    @Test
-    fun `when metric settings are flipped, getters reflect that`() {
-        val options = SentryOptions().apply {
-            isEnableMetrics = true
-            isEnableDefaultTagsForMetrics = false
-            isEnableSpanLocalMetricAggregation = false
-        }
-        assertTrue(options.isEnableMetrics)
-        assertFalse(options.isEnableDefaultTagsForMetrics)
-        assertFalse(options.isEnableSpanLocalMetricAggregation)
-    }
-
-    @Test
-    fun `metric callback is null by default`() {
-        assertNull(SentryOptions().beforeEmitMetricCallback)
-    }
-
-    @Test
-    fun `when metric callback is set, getter returns it`() {
-        val callback = SentryOptions.BeforeEmitMetricCallback { _, _ -> false }
-        val options = SentryOptions().apply {
-            beforeEmitMetricCallback = callback
-        }
-        assertSame(callback, options.beforeEmitMetricCallback)
     }
 
     @Test
@@ -720,5 +745,46 @@ class SentryOptionsTest {
         assertEquals("Europe/Vienna", options.cron?.defaultTimezone)
         assertEquals(30, options.cron?.defaultFailureIssueThreshold)
         assertEquals(40, options.cron?.defaultRecoveryThreshold)
+    }
+
+    @Test
+    fun `when options is initialized, InitPriority is set to MEDIUM by default`() {
+        assertEquals(SentryOptions().initPriority, InitPriority.MEDIUM)
+    }
+
+    @Test
+    fun `merging options when ignoredErrors is not set preserves the previous value`() {
+        val externalOptions = ExternalOptions()
+        val options = SentryOptions()
+        options.setIgnoredErrors(listOf("error1", "error2"))
+        options.merge(externalOptions)
+        assertEquals(listOf(FilterString("error1"), FilterString("error2")), options.ignoredErrors)
+    }
+
+    @Test
+    fun `merging options when ignoredTransactions is not set preserves the previous value`() {
+        val externalOptions = ExternalOptions()
+        val options = SentryOptions()
+        options.setIgnoredTransactions(listOf("transaction1", "transaction2"))
+        options.merge(externalOptions)
+        assertEquals(listOf(FilterString("transaction1"), FilterString("transaction2")), options.ignoredTransactions)
+    }
+
+    @Test
+    fun `merging options when ignoredCheckIns is not set preserves the previous value`() {
+        val externalOptions = ExternalOptions()
+        val options = SentryOptions()
+        options.setIgnoredCheckIns(listOf("checkin1", "checkin2"))
+        options.merge(externalOptions)
+        assertEquals(listOf(FilterString("checkin1"), FilterString("checkin2")), options.ignoredCheckIns)
+    }
+
+    @Test
+    fun `null tag`() {
+        val options = SentryOptions.empty()
+        options.setTag("k", "v")
+        options.setTag("k", null)
+        options.setTag(null, null)
+        assertTrue(options.tags.isEmpty())
     }
 }

@@ -5,22 +5,18 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
-    id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
-}
-
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.buildconfig)
+    alias(libs.plugins.springboot2) apply false
 }
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+    kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
 }
 
 dependencies {
@@ -31,35 +27,38 @@ dependencies {
     compileOnly(Config.Libs.springAop)
     compileOnly(Config.Libs.springSecurityWeb)
     compileOnly(Config.Libs.aspectj)
-    compileOnly(Config.Libs.servletApi)
-    compileOnly(Config.Libs.slf4jApi)
     compileOnly(Config.Libs.springWebflux)
-    compileOnly(Config.Libs.springBootStarterGraphql)
     compileOnly(projects.sentryGraphql)
-    compileOnly(Config.Libs.springBootStarterQuartz)
     compileOnly(projects.sentryQuartz)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    compileOnly(libs.otel)
+    compileOnly(libs.servlet.api)
+    compileOnly(libs.slf4j.api)
+    compileOnly(libs.springboot.starter.graphql)
+    compileOnly(libs.springboot.starter.quartz)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(projects.sentryGraphql)
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.Libs.springBootStarterTest)
-    testImplementation(Config.Libs.springBootStarterWeb)
-    testImplementation(Config.Libs.springBootStarterWebflux)
-    testImplementation(Config.Libs.springBootStarterSecurity)
-    testImplementation(Config.Libs.springBootStarterAop)
-    testImplementation(Config.Libs.springBootStarterGraphql)
-    testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.Libs.graphQlJava)
+    testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.graphql.java17)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.springboot.starter.aop)
+    testImplementation(libs.springboot.starter.graphql)
+    testImplementation(libs.springboot.starter.security)
+    testImplementation(libs.springboot.starter.test)
+    testImplementation(libs.springboot.starter.web)
+    testImplementation(libs.springboot.starter.webflux)
 }
 
 configure<SourceSetContainer> {
@@ -69,7 +68,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {
@@ -98,11 +97,23 @@ buildConfig {
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
-val generateBuildConfig by tasks
 tasks.withType<JavaCompile>().configureEach {
-    dependsOn(generateBuildConfig)
+    dependsOn(tasks.generateBuildConfig)
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
+    }
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Sentry-Version-Name" to project.version,
+            "Sentry-SDK-Name" to Config.Sentry.SENTRY_SPRING_SDK_NAME,
+            "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-spring",
+            "Implementation-Vendor" to "Sentry",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version
+        )
     }
 }

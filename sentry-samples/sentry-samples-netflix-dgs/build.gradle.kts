@@ -1,12 +1,11 @@
-import org.gradle.internal.impldep.org.junit.experimental.categories.Categories.CategoryFilter.exclude
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id(Config.BuildPlugins.springBoot) version Config.springBootVersion
-    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
+    alias(libs.plugins.springboot2)
+    alias(libs.plugins.spring.dependency.management)
     kotlin("jvm")
-    kotlin("plugin.spring") version Config.kotlinVersion
+    alias(libs.plugins.kotlin.spring)
 }
 
 group = "io.sentry.sample.spring-boot"
@@ -19,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    implementation(Config.Libs.springBootStarterWeb)
+    implementation(libs.springboot.starter.web)
     implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarter)
@@ -27,16 +26,16 @@ dependencies {
     implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.9.2"))
     implementation("com.netflix.graphql.dgs:graphql-dgs-subscriptions-websockets-autoconfigure:4.9.2")
     implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
-    testImplementation(Config.Libs.springBootStarterTest) {
+    testImplementation(libs.springboot.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
 }
 
-tasks.withType<Test> {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
-tasks.withType<KotlinCompile> {
+tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
         jvmTarget = JavaVersion.VERSION_1_8.toString()

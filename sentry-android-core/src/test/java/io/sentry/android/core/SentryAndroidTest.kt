@@ -11,10 +11,12 @@ import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
+import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.ISentryClient
 import io.sentry.Sentry
+import io.sentry.Sentry.OptionsConfiguration
 import io.sentry.SentryEnvelope
 import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
@@ -36,10 +38,15 @@ import io.sentry.cache.PersistingOptionsObserver
 import io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.OPTIONS_CACHE
 import io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME
-import io.sentry.cache.PersistingScopeObserver
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
+import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.cache.PersistingScopeObserver.SCOPE_CACHE
 import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
+import io.sentry.cache.tape.QueueFile
+import io.sentry.protocol.Contexts
+import io.sentry.protocol.SentryId
+import io.sentry.test.applyTestOptions
+import io.sentry.test.initForTest
 import io.sentry.transport.NoOpEnvelopeCache
 import io.sentry.util.StringUtils
 import org.awaitility.kotlin.await
@@ -61,6 +68,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
@@ -100,9 +108,9 @@ class SentryAndroidTest {
             }
             val mockContext = context ?: ContextUtilsTestHelper.mockMetaData(metaData = metadata)
             when {
-                logger != null -> SentryAndroid.init(mockContext, logger)
-                options != null -> SentryAndroid.init(mockContext, options)
-                else -> SentryAndroid.init(mockContext)
+                logger != null -> initForTest(mockContext, logger)
+                options != null -> initForTest(mockContext, options)
+                else -> initForTest(mockContext)
             }
         }
 
@@ -290,7 +298,7 @@ class SentryAndroidTest {
 
         val mockContext = ContextUtilsTestHelper.createMockContext(true)
         val cacheDirPath = Files.createTempDirectory("new_cache").absolutePathString()
-        SentryAndroid.init(mockContext) {
+        initForTest(mockContext) {
             it.dsn = "https://key@sentry.io/123"
             it.cacheDirPath = cacheDirPath
             options = it
@@ -322,12 +330,13 @@ class SentryAndroidTest {
     @Test
     fun `init does not start a session if one is already running`() {
         val client = mock<ISentryClient>()
+        whenever(client.isEnabled).thenReturn(true)
 
         initSentryWithForegroundImportance(true, { options ->
-            options.addIntegration { hub, _ ->
-                hub.bindClient(client)
+            options.addIntegration { scopes, _ ->
+                scopes.bindClient(client)
                 // usually done by LifecycleWatcher
-                hub.startSession()
+                scopes.startSession()
             }
         }) {}
 
@@ -353,7 +362,7 @@ class SentryAndroidTest {
     @Test
     fun `When initializing Sentry a callback is added to application by appStartMetrics`() {
         val mockContext = ContextUtilsTestHelper.createMockContext(true)
-        SentryAndroid.init(mockContext) {
+        initForTest(mockContext) {
             it.dsn = "https://key@sentry.io/123"
         }
         verify(mockContext.applicationContext as Application).registerActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
@@ -367,16 +376,16 @@ class SentryAndroidTest {
         Mockito.mockStatic(ContextUtils::class.java, Mockito.CALLS_REAL_METHODS).use { mockedContextUtils ->
             mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance() }
                 .thenReturn(inForeground)
-            SentryAndroid.init(context) { options ->
+            initForTest(context) { options ->
                 options.release = "prod"
                 options.dsn = "https://key@sentry.io/123"
                 options.isEnableAutoSessionTracking = true
-                options.experimental.sessionReplay.onErrorSampleRate = 1.0
+                options.sessionReplay.onErrorSampleRate = 1.0
                 optionsConfig(options)
             }
 
             var session: Session? = null
-            Sentry.getCurrentHub().configureScope { scope ->
+            Sentry.getCurrentScopes().configureScope { scope ->
                 session = scope.session
             }
             callback(session)
@@ -388,7 +397,7 @@ class SentryAndroidTest {
         fixture.initSut { options ->
             options.isEnableAutoSessionTracking = false
         }
-        Sentry.getCurrentHub().withScope { scope ->
+        Sentry.getCurrentScopes().withScope { scope ->
             assertNull(scope.session)
         }
     }
@@ -413,26 +422,30 @@ class SentryAndroidTest {
                 assertEquals("Debug!", event.breadcrumbs!![0].message)
                 assertEquals("staging", event.environment)
                 assertEquals("io.sentry.sample@2.0.0", event.release)
+                assertEquals("afcb46b1140ade5187c4bbb5daa804df", event.contexts[Contexts.REPLAY_ID])
                 asserted.set(true)
                 null
             }
 
             // have to do it after the cacheDir is set to options, because it adds a dsn hash after
             prefillOptionsCache(it.cacheDirPath!!)
-            prefillScopeCache(it.cacheDirPath!!)
+            prefillScopeCache(it, it.cacheDirPath!!)
 
             it.release = "io.sentry.sample@1.1.0+220"
             it.environment = "debug"
-            // this is necessary to delay the AnrV2Integration processing to execute the configure
-            // scope block below (otherwise it won't be possible as hub is no-op before .init)
-            it.executorService.submit {
-                Sentry.configureScope { scope ->
-                    // make sure the scope values changed to test that we're still using previously
-                    // persisted values for the old ANR events
-                    assertEquals("TestActivity", scope.transactionName)
-                }
-            }
             options = it
+        }
+        options.executorService.submit {
+            // verify we reset the persisted scope values after the init bg tasks have run to ensure
+            // clean state for a new process.
+            assertEquals(
+                emptyList<Breadcrumb>(),
+                options.findPersistingScopeObserver()?.read(options, BREADCRUMBS_FILENAME, List::class.java)
+            )
+            assertEquals(
+                SentryId.EMPTY_ID.toString(),
+                options.findPersistingScopeObserver()?.read(options, REPLAY_FILENAME, String::class.java)
+            )
         }
         Sentry.configureScope {
             it.setTransaction("TestActivity")
@@ -447,7 +460,7 @@ class SentryAndroidTest {
         // assert that persisted values have changed
         assertEquals(
             "TestActivity",
-            PersistingScopeObserver.read(options, TRANSACTION_FILENAME, String::class.java)
+            options.findPersistingScopeObserver()?.read(options, TRANSACTION_FILENAME, String::class.java)
         )
         assertEquals(
             "io.sentry.sample@1.1.0+220",
@@ -461,7 +474,7 @@ class SentryAndroidTest {
         fixture.initSut(context = mock<Application>()) { options ->
             optionsRef = options
             options.dsn = "https://key@sentry.io/123"
-            assertEquals(21, options.integrations.size)
+            assertEquals(18, options.integrations.size)
             options.integrations.removeAll {
                 it is UncaughtExceptionHandlerIntegration ||
                     it is ShutdownHookIntegration ||
@@ -472,15 +485,12 @@ class SentryAndroidTest {
                     it is AnrIntegration ||
                     it is ActivityLifecycleIntegration ||
                     it is ActivityBreadcrumbsIntegration ||
-                    it is CurrentActivityIntegration ||
                     it is UserInteractionIntegration ||
                     it is FragmentLifecycleIntegration ||
                     it is SentryTimberIntegration ||
                     it is AppComponentsBreadcrumbsIntegration ||
                     it is SystemEventsBreadcrumbsIntegration ||
                     it is NetworkBreadcrumbsIntegration ||
-                    it is TempSensorBreadcrumbsIntegration ||
-                    it is PhoneStateBreadcrumbsIntegration ||
                     it is SpotlightIntegration ||
                     it is ReplayIntegration
             }
@@ -517,19 +527,35 @@ class SentryAndroidTest {
         assertEquals(99, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
     }
 
-    private fun prefillScopeCache(cacheDir: String) {
+    @Test
+    fun `if the config options block throws still intializes android event processors`() {
+        lateinit var optionsRef: SentryOptions
+        fixture.initSut(context = mock<Application>()) { options ->
+            optionsRef = options
+            options.dsn = "https://key@sentry.io/123"
+            throw RuntimeException("Boom!")
+        }
+
+        assertTrue(optionsRef.eventProcessors.any { it is DefaultAndroidEventProcessor })
+        assertTrue(optionsRef.eventProcessors.any { it is AnrV2EventProcessor })
+    }
+
+    private fun prefillScopeCache(options: SentryOptions, cacheDir: String) {
         val scopeDir = File(cacheDir, SCOPE_CACHE).also { it.mkdirs() }
-        File(scopeDir, BREADCRUMBS_FILENAME).writeText(
-            """
-            [{
-              "timestamp": "2009-11-16T01:08:47.000Z",
-              "message": "Debug!",
-              "type": "debug",
-              "level": "debug"
-            }]
-            """.trimIndent()
+        val queueFile = QueueFile.Builder(File(scopeDir, BREADCRUMBS_FILENAME)).build()
+        val baos = ByteArrayOutputStream()
+        options.serializer.serialize(
+            Breadcrumb(DateUtils.getDateTime("2009-11-16T01:08:47.000Z")).apply {
+                message = "Debug!"
+                type = "debug"
+                level = DEBUG
+            },
+            baos.writer()
         )
+        queueFile.add(baos.toByteArray())
         File(scopeDir, TRANSACTION_FILENAME).writeText("\"MainActivity\"")
+        File(scopeDir, REPLAY_FILENAME).writeText("\"afcb46b1140ade5187c4bbb5daa804df\"")
+        File(options.getCacheDirPath(), "replay_afcb46b1140ade5187c4bbb5daa804df").mkdirs()
     }
 
     private fun prefillOptionsCache(cacheDir: String) {
@@ -543,4 +569,19 @@ class SentryAndroidTest {
         override fun store(envelope: SentryEnvelope, hint: Hint) = Unit
         override fun discard(envelope: SentryEnvelope) = Unit
     }
+}
+
+fun initForTest(context: Context, optionsConfiguration: OptionsConfiguration<SentryAndroidOptions>) {
+    SentryAndroid.init(context) {
+        applyTestOptions(it)
+        optionsConfiguration.configure(it)
+    }
+}
+
+fun initForTest(context: Context, logger: ILogger) {
+    SentryAndroid.init(context, logger)
+}
+
+fun initForTest(context: Context) {
+    SentryAndroid.init(context)
 }

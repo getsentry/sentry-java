@@ -1,4 +1,4 @@
-import com.android.build.gradle.internal.tasks.LibraryAarJarsTask
+
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.dokka.gradle.DokkaTask
 
@@ -6,17 +6,18 @@ plugins {
     kotlin("multiplatform")
     id("com.android.library")
     id("org.jetbrains.compose")
-    id(Config.QualityPlugins.kover)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.QualityPlugins.detektPlugin)
-    id(Config.BuildPlugins.dokkaPluginAlias)
+    alias(libs.plugins.kover)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.dokka.javadoc)
     `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
 }
 
 kotlin {
     explicitApi()
 
-    android {
+    androidTarget {
         publishLibraryVariants("release")
         compilations.all {
             kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
@@ -41,8 +42,6 @@ kotlin {
             dependencies {
                 compileOnly(compose.runtime)
                 compileOnly(compose.ui)
-
-                compileOnly(projects.sentryComposeHelper)
             }
         }
         val androidMain by getting {
@@ -50,28 +49,32 @@ kotlin {
                 api(projects.sentry)
                 api(projects.sentryAndroidNavigation)
 
-                compileOnly(Config.Libs.composeNavigation)
-                implementation(Config.Libs.lifecycleCommonJava8)
+                compileOnly(libs.androidx.navigation.compose)
+                implementation(libs.androidx.lifecycle.common.java8)
             }
         }
         val androidUnitTest by getting {
             dependencies {
-                implementation(Config.TestLibs.kotlinTestJunit)
-                implementation(Config.TestLibs.mockitoKotlin)
-                implementation(Config.TestLibs.mockitoInline)
-                implementation(Config.Libs.composeNavigation)
+                implementation(libs.androidx.compose.ui.test.junit4)
+                implementation(libs.androidx.navigation.compose)
+                implementation(libs.androidx.test.ext.junit)
+                implementation(libs.androidx.test.rules)
+                implementation(libs.androidx.test.runner)
+                implementation(libs.kotlin.test.junit)
+                implementation(libs.mockito.inline)
+                implementation(libs.mockito.kotlin)
+                implementation(libs.roboelectric)
             }
         }
     }
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.compose"
 
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
-        minSdk = Config.Android.minSdkVersionCompose
+        minSdk = libs.versions.minSdk.get().toInt()
 
         // for AGP 4.1
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
@@ -82,7 +85,9 @@ android {
     }
 
     buildTypes {
-        getByName("debug")
+        getByName("debug") {
+            consumerProguardFiles("proguard-rules.pro")
+        }
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }
@@ -104,14 +109,16 @@ android {
         checkReleaseBuilds = false
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    buildFeatures {
+        buildConfig = true
+    }
+
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
@@ -126,24 +133,4 @@ tasks.withType<DokkaTask>().configureEach {
             suppress.set(true)
         }
     }
-}
-
-/**
- * Due to https://youtrack.jetbrains.com/issue/KT-30878
- * you can not have java sources in a KMP-enabled project which has the android-lib plugin applied.
- * Thus we compile relevant java code in sentry-compose-helper first and embed it in here.
- */
-val embedComposeHelperConfig by configurations.creating {
-    isCanBeConsumed = false
-    isCanBeResolved = true
-}
-
-dependencies {
-    embedComposeHelperConfig(
-        project(":" + projects.sentryComposeHelper.name, "embeddedJar")
-    )
-}
-
-tasks.withType<LibraryAarJarsTask> {
-    mainScopeClassFiles.setFrom(embedComposeHelperConfig)
 }

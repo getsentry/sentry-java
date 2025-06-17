@@ -23,6 +23,7 @@ jobs:
     # we copy the secret to the env variable in order to access it in the workflow
     env:
       SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
       - name: Git checkout
@@ -37,9 +38,9 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@707359876a764dbcdb9da0b0ed08291818310c3d # pin@v3
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326
         with:
-          gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       # Clean, build and release a test apk, but only if we will run the benchmark
       - name: Make assembleBenchmarks
@@ -72,6 +73,7 @@ jobs:
     # we copy the secret to the env variable in order to access it in the workflow
     env:
       SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
       - name: Git checkout
@@ -86,9 +88,9 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@707359876a764dbcdb9da0b0ed08291818310c3d # pin@v3
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326
         with:
-          gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - uses: actions/cache@v4
         id: app-plain-cache

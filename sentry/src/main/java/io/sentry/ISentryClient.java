@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -40,7 +41,7 @@ public interface ISentryClient {
   void close(boolean isRestarting);
 
   /**
-   * Flushes events queued up, but keeps the client enabled. Not implemented yet.
+   * Flushes events queued up, but keeps the client enabled.
    *
    * @param timeoutMillis time in milliseconds
    */
@@ -77,6 +78,17 @@ public interface ISentryClient {
   default @NotNull SentryId captureEvent(@NotNull SentryEvent event, @Nullable Hint hint) {
     return captureEvent(event, null, hint);
   }
+
+  /**
+   * Captures the feedback.
+   *
+   * @param feedback The feedback to send.
+   * @param hint An optional hint to be applied to the event.
+   * @param scope An optional scope to be applied to the event.
+   * @return The Id (SentryId object) of the event
+   */
+  @NotNull
+  SentryId captureFeedback(@NotNull Feedback feedback, @Nullable Hint hint, @NotNull IScope scope);
 
   /**
    * Captures the message.
@@ -277,9 +289,26 @@ public interface ISentryClient {
     return captureTransaction(transaction, null, null, null);
   }
 
+  /**
+   * Captures the profile chunk and enqueues it for sending to Sentry server.
+   *
+   * @param profilingContinuousData the continuous profiling payload
+   * @return the profile chunk id
+   */
+  @ApiStatus.Internal
+  @NotNull
+  SentryId captureProfileChunk(
+      final @NotNull ProfileChunk profilingContinuousData, final @Nullable IScope scope);
+
   @NotNull
   @ApiStatus.Experimental
   SentryId captureCheckIn(@NotNull CheckIn checkIn, @Nullable IScope scope, @Nullable Hint hint);
+
+  @ApiStatus.Experimental
+  void captureLog(@NotNull SentryLogEvent logEvent, @Nullable IScope scope);
+
+  @ApiStatus.Internal
+  void captureBatchedLogEvents(@NotNull SentryLogEvents logEvents);
 
   @ApiStatus.Internal
   @Nullable
@@ -289,8 +318,4 @@ public interface ISentryClient {
   default boolean isHealthy() {
     return true;
   }
-
-  @ApiStatus.Internal
-  @NotNull
-  IMetricsAggregator getMetricsAggregator();
 }

@@ -4,38 +4,18 @@ plugins {
     id("com.android.library")
     kotlin("android")
     jacoco
-    id(Config.QualityPlugins.jacocoAndroid)
-    id(Config.NativePlugins.nativeBundleExport)
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.jacoco.android)
+    alias(libs.plugins.gradle.versions)
 }
 
-var sentryNativeSrc: String = "sentry-native"
-val sentryAndroidSdkName: String by project
-
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.android.ndk"
 
-    sentryNativeSrc = if (File("${project.projectDir}/sentry-native-local").exists()) {
-        "sentry-native-local"
-    } else {
-        "sentry-native"
-    }
-    println("sentry-android-ndk: $sentryNativeSrc")
-
     defaultConfig {
-        targetSdk = Config.Android.targetSdkVersion
-        minSdk = Config.Android.minSdkVersionNdk // NDK requires a higher API level than core.
+        minSdk = libs.versions.minSdk.get().toInt()
 
-        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
-
-        externalNativeBuild {
-            cmake {
-                arguments.add(0, "-DANDROID_STL=c++_static")
-                arguments.add(0, "-DSENTRY_NATIVE_SRC=$sentryNativeSrc")
-                arguments.add(0, "-DSENTRY_SDK_NAME=$sentryAndroidSdkName")
-            }
-        }
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
             abiFilters.addAll(Config.Android.abiFilters)
@@ -45,17 +25,10 @@ android {
         buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
     }
 
-    // we use the default NDK and CMake versions based on the AGP's version
-    // https://developer.android.com/studio/projects/install-ndk#apply-specific-version
-
-    externalNativeBuild {
-        cmake {
-            path("CMakeLists.txt")
-        }
-    }
-
     buildTypes {
-        getByName("debug")
+        getByName("debug") {
+            consumerProguardFiles("proguard-rules.pro")
+        }
         getByName("release") {
             consumerProguardFiles("proguard-rules.pro")
         }
@@ -81,18 +54,27 @@ android {
         checkReleaseBuilds = false
     }
 
-    nativeBundleExport {
-        headerDir = "${project.projectDir}/$sentryNativeSrc/include"
-    }
-
     // needed because of Kotlin 1.4.x
     configurations.all {
-        resolutionStrategy.force(Config.CompileOnly.jetbrainsAnnotations)
+        resolutionStrategy.force(libs.jetbrains.annotations.get())
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
+    buildFeatures {
+        buildConfig = true
+    }
+
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    }
+
+    // the default AGP version is too high, we keep this low for compatibility reasons
+    // see https://developer.android.com/build/releases/past-releases/ to find the AGP-NDK mapping
+    ndkVersion = "23.1.7779620"
+
+    @Suppress("UnstableApiUsage")
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 }
@@ -101,10 +83,12 @@ dependencies {
     api(projects.sentry)
     api(projects.sentryAndroidCore)
 
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    compileOnly(libs.jetbrains.annotations)
+
+    implementation(libs.sentry.native.ndk)
 
     testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.mockito.kotlin)
     testImplementation(projects.sentryTestSupport)
 }

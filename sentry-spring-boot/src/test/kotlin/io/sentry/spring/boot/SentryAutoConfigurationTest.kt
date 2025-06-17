@@ -1,21 +1,25 @@
 package io.sentry.spring.boot
 
 import com.acme.MainBootClass
+import io.opentelemetry.api.OpenTelemetry
 import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
+import io.sentry.FilterString
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.Integration
 import io.sentry.NoOpTransportFactory
 import io.sentry.SamplingContext
 import io.sentry.Sentry
 import io.sentry.SentryEvent
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
-import io.sentry.opentelemetry.OpenTelemetryLinkErrorEventProcessor
+import io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider
+import io.sentry.opentelemetry.agent.AgentMarker
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.quartz.SentryJobListener
@@ -24,6 +28,7 @@ import io.sentry.spring.HttpServletRequestSentryUserProvider
 import io.sentry.spring.SentryExceptionResolver
 import io.sentry.spring.SentryUserFilter
 import io.sentry.spring.SentryUserProvider
+import io.sentry.spring.SpringProfilesEventProcessor
 import io.sentry.spring.SpringSecuritySentryUserProvider
 import io.sentry.spring.tracing.SentryTracingFilter
 import io.sentry.spring.tracing.SpringServletTransactionNameProvider
@@ -78,18 +83,18 @@ class SentryAutoConfigurationTest {
         .withConfiguration(AutoConfigurations.of(SentryAutoConfiguration::class.java, WebMvcAutoConfiguration::class.java))
 
     @Test
-    fun `hub is not created when auto-configuration dsn is not set`() {
+    fun `scopes is not created when auto-configuration dsn is not set`() {
         contextRunner
             .run {
-                assertThat(it).doesNotHaveBean(IHub::class.java)
+                assertThat(it).doesNotHaveBean(IScopes::class.java)
             }
     }
 
     @Test
-    fun `hub is created when dsn is provided`() {
+    fun `scopes is created when dsn is provided`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertThat(it).hasSingleBean(IHub::class.java)
+                assertThat(it).hasSingleBean(IScopes::class.java)
             }
     }
 
@@ -141,7 +146,7 @@ class SentryAutoConfigurationTest {
         contextRunner.withPropertyValues(
             "sentry.dsn=http://key@localhost/proj",
             "sentry.read-timeout-millis=10",
-            "sentry.shutdown-timeout=20",
+            "sentry.shutdown-timeout-millis=20",
             "sentry.flush-timeout-millis=30",
             "sentry.debug=true",
             "sentry.diagnostic-level=INFO",
@@ -161,7 +166,6 @@ class SentryAutoConfigurationTest {
             "sentry.proxy.port=8090",
             "sentry.proxy.user=proxy-user",
             "sentry.proxy.pass=proxy-pass",
-            "sentry.enable-tracing=true",
             "sentry.traces-sample-rate=0.3",
             "sentry.tags.tag1=tag1-value",
             "sentry.tags.tag2=tag2-value",
@@ -170,12 +174,20 @@ class SentryAutoConfigurationTest {
             "sentry.enabled=false",
             "sentry.send-modules=false",
             "sentry.ignored-checkins=slug1,slugB",
+            "sentry.ignored-errors=Some error,Another .*",
+            "sentry.ignored-transactions=transactionName1,transactionNameB",
             "sentry.enable-backpressure-handling=false",
+            "sentry.enable-spotlight=true",
+            "sentry.spotlight-connection-url=http://local.sentry.io:1234",
+            "sentry.force-init=true",
+            "sentry.global-hub-mode=true",
+            "sentry.capture-open-telemetry-events=true",
             "sentry.cron.default-checkin-margin=10",
             "sentry.cron.default-max-runtime=30",
             "sentry.cron.default-timezone=America/New_York",
             "sentry.cron.default-failure-issue-threshold=40",
-            "sentry.cron.default-recovery-threshold=50"
+            "sentry.cron.default-recovery-threshold=50",
+            "sentry.logs.enabled=true"
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.readTimeoutMillis).isEqualTo(10)
@@ -199,21 +211,28 @@ class SentryAutoConfigurationTest {
             assertThat(options.proxy!!.port).isEqualTo("8090")
             assertThat(options.proxy!!.user).isEqualTo("proxy-user")
             assertThat(options.proxy!!.pass).isEqualTo("proxy-pass")
-            assertThat(options.enableTracing).isEqualTo(true)
             assertThat(options.tracesSampleRate).isEqualTo(0.3)
             assertThat(options.tags).containsEntry("tag1", "tag1-value").containsEntry("tag2", "tag2-value")
             assertThat(options.ignoredExceptionsForType).containsOnly(RuntimeException::class.java, IllegalStateException::class.java)
             assertThat(options.tracePropagationTargets).containsOnly("localhost", "^(http|https)://api\\..*\$")
             assertThat(options.isEnabled).isEqualTo(false)
             assertThat(options.isSendModules).isEqualTo(false)
-            assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
+            assertThat(options.ignoredCheckIns).containsOnly(FilterString("slug1"), FilterString("slugB"))
+            assertThat(options.ignoredErrors).containsOnly(FilterString("Some error"), FilterString("Another .*"))
+            assertThat(options.ignoredTransactions).containsOnly(FilterString("transactionName1"), FilterString("transactionNameB"))
             assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
+            assertThat(options.isForceInit).isEqualTo(true)
+            assertThat(options.isGlobalHubMode).isEqualTo(true)
+            assertThat(options.isCaptureOpenTelemetryEvents).isEqualTo(true)
+            assertThat(options.isEnableSpotlight).isEqualTo(true)
+            assertThat(options.spotlightConnectionUrl).isEqualTo("http://local.sentry.io:1234")
             assertThat(options.cron).isNotNull
             assertThat(options.cron!!.defaultCheckinMargin).isEqualTo(10L)
             assertThat(options.cron!!.defaultMaxRuntime).isEqualTo(30L)
             assertThat(options.cron!!.defaultTimezone).isEqualTo("America/New_York")
             assertThat(options.cron!!.defaultFailureIssueThreshold).isEqualTo(40L)
             assertThat(options.cron!!.defaultRecoveryThreshold).isEqualTo(50L)
+            assertThat(options.logs.isEnabled).isEqualTo(true)
         }
     }
 
@@ -235,17 +254,6 @@ class SentryAutoConfigurationTest {
         ).run {
             val options = it.getBean(SentryProperties::class.java)
             assertThat(options.tracePropagationTargets).isNotNull().isEmpty()
-        }
-    }
-
-    @Test
-    fun `when setting tracingOrigins it still works`() {
-        contextRunner.withPropertyValues(
-            "sentry.dsn=http://key@localhost/proj",
-            "sentry.tracing-origins=somehost,otherhost"
-        ).run {
-            val options = it.getBean(SentryProperties::class.java)
-            assertThat(options.tracePropagationTargets).isNotNull().isEqualTo(listOf("somehost", "otherhost"))
         }
     }
 
@@ -467,14 +475,6 @@ class SentryAutoConfigurationTest {
 
     @Test
     fun `when traces sample rate is set, creates tracing filter`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=0.2")
-            .run {
-                assertThat(it).hasBean("sentryTracingFilter")
-            }
-    }
-
-    @Test
-    fun `when enable tracing is set to false and traces sample rate is set, creates tracing filter`() {
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.traces-sample-rate=0.2")
             .run {
                 assertThat(it).hasBean("sentryTracingFilter")
@@ -738,43 +738,72 @@ class SentryAutoConfigurationTest {
     }
 
     @Test
-    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath and auto init off, creates OpenTelemetryLinkErrorEventProcessor`() {
+    fun `when AgentMarker is on the classpath and auto init off, runs SentryOpenTelemetryAgentWithoutAutoInitConfiguration`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
             .run {
-                assertThat(it).hasSingleBean(OpenTelemetryLinkErrorEventProcessor::class.java)
-                val options = it.getBean(SentryOptions::class.java)
-                assertThat(options.eventProcessors).anyMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+                assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryAgentWithoutAutoInit"))
             }
     }
 
     @Test
-    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath but auto init on, does not create OpenTelemetryLinkErrorEventProcessor`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=true")
-            .run {
-                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
-                val options = it.getBean(SentryOptions::class.java)
-                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
-            }
-    }
-
-    @Test
-    fun `when OpenTelemetryLinkErrorEventProcessor is on the classpath but auto init default, does not create OpenTelemetryLinkErrorEventProcessor`() {
+    fun `when AgentMarker is on the classpath and auto init on, does not run SentryOpenTelemetryAgentWithoutAutoInitConfiguration`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
-                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
-                val options = it.getBean(SentryOptions::class.java)
-                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryAgentWithoutAutoInit"))
             }
     }
 
     @Test
-    fun `when OpenTelemetryLinkErrorEventProcessor is not on the classpath, does not create OpenTelemetryLinkErrorEventProcessor`() {
+    fun `when AgentMarker is not on the classpath and auto init off, does not run SentryOpenTelemetryAgentWithoutAutoInitConfiguration`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
         contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.auto-init=false")
-            .withClassLoader(FilteredClassLoader(OpenTelemetryLinkErrorEventProcessor::class.java))
+            .withClassLoader(FilteredClassLoader(AgentMarker::class.java))
             .run {
-                assertThat(it).doesNotHaveBean(OpenTelemetryLinkErrorEventProcessor::class.java)
-                val options = it.getBean(SentryOptions::class.java)
-                assertThat(options.eventProcessors).noneMatch { processor -> processor.javaClass == OpenTelemetryLinkErrorEventProcessor::class.java }
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryAgentWithoutAutoInit"))
+            }
+    }
+
+    @Test
+    fun `when AgentMarker is not on the classpath but OpenTelemetry is, runs SpringBootOpenTelemetryNoAgent`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(AgentMarker::class.java))
+            .withUserConfiguration(OtelBeanConfig::class.java)
+            .run {
+                assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryNoAgent"))
+            }
+    }
+
+    @Test
+    fun `when AgentMarker and OpenTelemetry are not on the classpath, does not run SpringBootOpenTelemetryNoAgent`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(AgentMarker::class.java, OpenTelemetry::class.java))
+            .run {
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryNoAgent"))
+            }
+    }
+
+    @Test
+    fun `when AgentMarker and SentryAutoConfigurationCustomizerProvider are not on the classpath, does not run SpringBootOpenTelemetryNoAgent`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(AgentMarker::class.java, SentryAutoConfigurationCustomizerProvider::class.java))
+            .withUserConfiguration(OtelBeanConfig::class.java)
+            .run {
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryNoAgent"))
+            }
+    }
+
+    @Test
+    fun `when AgentMarker is not on the classpath and auto init on, does not run SentryOpenTelemetryAgentWithoutAutoInitConfiguration`() {
+        SentryIntegrationPackageStorage.getInstance().clearStorage()
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .withClassLoader(FilteredClassLoader(AgentMarker::class.java))
+            .run {
+                assertFalse(SentryIntegrationPackageStorage.getInstance().integrations.contains("SpringBootOpenTelemetryAgentWithoutAutoInit"))
             }
     }
 
@@ -838,6 +867,14 @@ class SentryAutoConfigurationTest {
                     { it.name == "custom-job-listener" },
                     "is custom job listener"
                 )
+            }
+    }
+
+    @Test
+    fun `registers SpringProfilesEventProcessor on SentryOptions`() {
+        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+            .run {
+                assertThat(it.getBean(SentryOptions::class.java).eventProcessors).anyMatch { processor -> processor.javaClass == SpringProfilesEventProcessor::class.java }
             }
     }
 
@@ -956,7 +993,7 @@ class SentryAutoConfigurationTest {
     }
 
     class CustomIntegration : Integration {
-        override fun register(hub: IHub, options: SentryOptions) {}
+        override fun register(scopes: IScopes, options: SentryOptions) {}
     }
 
     @Configuration(proxyBeanMethods = false)
@@ -1022,6 +1059,16 @@ class SentryAutoConfigurationTest {
 
     class CustomTracesSamplerCallback : SentryOptions.TracesSamplerCallback {
         override fun sample(samplingContext: SamplingContext) = 1.0
+    }
+
+    /**
+     * this should be taken care of by the otel spring starter in a real application
+     */
+    @Configuration
+    open class OtelBeanConfig {
+
+        @Bean
+        open fun openTelemetry() = OpenTelemetry.noop()
     }
 
     open class CustomSentryUserProvider : SentryUserProvider {

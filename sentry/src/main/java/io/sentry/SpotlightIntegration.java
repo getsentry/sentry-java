@@ -3,6 +3,7 @@ package io.sentry;
 import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.ERROR;
 import static io.sentry.SentryLevel.WARNING;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import io.sentry.util.Platform;
 import java.io.Closeable;
@@ -26,7 +27,7 @@ public final class SpotlightIntegration
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
 
   @Override
-  public void register(@NotNull IHub hub, @NotNull SentryOptions options) {
+  public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     this.options = options;
     this.logger = options.getLogger();
 
@@ -34,6 +35,7 @@ public final class SpotlightIntegration
       executorService = new SentryExecutorService();
       options.setBeforeEnvelopeCallback(this);
       logger.log(DEBUG, "SpotlightIntegration enabled.");
+      addIntegrationToSdkVersion("Spotlight");
     } else {
       logger.log(
           DEBUG,

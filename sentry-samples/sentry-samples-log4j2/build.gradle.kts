@@ -1,7 +1,7 @@
 plugins {
     java
     application
-    id(Config.QualityPlugins.gradleVersions)
+    alias(libs.plugins.gradle.versions)
 }
 
 application {
@@ -15,5 +15,5 @@ configure<JavaPluginExtension> {
 
 dependencies {
     implementation(projects.sentryLog4j2)
-    implementation(Config.Libs.log4j2Api)
+    implementation(libs.log4j.api)
 }

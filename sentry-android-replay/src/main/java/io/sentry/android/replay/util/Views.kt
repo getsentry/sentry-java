@@ -17,6 +17,7 @@ import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.TextView
 import io.sentry.SentryOptions
 import io.sentry.android.replay.viewhierarchy.ComposeViewHierarchyNode
@@ -146,7 +147,7 @@ internal val TextView.totalPaddingTopSafe: Int
  */
 internal fun Int.toOpaque() = this or 0xFF000000.toInt()
 
-class AndroidTextLayout(private val layout: Layout) : TextLayout {
+internal class AndroidTextLayout(private val layout: Layout) : TextLayout {
     override val lineCount: Int get() = layout.lineCount
     override val dominantTextColor: Int? get() {
         if (layout.text !is Spanned) return null
@@ -177,4 +178,52 @@ class AndroidTextLayout(private val layout: Layout) : TextLayout {
     override fun getLineTop(line: Int): Int = layout.getLineTop(line)
     override fun getLineBottom(line: Int): Int = layout.getLineBottom(line)
     override fun getLineStart(line: Int): Int = layout.getLineStart(line)
+}
+
+internal fun View?.addOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListener) {
+    if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
+        return
+    }
+    try {
+        viewTreeObserver.addOnDrawListener(listener)
+    } catch (_: IllegalStateException) {
+        // viewTreeObserver is already dead
+    }
+}
+
+internal fun View?.removeOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListener) {
+    if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
+        return
+    }
+    try {
+        viewTreeObserver.removeOnDrawListener(listener)
+    } catch (_: IllegalStateException) {
+        // viewTreeObserver is already dead
+    }
+}
+
+internal fun View?.addOnPreDrawListenerSafe(listener: ViewTreeObserver.OnPreDrawListener) {
+    if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
+        return
+    }
+    try {
+        viewTreeObserver.addOnPreDrawListener(listener)
+    } catch (_: IllegalStateException) {
+        // viewTreeObserver is already dead
+    }
+}
+
+internal fun View?.removeOnPreDrawListenerSafe(listener: ViewTreeObserver.OnPreDrawListener) {
+    if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
+        return
+    }
+    try {
+        viewTreeObserver.removeOnPreDrawListener(listener)
+    } catch (_: IllegalStateException) {
+        // viewTreeObserver is already dead
+    }
+}
+
+internal fun View.hasSize(): Boolean {
+    return width != 0 && height != 0
 }

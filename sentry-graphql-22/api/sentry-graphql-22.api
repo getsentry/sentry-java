@@ -1,0 +1,22 @@
+public final class io/sentry/graphql22/BuildConfig {
+	public static final field SENTRY_GRAPHQL22_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
+public final class io/sentry/graphql22/SentryInstrumentation : graphql/execution/instrumentation/SimplePerformantInstrumentation {
+	public static final field SENTRY_EXCEPTIONS_CONTEXT_KEY Ljava/lang/String;
+	public static final field SENTRY_SCOPES_CONTEXT_KEY Ljava/lang/String;
+	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Lio/sentry/graphql/ExceptionReporter;Ljava/util/List;)V
+	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Z)V
+	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;ZLjava/util/List;)V
+	public fun <init> (Lio/sentry/graphql/SentrySubscriptionHandler;Z)V
+	public fun beginExecuteOperation (Lgraphql/execution/instrumentation/parameters/InstrumentationExecuteOperationParameters;Lgraphql/execution/instrumentation/InstrumentationState;)Lgraphql/execution/instrumentation/InstrumentationContext;
+	public fun beginExecution (Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;Lgraphql/execution/instrumentation/InstrumentationState;)Lgraphql/execution/instrumentation/InstrumentationContext;
+	public fun createState (Lgraphql/execution/instrumentation/parameters/InstrumentationCreateStateParameters;)Lgraphql/execution/instrumentation/InstrumentationState;
+	public fun instrumentDataFetcher (Lgraphql/schema/DataFetcher;Lgraphql/execution/instrumentation/parameters/InstrumentationFieldFetchParameters;Lgraphql/execution/instrumentation/InstrumentationState;)Lgraphql/schema/DataFetcher;
+	public fun instrumentExecutionResult (Lgraphql/ExecutionResult;Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;Lgraphql/execution/instrumentation/InstrumentationState;)Ljava/util/concurrent/CompletableFuture;
+}
+
+public abstract interface class io/sentry/graphql22/SentryInstrumentation$BeforeSpanCallback : io/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback {
+}
+

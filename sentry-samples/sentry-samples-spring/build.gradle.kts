@@ -2,12 +2,12 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
-    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
+    alias(libs.plugins.springboot2) apply false
+    alias(libs.plugins.spring.dependency.management)
     kotlin("jvm")
-    kotlin("plugin.spring") version Config.kotlinVersion
+    alias(libs.plugins.kotlin.spring)
     id("war")
-    id(Config.BuildPlugins.gretty) version Config.BuildPlugins.grettyVersion
+    alias(libs.plugins.gretty)
 }
 
 group = "io.sentry.sample.spring"
@@ -26,27 +26,27 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation(Config.Libs.servletApi)
     implementation(Config.Libs.springWeb)
     implementation(Config.Libs.springAop)
     implementation(Config.Libs.aspectj)
     implementation(Config.Libs.springSecurityWeb)
     implementation(Config.Libs.springSecurityConfig)
-    implementation(Config.Libs.logbackClassic)
     implementation(Config.Libs.kotlinReflect)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpring)
     implementation(projects.sentryLogback)
-    testImplementation(Config.Libs.springBootStarterTest) {
+    implementation(libs.logback.classic)
+    implementation(libs.servlet.api)
+    testImplementation(libs.springboot.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
 }
 
-tasks.withType<Test> {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
-tasks.withType<KotlinCompile> {
+tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
         jvmTarget = JavaVersion.VERSION_1_8.toString()

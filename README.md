@@ -18,25 +18,25 @@ Sentry SDK for Java and Android
 
 | Packages                                | Maven Central                                                                                                                                                                                                                        | Minimum Android API Version |
 |-----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------- |
-| sentry-android                          | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android)                                                   | 19 |
-| sentry-android-core                     | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-core)                                         | 19 |
-| sentry-android-ndk                      | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-ndk/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-ndk)                                           | 19 |
-| sentry-android-okhttp                   | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-okhttp/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-okhttp)                                     | 21 |
-| sentry-android-timber                   | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-timber/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-timber)                                     | 19 |
-| sentry-android-fragment                 | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-fragment/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-fragment)                                 | 19 |
-| sentry-android-navigation               | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-navigation/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-navigation)                             | 19 |
-| sentry-android-sqlite                   | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-sqlite/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-sqlite)                                     | 19 |
+| sentry-android                          | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android)                                                   | 21 |
+| sentry-android-core                     | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-core)                                         | 21 |
+| sentry-android-ndk                      | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-ndk/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-ndk)                                           | 21 |
+| sentry-android-timber                   | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-timber/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-timber)                                     | 21 |
+| sentry-android-fragment                 | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-fragment/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-fragment)                                 | 21 |
+| sentry-android-navigation               | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-navigation/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-navigation)                             | 21 |
+| sentry-android-sqlite                   | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-sqlite/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-sqlite)                                     | 21 |
 | sentry-android-replay                   | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-replay/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-android-replay)                                     | 26 |
 | sentry-compose-android                  | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-compose-android/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-compose-android)                                   | 21 |
 | sentry-compose-desktop                  | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-compose-desktop/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-compose-desktop)                                   | 
 | sentry-compose                          | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-compose/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-compose)                                                   | 
 | sentry-apache-http-client-5             | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apache-http-client-5/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apache-http-client-5)                         |
-| sentry                                  | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry)                                                                   | 19 |
+| sentry                                  | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry)                                                                   | 21 |
 | sentry-jul                              | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-jul/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-jul)                                                           |
 | sentry-jdbc                             | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-jdbc/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-jdbc)                                                         |
-| sentry-apollo                           | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo)                                                     | 19 |
-| sentry-apollo-3                         | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo-3/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo-3)                                                 | 19 |
-| sentry-kotlin-extensions                | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-kotlin-extensions/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-kotlin-extensions)                               | 19 |
+| sentry-apollo                           | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo)                                                     | 21 |
+| sentry-apollo-3                         | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo-3/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo-3)                                                 | 21 |
+| sentry-apollo-4                         | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo-4/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-apollo-4)                                                 | 21 |
+| sentry-kotlin-extensions                | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-kotlin-extensions/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-kotlin-extensions)                               | 21 |
 | sentry-servlet                          | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet)                                                   | |
 | sentry-servlet-jakarta                  | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet-jakarta/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-servlet-jakarta)                                   | |
 | sentry-spring-boot                      | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-spring-boot)                                           |
@@ -49,12 +49,15 @@ Sentry SDK for Java and Android
 | sentry-log4j2                           | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-log4j2/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-log4j2)                                                     |
 | sentry-bom                              | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-bom/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-bom)                                                           |
 | sentry-graphql                          | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-graphql/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-graphql)                                                   |
+| sentry-graphql-core                     | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-graphql-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-graphql-core)                                         |
+| sentry-graphql-22                       | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-graphql-22/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-graphql-22)                                             |
 | sentry-quartz                           | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-quartz/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-quartz)                                                     |
 | sentry-openfeign                        | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-openfeign/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-openfeign)                                               |
 | sentry-opentelemetry-agent              | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-agent/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-agent)                           |
 | sentry-opentelemetry-agentcustomization | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-agentcustomization/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-agentcustomization) |
 | sentry-opentelemetry-core               | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-opentelemetry-core)                             |
 | sentry-okhttp                           | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-okhttp/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-okhttp)                                                     |
+| sentry-reactor                          | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-reactor/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-reactor)                                                    |
 
 # Releases
 
@@ -66,6 +69,7 @@ This repo uses the following ways to release SDK updates:
 
 # Useful links and docs
 
+* A deep dive into how we built [Session Replay for Android](https://www.droidcon.com/2024/11/22/rewind-and-resolve-a-deep-dive-into-building-session-replay-for-android/) at Droidcon London 2024.
 * Current Javadocs [generated from source code](https://getsentry.github.io/sentry-java/).
 * Java SDK version 1.x [can still be found here](https://docs.sentry.io/clients/java/).
 * Migration page from [sentry-android 1.x and 2.x to sentry-android 4.x](https://docs.sentry.io/platforms/android/migration/).
@@ -95,17 +99,6 @@ This repo uses the following ways to release SDK updates:
 * [Sample App. with Sentry Android SDK and Sentry Gradle Plugin](https://github.com/getsentry/examples/tree/master/android).
 * [Sample App. with Sentry Java SDK](https://github.com/getsentry/examples/tree/master/java).
 * [Sample for Development](https://github.com/getsentry/sentry-java/tree/main/sentry-samples).
-
-# Development
-
-This repository includes [`sentry-native`](https://github.com/getsentry/sentry-native/) as a git submodule.
-To build against `sentry-native` checked-out elsewhere in your file system, create a symlink `sentry-android-ndk/sentry-native-local` that points to your `sentry-native` directory.
-For example, if you had `sentry-native` checked-out in a sibling directory to this repo:
-
-`ln -s ../../sentry-native sentry-android-ndk/sentry-native-local`
-
-which will be picked up by `gradle` and used instead of the git submodule.
-This directory is also included in `.gitignore` not to be shown as pending changes.
 
 # Sentry Self Hosted Compatibility
 

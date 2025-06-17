@@ -1,9 +1,9 @@
 package io.sentry.android.core
 
 import android.app.Application
+import android.app.Application.ActivityLifecycleCallbacks
 import android.content.pm.ProviderInfo
 import android.os.Build
-import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.JsonSerializer
@@ -12,13 +12,11 @@ import io.sentry.SentryAppStartProfilingOptions
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.performance.AppStartMetrics
-import io.sentry.android.core.performance.AppStartMetrics.AppStartType
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
@@ -28,7 +26,6 @@ import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -51,6 +48,7 @@ class SentryPerformanceProviderTest {
         val providerInfo = ProviderInfo()
         val logger = mock<ILogger>()
         lateinit var configFile: File
+        var activityLifecycleCallbacks: MutableList<ActivityLifecycleCallbacks> = mutableListOf()
 
         fun getSut(sdkVersion: Int = Build.VERSION_CODES.S, authority: String = AUTHORITY, handleFile: ((config: File) -> Unit)? = null): SentryPerformanceProvider {
             val buildInfoProvider: BuildInfoProvider = mock()
@@ -59,7 +57,14 @@ class SentryPerformanceProviderTest {
             whenever(mockContext.applicationContext).thenReturn(mockContext)
             configFile = File(sentryCache, Sentry.APP_START_PROFILING_CONFIG_FILE_NAME)
             handleFile?.invoke(configFile)
-
+            whenever(mockContext.registerActivityLifecycleCallbacks(any())).then {
+                activityLifecycleCallbacks.add(it.arguments[0] as ActivityLifecycleCallbacks)
+                return@then Unit
+            }
+            whenever(mockContext.unregisterActivityLifecycleCallbacks(any())).then {
+                activityLifecycleCallbacks.remove(it.arguments[0] as ActivityLifecycleCallbacks)
+                return@then Unit
+            }
             providerInfo.authority = authority
             return SentryPerformanceProvider(logger, buildInfoProvider).apply {
                 attachInfo(mockContext, providerInfo)
@@ -105,70 +110,13 @@ class SentryPerformanceProviderTest {
     }
 
     @Test
-    fun `provider sets cold start based on first activity`() {
-        val provider = fixture.getSut()
-
-        // up until this point app start is not known
-        assertEquals(AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
-
-        // when there's no saved state
-        provider.activityCallback!!.onActivityCreated(mock(), null)
-        // then app start should be cold
-        assertEquals(AppStartType.COLD, AppStartMetrics.getInstance().appStartType)
-    }
-
-    @Test
-    fun `provider sets warm start based on first activity`() {
-        val provider = fixture.getSut()
-
-        // up until this point app start is not known
-        assertEquals(AppStartType.UNKNOWN, AppStartMetrics.getInstance().appStartType)
-
-        // when there's a saved state
-        provider.activityCallback!!.onActivityCreated(mock(), Bundle())
-
-        // then app start should be warm
-        assertEquals(AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
-    }
-
-    @Test
-    fun `provider keeps startup state even if multiple activities are launched`() {
-        val provider = fixture.getSut()
-
-        // when there's a saved state
-        provider.activityCallback!!.onActivityCreated(mock(), Bundle())
-
-        // then app start should be warm
-        assertEquals(AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
-
-        // when another activity is launched cold
-        provider.activityCallback!!.onActivityCreated(mock(), null)
-
-        // then app start should remain warm
-        assertEquals(AppStartType.WARM, AppStartMetrics.getInstance().appStartType)
-    }
-
-    @Test
     fun `provider sets both appstart and sdk init start + end times`() {
         val provider = fixture.getSut()
-        provider.onAppStartDone()
+        provider.onCreate()
 
         val metrics = AppStartMetrics.getInstance()
         assertTrue(metrics.appStartTimeSpan.hasStarted())
-        assertTrue(metrics.appStartTimeSpan.hasStopped())
-
         assertTrue(metrics.sdkInitTimeSpan.hasStarted())
-        assertTrue(metrics.sdkInitTimeSpan.hasStopped())
-    }
-
-    @Test
-    fun `provider properly registers and unregisters ActivityLifecycleCallbacks`() {
-        val provider = fixture.getSut()
-
-        // It register once for the provider itself and once for the appStartMetrics
-        verify(fixture.mockContext, times(2)).registerActivityLifecycleCallbacks(any())
-        provider.onAppStartDone()
-        verify(fixture.mockContext).unregisterActivityLifecycleCallbacks(any())
     }
 
     //region app start profiling
@@ -176,6 +124,7 @@ class SentryPerformanceProviderTest {
     fun `when config file does not exists, nothing happens`() {
         fixture.getSut()
         assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
         verify(fixture.logger, never()).log(any(), any())
     }
 
@@ -186,15 +135,7 @@ class SentryPerformanceProviderTest {
             config.setReadable(false)
         }
         assertNull(AppStartMetrics.getInstance().appStartProfiler)
-        verify(fixture.logger, never()).log(any(), any())
-    }
-
-    @Test
-    fun `when SDK is lower than 21, nothing happens`() {
-        fixture.getSut(sdkVersion = Build.VERSION_CODES.KITKAT) { config ->
-            writeConfig(config)
-        }
-        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
         verify(fixture.logger, never()).log(any(), any())
     }
 
@@ -204,6 +145,7 @@ class SentryPerformanceProviderTest {
             config.createNewFile()
         }
         assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
         verify(fixture.logger).log(
             eq(SentryLevel.WARNING),
             eq("Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start.")
@@ -213,7 +155,7 @@ class SentryPerformanceProviderTest {
     @Test
     fun `when profiling is disabled, profiler is not started`() {
         fixture.getSut { config ->
-            writeConfig(config, profilingEnabled = false)
+            writeConfig(config, profilingEnabled = false, continuousProfilingEnabled = false)
         }
         assertNull(AppStartMetrics.getInstance().appStartProfiler)
         verify(fixture.logger).log(
@@ -223,9 +165,21 @@ class SentryPerformanceProviderTest {
     }
 
     @Test
+    fun `when continuous profiling is disabled, continuous profiler is not started`() {
+        fixture.getSut { config ->
+            writeConfig(config, continuousProfilingEnabled = false, profilingEnabled = false)
+        }
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+        verify(fixture.logger).log(
+            eq(SentryLevel.INFO),
+            eq("Profiling is not enabled. App start profiling will not start.")
+        )
+    }
+
+    @Test
     fun `when trace is not sampled, profiler is not started and sample decision is stored`() {
         fixture.getSut { config ->
-            writeConfig(config, traceSampled = false, profileSampled = true)
+            writeConfig(config, continuousProfilingEnabled = false, traceSampled = false, profileSampled = true)
         }
         assertNull(AppStartMetrics.getInstance().appStartProfiler)
         assertNotNull(AppStartMetrics.getInstance().appStartSamplingDecision)
@@ -241,7 +195,7 @@ class SentryPerformanceProviderTest {
     @Test
     fun `when profile is not sampled, profiler is not started and sample decision is stored`() {
         fixture.getSut { config ->
-            writeConfig(config, traceSampled = true, profileSampled = false)
+            writeConfig(config, continuousProfilingEnabled = false, traceSampled = true, profileSampled = false)
         }
         assertNull(AppStartMetrics.getInstance().appStartProfiler)
         assertNotNull(AppStartMetrics.getInstance().appStartSamplingDecision)
@@ -254,9 +208,37 @@ class SentryPerformanceProviderTest {
     }
 
     @Test
-    fun `when profiler starts, it is set in AppStartMetrics`() {
+    fun `when continuous profile is not sampled, continuous profiler is not started`() {
+        fixture.getSut { config ->
+            writeConfig(config, continuousProfileSampled = false)
+        }
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+        verify(fixture.logger).log(
+            eq(SentryLevel.DEBUG),
+            eq("App start profiling was not sampled. It will not start.")
+        )
+    }
+
+    // This case should never happen in reality, but it's technically possible to have such configuration
+    @Test
+    fun `when both transaction and continuous profilers are enabled, only continuous profiler is created`() {
         fixture.getSut { config ->
             writeConfig(config)
+        }
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+        assertNotNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+        assertTrue(AppStartMetrics.getInstance().appStartContinuousProfiler!!.isRunning)
+        verify(fixture.logger).log(
+            eq(SentryLevel.DEBUG),
+            eq("App start continuous profiling started.")
+        )
+    }
+
+    @Test
+    fun `when profiler starts, it is set in AppStartMetrics`() {
+        fixture.getSut { config ->
+            writeConfig(config, continuousProfilingEnabled = false)
         }
         assertNotNull(AppStartMetrics.getInstance().appStartProfiler)
         assertNotNull(AppStartMetrics.getInstance().appStartSamplingDecision)
@@ -270,32 +252,79 @@ class SentryPerformanceProviderTest {
     }
 
     @Test
+    fun `when continuous profiler starts, it is set in AppStartMetrics`() {
+        fixture.getSut { config ->
+            writeConfig(config, profilingEnabled = false)
+        }
+        assertNotNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+        assertTrue(AppStartMetrics.getInstance().appStartContinuousProfiler!!.isRunning)
+        verify(fixture.logger).log(
+            eq(SentryLevel.DEBUG),
+            eq("App start continuous profiling started.")
+        )
+    }
+
+    @Test
     fun `when provider is closed, profiler is stopped`() {
         val provider = fixture.getSut { config ->
-            writeConfig(config)
+            writeConfig(config, continuousProfilingEnabled = false)
         }
         provider.shutdown()
         assertNotNull(AppStartMetrics.getInstance().appStartProfiler)
         assertFalse(AppStartMetrics.getInstance().appStartProfiler!!.isRunning)
     }
 
+    @Test
+    fun `when isEnableAppStartProfiling is false, transaction profiler is not started`() {
+        fixture.getSut { config ->
+            writeConfig(config, profilingEnabled = true, continuousProfilingEnabled = false, isEnableAppStartProfiling = false)
+        }
+        assertNull(AppStartMetrics.getInstance().appStartProfiler)
+    }
+
+    @Test
+    fun `when isStartProfilerOnAppStart is false, continuous profiler is not started`() {
+        fixture.getSut { config ->
+            writeConfig(config, profilingEnabled = false, continuousProfilingEnabled = true, isStartProfilerOnAppStart = false)
+        }
+        assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+    }
+
+    @Test
+    fun `when provider is closed, continuous profiler is stopped`() {
+        val provider = fixture.getSut { config ->
+            writeConfig(config, profilingEnabled = false)
+        }
+        provider.shutdown()
+        assertNotNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
+        assertFalse(AppStartMetrics.getInstance().appStartContinuousProfiler!!.isRunning)
+    }
+
     private fun writeConfig(
         configFile: File,
         profilingEnabled: Boolean = true,
+        continuousProfilingEnabled: Boolean = true,
         traceSampled: Boolean = true,
         traceSampleRate: Double = 1.0,
         profileSampled: Boolean = true,
         profileSampleRate: Double = 1.0,
+        continuousProfileSampled: Boolean = true,
+        isEnableAppStartProfiling: Boolean = true,
+        isStartProfilerOnAppStart: Boolean = true,
         profilingTracesDirPath: String = traceDir.absolutePath
     ) {
         val appStartProfilingOptions = SentryAppStartProfilingOptions()
         appStartProfilingOptions.isProfilingEnabled = profilingEnabled
+        appStartProfilingOptions.isContinuousProfilingEnabled = continuousProfilingEnabled
         appStartProfilingOptions.isTraceSampled = traceSampled
         appStartProfilingOptions.traceSampleRate = traceSampleRate
         appStartProfilingOptions.isProfileSampled = profileSampled
         appStartProfilingOptions.profileSampleRate = profileSampleRate
+        appStartProfilingOptions.isContinuousProfileSampled = continuousProfileSampled
         appStartProfilingOptions.profilingTracesDirPath = profilingTracesDirPath
         appStartProfilingOptions.profilingTracesHz = 101
+        appStartProfilingOptions.isEnableAppStartProfiling = isEnableAppStartProfiling
+        appStartProfilingOptions.isStartProfilerOnAppStart = isStartProfilerOnAppStart
         JsonSerializer(SentryOptions.empty()).serialize(appStartProfilingOptions, FileWriter(configFile))
     }
     //endregion

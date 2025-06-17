@@ -4,36 +4,32 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.BuildPlugins.springBoot) version Config.springBootVersion apply false
-}
-
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.springboot2) apply false
 }
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+    kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
 }
 
 dependencies {
     api(projects.sentrySpringBoot)
-    api(Config.Libs.springBootStarter)
+    api(libs.springboot.starter)
 
     annotationProcessor(platform(SpringBootPlugin.BOM_COORDINATES))
     annotationProcessor(Config.AnnotationProcessors.springBootAutoConfigure)
     annotationProcessor(Config.AnnotationProcessors.springBootConfiguration)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 }
 
 configure<SourceSetContainer> {
@@ -43,7 +39,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {
@@ -69,5 +65,18 @@ tasks.withType<JavaCompile>().configureEach {
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
+    }
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Sentry-Version-Name" to project.version,
+            "Sentry-SDK-Name" to Config.Sentry.SENTRY_SPRING_BOOT_STARTER_SDK_NAME,
+            "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-spring-boot-starter",
+            "Implementation-Vendor" to "Sentry",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version
+        )
     }
 }

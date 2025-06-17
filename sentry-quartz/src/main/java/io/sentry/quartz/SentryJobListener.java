@@ -3,11 +3,13 @@ package io.sentry.quartz;
 import io.sentry.BuildConfig;
 import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
+import io.sentry.ISentryLifecycleToken;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.LifecycleHelper;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import org.jetbrains.annotations.ApiStatus;
@@ -21,20 +23,24 @@ import org.quartz.JobListener;
 @ApiStatus.Experimental
 public final class SentryJobListener implements JobListener {
 
-  public static final String SENTRY_CHECK_IN_ID_KEY = "sentry-checkin-id";
-  public static final String SENTRY_SLUG_KEY = "sentry-slug";
-
-  private final @NotNull IHub hub;
-
-  public SentryJobListener() {
-    this(HubAdapter.getInstance());
-  }
-
-  public SentryJobListener(final @NotNull IHub hub) {
-    this.hub = Objects.requireNonNull(hub, "hub is required");
-    SentryIntegrationPackageStorage.getInstance().addIntegration("Quartz");
+  static {
     SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-quartz", BuildConfig.VERSION_NAME);
+  }
+
+  public static final String SENTRY_CHECK_IN_ID_KEY = "sentry-checkin-id";
+  public static final String SENTRY_SLUG_KEY = "sentry-slug";
+  public static final String SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY = "sentry-scope-lifecycle";
+
+  private final @NotNull IScopes scopes;
+
+  public SentryJobListener() {
+    this(ScopesAdapter.getInstance());
+  }
+
+  public SentryJobListener(final @NotNull IScopes scopes) {
+    this.scopes = Objects.requireNonNull(scopes, "scopes are required");
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Quartz");
   }
 
   @Override
@@ -49,15 +55,18 @@ public final class SentryJobListener implements JobListener {
       if (maybeSlug == null) {
         return;
       }
-      hub.pushScope();
-      TracingUtils.startNewTrace(hub);
+      final @NotNull ISentryLifecycleToken lifecycleToken =
+          scopes.forkedScopes("SentryJobListener").makeCurrent();
+      TracingUtils.startNewTrace(scopes);
       final @NotNull String slug = maybeSlug;
       final @NotNull CheckIn checkIn = new CheckIn(slug, CheckInStatus.IN_PROGRESS);
-      final @NotNull SentryId checkInId = hub.captureCheckIn(checkIn);
+      final @NotNull SentryId checkInId = scopes.captureCheckIn(checkIn);
       context.put(SENTRY_CHECK_IN_ID_KEY, checkInId);
       context.put(SENTRY_SLUG_KEY, slug);
+      context.put(SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY, lifecycleToken);
     } catch (Throwable t) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(SentryLevel.ERROR, "Unable to capture check-in in jobToBeExecuted.", t);
     }
@@ -94,14 +103,15 @@ public final class SentryJobListener implements JobListener {
       if (slug != null) {
         final boolean isFailed = jobException != null;
         final @NotNull CheckInStatus status = isFailed ? CheckInStatus.ERROR : CheckInStatus.OK;
-        hub.captureCheckIn(new CheckIn(checkInId, slug, status));
+        scopes.captureCheckIn(new CheckIn(checkInId, slug, status));
       }
     } catch (Throwable t) {
-      hub.getOptions()
+      scopes
+          .getOptions()
           .getLogger()
           .log(SentryLevel.ERROR, "Unable to capture check-in in jobWasExecuted.", t);
     } finally {
-      hub.popScope();
+      LifecycleHelper.close(context.get(SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY));
     }
   }
 }

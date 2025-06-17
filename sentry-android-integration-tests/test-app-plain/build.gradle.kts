@@ -3,13 +3,13 @@ plugins {
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.java.tests.perf.appplain"
 
     defaultConfig {
         applicationId = "io.sentry.java.tests.perf.appplain"
-        minSdk = Config.Android.minSdkVersionNdk
-        targetSdk = Config.Android.targetSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
     }
@@ -18,7 +18,7 @@ android {
         getByName("release") {
             isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             ndk {
                 abiFilters.clear()
                 abiFilters.add("arm64-v8a")
@@ -41,10 +41,8 @@ android {
         }
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 

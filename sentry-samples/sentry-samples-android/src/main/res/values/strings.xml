@@ -14,6 +14,7 @@
   <string name="crash_from_native">Crash from native (segfault)</string>
   <string name="capture_from_native">Capture event from native</string>
   <string name="anr">ANR</string>
+  <string name="native_anr">ANR (native)</string>
   <string name="do_request">Do Request</string>
   <string name="open_second_activity">Open Second Activity</string>
   <string name="open_sample_fragment">Open Sample Fragment</string>
@@ -25,6 +26,9 @@
   <string name="open_frame_data_for_spans">Open Frame Data for Spans Activity</string>
   <string name="open_metrics">Delightful Developer Metrics</string>
   <string name="test_timber_integration">Test Timber</string>
+  <string name="throw_in_coroutine">Throw exception in coroutine</string>
+  <string name="enable_replay_debug_mode">Enable Replay Debug Mode</string>
+  <string name="show_dialog">Show Dialog</string>
   <string name="back_main">Back to Main Activity</string>
   <string name="tap_me">text</string>
   <string name="lipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nibh lorem, venenatis sed nulla vel, venenatis sodales augue. Mauris varius elit eu ligula volutpat, sed tincidunt orci porttitor. Donec et dignissim lacus, sed luctus ipsum. Praesent ornare luctus tortor sit amet ultricies. Cras iaculis et diam et vulputate. Cras ut iaculis mauris, non pellentesque diam. Nunc in laoreet diam, vitae accumsan eros. Morbi non nunc ac eros molestie placerat vitae id dolor. Quisque ornare aliquam ipsum, a dapibus tortor. In eu sodales tellus.

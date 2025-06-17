@@ -4,23 +4,23 @@ import net.ltgt.gradle.errorprone.errorprone
 plugins {
     id("com.android.application")
     kotlin("android")
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.QualityPlugins.detektPlugin)
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.detekt)
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.uitest.android.benchmark"
 
     defaultConfig {
         applicationId = "io.sentry.uitest.android.benchmark"
-        minSdk = Config.Android.minSdkVersionNdk
-        targetSdk = Config.Android.targetSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0.0"
 
-        testInstrumentationRunner = Config.TestLibs.androidJUnitRunner
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Runs each test in its own instance of Instrumentation. This way they are isolated from
         // one another and get their own Application instance.
         // https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner#enable-gradle
@@ -55,12 +55,14 @@ android {
             isMinifyEnabled = true
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
+            testProguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
         }
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug") // to be able to run release mode
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
+            testProguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "benchmark-proguard-rules.pro")
         }
     }
 
@@ -76,36 +78,34 @@ android {
         checkReleaseBuilds = false
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 
 dependencies {
-
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
-
     implementation(projects.sentryAndroid)
-    implementation(Config.Libs.appCompat)
-    implementation(Config.Libs.androidxCore)
-    implementation(Config.Libs.androidxRecylerView)
-    implementation(Config.Libs.constraintLayout)
-    implementation(Config.TestLibs.espressoIdlingResource)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.core)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.test.espresso.idling.resource)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
+    compileOnly(libs.nopen.annotations)
 
-    androidTestImplementation(Config.TestLibs.kotlinTestJunit)
-    androidTestImplementation(Config.TestLibs.espressoCore)
-    androidTestImplementation(Config.TestLibs.androidxTestCoreKtx)
-    androidTestImplementation(Config.TestLibs.androidxRunner)
-    androidTestImplementation(Config.TestLibs.androidxTestRules)
-    androidTestImplementation(Config.TestLibs.androidxJunit)
-    androidTestUtil(Config.TestLibs.androidxTestOrchestrator)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
+
+    androidTestUtil(libs.androidx.test.orchestrator)
+    androidTestImplementation(projects.sentryTestSupport)
+    androidTestImplementation(libs.kotlin.test.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.runner)
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -116,11 +116,7 @@ tasks.withType<JavaCompile>().configureEach {
     }
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
-}
-
-kotlin {
-    explicitApi()
 }

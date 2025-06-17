@@ -14,6 +14,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.TextUnit
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
@@ -27,6 +28,7 @@ import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
+import java.lang.ref.WeakReference
 
 @TargetApi(26)
 internal object ComposeViewHierarchyNode {
@@ -39,7 +41,8 @@ internal object ComposeViewHierarchyNode {
         return when {
             isImage -> SentryReplayOptions.IMAGE_VIEW_CLASS_NAME
             collapsedSemantics?.contains(SemanticsProperties.Text) == true ||
-                collapsedSemantics?.contains(SemanticsActions.SetText) == true -> SentryReplayOptions.TEXT_VIEW_CLASS_NAME
+                collapsedSemantics?.contains(SemanticsActions.SetText) == true ||
+                collapsedSemantics?.contains(SemanticsProperties.EditableText) == true -> SentryReplayOptions.TEXT_VIEW_CLASS_NAME
             else -> "android.view.View"
         }
     }
@@ -55,14 +58,14 @@ internal object ComposeViewHierarchyNode {
         }
 
         val className = getProxyClassName(isImage)
-        if (options.experimental.sessionReplay.unmaskViewClasses.contains(className)) {
+        if (options.sessionReplay.unmaskViewClasses.contains(className)) {
             return false
         }
 
-        return options.experimental.sessionReplay.maskViewClasses.contains(className)
+        return options.sessionReplay.maskViewClasses.contains(className)
     }
 
-    private var _rootCoordinates: LayoutCoordinates? = null
+    private var _rootCoordinates: WeakReference<LayoutCoordinates>? = null
 
     private fun fromComposeNode(
         node: LayoutNode,
@@ -77,15 +80,16 @@ internal object ComposeViewHierarchyNode {
         }
 
         if (isComposeRoot) {
-            _rootCoordinates = node.coordinates.findRootCoordinates()
+            _rootCoordinates = WeakReference(node.coordinates.findRootCoordinates())
         }
 
         val semantics = node.collapsedSemantics
-        val visibleRect = node.coordinates.boundsInWindow(_rootCoordinates)
+        val visibleRect = node.coordinates.boundsInWindow(_rootCoordinates?.get())
         val isVisible = !node.outerCoordinator.isTransparent() &&
             (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
             visibleRect.height() > 0 && visibleRect.width() > 0
-        val isEditable = semantics?.contains(SemanticsActions.SetText) == true
+        val isEditable = semantics?.contains(SemanticsActions.SetText) == true ||
+            semantics?.contains(SemanticsProperties.EditableText) == true
         return when {
             semantics?.contains(SemanticsProperties.Text) == true || isEditable -> {
                 val shouldMask = isVisible && node.shouldMask(isImage = false, options)
@@ -99,14 +103,19 @@ internal object ComposeViewHierarchyNode {
                     ?.invoke(textLayoutResults)
 
                 val (color, hasFillModifier) = node.findTextAttributes()
-                var textColor = textLayoutResults.firstOrNull()?.layoutInput?.style?.color
+                val textLayoutResult = textLayoutResults.firstOrNull()
+                var textColor = textLayoutResult?.layoutInput?.style?.color
                 if (textColor?.isUnspecified == true) {
                     textColor = color
                 }
-                // TODO: support multiple text layouts
+                val isLaidOut = textLayoutResult?.layoutInput?.style?.fontSize != TextUnit.Unspecified
                 // TODO: support editable text (currently there's a way to get @Composable's padding only via reflection, and we can't reliably mask input fields based on TextLayout, so we mask the whole view instead)
                 TextViewHierarchyNode(
-                    layout = if (textLayoutResults.isNotEmpty() && !isEditable) ComposeTextLayout(textLayoutResults.first(), hasFillModifier) else null,
+                    layout = if (textLayoutResult != null && !isEditable && isLaidOut) {
+                        ComposeTextLayout(textLayoutResult, hasFillModifier)
+                    } else {
+                        null
+                    },
                     dominantColor = textColor?.toArgb()?.toOpaque(),
                     x = visibleRect.left.toFloat(),
                     y = visibleRect.top.toFloat(),

@@ -30,6 +30,10 @@ class NoOpSentryClientTest {
         assertEquals(SentryId.EMPTY_ID, sut.captureEnvelope(mock()))
 
     @Test
+    fun `captureFeedback returns empty SentryId`() =
+        assertEquals(SentryId.EMPTY_ID, sut.captureFeedback(mock(), mock(), mock()))
+
+    @Test
     fun `close does not affect captureEvent`() {
         sut.close()
         assertEquals(SentryId.EMPTY_ID, sut.callMethod("captureEvent", SentryEvent::class.java, null))
@@ -62,6 +66,10 @@ class NoOpSentryClientTest {
     @Test
     fun `captureTransaction returns empty SentryId`() =
         assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock()))
+
+    @Test
+    fun `captureProfileChunk returns empty SentryId`() =
+        assertEquals(SentryId.EMPTY_ID, sut.captureProfileChunk(mock(), mock()))
 
     @Test
     fun `captureCheckIn returns empty id`() {

@@ -2,7 +2,7 @@ package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
 import android.view.MotionEvent
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -59,7 +59,7 @@ class BufferCaptureStrategyTest {
             )
         }
         val scope = Scope(options)
-        val hub = mock<IHub> {
+        val scopes = mock<IScopes> {
             doAnswer {
                 (it.arguments[0] as ScopeCallback).run(scope)
             }.whenever(it).configureScope(any())
@@ -70,7 +70,7 @@ class BufferCaptureStrategyTest {
             on { persistSegmentValues(any(), anyOrNull()) }.then {
                 persistedSegment.put(it.arguments[0].toString(), it.arguments[1]?.toString())
             }
-            on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), any()) }
+            on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), any()) }
                 .thenReturn(GeneratedVideo(File("0.mp4"), 5, VIDEO_DURATION))
         }
         val recorderConfig = ScreenshotRecorderConfig(
@@ -91,11 +91,11 @@ class BufferCaptureStrategyTest {
                 whenever(replayCache.replayCacheDir).thenReturn(it)
             }
             options.run {
-                experimental.sessionReplay.onErrorSampleRate = onErrorSampleRate
+                sessionReplay.onErrorSampleRate = onErrorSampleRate
             }
             return BufferCaptureStrategy(
                 options,
-                hub,
+                scopes,
                 dateProvider,
                 Random(),
                 mock {
@@ -104,7 +104,7 @@ class BufferCaptureStrategyTest {
                         null
                     }.whenever(it).submit(any<Runnable>())
                 }
-            ) { _, _ -> replayCache }
+            ) { _ -> replayCache }
         }
 
         fun mockedMotionEvent(action: Int): MotionEvent = mock {
@@ -123,7 +123,7 @@ class BufferCaptureStrategyTest {
         val strategy = fixture.getSut()
         val replayId = SentryId()
 
-        strategy.start(fixture.recorderConfig, 0, replayId)
+        strategy.start(0, replayId)
 
         assertEquals(SentryId.EMPTY_ID, fixture.scope.replayId)
         assertEquals(replayId, strategy.currentReplayId)
@@ -135,7 +135,7 @@ class BufferCaptureStrategyTest {
         val strategy = fixture.getSut()
         val replayId = SentryId()
 
-        strategy.start(fixture.recorderConfig, 0, replayId)
+        strategy.start(0, replayId)
 
         assertEquals("0", fixture.persistedSegment[SEGMENT_KEY_ID])
         assertEquals(replayId.toString(), fixture.persistedSegment[SEGMENT_KEY_REPLAY_ID])
@@ -149,13 +149,14 @@ class BufferCaptureStrategyTest {
     @Test
     fun `pause creates but does not capture current segment`() {
         val strategy = fixture.getSut()
-        strategy.start(fixture.recorderConfig, 0, SentryId())
+        strategy.start(0, SentryId())
+        strategy.onConfigurationChanged(fixture.recorderConfig)
 
         strategy.pause()
 
         await.until { strategy.currentSegment == 1 }
 
-        verify(fixture.hub, never()).captureReplay(any(), any())
+        verify(fixture.scopes, never()).captureReplay(any(), any())
         assertEquals(1, strategy.currentSegment)
     }
 
@@ -166,11 +167,11 @@ class BufferCaptureStrategyTest {
             File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
 
         val strategy = fixture.getSut(replayCacheDir = currentReplay)
-        strategy.start(fixture.recorderConfig, 0, replayId)
+        strategy.start(0, replayId)
 
         strategy.stop()
 
-        verify(fixture.hub, never()).captureReplay(any(), any())
+        verify(fixture.scopes, never()).captureReplay(any(), any())
 
         assertEquals(SentryId.EMPTY_ID, strategy.currentReplayId)
         assertEquals(-1, strategy.currentSegment)
@@ -181,11 +182,11 @@ class BufferCaptureStrategyTest {
     @Test
     fun `onScreenshotRecorded adds screenshot to cache`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.errorReplayDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.errorReplayDuration * 5)
         val strategy = fixture.getSut(
             dateProvider = { now }
         )
-        strategy.start(fixture.recorderConfig)
+        strategy.start()
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) { frameTimestamp ->
             assertEquals(now, frameTimestamp)
@@ -195,36 +196,37 @@ class BufferCaptureStrategyTest {
     @Test
     fun `onScreenshotRecorded rotates screenshots when out of buffer bounds`() {
         val now =
-            System.currentTimeMillis() + (fixture.options.experimental.sessionReplay.errorReplayDuration * 5)
+            System.currentTimeMillis() + (fixture.options.sessionReplay.errorReplayDuration * 5)
         val strategy = fixture.getSut(
             dateProvider = { now }
         )
-        strategy.start(fixture.recorderConfig)
+        strategy.start()
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) { frameTimestamp ->
             assertEquals(now, frameTimestamp)
         }
-        verify(fixture.replayCache).rotate(eq(now - fixture.options.experimental.sessionReplay.errorReplayDuration))
+        verify(fixture.replayCache).rotate(eq(now - fixture.options.sessionReplay.errorReplayDuration))
     }
 
     @Test
     fun `onConfigurationChanged creates new segment and updates config`() {
         val strategy = fixture.getSut()
-        strategy.start(fixture.recorderConfig)
+        strategy.start()
+        strategy.onConfigurationChanged(fixture.recorderConfig)
 
         val newConfig = fixture.recorderConfig.copy(recordingHeight = 1080, recordingWidth = 1920)
         strategy.onConfigurationChanged(newConfig)
 
         await.until { strategy.currentSegment == 1 }
 
-        verify(fixture.hub, never()).captureReplay(any(), any())
+        verify(fixture.scopes, never()).captureReplay(any(), any())
         assertEquals(1, strategy.currentSegment)
     }
 
     @Test
     fun `convert does nothing when process is terminating`() {
         val strategy = fixture.getSut()
-        strategy.start(fixture.recorderConfig)
+        strategy.start()
 
         strategy.captureReplay(true) {}
 
@@ -235,7 +237,7 @@ class BufferCaptureStrategyTest {
     @Test
     fun `convert converts to session strategy and sets replayId to scope`() {
         val strategy = fixture.getSut()
-        strategy.start(fixture.recorderConfig)
+        strategy.start()
 
         val converted = strategy.convert()
         assertTrue(converted is SessionCaptureStrategy)
@@ -245,7 +247,7 @@ class BufferCaptureStrategyTest {
     @Test
     fun `convert persists buffer replayType when converting to session strategy`() {
         val strategy = fixture.getSut()
-        strategy.start(fixture.recorderConfig)
+        strategy.start()
 
         val converted = strategy.convert()
         assertEquals(
@@ -257,7 +259,7 @@ class BufferCaptureStrategyTest {
     @Test
     fun `captureReplay does not replayId to scope when not sampled`() {
         val strategy = fixture.getSut(onErrorSampleRate = 0.0)
-        strategy.start(fixture.recorderConfig)
+        strategy.start()
 
         strategy.captureReplay(false) {}
 
@@ -268,7 +270,9 @@ class BufferCaptureStrategyTest {
     fun `captureReplay sets replayId to scope and captures buffered segments`() {
         var called = false
         val strategy = fixture.getSut()
-        strategy.start(fixture.recorderConfig)
+        strategy.start()
+        strategy.onConfigurationChanged(fixture.recorderConfig)
+
         strategy.pause()
 
         strategy.captureReplay(false) {
@@ -276,7 +280,7 @@ class BufferCaptureStrategyTest {
         }
 
         // buffered + current = 2
-        verify(fixture.hub, times(2)).captureReplay(any(), any())
+        verify(fixture.scopes, times(2)).captureReplay(any(), any())
         assertEquals(strategy.currentReplayId, fixture.scope.replayId)
         assertTrue(called)
     }
@@ -284,14 +288,16 @@ class BufferCaptureStrategyTest {
     @Test
     fun `captureReplay sets new segment timestamp to new strategy after successful creation`() {
         val strategy = fixture.getSut()
-        strategy.start(fixture.recorderConfig)
+        strategy.start()
+        strategy.onConfigurationChanged(fixture.recorderConfig)
+
         val oldTimestamp = strategy.segmentTimestamp
 
         strategy.captureReplay(false) { newTimestamp ->
             assertEquals(oldTimestamp!!.time + VIDEO_DURATION, newTimestamp.time)
         }
 
-        verify(fixture.hub).captureReplay(any(), any())
+        verify(fixture.scopes).captureReplay(any(), any())
     }
 
     @Test
@@ -299,7 +305,7 @@ class BufferCaptureStrategyTest {
         val strategy = fixture.getSut()
         val replayId = SentryId()
 
-        strategy.start(fixture.recorderConfig, 0, replayId)
+        strategy.start(0, replayId)
 
         assertEquals(
             replayId.toString(),

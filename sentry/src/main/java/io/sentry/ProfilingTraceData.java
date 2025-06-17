@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -154,7 +153,7 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     // Stacktrace context
     this.transactionId = transactionId;
     this.traceId = traceId;
-    this.profileId = UUID.randomUUID().toString();
+    this.profileId = SentryUUID.generateSentryId();
     this.environment = environment != null ? environment : DEFAULT_ENVIRONMENT;
     this.truncationReason = truncationReason;
     if (!isTruncationReasonValid()) {
@@ -435,7 +434,12 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     if (sampledProfile != null) {
       writer.name(JsonKeys.SAMPLED_PROFILE).value(sampledProfile);
     }
+    // Measurements can be a very long list which will make it hard to read in logs, so we don't
+    // indent it
+    final String prevIndent = writer.getIndent();
+    writer.setIndent("");
     writer.name(JsonKeys.MEASUREMENTS).value(logger, measurementsMap);
+    writer.setIndent(prevIndent);
     writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
     if (unknown != null) {
       for (String key : unknown.keySet()) {

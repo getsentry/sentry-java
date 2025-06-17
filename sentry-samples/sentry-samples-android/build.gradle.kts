@@ -1,30 +1,30 @@
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.impl.VariantImpl
+import org.apache.tools.ant.taskdefs.condition.Os
+import org.gradle.internal.extensions.stdlib.capitalized
+
 plugins {
     id("com.android.application")
     kotlin("android")
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.samples.android"
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
-        minSdk = Config.Android.minSdkVersionCompose
-        targetSdk = Config.Android.targetSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 2
         versionName = project.version.toString()
 
         externalNativeBuild {
-            val sentryNativeSrc = if (File("${project.projectDir}/../../sentry-android-ndk/sentry-native-local").exists()) {
-                "sentry-native-local"
-            } else {
-                "sentry-native"
-            }
-            println("sentry-samples-android: $sentryNativeSrc")
-
             cmake {
-                arguments.add(0, "-DANDROID_STL=c++_static")
-                arguments.add(0, "-DSENTRY_NATIVE_SRC=$sentryNativeSrc")
+                // Android 15: As we're using an older version of AGP / NDK, the STL is not 16kb page aligned yet
+                // Our example code doesn't use the STL, so we simply disable it
+                // See https://developer.android.com/guide/practices/page-sizes
+                arguments.add(0, "-DANDROID_STL=none")
             }
         }
 
@@ -33,15 +33,31 @@ android {
         }
     }
 
+    lint {
+        disable.addAll(
+            listOf(
+                "Typos",
+                "PluralsCandidate",
+                "MonochromeLauncherIcon",
+                "TextFields",
+                "ContentDescription",
+                "LabelFor",
+                "HardcodedText"
+            )
+        )
+    }
+
     buildFeatures {
         // Determines whether to support View Binding.
         // Note that the viewBinding.enabled property is now deprecated.
         viewBinding = true
         compose = true
+        buildConfig = true
+        prefab = true
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
 
     dependenciesInfo {
@@ -94,26 +110,43 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    }
+
+    androidComponents.onVariants { variant ->
+        val taskName = "toggle${variant.name.capitalized()}NativeLogging"
+        val toggleNativeLoggingTask = project.tasks.register<ToggleNativeLoggingTask>(taskName) {
+            mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+            rootDir.set(project.rootDir.absolutePath)
+        }
+        project.afterEvaluate {
+            (variant as? VariantImpl<*>)?.taskContainer?.assembleTask?.configure {
+                finalizedBy(toggleNativeLoggingTask)
+            }
+            (variant as? VariantImpl<*>)?.taskContainer?.installTask?.configure {
+                finalizedBy(toggleNativeLoggingTask)
+            }
+        }
+    }
+
+    @Suppress("UnstableApiUsage")
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 }
 
 dependencies {
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
 
     implementation(projects.sentryAndroid)
-    implementation(projects.sentryAndroidOkhttp)
     implementation(projects.sentryAndroidFragment)
     implementation(projects.sentryAndroidTimber)
     implementation(projects.sentryCompose)
-    implementation(projects.sentryComposeHelper)
-    implementation(Config.Libs.fragment)
-    implementation(Config.Libs.timber)
+    implementation(projects.sentryKotlinExtensions)
+    implementation(projects.sentryOkhttp)
 
 //    how to exclude androidx if release health feature is disabled
 //    implementation(projects.sentryAndroid) {
@@ -122,17 +155,57 @@ dependencies {
 //        exclude(group = "androidx.core", module = "core")
 //    }
 
-    implementation(Config.Libs.appCompat)
-    implementation(Config.Libs.androidxRecylerView)
-    implementation(Config.Libs.retrofit2)
-    implementation(Config.Libs.retrofit2Gson)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.foundation.layout)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.coil.compose)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.sentry.native.ndk)
+    implementation(libs.timber)
 
-    implementation(Config.Libs.composeActivity)
-    implementation(Config.Libs.composeFoundation)
-    implementation(Config.Libs.composeFoundationLayout)
-    implementation(Config.Libs.composeNavigation)
-    implementation(Config.Libs.composeMaterial)
-    implementation(Config.Libs.composeCoil)
+    debugImplementation(libs.leakcanary)
+}
 
-    debugImplementation(Config.Libs.leakCanary)
+abstract class ToggleNativeLoggingTask : Exec() {
+
+    @get:Input
+    abstract val rootDir: Property<String>
+
+    @get:InputFile
+    abstract val mergedManifest: RegularFileProperty
+
+    override fun exec() {
+        isIgnoreExitValue = true
+        val manifestFile = mergedManifest.get().asFile
+        val manifestContent = manifestFile.readText()
+        val match = regex.find(manifestContent)
+
+        if (match != null) {
+            val value = match.groupValues[1].toBooleanStrictOrNull()
+            if (value != null) {
+                val args = mutableListOf<String>()
+                if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                    args.add(0, "cmd")
+                    args.add(1, "/c")
+                }
+                args.add("${rootDir.get()}/scripts/toggle-codec-logs.sh")
+                args.add(if (value) "enable" else "disable")
+                commandLine(args)
+                super.exec()
+            }
+        }
+    }
+
+    companion object {
+        private val regex = Regex(
+            """<meta-data\s+[^>]*android:name="io\.sentry\.session-replay\.debug"[^>]*android:value="([^"]+)""""
+        )
+    }
 }

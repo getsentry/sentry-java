@@ -15,6 +15,7 @@ import io.sentry.android.replay.video.MuxerConfig
 import io.sentry.android.replay.video.SimpleVideoEncoder
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
+import io.sentry.util.AutoClosableReentrantLock
 import io.sentry.util.FileUtils
 import java.io.Closeable
 import java.io.File
@@ -38,12 +39,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 public class ReplayCache(
     private val options: SentryOptions,
-    private val replayId: SentryId,
-    private val recorderConfig: ScreenshotRecorderConfig
+    private val replayId: SentryId
 ) : Closeable {
 
     private val isClosed = AtomicBoolean(false)
-    private val encoderLock = Any()
+    private val encoderLock = AutoClosableReentrantLock()
+    private val lock = AutoClosableReentrantLock()
     private var encoder: SimpleVideoEncoder? = null
 
     internal val replayCacheDir: File? by lazy {
@@ -54,7 +55,7 @@ public class ReplayCache(
     internal val frames = mutableListOf<ReplayFrame>()
 
     private val ongoingSegment = LinkedHashMap<String, String>()
-    private val ongoingSegmentFile: File? by lazy {
+    internal val ongoingSegmentFile: File? by lazy {
         if (replayCacheDir == null) {
             return@lazy null
         }
@@ -86,7 +87,7 @@ public class ReplayCache(
             it.createNewFile()
         }
         screenshot.outputStream().use {
-            bitmap.compress(JPEG, 80, it)
+            bitmap.compress(JPEG, options.sessionReplay.quality.screenshotQuality, it)
             it.flush()
         }
 
@@ -133,6 +134,8 @@ public class ReplayCache(
         segmentId: Int,
         height: Int,
         width: Int,
+        frameRate: Int,
+        bitRate: Int,
         videoFile: File = File(replayCacheDir, "$segmentId.mp4")
     ): GeneratedVideo? {
         if (videoFile.exists() && videoFile.length() > 0) {
@@ -146,23 +149,22 @@ public class ReplayCache(
             return null
         }
 
-        // TODO: reuse instance of encoder and just change file path to create a different muxer
-        encoder = synchronized(encoderLock) {
+        encoder = encoderLock.acquire().use {
             SimpleVideoEncoder(
                 options,
                 MuxerConfig(
                     file = videoFile,
                     recordingHeight = height,
                     recordingWidth = width,
-                    frameRate = recorderConfig.frameRate,
-                    bitRate = recorderConfig.bitRate
+                    frameRate = frameRate,
+                    bitRate = bitRate
                 )
             ).also { it.start() }
         }
 
-        val step = 1000 / recorderConfig.frameRate.toLong()
+        val step = 1000 / frameRate.toLong()
         var frameCount = 0
-        var lastFrame: ReplayFrame = frames.first()
+        var lastFrame: ReplayFrame? = frames.first()
         for (timestamp in from until (from + (duration)) step step) {
             val iter = frames.iterator()
             while (iter.hasNext()) {
@@ -182,6 +184,12 @@ public class ReplayCache(
             // to respect the video duration
             if (encode(lastFrame)) {
                 frameCount++
+            } else if (lastFrame != null) {
+                // if we failed to encode the frame, we delete the screenshot right away as the
+                // likelihood of it being able to be encoded later is low
+                deleteFile(lastFrame.screenshot)
+                frames.remove(lastFrame)
+                lastFrame = null
             }
         }
 
@@ -195,7 +203,7 @@ public class ReplayCache(
         }
 
         var videoDuration: Long
-        synchronized(encoderLock) {
+        encoderLock.acquire().use {
             encoder?.release()
             videoDuration = encoder?.duration ?: 0
             encoder = null
@@ -206,10 +214,13 @@ public class ReplayCache(
         return GeneratedVideo(videoFile, frameCount, videoDuration)
     }
 
-    private fun encode(frame: ReplayFrame): Boolean {
+    private fun encode(frame: ReplayFrame?): Boolean {
+        if (frame == null) {
+            return false
+        }
         return try {
             val bitmap = BitmapFactory.decodeFile(frame.screenshot.absolutePath)
-            synchronized(encoderLock) {
+            encoderLock.acquire().use {
                 encoder?.encode(bitmap)
             }
             bitmap.recycle()
@@ -236,7 +247,7 @@ public class ReplayCache(
      * @param until value until whose the frames should be removed, represented as unix timestamp
      * @return the first screen in the rotated buffer, if any
      */
-    fun rotate(until: Long): String? {
+    internal fun rotate(until: Long): String? {
         var screen: String? = null
         frames.removeAll {
             if (it.timestamp < until) {
@@ -251,7 +262,7 @@ public class ReplayCache(
     }
 
     override fun close() {
-        synchronized(encoderLock) {
+        encoderLock.acquire().use {
             encoder?.release()
             encoder = null
         }
@@ -259,28 +270,32 @@ public class ReplayCache(
     }
 
     // TODO: it's awful, choose a better serialization format
-    @Synchronized
-    fun persistSegmentValues(key: String, value: String?) {
-        if (isClosed.get()) {
-            return
-        }
-        if (ongoingSegment.isEmpty()) {
-            ongoingSegmentFile?.useLines { lines ->
-                lines.associateTo(ongoingSegment) {
-                    val (k, v) = it.split("=", limit = 2)
-                    k to v
+    internal fun persistSegmentValues(key: String, value: String?) {
+        lock.acquire().use {
+            if (isClosed.get()) {
+                return
+            }
+            if (ongoingSegmentFile?.exists() != true) {
+                ongoingSegmentFile?.createNewFile()
+            }
+            if (ongoingSegment.isEmpty()) {
+                ongoingSegmentFile?.useLines { lines ->
+                    lines.associateTo(ongoingSegment) {
+                        val (k, v) = it.split("=", limit = 2)
+                        k to v
+                    }
                 }
             }
+            if (value == null) {
+                ongoingSegment.remove(key)
+            } else {
+                ongoingSegment[key] = value
+            }
+            ongoingSegmentFile?.writeText(ongoingSegment.entries.joinToString("\n") { (k, v) -> "$k=$v" })
         }
-        if (value == null) {
-            ongoingSegment.remove(key)
-        } else {
-            ongoingSegment[key] = value
-        }
-        ongoingSegmentFile?.writeText(ongoingSegment.entries.joinToString("\n") { (k, v) -> "$k=$v" })
     }
 
-    companion object {
+    internal companion object {
         internal const val ONGOING_SEGMENT = ".ongoing_segment"
 
         internal const val SEGMENT_KEY_HEIGHT = "config.height"
@@ -306,7 +321,7 @@ public class ReplayCache(
             }
         }
 
-        internal fun fromDisk(options: SentryOptions, replayId: SentryId, replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null): LastSegmentData? {
+        internal fun fromDisk(options: SentryOptions, replayId: SentryId, replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null): LastSegmentData? {
             val replayCacheDir = makeReplayCacheDir(options, replayId)
             val lastSegmentFile = File(replayCacheDir, ONGOING_SEGMENT)
             if (!lastSegmentFile.exists()) {
@@ -360,7 +375,7 @@ public class ReplayCache(
                 scaleFactorY = 1.0f
             )
 
-            val cache = replayCacheProvider?.invoke(replayId, recorderConfig) ?: ReplayCache(options, replayId, recorderConfig)
+            val cache = replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId)
             cache.replayCacheDir?.listFiles { dir, name ->
                 if (name.endsWith(".jpg")) {
                     val file = File(dir, name)

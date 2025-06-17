@@ -7,9 +7,17 @@ pluginManagement {
     }
 }
 
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        mavenLocal()
+    }
+}
+
 rootProject.name = "sentry-root"
 rootProject.buildFileName = "build.gradle.kts"
-
+includeBuild("build-logic")
 include(
     "sentry",
     "sentry-kotlin-extensions",
@@ -17,15 +25,15 @@ include(
     "sentry-android-ndk",
     "sentry-android",
     "sentry-android-timber",
-    "sentry-android-okhttp",
     "sentry-android-fragment",
     "sentry-android-navigation",
     "sentry-android-sqlite",
     "sentry-android-replay",
     "sentry-compose",
-    "sentry-compose-helper",
     "sentry-apollo",
     "sentry-apollo-3",
+    "sentry-apollo-4",
+    "sentry-system-test-support",
     "sentry-test-support",
     "sentry-log4j2",
     "sentry-logback",
@@ -42,14 +50,21 @@ include(
     "sentry-bom",
     "sentry-openfeign",
     "sentry-graphql",
+    "sentry-graphql-22",
+    "sentry-graphql-core",
     "sentry-jdbc",
+    "sentry-opentelemetry:sentry-opentelemetry-bootstrap",
     "sentry-opentelemetry:sentry-opentelemetry-core",
     "sentry-opentelemetry:sentry-opentelemetry-agentcustomization",
     "sentry-opentelemetry:sentry-opentelemetry-agent",
+    "sentry-opentelemetry:sentry-opentelemetry-agentless",
+    "sentry-opentelemetry:sentry-opentelemetry-agentless-spring",
     "sentry-quartz",
     "sentry-okhttp",
+    "sentry-reactor",
     "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
+    "sentry-samples:sentry-samples-console-opentelemetry-noagent",
     "sentry-samples:sentry-samples-jul",
     "sentry-samples:sentry-samples-log4j2",
     "sentry-samples:sentry-samples-logback",
@@ -57,7 +72,11 @@ include(
     "sentry-samples:sentry-samples-spring",
     "sentry-samples:sentry-samples-spring-jakarta",
     "sentry-samples:sentry-samples-spring-boot",
+    "sentry-samples:sentry-samples-spring-boot-opentelemetry",
+    "sentry-samples:sentry-samples-spring-boot-opentelemetry-noagent",
     "sentry-samples:sentry-samples-spring-boot-jakarta",
+    "sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry",
+    "sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
     "sentry-samples:sentry-samples-spring-boot-webflux",
     "sentry-samples:sentry-samples-spring-boot-webflux-jakarta",
     "sentry-samples:sentry-samples-netflix-dgs",
@@ -68,12 +87,3 @@ include(
     "sentry-android-integration-tests:test-app-sentry",
     "sentry-samples:sentry-samples-openfeign"
 )
-
-gradle.beforeProject {
-    if (project.name == "sentry-android-ndk" || project.name == "sentry-samples-android") {
-        exec {
-            logger.log(LogLevel.LIFECYCLE, "Initializing git submodules")
-            commandLine("git", "submodule", "update", "--init", "--recursive")
-        }
-    }
-}

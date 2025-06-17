@@ -3,16 +3,12 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
-}
-
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.buildconfig)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -21,23 +17,23 @@ tasks.withType<KotlinCompile>().configureEach {
 
 dependencies {
     api(projects.sentry)
-    compileOnly(Config.Libs.log4j2Api)
-    compileOnly(Config.Libs.log4j2Core)
-    annotationProcessor(Config.Libs.log4j2Core)
+    compileOnly(libs.log4j.api)
+    compileOnly(libs.log4j.core)
+    annotationProcessor(libs.log4j.core)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.Libs.log4j2Api)
-    testImplementation(Config.Libs.log4j2Core)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.log4j.api)
+    testImplementation(libs.log4j.core)
+    testImplementation(libs.mockito.kotlin)
 }
 
 configure<SourceSetContainer> {
@@ -47,7 +43,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {
@@ -76,11 +72,23 @@ buildConfig {
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
-val generateBuildConfig by tasks
 tasks.withType<JavaCompile>().configureEach {
-    dependsOn(generateBuildConfig)
+    dependsOn(tasks.generateBuildConfig)
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
+    }
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Sentry-Version-Name" to project.version,
+            "Sentry-SDK-Name" to Config.Sentry.SENTRY_LOG4J2_SDK_NAME,
+            "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-log4j2",
+            "Implementation-Vendor" to "Sentry",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version
+        )
     }
 }

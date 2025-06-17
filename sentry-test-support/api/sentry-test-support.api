@@ -1,10 +1,13 @@
 public final class io/sentry/AssertionsKt {
+	public static final fun assertEnvelopeFeedback (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;)Lio/sentry/SentryEvent;
+	public static synthetic fun assertEnvelopeFeedback$default (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lio/sentry/SentryEvent;
 	public static final fun assertEnvelopeProfile (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;)Lio/sentry/ProfilingTraceData;
 	public static synthetic fun assertEnvelopeProfile$default (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lio/sentry/ProfilingTraceData;
 	public static final fun assertEnvelopeTransaction (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;)Lio/sentry/protocol/SentryTransaction;
 	public static synthetic fun assertEnvelopeTransaction$default (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
 	public static final fun checkEvent (Lkotlin/jvm/functions/Function1;)Lio/sentry/SentryEnvelope;
 	public static final fun checkTransaction (Lkotlin/jvm/functions/Function1;)Lio/sentry/SentryEnvelope;
+	public static final fun getMockServerRequestTimeoutMillis ()J
 }
 
 public final class io/sentry/SkipError : java/lang/Error {
@@ -31,7 +34,24 @@ public final class io/sentry/test/ImmediateExecutorService : io/sentry/ISentryEx
 	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
 }
 
+public final class io/sentry/test/InitKt {
+	public static final fun applyTestOptions (Lio/sentry/SentryOptions;)V
+	public static final fun initForTest ()V
+	public static final fun initForTest (Lio/sentry/Sentry$OptionsConfiguration;)V
+	public static final fun initForTest (Lio/sentry/Sentry$OptionsConfiguration;Z)V
+	public static final fun initForTest (Lio/sentry/SentryOptions;)V
+	public static final fun initForTest (Ljava/lang/String;)V
+}
+
+public final class io/sentry/test/MocksKt {
+	public static final fun createSentryClientMock (Z)Lio/sentry/ISentryClient;
+	public static synthetic fun createSentryClientMock$default (ZILjava/lang/Object;)Lio/sentry/ISentryClient;
+	public static final fun createTestScopes (Lio/sentry/SentryOptions;ZLio/sentry/IScope;Lio/sentry/IScope;Lio/sentry/IScope;)Lio/sentry/Scopes;
+	public static synthetic fun createTestScopes$default (Lio/sentry/SentryOptions;ZLio/sentry/IScope;Lio/sentry/IScope;Lio/sentry/IScope;ILjava/lang/Object;)Lio/sentry/Scopes;
+}
+
 public final class io/sentry/test/ReflectionKt {
+	public static final fun collectInterfaceHierarchy (Ljava/lang/Class;)Ljava/util/List;
 	public static final fun containsMethod (Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;)Z
 	public static final fun containsMethod (Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Z
 	public static final fun getCtor (Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Constructor;

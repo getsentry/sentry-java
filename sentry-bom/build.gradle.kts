@@ -9,8 +9,7 @@ dependencies {
             .filter {
                 !it.name.startsWith("sentry-samples") &&
                     it.name != project.name &&
-                    !it.name.contains("test", ignoreCase = true) &&
-                    it.name != "sentry-compose-helper"
+                    !it.name.contains("test", ignoreCase = true)
             }
             .forEach { project ->
                 evaluationDependsOn(project.path)
@@ -25,13 +24,5 @@ dependencies {
                         api(dependency)
                     }
             }
-    }
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["javaPlatform"])
-        }
     }
 }

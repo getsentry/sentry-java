@@ -11,9 +11,9 @@ import com.apollographql.apollo3.network.http.HttpInterceptorChain
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.HubAdapter
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ISpan
+import io.sentry.ScopesAdapter
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
@@ -31,17 +31,17 @@ import io.sentry.util.HttpUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import io.sentry.vendor.Base64
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
-import java.util.Locale
 
 private const val TRACE_ORIGIN = "auto.graphql.apollo3"
 
 class SentryApollo3HttpInterceptor @JvmOverloads constructor(
-    @ApiStatus.Internal private val hub: IHub = HubAdapter.getInstance(),
+    @ApiStatus.Internal private val scopes: IScopes = ScopesAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
     private val captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
     private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
@@ -53,8 +53,6 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             SentryIntegrationPackageStorage.getInstance()
                 .addIntegration("Apollo3ClientError")
         }
-        SentryIntegrationPackageStorage.getInstance()
-            .addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
     }
 
     private val regex: Regex by lazy {
@@ -65,7 +63,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         request: HttpRequest,
         chain: HttpInterceptorChain
     ): HttpResponse {
-        val activeSpan = if (Platform.isAndroid()) hub.transaction else hub.span
+        val activeSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
 
         val operationName = getHeader(HEADER_APOLLO_OPERATION_NAME, request.headers)
         val operationType = decodeHeaderValue(request, SENTRY_APOLLO_3_OPERATION_TYPE)
@@ -77,7 +75,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             span = startChild(request, activeSpan, operationName, operationType, operationId)
         }
 
-        val modifiedRequest = maybeAddTracingHeaders(hub, request, span)
+        val modifiedRequest = maybeAddTracingHeaders(scopes, request, span)
         var httpResponse: HttpResponse? = null
         var statusCode: Int? = null
 
@@ -117,14 +115,16 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         }
     }
 
-    private fun maybeAddTracingHeaders(hub: IHub, request: HttpRequest, span: ISpan?): HttpRequest {
+    private fun maybeAddTracingHeaders(scopes: IScopes, request: HttpRequest, span: ISpan?): HttpRequest {
         var cleanedHeaders = removeSentryInternalHeaders(request.headers).toMutableList()
 
-        TracingUtils.traceIfAllowed(hub, request.url, request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value }, span)?.let {
-            cleanedHeaders.add(HttpHeader(it.sentryTraceHeader.name, it.sentryTraceHeader.value))
-            it.baggageHeader?.let { baggageHeader ->
-                cleanedHeaders = cleanedHeaders.filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }.toMutableList().apply {
-                    add(HttpHeader(baggageHeader.name, baggageHeader.value))
+        if (!isIgnored()) {
+            TracingUtils.traceIfAllowed(scopes, request.url, request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value }, span)?.let {
+                cleanedHeaders.add(HttpHeader(it.sentryTraceHeader.name, it.sentryTraceHeader.value))
+                it.baggageHeader?.let { baggageHeader ->
+                    cleanedHeaders = cleanedHeaders.filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }.toMutableList().apply {
+                        add(HttpHeader(baggageHeader.name, baggageHeader.value))
+                    }
                 }
             }
         }
@@ -134,6 +134,10 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         }
 
         return requestBuilder.build()
+    }
+
+    private fun isIgnored(): Boolean {
+        return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
     }
 
     private fun removeSentryInternalHeaders(headers: List<HttpHeader>): List<HttpHeader> {
@@ -170,7 +174,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             variables?.let {
                 setData("variables", it)
             }
-            setData(HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT))
+            setData(HTTP_METHOD_KEY, method.uppercase())
         }
     }
 
@@ -179,7 +183,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             try {
                 String(Base64.decode(it, Base64.NO_WRAP))
             } catch (e: Throwable) {
-                hub.options.logger.log(
+                scopes.options.logger.log(
                     SentryLevel.ERROR,
                     "Error decoding internal apolloHeader $headerName",
                     e
@@ -218,7 +222,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
                         span.spanContext.sampled = false
                     }
                 } catch (e: Throwable) {
-                    hub.options.logger.log(
+                    scopes.options.logger.log(
                         SentryLevel.ERROR,
                         "An error occurred while executing beforeSpan on ApolloInterceptor",
                         e
@@ -256,7 +260,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             hint.set(APOLLO_RESPONSE, httpResponse)
         }
 
-        hub.addBreadcrumb(breadcrumb, hint)
+        scopes.addBreadcrumb(breadcrumb, hint)
     }
 
     // Extensions
@@ -273,7 +277,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
 
     private fun getHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
         // Headers are only sent if isSendDefaultPii is enabled due to PII
-        if (!hub.options.isSendDefaultPii) {
+        if (!scopes.options.isSendDefaultPii) {
             return null
         }
 
@@ -311,7 +315,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             val body = try {
                 response.body?.peek()?.readUtf8() ?: ""
             } catch (e: Throwable) {
-                hub.options.logger.log(
+                scopes.options.logger.log(
                     SentryLevel.ERROR,
                     "Error reading the response body.",
                     e
@@ -368,7 +372,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
                 urlDetails.applyToRequest(this)
                 // Cookie is only sent if isSendDefaultPii is enabled
                 cookies =
-                    if (hub.options.isSendDefaultPii) getHeader("Cookie", request.headers) else null
+                    if (scopes.options.isSendDefaultPii) getHeader("Cookie", request.headers) else null
                 method = request.method.name
                 headers = getHeaders(request.headers)
                 apiTarget = "graphql"
@@ -382,7 +386,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
                         it.writeTo(buffer)
                         data = buffer.readUtf8()
                     } catch (e: Throwable) {
-                        hub.options.logger.log(
+                        scopes.options.logger.log(
                             SentryLevel.ERROR,
                             "Error reading the request body.",
                             e
@@ -396,7 +400,7 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
 
             val sentryResponse = Response().apply {
                 // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
-                cookies = if (hub.options.isSendDefaultPii) {
+                cookies = if (scopes.options.isSendDefaultPii) {
                     getHeader(
                         "Set-Cookie",
                         response.headers
@@ -419,9 +423,9 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
             event.contexts.setResponse(sentryResponse)
             event.fingerprints = fingerprints
 
-            hub.captureEvent(event, hint)
+            scopes.captureEvent(event, hint)
         } catch (e: Throwable) {
-            hub.options.logger.log(
+            scopes.options.logger.log(
                 SentryLevel.ERROR,
                 "Error capturing the GraphQL error.",
                 e
@@ -447,5 +451,10 @@ class SentryApollo3HttpInterceptor @JvmOverloads constructor(
         const val SENTRY_APOLLO_3_VARIABLES = "SENTRY-APOLLO-3-VARIABLES"
         const val SENTRY_APOLLO_3_OPERATION_TYPE = "SENTRY-APOLLO-3-OPERATION-TYPE"
         const val DEFAULT_CAPTURE_FAILED_REQUESTS = true
+
+        init {
+            SentryIntegrationPackageStorage.getInstance()
+                .addPackage("maven:io.sentry:sentry-apollo-3", BuildConfig.VERSION_NAME)
+        }
     }
 }

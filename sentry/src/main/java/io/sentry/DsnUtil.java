@@ -23,7 +23,7 @@ public final class DsnUtil {
       return false;
     }
 
-    final @NotNull Dsn dsn = options.getParsedDsn();
+    final @NotNull Dsn dsn = options.retrieveParsedDsn();
     final @NotNull URI sentryUri = dsn.getSentryUri();
     final @Nullable String dsnHost = sentryUri.getHost();
 
@@ -31,6 +31,13 @@ public final class DsnUtil {
       return false;
     }
 
-    return url.toLowerCase(Locale.ROOT).contains(dsnHost.toLowerCase(Locale.ROOT));
+    final @NotNull String lowerCaseHost = dsnHost.toLowerCase(Locale.ROOT);
+    final int dsnPort = sentryUri.getPort();
+
+    if (dsnPort > 0) {
+      return url.toLowerCase(Locale.ROOT).contains(lowerCaseHost + ":" + dsnPort);
+    } else {
+      return url.toLowerCase(Locale.ROOT).contains(lowerCaseHost);
+    }
   }
 }

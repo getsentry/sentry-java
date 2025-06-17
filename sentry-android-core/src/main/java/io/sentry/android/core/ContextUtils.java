@@ -2,12 +2,12 @@ package io.sentry.android.core;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.content.Context.ACTIVITY_SERVICE;
-import static android.content.Context.RECEIVER_EXPORTED;
 import static android.content.pm.PackageInfo.REQUESTED_PERMISSION_GRANTED;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -15,21 +15,25 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.provider.Settings;
 import android.util.DisplayMetrics;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.util.AndroidLazyEvaluator;
 import io.sentry.protocol.App;
+import io.sentry.util.LazyEvaluator;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class ContextUtils {
@@ -61,7 +65,124 @@ public final class ContextUtils {
     }
   }
 
+  static class SplitApksInfo {
+    // https://github.com/google/bundletool/blob/master/src/main/java/com/android/tools/build/bundletool/model/AndroidManifest.java#L257-L263
+    static final String SPLITS_REQUIRED = "com.android.vending.splits.required";
+
+    private final boolean isSplitApks;
+    private final String[] splitNames;
+
+    public SplitApksInfo(final boolean isSplitApks, final String[] splitNames) {
+      this.isSplitApks = isSplitApks;
+      this.splitNames = splitNames;
+    }
+
+    public boolean isSplitApks() {
+      return isSplitApks;
+    }
+
+    public @Nullable String[] getSplitNames() {
+      return splitNames;
+    }
+  }
+
   private ContextUtils() {}
+
+  // to avoid doing a bunch of Binder calls we use LazyEvaluator to cache the values that are static
+  // during the app process running
+
+  private static final @NotNull LazyEvaluator<Boolean> isForegroundImportance =
+      new LazyEvaluator<>(
+          () -> {
+            try {
+              final ActivityManager.RunningAppProcessInfo appProcessInfo =
+                  new ActivityManager.RunningAppProcessInfo();
+              ActivityManager.getMyMemoryState(appProcessInfo);
+              return appProcessInfo.importance == IMPORTANCE_FOREGROUND;
+            } catch (Throwable ignored) {
+              // should never happen
+            }
+            return false;
+          });
+
+  /**
+   * Since this packageInfo uses flags 0 we can assume it's static and cache it as the package name
+   * or version code cannot change during runtime, only after app update (which will spin up a new
+   * process).
+   */
+  @SuppressLint("NewApi")
+  private static final @NotNull AndroidLazyEvaluator<PackageInfo> staticPackageInfo33 =
+      new AndroidLazyEvaluator<>(
+          context -> {
+            try {
+              return context
+                  .getPackageManager()
+                  .getPackageInfo(context.getPackageName(), PackageManager.PackageInfoFlags.of(0));
+            } catch (Throwable e) {
+              return null;
+            }
+          });
+
+  private static final @NotNull AndroidLazyEvaluator<PackageInfo> staticPackageInfo =
+      new AndroidLazyEvaluator<>(
+          context -> {
+            try {
+              return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            } catch (Throwable e) {
+              return null;
+            }
+          });
+
+  private static final @NotNull AndroidLazyEvaluator<String> applicationName =
+      new AndroidLazyEvaluator<>(
+          context -> {
+            try {
+              final ApplicationInfo applicationInfo = context.getApplicationInfo();
+              final int stringId = applicationInfo.labelRes;
+              if (stringId == 0) {
+                if (applicationInfo.nonLocalizedLabel != null) {
+                  return applicationInfo.nonLocalizedLabel.toString();
+                }
+                return context.getPackageManager().getApplicationLabel(applicationInfo).toString();
+              } else {
+                return context.getString(stringId);
+              }
+            } catch (Throwable e) {
+              return null;
+            }
+          });
+
+  /**
+   * Since this applicationInfo uses the same flag (METADATA) we can assume it's static and cache it
+   * as the manifest metadata cannot change during runtime, only after app update (which will spin
+   * up a new process).
+   */
+  @SuppressLint("NewApi")
+  private static final @NotNull AndroidLazyEvaluator<ApplicationInfo> staticAppInfo33 =
+      new AndroidLazyEvaluator<>(
+          context -> {
+            try {
+              return context
+                  .getPackageManager()
+                  .getApplicationInfo(
+                      context.getPackageName(),
+                      PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA));
+            } catch (Throwable e) {
+              return null;
+            }
+          });
+
+  private static final @NotNull AndroidLazyEvaluator<ApplicationInfo> staticAppInfo =
+      new AndroidLazyEvaluator<>(
+          context -> {
+            try {
+              return context
+                  .getPackageManager()
+                  .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+            } catch (Throwable e) {
+              return null;
+            }
+          });
 
   /**
    * Return the Application's PackageInfo if possible, or null.
@@ -70,10 +191,12 @@ public final class ContextUtils {
    */
   @Nullable
   static PackageInfo getPackageInfo(
-      final @NotNull Context context,
-      final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider) {
-    return getPackageInfo(context, 0, logger, buildInfoProvider);
+      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
+      return staticPackageInfo33.getValue(context);
+    } else {
+      return staticPackageInfo.getValue(context);
+    }
   }
 
   /**
@@ -110,22 +233,14 @@ public final class ContextUtils {
    * @return the Application's ApplicationInfo if possible, or throws
    */
   @SuppressLint("NewApi")
-  @NotNull
+  @Nullable
   @SuppressWarnings("deprecation")
   static ApplicationInfo getApplicationInfo(
-      final @NotNull Context context,
-      final long flag,
-      final @NotNull BuildInfoProvider buildInfoProvider)
-      throws PackageManager.NameNotFoundException {
+      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.TIRAMISU) {
-      return context
-          .getPackageManager()
-          .getApplicationInfo(
-              context.getPackageName(), PackageManager.ApplicationInfoFlags.of(flag));
+      return staticAppInfo33.getValue(context);
     } else {
-      return context
-          .getPackageManager()
-          .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+      return staticAppInfo.getValue(context);
     }
   }
 
@@ -169,13 +284,35 @@ public final class ContextUtils {
    */
   @ApiStatus.Internal
   public static boolean isForegroundImportance() {
-    try {
-      final ActivityManager.RunningAppProcessInfo appProcessInfo =
-          new ActivityManager.RunningAppProcessInfo();
-      ActivityManager.getMyMemoryState(appProcessInfo);
-      return appProcessInfo.importance == IMPORTANCE_FOREGROUND;
-    } catch (Throwable ignored) {
-      // should never happen
+    return isForegroundImportance.getValue();
+  }
+
+  /**
+   * Determines if the app is a packaged android library for running Compose Preview Mode
+   *
+   * @param context the context
+   * @return true, if the app is actually a library running as an app for Compose Preview Mode
+   */
+  @ApiStatus.Internal
+  public static boolean appIsLibraryForComposePreview(final @NotNull Context context) {
+    // Jetpack Compose Preview (aka "Run Preview on Device")
+    // uses the androidTest flavor for android library modules,
+    // so let's fail-fast by checking this first
+    if (context.getPackageName().endsWith(".test")) {
+      try {
+        final @NotNull ActivityManager activityManager =
+            (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        final @NotNull List<ActivityManager.AppTask> appTasks = activityManager.getAppTasks();
+        for (final ActivityManager.AppTask task : appTasks) {
+          final @Nullable ComponentName component = task.getTaskInfo().baseIntent.getComponent();
+          if (component != null
+              && component.getClassName().equals("androidx.compose.ui.tooling.PreviewActivity")) {
+            return true;
+          }
+        }
+      } catch (Throwable t) {
+        // ignored
+      }
     }
     return false;
   }
@@ -213,7 +350,7 @@ public final class ContextUtils {
       final @NotNull BuildInfoProvider buildInfoProvider) {
     String packageName = null;
     try {
-      final PackageInfo packageInfo = getPackageInfo(context, logger, buildInfoProvider);
+      final PackageInfo packageInfo = getPackageInfo(context, buildInfoProvider);
       final PackageManager packageManager = context.getPackageManager();
 
       if (packageInfo != null && packageManager != null) {
@@ -234,29 +371,33 @@ public final class ContextUtils {
     return null;
   }
 
+  @SuppressWarnings({"deprecation"})
+  static @Nullable SplitApksInfo retrieveSplitApksInfo(
+      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
+    String[] splitNames = null;
+    final ApplicationInfo applicationInfo = getApplicationInfo(context, buildInfoProvider);
+    final PackageInfo packageInfo = getPackageInfo(context, buildInfoProvider);
+
+    if (packageInfo != null) {
+      splitNames = packageInfo.splitNames;
+      boolean isSplitApks = false;
+      if (applicationInfo != null && applicationInfo.metaData != null) {
+        isSplitApks = applicationInfo.metaData.getBoolean(SplitApksInfo.SPLITS_REQUIRED);
+      }
+
+      return new SplitApksInfo(isSplitApks, splitNames);
+    }
+
+    return null;
+  }
+
   /**
    * Get the human-facing Application name.
    *
    * @return Application name
    */
-  static @Nullable String getApplicationName(
-      final @NotNull Context context, final @NotNull ILogger logger) {
-    try {
-      final ApplicationInfo applicationInfo = context.getApplicationInfo();
-      final int stringId = applicationInfo.labelRes;
-      if (stringId == 0) {
-        if (applicationInfo.nonLocalizedLabel != null) {
-          return applicationInfo.nonLocalizedLabel.toString();
-        }
-        return context.getPackageManager().getApplicationLabel(applicationInfo).toString();
-      } else {
-        return context.getString(stringId);
-      }
-    } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, "Error getting application name.", e);
-    }
-
-    return null;
+  static @Nullable String getApplicationName(final @NotNull Context context) {
+    return applicationName.getValue(context);
   }
 
   /**
@@ -289,20 +430,8 @@ public final class ContextUtils {
     }
   }
 
-  static @Nullable String getDeviceName(final @NotNull Context context) {
-    return Settings.Global.getString(context.getContentResolver(), "device_name");
-  }
-
-  @SuppressWarnings("deprecation")
-  @SuppressLint("NewApi") // we're wrapping into if-check with sdk version
-  static @NotNull String[] getArchitectures(final @NotNull BuildInfoProvider buildInfoProvider) {
-    final String[] supportedAbis;
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.LOLLIPOP) {
-      supportedAbis = Build.SUPPORTED_ABIS;
-    } else {
-      supportedAbis = new String[] {Build.CPU_ABI, Build.CPU_ABI2};
-    }
-    return supportedAbis;
+  static @NotNull String[] getArchitectures() {
+    return Build.SUPPORTED_ABIS;
   }
 
   /**
@@ -349,7 +478,7 @@ public final class ContextUtils {
       // If this receiver is listening for broadcasts sent from the system or from other apps, even
       // other apps that you own—use the RECEIVER_EXPORTED flag. If instead this receiver is
       // listening only for broadcasts sent by your app, use the RECEIVER_NOT_EXPORTED flag.
-      return context.registerReceiver(receiver, filter, RECEIVER_EXPORTED);
+      return context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
     } else {
       return context.registerReceiver(receiver, filter);
     }
@@ -358,6 +487,7 @@ public final class ContextUtils {
   static void setAppPackageInfo(
       final @NotNull PackageInfo packageInfo,
       final @NotNull BuildInfoProvider buildInfoProvider,
+      final @Nullable DeviceInfoUtil deviceInfoUtil,
       final @NotNull App app) {
     app.setAppIdentifier(packageInfo.packageName);
     app.setAppVersion(packageInfo.versionName);
@@ -382,6 +512,19 @@ public final class ContextUtils {
       }
     }
     app.setPermissions(permissions);
+
+    if (deviceInfoUtil != null) {
+      try {
+        final ContextUtils.SplitApksInfo splitApksInfo = deviceInfoUtil.getSplitApksInfo();
+        if (splitApksInfo != null) {
+          app.setSplitApks(splitApksInfo.isSplitApks());
+          if (splitApksInfo.getSplitNames() != null) {
+            app.setSplitNames(Arrays.asList(splitApksInfo.getSplitNames()));
+          }
+        }
+      } catch (Throwable e) {
+      }
+    }
   }
 
   /**
@@ -397,5 +540,15 @@ public final class ContextUtils {
       return appContext;
     }
     return context;
+  }
+
+  @TestOnly
+  static void resetInstance() {
+    isForegroundImportance.resetValue();
+    staticPackageInfo33.resetValue();
+    staticPackageInfo.resetValue();
+    applicationName.resetValue();
+    staticAppInfo33.resetValue();
+    staticAppInfo.resetValue();
   }
 }

@@ -9,12 +9,12 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Device;
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.Geo;
 import io.sentry.protocol.Gpu;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
-import io.sentry.protocol.MetricSummary;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkInfo;
@@ -85,12 +85,14 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(Device.class, new Device.Deserializer());
     deserializersByClass.put(
         Device.DeviceOrientation.class, new Device.DeviceOrientation.Deserializer());
+    deserializersByClass.put(Feedback.class, new Feedback.Deserializer());
     deserializersByClass.put(Gpu.class, new Gpu.Deserializer());
     deserializersByClass.put(MeasurementValue.class, new MeasurementValue.Deserializer());
     deserializersByClass.put(Mechanism.class, new Mechanism.Deserializer());
     deserializersByClass.put(Message.class, new Message.Deserializer());
-    deserializersByClass.put(MetricSummary.class, new MetricSummary.Deserializer());
     deserializersByClass.put(OperatingSystem.class, new OperatingSystem.Deserializer());
+    deserializersByClass.put(ProfileChunk.class, new ProfileChunk.Deserializer());
+    deserializersByClass.put(ProfileContext.class, new ProfileContext.Deserializer());
     deserializersByClass.put(ProfilingTraceData.class, new ProfilingTraceData.Deserializer());
     deserializersByClass.put(
         ProfilingTransactionData.class, new ProfilingTransactionData.Deserializer());
@@ -117,6 +119,7 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(SentryItemType.class, new SentryItemType.Deserializer());
     deserializersByClass.put(SentryLevel.class, new SentryLevel.Deserializer());
     deserializersByClass.put(SentryLockReason.class, new SentryLockReason.Deserializer());
+    deserializersByClass.put(SentryLogEvents.class, new SentryLogEvents.Deserializer());
     deserializersByClass.put(SentryPackage.class, new SentryPackage.Deserializer());
     deserializersByClass.put(SentryRuntime.class, new SentryRuntime.Deserializer());
     deserializersByClass.put(SentryReplayEvent.class, new SentryReplayEvent.Deserializer());

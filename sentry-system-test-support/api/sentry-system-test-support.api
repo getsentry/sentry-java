@@ -1,0 +1,579 @@
+public final class io/sentry/samples/graphql/AddProjectMutation : com/apollographql/apollo3/api/Mutation {
+	public static final field Companion Lio/sentry/samples/graphql/AddProjectMutation$Companion;
+	public static final field OPERATION_ID Ljava/lang/String;
+	public static final field OPERATION_NAME Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;)V
+	public fun adapter ()Lcom/apollographql/apollo3/api/Adapter;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/sentry/samples/graphql/AddProjectMutation;
+	public static synthetic fun copy$default (Lio/sentry/samples/graphql/AddProjectMutation;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/samples/graphql/AddProjectMutation;
+	public fun document ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSlug ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun id ()Ljava/lang/String;
+	public fun name ()Ljava/lang/String;
+	public fun rootField ()Lcom/apollographql/apollo3/api/CompiledField;
+	public fun serializeVariables (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/AddProjectMutation$Companion {
+	public final fun getOPERATION_DOCUMENT ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/AddProjectMutation$Data : com/apollographql/apollo3/api/Mutation$Data {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/sentry/samples/graphql/AddProjectMutation$Data;
+	public static synthetic fun copy$default (Lio/sentry/samples/graphql/AddProjectMutation$Data;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/samples/graphql/AddProjectMutation$Data;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAddProject ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/GreetingQuery : com/apollographql/apollo3/api/Query {
+	public static final field Companion Lio/sentry/samples/graphql/GreetingQuery$Companion;
+	public static final field OPERATION_ID Ljava/lang/String;
+	public static final field OPERATION_NAME Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;)V
+	public fun adapter ()Lcom/apollographql/apollo3/api/Adapter;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/sentry/samples/graphql/GreetingQuery;
+	public static synthetic fun copy$default (Lio/sentry/samples/graphql/GreetingQuery;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/samples/graphql/GreetingQuery;
+	public fun document ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun id ()Ljava/lang/String;
+	public fun name ()Ljava/lang/String;
+	public fun rootField ()Lcom/apollographql/apollo3/api/CompiledField;
+	public fun serializeVariables (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/GreetingQuery$Companion {
+	public final fun getOPERATION_DOCUMENT ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/GreetingQuery$Data : com/apollographql/apollo3/api/Query$Data {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/sentry/samples/graphql/GreetingQuery$Data;
+	public static synthetic fun copy$default (Lio/sentry/samples/graphql/GreetingQuery$Data;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/samples/graphql/GreetingQuery$Data;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getGreeting ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/ProjectQuery : com/apollographql/apollo3/api/Query {
+	public static final field Companion Lio/sentry/samples/graphql/ProjectQuery$Companion;
+	public static final field OPERATION_ID Ljava/lang/String;
+	public static final field OPERATION_NAME Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;)V
+	public fun adapter ()Lcom/apollographql/apollo3/api/Adapter;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/sentry/samples/graphql/ProjectQuery;
+	public static synthetic fun copy$default (Lio/sentry/samples/graphql/ProjectQuery;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/samples/graphql/ProjectQuery;
+	public fun document ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSlug ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun id ()Ljava/lang/String;
+	public fun name ()Ljava/lang/String;
+	public fun rootField ()Lcom/apollographql/apollo3/api/CompiledField;
+	public fun serializeVariables (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/ProjectQuery$Companion {
+	public final fun getOPERATION_DOCUMENT ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/ProjectQuery$Data : com/apollographql/apollo3/api/Query$Data {
+	public fun <init> (Lio/sentry/samples/graphql/ProjectQuery$Project;)V
+	public final fun component1 ()Lio/sentry/samples/graphql/ProjectQuery$Project;
+	public final fun copy (Lio/sentry/samples/graphql/ProjectQuery$Project;)Lio/sentry/samples/graphql/ProjectQuery$Data;
+	public static synthetic fun copy$default (Lio/sentry/samples/graphql/ProjectQuery$Data;Lio/sentry/samples/graphql/ProjectQuery$Project;ILjava/lang/Object;)Lio/sentry/samples/graphql/ProjectQuery$Data;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getProject ()Lio/sentry/samples/graphql/ProjectQuery$Project;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/ProjectQuery$Project {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/samples/graphql/type/ProjectStatus;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lio/sentry/samples/graphql/type/ProjectStatus;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lio/sentry/samples/graphql/type/ProjectStatus;)Lio/sentry/samples/graphql/ProjectQuery$Project;
+	public static synthetic fun copy$default (Lio/sentry/samples/graphql/ProjectQuery$Project;Ljava/lang/String;Ljava/lang/String;Lio/sentry/samples/graphql/type/ProjectStatus;ILjava/lang/Object;)Lio/sentry/samples/graphql/ProjectQuery$Project;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public final fun getSlug ()Ljava/lang/String;
+	public final fun getStatus ()Lio/sentry/samples/graphql/type/ProjectStatus;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/TasksAndAssigneesQuery : com/apollographql/apollo3/api/Query {
+	public static final field Companion Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Companion;
+	public static final field OPERATION_ID Ljava/lang/String;
+	public static final field OPERATION_NAME Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;)V
+	public fun adapter ()Lcom/apollographql/apollo3/api/Adapter;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery;
+	public static synthetic fun copy$default (Lio/sentry/samples/graphql/TasksAndAssigneesQuery;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery;
+	public fun document ()Ljava/lang/String;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSlug ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun id ()Ljava/lang/String;
+	public fun name ()Ljava/lang/String;
+	public fun rootField ()Lcom/apollographql/apollo3/api/CompiledField;
+	public fun serializeVariables (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/TasksAndAssigneesQuery$Assignee {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Assignee;
+	public static synthetic fun copy$default (Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Assignee;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Assignee;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/TasksAndAssigneesQuery$Companion {
+	public final fun getOPERATION_DOCUMENT ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/TasksAndAssigneesQuery$Creator {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Creator;
+	public static synthetic fun copy$default (Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Creator;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Creator;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/TasksAndAssigneesQuery$Data : com/apollographql/apollo3/api/Query$Data {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Data;
+	public static synthetic fun copy$default (Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Data;Ljava/util/List;ILjava/lang/Object;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Data;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTasks ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/TasksAndAssigneesQuery$Task {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Assignee;Ljava/lang/String;Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Creator;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Assignee;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Creator;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Assignee;Ljava/lang/String;Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Creator;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Task;
+	public static synthetic fun copy$default (Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Task;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Assignee;Ljava/lang/String;Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Creator;ILjava/lang/Object;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Task;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAssignee ()Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Assignee;
+	public final fun getAssigneeId ()Ljava/lang/String;
+	public final fun getCreator ()Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Creator;
+	public final fun getCreatorId ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/samples/graphql/adapter/AddProjectMutation_ResponseAdapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/AddProjectMutation_ResponseAdapter;
+}
+
+public final class io/sentry/samples/graphql/adapter/AddProjectMutation_ResponseAdapter$Data : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/AddProjectMutation_ResponseAdapter$Data;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/AddProjectMutation$Data;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public final fun getRESPONSE_NAMES ()Ljava/util/List;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/AddProjectMutation$Data;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/samples/graphql/adapter/AddProjectMutation_VariablesAdapter : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/AddProjectMutation_VariablesAdapter;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/AddProjectMutation;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/AddProjectMutation;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/samples/graphql/adapter/GreetingQuery_ResponseAdapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/GreetingQuery_ResponseAdapter;
+}
+
+public final class io/sentry/samples/graphql/adapter/GreetingQuery_ResponseAdapter$Data : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/GreetingQuery_ResponseAdapter$Data;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/GreetingQuery$Data;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public final fun getRESPONSE_NAMES ()Ljava/util/List;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/GreetingQuery$Data;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/samples/graphql/adapter/GreetingQuery_VariablesAdapter : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/GreetingQuery_VariablesAdapter;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/GreetingQuery;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/GreetingQuery;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/samples/graphql/adapter/ProjectQuery_ResponseAdapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/ProjectQuery_ResponseAdapter;
+}
+
+public final class io/sentry/samples/graphql/adapter/ProjectQuery_ResponseAdapter$Data : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/ProjectQuery_ResponseAdapter$Data;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/ProjectQuery$Data;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public final fun getRESPONSE_NAMES ()Ljava/util/List;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/ProjectQuery$Data;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/samples/graphql/adapter/ProjectQuery_ResponseAdapter$Project : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/ProjectQuery_ResponseAdapter$Project;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/ProjectQuery$Project;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public final fun getRESPONSE_NAMES ()Ljava/util/List;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/ProjectQuery$Project;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/samples/graphql/adapter/ProjectQuery_VariablesAdapter : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/ProjectQuery_VariablesAdapter;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/ProjectQuery;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/ProjectQuery;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/samples/graphql/adapter/TasksAndAssigneesQuery_ResponseAdapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/TasksAndAssigneesQuery_ResponseAdapter;
+}
+
+public final class io/sentry/samples/graphql/adapter/TasksAndAssigneesQuery_ResponseAdapter$Assignee : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/TasksAndAssigneesQuery_ResponseAdapter$Assignee;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Assignee;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public final fun getRESPONSE_NAMES ()Ljava/util/List;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Assignee;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/samples/graphql/adapter/TasksAndAssigneesQuery_ResponseAdapter$Creator : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/TasksAndAssigneesQuery_ResponseAdapter$Creator;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Creator;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public final fun getRESPONSE_NAMES ()Ljava/util/List;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Creator;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/samples/graphql/adapter/TasksAndAssigneesQuery_ResponseAdapter$Data : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/TasksAndAssigneesQuery_ResponseAdapter$Data;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Data;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public final fun getRESPONSE_NAMES ()Ljava/util/List;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Data;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/samples/graphql/adapter/TasksAndAssigneesQuery_ResponseAdapter$Task : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/TasksAndAssigneesQuery_ResponseAdapter$Task;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Task;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public final fun getRESPONSE_NAMES ()Ljava/util/List;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/TasksAndAssigneesQuery$Task;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/samples/graphql/adapter/TasksAndAssigneesQuery_VariablesAdapter : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/adapter/TasksAndAssigneesQuery_VariablesAdapter;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/TasksAndAssigneesQuery;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/TasksAndAssigneesQuery;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/samples/graphql/selections/AddProjectMutationSelections {
+	public static final field INSTANCE Lio/sentry/samples/graphql/selections/AddProjectMutationSelections;
+	public final fun get__root ()Ljava/util/List;
+}
+
+public final class io/sentry/samples/graphql/selections/GreetingQuerySelections {
+	public static final field INSTANCE Lio/sentry/samples/graphql/selections/GreetingQuerySelections;
+	public final fun get__root ()Ljava/util/List;
+}
+
+public final class io/sentry/samples/graphql/selections/ProjectQuerySelections {
+	public static final field INSTANCE Lio/sentry/samples/graphql/selections/ProjectQuerySelections;
+	public final fun get__root ()Ljava/util/List;
+}
+
+public final class io/sentry/samples/graphql/selections/TasksAndAssigneesQuerySelections {
+	public static final field INSTANCE Lio/sentry/samples/graphql/selections/TasksAndAssigneesQuerySelections;
+	public final fun get__root ()Ljava/util/List;
+}
+
+public final class io/sentry/samples/graphql/type/Assignee {
+	public static final field Companion Lio/sentry/samples/graphql/type/Assignee$Companion;
+	public fun <init> ()V
+}
+
+public final class io/sentry/samples/graphql/type/Assignee$Companion {
+	public final fun getType ()Lcom/apollographql/apollo3/api/ObjectType;
+}
+
+public final class io/sentry/samples/graphql/type/Creator {
+	public static final field Companion Lio/sentry/samples/graphql/type/Creator$Companion;
+	public fun <init> ()V
+}
+
+public final class io/sentry/samples/graphql/type/Creator$Companion {
+	public final fun getType ()Lcom/apollographql/apollo3/api/ObjectType;
+}
+
+public final class io/sentry/samples/graphql/type/GraphQLBoolean {
+	public static final field Companion Lio/sentry/samples/graphql/type/GraphQLBoolean$Companion;
+	public fun <init> ()V
+}
+
+public final class io/sentry/samples/graphql/type/GraphQLBoolean$Companion {
+	public final fun getType ()Lcom/apollographql/apollo3/api/CustomScalarType;
+}
+
+public final class io/sentry/samples/graphql/type/GraphQLFloat {
+	public static final field Companion Lio/sentry/samples/graphql/type/GraphQLFloat$Companion;
+	public fun <init> ()V
+}
+
+public final class io/sentry/samples/graphql/type/GraphQLFloat$Companion {
+	public final fun getType ()Lcom/apollographql/apollo3/api/CustomScalarType;
+}
+
+public final class io/sentry/samples/graphql/type/GraphQLID {
+	public static final field Companion Lio/sentry/samples/graphql/type/GraphQLID$Companion;
+	public fun <init> ()V
+}
+
+public final class io/sentry/samples/graphql/type/GraphQLID$Companion {
+	public final fun getType ()Lcom/apollographql/apollo3/api/CustomScalarType;
+}
+
+public final class io/sentry/samples/graphql/type/GraphQLInt {
+	public static final field Companion Lio/sentry/samples/graphql/type/GraphQLInt$Companion;
+	public fun <init> ()V
+}
+
+public final class io/sentry/samples/graphql/type/GraphQLInt$Companion {
+	public final fun getType ()Lcom/apollographql/apollo3/api/CustomScalarType;
+}
+
+public final class io/sentry/samples/graphql/type/GraphQLString {
+	public static final field Companion Lio/sentry/samples/graphql/type/GraphQLString$Companion;
+	public fun <init> ()V
+}
+
+public final class io/sentry/samples/graphql/type/GraphQLString$Companion {
+	public final fun getType ()Lcom/apollographql/apollo3/api/CustomScalarType;
+}
+
+public final class io/sentry/samples/graphql/type/Mutation {
+	public static final field Companion Lio/sentry/samples/graphql/type/Mutation$Companion;
+	public fun <init> ()V
+}
+
+public final class io/sentry/samples/graphql/type/Mutation$Companion {
+	public final fun getType ()Lcom/apollographql/apollo3/api/ObjectType;
+}
+
+public final class io/sentry/samples/graphql/type/Project {
+	public static final field Companion Lio/sentry/samples/graphql/type/Project$Companion;
+	public fun <init> ()V
+}
+
+public final class io/sentry/samples/graphql/type/Project$Companion {
+	public final fun getType ()Lcom/apollographql/apollo3/api/ObjectType;
+}
+
+public final class io/sentry/samples/graphql/type/ProjectStatus : java/lang/Enum {
+	public static final field ACTIVE Lio/sentry/samples/graphql/type/ProjectStatus;
+	public static final field ATTIC Lio/sentry/samples/graphql/type/ProjectStatus;
+	public static final field COMMUNITY Lio/sentry/samples/graphql/type/ProjectStatus;
+	public static final field Companion Lio/sentry/samples/graphql/type/ProjectStatus$Companion;
+	public static final field EOL Lio/sentry/samples/graphql/type/ProjectStatus;
+	public static final field INCUBATING Lio/sentry/samples/graphql/type/ProjectStatus;
+	public static final field UNKNOWN__ Lio/sentry/samples/graphql/type/ProjectStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getRawValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/samples/graphql/type/ProjectStatus;
+	public static fun values ()[Lio/sentry/samples/graphql/type/ProjectStatus;
+}
+
+public final class io/sentry/samples/graphql/type/ProjectStatus$Companion {
+	public final fun getType ()Lcom/apollographql/apollo3/api/EnumType;
+	public final fun knownValues ()[Lio/sentry/samples/graphql/type/ProjectStatus;
+	public final fun safeValueOf (Ljava/lang/String;)Lio/sentry/samples/graphql/type/ProjectStatus;
+}
+
+public final class io/sentry/samples/graphql/type/Query {
+	public static final field Companion Lio/sentry/samples/graphql/type/Query$Companion;
+	public fun <init> ()V
+}
+
+public final class io/sentry/samples/graphql/type/Query$Companion {
+	public final fun getType ()Lcom/apollographql/apollo3/api/ObjectType;
+}
+
+public final class io/sentry/samples/graphql/type/Task {
+	public static final field Companion Lio/sentry/samples/graphql/type/Task$Companion;
+	public fun <init> ()V
+}
+
+public final class io/sentry/samples/graphql/type/Task$Companion {
+	public final fun getType ()Lcom/apollographql/apollo3/api/ObjectType;
+}
+
+public final class io/sentry/samples/graphql/type/adapter/ProjectStatus_ResponseAdapter : com/apollographql/apollo3/api/Adapter {
+	public static final field INSTANCE Lio/sentry/samples/graphql/type/adapter/ProjectStatus_ResponseAdapter;
+	public fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Lio/sentry/samples/graphql/type/ProjectStatus;
+	public synthetic fun fromJson (Lcom/apollographql/apollo3/api/json/JsonReader;Lcom/apollographql/apollo3/api/CustomScalarAdapters;)Ljava/lang/Object;
+	public fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Lio/sentry/samples/graphql/type/ProjectStatus;)V
+	public synthetic fun toJson (Lcom/apollographql/apollo3/api/json/JsonWriter;Lcom/apollographql/apollo3/api/CustomScalarAdapters;Ljava/lang/Object;)V
+}
+
+public final class io/sentry/systemtest/Person {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/systemtest/Person;
+	public static synthetic fun copy$default (Lio/sentry/systemtest/Person;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/systemtest/Person;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFirstName ()Ljava/lang/String;
+	public final fun getLastName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/systemtest/Todo {
+	public fun <init> (JLjava/lang/String;Z)V
+	public final fun component1 ()J
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun copy (JLjava/lang/String;Z)Lio/sentry/systemtest/Todo;
+	public static synthetic fun copy$default (Lio/sentry/systemtest/Todo;JLjava/lang/String;ZILjava/lang/Object;)Lio/sentry/systemtest/Todo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCompleted ()Z
+	public final fun getId ()J
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/systemtest/graphql/GraphqlTestClient {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun addProject (Ljava/lang/String;)Lcom/apollographql/apollo3/api/ApolloResponse;
+	public final fun getApollo ()Lcom/apollographql/apollo3/ApolloClient;
+	public final fun greet (Ljava/lang/String;)Lcom/apollographql/apollo3/api/ApolloResponse;
+	public final fun project (Ljava/lang/String;)Lcom/apollographql/apollo3/api/ApolloResponse;
+	public final fun tasksAndAssignees (Ljava/lang/String;)Lcom/apollographql/apollo3/api/ApolloResponse;
+}
+
+public final class io/sentry/systemtest/util/EnvelopeCounts {
+	public fun <init> ()V
+	public final fun getEnvelopes ()Ljava/lang/Long;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/systemtest/util/EnvelopesReceived {
+	public fun <init> ()V
+	public final fun getEnvelopes ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+}
+
+public class io/sentry/systemtest/util/LoggingInsecureRestClient {
+	public fun <init> ()V
+	protected final fun call (Lokhttp3/Request$Builder;ZLjava/util/Map;)Lokhttp3/Response;
+	public static synthetic fun call$default (Lio/sentry/systemtest/util/LoggingInsecureRestClient;Lokhttp3/Request$Builder;ZLjava/util/Map;ILjava/lang/Object;)Lokhttp3/Response;
+	protected final fun client ()Lokhttp3/OkHttpClient;
+	public final fun getLastKnownStatusCode ()Ljava/lang/Integer;
+	public final fun getLogger ()Lorg/slf4j/Logger;
+	protected final fun objectMapper ()Lcom/fasterxml/jackson/databind/ObjectMapper;
+	public final fun setLastKnownStatusCode (Ljava/lang/Integer;)V
+	protected final fun toRequestBody (Ljava/lang/Object;)Lokhttp3/RequestBody;
+}
+
+public final class io/sentry/systemtest/util/RestTestClient : io/sentry/systemtest/util/LoggingInsecureRestClient {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun createPerson (Lio/sentry/systemtest/Person;Ljava/util/Map;)Lio/sentry/systemtest/Person;
+	public static synthetic fun createPerson$default (Lio/sentry/systemtest/util/RestTestClient;Lio/sentry/systemtest/Person;Ljava/util/Map;ILjava/lang/Object;)Lio/sentry/systemtest/Person;
+	public final fun createPersonDistributedTracing (Lio/sentry/systemtest/Person;Ljava/util/Map;)Lio/sentry/systemtest/Person;
+	public static synthetic fun createPersonDistributedTracing$default (Lio/sentry/systemtest/util/RestTestClient;Lio/sentry/systemtest/Person;Ljava/util/Map;ILjava/lang/Object;)Lio/sentry/systemtest/Person;
+	public final fun getPerson (J)Lio/sentry/systemtest/Person;
+	public final fun getPersonDistributedTracing (JLjava/util/Map;)Lio/sentry/systemtest/Person;
+	public static synthetic fun getPersonDistributedTracing$default (Lio/sentry/systemtest/util/RestTestClient;JLjava/util/Map;ILjava/lang/Object;)Lio/sentry/systemtest/Person;
+	public final fun getTodo (J)Lio/sentry/systemtest/Todo;
+	public final fun getTodoRestClient (J)Lio/sentry/systemtest/Todo;
+	public final fun getTodoWebclient (J)Lio/sentry/systemtest/Todo;
+}
+
+public final class io/sentry/systemtest/util/SentryMockServerClient : io/sentry/systemtest/util/LoggingInsecureRestClient {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun getEnvelopeCount ()Lio/sentry/systemtest/util/EnvelopeCounts;
+	public final fun getEnvelopes ()Lio/sentry/systemtest/util/EnvelopesReceived;
+	public final fun reset ()V
+}
+
+public final class io/sentry/systemtest/util/TestHelper {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun doesContainLogWithBody (Lio/sentry/SentryLogEvents;Ljava/lang/String;)Z
+	public final fun doesTransactionContainSpanWithDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
+	public final fun doesTransactionContainSpanWithOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
+	public final fun doesTransactionHaveOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
+	public final fun doesTransactionHaveTraceId (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
+	public final fun ensureEnvelopeCountIncreased ()V
+	public final fun ensureEnvelopeReceived (Lkotlin/jvm/functions/Function1;)V
+	public final fun ensureErrorCount (Lcom/apollographql/apollo3/api/ApolloResponse;I)V
+	public final fun ensureErrorReceived (Lkotlin/jvm/functions/Function1;)V
+	public final fun ensureLogsReceived (Lkotlin/jvm/functions/Function2;)V
+	public final fun ensureNoEnvelopeReceived (Lkotlin/jvm/functions/Function1;)V
+	public final fun ensureNoErrors (Lcom/apollographql/apollo3/api/ApolloResponse;)V
+	public final fun ensureNoTransactionReceived (Lkotlin/jvm/functions/Function2;)V
+	public final fun ensureTransactionReceived (Lkotlin/jvm/functions/Function2;)V
+	public final fun ensureTransactionWithSpanReceived (Lkotlin/jvm/functions/Function1;)V
+	public final fun getEnvelopeCounts ()Lio/sentry/systemtest/util/EnvelopeCounts;
+	public final fun getGraphqlClient ()Lio/sentry/systemtest/graphql/GraphqlTestClient;
+	public final fun getJsonSerializer ()Lio/sentry/JsonSerializer;
+	public final fun getRestClient ()Lio/sentry/systemtest/util/RestTestClient;
+	public final fun getSentryClient ()Lio/sentry/systemtest/util/SentryMockServerClient;
+	public final fun logObject (Ljava/lang/Object;)V
+	public final fun reset ()V
+	public final fun setEnvelopeCounts (Lio/sentry/systemtest/util/EnvelopeCounts;)V
+	public final fun snapshotEnvelopeCount ()V
+}
+

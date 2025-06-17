@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryPackage;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -12,10 +13,15 @@ import org.jetbrains.annotations.TestOnly;
 @ApiStatus.Internal
 public final class SentryIntegrationPackageStorage {
   private static volatile @Nullable SentryIntegrationPackageStorage INSTANCE;
+  private static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
+  private static volatile @Nullable Boolean mixedVersionsDetected = null;
+  private static final @NotNull AutoClosableReentrantLock mixedVersionsLock =
+      new AutoClosableReentrantLock();
 
   public static @NotNull SentryIntegrationPackageStorage getInstance() {
     if (INSTANCE == null) {
-      synchronized (SentryIntegrationPackageStorage.class) {
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
         if (INSTANCE == null) {
           INSTANCE = new SentryIntegrationPackageStorage();
         }
@@ -61,10 +67,46 @@ public final class SentryIntegrationPackageStorage {
 
     SentryPackage newPackage = new SentryPackage(name, version);
     packages.add(newPackage);
+    try (final @NotNull ISentryLifecycleToken ignored = mixedVersionsLock.acquire()) {
+      mixedVersionsDetected = null;
+    }
   }
 
   public @NotNull Set<SentryPackage> getPackages() {
     return packages;
+  }
+
+  public boolean checkForMixedVersions(final @NotNull ILogger logger) {
+    final @Nullable Boolean mixedVersionsDetectedBefore = mixedVersionsDetected;
+    if (mixedVersionsDetectedBefore != null) {
+      return mixedVersionsDetectedBefore;
+    }
+    try (final @NotNull ISentryLifecycleToken ignored = mixedVersionsLock.acquire()) {
+      final @NotNull String sdkVersion = BuildConfig.VERSION_NAME;
+      boolean mixedVersionsDetectedThisCheck = false;
+
+      for (SentryPackage pkg : packages) {
+        if (pkg.getName().startsWith("maven:io.sentry:")
+            && !sdkVersion.equalsIgnoreCase(pkg.getVersion())) {
+          logger.log(
+              SentryLevel.ERROR,
+              "The Sentry SDK has been configured with mixed versions. Expected %s to match core SDK version %s but was %s",
+              pkg.getName(),
+              sdkVersion,
+              pkg.getVersion());
+          mixedVersionsDetectedThisCheck = true;
+        }
+      }
+
+      if (mixedVersionsDetectedThisCheck) {
+        logger.log(SentryLevel.ERROR, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+        logger.log(SentryLevel.ERROR, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+        logger.log(SentryLevel.ERROR, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+        logger.log(SentryLevel.ERROR, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      }
+      mixedVersionsDetected = mixedVersionsDetectedThisCheck;
+      return mixedVersionsDetectedThisCheck;
+    }
   }
 
   @TestOnly

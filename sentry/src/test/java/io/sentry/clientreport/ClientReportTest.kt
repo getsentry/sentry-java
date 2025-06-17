@@ -7,15 +7,17 @@ import io.sentry.DataCategory
 import io.sentry.DateUtils
 import io.sentry.EventProcessor
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.NoOpLogger
 import io.sentry.ProfilingTraceData
+import io.sentry.ReplayRecording
 import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent
 import io.sentry.SentryTracer
 import io.sentry.Session
 import io.sentry.TracesSamplingDecision
@@ -24,10 +26,11 @@ import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.UserFeedback
 import io.sentry.dsnString
 import io.sentry.hints.Retryable
-import io.sentry.metrics.EncodedMetrics
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.test.initForTest
 import io.sentry.util.HintUtils
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -49,9 +52,10 @@ class ClientReportTest {
     @Test
     fun `lost envelope can be recorded`() {
         givenClientReportRecorder()
-        val hub = mock<IHub>()
-        whenever(hub.options).thenReturn(opts)
-        val transaction = SentryTracer(TransactionContext("name", "op"), hub)
+        val scopes = mock<IScopes>()
+        whenever(scopes.options).thenReturn(opts)
+        val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
+        val feedbackEvent = SentryEvent().apply { contexts.setFeedback(Feedback("message")) }
 
         val lostClientReport = ClientReport(
             DateUtils.getCurrentDateTime(),
@@ -71,13 +75,14 @@ class ClientReportTest {
             SentryEnvelopeItem.fromAttachment(opts.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000),
             SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, opts.serializer),
             SentryEnvelopeItem.fromCheckIn(opts.serializer, CheckIn("monitor-slug-1", CheckInStatus.ERROR)),
-            SentryEnvelopeItem.fromMetrics(EncodedMetrics(emptyMap()))
+            SentryEnvelopeItem.fromReplay(opts.serializer, opts.logger, SentryReplayEvent(), ReplayRecording(), false),
+            SentryEnvelopeItem.fromEvent(opts.serializer, feedbackEvent)
         )
 
         clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
 
         val clientReportAtEnd = clientReportRecorder.resetCountsAndGenerateClientReport()
-        testHelper.assertTotalCount(15, clientReportAtEnd)
+        testHelper.assertTotalCount(16, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.SAMPLE_RATE, DataCategory.Error, 3, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.BEFORE_SEND, DataCategory.Error, 2, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.QUEUE_OVERFLOW, DataCategory.Transaction, 1, clientReportAtEnd)
@@ -89,15 +94,16 @@ class ClientReportTest {
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Attachment, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Profile, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Monitor, 1, clientReportAtEnd)
-        testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.MetricBucket, 1, clientReportAtEnd)
+        testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Replay, 1, clientReportAtEnd)
+        testHelper.assertCountFor(DiscardReason.NETWORK_ERROR, DataCategory.Feedback, 1, clientReportAtEnd)
     }
 
     @Test
     fun `lost transaction records dropped spans`() {
         givenClientReportRecorder()
-        val hub = mock<IHub>()
-        whenever(hub.options).thenReturn(opts)
-        val transaction = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), hub)
+        val scopes = mock<IScopes>()
+        whenever(scopes.options).thenReturn(opts)
+        val transaction = SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), scopes)
         transaction.startChild("lost span", "span1").finish()
         transaction.startChild("lost span", "span2").finish()
         transaction.startChild("lost span", "span3").finish()
@@ -134,7 +140,7 @@ class ClientReportTest {
             DateUtils.getCurrentDateTime(),
             listOf(
                 DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 3),
-                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 2),
+                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 2),
                 DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1),
                 DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Profile.category, 2)
             )
@@ -147,7 +153,7 @@ class ClientReportTest {
         val clientReportAtEnd = clientReportRecorder.resetCountsAndGenerateClientReport()
         testHelper.assertTotalCount(8, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.SAMPLE_RATE, DataCategory.Error, 3, clientReportAtEnd)
-        testHelper.assertCountFor(DiscardReason.BEFORE_SEND, DataCategory.Error, 2, clientReportAtEnd)
+        testHelper.assertCountFor(DiscardReason.BEFORE_SEND, DataCategory.Feedback, 2, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.QUEUE_OVERFLOW, DataCategory.Transaction, 1, clientReportAtEnd)
         testHelper.assertCountFor(DiscardReason.SAMPLE_RATE, DataCategory.Profile, 2, clientReportAtEnd)
     }
@@ -191,7 +197,7 @@ class ClientReportTest {
     }
 
     private fun setupSentry(callback: Sentry.OptionsConfiguration<SentryOptions>? = null) {
-        Sentry.init { options ->
+        initForTest { options ->
             options.dsn = dsnString
             callback?.configure(options)
             opts = options

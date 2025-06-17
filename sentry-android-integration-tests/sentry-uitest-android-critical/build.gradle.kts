@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInt()
     namespace = "io.sentry.uitest.android.critical"
 
     signingConfigs {
@@ -17,8 +17,8 @@ android {
 
     defaultConfig {
         applicationId = "io.sentry.uitest.android.critical"
-        minSdk = Config.Android.minSdkVersionCompose
-        targetSdk = Config.Android.targetSdkVersion
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
     }
@@ -40,30 +40,24 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = Config.androidComposeCompilerVersion
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
-    variantFilter {
-        if (Config.Android.shouldSkipDebugVariant(buildType.name)) {
-            ignore = true
-        }
+    androidComponents.beforeVariants {
+        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
     }
 }
 
 dependencies {
     implementation(kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION))
-    implementation(Config.Libs.androidxCore)
-    implementation(Config.Libs.composeActivity)
-    implementation(Config.Libs.composeFoundation)
-    implementation(Config.Libs.composeMaterial)
-    implementation(Config.Libs.constraintLayout)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.core)
     implementation(projects.sentryAndroidCore)
 }
 
-tasks.withType<Detekt> {
+tasks.withType<Detekt>().configureEach {
     // Target version of the generated JVM bytecode. It is used for type resolution.
     jvmTarget = JavaVersion.VERSION_1_8.toString()
-}
-
-kotlin {
-    explicitApi()
 }

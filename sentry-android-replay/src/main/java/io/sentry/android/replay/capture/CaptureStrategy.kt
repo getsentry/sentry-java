@@ -5,7 +5,7 @@ import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ReplayRecording
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
@@ -16,9 +16,11 @@ import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebMetaEvent
+import io.sentry.rrweb.RRWebOptionsEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import java.io.File
 import java.util.Date
+import java.util.Deque
 import java.util.LinkedList
 
 internal interface CaptureStrategy {
@@ -29,7 +31,6 @@ internal interface CaptureStrategy {
     var segmentTimestamp: Date?
 
     fun start(
-        recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int = 0,
         replayId: SentryId = SentryId(),
         replayType: ReplayType? = null
@@ -53,13 +54,15 @@ internal interface CaptureStrategy {
 
     fun convert(): CaptureStrategy
 
-    fun close()
-
     companion object {
-        internal val currentEventsLock = Any()
+        private const val BREADCRUMB_START_OFFSET = 100L
+
+        // 5 minutes, otherwise relay will just drop it. Can prevent the case where the device
+        // time is wrong and the segment is too long.
+        private const val MAX_SEGMENT_DURATION = 1000L * 60 * 5
 
         fun createSegment(
-            hub: IHub?,
+            scopes: IScopes?,
             options: SentryOptions,
             duration: Long,
             currentSegmentTimestamp: Date,
@@ -70,23 +73,26 @@ internal interface CaptureStrategy {
             replayType: ReplayType,
             cache: ReplayCache?,
             frameRate: Int,
+            bitRate: Int,
             screenAtStart: String?,
             breadcrumbs: List<Breadcrumb>?,
-            events: LinkedList<RRWebEvent>
+            events: Deque<RRWebEvent>
         ): ReplaySegment {
             val generatedVideo = cache?.createVideoOf(
-                duration,
+                minOf(duration, MAX_SEGMENT_DURATION),
                 currentSegmentTimestamp.time,
                 segmentId,
                 height,
-                width
+                width,
+                frameRate,
+                bitRate
             ) ?: return ReplaySegment.Failed
 
             val (video, frameCount, videoDuration) = generatedVideo
 
             val replayBreadcrumbs: List<Breadcrumb> = if (breadcrumbs == null) {
                 var crumbs = emptyList<Breadcrumb>()
-                hub?.configureScope { scope ->
+                scopes?.configureScope { scope ->
                     crumbs = ArrayList(scope.breadcrumbs)
                 }
                 crumbs
@@ -126,7 +132,7 @@ internal interface CaptureStrategy {
             replayType: ReplayType,
             screenAtStart: String?,
             breadcrumbs: List<Breadcrumb>,
-            events: LinkedList<RRWebEvent>
+            events: Deque<RRWebEvent>
         ): ReplaySegment {
             val endTimestamp = DateUtils.getDateTime(segmentTimestamp.time + videoDuration)
             val replay = SentryReplayEvent().apply {
@@ -161,7 +167,10 @@ internal interface CaptureStrategy {
 
             val urls = LinkedList<String>()
             breadcrumbs.forEach { breadcrumb ->
-                if (breadcrumb.timestamp.time >= segmentTimestamp.time &&
+                // we add some fixed breadcrumb offset to make sure we don't miss any
+                // breadcrumbs that might be relevant for the current segment, but just happened
+                // earlier than the current segment (e.g. network connectivity changed)
+                if ((breadcrumb.timestamp.time + BREADCRUMB_START_OFFSET) >= segmentTimestamp.time &&
                     breadcrumb.timestamp.time < endTimestamp.time
                 ) {
                     val rrwebEvent = options
@@ -173,7 +182,9 @@ internal interface CaptureStrategy {
                         recordingPayload += rrwebEvent
 
                         // fill in the urls array from navigation breadcrumbs
-                        if ((rrwebEvent as? RRWebBreadcrumbEvent)?.category == "navigation") {
+                        if ((rrwebEvent as? RRWebBreadcrumbEvent)?.category == "navigation" &&
+                            rrwebEvent.data?.getOrElse("to", { null }) is String
+                        ) {
                             urls.add(rrwebEvent.data!!["to"] as String)
                         }
                     }
@@ -190,6 +201,10 @@ internal interface CaptureStrategy {
                 }
             }
 
+            if (segmentId == 0) {
+                recordingPayload += RRWebOptionsEvent(options)
+            }
+
             val recording = ReplayRecording().apply {
                 this.segmentId = segmentId
                 this.payload = recordingPayload.sortedBy { it.timestamp }
@@ -203,16 +218,16 @@ internal interface CaptureStrategy {
         }
 
         internal fun rotateEvents(
-            events: LinkedList<RRWebEvent>,
+            events: Deque<RRWebEvent>,
             until: Long,
             callback: ((RRWebEvent) -> Unit)? = null
         ) {
-            synchronized(currentEventsLock) {
-                var event = events.peek()
-                while (event != null && event.timestamp < until) {
+            val iter = events.iterator()
+            while (iter.hasNext()) {
+                val event = iter.next()
+                if (event.timestamp < until) {
                     callback?.invoke(event)
-                    events.remove()
-                    event = events.peek()
+                    iter.remove()
                 }
             }
         }
@@ -224,8 +239,8 @@ internal interface CaptureStrategy {
             val replay: SentryReplayEvent,
             val recording: ReplayRecording
         ) : ReplaySegment() {
-            fun capture(hub: IHub?, hint: Hint = Hint()) {
-                hub?.captureReplay(replay, hint.apply { replayRecording = recording })
+            fun capture(scopes: IScopes?, hint: Hint = Hint()) {
+                scopes?.captureReplay(replay, hint.apply { replayRecording = recording })
             }
 
             fun setSegmentId(segmentId: Int) {

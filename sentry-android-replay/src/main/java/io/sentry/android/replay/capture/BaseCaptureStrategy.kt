@@ -1,9 +1,11 @@
 package io.sentry.android.replay.capture
 
+import android.annotation.TargetApi
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
-import io.sentry.IHub
+import io.sentry.IScopes
+import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
@@ -14,25 +16,22 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_ID
-import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_RECORDING
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_SCREEN_AT_START
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.Companion.createSegment
-import io.sentry.android.replay.capture.CaptureStrategy.Companion.currentEventsLock
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.gestures.ReplayGestureConverter
-import io.sentry.android.replay.util.PersistableLinkedList
-import io.sentry.android.replay.util.gracefullyShutdown
 import io.sentry.android.replay.util.submitSafely
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
 import java.util.Date
-import java.util.LinkedList
+import java.util.Deque
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ThreadFactory
@@ -42,12 +41,13 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
+@TargetApi(26)
 internal abstract class BaseCaptureStrategy(
     private val options: SentryOptions,
-    private val hub: IHub?,
+    private val scopes: IScopes?,
     private val dateProvider: ICurrentDateProvider,
-    executor: ScheduledExecutorService? = null,
-    private val replayCacheProvider: ((replayId: SentryId, recorderConfig: ScreenshotRecorderConfig) -> ReplayCache)? = null
+    protected val replayExecutor: ScheduledExecutorService,
+    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
 ) : CaptureStrategy {
 
     internal companion object {
@@ -61,10 +61,10 @@ internal abstract class BaseCaptureStrategy(
 
     protected val isTerminating = AtomicBoolean(false)
     protected var cache: ReplayCache? = null
-    protected var recorderConfig: ScreenshotRecorderConfig by persistableAtomic { _, _, newValue ->
+    protected var recorderConfig: ScreenshotRecorderConfig? by persistableAtomicNullable(propertyName = "") { _, _, newValue ->
         if (newValue == null) {
             // recorderConfig is only nullable on init, but never after
-            return@persistableAtomic
+            return@persistableAtomicNullable
         }
         cache?.persistSegmentValues(SEGMENT_KEY_HEIGHT, newValue.recordingHeight.toString())
         cache?.persistSegmentValues(SEGMENT_KEY_WIDTH, newValue.recordingWidth.toString())
@@ -81,29 +81,19 @@ internal abstract class BaseCaptureStrategy(
     override val replayCacheDir: File? get() = cache?.replayCacheDir
 
     override var replayType by persistableAtomic<ReplayType>(propertyName = SEGMENT_KEY_REPLAY_TYPE)
-    protected val currentEvents: LinkedList<RRWebEvent> = PersistableLinkedList(
-        propertyName = SEGMENT_KEY_REPLAY_RECORDING,
-        options,
-        persistingExecutor,
-        cacheProvider = { cache }
-    )
 
-    protected val replayExecutor: ScheduledExecutorService by lazy {
-        executor ?: Executors.newSingleThreadScheduledExecutor(ReplayExecutorServiceThreadFactory())
-    }
+    protected val currentEvents: Deque<RRWebEvent> = ConcurrentLinkedDeque()
 
     override fun start(
-        recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int,
         replayId: SentryId,
         replayType: ReplayType?
     ) {
-        cache = replayCacheProvider?.invoke(replayId, recorderConfig) ?: ReplayCache(options, replayId, recorderConfig)
+        cache = replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId)
 
         this.currentReplayId = replayId
         this.currentSegment = segmentId
         this.replayType = replayType ?: (if (this is SessionCaptureStrategy) SESSION else BUFFER)
-        this.recorderConfig = recorderConfig
 
         segmentTimestamp = DateUtils.getCurrentDateTime()
         replayStartTimestamp.set(dateProvider.currentTimeMillis)
@@ -117,7 +107,6 @@ internal abstract class BaseCaptureStrategy(
 
     override fun stop() {
         cache?.close()
-        currentSegment = -1
         replayStartTimestamp.set(0)
         segmentTimestamp = null
         currentReplayId = SentryId.EMPTY_ID
@@ -130,15 +119,16 @@ internal abstract class BaseCaptureStrategy(
         segmentId: Int,
         height: Int,
         width: Int,
+        frameRate: Int,
+        bitRate: Int,
         replayType: ReplayType = this.replayType,
         cache: ReplayCache? = this.cache,
-        frameRate: Int = recorderConfig.frameRate,
         screenAtStart: String? = this.screenAtStart,
         breadcrumbs: List<Breadcrumb>? = null,
-        events: LinkedList<RRWebEvent> = this.currentEvents
+        events: Deque<RRWebEvent> = this.currentEvents
     ): ReplaySegment =
         createSegment(
-            hub,
+            scopes,
             options,
             duration,
             currentSegmentTimestamp,
@@ -149,6 +139,7 @@ internal abstract class BaseCaptureStrategy(
             replayType,
             cache,
             frameRate,
+            bitRate,
             screenAtStart,
             breadcrumbs,
             events
@@ -159,24 +150,11 @@ internal abstract class BaseCaptureStrategy(
     }
 
     override fun onTouchEvent(event: MotionEvent) {
-        val rrwebEvents = gestureConverter.convert(event, recorderConfig)
-        if (rrwebEvents != null) {
-            synchronized(currentEventsLock) {
+        recorderConfig?.let { config ->
+            val rrwebEvents = gestureConverter.convert(event, config)
+            if (rrwebEvents != null) {
                 currentEvents += rrwebEvents
             }
-        }
-    }
-
-    override fun close() {
-        replayExecutor.gracefullyShutdown(options)
-    }
-
-    private class ReplayExecutorServiceThreadFactory : ThreadFactory {
-        private var cnt = 0
-        override fun newThread(r: Runnable): Thread {
-            val ret = Thread(r, "SentryReplayIntegration-" + cnt++)
-            ret.setDaemon(true)
-            return ret
         }
     }
 
@@ -200,12 +178,16 @@ internal abstract class BaseCaptureStrategy(
             private val value = AtomicReference(initialValue)
 
             private fun runInBackground(task: () -> Unit) {
-                if (options.mainThreadChecker.isMainThread) {
+                if (options.threadChecker.isMainThread) {
                     persistingExecutor.submitSafely(options, "$TAG.runInBackground") {
                         task()
                     }
                 } else {
-                    task()
+                    try {
+                        task()
+                    } catch (e: Throwable) {
+                        options.logger.log(ERROR, "Failed to execute task $TAG.runInBackground", e)
+                    }
                 }
             }
 
@@ -227,9 +209,4 @@ internal abstract class BaseCaptureStrategy(
         }
     ): ReadWriteProperty<Any?, T> =
         persistableAtomicNullable<T>(initialValue, propertyName, onChange) as ReadWriteProperty<Any?, T>
-
-    private inline fun <T> persistableAtomic(
-        crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit
-    ): ReadWriteProperty<Any?, T> =
-        persistableAtomicNullable<T>(null, "", onChange) as ReadWriteProperty<Any?, T>
 }

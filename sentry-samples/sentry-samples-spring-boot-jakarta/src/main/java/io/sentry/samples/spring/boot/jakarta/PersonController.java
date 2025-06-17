@@ -1,5 +1,7 @@
 package io.sentry.samples.spring.boot.jakarta;
 
+import io.sentry.ISpan;
+import io.sentry.Sentry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,12 +23,27 @@ public class PersonController {
 
   @GetMapping("{id}")
   Person person(@PathVariable Long id) {
-    LOGGER.error("Trying person with id={}", id, new RuntimeException("error while loading"));
-    throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
+    ISpan currentSpan = Sentry.getSpan();
+    ISpan sentrySpan = currentSpan.startChild("spanCreatedThroughSentryApi");
+    try {
+      Sentry.logger().warn("warn Sentry logging");
+      Sentry.logger().error("error Sentry logging");
+      Sentry.logger().info("hello %s %s", "there", "world!");
+      LOGGER.error("Trying person with id={}", id, new RuntimeException("error while loading"));
+      throw new IllegalArgumentException("Something went wrong [id=" + id + "]");
+    } finally {
+      sentrySpan.finish();
+    }
   }
 
   @PostMapping
   Person create(@RequestBody Person person) {
-    return personService.create(person);
+    ISpan currentSpan = Sentry.getSpan();
+    ISpan sentrySpan = currentSpan.startChild("spanCreatedThroughSentryApi");
+    try {
+      return personService.create(person);
+    } finally {
+      sentrySpan.finish();
+    }
   }
 }

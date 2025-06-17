@@ -8,10 +8,12 @@ import android.content.Context;
 import android.content.res.Configuration;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
+import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.protocol.Device;
 import io.sentry.util.Objects;
@@ -24,9 +26,16 @@ import org.jetbrains.annotations.Nullable;
 public final class AppComponentsBreadcrumbsIntegration
     implements Integration, Closeable, ComponentCallbacks2 {
 
+  private static final long DEBOUNCE_WAIT_TIME_MS = 60 * 1000;
+  // pre-allocate hint to avoid creating it every time for the low memory case
+  private static final @NotNull Hint EMPTY_HINT = new Hint();
+
   private final @NotNull Context context;
-  private @Nullable IHub hub;
+  private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
+
+  private final @NotNull Debouncer trimMemoryDebouncer =
+      new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
 
   public AppComponentsBreadcrumbsIntegration(final @NotNull Context context) {
     this.context =
@@ -34,8 +43,8 @@ public final class AppComponentsBreadcrumbsIntegration
   }
 
   @Override
-  public void register(final @NotNull IHub hub, final @NotNull SentryOptions options) {
-    this.hub = Objects.requireNonNull(hub, "Hub is required");
+  public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options =
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
@@ -91,48 +100,49 @@ public final class AppComponentsBreadcrumbsIntegration
 
   @Override
   public void onLowMemory() {
-    final long now = System.currentTimeMillis();
-    executeInBackground(() -> captureLowMemoryBreadcrumb(now, null));
+    // we do this in onTrimMemory below already, this is legacy API (14 or below)
   }
 
   @Override
   public void onTrimMemory(final int level) {
+    if (level < TRIM_MEMORY_BACKGROUND) {
+      // only add breadcrumb if TRIM_MEMORY_BACKGROUND, TRIM_MEMORY_MODERATE or
+      // TRIM_MEMORY_COMPLETE.
+      // Release as much memory as the process can.
+
+      // TRIM_MEMORY_UI_HIDDEN, TRIM_MEMORY_RUNNING_MODERATE, TRIM_MEMORY_RUNNING_LOW and
+      // TRIM_MEMORY_RUNNING_CRITICAL.
+      // Release any memory that your app doesn't need to run.
+      // So they are still not so critical at the point of killing the process.
+      // https://developer.android.com/topic/performance/memory
+      return;
+    }
+
+    if (trimMemoryDebouncer.checkForDebounce()) {
+      // if we received trim_memory within 1 minute time, ignore this call
+      return;
+    }
+
     final long now = System.currentTimeMillis();
     executeInBackground(() -> captureLowMemoryBreadcrumb(now, level));
   }
 
-  private void captureLowMemoryBreadcrumb(final long timeMs, final @Nullable Integer level) {
-    if (hub != null) {
+  private void captureLowMemoryBreadcrumb(final long timeMs, final int level) {
+    if (scopes != null) {
       final Breadcrumb breadcrumb = new Breadcrumb(timeMs);
-      if (level != null) {
-        // only add breadcrumb if TRIM_MEMORY_BACKGROUND, TRIM_MEMORY_MODERATE or
-        // TRIM_MEMORY_COMPLETE.
-        // Release as much memory as the process can.
-
-        // TRIM_MEMORY_UI_HIDDEN, TRIM_MEMORY_RUNNING_MODERATE, TRIM_MEMORY_RUNNING_LOW and
-        // TRIM_MEMORY_RUNNING_CRITICAL.
-        // Release any memory that your app doesn't need to run.
-        // So they are still not so critical at the point of killing the process.
-        // https://developer.android.com/topic/performance/memory
-
-        if (level < TRIM_MEMORY_BACKGROUND) {
-          return;
-        }
-        breadcrumb.setData("level", level);
-      }
-
       breadcrumb.setType("system");
       breadcrumb.setCategory("device.event");
       breadcrumb.setMessage("Low memory");
       breadcrumb.setData("action", "LOW_MEMORY");
+      breadcrumb.setData("level", level);
       breadcrumb.setLevel(SentryLevel.WARNING);
-      hub.addBreadcrumb(breadcrumb);
+      scopes.addBreadcrumb(breadcrumb, EMPTY_HINT);
     }
   }
 
   private void captureConfigurationChangedBreadcrumb(
       final long timeMs, final @NotNull Configuration newConfig) {
-    if (hub != null) {
+    if (scopes != null) {
       final Device.DeviceOrientation deviceOrientation =
           DeviceOrientations.getOrientation(context.getResources().getConfiguration().orientation);
 
@@ -152,7 +162,7 @@ public final class AppComponentsBreadcrumbsIntegration
       final Hint hint = new Hint();
       hint.set(ANDROID_CONFIGURATION, newConfig);
 
-      hub.addBreadcrumb(breadcrumb, hint);
+      scopes.addBreadcrumb(breadcrumb, hint);
     }
   }
 

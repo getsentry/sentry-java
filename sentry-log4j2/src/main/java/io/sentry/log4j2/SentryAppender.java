@@ -7,9 +7,10 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
 import io.sentry.DateUtils;
 import io.sentry.Hint;
-import io.sentry.HubAdapter;
-import io.sentry.IHub;
+import io.sentry.IScopes;
 import io.sentry.ITransportFactory;
+import io.sentry.InitPriority;
+import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import io.sentry.SentryIntegrationPackageStorage;
@@ -50,8 +51,13 @@ public class SentryAppender extends AbstractAppender {
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
   private final @Nullable Boolean debug;
-  private final @NotNull IHub hub;
+  private final @NotNull IScopes scopes;
   private final @Nullable List<String> contextTags;
+
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-log4j2", BuildConfig.VERSION_NAME);
+  }
 
   public SentryAppender(
       final @NotNull String name,
@@ -61,7 +67,7 @@ public class SentryAppender extends AbstractAppender {
       final @Nullable Level minimumEventLevel,
       final @Nullable Boolean debug,
       final @Nullable ITransportFactory transportFactory,
-      final @NotNull IHub hub,
+      final @NotNull IScopes scopes,
       final @Nullable String[] contextTags) {
     super(name, filter, null, true, null);
     this.dsn = dsn;
@@ -73,7 +79,7 @@ public class SentryAppender extends AbstractAppender {
     }
     this.debug = debug;
     this.transportFactory = transportFactory;
-    this.hub = hub;
+    this.scopes = scopes;
     this.contextTags = contextTags != null ? Arrays.asList(contextTags) : null;
   }
 
@@ -110,34 +116,33 @@ public class SentryAppender extends AbstractAppender {
         minimumEventLevel,
         debug,
         null,
-        HubAdapter.getInstance(),
+        ScopesAdapter.getInstance(),
         contextTags != null ? contextTags.split(",") : null);
   }
 
   @Override
   public void start() {
-    if (!Sentry.isEnabled()) {
-      try {
-        Sentry.init(
-            options -> {
-              options.setEnableExternalConfiguration(true);
-              options.setDsn(dsn);
-              if (debug != null) {
-                options.setDebug(debug);
+    try {
+      Sentry.init(
+          options -> {
+            options.setEnableExternalConfiguration(true);
+            options.setInitPriority(InitPriority.LOWEST);
+            options.setDsn(dsn);
+            if (debug != null) {
+              options.setDebug(debug);
+            }
+            options.setSentryClientName(
+                BuildConfig.SENTRY_LOG4J2_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
+            options.setSdkVersion(createSdkVersion(options));
+            if (contextTags != null) {
+              for (final String contextTag : contextTags) {
+                options.addContextTag(contextTag);
               }
-              options.setSentryClientName(
-                  BuildConfig.SENTRY_LOG4J2_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
-              options.setSdkVersion(createSdkVersion(options));
-              if (contextTags != null) {
-                for (final String contextTag : contextTags) {
-                  options.addContextTag(contextTag);
-                }
-              }
-              Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
-            });
-      } catch (IllegalArgumentException e) {
-        LOGGER.warn("Failed to init Sentry during appender initialization: " + e.getMessage());
-      }
+            }
+            Optional.ofNullable(transportFactory).ifPresent(options::setTransportFactory);
+          });
+    } catch (IllegalArgumentException e) {
+      LOGGER.warn("Failed to init Sentry during appender initialization: " + e.getMessage());
     }
     addPackageAndIntegrationInfo();
     super.start();
@@ -149,13 +154,13 @@ public class SentryAppender extends AbstractAppender {
       final Hint hint = new Hint();
       hint.set(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
 
-      hub.captureEvent(createEvent(eventObject), hint);
+      scopes.captureEvent(createEvent(eventObject), hint);
     }
     if (eventObject.getLevel().isMoreSpecificThan(minimumBreadcrumbLevel)) {
       final Hint hint = new Hint();
       hint.set(LOG4J_LOG_EVENT, eventObject);
 
-      hub.addBreadcrumb(createBreadcrumb(eventObject), hint);
+      scopes.addBreadcrumb(createBreadcrumb(eventObject), hint);
     }
   }
 
@@ -199,9 +204,9 @@ public class SentryAppender extends AbstractAppender {
         CollectionUtils.filterMapEntries(
             loggingEvent.getContextData().toMap(), entry -> entry.getValue() != null);
     if (!contextData.isEmpty()) {
-      // get tags from HubAdapter options to allow getting the correct tags if Sentry has been
+      // get tags from ScopesAdapter options to allow getting the correct tags if Sentry has been
       // initialized somewhere else
-      final List<String> contextTags = hub.getOptions().getContextTags();
+      final List<String> contextTags = scopes.getOptions().getContextTags();
       if (contextTags != null && !contextTags.isEmpty()) {
         for (final String contextTag : contextTags) {
           // if mdc tag is listed in SentryOptions, apply as event tag
@@ -277,8 +282,6 @@ public class SentryAppender extends AbstractAppender {
   }
 
   private void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-log4j2", BuildConfig.VERSION_NAME);
     SentryIntegrationPackageStorage.getInstance().addIntegration("Log4j");
   }
 }

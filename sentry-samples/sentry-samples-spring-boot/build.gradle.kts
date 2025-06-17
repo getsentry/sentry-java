@@ -2,11 +2,10 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id(Config.BuildPlugins.springBoot) version Config.springBootVersion
-    id(Config.BuildPlugins.springDependencyManagement) version Config.BuildPlugins.springDependencyManagementVersion
+    alias(libs.plugins.springboot2)
+    alias(libs.plugins.spring.dependency.management)
     kotlin("jvm")
-    kotlin("plugin.spring") version Config.kotlinVersion
-    id("com.apollographql.apollo3") version "3.8.2"
+    alias(libs.plugins.kotlin.spring)
 }
 
 group = "io.sentry.sample.spring-boot"
@@ -27,7 +26,7 @@ tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
 }
 
-tasks.withType<KotlinCompile> {
+tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
         jvmTarget = JavaVersion.VERSION_17.toString()
@@ -35,18 +34,18 @@ tasks.withType<KotlinCompile> {
 }
 
 dependencies {
-    implementation(Config.Libs.springBootStarterSecurity)
-    implementation(Config.Libs.springBootStarterWeb)
-    implementation(Config.Libs.springBootStarterWebsocket)
-    implementation(Config.Libs.springBootStarterWebflux)
-    implementation(Config.Libs.springBootStarterGraphql)
-    implementation(Config.Libs.springBootStarterQuartz)
-    implementation(Config.Libs.springBootStarterAop)
-    implementation(Config.Libs.springBootStarterActuator)
+    implementation(libs.springboot.starter)
+    implementation(libs.springboot.starter.actuator)
+    implementation(libs.springboot.starter.aop)
+    implementation(libs.springboot.starter.graphql)
+    implementation(libs.springboot.starter.jdbc)
+    implementation(libs.springboot.starter.quartz)
+    implementation(libs.springboot.starter.security)
+    implementation(libs.springboot.starter.web)
+    implementation(libs.springboot.starter.webflux)
+    implementation(libs.springboot.starter.websocket)
     implementation(Config.Libs.aspectj)
-    implementation(Config.Libs.springBootStarter)
     implementation(Config.Libs.kotlinReflect)
-    implementation(Config.Libs.springBootStarterJdbc)
     implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
     implementation(projects.sentrySpringBootStarter)
     implementation(projects.sentryLogback)
@@ -55,15 +54,18 @@ dependencies {
 
     // database query tracing
     implementation(projects.sentryJdbc)
-    runtimeOnly(Config.TestLibs.hsqldb)
-    testImplementation(Config.Libs.springBootStarterTest) {
+    runtimeOnly(libs.hsqldb)
+
+    testImplementation(projects.sentrySystemTestSupport)
+    testImplementation(kotlin(Config.kotlinStdLib))
+    testImplementation(libs.apollo3.kotlin)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.slf4j2.api)
+    testImplementation(libs.springboot.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
-    testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.Libs.logbackClassic)
-    testImplementation(Config.Libs.slf4jApi2)
-    testImplementation(Config.Libs.apolloKotlin)
+    testImplementation("ch.qos.logback:logback-classic:1.5.16")
+    testImplementation("ch.qos.logback:logback-core:1.5.16")
     testImplementation("org.apache.httpcomponents:httpclient")
 }
 
@@ -77,7 +79,9 @@ tasks.register<Test>("systemTest").configure {
     group = "verification"
     description = "Runs the System tests"
 
-//    maxParallelForks = Runtime.getRuntime().availableProcessors() / 2
+    outputs.upToDateWhen { false }
+
+    maxParallelForks = 1
 
     // Cap JVM args per test
     minHeapSize = "128m"
@@ -93,15 +97,5 @@ tasks.named("test").configure {
 
     filter {
         excludeTestsMatching("io.sentry.systemtest.*")
-    }
-}
-
-apollo {
-    service("service") {
-        srcDir("src/test/graphql")
-        packageName.set("io.sentry.samples.graphql")
-        outputDirConnection {
-            connectToKotlinSourceSet("test")
-        }
     }
 }

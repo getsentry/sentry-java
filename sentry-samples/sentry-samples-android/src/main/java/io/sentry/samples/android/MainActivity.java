@@ -1,31 +1,30 @@
 package io.sentry.samples.android;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
 import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
-import io.sentry.UserFeedback;
+import io.sentry.android.core.SentryUserFeedbackDialog;
 import io.sentry.instrumentation.file.SentryFileOutputStream;
-import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.samples.android.compose.ComposeActivity;
 import io.sentry.samples.android.databinding.ActivityMainBinding;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import timber.log.Timber;
 
@@ -41,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    SharedState.INSTANCE.setOrientationChange(
+        getIntent().getBooleanExtra("isOrientationChange", false));
     final ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
 
     final File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
@@ -73,29 +74,17 @@ public class MainActivity extends AppCompatActivity {
 
     binding.sendUserFeedback.setOnClickListener(
         view -> {
-          SentryId sentryId = Sentry.captureException(new Exception("I have feedback"));
-
-          UserFeedback userFeedback = new UserFeedback(sentryId);
-          userFeedback.setComments("It broke on Android. I don't know why, but this happens.");
-          userFeedback.setEmail("john@me.com");
-          userFeedback.setName("John Me");
-          Sentry.captureUserFeedback(userFeedback);
+          new SentryUserFeedbackDialog.Builder(this).create().show();
         });
 
     binding.addAttachment.setOnClickListener(
         view -> {
           String fileName = Calendar.getInstance().getTimeInMillis() + "_file.txt";
           File file = getApplication().getFileStreamPath(fileName);
-          try (final FileOutputStream fileOutputStream = new SentryFileOutputStream(file);
-              final OutputStreamWriter outputStreamWriter =
-                  new OutputStreamWriter(fileOutputStream);
-              final Writer writer = new BufferedWriter(outputStreamWriter)) {
-            for (int i = 0; i < 1024; i++) {
-              // To keep the sample code simple this happens on the main thread. Don't do this in a
-              // real app.
-              writer.write(String.format(Locale.getDefault(), "%d\n", i));
-            }
-            writer.flush();
+          try (final FileOutputStream fos =
+              SentryFileOutputStream.Factory.create(new FileOutputStream(file), file)) {
+            FileChannel channel = fos.getChannel();
+            channel.write(java.nio.ByteBuffer.wrap("Hello, World!".getBytes()));
           } catch (IOException e) {
             Sentry.captureException(e);
           }
@@ -210,6 +199,31 @@ public class MainActivity extends AppCompatActivity {
                   1000);
         });
 
+    binding.nativeAnr.setOnClickListener(
+        view -> {
+          new Thread(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      NativeSample.freezeMysteriously(mutex);
+                    }
+                  })
+              .start();
+
+          new Handler()
+              .postDelayed(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      synchronized (mutex) {
+                        // Shouldn't happen
+                        throw new IllegalStateException();
+                      }
+                    }
+                  },
+                  1000);
+        });
+
     binding.openSecondActivity.setOnClickListener(
         view -> {
           // finishing so its completely destroyed
@@ -254,8 +268,37 @@ public class MainActivity extends AppCompatActivity {
     binding.openFrameDataForSpans.setOnClickListener(
         view -> startActivity(new Intent(this, FrameDataForSpansActivity.class)));
 
-    binding.openMetrics.setOnClickListener(
-        view -> startActivity(new Intent(this, MetricsActivity.class)));
+    binding.throwInCoroutine.setOnClickListener(
+        view -> {
+          CoroutinesUtil.INSTANCE.throwInCoroutine();
+        });
+
+    binding.showDialog.setOnClickListener(
+        view -> {
+          new AlertDialog.Builder(MainActivity.this)
+              .setTitle("Example Title")
+              .setMessage("Example Message")
+              .setPositiveButton(
+                  "Close",
+                  (dialog, which) -> {
+                    if (SharedState.INSTANCE.isOrientationChange()) {
+                      int currentOrientation = getResources().getConfiguration().orientation;
+                      if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                      } else if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                      }
+                    } else {
+                      dialog.dismiss();
+                    }
+                  })
+              .show();
+        });
+
+    binding.enableReplayDebugMode.setOnClickListener(
+        view -> {
+          Sentry.replay().enableDebugMaskingOverlay();
+        });
 
     setContentView(binding.getRoot());
   }

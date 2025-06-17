@@ -2,8 +2,8 @@ package io.sentry;
 
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Cached;
-import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -65,34 +65,8 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   }
 
   private void setDebugMeta(final @NotNull SentryBaseEvent event) {
-    final @NotNull List<DebugImage> debugImages = new ArrayList<>();
-
-    if (options.getProguardUuid() != null) {
-      final DebugImage proguardMappingImage = new DebugImage();
-      proguardMappingImage.setType(DebugImage.PROGUARD);
-      proguardMappingImage.setUuid(options.getProguardUuid());
-      debugImages.add(proguardMappingImage);
-    }
-
-    for (final @NotNull String bundleId : options.getBundleIds()) {
-      final DebugImage sourceBundleImage = new DebugImage();
-      sourceBundleImage.setType(DebugImage.JVM);
-      sourceBundleImage.setDebugId(bundleId);
-      debugImages.add(sourceBundleImage);
-    }
-
-    if (!debugImages.isEmpty()) {
-      DebugMeta debugMeta = event.getDebugMeta();
-
-      if (debugMeta == null) {
-        debugMeta = new DebugMeta();
-      }
-      if (debugMeta.getImages() == null) {
-        debugMeta.setImages(debugImages);
-      } else {
-        debugMeta.getImages().addAll(debugImages);
-      }
-
+    final DebugMeta debugMeta = DebugMeta.buildDebugMeta(event.getDebugMeta(), options);
+    if (debugMeta != null) {
       event.setDebugMeta(debugMeta);
     }
   }
@@ -159,6 +133,11 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
 
     if (shouldApplyScopeData(event, hint)) {
       processNonCachedEvent(event);
+      final @Nullable SdkVersion replaySdkVersion = options.getSessionReplay().getSdkVersion();
+      if (replaySdkVersion != null) {
+        // we override the SdkVersion only for replay events as those may come from Hybrid SDKs
+        event.setSdk(replaySdkVersion);
+      }
     }
     return event;
   }
@@ -201,11 +180,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
 
   private void ensureHostnameCache() {
     if (hostnameCache == null) {
-      synchronized (this) {
-        if (hostnameCache == null) {
-          hostnameCache = HostnameCache.getInstance();
-        }
-      }
+      hostnameCache = HostnameCache.getInstance();
     }
   }
 
@@ -239,7 +214,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
       user = new User();
       event.setUser(user);
     }
-    if (user.getIpAddress() == null) {
+    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
@@ -320,5 +295,10 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   @Nullable
   HostnameCache getHostnameCache() {
     return hostnameCache;
+  }
+
+  @Override
+  public @Nullable Long getOrder() {
+    return 0L;
   }
 }

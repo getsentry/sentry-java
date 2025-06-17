@@ -72,6 +72,15 @@ inline fun assertEnvelopeProfile(
 ): ProfilingTraceData = assertEnvelopeItem(items, SentryItemType.Profile, logger, predicate)
 
 /**
+ * Asserts a feedback exists in [items] and returns the first one. Otherwise it throws an [AssertionError].
+ */
+inline fun assertEnvelopeFeedback(
+    items: List<SentryEnvelopeItem>,
+    logger: ILogger = NoOpLogger.getInstance(),
+    predicate: (index: Int, item: SentryEvent) -> Unit = { _, _ -> }
+): SentryEvent = assertEnvelopeItem(items, SentryItemType.Feedback, logger, predicate)
+
+/**
  * Modified version of check from mockito-kotlin Verification.kt, that does not print errors of type `SkipError`.
  */
 private inline fun <reified T : Any> check(noinline predicate: (T) -> Unit): T {
@@ -99,3 +108,5 @@ If you are using `check` as part of a stubbing, use `argThat` or `argForWhich` i
 }
 
 class SkipError(message: String) : Error(message)
+
+val mockServerRequestTimeoutMillis = 5000L

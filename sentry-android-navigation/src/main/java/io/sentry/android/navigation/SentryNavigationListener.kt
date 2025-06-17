@@ -7,9 +7,9 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.HubAdapter
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.ITransaction
+import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
@@ -34,8 +34,8 @@ private const val TRACE_ORIGIN = "auto.navigation"
  * @param enableNavigationTracing Whether the integration should start a new idle [ITransaction]
  * with [SentryOptions.idleTimeout] for navigation events.
  */
-class SentryNavigationListener @JvmOverloads constructor(
-    private val hub: IHub = HubAdapter.getInstance(),
+public class SentryNavigationListener @JvmOverloads constructor(
+    private val scopes: IScopes = ScopesAdapter.getInstance(),
     private val enableNavigationBreadcrumbs: Boolean = true,
     private val enableNavigationTracing: Boolean = true,
     private val traceOriginAppendix: String? = null
@@ -44,14 +44,12 @@ class SentryNavigationListener @JvmOverloads constructor(
     private var previousDestinationRef: WeakReference<NavDestination>? = null
     private var previousArgs: Bundle? = null
 
-    private val isPerformanceEnabled get() = hub.options.isTracingEnabled && enableNavigationTracing
+    private val isPerformanceEnabled get() = scopes.options.isTracingEnabled && enableNavigationTracing
 
     private var activeTransaction: ITransaction? = null
 
     init {
         addIntegrationToSdkVersion("NavigationListener")
-        SentryIntegrationPackageStorage.getInstance()
-            .addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
     }
 
     override fun onDestinationChanged(
@@ -64,8 +62,8 @@ class SentryNavigationListener @JvmOverloads constructor(
 
         val routeName = destination.extractName(controller.context)
         if (routeName != null) {
-            if (hub.options.isEnableScreenTracking) {
-                hub.configureScope { it.screen = routeName }
+            if (scopes.options.isEnableScreenTracking) {
+                scopes.configureScope { it.screen = routeName }
             }
             startTracing(routeName, destination, toArguments)
         }
@@ -98,7 +96,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         }
         val hint = Hint()
         hint.set(TypeCheckHint.ANDROID_NAV_DESTINATION, destination)
-        hub.addBreadcrumb(breadcrumb, hint)
+        scopes.addBreadcrumb(breadcrumb, hint)
     }
 
     private fun startTracing(
@@ -107,7 +105,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         arguments: Map<String, Any?>
     ) {
         if (!isPerformanceEnabled) {
-            TracingUtils.startNewTrace(hub)
+            TracingUtils.startNewTrace(scopes)
             return
         }
 
@@ -118,7 +116,7 @@ class SentryNavigationListener @JvmOverloads constructor(
 
         if (destination.navigatorName == "activity") {
             // we do not trace navigation between activities to avoid clashing with activity lifecycle tracing
-            hub.options.logger.log(
+            scopes.options.logger.log(
                 DEBUG,
                 "Navigating to activity destination, no transaction captured."
             )
@@ -127,12 +125,12 @@ class SentryNavigationListener @JvmOverloads constructor(
 
         val transactionOptions = TransactionOptions().also {
             it.isWaitForChildren = true
-            it.idleTimeout = hub.options.idleTimeout
+            it.idleTimeout = scopes.options.idleTimeout
             it.deadlineTimeout = TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION
             it.isTrimEnd = true
         }
 
-        val transaction = hub.startTransaction(
+        val transaction = scopes.startTransaction(
             TransactionContext(routeName, TransactionNameSource.ROUTE, NAVIGATION_OP),
             transactionOptions
         )
@@ -144,7 +142,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         if (arguments.isNotEmpty()) {
             transaction.setData("arguments", arguments)
         }
-        hub.configureScope { scope ->
+        scopes.configureScope { scope ->
             scope.withTransaction { tx ->
                 if (tx == null) {
                     scope.transaction = transaction
@@ -159,7 +157,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         activeTransaction?.finish(status)
 
         // clear transaction from scope so others can bind to it
-        hub.configureScope { scope ->
+        scopes.configureScope { scope ->
             scope.withTransaction { tx ->
                 if (tx == activeTransaction) {
                     scope.clearTransaction()
@@ -182,7 +180,7 @@ class SentryNavigationListener @JvmOverloads constructor(
         val name = route ?: try {
             context.resources.getResourceEntryName(id)
         } catch (e: NotFoundException) {
-            hub.options.logger.log(
+            scopes.options.logger.log(
                 DEBUG,
                 "Destination id cannot be retrieved from Resources, no transaction captured."
             )
@@ -193,7 +191,12 @@ class SentryNavigationListener @JvmOverloads constructor(
         return "/" + name.substringBefore('/') // strip out arguments from the tx name
     }
 
-    companion object {
-        const val NAVIGATION_OP = "navigation"
+    public companion object {
+        public const val NAVIGATION_OP: String = "navigation"
+
+        init {
+            SentryIntegrationPackageStorage.getInstance()
+                .addPackage("maven:io.sentry:sentry-android-navigation", BuildConfig.VERSION_NAME)
+        }
     }
 }

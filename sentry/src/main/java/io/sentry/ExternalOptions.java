@@ -1,10 +1,7 @@
 package io.sentry;
 
 import io.sentry.config.PropertiesProvider;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -26,7 +23,6 @@ public final class ExternalOptions {
   private @Nullable Boolean enableUncaughtExceptionHandler;
   private @Nullable Boolean debug;
   private @Nullable Boolean enableDeduplication;
-  private @Nullable Boolean enableTracing;
   private @Nullable Double tracesSampleRate;
   private @Nullable Double profilesSampleRate;
   private @Nullable SentryOptions.RequestSize maxRequestBodySize;
@@ -40,16 +36,25 @@ public final class ExternalOptions {
   private @Nullable Long idleTimeout;
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
+  private @Nullable List<String> ignoredErrors;
   private @Nullable Boolean printUncaughtStackTrace;
   private @Nullable Boolean sendClientReports;
   private @NotNull Set<String> bundleIds = new CopyOnWriteArraySet<>();
   private @Nullable Boolean enabled;
   private @Nullable Boolean enablePrettySerializationOutput;
+  private @Nullable Boolean enableSpotlight;
+  private @Nullable Boolean enableLogs;
+  private @Nullable String spotlightConnectionUrl;
 
   private @Nullable List<String> ignoredCheckIns;
+  private @Nullable List<String> ignoredTransactions;
 
   private @Nullable Boolean sendModules;
+  private @Nullable Boolean sendDefaultPii;
   private @Nullable Boolean enableBackpressureHandling;
+  private @Nullable Boolean globalHubMode;
+  private @Nullable Boolean forceInit;
+  private @Nullable Boolean captureOpenTelemetryEvents;
 
   private @Nullable SentryOptions.Cron cron;
 
@@ -66,12 +71,12 @@ public final class ExternalOptions {
         propertiesProvider.getBooleanProperty("uncaught.handler.enabled"));
     options.setPrintUncaughtStackTrace(
         propertiesProvider.getBooleanProperty("uncaught.handler.print-stacktrace"));
-    options.setEnableTracing(propertiesProvider.getBooleanProperty("enable-tracing"));
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setProfilesSampleRate(propertiesProvider.getDoubleProperty("profiles-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
     options.setSendClientReports(propertiesProvider.getBooleanProperty("send-client-reports"));
+    options.setForceInit(propertiesProvider.getBooleanProperty("force-init"));
     final String maxRequestBodySize = propertiesProvider.getProperty("max-request-body-size");
     if (maxRequestBodySize != null) {
       options.setMaxRequestBodySize(
@@ -125,17 +130,28 @@ public final class ExternalOptions {
     }
     options.setIdleTimeout(propertiesProvider.getLongProperty("idle-timeout"));
 
+    options.setIgnoredErrors(propertiesProvider.getListOrNull("ignored-errors"));
+
     options.setEnabled(propertiesProvider.getBooleanProperty("enabled"));
 
     options.setEnablePrettySerializationOutput(
         propertiesProvider.getBooleanProperty("enable-pretty-serialization-output"));
 
     options.setSendModules(propertiesProvider.getBooleanProperty("send-modules"));
+    options.setSendDefaultPii(propertiesProvider.getBooleanProperty("send-default-pii"));
 
-    options.setIgnoredCheckIns(propertiesProvider.getList("ignored-checkins"));
+    options.setIgnoredCheckIns(propertiesProvider.getListOrNull("ignored-checkins"));
+    options.setIgnoredTransactions(propertiesProvider.getListOrNull("ignored-transactions"));
 
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
+
+    options.setGlobalHubMode(propertiesProvider.getBooleanProperty("global-hub-mode"));
+
+    options.setCaptureOpenTelemetryEvents(
+        propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
+
+    options.setEnableLogs(propertiesProvider.getBooleanProperty("logs.enabled"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -183,6 +199,9 @@ public final class ExternalOptions {
 
       options.setCron(cron);
     }
+
+    options.setEnableSpotlight(propertiesProvider.getBooleanProperty("enable-spotlight"));
+    options.setSpotlightConnectionUrl(propertiesProvider.getProperty("spotlight-connection-url"));
 
     return options;
   }
@@ -236,11 +255,6 @@ public final class ExternalOptions {
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
-  @Deprecated
-  public @Nullable List<String> getTracingOrigins() {
-    return tracePropagationTargets;
-  }
-
   public @Nullable List<String> getTracePropagationTargets() {
     return tracePropagationTargets;
   }
@@ -259,14 +273,6 @@ public final class ExternalOptions {
 
   public void setEnableDeduplication(final @Nullable Boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
-  }
-
-  public @Nullable Boolean getEnableTracing() {
-    return enableTracing;
-  }
-
-  public void setEnableTracing(final @Nullable Boolean enableTracing) {
-    this.enableTracing = enableTracing;
   }
 
   public @Nullable Double getTracesSampleRate() {
@@ -337,12 +343,6 @@ public final class ExternalOptions {
     inAppExcludes.add(exclude);
   }
 
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public void addTracingOrigin(final @NotNull String tracingOrigin) {
-    this.addTracePropagationTarget(tracingOrigin);
-  }
-
   public void addTracePropagationTarget(final @NotNull String tracePropagationTarget) {
     if (tracePropagationTargets == null) {
       tracePropagationTargets = new CopyOnWriteArrayList<>();
@@ -378,6 +378,14 @@ public final class ExternalOptions {
 
   public void setIdleTimeout(final @Nullable Long idleTimeout) {
     this.idleTimeout = idleTimeout;
+  }
+
+  public @Nullable List<String> getIgnoredErrors() {
+    return ignoredErrors;
+  }
+
+  public void setIgnoredErrors(final @Nullable List<String> ignoredErrors) {
+    this.ignoredErrors = ignoredErrors;
   }
 
   public @Nullable Boolean getSendClientReports() {
@@ -421,6 +429,14 @@ public final class ExternalOptions {
     this.sendModules = sendModules;
   }
 
+  public @Nullable Boolean isSendDefaultPii() {
+    return sendDefaultPii;
+  }
+
+  public void setSendDefaultPii(final @Nullable Boolean sendDefaultPii) {
+    this.sendDefaultPii = sendDefaultPii;
+  }
+
   @ApiStatus.Experimental
   public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
     this.ignoredCheckIns = ignoredCheckIns;
@@ -429,6 +445,14 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable List<String> getIgnoredCheckIns() {
     return ignoredCheckIns;
+  }
+
+  public void setIgnoredTransactions(final @Nullable List<String> ignoredTransactions) {
+    this.ignoredTransactions = ignoredTransactions;
+  }
+
+  public @Nullable List<String> getIgnoredTransactions() {
+    return ignoredTransactions;
   }
 
   @ApiStatus.Experimental
@@ -441,6 +465,23 @@ public final class ExternalOptions {
     return enableBackpressureHandling;
   }
 
+  public void setGlobalHubMode(final @Nullable Boolean globalHubMode) {
+    this.globalHubMode = globalHubMode;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Boolean isGlobalHubMode() {
+    return globalHubMode;
+  }
+
+  public void setForceInit(final @Nullable Boolean forceInit) {
+    this.forceInit = forceInit;
+  }
+
+  public @Nullable Boolean isForceInit() {
+    return forceInit;
+  }
+
   @ApiStatus.Experimental
   public @Nullable SentryOptions.Cron getCron() {
     return cron;
@@ -449,5 +490,45 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public void setCron(final @Nullable SentryOptions.Cron cron) {
     this.cron = cron;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableSpotlight(final @Nullable Boolean enableSpotlight) {
+    this.enableSpotlight = enableSpotlight;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Boolean isEnableSpotlight() {
+    return enableSpotlight;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable String getSpotlightConnectionUrl() {
+    return spotlightConnectionUrl;
+  }
+
+  @ApiStatus.Experimental
+  public void setSpotlightConnectionUrl(final @Nullable String spotlightConnectionUrl) {
+    this.spotlightConnectionUrl = spotlightConnectionUrl;
+  }
+
+  @ApiStatus.Experimental
+  public void setCaptureOpenTelemetryEvents(final @Nullable Boolean captureOpenTelemetryEvents) {
+    this.captureOpenTelemetryEvents = captureOpenTelemetryEvents;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Boolean isCaptureOpenTelemetryEvents() {
+    return captureOpenTelemetryEvents;
+  }
+
+  @ApiStatus.Experimental
+  public void setEnableLogs(final @Nullable Boolean enableLogs) {
+    this.enableLogs = enableLogs;
+  }
+
+  @ApiStatus.Experimental
+  public @Nullable Boolean isEnableLogs() {
+    return enableLogs;
   }
 }

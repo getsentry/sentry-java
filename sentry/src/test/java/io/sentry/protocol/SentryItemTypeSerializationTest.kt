@@ -25,12 +25,12 @@ class SentryItemTypeSerializationTest {
         assertEquals(serialize(SentryItemType.Attachment), json("attachment"))
         assertEquals(serialize(SentryItemType.Transaction), json("transaction"))
         assertEquals(serialize(SentryItemType.Profile), json("profile"))
+        assertEquals(serialize(SentryItemType.ProfileChunk), json("profile_chunk"))
         assertEquals(serialize(SentryItemType.ClientReport), json("client_report"))
         assertEquals(serialize(SentryItemType.ReplayEvent), json("replay_event"))
         assertEquals(serialize(SentryItemType.ReplayRecording), json("replay_recording"))
         assertEquals(serialize(SentryItemType.ReplayVideo), json("replay_video"))
         assertEquals(serialize(SentryItemType.CheckIn), json("check_in"))
-        assertEquals(serialize(SentryItemType.Statsd), json("statsd"))
         assertEquals(serialize(SentryItemType.Feedback), json("feedback"))
     }
 
@@ -42,12 +42,12 @@ class SentryItemTypeSerializationTest {
         assertEquals(deserialize(json("attachment")), SentryItemType.Attachment)
         assertEquals(deserialize(json("transaction")), SentryItemType.Transaction)
         assertEquals(deserialize(json("profile")), SentryItemType.Profile)
+        assertEquals(deserialize(json("profile_chunk")), SentryItemType.ProfileChunk)
         assertEquals(deserialize(json("client_report")), SentryItemType.ClientReport)
         assertEquals(deserialize(json("replay_event")), SentryItemType.ReplayEvent)
         assertEquals(deserialize(json("replay_recording")), SentryItemType.ReplayRecording)
         assertEquals(deserialize(json("replay_video")), SentryItemType.ReplayVideo)
         assertEquals(deserialize(json("check_in")), SentryItemType.CheckIn)
-        assertEquals(deserialize(json("statsd")), SentryItemType.Statsd)
         assertEquals(deserialize(json("feedback")), SentryItemType.Feedback)
     }
 

@@ -21,6 +21,10 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+
+    env:
+      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,9 +36,9 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@707359876a764dbcdb9da0b0ed08291818310c3d # pin@v3
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326
         with:
-          gradle-home-cache-cleanup: true
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Build debug APK
         run: make assembleUiTestCriticalRelease
@@ -97,7 +101,7 @@ jobs:
           version: ${{env.MAESTRO_VERSION}}
 
       - name: Run tests
-        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d # pin@v2.33.0
+        uses: reactivecircus/android-emulator-runner@1dcd0090116d15e7c562f8db72807de5e036a4ed # pin@v2.34.0
         with:
           api-level: ${{ matrix.api-level }}
           force-avd-creation: false

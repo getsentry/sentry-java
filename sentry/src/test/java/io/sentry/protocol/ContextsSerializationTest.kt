@@ -21,8 +21,10 @@ class ContextsSerializationTest {
             setOperatingSystem(OperatingSystemSerializationTest.Fixture().getSut())
             setRuntime(SentryRuntimeSerializationTest.Fixture().getSut())
             setGpu(GpuSerializationTest.Fixture().getSut())
+            setFeedback(FeedbackTest.Fixture().getSut())
             setResponse(ResponseSerializationTest.Fixture().getSut())
-            trace = SpanContextSerializationTest.Fixture().getSut()
+            setTrace(SpanContextSerializationTest.Fixture().getSut())
+            setSpring(SpringSerializationTest.Fixture().getSut())
         }
     }
     private val fixture = Fixture()

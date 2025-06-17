@@ -10,6 +10,7 @@ import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -115,7 +116,7 @@ class ScopeTest {
         scope.setExtra("extra", "extra")
 
         val transaction =
-            SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
+            SentryTracer(TransactionContext("transaction-name", "op"), NoOpScopes.getInstance())
         scope.transaction = transaction
 
         val attachment = Attachment("path/log.txt")
@@ -193,7 +194,7 @@ class ScopeTest {
         scope.setTransaction(
             SentryTracer(
                 TransactionContext("newTransaction", "op"),
-                NoOpHub.getInstance()
+                NoOpScopes.getInstance()
             )
         )
 
@@ -266,7 +267,7 @@ class ScopeTest {
     fun `clear scope resets scope to default state`() {
         val scope = Scope(SentryOptions())
         scope.level = SentryLevel.WARNING
-        scope.setTransaction(SentryTracer(TransactionContext("", "op"), NoOpHub.getInstance()))
+        scope.setTransaction(SentryTracer(TransactionContext("", "op"), NoOpScopes.getInstance()))
         scope.user = User()
         scope.request = Request()
         scope.fingerprint = mutableListOf("finger")
@@ -389,6 +390,57 @@ class ScopeTest {
 
         val session = scope.endSession()
         assertNull(session)
+    }
+
+    @Test
+    fun `Starting a session multiple times reevaluates profileSessionSampleRate`() {
+        val profiler = mock<IContinuousProfiler>()
+        val options = SentryOptions().apply {
+            release = "0.0.1"
+            setContinuousProfiler(profiler)
+            profileSessionSampleRate = 1.0
+        }
+
+        val scope = Scope(options)
+        // The first time a session is started, sample rate is not reevaluated, as there's no need
+        scope.startSession()
+        verify(profiler, never()).reevaluateSampling()
+        // The second time a session is started, sample rate is reevaluated
+        scope.startSession()
+        verify(profiler).reevaluateSampling()
+        // Every time a session is started with an already running one, sample rate is reevaluated
+        scope.startSession()
+        verify(profiler, times(2)).reevaluateSampling()
+    }
+
+    @Test
+    fun `Scope ends a session and reevaluates profileSessionSampleRate`() {
+        val profiler = mock<IContinuousProfiler>()
+        val options = SentryOptions().apply {
+            release = "0.0.1"
+            setContinuousProfiler(profiler)
+            profileSessionSampleRate = 1.0
+        }
+
+        val scope = Scope(options)
+        scope.startSession()
+        verify(profiler, never()).reevaluateSampling()
+        scope.endSession()
+        verify(profiler).reevaluateSampling()
+    }
+
+    @Test
+    fun `Scope ends a session and does not reevaluate profileSessionSampleRate if none exist`() {
+        val profiler = mock<IContinuousProfiler>()
+        val options = SentryOptions().apply {
+            release = "0.0.1"
+            setContinuousProfiler(profiler)
+            profileSessionSampleRate = 1.0
+        }
+
+        val scope = Scope(options)
+        scope.endSession()
+        verify(profiler, never()).reevaluateSampling()
     }
 
     @Test
@@ -838,7 +890,7 @@ class ScopeTest {
     @Test
     fun `Scope getTransaction returns the transaction if there is no active span`() {
         val scope = Scope(SentryOptions())
-        val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
+        val transaction = SentryTracer(TransactionContext("name", "op"), NoOpScopes.getInstance())
         scope.transaction = transaction
         assertEquals(transaction, scope.span)
     }
@@ -846,7 +898,7 @@ class ScopeTest {
     @Test
     fun `Scope getTransaction returns the current span if there is an unfinished span`() {
         val scope = Scope(SentryOptions())
-        val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
+        val transaction = SentryTracer(TransactionContext("name", "op"), NoOpScopes.getInstance())
         scope.transaction = transaction
         val span = transaction.startChild("op")
         assertEquals(span, scope.span)
@@ -855,7 +907,7 @@ class ScopeTest {
     @Test
     fun `Scope getTransaction returns the current span if there is a finished span`() {
         val scope = Scope(SentryOptions())
-        val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
+        val transaction = SentryTracer(TransactionContext("name", "op"), NoOpScopes.getInstance())
         scope.transaction = transaction
         val span = transaction.startChild("op")
         span.finish()
@@ -865,7 +917,7 @@ class ScopeTest {
     @Test
     fun `Scope getTransaction returns the latest span if there is a list of active span`() {
         val scope = Scope(SentryOptions())
-        val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
+        val transaction = SentryTracer(TransactionContext("name", "op"), NoOpScopes.getInstance())
         scope.transaction = transaction
         val span = transaction.startChild("op")
         val innerSpan = span.startChild("op")
@@ -875,7 +927,7 @@ class ScopeTest {
     @Test
     fun `Scope setTransaction sets transaction name`() {
         val scope = Scope(SentryOptions())
-        val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
+        val transaction = SentryTracer(TransactionContext("name", "op"), NoOpScopes.getInstance())
         scope.transaction = transaction
         scope.setTransaction("new-name")
         assertNotNull(scope.transaction) {
@@ -887,7 +939,7 @@ class ScopeTest {
     @Test
     fun `Scope setTransaction with null does not clear transaction`() {
         val scope = Scope(SentryOptions())
-        val transaction = SentryTracer(TransactionContext("name", "op"), NoOpHub.getInstance())
+        val transaction = SentryTracer(TransactionContext("name", "op"), NoOpScopes.getInstance())
         scope.transaction = transaction
         scope.callMethod("setTransaction", String::class.java, null)
         assertNotNull(scope.transaction)
@@ -952,7 +1004,7 @@ class ScopeTest {
     fun `when transaction is started, sets transaction name on the transaction object`() {
         val scope = Scope(SentryOptions())
         val sentryTransaction =
-            SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
+            SentryTracer(TransactionContext("transaction-name", "op"), NoOpScopes.getInstance())
         scope.transaction = sentryTransaction
         assertEquals("transaction-name", scope.transactionName)
         scope.setTransaction("new-name")
@@ -966,7 +1018,7 @@ class ScopeTest {
         val scope = Scope(SentryOptions())
         scope.setTransaction("transaction-a")
         val sentryTransaction =
-            SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
+            SentryTracer(TransactionContext("transaction-name", "op"), NoOpScopes.getInstance())
         scope.setTransaction(sentryTransaction)
         assertEquals("transaction-name", scope.transactionName)
         scope.clearTransaction()
@@ -977,7 +1029,7 @@ class ScopeTest {
     fun `withTransaction returns the current Transaction bound to the Scope`() {
         val scope = Scope(SentryOptions())
         val sentryTransaction =
-            SentryTracer(TransactionContext("transaction-name", "op"), NoOpHub.getInstance())
+            SentryTracer(TransactionContext("transaction-name", "op"), NoOpScopes.getInstance())
         scope.setTransaction(sentryTransaction)
 
         scope.withTransaction {
@@ -1038,6 +1090,63 @@ class ScopeTest {
 
         // expect no exception to be thrown
         // previously was crashing, see https://github.com/getsentry/sentry-java/issues/3313
+    }
+
+    @Test
+    fun `null tags do not cause NPE`() {
+        val scope = Scope(SentryOptions.empty())
+        scope.setTag("k", "oldvalue")
+        scope.setTag(null, null)
+        scope.setTag("k", null)
+        scope.setTag(null, "v")
+        scope.removeTag(null)
+        assertTrue(scope.tags.isEmpty())
+    }
+
+    @Test
+    fun `null extras do not cause NPE`() {
+        val scope = Scope(SentryOptions.empty())
+        scope.setExtra("k", "oldvalue")
+        scope.setExtra(null, null)
+        scope.setExtra("k", null)
+        scope.setExtra(null, "v")
+        scope.removeExtra(null)
+        assertTrue(scope.extras.isEmpty())
+    }
+
+    @Test
+    fun `null contexts do not cause NPE`() {
+        val scope = Scope(SentryOptions.empty())
+
+        scope.setContexts("obj", null as Any?)
+        scope.setContexts("bool", true)
+        scope.setContexts("string", "hello")
+        scope.setContexts("num", 100)
+        scope.setContexts("list", listOf("a", "b"))
+        scope.setContexts("array", arrayOf("c", "d"))
+        scope.setContexts("char", 'z')
+
+        assertFalse(scope.contexts.isEmpty)
+
+        scope.setContexts(null, null as Any?)
+        scope.setContexts(null, null as Boolean?)
+        scope.setContexts(null, null as String?)
+        scope.setContexts(null, null as Number?)
+        scope.setContexts(null, null as List<Any>?)
+        scope.setContexts(null, null as Array<Any>?)
+        scope.setContexts(null, null as Character?)
+
+        scope.setContexts("obj", null as Any?)
+        scope.setContexts("bool", null as Boolean?)
+        scope.setContexts("string", null as String?)
+        scope.setContexts("num", null as Number?)
+        scope.setContexts("list", null as List<Any>?)
+        scope.setContexts("array", null as Array<Any>?)
+        scope.setContexts("char", null as Character?)
+
+        scope.removeContexts(null)
+
+        assertTrue(scope.contexts.isEmpty)
     }
 
     private fun eventProcessor(): EventProcessor {

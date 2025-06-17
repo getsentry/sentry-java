@@ -4,7 +4,7 @@ import static io.sentry.protocol.Contexts.REPLAY_ID;
 
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
-import io.sentry.protocol.User;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.SampleRateUtils;
 import io.sentry.util.StringUtils;
 import java.io.UnsupportedEncodingException;
@@ -14,7 +14,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -33,21 +33,39 @@ public final class Baggage {
   static final @NotNull Integer MAX_BAGGAGE_LIST_MEMBER_COUNT = 64;
   static final @NotNull String SENTRY_BAGGAGE_PREFIX = "sentry-";
 
-  final @NotNull Map<String, String> keyValues;
-  final @Nullable String thirdPartyHeader;
+  // DecimalFormat is not thread safe
+  private static class DecimalFormatterThreadLocal extends ThreadLocal<DecimalFormat> {
+
+    @Override
+    protected DecimalFormat initialValue() {
+      return new DecimalFormat("#.################", DecimalFormatSymbols.getInstance(Locale.ROOT));
+    }
+  }
+
+  private static final DecimalFormatterThreadLocal decimalFormatter =
+      new DecimalFormatterThreadLocal();
+
+  private final @NotNull ConcurrentHashMap<String, String> keyValues;
+  private final @NotNull AutoClosableReentrantLock keyValuesLock = new AutoClosableReentrantLock();
+
+  private @Nullable Double sampleRate;
+  private @Nullable Double sampleRand;
+
+  private final @Nullable String thirdPartyHeader;
   private boolean mutable;
+  private final boolean shouldFreeze;
   final @NotNull ILogger logger;
 
   @NotNull
   public static Baggage fromHeader(final @Nullable String headerValue) {
     return Baggage.fromHeader(
-        headerValue, false, HubAdapter.getInstance().getOptions().getLogger());
+        headerValue, false, ScopesAdapter.getInstance().getOptions().getLogger());
   }
 
   @NotNull
   public static Baggage fromHeader(final @Nullable List<String> headerValues) {
     return Baggage.fromHeader(
-        headerValues, false, HubAdapter.getInstance().getOptions().getLogger());
+        headerValues, false, ScopesAdapter.getInstance().getOptions().getLogger());
   }
 
   @ApiStatus.Internal
@@ -84,9 +102,14 @@ public final class Baggage {
       final @Nullable String headerValue,
       final boolean includeThirdPartyValues,
       final @NotNull ILogger logger) {
-    final @NotNull Map<String, String> keyValues = new HashMap<>();
+
+    final @NotNull ConcurrentHashMap<String, String> keyValues = new ConcurrentHashMap<>();
+
     final @NotNull List<String> thirdPartyKeyValueStrings = new ArrayList<>();
-    boolean mutable = true;
+    boolean shouldFreeze = false;
+
+    @Nullable Double sampleRate = null;
+    @Nullable Double sampleRand = null;
 
     if (headerValue != null) {
       try {
@@ -103,8 +126,26 @@ public final class Baggage {
               final String value = keyValueString.substring(separatorIndex + 1).trim();
               final String valueDecoded = decode(value);
 
-              keyValues.put(keyDecoded, valueDecoded);
-              mutable = false;
+              if (DSCKeys.SAMPLE_RATE.equals(keyDecoded)) {
+                sampleRate = toDouble(valueDecoded);
+              } else if (DSCKeys.SAMPLE_RAND.equals(keyDecoded)) {
+                sampleRand = toDouble(valueDecoded);
+              } else {
+                keyValues.put(keyDecoded, valueDecoded);
+              }
+              // Without ignoring SAMPLE_RAND here, we'd be freezing baggage that we're transporting
+              // via OTel span attributes.
+              // This is done when a transaction is created via Sentry API.
+              // In that case Baggage is created before the OTel span is created and we put it on
+              // the span attributes.
+              // It does however only contain the sample random value as its only value.
+              // The OTel code then uses it to create a propagation context from it and ends up
+              // freezing it,
+              // preventing outgoing requests (to other systems or Sentry) from adding info to
+              // baggage and only then freeze it.
+              if (!DSCKeys.SAMPLE_RAND.equalsIgnoreCase(key)) {
+                shouldFreeze = true;
+              }
             } catch (Throwable e) {
               logger.log(
                   SentryLevel.ERROR,
@@ -124,25 +165,32 @@ public final class Baggage {
         thirdPartyKeyValueStrings.isEmpty()
             ? null
             : StringUtils.join(",", thirdPartyKeyValueStrings);
-    return new Baggage(keyValues, thirdPartyHeader, mutable, logger);
+    /*
+     can't freeze Baggage right away as we might have to backfill sampleRand
+     also we don't receive sentry-trace header here or in ctor so we can't
+     backfill then freeze here unless we pass sentry-trace header.
+    */
+    return new Baggage(
+        keyValues, sampleRate, sampleRand, thirdPartyHeader, true, shouldFreeze, logger);
   }
 
   @ApiStatus.Internal
   @NotNull
   public static Baggage fromEvent(
-      final @NotNull SentryEvent event, final @NotNull SentryOptions options) {
+      final @NotNull SentryBaseEvent event,
+      final @Nullable String transaction,
+      final @NotNull SentryOptions options) {
     final Baggage baggage = new Baggage(options.getLogger());
     final SpanContext trace = event.getContexts().getTrace();
     baggage.setTraceId(trace != null ? trace.getTraceId().toString() : null);
-    baggage.setPublicKey(options.getParsedDsn().getPublicKey());
+    baggage.setPublicKey(options.retrieveParsedDsn().getPublicKey());
     baggage.setRelease(event.getRelease());
     baggage.setEnvironment(event.getEnvironment());
-    final User user = event.getUser();
-    baggage.setUserSegment(user != null ? getSegment(user) : null);
-    baggage.setTransaction(event.getTransaction());
+    baggage.setTransaction(transaction);
     // we don't persist sample rate
     baggage.setSampleRate(null);
     baggage.setSampled(null);
+    baggage.setSampleRand(null);
     final @Nullable Object replayId = event.getContexts().get(REPLAY_ID);
     if (replayId != null && !replayId.toString().equals(SentryId.EMPTY_ID.toString())) {
       baggage.setReplayId(replayId.toString());
@@ -155,24 +203,37 @@ public final class Baggage {
 
   @ApiStatus.Internal
   public Baggage(final @NotNull ILogger logger) {
-    this(new HashMap<>(), null, true, logger);
+    this(new ConcurrentHashMap<>(), null, null, null, true, false, logger);
   }
 
   @ApiStatus.Internal
   public Baggage(final @NotNull Baggage baggage) {
-    this(baggage.keyValues, baggage.thirdPartyHeader, baggage.mutable, baggage.logger);
+    this(
+        baggage.keyValues,
+        baggage.sampleRate,
+        baggage.sampleRand,
+        baggage.thirdPartyHeader,
+        baggage.mutable,
+        baggage.shouldFreeze,
+        baggage.logger);
   }
 
   @ApiStatus.Internal
   public Baggage(
-      final @NotNull Map<String, String> keyValues,
+      final @NotNull ConcurrentHashMap<String, String> keyValues,
+      final @Nullable Double sampleRate,
+      final @Nullable Double sampleRand,
       final @Nullable String thirdPartyHeader,
-      boolean isMutable,
+      final boolean isMutable,
+      final boolean shouldFreeze,
       final @NotNull ILogger logger) {
     this.keyValues = keyValues;
+    this.sampleRate = sampleRate;
+    this.sampleRand = sampleRand;
     this.logger = logger;
-    this.mutable = isMutable;
     this.thirdPartyHeader = thirdPartyHeader;
+    this.mutable = isMutable;
+    this.shouldFreeze = shouldFreeze;
   }
 
   @ApiStatus.Internal
@@ -183,6 +244,11 @@ public final class Baggage {
   @ApiStatus.Internal
   public boolean isMutable() {
     return mutable;
+  }
+
+  @ApiStatus.Internal
+  public boolean isShouldFreeze() {
+    return shouldFreeze;
   }
 
   @Nullable
@@ -201,9 +267,22 @@ public final class Baggage {
       separator = ",";
     }
 
-    final Set<String> keys = new TreeSet<>(keyValues.keySet());
+    final Set<String> keys;
+    try (final @NotNull ISentryLifecycleToken ignored = keyValuesLock.acquire()) {
+      keys = new TreeSet<>(Collections.list(keyValues.keys()));
+    }
+    keys.add(DSCKeys.SAMPLE_RATE);
+    keys.add(DSCKeys.SAMPLE_RAND);
+
     for (final String key : keys) {
-      final @Nullable String value = keyValues.get(key);
+      final @Nullable String value;
+      if (DSCKeys.SAMPLE_RATE.equals(key)) {
+        value = sampleRateToString(sampleRate);
+      } else if (DSCKeys.SAMPLE_RAND.equals(key)) {
+        value = sampleRateToString(sampleRand);
+      } else {
+        value = keyValues.get(key);
+      }
 
       if (value != null) {
         if (listMemberCount >= MAX_BAGGAGE_LIST_MEMBER_COUNT) {
@@ -242,7 +321,6 @@ public final class Baggage {
         }
       }
     }
-
     return sb.toString();
   }
 
@@ -313,26 +391,6 @@ public final class Baggage {
     set(DSCKeys.USER_ID, userId);
   }
 
-  /**
-   * @deprecated has no effect and will be removed in the next major update.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @ApiStatus.Internal
-  public @Nullable String getUserSegment() {
-    return get(DSCKeys.USER_SEGMENT);
-  }
-
-  /**
-   * @deprecated has no effect and will be removed in the next major update.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  @ApiStatus.Internal
-  public void setUserSegment(final @Nullable String userSegment) {
-    set(DSCKeys.USER_SEGMENT, userSegment);
-  }
-
   @ApiStatus.Internal
   public @Nullable String getTransaction() {
     return get(DSCKeys.TRANSACTION);
@@ -344,8 +402,8 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
-  public @Nullable String getSampleRate() {
-    return get(DSCKeys.SAMPLE_RATE);
+  public @Nullable Double getSampleRate() {
+    return sampleRate;
   }
 
   @ApiStatus.Internal
@@ -354,8 +412,27 @@ public final class Baggage {
   }
 
   @ApiStatus.Internal
-  public void setSampleRate(final @Nullable String sampleRate) {
-    set(DSCKeys.SAMPLE_RATE, sampleRate);
+  public void setSampleRate(final @Nullable Double sampleRate) {
+    if (isMutable()) {
+      this.sampleRate = sampleRate;
+    }
+  }
+
+  @ApiStatus.Internal
+  public void forceSetSampleRate(final @Nullable Double sampleRate) {
+    this.sampleRate = sampleRate;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable Double getSampleRand() {
+    return sampleRand;
+  }
+
+  @ApiStatus.Internal
+  public void setSampleRand(final @Nullable Double sampleRand) {
+    if (isMutable()) {
+      this.sampleRand = sampleRand;
+    }
   }
 
   @ApiStatus.Internal
@@ -373,87 +450,95 @@ public final class Baggage {
     set(DSCKeys.REPLAY_ID, replayId);
   }
 
+  /**
+   * Sets / updates a value, but only if the baggage is still mutable.
+   *
+   * @param key key
+   * @param value value to set
+   */
   @ApiStatus.Internal
   public void set(final @NotNull String key, final @Nullable String value) {
     if (mutable) {
-      this.keyValues.put(key, value);
+      if (value == null) {
+        keyValues.remove(key);
+      } else {
+        keyValues.put(key, value);
+      }
     }
   }
 
   @ApiStatus.Internal
   public @NotNull Map<String, Object> getUnknown() {
     final @NotNull Map<String, Object> unknown = new ConcurrentHashMap<>();
-    for (Map.Entry<String, String> keyValue : this.keyValues.entrySet()) {
-      final @NotNull String key = keyValue.getKey();
-      final @Nullable String value = keyValue.getValue();
-      if (!DSCKeys.ALL.contains(key)) {
-        if (value != null) {
-          final @NotNull String unknownKey = key.replaceFirst(SENTRY_BAGGAGE_PREFIX, "");
-          unknown.put(unknownKey, value);
+    try (final @NotNull ISentryLifecycleToken ignored = keyValuesLock.acquire()) {
+      for (final Map.Entry<String, String> keyValue : keyValues.entrySet()) {
+        final @NotNull String key = keyValue.getKey();
+        final @Nullable String value = keyValue.getValue();
+        if (!DSCKeys.ALL.contains(key)) {
+          if (value != null) {
+            final @NotNull String unknownKey = key.replaceFirst(SENTRY_BAGGAGE_PREFIX, "");
+            unknown.put(unknownKey, value);
+          }
         }
       }
     }
-
     return unknown;
   }
 
   @ApiStatus.Internal
   public void setValuesFromTransaction(
-      final @NotNull ITransaction transaction,
-      final @Nullable User user,
+      final @NotNull SentryId traceId,
       final @Nullable SentryId replayId,
       final @NotNull SentryOptions sentryOptions,
-      final @Nullable TracesSamplingDecision samplingDecision) {
-    setTraceId(transaction.getSpanContext().getTraceId().toString());
-    setPublicKey(sentryOptions.getParsedDsn().getPublicKey());
+      final @Nullable TracesSamplingDecision samplingDecision,
+      final @Nullable String transactionName,
+      final @Nullable TransactionNameSource transactionNameSource) {
+    setTraceId(traceId.toString());
+    setPublicKey(sentryOptions.retrieveParsedDsn().getPublicKey());
     setRelease(sentryOptions.getRelease());
     setEnvironment(sentryOptions.getEnvironment());
-    setUserSegment(user != null ? getSegment(user) : null);
-    setTransaction(
-        isHighQualityTransactionName(transaction.getTransactionNameSource())
-            ? transaction.getName()
-            : null);
+    setTransaction(isHighQualityTransactionName(transactionNameSource) ? transactionName : null);
     if (replayId != null && !SentryId.EMPTY_ID.equals(replayId)) {
       setReplayId(replayId.toString());
     }
-    setSampleRate(sampleRateToString(sampleRate(samplingDecision)));
+    setSampleRate(sampleRate(samplingDecision));
     setSampled(StringUtils.toString(sampled(samplingDecision)));
+    setSampleRand(sampleRand(samplingDecision));
+  }
+
+  @ApiStatus.Internal
+  public void setValuesFromSamplingDecision(
+      final @Nullable TracesSamplingDecision samplingDecision) {
+    if (samplingDecision == null) {
+      return;
+    }
+
+    setSampled(StringUtils.toString(sampled(samplingDecision)));
+
+    if (samplingDecision.getSampleRand() != null) {
+      setSampleRand(sampleRand(samplingDecision));
+    }
+
+    if (samplingDecision.getSampleRate() != null) {
+      forceSetSampleRate(sampleRate(samplingDecision));
+    }
   }
 
   @ApiStatus.Internal
   public void setValuesFromScope(
       final @NotNull IScope scope, final @NotNull SentryOptions options) {
     final @NotNull PropagationContext propagationContext = scope.getPropagationContext();
-    final @Nullable User user = scope.getUser();
     final @NotNull SentryId replayId = scope.getReplayId();
     setTraceId(propagationContext.getTraceId().toString());
-    setPublicKey(options.getParsedDsn().getPublicKey());
+    setPublicKey(options.retrieveParsedDsn().getPublicKey());
     setRelease(options.getRelease());
     setEnvironment(options.getEnvironment());
     if (!SentryId.EMPTY_ID.equals(replayId)) {
       setReplayId(replayId.toString());
     }
-    setUserSegment(user != null ? getSegment(user) : null);
     setTransaction(null);
     setSampleRate(null);
     setSampled(null);
-  }
-
-  /**
-   * @deprecated has no effect and will be removed in the next major update.
-   */
-  @Deprecated
-  private static @Nullable String getSegment(final @NotNull User user) {
-    if (user.getSegment() != null) {
-      return user.getSegment();
-    }
-
-    final Map<String, String> userData = user.getData();
-    if (userData != null) {
-      return userData.get("segment");
-    } else {
-      return null;
-    }
   }
 
   private static @Nullable Double sampleRate(@Nullable TracesSamplingDecision samplingDecision) {
@@ -464,14 +549,19 @@ public final class Baggage {
     return samplingDecision.getSampleRate();
   }
 
+  private static @Nullable Double sampleRand(@Nullable TracesSamplingDecision samplingDecision) {
+    if (samplingDecision == null) {
+      return null;
+    }
+
+    return samplingDecision.getSampleRand();
+  }
+
   private static @Nullable String sampleRateToString(@Nullable Double sampleRateAsDouble) {
     if (!SampleRateUtils.isValidTracesSampleRate(sampleRateAsDouble, false)) {
       return null;
     }
-
-    DecimalFormat df =
-        new DecimalFormat("#.################", DecimalFormatSymbols.getInstance(Locale.ROOT));
-    return df.format(sampleRateAsDouble);
+    return decimalFormatter.get().format(sampleRateAsDouble);
   }
 
   private static @Nullable Boolean sampled(@Nullable TracesSamplingDecision samplingDecision) {
@@ -488,14 +578,13 @@ public final class Baggage {
         && !TransactionNameSource.URL.equals(transactionNameSource);
   }
 
-  @ApiStatus.Internal
-  public @Nullable Double getSampleRateDouble() {
-    final String sampleRateString = getSampleRate();
-    if (sampleRateString != null) {
+  @Nullable
+  private static Double toDouble(final @Nullable String stringValue) {
+    if (stringValue != null) {
       try {
-        double sampleRate = Double.parseDouble(sampleRateString);
-        if (SampleRateUtils.isValidTracesSampleRate(sampleRate, false)) {
-          return sampleRate;
+        double doubleValue = Double.parseDouble(stringValue);
+        if (SampleRateUtils.isValidTracesSampleRate(doubleValue, false)) {
+          return doubleValue;
         }
       } catch (NumberFormatException e) {
         return null;
@@ -512,7 +601,6 @@ public final class Baggage {
     final String publicKey = getPublicKey();
 
     if (traceIdString != null && publicKey != null) {
-      @SuppressWarnings("deprecation")
       final @NotNull TraceContext traceContext =
           new TraceContext(
               new SentryId(traceIdString),
@@ -520,11 +608,11 @@ public final class Baggage {
               getRelease(),
               getEnvironment(),
               getUserId(),
-              getUserSegment(),
               getTransaction(),
-              getSampleRate(),
+              sampleRateToString(getSampleRate()),
               getSampled(),
-              replayIdString == null ? null : new SentryId(replayIdString));
+              replayIdString == null ? null : new SentryId(replayIdString),
+              sampleRateToString(getSampleRand()));
       traceContext.setUnknown(getUnknown());
       return traceContext;
     } else {
@@ -539,9 +627,9 @@ public final class Baggage {
     public static final String RELEASE = "sentry-release";
     public static final String USER_ID = "sentry-user_id";
     public static final String ENVIRONMENT = "sentry-environment";
-    public static final String USER_SEGMENT = "sentry-user_segment";
     public static final String TRANSACTION = "sentry-transaction";
     public static final String SAMPLE_RATE = "sentry-sample_rate";
+    public static final String SAMPLE_RAND = "sentry-sample_rand";
     public static final String SAMPLED = "sentry-sampled";
     public static final String REPLAY_ID = "sentry-replay_id";
 
@@ -552,9 +640,9 @@ public final class Baggage {
             RELEASE,
             USER_ID,
             ENVIRONMENT,
-            USER_SEGMENT,
             TRANSACTION,
             SAMPLE_RATE,
+            SAMPLE_RAND,
             SAMPLED,
             REPLAY_ID);
   }

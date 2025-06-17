@@ -2,7 +2,7 @@ package io.sentry.android.core
 
 import android.content.Context
 import io.sentry.Hint
-import io.sentry.IHub
+import io.sentry.IScopes
 import io.sentry.SentryLevel
 import io.sentry.android.core.AnrIntegration.AnrHint
 import io.sentry.exception.ExceptionMechanismException
@@ -24,7 +24,7 @@ class AnrIntegrationTest {
 
     private class Fixture {
         val context = mock<Context>()
-        val hub = mock<IHub>()
+        val scopes = mock<IScopes>()
         var options: SentryAndroidOptions = SentryAndroidOptions().apply {
             setLogger(mock())
         }
@@ -49,7 +49,7 @@ class AnrIntegrationTest {
         fixture.options.executorService = ImmediateExecutorService()
         val sut = fixture.getSut()
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertNotNull(sut.anrWatchDog)
         assertTrue((sut.anrWatchDog as ANRWatchDog).isAlive)
@@ -60,7 +60,7 @@ class AnrIntegrationTest {
         fixture.options.executorService = mock()
         val sut = fixture.getSut()
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertNull(sut.anrWatchDog)
     }
@@ -70,7 +70,7 @@ class AnrIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.isAnrEnabled = false
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertNull(sut.anrWatchDog)
     }
@@ -79,9 +79,9 @@ class AnrIntegrationTest {
     fun `When ANR watch dog is triggered, it should capture an error event with AnrHint`() {
         val sut = fixture.getSut()
 
-        sut.reportANR(fixture.hub, fixture.options, getApplicationNotResponding())
+        sut.reportANR(fixture.scopes, fixture.options, getApplicationNotResponding())
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.ERROR, it.level)
             },
@@ -97,7 +97,7 @@ class AnrIntegrationTest {
         val sut = fixture.getSut()
         fixture.options.executorService = ImmediateExecutorService()
 
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
 
         assertNotNull(sut.anrWatchDog)
 
@@ -107,11 +107,11 @@ class AnrIntegrationTest {
     }
 
     @Test
-    fun `when hub is closed right after start, integration is not registered`() {
+    fun `when scopes is closed right after start, integration is not registered`() {
         val deferredExecutorService = DeferredExecutorService()
         val sut = fixture.getSut()
         fixture.options.executorService = deferredExecutorService
-        sut.register(fixture.hub, fixture.options)
+        sut.register(fixture.scopes, fixture.options)
         assertNull(sut.anrWatchDog)
         sut.close()
         deferredExecutorService.runAll()
@@ -122,9 +122,9 @@ class AnrIntegrationTest {
     fun `When ANR watch dog is triggered, constructs exception with proper mechanism and snapshot flag`() {
         val sut = fixture.getSut()
 
-        sut.reportANR(fixture.hub, fixture.options, getApplicationNotResponding())
+        sut.reportANR(fixture.scopes, fixture.options, getApplicationNotResponding())
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 val ex = it.throwableMechanism as ExceptionMechanismException
                 assertTrue(ex.isSnapshot)
@@ -139,9 +139,9 @@ class AnrIntegrationTest {
         val sut = fixture.getSut()
         AppState.getInstance().setInBackground(true)
 
-        sut.reportANR(fixture.hub, fixture.options, getApplicationNotResponding())
+        sut.reportANR(fixture.scopes, fixture.options, getApplicationNotResponding())
 
-        verify(fixture.hub).captureEvent(
+        verify(fixture.scopes).captureEvent(
             check {
                 val message = it.throwable?.message
                 assertTrue(message?.startsWith("Background") == true)

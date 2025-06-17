@@ -3,16 +3,12 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
-}
-
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.buildconfig)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -20,19 +16,20 @@ tasks.withType<KotlinCompile>().configureEach {
 }
 
 dependencies {
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
-    errorprone(Config.CompileOnly.errorProneNullAway)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
     // tests
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.TestLibs.awaitility)
-    testImplementation(Config.TestLibs.javaFaker)
-    testImplementation(Config.TestLibs.msgpack)
+    testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.javafaker)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.msgpack)
+    testImplementation(libs.okio)
     testImplementation(projects.sentryTestSupport)
 }
 
@@ -43,7 +40,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {
@@ -77,12 +74,24 @@ buildConfig {
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
-val generateBuildConfig by tasks
-tasks.withType<JavaCompile>() {
-    dependsOn(generateBuildConfig)
+tasks.withType<JavaCompile>().configureEach {
+    dependsOn(tasks.generateBuildConfig)
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
     }
     options.errorprone.errorproneArgs.add("-XepExcludedPaths:.*/io/sentry/vendor/.*")
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Sentry-Version-Name" to project.version,
+            "Sentry-SDK-Name" to Config.Sentry.SENTRY_JAVA_SDK_NAME,
+            "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry",
+            "Implementation-Vendor" to "Sentry",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version
+        )
+    }
 }

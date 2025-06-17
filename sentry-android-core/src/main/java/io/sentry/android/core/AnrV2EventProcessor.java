@@ -33,6 +33,7 @@ import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryExceptionFactory;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanContext;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
@@ -83,6 +84,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
 
+  private final @Nullable PersistingScopeObserver persistingScopeObserver;
+
   public AnrV2EventProcessor(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
@@ -90,6 +93,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     this.context = ContextUtils.getApplicationContext(context);
     this.options = options;
     this.buildInfoProvider = buildInfoProvider;
+    this.persistingScopeObserver = options.findPersistingScopeObserver();
 
     final SentryStackTraceFactory sentryStackTraceFactory =
         new SentryStackTraceFactory(this.options);
@@ -188,8 +192,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   private void setReplayId(final @NotNull SentryEvent event) {
-    @Nullable
-    String persistedReplayId = PersistingScopeObserver.read(options, REPLAY_FILENAME, String.class);
+    @Nullable String persistedReplayId = readFromDisk(options, REPLAY_FILENAME, String.class);
     final @NotNull File replayFolder =
         new File(options.getCacheDirPath(), "replay_" + persistedReplayId);
     if (!replayFolder.exists()) {
@@ -224,8 +227,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   private void setTrace(final @NotNull SentryEvent event) {
-    final SpanContext spanContext =
-        PersistingScopeObserver.read(options, TRACE_FILENAME, SpanContext.class);
+    final SpanContext spanContext = readFromDisk(options, TRACE_FILENAME, SpanContext.class);
     if (event.getContexts().getTrace() == null) {
       if (spanContext != null
           && spanContext.getSpanId() != null
@@ -236,8 +238,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   private void setLevel(final @NotNull SentryEvent event) {
-    final SentryLevel level =
-        PersistingScopeObserver.read(options, LEVEL_FILENAME, SentryLevel.class);
+    final SentryLevel level = readFromDisk(options, LEVEL_FILENAME, SentryLevel.class);
     if (event.getLevel() == null) {
       event.setLevel(level);
     }
@@ -246,7 +247,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   @SuppressWarnings("unchecked")
   private void setFingerprints(final @NotNull SentryEvent event, final @NotNull Object hint) {
     final List<String> fingerprint =
-        (List<String>) PersistingScopeObserver.read(options, FINGERPRINT_FILENAME, List.class);
+        (List<String>) readFromDisk(options, FINGERPRINT_FILENAME, List.class);
     if (event.getFingerprints() == null) {
       event.setFingerprints(fingerprint);
     }
@@ -262,16 +263,14 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
 
   private void setTransaction(final @NotNull SentryEvent event) {
-    final String transaction =
-        PersistingScopeObserver.read(options, TRANSACTION_FILENAME, String.class);
+    final String transaction = readFromDisk(options, TRANSACTION_FILENAME, String.class);
     if (event.getTransaction() == null) {
       event.setTransaction(transaction);
     }
   }
 
   private void setContexts(final @NotNull SentryBaseEvent event) {
-    final Contexts persistedContexts =
-        PersistingScopeObserver.read(options, CONTEXTS_FILENAME, Contexts.class);
+    final Contexts persistedContexts = readFromDisk(options, CONTEXTS_FILENAME, Contexts.class);
     if (persistedContexts == null) {
       return;
     }
@@ -291,7 +290,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   @SuppressWarnings("unchecked")
   private void setExtras(final @NotNull SentryBaseEvent event) {
     final Map<String, Object> extras =
-        (Map<String, Object>) PersistingScopeObserver.read(options, EXTRAS_FILENAME, Map.class);
+        (Map<String, Object>) readFromDisk(options, EXTRAS_FILENAME, Map.class);
     if (extras == null) {
       return;
     }
@@ -309,14 +308,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   @SuppressWarnings("unchecked")
   private void setBreadcrumbs(final @NotNull SentryBaseEvent event) {
     final List<Breadcrumb> breadcrumbs =
-        (List<Breadcrumb>)
-            PersistingScopeObserver.read(
-                options, BREADCRUMBS_FILENAME, List.class, new Breadcrumb.Deserializer());
+        (List<Breadcrumb>) readFromDisk(options, BREADCRUMBS_FILENAME, List.class);
     if (breadcrumbs == null) {
       return;
     }
     if (event.getBreadcrumbs() == null) {
-      event.setBreadcrumbs(new ArrayList<>(breadcrumbs));
+      event.setBreadcrumbs(breadcrumbs);
     } else {
       event.getBreadcrumbs().addAll(breadcrumbs);
     }
@@ -326,7 +323,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setScopeTags(final @NotNull SentryBaseEvent event) {
     final Map<String, String> tags =
         (Map<String, String>)
-            PersistingScopeObserver.read(options, PersistingScopeObserver.TAGS_FILENAME, Map.class);
+            readFromDisk(options, PersistingScopeObserver.TAGS_FILENAME, Map.class);
     if (tags == null) {
       return;
     }
@@ -343,17 +340,27 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private void setUser(final @NotNull SentryBaseEvent event) {
     if (event.getUser() == null) {
-      final User user = PersistingScopeObserver.read(options, USER_FILENAME, User.class);
+      final User user = readFromDisk(options, USER_FILENAME, User.class);
       event.setUser(user);
     }
   }
 
   private void setRequest(final @NotNull SentryBaseEvent event) {
     if (event.getRequest() == null) {
-      final Request request =
-          PersistingScopeObserver.read(options, REQUEST_FILENAME, Request.class);
+      final Request request = readFromDisk(options, REQUEST_FILENAME, Request.class);
       event.setRequest(request);
     }
+  }
+
+  private <T> @Nullable T readFromDisk(
+      final @NotNull SentryOptions options,
+      final @NotNull String fileName,
+      final @NotNull Class<T> clazz) {
+    if (persistingScopeObserver == null) {
+      return null;
+    }
+
+    return persistingScopeObserver.read(options, fileName, clazz);
   }
 
   // endregion
@@ -374,14 +381,13 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     if (app == null) {
       app = new App();
     }
-    app.setAppName(ContextUtils.getApplicationName(context, options.getLogger()));
+    app.setAppName(ContextUtils.getApplicationName(context));
     // TODO: not entirely correct, because we define background ANRs as not the ones of
     //  IMPORTANCE_FOREGROUND, but this doesn't mean the app was in foreground when an ANR happened
     //  but it's our best effort for now. We could serialize AppState in theory.
     app.setInForeground(!isBackgroundAnr(hint));
 
-    final PackageInfo packageInfo =
-        ContextUtils.getPackageInfo(context, options.getLogger(), buildInfoProvider);
+    final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
     if (packageInfo != null) {
       app.setAppIdentifier(packageInfo.packageName);
     }
@@ -403,6 +409,19 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
             .getLogger()
             .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
       }
+    }
+
+    try {
+      final ContextUtils.SplitApksInfo splitApksInfo =
+          DeviceInfoUtil.getInstance(context, options).getSplitApksInfo();
+      if (splitApksInfo != null) {
+        app.setSplitApks(splitApksInfo.isSplitApks());
+        if (splitApksInfo.getSplitNames() != null) {
+          app.setSplitNames(Arrays.asList(splitApksInfo.getSplitNames()));
+        }
+      }
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Error getting split apks info.", e);
     }
 
     event.getContexts().setApp(app);
@@ -499,6 +518,11 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   }
   // endregion
 
+  @Override
+  public @Nullable Long getOrder() {
+    return 12000L;
+  }
+
   // region static values
   private void setStaticValues(final @NotNull SentryEvent event) {
     mergeUser(event);
@@ -575,7 +599,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
     if (user.getId() == null) {
       user.setId(getDeviceId());
     }
-    if (user.getIpAddress() == null) {
+    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
@@ -592,8 +616,7 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   private void setSideLoadedInfo(final @NotNull SentryBaseEvent event) {
     try {
       final ContextUtils.SideLoadedInfo sideLoadedInfo =
-          ContextUtils.retrieveSideLoadedInfo(context, options.getLogger(), buildInfoProvider);
-
+          DeviceInfoUtil.getInstance(context, options).getSideLoadedInfo();
       if (sideLoadedInfo != null) {
         final @NotNull Map<String, String> tags = sideLoadedInfo.asTags();
         for (Map.Entry<String, String> entry : tags.entrySet()) {
@@ -616,15 +639,12 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
   @SuppressLint("NewApi")
   private @NotNull Device getDevice() {
     Device device = new Device();
-    if (options.isSendDefaultPii()) {
-      device.setName(ContextUtils.getDeviceName(context));
-    }
     device.setManufacturer(Build.MANUFACTURER);
     device.setBrand(Build.BRAND);
     device.setFamily(ContextUtils.getFamily(options.getLogger()));
     device.setModel(Build.MODEL);
     device.setModelId(Build.ID);
-    device.setArchs(ContextUtils.getArchitectures(buildInfoProvider));
+    device.setArchs(ContextUtils.getArchitectures());
 
     final ActivityManager.MemoryInfo memInfo =
         ContextUtils.getMemInfo(context, options.getLogger());
@@ -662,7 +682,8 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
 
   private void mergeOS(final @NotNull SentryBaseEvent event) {
     final OperatingSystem currentOS = event.getContexts().getOperatingSystem();
-    final OperatingSystem androidOS = getOperatingSystem();
+    final OperatingSystem androidOS =
+        DeviceInfoUtil.getInstance(context, options).getOperatingSystem();
 
     // make Android OS the main OS using the 'os' key
     event.getContexts().setOperatingSystem(androidOS);
@@ -677,21 +698,6 @@ public final class AnrV2EventProcessor implements BackfillingEventProcessor {
       }
       event.getContexts().put(osNameKey, currentOS);
     }
-  }
-
-  private @NotNull OperatingSystem getOperatingSystem() {
-    OperatingSystem os = new OperatingSystem();
-    os.setName("Android");
-    os.setVersion(Build.VERSION.RELEASE);
-    os.setBuild(Build.DISPLAY);
-
-    try {
-      os.setKernelVersion(ContextUtils.getKernelVersion(options.getLogger()));
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting OperatingSystem.", e);
-    }
-
-    return os;
   }
   // endregion
 }

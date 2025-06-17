@@ -1,6 +1,8 @@
 package io.sentry;
 
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.SampleRateUtils;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import org.jetbrains.annotations.ApiStatus;
@@ -19,14 +21,14 @@ public final class SentryReplayOptions {
       "com.google.android.exoplayer2.ui.StyledPlayerView";
 
   public enum SentryReplayQuality {
-    /** Video Scale: 80% Bit Rate: 50.000 */
-    LOW(0.8f, 50_000),
+    /** Video Scale: 80% Bit Rate: 50.000 JPEG Compression: 10 */
+    LOW(0.8f, 50_000, 10),
 
-    /** Video Scale: 100% Bit Rate: 75.000 */
-    MEDIUM(1.0f, 75_000),
+    /** Video Scale: 100% Bit Rate: 75.000 JPEG Compression: 30 */
+    MEDIUM(1.0f, 75_000, 30),
 
-    /** Video Scale: 100% Bit Rate: 100.000 */
-    HIGH(1.0f, 100_000);
+    /** Video Scale: 100% Bit Rate: 100.000 JPEG Compression: 50 */
+    HIGH(1.0f, 100_000, 50);
 
     /** The scale related to the window size (in dp) at which the replay will be created. */
     public final float sizeScale;
@@ -37,9 +39,17 @@ public final class SentryReplayOptions {
      */
     public final int bitRate;
 
-    SentryReplayQuality(final float sizeScale, final int bitRate) {
+    /** Defines the compression quality with which the screenshots are stored to disk. */
+    public final int screenshotQuality;
+
+    SentryReplayQuality(final float sizeScale, final int bitRate, final int screenshotQuality) {
       this.sizeScale = sizeScale;
       this.bitRate = bitRate;
+      this.screenshotQuality = screenshotQuality;
+    }
+
+    public @NotNull String serializedName() {
+      return name().toLowerCase(Locale.ROOT);
     }
   }
 
@@ -81,6 +91,12 @@ public final class SentryReplayOptions {
    */
   private Set<String> unmaskViewClasses = new CopyOnWriteArraySet<>();
 
+  /** The class name of the view container that masks all of its children. */
+  private @Nullable String maskViewContainerClass = null;
+
+  /** The class name of the view container that unmasks its direct children. */
+  private @Nullable String unmaskViewContainerClass = null;
+
   /**
    * Defines the quality of the session replay. The higher the quality, the more accurate the replay
    * will be, but also more data to transfer and more CPU load, defaults to MEDIUM.
@@ -102,7 +118,28 @@ public final class SentryReplayOptions {
   /** The maximum duration of a full session replay, defaults to 1h. */
   private long sessionDuration = 60 * 60 * 1000L;
 
-  public SentryReplayOptions(final boolean empty) {
+  /**
+   * Whether to track the screen configuration (e.g. window size, orientation, etc.) automatically.
+   * A valid configuration is required to capture a session replay. If set to false,
+   * ReplayIntegration.onConfigurationChanged() must be called manually to update the configuration.
+   *
+   * <p>Defaults to true.
+   */
+  private boolean trackConfiguration = true;
+
+  /**
+   * SdkVersion object that contains the Sentry Client Name and its version. This object is only
+   * applied to {@link SentryReplayEvent}s.
+   */
+  private @Nullable SdkVersion sdkVersion;
+
+  /**
+   * Turns debug mode on or off for Session Replay-specific code paths. If debug is enabled SDK will
+   * attempt to print out useful debugging information if something goes wrong. Default is disabled.
+   */
+  private boolean debug = false;
+
+  public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
       setMaskAllText(true);
       setMaskAllImages(true);
@@ -111,14 +148,18 @@ public final class SentryReplayOptions {
       maskViewClasses.add(ANDROIDX_MEDIA_VIEW_CLASS_NAME);
       maskViewClasses.add(EXOPLAYER_CLASS_NAME);
       maskViewClasses.add(EXOPLAYER_STYLED_CLASS_NAME);
+      this.sdkVersion = sdkVersion;
     }
   }
 
   public SentryReplayOptions(
-      final @Nullable Double sessionSampleRate, final @Nullable Double onErrorSampleRate) {
-    this(false);
+      final @Nullable Double sessionSampleRate,
+      final @Nullable Double onErrorSampleRate,
+      final @Nullable SdkVersion sdkVersion) {
+    this(false, sdkVersion);
     this.sessionSampleRate = sessionSampleRate;
     this.onErrorSampleRate = onErrorSampleRate;
+    this.sdkVersion = sdkVersion;
   }
 
   @Nullable
@@ -238,5 +279,64 @@ public final class SentryReplayOptions {
   @ApiStatus.Internal
   public long getSessionDuration() {
     return sessionDuration;
+  }
+
+  @ApiStatus.Internal
+  public void setMaskViewContainerClass(@NotNull String containerClass) {
+    addMaskViewClass(containerClass);
+    maskViewContainerClass = containerClass;
+  }
+
+  @ApiStatus.Internal
+  public void setUnmaskViewContainerClass(@NotNull String containerClass) {
+    unmaskViewContainerClass = containerClass;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable String getMaskViewContainerClass() {
+    return maskViewContainerClass;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable String getUnmaskViewContainerClass() {
+    return unmaskViewContainerClass;
+  }
+
+  @ApiStatus.Internal
+  public boolean isTrackConfiguration() {
+    return trackConfiguration;
+  }
+
+  @ApiStatus.Internal
+  public void setTrackConfiguration(final boolean trackConfiguration) {
+    this.trackConfiguration = trackConfiguration;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable SdkVersion getSdkVersion() {
+    return sdkVersion;
+  }
+
+  @ApiStatus.Internal
+  public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
+    this.sdkVersion = sdkVersion;
+  }
+
+  /**
+   * Check if debug mode is ON Default is OFF
+   *
+   * @return true if ON or false otherwise
+   */
+  public boolean isDebug() {
+    return debug;
+  }
+
+  /**
+   * Sets the debug mode to ON or OFF Default is OFF
+   *
+   * @param debug true if ON or false otherwise
+   */
+  public void setDebug(final boolean debug) {
+    this.debug = debug;
   }
 }

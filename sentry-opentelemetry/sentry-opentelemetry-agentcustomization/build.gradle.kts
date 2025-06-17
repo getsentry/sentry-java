@@ -3,15 +3,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-}
-
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -24,24 +20,25 @@ dependencies {
         exclude(group = "io.opentelemetry")
         exclude(group = "io.opentelemetry.javaagent")
     }
+    compileOnly(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
 
-    compileOnly(Config.Libs.OpenTelemetry.otelSdk)
-    compileOnly(Config.Libs.OpenTelemetry.otelExtensionAutoconfigureSpi)
-    compileOnly(Config.Libs.OpenTelemetry.otelJavaAgentExtensionApi)
-    compileOnly(Config.Libs.OpenTelemetry.otelJavaAgentTooling)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    compileOnly(libs.otel)
+    compileOnly(libs.otel.extension.autoconfigure.spi)
+    compileOnly(libs.otel.javaagent.extension.api)
+    compileOnly(libs.otel.javaagent.tooling)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
-    errorprone(Config.CompileOnly.errorProneNullAway)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.awaitility)
+    testImplementation(libs.awaitility.kotlin)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.mockito.kotlin)
 }
 
 configure<SourceSetContainer> {
@@ -51,7 +48,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {
@@ -77,5 +74,18 @@ tasks.withType<JavaCompile>().configureEach {
     options.errorprone {
         check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
         option("NullAway:AnnotatedPackages", "io.sentry")
+    }
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Sentry-Version-Name" to project.version,
+            "Sentry-SDK-Name" to Config.Sentry.SENTRY_OPENTELEMETRY_AGENTCUSTOMIZATION_SDK_NAME,
+            "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-opentelemetry-agentcustomization",
+            "Implementation-Vendor" to "Sentry",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version
+        )
     }
 }

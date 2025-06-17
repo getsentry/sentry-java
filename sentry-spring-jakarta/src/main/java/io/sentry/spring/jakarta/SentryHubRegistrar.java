@@ -1,7 +1,8 @@
 package io.sentry.spring.jakarta;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.HubAdapter;
+import io.sentry.InitPriority;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
@@ -18,6 +19,11 @@ import org.springframework.core.type.AnnotationMetadata;
 @Configuration
 @Open
 public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
+
+  static {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-spring-jakarta", BuildConfig.VERSION_NAME);
+  }
 
   @Override
   public void registerBeanDefinitions(
@@ -46,6 +52,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
     builder.addPropertyValue("enableExternalConfiguration", true);
     builder.addPropertyValue("sentryClientName", BuildConfig.SENTRY_SPRING_JAKARTA_SDK_NAME);
     builder.addPropertyValue("sdkVersion", createSdkVersion());
+    builder.addPropertyValue("initPriority", InitPriority.LOW);
     addPackageAndIntegrationInfo();
     if (annotationAttributes.containsKey("sendDefaultPii")) {
       builder.addPropertyValue("sendDefaultPii", annotationAttributes.getBoolean("sendDefaultPii"));
@@ -60,7 +67,7 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
 
   private void registerSentryHubBean(final @NotNull BeanDefinitionRegistry registry) {
     final BeanDefinitionBuilder builder =
-        BeanDefinitionBuilder.genericBeanDefinition(HubAdapter.class);
+        BeanDefinitionBuilder.genericBeanDefinition(ScopesAdapter.class);
     builder.setInitMethodName("getInstance");
 
     registry.registerBeanDefinition("sentryHub", builder.getBeanDefinition());
@@ -91,8 +98,6 @@ public class SentryHubRegistrar implements ImportBeanDefinitionRegistrar {
   }
 
   private static void addPackageAndIntegrationInfo() {
-    SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-spring-jakarta", BuildConfig.VERSION_NAME);
     SentryIntegrationPackageStorage.getInstance().addIntegration("Spring6");
   }
 }

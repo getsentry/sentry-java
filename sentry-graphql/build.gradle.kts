@@ -3,45 +3,42 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `java-library`
+    id("io.sentry.javadoc")
     kotlin("jvm")
     jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
-    id(Config.BuildPlugins.buildConfig) version Config.BuildPlugins.buildConfigVersion
-}
-
-configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    alias(libs.plugins.errorprone)
+    alias(libs.plugins.gradle.versions)
+    alias(libs.plugins.buildconfig)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = Config.kotlinCompatibleLanguageVersion
+    kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
 }
 
 dependencies {
     api(projects.sentry)
-    compileOnly(Config.Libs.graphQlJava)
+    api(projects.sentryGraphqlCore)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    errorprone(Config.CompileOnly.errorProneNullAway)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+    compileOnly(libs.graphql.java17)
+    compileOnly(libs.jetbrains.annotations)
+    compileOnly(libs.nopen.annotations)
+    errorprone(libs.errorprone.core)
+    errorprone(libs.nopen.checker)
+    errorprone(libs.nullaway)
 
     // tests
     testImplementation(projects.sentry)
     testImplementation(projects.sentryTestSupport)
     testImplementation(kotlin(Config.kotlinStdLib))
-    testImplementation(Config.TestLibs.kotlinTestJunit)
-    testImplementation(Config.TestLibs.mockitoKotlin)
-    testImplementation(Config.TestLibs.mockitoInline)
-    testImplementation(Config.TestLibs.mockWebserver)
-    testImplementation(Config.Libs.okhttp)
-    testImplementation(Config.Libs.springBootStarterGraphql)
+    testImplementation(libs.graphql.java17)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.okhttp)
+    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.springboot.starter.graphql)
     testImplementation("com.netflix.graphql.dgs:graphql-error-types:4.9.2")
-    testImplementation(Config.Libs.graphQlJava)
 }
 
 configure<SourceSetContainer> {
@@ -51,7 +48,7 @@ configure<SourceSetContainer> {
 }
 
 jacoco {
-    toolVersion = Config.QualityPlugins.Jacoco.version
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {
@@ -85,4 +82,17 @@ buildConfig {
     packageName("io.sentry.graphql")
     buildConfigField("String", "SENTRY_GRAPHQL_SDK_NAME", "\"${Config.Sentry.SENTRY_GRAPHQL_SDK_NAME}\"")
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Sentry-Version-Name" to project.version,
+            "Sentry-SDK-Name" to Config.Sentry.SENTRY_GRAPHQL_SDK_NAME,
+            "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-graphql",
+            "Implementation-Vendor" to "Sentry",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version
+        )
+    }
 }
