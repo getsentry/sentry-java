@@ -105,7 +105,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     if (feedbackOptions.isUseSentryUser()) {
       final @Nullable User user = Sentry.getCurrentScopes().getScope().getUser();
       if (user != null) {
-        edtName.setText(user.getName());
+        edtName.setText(user.getUsername());
         edtEmail.setText(user.getEmail());
       }
     }
