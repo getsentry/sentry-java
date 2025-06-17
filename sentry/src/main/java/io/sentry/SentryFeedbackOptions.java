@@ -32,33 +32,33 @@ public final class SentryFeedbackOptions {
 
   // Text Customization
   /** The title of the feedback form. Defaults to "Report a Bug". */
-  private @NotNull String formTitle = "Report a Bug";
+  private @NotNull CharSequence formTitle = "Report a Bug";
   /** The label of the submit button. Defaults to "Send Bug Report". */
-  private @NotNull String submitButtonLabel = "Send Bug Report";
+  private @NotNull CharSequence submitButtonLabel = "Send Bug Report";
   /** The label of the cancel button. Defaults to "Cancel". */
-  private @NotNull String cancelButtonLabel = "Cancel";
+  private @NotNull CharSequence cancelButtonLabel = "Cancel";
   /** The label next to the name input field. Defaults to "Name". */
-  private @NotNull String nameLabel = "Name";
+  private @NotNull CharSequence nameLabel = "Name";
   /** The placeholder in the name input field. Defaults to "Your Name". */
-  private @NotNull String namePlaceholder = "Your Name";
+  private @NotNull CharSequence namePlaceholder = "Your Name";
   /** The label next to the email input field. Defaults to "Email". */
-  private @NotNull String emailLabel = "Email";
+  private @NotNull CharSequence emailLabel = "Email";
   /** The placeholder in the email input field. Defaults to "your.email@example.org". */
-  private @NotNull String emailPlaceholder = "your.email@example.org";
+  private @NotNull CharSequence emailPlaceholder = "your.email@example.org";
   /** The text to attach to the title label for a required field. Defaults to " (Required)". */
-  private @NotNull String isRequiredLabel = " (Required)";
+  private @NotNull CharSequence isRequiredLabel = " (Required)";
   /** The label of the feedback description input field. Defaults to "Description". */
-  private @NotNull String messageLabel = "Description";
+  private @NotNull CharSequence messageLabel = "Description";
   /**
    * The placeholder in the feedback description input field. Defaults to "What's the bug? What did
    * you expect?".
    */
-  private @NotNull String messagePlaceholder = "What's the bug? What did you expect?";
+  private @NotNull CharSequence messagePlaceholder = "What's the bug? What did you expect?";
   /**
    * The message displayed after a successful feedback submission. Defaults to "Thank you for your
    * report!".
    */
-  private @NotNull String successMessageText = "Thank you for your report!";
+  private @NotNull CharSequence successMessageText = "Thank you for your report!";
 
   // Callbacks
   /** Callback called when the feedback form is opened. */
@@ -216,7 +216,7 @@ public final class SentryFeedbackOptions {
    *
    * @return the title of the feedback form
    */
-  public @NotNull String getFormTitle() {
+  public @NotNull CharSequence getFormTitle() {
     return formTitle;
   }
 
@@ -225,7 +225,7 @@ public final class SentryFeedbackOptions {
    *
    * @param formTitle the title of the feedback form
    */
-  public void setFormTitle(final @NotNull String formTitle) {
+  public void setFormTitle(final @NotNull CharSequence formTitle) {
     this.formTitle = formTitle;
   }
 
@@ -234,7 +234,7 @@ public final class SentryFeedbackOptions {
    *
    * @return the label of the submit button
    */
-  public @NotNull String getSubmitButtonLabel() {
+  public @NotNull CharSequence getSubmitButtonLabel() {
     return submitButtonLabel;
   }
 
@@ -243,7 +243,7 @@ public final class SentryFeedbackOptions {
    *
    * @param submitButtonLabel the label of the submit button
    */
-  public void setSubmitButtonLabel(final @NotNull String submitButtonLabel) {
+  public void setSubmitButtonLabel(final @NotNull CharSequence submitButtonLabel) {
     this.submitButtonLabel = submitButtonLabel;
   }
 
@@ -252,7 +252,7 @@ public final class SentryFeedbackOptions {
    *
    * @return the label of the cancel button
    */
-  public @NotNull String getCancelButtonLabel() {
+  public @NotNull CharSequence getCancelButtonLabel() {
     return cancelButtonLabel;
   }
 
@@ -261,7 +261,7 @@ public final class SentryFeedbackOptions {
    *
    * @param cancelButtonLabel the label of the cancel button
    */
-  public void setCancelButtonLabel(final @NotNull String cancelButtonLabel) {
+  public void setCancelButtonLabel(final @NotNull CharSequence cancelButtonLabel) {
     this.cancelButtonLabel = cancelButtonLabel;
   }
 
@@ -270,7 +270,7 @@ public final class SentryFeedbackOptions {
    *
    * @return the label next to the name input field
    */
-  public @NotNull String getNameLabel() {
+  public @NotNull CharSequence getNameLabel() {
     return nameLabel;
   }
 
@@ -279,7 +279,7 @@ public final class SentryFeedbackOptions {
    *
    * @param nameLabel the label next to the name input field
    */
-  public void setNameLabel(final @NotNull String nameLabel) {
+  public void setNameLabel(final @NotNull CharSequence nameLabel) {
     this.nameLabel = nameLabel;
   }
 
@@ -288,7 +288,7 @@ public final class SentryFeedbackOptions {
    *
    * @return the placeholder in the name input field
    */
-  public @NotNull String getNamePlaceholder() {
+  public @NotNull CharSequence getNamePlaceholder() {
     return namePlaceholder;
   }
 
@@ -297,7 +297,7 @@ public final class SentryFeedbackOptions {
    *
    * @param namePlaceholder the placeholder in the name input field
    */
-  public void setNamePlaceholder(final @NotNull String namePlaceholder) {
+  public void setNamePlaceholder(final @NotNull CharSequence namePlaceholder) {
     this.namePlaceholder = namePlaceholder;
   }
 
@@ -306,7 +306,7 @@ public final class SentryFeedbackOptions {
    *
    * @return the label next to the email input field
    */
-  public @NotNull String getEmailLabel() {
+  public @NotNull CharSequence getEmailLabel() {
     return emailLabel;
   }
 
@@ -315,7 +315,7 @@ public final class SentryFeedbackOptions {
    *
    * @param emailLabel the label next to the email input field
    */
-  public void setEmailLabel(final @NotNull String emailLabel) {
+  public void setEmailLabel(final @NotNull CharSequence emailLabel) {
     this.emailLabel = emailLabel;
   }
 
@@ -324,7 +324,7 @@ public final class SentryFeedbackOptions {
    *
    * @return the placeholder in the email input field
    */
-  public @NotNull String getEmailPlaceholder() {
+  public @NotNull CharSequence getEmailPlaceholder() {
     return emailPlaceholder;
   }
 
@@ -333,7 +333,7 @@ public final class SentryFeedbackOptions {
    *
    * @param emailPlaceholder the placeholder in the email input field
    */
-  public void setEmailPlaceholder(final @NotNull String emailPlaceholder) {
+  public void setEmailPlaceholder(final @NotNull CharSequence emailPlaceholder) {
     this.emailPlaceholder = emailPlaceholder;
   }
 
@@ -342,7 +342,7 @@ public final class SentryFeedbackOptions {
    *
    * @return the text to attach to the title label for a required field
    */
-  public @NotNull String getIsRequiredLabel() {
+  public @NotNull CharSequence getIsRequiredLabel() {
     return isRequiredLabel;
   }
 
@@ -351,7 +351,7 @@ public final class SentryFeedbackOptions {
    *
    * @param isRequiredLabel the text to attach to the title label for a required field
    */
-  public void setIsRequiredLabel(final @NotNull String isRequiredLabel) {
+  public void setIsRequiredLabel(final @NotNull CharSequence isRequiredLabel) {
     this.isRequiredLabel = isRequiredLabel;
   }
 
@@ -360,7 +360,7 @@ public final class SentryFeedbackOptions {
    *
    * @return the label of the feedback description input field
    */
-  public @NotNull String getMessageLabel() {
+  public @NotNull CharSequence getMessageLabel() {
     return messageLabel;
   }
 
@@ -369,7 +369,7 @@ public final class SentryFeedbackOptions {
    *
    * @param messageLabel the label of the feedback description input field
    */
-  public void setMessageLabel(final @NotNull String messageLabel) {
+  public void setMessageLabel(final @NotNull CharSequence messageLabel) {
     this.messageLabel = messageLabel;
   }
 
@@ -379,7 +379,7 @@ public final class SentryFeedbackOptions {
    *
    * @return the placeholder in the feedback description input field
    */
-  public @NotNull String getMessagePlaceholder() {
+  public @NotNull CharSequence getMessagePlaceholder() {
     return messagePlaceholder;
   }
 
@@ -388,7 +388,7 @@ public final class SentryFeedbackOptions {
    *
    * @param messagePlaceholder the placeholder in the feedback description input field
    */
-  public void setMessagePlaceholder(final @NotNull String messagePlaceholder) {
+  public void setMessagePlaceholder(final @NotNull CharSequence messagePlaceholder) {
     this.messagePlaceholder = messagePlaceholder;
   }
 
@@ -398,7 +398,7 @@ public final class SentryFeedbackOptions {
    *
    * @return the message displayed after a successful feedback submission
    */
-  public @NotNull String getSuccessMessageText() {
+  public @NotNull CharSequence getSuccessMessageText() {
     return successMessageText;
   }
 
@@ -407,7 +407,7 @@ public final class SentryFeedbackOptions {
    *
    * @param successMessageText the message displayed after a successful feedback submission
    */
-  public void setSuccessMessageText(final @NotNull String successMessageText) {
+  public void setSuccessMessageText(final @NotNull CharSequence successMessageText) {
     this.successMessageText = successMessageText;
   }
 

@@ -27,6 +27,10 @@
 - Add `user.id`, `user.name` and `user.email` to log attributes ([#4486](https://github.com/getsentry/sentry-java/pull/4486))
 - Serialize `preContext` and `postContext` in `SentryStackFrame` ([#4482](https://github.com/getsentry/sentry-java/pull/4482))
 
+### Internal
+
+- User Feedback now uses SentryUser.username instead of SentryUser.name ([#4494](https://github.com/getsentry/sentry-java/pull/4494))
+
 ## 8.13.3
 
 ### Fixes
