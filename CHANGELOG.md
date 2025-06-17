@@ -25,7 +25,8 @@
       SentryUserFeedbackDialog.Builder(context).create().show()
       ```
 - Add `user.id`, `user.name` and `user.email` to log attributes ([#4486](https://github.com/getsentry/sentry-java/pull/4486))
-- Add device (brand, model and family) and OS (name and version) attributes to logs ([#4493](https://github.com/getsentry/sentry-java/pull/4493))
+- User `name` attribute has been deprecated, please use `username` instead ([#4486](https://github.com/getsentry/sentry-java/pull/4486))
+- Add device (`device.brand`, `device.model` and `device.family`) and OS (`os.name` and `os.version`) attributes to logs ([#4493](https://github.com/getsentry/sentry-java/pull/4493))
 - Serialize `preContext` and `postContext` in `SentryStackFrame` ([#4482](https://github.com/getsentry/sentry-java/pull/4482))
 
 ## 8.13.3
