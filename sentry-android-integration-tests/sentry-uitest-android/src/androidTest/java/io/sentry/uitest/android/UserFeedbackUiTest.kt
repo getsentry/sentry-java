@@ -26,8 +26,8 @@ import io.sentry.SentryFeedbackOptions.SentryFeedbackCallback
 import io.sentry.SentryOptions
 import io.sentry.android.core.AndroidLogger
 import io.sentry.android.core.R
+import io.sentry.android.core.SentryUserFeedbackButton
 import io.sentry.android.core.SentryUserFeedbackDialog
-import io.sentry.android.core.SentryUserFeedbackWidget
 import io.sentry.assertEnvelopeFeedback
 import io.sentry.protocol.User
 import io.sentry.test.getProperty
@@ -653,14 +653,14 @@ class UserFeedbackUiTest : BaseUiTest() {
         checker(dialog)
     }
 
-    private fun showWidgetAndCheck(widgetConfig: ((widget: SentryUserFeedbackWidget) -> Unit)? = null, checker: (widget: SentryUserFeedbackWidget) -> Unit = {}) {
+    private fun showWidgetAndCheck(widgetConfig: ((widget: SentryUserFeedbackButton) -> Unit)? = null, checker: (widget: SentryUserFeedbackButton) -> Unit = {}) {
         val buttonId = Int.MAX_VALUE - 1
         val feedbackScenario = launchActivity<EmptyActivity>()
         feedbackScenario.onActivity {
             val view = LinearLayout(it).apply {
                 orientation = LinearLayout.VERTICAL
                 addView(
-                    SentryUserFeedbackWidget(it).apply {
+                    SentryUserFeedbackButton(it).apply {
                         id = buttonId
                         widgetConfig?.invoke(this)
                     }
@@ -672,7 +672,7 @@ class UserFeedbackUiTest : BaseUiTest() {
         onView(withId(buttonId))
             .check(matches(isDisplayed()))
             .check { view, _ ->
-                checker(view as SentryUserFeedbackWidget)
+                checker(view as SentryUserFeedbackButton)
             }
     }
 
