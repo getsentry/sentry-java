@@ -8,6 +8,7 @@ public class io/sentry/logback/SentryAppender : ch/qos/logback/core/Unsynchroniz
 	public fun <init> ()V
 	protected fun append (Lch/qos/logback/classic/spi/ILoggingEvent;)V
 	protected synthetic fun append (Ljava/lang/Object;)V
+	protected fun captureLog (Lch/qos/logback/classic/spi/ILoggingEvent;)V
 	protected fun createBreadcrumb (Lch/qos/logback/classic/spi/ILoggingEvent;)Lio/sentry/Breadcrumb;
 	protected fun createEvent (Lch/qos/logback/classic/spi/ILoggingEvent;)Lio/sentry/SentryEvent;
 	public fun getMinimumBreadcrumbLevel ()Lch/qos/logback/classic/Level;

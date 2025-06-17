@@ -2888,6 +2888,51 @@ class ScopesTest {
     }
 
     @Test
+    fun `missing user does not break attributes`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+            it.isSendDefaultPii = true
+        }
+
+        sut.logger().log(SentryLogLevel.WARN, "log message")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("log message", it.body)
+
+                assertNull(it.attributes?.get("user.id"))
+                assertNull(it.attributes?.get("user.name"))
+                assertNull(it.attributes?.get("user.email"))
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
+    fun `missing user fields do not break attributes`() {
+        val (sut, mockClient) = getEnabledScopes {
+            it.logs.isEnabled = true
+            it.isSendDefaultPii = true
+        }
+
+        sut.configureScope { scope ->
+            scope.user = User()
+        }
+        sut.logger().log(SentryLogLevel.WARN, "log message")
+
+        verify(mockClient).captureLog(
+            check {
+                assertEquals("log message", it.body)
+
+                assertNull(it.attributes?.get("user.id"))
+                assertNull(it.attributes?.get("user.name"))
+                assertNull(it.attributes?.get("user.email"))
+            },
+            anyOrNull()
+        )
+    }
+
+    @Test
     fun `does not add user fields to log attributes by default`() {
         val (sut, mockClient) = getEnabledScopes {
             it.logs.isEnabled = true
