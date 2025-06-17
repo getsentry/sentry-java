@@ -11,6 +11,7 @@ import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.Owner
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
@@ -29,26 +30,51 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHiera
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import java.lang.ref.WeakReference
+import java.lang.reflect.Method
 
 @TargetApi(26)
 internal object ComposeViewHierarchyNode {
+
+    private val getSemanticsConfigurationMethod: Method? by lazy {
+        try {
+            return@lazy LayoutNode::class.java.getDeclaredMethod("getSemanticsConfiguration").apply {
+                isAccessible = true
+            }
+        } catch (_: Throwable) {
+            // ignore, as this method may not be available
+        }
+        return@lazy null
+    }
+
+    private var semanticsRetrievalErrorLogged: Boolean = false
+
+    @JvmStatic
+    internal fun retrieveSemanticsConfiguration(node: LayoutNode): SemanticsConfiguration? {
+        // Jetpack Compose 1.8 or newer provides SemanticsConfiguration via SemanticsInfo
+        // See https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/node/LayoutNode.kt
+        // and https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/semantics/SemanticsInfo.kt
+        getSemanticsConfigurationMethod?.let {
+            return it.invoke(node) as SemanticsConfiguration?
+        }
+
+        // for backwards compatibility
+        return node.collapsedSemantics
+    }
 
     /**
      * Since Compose doesn't have a concept of a View class (they are all composable functions),
      * we need to map the semantics node to a corresponding old view system class.
      */
-    private fun LayoutNode.getProxyClassName(isImage: Boolean): String {
+    private fun getProxyClassName(isImage: Boolean, config: SemanticsConfiguration?): String {
         return when {
             isImage -> SentryReplayOptions.IMAGE_VIEW_CLASS_NAME
-            collapsedSemantics?.contains(SemanticsProperties.Text) == true ||
-                collapsedSemantics?.contains(SemanticsActions.SetText) == true ||
-                collapsedSemantics?.contains(SemanticsProperties.EditableText) == true -> SentryReplayOptions.TEXT_VIEW_CLASS_NAME
+            config != null && (config.contains(SemanticsProperties.Text) || config.contains(SemanticsActions.SetText) || config.contains(SemanticsProperties.EditableText)) -> SentryReplayOptions.TEXT_VIEW_CLASS_NAME
             else -> "android.view.View"
         }
     }
 
-    private fun LayoutNode.shouldMask(isImage: Boolean, options: SentryOptions): Boolean {
-        val sentryPrivacyModifier = collapsedSemantics?.getOrNull(SentryReplayModifiers.SentryPrivacy)
+    private fun SemanticsConfiguration?.shouldMask(isImage: Boolean, options: SentryOptions): Boolean {
+        val sentryPrivacyModifier = this?.getOrNull(SentryReplayModifiers.SentryPrivacy)
         if (sentryPrivacyModifier == "unmask") {
             return false
         }
@@ -57,7 +83,7 @@ internal object ComposeViewHierarchyNode {
             return true
         }
 
-        val className = getProxyClassName(isImage)
+        val className = getProxyClassName(isImage, this)
         if (options.sessionReplay.unmaskViewClasses.contains(className)) {
             return false
         }
@@ -83,16 +109,53 @@ internal object ComposeViewHierarchyNode {
             _rootCoordinates = WeakReference(node.coordinates.findRootCoordinates())
         }
 
-        val semantics = node.collapsedSemantics
         val visibleRect = node.coordinates.boundsInWindow(_rootCoordinates?.get())
+        val semantics: SemanticsConfiguration?
+
+        try {
+            semantics = retrieveSemanticsConfiguration(node)
+        } catch (t: Throwable) {
+            if (!semanticsRetrievalErrorLogged) {
+                semanticsRetrievalErrorLogged = true
+                options.logger.log(
+                    SentryLevel.ERROR,
+                    t,
+                    """
+                Error retrieving semantics information from Compose tree. Most likely you're using
+                an unsupported version of androidx.compose.ui:ui. The supported
+                version range is 1.5.0 - 1.8.0.
+                If you're using a newer version, please open a github issue with the version
+                you're using, so we can add support for it.
+                    """.trimIndent()
+                )
+            }
+
+            // If we're unable to retrieve the semantics configuration
+            // we should play safe and mask the whole node.
+            return GenericViewHierarchyNode(
+                x = visibleRect.left.toFloat(),
+                y = visibleRect.top.toFloat(),
+                width = node.width,
+                height = node.height,
+                elevation = (parent?.elevation ?: 0f),
+                distance = distance,
+                parent = parent,
+                shouldMask = true,
+                isImportantForContentCapture = false, /* will be set by children */
+                isVisible = !node.outerCoordinator.isTransparent() && visibleRect.height() > 0 && visibleRect.width() > 0,
+                visibleRect = visibleRect
+            )
+        }
+
         val isVisible = !node.outerCoordinator.isTransparent() &&
             (semantics == null || !semantics.contains(SemanticsProperties.InvisibleToUser)) &&
             visibleRect.height() > 0 && visibleRect.width() > 0
         val isEditable = semantics?.contains(SemanticsActions.SetText) == true ||
             semantics?.contains(SemanticsProperties.EditableText) == true
+
         return when {
             semantics?.contains(SemanticsProperties.Text) == true || isEditable -> {
-                val shouldMask = isVisible && node.shouldMask(isImage = false, options)
+                val shouldMask = isVisible && semantics.shouldMask(isImage = false, options)
 
                 parent?.setImportantForCaptureToAncestors(true)
                 // TODO: if we get reports that it's slow, we can drop this, and just mask
@@ -133,7 +196,7 @@ internal object ComposeViewHierarchyNode {
             else -> {
                 val painter = node.findPainter()
                 if (painter != null) {
-                    val shouldMask = isVisible && node.shouldMask(isImage = true, options)
+                    val shouldMask = isVisible && semantics.shouldMask(isImage = true, options)
 
                     parent?.setImportantForCaptureToAncestors(true)
                     ImageViewHierarchyNode(
@@ -150,7 +213,7 @@ internal object ComposeViewHierarchyNode {
                         visibleRect = visibleRect
                     )
                 } else {
-                    val shouldMask = isVisible && node.shouldMask(isImage = false, options)
+                    val shouldMask = isVisible && semantics.shouldMask(isImage = false, options)
 
                     // TODO: this currently does not support embedded AndroidViews, we'd have to
                     // TODO: traverse the ViewHierarchyNode here again. For now we can recommend
