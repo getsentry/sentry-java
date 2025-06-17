@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix Session Replay masking for newer versions of Jetpack Compose (1.8+) ([#4485](https://github.com/getsentry/sentry-java/pull/4485))
+
 ### Features
 
+- Add New User Feedback Widget ([#4450](https://github.com/getsentry/sentry-java/pull/4450))
+    - This widget is a custom button that can be used to show the user feedback form
 - Add New User Feedback form ([#4384](https://github.com/getsentry/sentry-java/pull/4384))
     - We now introduce SentryUserFeedbackDialog, which extends AlertDialog, inheriting the show() and cancel() methods, among others.
       To use it, just instantiate it and call show() on the instance (Sentry must be previously initialized).
@@ -20,6 +26,7 @@
       ```
 - Add `user.id`, `user.name` and `user.email` to log attributes ([#4486](https://github.com/getsentry/sentry-java/pull/4486))
 - Add device (brand, model and family) and OS (name and version) attributes to logs ([#4493](https://github.com/getsentry/sentry-java/pull/4493))
+- Serialize `preContext` and `postContext` in `SentryStackFrame` ([#4482](https://github.com/getsentry/sentry-java/pull/4482))
 
 ## 8.13.3
 

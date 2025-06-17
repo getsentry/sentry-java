@@ -1,7 +1,10 @@
 package io.sentry.uitest.android
 
+import android.graphics.Color
+import android.util.TypedValue
 import android.view.View
 import android.widget.EditText
+import android.widget.LinearLayout
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
@@ -23,9 +26,11 @@ import io.sentry.SentryFeedbackOptions.SentryFeedbackCallback
 import io.sentry.SentryOptions
 import io.sentry.android.core.AndroidLogger
 import io.sentry.android.core.R
+import io.sentry.android.core.SentryUserFeedbackButton
 import io.sentry.android.core.SentryUserFeedbackDialog
 import io.sentry.assertEnvelopeFeedback
 import io.sentry.protocol.User
+import io.sentry.test.getProperty
 import org.hamcrest.Description
 import org.hamcrest.Matcher
 import org.hamcrest.Matchers.allOf
@@ -34,6 +39,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -517,6 +523,95 @@ class UserFeedbackUiTest : BaseUiTest() {
         }
     }
 
+    @Test
+    fun userFeedbackWidgetDefaults() {
+        initSentry()
+        var widgetId = 0
+        showWidgetAndCheck { widget ->
+            widgetId = widget.id
+            val densityScale = context.resources.displayMetrics.density
+            assertEquals((densityScale * 4).toInt(), widget.compoundDrawablePadding)
+
+            assertNotNull(widget.compoundDrawables[0]) // Drawable left
+            assertNull(widget.compoundDrawables[1]) // Drawable top
+            assertNull(widget.compoundDrawables[2]) // Drawable right
+            assertNull(widget.compoundDrawables[3]) // Drawable bottom
+
+            // Couldn't find a reliable way to check the drawable, so i'll skip it
+
+            assertFalse(widget.isAllCaps)
+
+            assertEquals(R.drawable.sentry_oval_button_ripple_background, widget.getProperty<Int>("mBackgroundResource"))
+
+            assertEquals((densityScale * 12).toInt(), widget.paddingStart)
+            assertEquals((densityScale * 12).toInt(), widget.paddingEnd)
+            assertEquals((densityScale * 12).toInt(), widget.paddingTop)
+            assertEquals((densityScale * 12).toInt(), widget.paddingBottom)
+
+            val typedValue = TypedValue()
+            widget.context.theme.resolveAttribute(android.R.attr.colorForeground, typedValue, true)
+            assertEquals(typedValue.data, widget.currentTextColor)
+
+            assertEquals("Report a Bug", widget.text)
+        }
+
+        onView(withId(widgetId)).perform(click())
+        // Check that the user feedback dialog is shown
+        checkViewVisibility(R.id.sentry_dialog_user_feedback_layout)
+    }
+
+    @Test
+    fun userFeedbackWidgetDefaultsOverridden() {
+        initSentry()
+        showWidgetAndCheck({ widget ->
+            widget.compoundDrawablePadding = 1
+            widget.setCompoundDrawables(null, null, null, null)
+            widget.isAllCaps = true
+            widget.setBackgroundResource(R.drawable.sentry_edit_text_border)
+            widget.setTextColor(Color.RED)
+            widget.text = "My custom text"
+            widget.setPadding(0, 0, 0, 0)
+        }) { widget ->
+            val densityScale = context.resources.displayMetrics.density
+            assertEquals(1, widget.compoundDrawablePadding)
+
+            assertNull(widget.compoundDrawables[0]) // Drawable left
+            assertNull(widget.compoundDrawables[1]) // Drawable top
+            assertNull(widget.compoundDrawables[2]) // Drawable right
+            assertNull(widget.compoundDrawables[3]) // Drawable bottom
+
+            assertTrue(widget.isAllCaps)
+
+            assertEquals(R.drawable.sentry_edit_text_border, widget.getProperty<Int>("mBackgroundResource"))
+
+            assertEquals((densityScale * 0).toInt(), widget.paddingStart)
+            assertEquals((densityScale * 0).toInt(), widget.paddingEnd)
+            assertEquals((densityScale * 0).toInt(), widget.paddingTop)
+            assertEquals((densityScale * 0).toInt(), widget.paddingBottom)
+
+            assertEquals(Color.RED, widget.currentTextColor)
+
+            assertEquals("My custom text", widget.text)
+        }
+    }
+
+    @Test
+    fun userFeedbackWidgetShowsDialogOnClickOverridden() {
+        initSentry()
+        var widgetId = 0
+        var customListenerCalled = false
+        showWidgetAndCheck { widget ->
+            widgetId = widget.id
+            widget.setOnClickListener { customListenerCalled = true }
+        }
+
+        onView(withId(widgetId)).perform(click())
+        // Check that the user feedback dialog is shown
+        checkViewVisibility(R.id.sentry_dialog_user_feedback_layout)
+        // And the custom listener is called, too
+        assertTrue(customListenerCalled)
+    }
+
     private fun checkViewVisibility(viewId: Int, isGone: Boolean = false) {
         onView(withId(viewId))
             .check(matches(withEffectiveVisibility(if (isGone) Visibility.GONE else Visibility.VISIBLE)))
@@ -556,6 +651,29 @@ class UserFeedbackUiTest : BaseUiTest() {
             .check(matches(isDisplayed()))
 
         checker(dialog)
+    }
+
+    private fun showWidgetAndCheck(widgetConfig: ((widget: SentryUserFeedbackButton) -> Unit)? = null, checker: (widget: SentryUserFeedbackButton) -> Unit = {}) {
+        val buttonId = Int.MAX_VALUE - 1
+        val feedbackScenario = launchActivity<EmptyActivity>()
+        feedbackScenario.onActivity {
+            val view = LinearLayout(it).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(
+                    SentryUserFeedbackButton(it).apply {
+                        id = buttonId
+                        widgetConfig?.invoke(this)
+                    }
+                )
+            }
+            it.setContentView(view)
+        }
+        checkViewVisibility(buttonId)
+        onView(withId(buttonId))
+            .check(matches(isDisplayed()))
+            .check { view, _ ->
+                checker(view as SentryUserFeedbackButton)
+            }
     }
 
     fun withError(expectedError: String): Matcher<View> {

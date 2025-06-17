@@ -5903,6 +5903,8 @@ public final class io/sentry/protocol/SentryStackFrame$JsonKeys {
 	public static final field NATIVE Ljava/lang/String;
 	public static final field PACKAGE Ljava/lang/String;
 	public static final field PLATFORM Ljava/lang/String;
+	public static final field POST_CONTEXT Ljava/lang/String;
+	public static final field PRE_CONTEXT Ljava/lang/String;
 	public static final field RAW_FUNCTION Ljava/lang/String;
 	public static final field SYMBOL Ljava/lang/String;
 	public static final field SYMBOL_ADDR Ljava/lang/String;
