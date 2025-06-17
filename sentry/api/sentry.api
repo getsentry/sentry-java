@@ -458,6 +458,7 @@ public final class io/sentry/EnvelopeSender : io/sentry/IEnvelopeSender {
 public abstract interface class io/sentry/EventProcessor {
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
 	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
@@ -1284,6 +1285,7 @@ public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java
 	public fun close ()V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
 	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
@@ -3143,6 +3145,7 @@ public final class io/sentry/SentryLogEvent : io/sentry/JsonSerializable, io/sen
 	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setAttribute (Ljava/lang/String;Lio/sentry/SentryLogEventAttributeValue;)V
 	public fun setAttributes (Ljava/util/Map;)V
 	public fun setBody (Ljava/lang/String;)V
 	public fun setLevel (Lio/sentry/SentryLogLevel;)V

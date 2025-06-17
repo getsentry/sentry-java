@@ -73,6 +73,17 @@ public final class SentryLogEvent implements JsonUnknown, JsonSerializable {
     this.attributes = attributes;
   }
 
+  public void setAttribute(
+      final @Nullable String key, final @Nullable SentryLogEventAttributeValue value) {
+    if (key == null) {
+      return;
+    }
+    if (this.attributes == null) {
+      this.attributes = new HashMap<>();
+    }
+    this.attributes.put(key, value);
+  }
+
   public @Nullable Integer getSeverityNumber() {
     return severityNumber;
   }
