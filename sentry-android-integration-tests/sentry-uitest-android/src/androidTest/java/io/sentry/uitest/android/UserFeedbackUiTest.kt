@@ -439,6 +439,7 @@ class UserFeedbackUiTest : BaseUiTest() {
         Sentry.setUser(
             User().apply {
                 name = "Test User"
+                username = "Test UserName"
                 email = "Test User Email"
             }
         )
@@ -446,7 +447,7 @@ class UserFeedbackUiTest : BaseUiTest() {
             // Name and email are filled with Sentry user properties
             onView(withId(R.id.sentry_dialog_user_feedback_edt_name))
                 .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
-                .check(matches(withText("Test User")))
+                .check(matches(withText("Test UserName")))
 
             // Even if the field is hidden
             onView(withId(R.id.sentry_dialog_user_feedback_edt_email))
@@ -464,6 +465,7 @@ class UserFeedbackUiTest : BaseUiTest() {
         Sentry.setUser(
             User().apply {
                 name = "Test User"
+                username = "Test UserName"
                 email = "Test User Email"
             }
         )
