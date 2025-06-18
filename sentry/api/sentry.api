@@ -458,6 +458,7 @@ public final class io/sentry/EnvelopeSender : io/sentry/IEnvelopeSender {
 public abstract interface class io/sentry/EventProcessor {
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
 	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
@@ -1284,6 +1285,7 @@ public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java
 	public fun close ()V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
 	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
@@ -2976,37 +2978,37 @@ public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorSe
 public final class io/sentry/SentryFeedbackOptions {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/SentryFeedbackOptions;)V
-	public fun getCancelButtonLabel ()Ljava/lang/String;
-	public fun getEmailLabel ()Ljava/lang/String;
-	public fun getEmailPlaceholder ()Ljava/lang/String;
-	public fun getFormTitle ()Ljava/lang/String;
-	public fun getIsRequiredLabel ()Ljava/lang/String;
-	public fun getMessageLabel ()Ljava/lang/String;
-	public fun getMessagePlaceholder ()Ljava/lang/String;
-	public fun getNameLabel ()Ljava/lang/String;
-	public fun getNamePlaceholder ()Ljava/lang/String;
+	public fun getCancelButtonLabel ()Ljava/lang/CharSequence;
+	public fun getEmailLabel ()Ljava/lang/CharSequence;
+	public fun getEmailPlaceholder ()Ljava/lang/CharSequence;
+	public fun getFormTitle ()Ljava/lang/CharSequence;
+	public fun getIsRequiredLabel ()Ljava/lang/CharSequence;
+	public fun getMessageLabel ()Ljava/lang/CharSequence;
+	public fun getMessagePlaceholder ()Ljava/lang/CharSequence;
+	public fun getNameLabel ()Ljava/lang/CharSequence;
+	public fun getNamePlaceholder ()Ljava/lang/CharSequence;
 	public fun getOnFormClose ()Ljava/lang/Runnable;
 	public fun getOnFormOpen ()Ljava/lang/Runnable;
 	public fun getOnSubmitError ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
 	public fun getOnSubmitSuccess ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
-	public fun getSubmitButtonLabel ()Ljava/lang/String;
-	public fun getSuccessMessageText ()Ljava/lang/String;
+	public fun getSubmitButtonLabel ()Ljava/lang/CharSequence;
+	public fun getSuccessMessageText ()Ljava/lang/CharSequence;
 	public fun isEmailRequired ()Z
 	public fun isNameRequired ()Z
 	public fun isShowBranding ()Z
 	public fun isShowEmail ()Z
 	public fun isShowName ()Z
 	public fun isUseSentryUser ()Z
-	public fun setCancelButtonLabel (Ljava/lang/String;)V
-	public fun setEmailLabel (Ljava/lang/String;)V
-	public fun setEmailPlaceholder (Ljava/lang/String;)V
+	public fun setCancelButtonLabel (Ljava/lang/CharSequence;)V
+	public fun setEmailLabel (Ljava/lang/CharSequence;)V
+	public fun setEmailPlaceholder (Ljava/lang/CharSequence;)V
 	public fun setEmailRequired (Z)V
-	public fun setFormTitle (Ljava/lang/String;)V
-	public fun setIsRequiredLabel (Ljava/lang/String;)V
-	public fun setMessageLabel (Ljava/lang/String;)V
-	public fun setMessagePlaceholder (Ljava/lang/String;)V
-	public fun setNameLabel (Ljava/lang/String;)V
-	public fun setNamePlaceholder (Ljava/lang/String;)V
+	public fun setFormTitle (Ljava/lang/CharSequence;)V
+	public fun setIsRequiredLabel (Ljava/lang/CharSequence;)V
+	public fun setMessageLabel (Ljava/lang/CharSequence;)V
+	public fun setMessagePlaceholder (Ljava/lang/CharSequence;)V
+	public fun setNameLabel (Ljava/lang/CharSequence;)V
+	public fun setNamePlaceholder (Ljava/lang/CharSequence;)V
 	public fun setNameRequired (Z)V
 	public fun setOnFormClose (Ljava/lang/Runnable;)V
 	public fun setOnFormOpen (Ljava/lang/Runnable;)V
@@ -3015,8 +3017,8 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun setShowBranding (Z)V
 	public fun setShowEmail (Z)V
 	public fun setShowName (Z)V
-	public fun setSubmitButtonLabel (Ljava/lang/String;)V
-	public fun setSuccessMessageText (Ljava/lang/String;)V
+	public fun setSubmitButtonLabel (Ljava/lang/CharSequence;)V
+	public fun setSuccessMessageText (Ljava/lang/CharSequence;)V
 	public fun setUseSentryUser (Z)V
 	public fun toString ()Ljava/lang/String;
 }
@@ -3143,6 +3145,7 @@ public final class io/sentry/SentryLogEvent : io/sentry/JsonSerializable, io/sen
 	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setAttribute (Ljava/lang/String;Lio/sentry/SentryLogEventAttributeValue;)V
 	public fun setAttributes (Ljava/util/Map;)V
 	public fun setBody (Ljava/lang/String;)V
 	public fun setLevel (Lio/sentry/SentryLogLevel;)V
@@ -5903,6 +5906,8 @@ public final class io/sentry/protocol/SentryStackFrame$JsonKeys {
 	public static final field NATIVE Ljava/lang/String;
 	public static final field PACKAGE Ljava/lang/String;
 	public static final field PLATFORM Ljava/lang/String;
+	public static final field POST_CONTEXT Ljava/lang/String;
+	public static final field PRE_CONTEXT Ljava/lang/String;
 	public static final field RAW_FUNCTION Ljava/lang/String;
 	public static final field SYMBOL Ljava/lang/String;
 	public static final field SYMBOL_ADDR Ljava/lang/String;
