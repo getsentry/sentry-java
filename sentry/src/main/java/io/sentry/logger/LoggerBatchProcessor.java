@@ -101,7 +101,9 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
       }
     } while (!queue.isEmpty() && logEvents.size() < MAX_BATCH_SIZE);
 
-    client.captureBatchedLogEvents(new SentryLogEvents(logEvents));
+    if (!logEvents.isEmpty()) {
+      client.captureBatchedLogEvents(new SentryLogEvents(logEvents));
+    }
   }
 
   private class BatchRunnable implements Runnable {
