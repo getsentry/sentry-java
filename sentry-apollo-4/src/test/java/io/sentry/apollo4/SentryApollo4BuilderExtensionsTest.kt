@@ -36,12 +36,12 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentryApollo4BuilderExtensionsTestWithV4Implementation : SentryApollo4BuilderExtensionsTest(ApolloCall<*>::execute)
+
 class SentryApollo4BuilderExtensionsTestWithV3Implementation : SentryApollo4BuilderExtensionsTest(ApolloCall<*>::executeV3)
 
 abstract class SentryApollo4BuilderExtensionsTest(
-    private val executeQueryImplementation: KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>
+    private val executeQueryImplementation: KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>,
 ) {
-
     class Fixture {
         val server = MockWebServer()
         val scopes = mock<IScopes>()
@@ -64,22 +64,24 @@ abstract class SentryApollo4BuilderExtensionsTest(
   }
 }""",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            beforeSpan: BeforeSpanCallback? = null
+            beforeSpan: BeforeSpanCallback? = null,
         ): ApolloClient {
             whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
                     dsn = "http://key@localhost/proj"
-                }
+                },
             )
 
             server.enqueue(
                 MockResponse()
                     .setBody(responseBody)
                     .setSocketPolicy(socketPolicy)
-                    .setResponseCode(httpStatusCode)
+                    .setResponseCode(httpStatusCode),
             )
 
-            return ApolloClient.Builder().serverUrl(server.url("/").toString())
+            return ApolloClient
+                .Builder()
+                .serverUrl(server.url("/").toString())
                 .sentryTracing(scopes = scopes, beforeSpan = beforeSpan, captureFailedRequests = false)
                 .build()
         }
@@ -98,7 +100,7 @@ abstract class SentryApollo4BuilderExtensionsTest(
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -113,7 +115,7 @@ abstract class SentryApollo4BuilderExtensionsTest(
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -128,7 +130,7 @@ abstract class SentryApollo4BuilderExtensionsTest(
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -145,7 +147,7 @@ abstract class SentryApollo4BuilderExtensionsTest(
                 assertEquals(193L, it.data["request_body_size"])
                 assertEquals("query", it.data["operation_type"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -159,7 +161,7 @@ abstract class SentryApollo4BuilderExtensionsTest(
                 assertEquals(193L, it.data["request_body_size"])
                 assertEquals("query", it.data["operation_type"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -174,7 +176,7 @@ abstract class SentryApollo4BuilderExtensionsTest(
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -199,20 +201,25 @@ abstract class SentryApollo4BuilderExtensionsTest(
         }
     }
 
-    private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true, id: String = "83") = runBlocking {
+    private fun executeQuery(
+        sut: ApolloClient = fixture.getSut(),
+        isSpanActive: Boolean = true,
+        id: String = "83",
+    ) = runBlocking {
         var tx: ITransaction? = null
         if (isSpanActive) {
             tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
             whenever(fixture.scopes.span).thenReturn(tx)
         }
 
-        val coroutine = launch {
-            try {
-                executeQueryImplementation(sut.query(LaunchDetailsQuery(id)))
-            } catch (e: ApolloException) {
-                return@launch
+        val coroutine =
+            launch {
+                try {
+                    executeQueryImplementation(sut.query(LaunchDetailsQuery(id)))
+                } catch (e: ApolloException) {
+                    return@launch
+                }
             }
-        }
 
         coroutine.join()
         tx?.finish()

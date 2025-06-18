@@ -1,4 +1,6 @@
-// ktlint-disable filename
+
+@file:Suppress("ktlint:standard:filename")
+
 package io.sentry.android.replay.util
 
 import android.annotation.TargetApi
@@ -18,7 +20,7 @@ internal class PersistableLinkedList(
     private val propertyName: String,
     private val options: SentryOptions,
     private val persistingExecutor: ScheduledExecutorService,
-    private val cacheProvider: () -> ReplayCache?
+    private val cacheProvider: () -> ReplayCache?,
 ) : ConcurrentLinkedDeque<RRWebEvent>() {
     // only overriding methods that we use, to observe the collection
     override fun addAll(elements: Collection<RRWebEvent>): Boolean {

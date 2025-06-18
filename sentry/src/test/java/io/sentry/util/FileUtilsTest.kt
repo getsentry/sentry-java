@@ -9,7 +9,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class FileUtilsTest {
-
     @Test
     fun `deleteRecursively returns true on null file`() {
         assertTrue(FileUtils.deleteRecursively(null))

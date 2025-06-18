@@ -4,7 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class LazyEvaluatorTest {
-
     class Fixture {
         var count = 0
 

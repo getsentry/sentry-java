@@ -7,7 +7,6 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
 class NoOpSpanTest {
-
     private val span = NoOpSpan.getInstance()
 
     @Test

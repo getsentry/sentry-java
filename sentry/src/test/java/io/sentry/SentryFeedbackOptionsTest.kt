@@ -5,7 +5,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SentryFeedbackOptionsTest {
-
     @Test
     fun `feedback options is initialized with default values`() {
         val options = SentryFeedbackOptions()
@@ -34,29 +33,30 @@ class SentryFeedbackOptionsTest {
 
     @Test
     fun `feedback options copy constructor`() {
-        val options = SentryFeedbackOptions().apply {
-            isNameRequired = true
-            isShowName = false
-            isEmailRequired = true
-            isShowEmail = false
-            isUseSentryUser = false
-            isShowBranding = false
-            formTitle = "Title"
-            submitButtonLabel = "Submit"
-            cancelButtonLabel = "Cancel Label"
-            nameLabel = "Name Label"
-            namePlaceholder = "Name Placeholder"
-            emailLabel = "Email Label"
-            emailPlaceholder = "Email Placeholder"
-            isRequiredLabel = "Required Label"
-            messageLabel = "Message Label"
-            messagePlaceholder = "Message Placeholder"
-            successMessageText = "Success Message"
-            onFormOpen = mock()
-            onFormClose = mock()
-            onSubmitSuccess = mock()
-            onSubmitError = mock()
-        }
+        val options =
+            SentryFeedbackOptions().apply {
+                isNameRequired = true
+                isShowName = false
+                isEmailRequired = true
+                isShowEmail = false
+                isUseSentryUser = false
+                isShowBranding = false
+                formTitle = "Title"
+                submitButtonLabel = "Submit"
+                cancelButtonLabel = "Cancel Label"
+                nameLabel = "Name Label"
+                namePlaceholder = "Name Placeholder"
+                emailLabel = "Email Label"
+                emailPlaceholder = "Email Placeholder"
+                isRequiredLabel = "Required Label"
+                messageLabel = "Message Label"
+                messagePlaceholder = "Message Placeholder"
+                successMessageText = "Success Message"
+                onFormOpen = mock()
+                onFormClose = mock()
+                onSubmitSuccess = mock()
+                onSubmitError = mock()
+            }
         val optionsCopy = SentryFeedbackOptions(options)
         assertEquals(true, optionsCopy.isNameRequired)
         assertEquals(false, optionsCopy.isShowName)

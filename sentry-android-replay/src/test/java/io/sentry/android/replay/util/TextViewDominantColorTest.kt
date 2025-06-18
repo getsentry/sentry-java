@@ -26,7 +26,6 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
 class TextViewDominantColorTest {
-
     @Test
     fun `when no spans, returns currentTextColor`() {
         val controller = buildActivity(TextViewActivity::class.java, null).setup()
@@ -45,9 +44,10 @@ class TextViewDominantColorTest {
         controller.create().start().resume()
 
         val text = "Hello, World!"
-        TextViewActivity.textView?.text = SpannableString(text).apply {
-            setSpan(ForegroundColorSpan(Color.RED), 0, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
-        }
+        TextViewActivity.textView?.text =
+            SpannableString(text).apply {
+                setSpan(ForegroundColorSpan(Color.RED), 0, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+            }
         TextViewActivity.textView?.setTextColor(Color.WHITE)
         TextViewActivity.textView?.requestLayout()
 
@@ -64,10 +64,11 @@ class TextViewDominantColorTest {
         controller.create().start().resume()
 
         val text = "Hello, World!"
-        TextViewActivity.textView?.text = SpannableString(text).apply {
-            setSpan(ForegroundColorSpan(Color.RED), 0, 5, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
-            setSpan(ForegroundColorSpan(Color.BLACK), 6, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
-        }
+        TextViewActivity.textView?.text =
+            SpannableString(text).apply {
+                setSpan(ForegroundColorSpan(Color.RED), 0, 5, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+                setSpan(ForegroundColorSpan(Color.BLACK), 6, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+            }
         TextViewActivity.textView?.setTextColor(Color.WHITE)
         TextViewActivity.textView?.requestLayout()
 
@@ -80,23 +81,24 @@ class TextViewDominantColorTest {
 }
 
 private class TextViewActivity : Activity() {
-
     companion object {
         var textView: TextView? = null
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val linearLayout = LinearLayout(this).apply {
-            setBackgroundColor(android.R.color.white)
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-        }
+        val linearLayout =
+            LinearLayout(this).apply {
+                setBackgroundColor(android.R.color.white)
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+            }
 
-        textView = TextView(this).apply {
-            text = "Hello, World!"
-            layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
-        }
+        textView =
+            TextView(this).apply {
+                text = "Hello, World!"
+                layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+            }
         linearLayout.addView(textView)
 
         setContentView(linearLayout)

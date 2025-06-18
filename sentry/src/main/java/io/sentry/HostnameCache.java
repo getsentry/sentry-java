@@ -40,10 +40,13 @@ public final class HostnameCache {
 
   /** Time for which the cache is kept. */
   private final long cacheDuration;
+
   /** Current value for hostname (might change over time). */
   @Nullable private volatile String hostname;
+
   /** Time at which the cache should expire. */
   private volatile long expirationTimestamp;
+
   /** Whether a cache update thread is currently running or not. */
   private final @NotNull AtomicBoolean updateRunning = new AtomicBoolean(false);
 

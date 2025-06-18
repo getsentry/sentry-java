@@ -1,4 +1,6 @@
-// ktlint-disable filename
+
+@file:Suppress("ktlint:standard:filename")
+
 package io.sentry.test
 
 import io.sentry.IScope
@@ -25,18 +27,23 @@ class ImmediateExecutorService : ISentryExecutorService {
     }
 
     override fun <T> submit(callable: Callable<T>): Future<T> = mock()
-    override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
+
+    override fun schedule(
+        runnable: Runnable,
+        delayMillis: Long,
+    ): Future<*> {
         if (runnable !is IBackpressureMonitor) {
             runnable.run()
         }
         return mock<Future<Runnable>>()
     }
+
     override fun close(timeoutMillis: Long) {}
+
     override fun isClosed(): Boolean = false
 }
 
 class DeferredExecutorService : ISentryExecutorService {
-
     private var runnables = ArrayList<Runnable>()
     private var scheduledRunnables = ArrayList<Runnable>()
 
@@ -63,26 +70,39 @@ class DeferredExecutorService : ISentryExecutorService {
     }
 
     override fun <T> submit(callable: Callable<T>): Future<T> = mock()
-    override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
+
+    override fun schedule(
+        runnable: Runnable,
+        delayMillis: Long,
+    ): Future<*> {
         synchronized(this) {
             scheduledRunnables.add(runnable)
         }
         return FutureTask {}
     }
+
     override fun close(timeoutMillis: Long) {}
+
     override fun isClosed(): Boolean = false
 
     fun hasScheduledRunnables(): Boolean = scheduledRunnables.isNotEmpty()
 }
 
-fun createSentryClientMock(enabled: Boolean = true) = mock<ISentryClient>().also {
-    val isEnabled = AtomicBoolean(enabled)
-    whenever(it.isEnabled).then { isEnabled.get() }
-    whenever(it.close()).then { isEnabled.set(false) }
-    whenever(it.close(any())).then { isEnabled.set(false) }
-}
+fun createSentryClientMock(enabled: Boolean = true) =
+    mock<ISentryClient>().also {
+        val isEnabled = AtomicBoolean(enabled)
+        whenever(it.isEnabled).then { isEnabled.get() }
+        whenever(it.close()).then { isEnabled.set(false) }
+        whenever(it.close(any())).then { isEnabled.set(false) }
+    }
 
-fun createTestScopes(options: SentryOptions? = null, enabled: Boolean = true, scope: IScope? = null, isolationScope: IScope? = null, globalScope: IScope? = null): Scopes {
+fun createTestScopes(
+    options: SentryOptions? = null,
+    enabled: Boolean = true,
+    scope: IScope? = null,
+    isolationScope: IScope? = null,
+    globalScope: IScope? = null,
+): Scopes {
     val optionsToUse = options ?: SentryOptions().also { it.dsn = "https://key@sentry.io/proj" }
     initForTest(optionsToUse)
     val scopeToUse = scope ?: Scope(optionsToUse)

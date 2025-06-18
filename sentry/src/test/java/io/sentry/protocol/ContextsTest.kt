@@ -9,7 +9,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class ContextsTest {
-
     @Test
     fun `copying contexts wont have the same references`() {
         val contexts = Contexts()
@@ -133,11 +132,12 @@ class ContextsTest {
     @Test
     fun `putAll map with null key and value does not throw`() {
         val contexts = Contexts()
-        val map = mutableMapOf(
-            null to null,
-            "k" to null,
-            "a" to 1
-        )
+        val map =
+            mutableMapOf(
+                null to null,
+                "k" to null,
+                "a" to 1,
+            )
         contexts.putAll(map)
 
         assertEquals(listOf("a"), contexts.keys().toList())

@@ -28,7 +28,10 @@ import java.lang.NullPointerException
  * Recursively traverses the view hierarchy and creates a [ViewHierarchyNode] for each view.
  * Supports Compose view hierarchy as well.
  */
-internal fun View.traverse(parentNode: ViewHierarchyNode, options: SentryOptions) {
+internal fun View.traverse(
+    parentNode: ViewHierarchyNode,
+    options: SentryOptions,
+) {
     if (this !is ViewGroup) {
         return
     }
@@ -102,7 +105,11 @@ internal fun Drawable?.isMaskable(): Boolean {
     }
 }
 
-internal fun TextLayout?.getVisibleRects(globalRect: Rect, paddingLeft: Int, paddingTop: Int): List<Rect> {
+internal fun TextLayout?.getVisibleRects(
+    globalRect: Rect,
+    paddingLeft: Int,
+    paddingTop: Int,
+): List<Rect> {
     if (this == null) {
         return listOf(globalRect)
     }
@@ -136,18 +143,21 @@ internal fun TextLayout?.getVisibleRects(globalRect: Rect, paddingLeft: Int, pad
  * [TextView.getExtendedPaddingTop]
  */
 internal val TextView.totalPaddingTopSafe: Int
-    get() = try {
-        totalPaddingTop
-    } catch (e: NullPointerException) {
-        extendedPaddingTop
-    }
+    get() =
+        try {
+            totalPaddingTop
+        } catch (e: NullPointerException) {
+            extendedPaddingTop
+        }
 
 /**
  * Converts an [Int] ARGB color to an opaque color by setting the alpha channel to 255.
  */
 internal fun Int.toOpaque() = this or 0xFF000000.toInt()
 
-internal class AndroidTextLayout(private val layout: Layout) : TextLayout {
+internal class AndroidTextLayout(
+    private val layout: Layout,
+) : TextLayout {
     override val lineCount: Int get() = layout.lineCount
     override val dominantTextColor: Int? get() {
         if (layout.text !is Spanned) return null
@@ -172,11 +182,20 @@ internal class AndroidTextLayout(private val layout: Layout) : TextLayout {
         }
         return dominantColor?.toOpaque()
     }
-    override fun getPrimaryHorizontal(line: Int, offset: Int): Float = layout.getPrimaryHorizontal(offset)
+
+    override fun getPrimaryHorizontal(
+        line: Int,
+        offset: Int,
+    ): Float = layout.getPrimaryHorizontal(offset)
+
     override fun getEllipsisCount(line: Int): Int = layout.getEllipsisCount(line)
+
     override fun getLineVisibleEnd(line: Int): Int = layout.getLineVisibleEnd(line)
+
     override fun getLineTop(line: Int): Int = layout.getLineTop(line)
+
     override fun getLineBottom(line: Int): Int = layout.getLineBottom(line)
+
     override fun getLineStart(line: Int): Int = layout.getLineStart(line)
 }
 
@@ -224,6 +243,4 @@ internal fun View?.removeOnPreDrawListenerSafe(listener: ViewTreeObserver.OnPreD
     }
 }
 
-internal fun View.hasSize(): Boolean {
-    return width != 0 && height != 0
-}
+internal fun View.hasSize(): Boolean = width != 0 && height != 0

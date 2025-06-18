@@ -47,9 +47,8 @@ internal abstract class BaseCaptureStrategy(
     private val scopes: IScopes?,
     private val dateProvider: ICurrentDateProvider,
     protected val replayExecutor: ScheduledExecutorService,
-    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
+    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
 ) : CaptureStrategy {
-
     internal companion object {
         private const val TAG = "CaptureStrategy"
     }
@@ -87,7 +86,7 @@ internal abstract class BaseCaptureStrategy(
     override fun start(
         segmentId: Int,
         replayId: SentryId,
-        replayType: ReplayType?
+        replayType: ReplayType?,
     ) {
         cache = replayCacheProvider?.invoke(replayId) ?: ReplayCache(options, replayId)
 
@@ -125,7 +124,7 @@ internal abstract class BaseCaptureStrategy(
         cache: ReplayCache? = this.cache,
         screenAtStart: String? = this.screenAtStart,
         breadcrumbs: List<Breadcrumb>? = null,
-        events: Deque<RRWebEvent> = this.currentEvents
+        events: Deque<RRWebEvent> = this.currentEvents,
     ): ReplaySegment =
         createSegment(
             scopes,
@@ -142,7 +141,7 @@ internal abstract class BaseCaptureStrategy(
             bitRate,
             screenAtStart,
             breadcrumbs,
-            events
+            events,
         )
 
     override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
@@ -160,6 +159,7 @@ internal abstract class BaseCaptureStrategy(
 
     private class ReplayPersistingExecutorServiceThreadFactory : ThreadFactory {
         private var cnt = 0
+
         override fun newThread(r: Runnable): Thread {
             val ret = Thread(r, "SentryReplayPersister-" + cnt++)
             ret.setDaemon(true)
@@ -172,7 +172,7 @@ internal abstract class BaseCaptureStrategy(
         propertyName: String,
         crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit = { _, _, newValue ->
             cache?.persistSegmentValues(propertyName, newValue.toString())
-        }
+        },
     ): ReadWriteProperty<Any?, T?> =
         object : ReadWriteProperty<Any?, T?> {
             private val value = AtomicReference(initialValue)
@@ -191,9 +191,16 @@ internal abstract class BaseCaptureStrategy(
                 }
             }
 
-            override fun getValue(thisRef: Any?, property: KProperty<*>): T? = value.get()
+            override fun getValue(
+                thisRef: Any?,
+                property: KProperty<*>,
+            ): T? = value.get()
 
-            override fun setValue(thisRef: Any?, property: KProperty<*>, value: T?) {
+            override fun setValue(
+                thisRef: Any?,
+                property: KProperty<*>,
+                value: T?,
+            ) {
                 val oldValue = this.value.getAndSet(value)
                 if (oldValue != value) {
                     runInBackground { onChange(propertyName, oldValue, value) }
@@ -206,7 +213,6 @@ internal abstract class BaseCaptureStrategy(
         propertyName: String,
         crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit = { _, _, newValue ->
             cache?.persistSegmentValues(propertyName, newValue.toString())
-        }
-    ): ReadWriteProperty<Any?, T> =
-        persistableAtomicNullable<T>(initialValue, propertyName, onChange) as ReadWriteProperty<Any?, T>
+        },
+    ): ReadWriteProperty<Any?, T> = persistableAtomicNullable<T>(initialValue, propertyName, onChange) as ReadWriteProperty<Any?, T>
 }

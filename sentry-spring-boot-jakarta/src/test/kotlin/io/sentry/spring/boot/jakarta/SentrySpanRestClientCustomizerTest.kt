@@ -38,7 +38,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentrySpanRestClientCustomizerTest {
-
     class Fixture {
         val sentryOptions = SentryOptions()
         val scopes = mock<IScopes>()
@@ -59,7 +58,7 @@ class SentrySpanRestClientCustomizerTest {
             isTransactionActive: Boolean,
             status: HttpStatus = HttpStatus.OK,
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            includeMockServerInTracingOrigins: Boolean = true
+            includeMockServerInTracingOrigins: Boolean = true,
         ): RestClient.Builder {
             customizer.customize(restClientBuilder)
 
@@ -76,7 +75,7 @@ class SentrySpanRestClientCustomizerTest {
                 MockResponse()
                     .setBody("OK")
                     .setSocketPolicy(socketPolicy)
-                    .setResponseCode(status.value())
+                    .setResponseCode(status.value()),
             )
 
             if (isTransactionActive) {
@@ -84,9 +83,11 @@ class SentrySpanRestClientCustomizerTest {
             }
 
             return restClientBuilder.apply {
-                val httpClient = HttpClients.custom()
-                    .disableAutomaticRetries() // Required to not make another request automatically
-                    .build()
+                val httpClient =
+                    HttpClients
+                        .custom()
+                        .disableAutomaticRetries() // Required to not make another request automatically
+                        .build()
                 val requestFactory = HttpComponentsClientHttpRequestFactory(httpClient)
                 requestFactory.setConnectTimeout(Duration.ofSeconds(2))
                 requestFactory.setConnectionRequestTimeout(Duration.ofSeconds(2))
@@ -99,8 +100,14 @@ class SentrySpanRestClientCustomizerTest {
 
     @Test
     fun `when transaction is active, creates span around RestClient HTTP call`() {
-        val result = fixture.getSut(isTransactionActive = true).build()
-            .get().uri(fixture.url).retrieve().toEntity(String::class.java)
+        val result =
+            fixture
+                .getSut(isTransactionActive = true)
+                .build()
+                .get()
+                .uri(fixture.url)
+                .retrieve()
+                .toEntity(String::class.java)
 
         assertThat(result.body).isEqualTo("OK")
         assertThat(fixture.transaction.spans).hasSize(1)
@@ -110,10 +117,19 @@ class SentrySpanRestClientCustomizerTest {
         assertThat(span.status).isEqualTo(SpanStatus.OK)
 
         val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
-        assertThat(recordedRequest.headers["sentry-trace"]!!).startsWith(fixture.transaction.spanContext.traceId.toString())
-            .endsWith("-1")
-            .doesNotContain(fixture.transaction.spanContext.spanId.toString())
-        assertThat(recordedRequest.headers["baggage"]!!).contains(fixture.transaction.spanContext.traceId.toString())
+        assertThat(recordedRequest.headers["sentry-trace"]!!)
+            .startsWith(
+                fixture.transaction.spanContext.traceId
+                    .toString(),
+            ).endsWith("-1")
+            .doesNotContain(
+                fixture.transaction.spanContext.spanId
+                    .toString(),
+            )
+        assertThat(recordedRequest.headers["baggage"]!!).contains(
+            fixture.transaction.spanContext.traceId
+                .toString(),
+        )
     }
 
     @Test
@@ -123,10 +139,11 @@ class SentrySpanRestClientCustomizerTest {
         headers.add("baggage", "thirdPartyBaggage=someValue")
         headers.add(
             "baggage",
-            "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"
+            "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
         )
 
-        sut.build()
+        sut
+            .build()
             .get()
             .uri(fixture.url)
             .httpRequest { it.headers.addAll(headers) }
@@ -139,7 +156,11 @@ class SentrySpanRestClientCustomizerTest {
 
         val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
         assertEquals(baggageHeaderValues.size, 1)
-        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
+        assertTrue(
+            baggageHeaderValues[0].startsWith(
+                "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+            ),
+        )
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-transaction=aTransaction"))
         assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
@@ -147,7 +168,9 @@ class SentrySpanRestClientCustomizerTest {
 
     @Test
     fun `when transaction is active and server is not listed in tracing origins, does not add sentry trace header to the request`() {
-        fixture.getSut(isTransactionActive = true, includeMockServerInTracingOrigins = false).build()
+        fixture
+            .getSut(isTransactionActive = true, includeMockServerInTracingOrigins = false)
+            .build()
             .get()
             .uri(fixture.url)
             .retrieve()
@@ -158,7 +181,8 @@ class SentrySpanRestClientCustomizerTest {
 
     @Test
     fun `when transaction is active and server is listed in tracing origins, adds sentry trace header to the request`() {
-        fixture.getSut(isTransactionActive = true, includeMockServerInTracingOrigins = true)
+        fixture
+            .getSut(isTransactionActive = true, includeMockServerInTracingOrigins = true)
             .build()
             .get()
             .uri(fixture.url)
@@ -171,7 +195,8 @@ class SentrySpanRestClientCustomizerTest {
     @Test
     fun `when transaction is active and response code is not 2xx, creates span with error status around RestClient HTTP call`() {
         try {
-            fixture.getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR)
+            fixture
+                .getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR)
                 .build()
                 .get()
                 .uri(fixture.url)
@@ -189,10 +214,12 @@ class SentrySpanRestClientCustomizerTest {
     @Test
     fun `when transaction is active and throws IO exception, creates span with error status around RestClient HTTP call`() {
         try {
-            val sut = fixture.getSut(
-                isTransactionActive = true,
-                socketPolicy = SocketPolicy.DISCONNECT_AT_START
-            ).build()
+            val sut =
+                fixture
+                    .getSut(
+                        isTransactionActive = true,
+                        socketPolicy = SocketPolicy.DISCONNECT_AT_START,
+                    ).build()
             sut
                 .get()
                 .uri(fixture.url)
@@ -211,11 +238,14 @@ class SentrySpanRestClientCustomizerTest {
 
     @Test
     fun `when transaction is not active, does not create span around RestClient HTTP call`() {
-        val result = fixture.getSut(isTransactionActive = false).build()
-            .get()
-            .uri(fixture.url)
-            .retrieve()
-            .toEntity(String::class.java)
+        val result =
+            fixture
+                .getSut(isTransactionActive = false)
+                .build()
+                .get()
+                .uri(fixture.url)
+                .retrieve()
+                .toEntity(String::class.java)
 
         assertThat(result.body).isEqualTo("OK")
         assertThat(fixture.transaction.spans).isEmpty()
@@ -228,10 +258,11 @@ class SentrySpanRestClientCustomizerTest {
         headers.add("baggage", "thirdPartyBaggage=someValue")
         headers.add(
             "baggage",
-            "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"
+            "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
         )
 
-        sut.build()
+        sut
+            .build()
             .get()
             .uri(fixture.url)
             .httpRequest { it.headers.addAll(headers) }
@@ -244,7 +275,11 @@ class SentrySpanRestClientCustomizerTest {
 
         val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
         assertEquals(baggageHeaderValues.size, 1)
-        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
+        assertTrue(
+            baggageHeaderValues[0].startsWith(
+                "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+            ),
+        )
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
     }
@@ -255,7 +290,8 @@ class SentrySpanRestClientCustomizerTest {
         val sut = fixture.getSut(isTransactionActive = false)
         val headers = HttpHeaders()
 
-        sut.build()
+        sut
+            .build()
             .get()
             .uri(fixture.url)
             .httpRequest { it.headers.addAll(headers) }
@@ -269,7 +305,8 @@ class SentrySpanRestClientCustomizerTest {
 
     @Test
     fun `when transaction is active adds breadcrumb when http calls succeeds`() {
-        fixture.getSut(isTransactionActive = true)
+        fixture
+            .getSut(isTransactionActive = true)
             .build()
             .post()
             .uri(fixture.url)
@@ -283,7 +320,7 @@ class SentrySpanRestClientCustomizerTest {
                 assertEquals("POST", it.data["method"])
                 assertEquals(7, it.data["request_body_size"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -291,7 +328,9 @@ class SentrySpanRestClientCustomizerTest {
     @Test
     fun `when transaction is active adds breadcrumb when http calls results in exception`() {
         try {
-            fixture.getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR).build()
+            fixture
+                .getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR)
+                .build()
                 .get()
                 .uri(fixture.url)
                 .retrieve()
@@ -304,13 +343,15 @@ class SentrySpanRestClientCustomizerTest {
                 assertEquals(fixture.url, it.data["url"])
                 assertEquals("GET", it.data["method"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `when transaction is not active adds breadcrumb when http calls succeeds`() {
-        fixture.getSut(isTransactionActive = false).build()
+        fixture
+            .getSut(isTransactionActive = false)
+            .build()
             .post()
             .uri(fixture.url)
             .body("content")
@@ -323,7 +364,7 @@ class SentrySpanRestClientCustomizerTest {
                 assertEquals("POST", it.data["method"])
                 assertEquals(7, it.data["request_body_size"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -331,7 +372,9 @@ class SentrySpanRestClientCustomizerTest {
     @Test
     fun `when transaction is not active adds breadcrumb when http calls results in exception`() {
         try {
-            fixture.getSut(isTransactionActive = false, status = HttpStatus.INTERNAL_SERVER_ERROR).build()
+            fixture
+                .getSut(isTransactionActive = false, status = HttpStatus.INTERNAL_SERVER_ERROR)
+                .build()
                 .get()
                 .uri(fixture.url)
                 .retrieve()
@@ -344,7 +387,7 @@ class SentrySpanRestClientCustomizerTest {
                 assertEquals(fixture.url, it.data["url"])
                 assertEquals("GET", it.data["method"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 }

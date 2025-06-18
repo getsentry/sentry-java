@@ -8,7 +8,6 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 
 class AndroidMemoryCollectorTest {
-
     private val fixture = Fixture()
 
     private class Fixture {

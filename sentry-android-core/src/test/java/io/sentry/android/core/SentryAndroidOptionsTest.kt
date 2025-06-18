@@ -12,7 +12,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryAndroidOptionsTest {
-
     @Test
     fun `init should set clientName`() {
         val sentryOptions = SentryAndroidOptions()
@@ -35,14 +34,14 @@ class SentryAndroidOptionsTest {
             sdkVersion.packageSet.any {
                 it.name == "maven:io.sentry:sentry-android-core" &&
                     it.version == BuildConfig.VERSION_NAME
-            }
+            },
         )
 
         assertTrue(
             sdkVersion.packageSet.any {
                 it.name == "maven:io.sentry:sentry" &&
                     it.version == BuildConfig.VERSION_NAME
-            }
+            },
         )
     }
 
@@ -54,9 +53,10 @@ class SentryAndroidOptionsTest {
 
     @Test
     fun `set debugImagesLoader accepts non null value`() {
-        val sentryOptions = SentryAndroidOptions().apply {
-            debugImagesLoader = CustomDebugImagesLoader()
-        }
+        val sentryOptions =
+            SentryAndroidOptions().apply {
+                debugImagesLoader = CustomDebugImagesLoader()
+            }
         assertNotNull(sentryOptions.debugImagesLoader)
     }
 
@@ -69,27 +69,30 @@ class SentryAndroidOptionsTest {
     @Test
     fun `set transactionProfiler accepts non null value`() {
         val profiler = mock<ITransactionProfiler>()
-        val sentryOptions = SentryAndroidOptions().apply {
-            setTransactionProfiler(profiler)
-        }
+        val sentryOptions =
+            SentryAndroidOptions().apply {
+                setTransactionProfiler(profiler)
+            }
         assertEquals(profiler, sentryOptions.transactionProfiler)
     }
 
     @Test
     fun `set transactionProfiler to null is ignored`() {
-        val sentryOptions = SentryAndroidOptions().apply {
-            setTransactionProfiler(null)
-        }
+        val sentryOptions =
+            SentryAndroidOptions().apply {
+                setTransactionProfiler(null)
+            }
         assertEquals(NoOpTransactionProfiler.getInstance(), sentryOptions.transactionProfiler)
     }
 
     @Test
     fun `set transactionProfiler multiple times is ignored`() {
         val profiler = mock<ITransactionProfiler>()
-        val sentryOptions = SentryAndroidOptions().apply {
-            setTransactionProfiler(profiler)
-            setTransactionProfiler(mock())
-        }
+        val sentryOptions =
+            SentryAndroidOptions().apply {
+                setTransactionProfiler(profiler)
+                setTransactionProfiler(mock())
+            }
         assertEquals(profiler, sentryOptions.transactionProfiler)
     }
 
@@ -182,6 +185,7 @@ class SentryAndroidOptionsTest {
 
     private class CustomDebugImagesLoader : IDebugImagesLoader {
         override fun loadDebugImages(): List<DebugImage>? = null
+
         override fun loadDebugImagesForAddresses(addresses: Set<String>?): Set<DebugImage>? = null
 
         override fun clearDebugImages() {}

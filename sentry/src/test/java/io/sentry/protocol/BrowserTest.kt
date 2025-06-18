@@ -6,7 +6,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class BrowserTest {
-
     @Test
     fun `copying browser wont have the same references`() {
         val browser = Browser()

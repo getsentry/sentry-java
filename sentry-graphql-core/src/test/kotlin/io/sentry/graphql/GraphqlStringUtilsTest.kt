@@ -26,9 +26,13 @@ class GraphqlStringUtilsTest {
 
     @Test
     fun `type to String`() {
-        val scalarType = GraphQLScalarType.newScalar().name("MyResponseType").coercing(
-            GraphqlStringCoercing()
-        ).build()
+        val scalarType =
+            GraphQLScalarType
+                .newScalar()
+                .name("MyResponseType")
+                .coercing(
+                    GraphqlStringCoercing(),
+                ).build()
         val string = GraphqlStringUtils.typeToString(scalarType)
         assertEquals("MyResponseType", string)
     }
@@ -40,14 +44,25 @@ class GraphqlStringUtilsTest {
 
     @Test
     fun `objectType to String`() {
-        val scalarType = GraphQLScalarType.newScalar().name("MyResponseType").coercing(
-            GraphqlStringCoercing()
-        ).build()
-        val field = GraphQLFieldDefinition.newFieldDefinition()
-            .name("myQueryFieldName")
-            .type(scalarType)
-            .build()
-        val objectType = GraphQLObjectType.newObject().name("QUERY").field(field).build()
+        val scalarType =
+            GraphQLScalarType
+                .newScalar()
+                .name("MyResponseType")
+                .coercing(
+                    GraphqlStringCoercing(),
+                ).build()
+        val field =
+            GraphQLFieldDefinition
+                .newFieldDefinition()
+                .name("myQueryFieldName")
+                .type(scalarType)
+                .build()
+        val objectType =
+            GraphQLObjectType
+                .newObject()
+                .name("QUERY")
+                .field(field)
+                .build()
         val string = GraphqlStringUtils.objectTypeToString(objectType)
         assertEquals("QUERY", string)
     }

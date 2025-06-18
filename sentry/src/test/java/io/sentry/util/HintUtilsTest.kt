@@ -11,7 +11,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class HintUtilsTest {
-
     @Test
     fun `if event is Cached, it should not apply scopes data`() {
         val hints = HintUtils.createWithTypeCheckHint(mock<Cached>())

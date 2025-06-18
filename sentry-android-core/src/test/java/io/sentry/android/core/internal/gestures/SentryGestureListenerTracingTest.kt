@@ -45,9 +45,10 @@ class SentryGestureListenerTracingTest {
         val window = mock<Window>()
         val context = mock<Context>()
         val resources = mock<Resources>()
-        val options = SentryAndroidOptions().apply {
-            dsn = "https://key@sentry.io/proj"
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+            }
         val scopes = mock<IScopes>()
         val event = mock<MotionEvent>()
         val scope = mock<IScope>()
@@ -61,7 +62,7 @@ class SentryGestureListenerTracingTest {
             tracesSampleRate: Double? = 1.0,
             isEnableUserInteractionTracing: Boolean = true,
             transaction: SentryTracer? = null,
-            isEnableAutoTraceIdGeneration: Boolean = true
+            isEnableAutoTraceIdGeneration: Boolean = true,
         ): SentryGestureListener {
             options.tracesSampleRate = tracesSampleRate
             options.isEnableUserInteractionTracing = isEnableUserInteractionTracing
@@ -83,7 +84,7 @@ class SentryGestureListenerTracingTest {
                 resources.mockForTarget(target, resourceName)
             } else {
                 whenever(resources.getResourceEntryName(target.id)).thenThrow(
-                    Resources.NotFoundException()
+                    Resources.NotFoundException(),
                 )
             }
             whenever(context.resources).thenReturn(resources)
@@ -97,7 +98,7 @@ class SentryGestureListenerTracingTest {
             return SentryGestureListener(
                 activity,
                 scopes,
-                options
+                options,
             )
         }
     }
@@ -112,7 +113,7 @@ class SentryGestureListenerTracingTest {
 
         verify(fixture.scopes, never()).startTransaction(
             any(),
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -124,7 +125,7 @@ class SentryGestureListenerTracingTest {
 
         verify(fixture.scopes, never()).startTransaction(
             any(),
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -136,7 +137,7 @@ class SentryGestureListenerTracingTest {
 
         verify(fixture.scopes, never()).startTransaction(
             any(),
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -208,7 +209,7 @@ class SentryGestureListenerTracingTest {
                 assertEquals("Activity.test_button", it.name)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -224,9 +225,9 @@ class SentryGestureListenerTracingTest {
                 assertEquals(fixture.options.idleTimeout, transactionOptions.idleTimeout)
                 assertEquals(
                     TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION,
-                    transactionOptions.deadlineTimeout
+                    transactionOptions.deadlineTimeout,
                 )
-            }
+            },
         )
     }
 
@@ -241,7 +242,7 @@ class SentryGestureListenerTracingTest {
                 assertEquals("ui.action.click", it.operation)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -257,7 +258,7 @@ class SentryGestureListenerTracingTest {
                 assertEquals("Activity.test_button", it.name)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
 
         clearInvocations(fixture.scopes)
@@ -287,7 +288,7 @@ class SentryGestureListenerTracingTest {
                 assertEquals("Activity.test_checkbox", it.name)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -303,7 +304,7 @@ class SentryGestureListenerTracingTest {
                 assertEquals("ui.action.click", it.operation)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
 
         clearInvocations(fixture.scopes)
@@ -325,7 +326,7 @@ class SentryGestureListenerTracingTest {
                 assertEquals("ui.action.scroll", it.operation)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -336,7 +337,7 @@ class SentryGestureListenerTracingTest {
         val sut = fixture.getSut<View>(transaction = transaction)
 
         whenever(transaction.spanContext).thenReturn(
-            SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null)
+            SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null),
         )
 
         // when the same button is clicked twice
@@ -349,7 +350,7 @@ class SentryGestureListenerTracingTest {
                 assertEquals("Activity.test_button", it.name)
                 assertEquals(TransactionNameSource.COMPONENT, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -396,12 +397,13 @@ class SentryGestureListenerTracingTest {
                 // Verify that a new propagation context was set and it's different from the initial one
                 assertNotNull(scope.propagationContext)
                 assertNotEquals(initialPropagationContext, scope.propagationContext)
-            }
+            },
         )
     }
 
     internal open class ScrollableListView : AbsListView(mock()) {
         override fun getAdapter(): ListAdapter = mock()
+
         override fun setSelection(position: Int) = Unit
     }
 }

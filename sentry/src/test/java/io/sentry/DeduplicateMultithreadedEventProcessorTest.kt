@@ -11,29 +11,28 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class DeduplicateMultithreadedEventProcessorTest {
-
     class Fixture {
-
-        fun getSut(): DeduplicateMultithreadedEventProcessor {
-            return DeduplicateMultithreadedEventProcessor(SentryOptions())
-        }
+        fun getSut(): DeduplicateMultithreadedEventProcessor = DeduplicateMultithreadedEventProcessor(SentryOptions())
 
         fun getEvent(
             type: String? = null,
             isHandled: Boolean = true,
-            tid: Long? = null
+            tid: Long? = null,
         ): SentryEvent {
-            val event = SentryEvent().apply {
-                exceptions = listOf(
-                    SentryException().apply {
-                        this.type = type
-                        this.threadId = tid
-                        mechanism = Mechanism().apply {
-                            this.isHandled = isHandled
-                        }
-                    }
-                )
-            }
+            val event =
+                SentryEvent().apply {
+                    exceptions =
+                        listOf(
+                            SentryException().apply {
+                                this.type = type
+                                this.threadId = tid
+                                mechanism =
+                                    Mechanism().apply {
+                                        this.isHandled = isHandled
+                                    }
+                            },
+                        )
+                }
             return event
         }
     }
@@ -135,7 +134,7 @@ class DeduplicateMultithreadedEventProcessorTest {
         processor.process(event2, hint)
         assertEquals(
             EventDropReason.MULTITHREADED_DEDUPLICATION,
-            HintUtils.getEventDropReason(hint)
+            HintUtils.getEventDropReason(hint),
         )
     }
 

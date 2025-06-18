@@ -37,18 +37,18 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(
     sdk = [26],
-    shadows = [ReplayShadowMediaCodec::class]
+    shadows = [ReplayShadowMediaCodec::class],
 )
 class ReplayCacheTest {
-
     @get:Rule
     val tmpDir = TemporaryFolder()
 
     internal class Fixture {
         val options = SentryOptions()
+
         fun getSut(
             dir: TemporaryFolder?,
-            replayId: SentryId = SentryId()
+            replayId: SentryId = SentryId(),
         ): ReplayCache {
             options.run {
                 cacheDirPath = dir?.newFolder()?.absolutePath
@@ -68,10 +68,11 @@ class ReplayCacheTest {
     @Test
     fun `when no cacheDirPath specified, does not store screenshots`() {
         val replayId = SentryId()
-        val replayCache = fixture.getSut(
-            null,
-            replayId
-        )
+        val replayCache =
+            fixture.getSut(
+                null,
+                replayId,
+            )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
@@ -82,10 +83,11 @@ class ReplayCacheTest {
     @Test
     fun `stores screenshots with timestamp as name`() {
         val replayId = SentryId()
-        val replayCache = fixture.getSut(
-            tmpDir,
-            replayId
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+                replayId,
+            )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
@@ -98,9 +100,10 @@ class ReplayCacheTest {
 
     @Test
     fun `when no frames are provided, returns nothing`() {
-        val replayCache = fixture.getSut(
-            tmpDir
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+            )
 
         val video = replayCache.createVideoOf(5000L, 0, 0, 100, 200, 1, 20_000)
 
@@ -110,9 +113,10 @@ class ReplayCacheTest {
     @Test
     fun `deletes frames after creating a video`() {
         ReplayShadowMediaCodec.framesToEncode = 3
-        val replayCache = fixture.getSut(
-            tmpDir
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+            )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
@@ -131,9 +135,10 @@ class ReplayCacheTest {
 
     @Test
     fun `repeats last known frame for the segment duration`() {
-        val replayCache = fixture.getSut(
-            tmpDir
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+            )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
@@ -147,9 +152,10 @@ class ReplayCacheTest {
 
     @Test
     fun `repeats last known frame for the segment duration for each timespan`() {
-        val replayCache = fixture.getSut(
-            tmpDir
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+            )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
@@ -164,9 +170,10 @@ class ReplayCacheTest {
 
     @Test
     fun `repeats last known frame for each segment`() {
-        val replayCache = fixture.getSut(
-            tmpDir
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+            )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
@@ -188,9 +195,10 @@ class ReplayCacheTest {
     fun `respects frameRate`() {
         ReplayShadowMediaCodec.framesToEncode = 6
 
-        val replayCache = fixture.getSut(
-            tmpDir
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+            )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
@@ -206,9 +214,10 @@ class ReplayCacheTest {
 
     @Test
     fun `does not add frame when bitmap is recycled`() {
-        val replayCache = fixture.getSut(
-            tmpDir
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+            )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888).also { it.recycle() }
         replayCache.addFrame(bitmap, 1)
@@ -218,9 +227,10 @@ class ReplayCacheTest {
 
     @Test
     fun `addFrame with File path works`() {
-        val replayCache = fixture.getSut(
-            tmpDir
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+            )
 
         val flutterCacheDir =
             File(fixture.options.cacheDirPath!!, "flutter_replay").also { it.mkdirs() }
@@ -240,9 +250,10 @@ class ReplayCacheTest {
 
     @Test
     fun `rotates frames`() {
-        val replayCache = fixture.getSut(
-            tmpDir
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+            )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
@@ -257,9 +268,10 @@ class ReplayCacheTest {
 
     @Test
     fun `rotate returns first screen in buffer`() {
-        val replayCache = fixture.getSut(
-            tmpDir
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+            )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1, "MainActivity")
@@ -274,10 +286,11 @@ class ReplayCacheTest {
     @Test
     fun `does not persist segment if already closed`() {
         val replayId = SentryId()
-        val replayCache = fixture.getSut(
-            tmpDir,
-            replayId
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+                replayId,
+            )
 
         replayCache.close()
 
@@ -288,10 +301,11 @@ class ReplayCacheTest {
     @Test
     fun `when file does not exist upon persisting creates it`() {
         val replayId = SentryId()
-        val replayCache = fixture.getSut(
-            tmpDir,
-            replayId
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+                replayId,
+            )
 
         replayCache.ongoingSegmentFile?.delete()
 
@@ -303,10 +317,11 @@ class ReplayCacheTest {
     @Test
     fun `stores segment key value pairs`() {
         val replayId = SentryId()
-        val replayCache = fixture.getSut(
-            tmpDir,
-            replayId
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+                replayId,
+            )
 
         replayCache.persistSegmentValues("key1", "value1")
         replayCache.persistSegmentValues("key2", "value2")
@@ -319,10 +334,11 @@ class ReplayCacheTest {
     @Test
     fun `removes segment key value pair, if the value is null`() {
         val replayId = SentryId()
-        val replayCache = fixture.getSut(
-            tmpDir,
-            replayId
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+                replayId,
+            )
 
         replayCache.persistSegmentValues("key1", "value1")
         replayCache.persistSegmentValues("key2", "value2")
@@ -363,7 +379,7 @@ class ReplayCacheTest {
                 $SEGMENT_KEY_BIT_RATE=75000
                 $SEGMENT_KEY_ID=0
                 $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
-                """.trimIndent()
+                """.trimIndent(),
             )
             // omitting replay type, which is required, for the test
         }
@@ -392,7 +408,7 @@ class ReplayCacheTest {
                 $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
                 $SEGMENT_KEY_REPLAY_TYPE=SESSION
                 $SEGMENT_KEY_REPLAY_RECORDING={}[{"type":3,"timestamp":1720693523997,"data":{"source":2,"type":7,"id":0,"x":314.2979431152344,"y":625.44140625,"pointerType":2,"pointerId":0}},{"type":3,"timestamp":1720693524774,"data":{"source":2,"type":9,"id":0,"x":322.00390625,"y":424.4384765625,"pointerType":2,"pointerId":0}}]
-                """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -445,7 +461,7 @@ class ReplayCacheTest {
                 $SEGMENT_KEY_ID=0
                 $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
                 $SEGMENT_KEY_REPLAY_TYPE=SESSION
-                """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -458,22 +474,34 @@ class ReplayCacheTest {
         val lastSegment = ReplayCache.fromDisk(fixture.options, replayId)!!
 
         assertEquals(1, lastSegment.cache.frames.size)
-        assertEquals(1, lastSegment.cache.frames.first().timestamp)
-        assertEquals("1.jpg", lastSegment.cache.frames.first().screenshot.name)
+        assertEquals(
+            1,
+            lastSegment.cache.frames
+                .first()
+                .timestamp,
+        )
+        assertEquals(
+            "1.jpg",
+            lastSegment.cache.frames
+                .first()
+                .screenshot.name,
+        )
     }
 
     @Test
     fun `when videoFile exists and is not empty, deletes it before writing`() {
         ReplayShadowMediaCodec.framesToEncode = 3
 
-        val replayCache = fixture.getSut(
-            tmpDir
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+            )
 
-        val oldVideoFile = File(replayCache.replayCacheDir, "0.mp4").also {
-            it.createNewFile()
-            it.writeBytes(byteArrayOf(1, 2, 3))
-        }
+        val oldVideoFile =
+            File(replayCache.replayCacheDir, "0.mp4").also {
+                it.createNewFile()
+                it.writeBytes(byteArrayOf(1, 2, 3))
+            }
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)
         replayCache.addFrame(bitmap, 1001)
@@ -503,7 +531,7 @@ class ReplayCacheTest {
                 $SEGMENT_KEY_ID=2
                 $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
                 $SEGMENT_KEY_REPLAY_TYPE=BUFFER
-                """.trimIndent()
+                """.trimIndent(),
             )
         }
 
@@ -522,9 +550,10 @@ class ReplayCacheTest {
     fun `when screenshot is corrupted, deletes it immediately`() {
         ShadowBitmapFactory.setAllowInvalidImageData(false)
         ReplayShadowMediaCodec.framesToEncode = 1
-        val replayCache = fixture.getSut(
-            tmpDir
-        )
+        val replayCache =
+            fixture.getSut(
+                tmpDir,
+            )
 
         val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
         replayCache.addFrame(bitmap, 1)

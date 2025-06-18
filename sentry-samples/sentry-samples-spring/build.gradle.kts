@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
 
 plugins {
     alias(libs.plugins.springboot2) apply false
@@ -12,8 +13,18 @@ plugins {
 
 group = "io.sentry.sample.spring"
 version = "0.0.1-SNAPSHOT"
-java.sourceCompatibility = JavaVersion.VERSION_1_8
-java.targetCompatibility = JavaVersion.VERSION_1_8
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+spotless {
+    kotlinGradle {
+        // This file throws an unclear error
+        targetExclude("build.gradle.kts")
+    }
+}
 
 repositories {
     mavenCentral()
@@ -21,7 +32,7 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+        mavenBom(BOM_COORDINATES)
     }
 }
 

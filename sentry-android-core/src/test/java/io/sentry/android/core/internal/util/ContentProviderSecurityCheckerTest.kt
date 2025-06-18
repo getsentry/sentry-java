@@ -11,17 +11,14 @@ import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
 class ContentProviderSecurityCheckerTest {
-
     private class Fixture {
         val buildInfoProvider = mock<BuildInfoProvider>()
 
-        fun getSut(
-            sdkVersion: Int = Build.VERSION_CODES.O
-        ): ContentProviderSecurityChecker {
+        fun getSut(sdkVersion: Int = Build.VERSION_CODES.O): ContentProviderSecurityChecker {
             whenever(buildInfoProvider.sdkInfoVersion).thenReturn(sdkVersion)
 
             return ContentProviderSecurityChecker(
-                buildInfoProvider
+                buildInfoProvider,
             )
         }
     }

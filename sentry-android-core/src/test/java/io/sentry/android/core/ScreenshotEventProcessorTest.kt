@@ -28,7 +28,6 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class ScreenshotEventProcessorTest {
-
     private class Fixture {
         val buildInfo = mock<BuildInfoProvider>()
         val activity = mock<Activity>()
@@ -36,9 +35,10 @@ class ScreenshotEventProcessorTest {
         val view = mock<View>()
         val rootView = mock<View>()
         val threadChecker = mock<IThreadChecker>()
-        val options = SentryAndroidOptions().apply {
-            dsn = "https://key@sentry.io/proj"
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+            }
         val mainProcessor = MainEventProcessor(options)
 
         init {
@@ -190,7 +190,11 @@ class ScreenshotEventProcessorTest {
         val sut = fixture.getSut(true)
         val event = fixture.mainProcessor.process(getEvent(), hint)
         sut.process(event, hint)
-        assertTrue(fixture.options.sdkVersion!!.integrationSet.contains("Screenshot"))
+        assertTrue(
+            fixture.options.sdkVersion!!
+                .integrationSet
+                .contains("Screenshot"),
+        )
     }
 
     @Test
@@ -200,7 +204,11 @@ class ScreenshotEventProcessorTest {
         val sut = fixture.getSut(false)
         val event = fixture.mainProcessor.process(getEvent(), hint)
         sut.process(event, hint)
-        assertFalse(fixture.options.sdkVersion!!.integrationSet.contains("Screenshot"))
+        assertFalse(
+            fixture.options.sdkVersion!!
+                .integrationSet
+                .contains("Screenshot"),
+        )
     }
 
     @Test
@@ -208,9 +216,10 @@ class ScreenshotEventProcessorTest {
         CurrentActivityHolder.getInstance().setActivity(fixture.activity)
 
         val processor = fixture.getSut(true)
-        val event = SentryEvent().apply {
-            exceptions = listOf(SentryException())
-        }
+        val event =
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
         var hint0 = Hint()
         processor.process(event, hint0)
         assertNotNull(hint0.screenshot)
@@ -237,9 +246,10 @@ class ScreenshotEventProcessorTest {
         }
 
         val processor = fixture.getSut(true)
-        val event = SentryEvent().apply {
-            exceptions = listOf(SentryException())
-        }
+        val event =
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
         val hint0 = Hint()
         processor.process(event, hint0)
         assertFalse(debounceFlag)
@@ -262,9 +272,10 @@ class ScreenshotEventProcessorTest {
         fixture.options.setBeforeScreenshotCaptureCallback { _, _, _ ->
             true
         }
-        val event = SentryEvent().apply {
-            exceptions = listOf(SentryException())
-        }
+        val event =
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
         val hint0 = Hint()
         processor.process(event, hint0)
         processor.process(event, hint0)
@@ -285,9 +296,10 @@ class ScreenshotEventProcessorTest {
         }
         val processor = fixture.getSut(true)
 
-        val event = SentryEvent().apply {
-            exceptions = listOf(SentryException())
-        }
+        val event =
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
         val hint = Hint()
 
         processor.process(event, hint)
@@ -303,9 +315,10 @@ class ScreenshotEventProcessorTest {
         }
         val processor = fixture.getSut(true)
 
-        val event = SentryEvent().apply {
-            exceptions = listOf(SentryException())
-        }
+        val event =
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
         val hint = Hint()
 
         processor.process(event, hint)

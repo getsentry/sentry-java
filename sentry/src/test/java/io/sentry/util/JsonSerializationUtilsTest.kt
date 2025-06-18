@@ -7,7 +7,7 @@ import org.mockito.invocation.InvocationOnMock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import java.io.Writer
-import java.util.*
+import java.util.Calendar
 import java.util.concurrent.atomic.AtomicIntegerArray
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -15,7 +15,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class JsonSerializationUtilsTest {
-
     @Test
     fun `serializes calendar to map`() {
         val calendar = Calendar.getInstance()
@@ -23,14 +22,15 @@ class JsonSerializationUtilsTest {
 
         val actual = JsonSerializationUtils.calendarToMap(calendar)
 
-        val expected = mapOf<String, Any?>(
-            "month" to 0,
-            "year" to 2022,
-            "dayOfMonth" to 1,
-            "hourOfDay" to 11,
-            "minute" to 59,
-            "second" to 58
-        )
+        val expected =
+            mapOf<String, Any?>(
+                "month" to 0,
+                "year" to 2022,
+                "dayOfMonth" to 1,
+                "hourOfDay" to 11,
+                "minute" to 59,
+                "second" to 58,
+            )
         assertEquals(expected, actual)
     }
 
@@ -42,13 +42,14 @@ class JsonSerializationUtilsTest {
 
     @Test
     fun `returns byte array of given serializable`() {
-        val mockSerializer: JsonSerializer = mock {
-            on(it.serialize(any<JsonSerializable>(), any())).then { invocationOnMock: InvocationOnMock ->
-                val writer: Writer = invocationOnMock.getArgument(1)
-                writer.write("mock-data")
-                writer.flush()
+        val mockSerializer: JsonSerializer =
+            mock {
+                on(it.serialize(any<JsonSerializable>(), any())).then { invocationOnMock: InvocationOnMock ->
+                    val writer: Writer = invocationOnMock.getArgument(1)
+                    writer.write("mock-data")
+                    writer.flush()
+                }
             }
-        }
         val logger: ILogger = mock()
         val serializable: JsonSerializable = mock()
         val actualBytes = JsonSerializationUtils.bytesFrom(mockSerializer, logger, serializable)
@@ -58,11 +59,12 @@ class JsonSerializationUtilsTest {
 
     @Test
     fun `return null on serialization error`() {
-        val mockSerializer: JsonSerializer = mock {
-            on(it.serialize(any<JsonSerializable>(), any())).then {
-                throw Exception("Mocked exception.")
+        val mockSerializer: JsonSerializer =
+            mock {
+                on(it.serialize(any<JsonSerializable>(), any())).then {
+                    throw Exception("Mocked exception.")
+                }
             }
-        }
         val logger: ILogger = mock()
         val serializable: JsonSerializable = mock()
         val actualBytes = JsonSerializationUtils.bytesFrom(mockSerializer, logger, serializable)

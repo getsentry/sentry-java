@@ -37,14 +37,14 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class SentryFeignClientTest {
-
     class Fixture {
         val scopes = mock<IScopes>()
         val server = MockWebServer()
         val sentryTracer: SentryTracer
-        val sentryOptions = SentryOptions().apply {
-            dsn = "http://key@localhost/proj"
-        }
+        val sentryOptions =
+            SentryOptions().apply {
+                dsn = "http://key@localhost/proj"
+            }
         val scope = Scope(sentryOptions)
 
         init {
@@ -58,7 +58,7 @@ class SentryFeignClientTest {
             httpStatusCode: Int = 201,
             responseBody: String = "success",
             networkError: Boolean = false,
-            beforeSpan: SentryFeignClient.BeforeSpanCallback? = null
+            beforeSpan: SentryFeignClient.BeforeSpanCallback? = null,
         ): MockApi {
             if (isSpanActive) {
                 whenever(scopes.span).thenReturn(sentryTracer)
@@ -66,17 +66,19 @@ class SentryFeignClientTest {
             server.enqueue(
                 MockResponse()
                     .setBody(responseBody)
-                    .setResponseCode(httpStatusCode)
+                    .setResponseCode(httpStatusCode),
             )
             server.start()
 
             return if (!networkError) {
-                Feign.builder()
+                Feign
+                    .builder()
                     .addCapability(SentryCapability(scopes, beforeSpan))
             } else {
                 val mockClient = mock<Client>()
                 whenever(mockClient.execute(any(), any())).thenThrow(RuntimeException::class.java)
-                Feign.builder()
+                Feign
+                    .builder()
                     .client(SentryFeignClient(mockClient, scopes, beforeSpan))
             }.target(MockApi::class.java, server.url("/").toUrl().toString())
         }
@@ -106,7 +108,15 @@ class SentryFeignClientTest {
         fixture.sentryOptions.dsn = "https://key@sentry.io/proj"
         val sut = fixture.getSut()
 
-        sut.getOkWithBaggageHeader(mapOf("baggage" to listOf("thirdPartyBaggage=someValue", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")))
+        sut.getOkWithBaggageHeader(
+            mapOf(
+                "baggage" to
+                    listOf(
+                        "thirdPartyBaggage=someValue",
+                        "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+                    ),
+            ),
+        )
 
         val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNotNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
@@ -114,7 +124,11 @@ class SentryFeignClientTest {
 
         val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
         assertEquals(baggageHeaderValues.size, 1)
-        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
+        assertTrue(
+            baggageHeaderValues[0].startsWith(
+                "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+            ),
+        )
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
         assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
@@ -220,7 +234,7 @@ class SentryFeignClientTest {
                 assertEquals(13, it.data["response_body_size"])
                 assertEquals(12, it.data["request_body_size"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -234,7 +248,7 @@ class SentryFeignClientTest {
                 assertEquals(0, it.data["response_body_size"])
                 assertEquals(12, it.data["request_body_size"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -253,7 +267,7 @@ class SentryFeignClientTest {
             check<Breadcrumb> {
                 assertEquals("http", it.type)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -275,10 +289,11 @@ class SentryFeignClientTest {
 
     @Test
     fun `customizer modifies span`() {
-        val sut = fixture.getSut { span, _, _ ->
-            span.description = "overwritten description"
-            span
-        }
+        val sut =
+            fixture.getSut { span, _, _ ->
+                span.description = "overwritten description"
+                span
+            }
         sut.getOk()
         assertEquals(1, fixture.sentryTracer.children.size)
         val httpClientSpan = fixture.sentryTracer.children.first()
@@ -287,14 +302,15 @@ class SentryFeignClientTest {
 
     @Test
     fun `customizer receives request and response`() {
-        val sut = fixture.getSut { span, request, response ->
-            assertEquals(request.url(), request.url())
-            assertEquals(request.httpMethod().name, request.httpMethod().name)
-            assertNotNull(response) {
-                assertEquals(201, it.status())
+        val sut =
+            fixture.getSut { span, request, response ->
+                assertEquals(request.url(), request.url())
+                assertEquals(request.httpMethod().name, request.httpMethod().name)
+                assertNotNull(response) {
+                    assertEquals(201, it.status())
+                }
+                span
             }
-            span
-        }
         sut.getOk()
     }
 
@@ -313,7 +329,9 @@ class SentryFeignClientTest {
         fun getOk(): String
 
         @RequestLine("GET /status/200")
-        fun getOkWithBaggageHeader(@HeaderMap headers: Map<String, Any>): String
+        fun getOkWithBaggageHeader(
+            @HeaderMap headers: Map<String, Any>,
+        ): String
 
         @RequestLine("POST /post-with-body")
         fun postWithBody(body: String)

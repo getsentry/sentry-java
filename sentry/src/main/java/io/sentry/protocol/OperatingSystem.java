@@ -20,8 +20,10 @@ public final class OperatingSystem implements JsonUnknown, JsonSerializable {
 
   /** Name of the operating system. */
   private @Nullable String name;
+
   /** Version of the operating system. */
   private @Nullable String version;
+
   /**
    * Unprocessed operating system info.
    *
@@ -30,14 +32,17 @@ public final class OperatingSystem implements JsonUnknown, JsonSerializable {
    * explicitly given.
    */
   private @Nullable String rawDescription;
+
   /** Internal build number of the operating system. */
   private @Nullable String build;
+
   /**
    * Current kernel version.
    *
    * <p>This is typically the entire output of the `uname` syscall.
    */
   private @Nullable String kernelVersion;
+
   /** Indicator if the OS is rooted (mobile mostly). */
   private @Nullable Boolean rooted;
 

@@ -30,7 +30,6 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class FirstDrawDoneListenerTest {
-
     private class Fixture {
         val application: Context = ApplicationProvider.getApplicationContext()
         val buildInfo = mock<BuildInfoProvider>()

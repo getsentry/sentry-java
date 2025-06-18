@@ -5,7 +5,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class IpAddressUtilsTest {
-
     @Test
     fun `{{auto}} is considered a default address`() {
         assertTrue(IpAddressUtils.isDefault("{{auto}}"))

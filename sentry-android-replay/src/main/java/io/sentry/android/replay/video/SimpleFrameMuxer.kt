@@ -39,7 +39,10 @@ internal interface SimpleFrameMuxer {
 
     fun start(videoFormat: MediaFormat)
 
-    fun muxVideoFrame(encodedData: ByteBuffer, bufferInfo: MediaCodec.BufferInfo)
+    fun muxVideoFrame(
+        encodedData: ByteBuffer,
+        bufferInfo: MediaCodec.BufferInfo,
+    )
 
     fun release()
 

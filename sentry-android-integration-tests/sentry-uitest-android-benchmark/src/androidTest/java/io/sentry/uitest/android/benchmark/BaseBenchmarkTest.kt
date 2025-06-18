@@ -10,7 +10,6 @@ import androidx.test.runner.AndroidJUnitRunner
 import kotlin.test.BeforeTest
 
 abstract class BaseBenchmarkTest {
-
     protected lateinit var runner: AndroidJUnitRunner
     protected lateinit var context: Context
     protected lateinit var choreographer: Choreographer

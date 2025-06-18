@@ -4,8 +4,9 @@ import androidx.test.espresso.IdlingResource
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Idling resource based on a boolean flag. */
-class BooleanIdlingResource(private val name: String) : IdlingResource {
-
+class BooleanIdlingResource(
+    private val name: String,
+) : IdlingResource {
     private val isIdle = AtomicBoolean(true)
 
     private val isIdleLock = Object()

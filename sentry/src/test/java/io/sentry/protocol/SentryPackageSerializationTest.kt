@@ -12,15 +12,16 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 
 class SentryPackageSerializationTest {
-
     private class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = SentryPackage(
-            "b59a1949-9950-4203-b394-ddd8d02c9633",
-            "3d7790f3-7f32-43f7-b82f-9f5bc85205a8"
-        )
+        fun getSut() =
+            SentryPackage(
+                "b59a1949-9950-4203-b394-ddd8d02c9633",
+                "3d7790f3-7f32-43f7-b82f-9f5bc85205a8",
+            )
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -40,11 +41,11 @@ class SentryPackageSerializationTest {
 
     // Helper
 
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
+    private fun sanitizedFile(path: String): String =
+        FileFromResources
+            .invoke(path)
             .replace(Regex("[\n\r]"), "")
             .replace(" ", "")
-    }
 
     private fun serialize(jsonSerializable: JsonSerializable): String {
         val wrt = StringWriter()

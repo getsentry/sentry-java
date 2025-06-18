@@ -25,7 +25,6 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class SdkInitTests : BaseUiTest() {
-
     @Test
     fun doubleInitDoesNotThrow() {
         initSentry(false) { options: SentryAndroidOptions ->
@@ -75,7 +74,7 @@ class SdkInitTests : BaseUiTest() {
             findEnvelope {
                 assertEnvelopeTransaction(
                     it.items.toList(),
-                    AndroidLogger()
+                    AndroidLogger(),
                 ).transaction == "e2etests"
             }.assert {
                 val transactionItem: SentryTransaction = it.assertTransaction()
@@ -88,7 +87,7 @@ class SdkInitTests : BaseUiTest() {
             findEnvelope {
                 assertEnvelopeTransaction(
                     it.items.toList(),
-                    AndroidLogger()
+                    AndroidLogger(),
                 ).transaction == "e2etests2"
             }.assert {
                 val transactionItem: SentryTransaction = it.assertTransaction()
@@ -133,7 +132,7 @@ class SdkInitTests : BaseUiTest() {
         // We assert for less than 1 second just to account for slow devices in saucelabs or headless emulator
         assertTrue(
             restartMs < 1000,
-            "Expected less than 1000 ms for SDK restart. Got $restartMs ms"
+            "Expected less than 1000 ms for SDK restart. Got $restartMs ms",
         )
 
         relay.assert {
@@ -183,30 +182,33 @@ class SdkInitTests : BaseUiTest() {
         val restartMs = afterRestart - beforeRestart
         assertTrue(
             restartMs > 3000,
-            "Expected more than 3000 ms for SDK close and restart. Got $restartMs ms"
+            "Expected more than 3000 ms for SDK close and restart. Got $restartMs ms",
         )
     }
 
     @Test
     fun initViaActivityDoesNotLeak() {
-        LeakCanary.config = LeakCanary.config.copy(
-            referenceMatchers = AndroidReferenceMatchers.appDefaults +
-                listOf(
-                    IgnoredReferenceMatcher(
-                        ReferencePattern.InstanceFieldPattern(
-                            "com.saucelabs.rdcinjector.testfairy.TestFairyEventQueue",
-                            "context"
-                        )
-                    )
-                ) + ('a'..'z').map { char ->
-                IgnoredReferenceMatcher(
-                    ReferencePattern.StaticFieldPattern(
-                        "com.testfairy.modules.capture.TouchListener",
-                        "$char"
-                    )
-                )
-            }
-        )
+        LeakCanary.config =
+            LeakCanary.config.copy(
+                referenceMatchers =
+                    AndroidReferenceMatchers.appDefaults +
+                        listOf(
+                            IgnoredReferenceMatcher(
+                                ReferencePattern.InstanceFieldPattern(
+                                    "com.saucelabs.rdcinjector.testfairy.TestFairyEventQueue",
+                                    "context",
+                                ),
+                            ),
+                        ) +
+                        ('a'..'z').map { char ->
+                            IgnoredReferenceMatcher(
+                                ReferencePattern.StaticFieldPattern(
+                                    "com.testfairy.modules.capture.TouchListener",
+                                    "$char",
+                                ),
+                            )
+                        },
+            )
 
         val activityScenario = launchActivity<ComposeActivity>()
         activityScenario.moveToState(Lifecycle.State.RESUMED)
@@ -263,19 +265,20 @@ class SdkInitTests : BaseUiTest() {
     }
 
     private fun assertDefaultIntegrations() {
-        val integrations = mutableListOf(
-            "UncaughtExceptionHandler",
-            "ShutdownHook",
-            "SendCachedEnvelope",
-            "AppLifecycle",
-            "EnvelopeFileObserver",
-            "AnrV2",
-            "ActivityLifecycle",
-            "ActivityBreadcrumbs",
-            "UserInteraction",
-            "AppComponentsBreadcrumbs",
-            "NetworkBreadcrumbs"
-        )
+        val integrations =
+            mutableListOf(
+                "UncaughtExceptionHandler",
+                "ShutdownHook",
+                "SendCachedEnvelope",
+                "AppLifecycle",
+                "EnvelopeFileObserver",
+                "AnrV2",
+                "ActivityLifecycle",
+                "ActivityBreadcrumbs",
+                "UserInteraction",
+                "AppComponentsBreadcrumbs",
+                "NetworkBreadcrumbs",
+            )
 
         // NdkIntegration is not always available, so we check for its presence
         try {
@@ -286,7 +289,10 @@ class SdkInitTests : BaseUiTest() {
         }
 
         for (integration in integrations) {
-            assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains(integration), "Integration $integration was expected, but was not registered")
+            assertTrue(
+                SentryIntegrationPackageStorage.getInstance().integrations.contains(integration),
+                "Integration $integration was expected, but was not registered",
+            )
         }
     }
 }

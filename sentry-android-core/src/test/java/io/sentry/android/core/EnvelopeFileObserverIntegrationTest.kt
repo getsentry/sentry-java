@@ -85,9 +85,10 @@ class EnvelopeFileObserverIntegrationTest {
     @Test
     fun `when scopes is closed right after start, integration is not registered`() {
         val deferredExecutorService = DeferredExecutorService()
-        val integration = fixture.getSut {
-            it.executorService = deferredExecutorService
-        }
+        val integration =
+            fixture.getSut {
+                it.executorService = deferredExecutorService
+            }
         integration.register(fixture.scopes, fixture.scopes.options)
         integration.close()
         deferredExecutorService.runAll()
@@ -96,28 +97,30 @@ class EnvelopeFileObserverIntegrationTest {
 
     @Test
     fun `register with fake executor service does not install integration`() {
-        val integration = fixture.getSut {
-            it.executorService = mock()
-        }
+        val integration =
+            fixture.getSut {
+                it.executorService = mock()
+            }
         integration.register(fixture.scopes, fixture.scopes.options)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
             eq("Registering EnvelopeFileObserverIntegration for path: %s"),
-            eq(file.absolutePath)
+            eq(file.absolutePath),
         )
         verify(fixture.logger, never()).log(eq(SentryLevel.DEBUG), eq("EnvelopeFileObserverIntegration installed."))
     }
 
     @Test
     fun `register integration on the background via executor service`() {
-        val integration = fixture.getSut {
-            it.executorService = ImmediateExecutorService()
-        }
+        val integration =
+            fixture.getSut {
+                it.executorService = ImmediateExecutorService()
+            }
         integration.register(fixture.scopes, fixture.scopes.options)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
             eq("Registering EnvelopeFileObserverIntegration for path: %s"),
-            eq(file.absolutePath)
+            eq(file.absolutePath),
         )
         verify(fixture.logger).log(eq(SentryLevel.DEBUG), eq("EnvelopeFileObserverIntegration installed."))
     }

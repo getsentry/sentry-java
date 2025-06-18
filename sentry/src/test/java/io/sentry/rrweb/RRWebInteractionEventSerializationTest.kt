@@ -11,14 +11,15 @@ class RRWebInteractionEventSerializationTest {
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = RRWebInteractionEvent().apply {
-            timestamp = 12345678901
-            id = 1
-            x = 1.0f
-            y = 2.0f
-            interactionType = TouchStart
-            pointerId = 1
-        }
+        fun getSut() =
+            RRWebInteractionEvent().apply {
+                timestamp = 12345678901
+                id = 1
+                x = 1.0f
+                y = 2.0f
+                interactionType = TouchStart
+                pointerId = 1
+            }
     }
 
     private val fixture = Fixture()

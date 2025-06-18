@@ -19,64 +19,75 @@ import io.sentry.apollo4.generated.type.Rocket
 import kotlin.collections.List
 
 public object LaunchDetailsQuerySelections {
-    private val mission: List<CompiledSelection> = listOf(
-        CompiledField.Builder(
-            name = "name",
-            type = GraphQLString.type
-        ).build(),
-        CompiledField.Builder(
-            name = "missionPatch",
-            type = GraphQLString.type
-        ).arguments(
-            listOf(
-                CompiledArgument.Builder(CompiledArgumentDefinition.Builder("size").build()).value("LARGE").build()
-            )
+    private val mission: List<CompiledSelection> =
+        listOf(
+            CompiledField
+                .Builder(
+                    name = "name",
+                    type = GraphQLString.type,
+                ).build(),
+            CompiledField
+                .Builder(
+                    name = "missionPatch",
+                    type = GraphQLString.type,
+                ).arguments(
+                    listOf(
+                        CompiledArgument.Builder(CompiledArgumentDefinition.Builder("size").build()).value("LARGE").build(),
+                    ),
+                ).build(),
         )
-            .build()
-    )
 
-    private val rocket: List<CompiledSelection> = listOf(
-        CompiledField.Builder(
-            name = "name",
-            type = GraphQLString.type
-        ).build(),
-        CompiledField.Builder(
-            name = "type",
-            type = GraphQLString.type
-        ).build()
-    )
-
-    private val launch: List<CompiledSelection> = listOf(
-        CompiledField.Builder(
-            name = "id",
-            type = GraphQLID.type.notNull()
-        ).build(),
-        CompiledField.Builder(
-            name = "site",
-            type = GraphQLString.type
-        ).build(),
-        CompiledField.Builder(
-            name = "mission",
-            type = Mission.type
-        ).selections(mission)
-            .build(),
-        CompiledField.Builder(
-            name = "rocket",
-            type = Rocket.type
-        ).selections(rocket)
-            .build()
-    )
-
-    public val root: List<CompiledSelection> = listOf(
-        CompiledField.Builder(
-            name = "launch",
-            type = Launch.type
-        ).arguments(
-            listOf(
-                CompiledArgument.Builder(CompiledArgumentDefinition.Builder("id").build()).value("id").build()
-            )
+    private val rocket: List<CompiledSelection> =
+        listOf(
+            CompiledField
+                .Builder(
+                    name = "name",
+                    type = GraphQLString.type,
+                ).build(),
+            CompiledField
+                .Builder(
+                    name = "type",
+                    type = GraphQLString.type,
+                ).build(),
         )
-            .selections(launch)
-            .build()
-    )
+
+    private val launch: List<CompiledSelection> =
+        listOf(
+            CompiledField
+                .Builder(
+                    name = "id",
+                    type = GraphQLID.type.notNull(),
+                ).build(),
+            CompiledField
+                .Builder(
+                    name = "site",
+                    type = GraphQLString.type,
+                ).build(),
+            CompiledField
+                .Builder(
+                    name = "mission",
+                    type = Mission.type,
+                ).selections(mission)
+                .build(),
+            CompiledField
+                .Builder(
+                    name = "rocket",
+                    type = Rocket.type,
+                ).selections(rocket)
+                .build(),
+        )
+
+    public val root: List<CompiledSelection> =
+        listOf(
+            CompiledField
+                .Builder(
+                    name = "launch",
+                    type = Launch.type,
+                ).arguments(
+                    listOf(
+                        CompiledArgument.Builder(CompiledArgumentDefinition.Builder("id").build()).value("id").build(),
+                    ),
+                ).selections(launch)
+                .build(),
+        )
 }

@@ -15,7 +15,9 @@ plugins {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
-    kotlinOptions.languageVersion = libs.versions.kotlin.compatible.version.get()
+    kotlinOptions.languageVersion =
+        libs.versions.kotlin.compatible.version
+            .get()
 }
 
 dependencies {
@@ -125,7 +127,7 @@ tasks.jar {
             "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-spring-boot",
             "Implementation-Vendor" to "Sentry",
             "Implementation-Title" to project.name,
-            "Implementation-Version" to project.version
+            "Implementation-Version" to project.version,
         )
     }
 }

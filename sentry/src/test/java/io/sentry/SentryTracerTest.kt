@@ -28,7 +28,6 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryTracerTest {
-
     private class Fixture {
         val options = SentryOptions()
         val scopes: Scopes
@@ -39,11 +38,12 @@ class SentryTracerTest {
             options.environment = "environment"
             options.release = "release@3.0.0"
             scopes = spy(createTestScopes(options))
-            compositePerformanceCollector = spy(
-                DefaultCompositePerformanceCollector(
-                    options
+            compositePerformanceCollector =
+                spy(
+                    DefaultCompositePerformanceCollector(
+                        options,
+                    ),
                 )
-            )
         }
 
         fun getSut(
@@ -55,7 +55,7 @@ class SentryTracerTest {
             trimEnd: Boolean = false,
             transactionFinishedCallback: TransactionFinishedCallback? = null,
             samplingDecision: TracesSamplingDecision? = null,
-            performanceCollector: CompositePerformanceCollector? = compositePerformanceCollector
+            performanceCollector: CompositePerformanceCollector? = compositePerformanceCollector,
         ): SentryTracer {
             optionsConfiguration.configure(options)
 
@@ -75,12 +75,14 @@ class SentryTracerTest {
     @Test
     fun `transfer origin from transaction options to transaction context`() {
         fixture.getSut()
-        val transactionOptions = TransactionOptions().also {
-            it.origin = "new-origin"
-        }
-        val transactionContext = TransactionContext("name", "op", null).also {
-            it.origin = "old-origin"
-        }
+        val transactionOptions =
+            TransactionOptions().also {
+                it.origin = "new-origin"
+            }
+        val transactionContext =
+            TransactionContext("name", "op", null).also {
+                it.origin = "old-origin"
+            }
 
         val transaction = SentryTracer(transactionContext, fixture.scopes, transactionOptions, null)
         assertEquals("new-origin", transaction.spanContext.origin)
@@ -97,11 +99,12 @@ class SentryTracerTest {
 
     @Test
     fun `does not create child span if origin is ignored`() {
-        val tracer = fixture.getSut({
-            it.setDebug(true)
-            it.setLogger(SystemOutLogger())
-            it.setIgnoredSpanOrigins(listOf("ignored"))
-        })
+        val tracer =
+            fixture.getSut({
+                it.setDebug(true)
+                it.setLogger(SystemOutLogger())
+                it.setIgnoredSpanOrigins(listOf("ignored"))
+            })
         tracer.startChild("child1", null, SpanOptions().also { it.origin = "ignored" })
         tracer.startChild("child2")
         assertEquals(1, tracer.children.size)
@@ -109,11 +112,12 @@ class SentryTracerTest {
 
     @Test
     fun `does not add more spans than configured in options`() {
-        val tracer = fixture.getSut({
-            it.maxSpans = 2
-            it.setDebug(true)
-            it.setLogger(SystemOutLogger())
-        })
+        val tracer =
+            fixture.getSut({
+                it.maxSpans = 2
+                it.setDebug(true)
+                it.setLogger(SystemOutLogger())
+            })
         tracer.startChild("child1")
         tracer.startChild("child2")
         tracer.startChild("child3")
@@ -122,11 +126,12 @@ class SentryTracerTest {
 
     @Test
     fun `when span limit is reached, startChild returns NoOpSpan`() {
-        val tracer = fixture.getSut({
-            it.maxSpans = 2
-            it.setDebug(true)
-            it.setLogger(SystemOutLogger())
-        })
+        val tracer =
+            fixture.getSut({
+                it.maxSpans = 2
+                it.setDebug(true)
+                it.setLogger(SystemOutLogger())
+            })
         tracer.startChild("child1")
         tracer.startChild("child2")
         assertTrue(tracer.startChild("child3") is NoOpSpan)
@@ -196,17 +201,18 @@ class SentryTracerTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `when transaction is finished and profiling is disabled, transactionProfiler is not called`() {
         val transactionProfiler = mock<ITransactionProfiler>()
-        val tracer = fixture.getSut(optionsConfiguration = {
-            it.profilesSampleRate = 0.0
-            it.setTransactionProfiler(transactionProfiler)
-        })
+        val tracer =
+            fixture.getSut(optionsConfiguration = {
+                it.profilesSampleRate = 0.0
+                it.setTransactionProfiler(transactionProfiler)
+            })
         tracer.finish()
         verify(transactionProfiler, never()).onTransactionFinish(any(), anyOrNull(), anyOrNull())
     }
@@ -214,10 +220,11 @@ class SentryTracerTest {
     @Test
     fun `when transaction is finished and sampled and profiling is enabled, transactionProfiler is called`() {
         val transactionProfiler = mock<ITransactionProfiler>()
-        val tracer = fixture.getSut(optionsConfiguration = {
-            it.profilesSampleRate = 1.0
-            it.setTransactionProfiler(transactionProfiler)
-        }, samplingDecision = TracesSamplingDecision(true, null, true, null))
+        val tracer =
+            fixture.getSut(optionsConfiguration = {
+                it.profilesSampleRate = 1.0
+                it.setTransactionProfiler(transactionProfiler)
+            }, samplingDecision = TracesSamplingDecision(true, null, true, null))
         tracer.finish()
         verify(transactionProfiler).onTransactionFinish(any(), anyOrNull(), anyOrNull())
     }
@@ -227,9 +234,10 @@ class SentryTracerTest {
         val continuousProfiler = mock<IContinuousProfiler>()
         val profilerId = SentryId()
         whenever(continuousProfiler.profilerId).thenReturn(profilerId)
-        val tracer = fixture.getSut(optionsConfiguration = {
-            it.setContinuousProfiler(continuousProfiler)
-        }, samplingDecision = TracesSamplingDecision(true))
+        val tracer =
+            fixture.getSut(optionsConfiguration = {
+                it.setContinuousProfiler(continuousProfiler)
+            }, samplingDecision = TracesSamplingDecision(true))
         tracer.finish()
         verify(fixture.scopes).captureTransaction(
             check {
@@ -239,7 +247,7 @@ class SentryTracerTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -248,9 +256,10 @@ class SentryTracerTest {
         val continuousProfiler = mock<IContinuousProfiler>()
         val profilerId = SentryId()
         whenever(continuousProfiler.profilerId).thenReturn(profilerId)
-        val tracer = fixture.getSut(optionsConfiguration = {
-            it.setContinuousProfiler(continuousProfiler)
-        }, samplingDecision = TracesSamplingDecision(false))
+        val tracer =
+            fixture.getSut(optionsConfiguration = {
+                it.setContinuousProfiler(continuousProfiler)
+            }, samplingDecision = TracesSamplingDecision(false))
         tracer.finish()
         // profiler is never stopped, as it was never started
         verify(continuousProfiler, never()).stopProfiler(any())
@@ -261,7 +270,7 @@ class SentryTracerTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -270,10 +279,11 @@ class SentryTracerTest {
         val continuousProfiler = mock<IContinuousProfiler>()
         val profilerId = SentryId()
         whenever(continuousProfiler.profilerId).thenReturn(profilerId)
-        val tracer = fixture.getSut(optionsConfiguration = {
-            it.setContinuousProfiler(continuousProfiler)
-            it.profileLifecycle = ProfileLifecycle.MANUAL
-        }, samplingDecision = TracesSamplingDecision(true))
+        val tracer =
+            fixture.getSut(optionsConfiguration = {
+                it.setContinuousProfiler(continuousProfiler)
+                it.profileLifecycle = ProfileLifecycle.MANUAL
+            }, samplingDecision = TracesSamplingDecision(true))
         tracer.finish()
         // profiler is never stopped, as it should be stopped manually
         verify(continuousProfiler, never()).stopProfiler(any())
@@ -281,9 +291,10 @@ class SentryTracerTest {
 
     @Test
     fun `when continuous profiler is not running, profile context is not set`() {
-        val tracer = fixture.getSut(optionsConfiguration = {
-            it.setContinuousProfiler(NoOpContinuousProfiler.getInstance())
-        })
+        val tracer =
+            fixture.getSut(optionsConfiguration = {
+                it.setContinuousProfiler(NoOpContinuousProfiler.getInstance())
+            })
         tracer.finish()
         verify(fixture.scopes).captureTransaction(
             check {
@@ -291,7 +302,7 @@ class SentryTracerTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -301,9 +312,10 @@ class SentryTracerTest {
         val profiler = mock<IContinuousProfiler>()
         whenever(profiler.profilerId).thenReturn(profilerId)
 
-        val tracer = fixture.getSut(optionsConfiguration = { options ->
-            options.setContinuousProfiler(profiler)
-        }, samplingDecision = TracesSamplingDecision(true))
+        val tracer =
+            fixture.getSut(optionsConfiguration = { options ->
+                options.setContinuousProfiler(profiler)
+            }, samplingDecision = TracesSamplingDecision(true))
         val span = tracer.startChild("span.op")
         assertEquals(profilerId.toString(), span.getData(SpanDataConvention.PROFILER_ID))
     }
@@ -314,18 +326,20 @@ class SentryTracerTest {
         val profiler = mock<IContinuousProfiler>()
         whenever(profiler.profilerId).thenReturn(profilerId)
 
-        val tracer = fixture.getSut(optionsConfiguration = { options ->
-            options.setContinuousProfiler(profiler)
-        }, samplingDecision = TracesSamplingDecision(false))
+        val tracer =
+            fixture.getSut(optionsConfiguration = { options ->
+                options.setContinuousProfiler(profiler)
+            }, samplingDecision = TracesSamplingDecision(false))
         val span = tracer.startChild("span.op")
         assertNull(span.getData(SpanDataConvention.PROFILER_ID))
     }
 
     @Test
     fun `when continuous profiler is not running, profiler id is not set in span data`() {
-        val tracer = fixture.getSut(optionsConfiguration = { options ->
-            options.setContinuousProfiler(NoOpContinuousProfiler.getInstance())
-        })
+        val tracer =
+            fixture.getSut(optionsConfiguration = { options ->
+                options.setContinuousProfiler(NoOpContinuousProfiler.getInstance())
+            })
         val span = tracer.startChild("span.op")
         assertNull(span.getData(SpanDataConvention.PROFILER_ID))
     }
@@ -363,7 +377,7 @@ class SentryTracerTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -381,23 +395,27 @@ class SentryTracerTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `when transaction is finished, context is set`() {
         val tracer = fixture.getSut()
-        val otelContext = mapOf(
-            "attributes" to mapOf(
-                "db.connection_string" to "hsqldb:mem:",
-                "db.statement" to "CREATE TABLE person ( id INTEGER IDENTITY PRIMARY KEY, firstName VARCHAR(?) NOT NULL, lastName VARCHAR(?) NOT NULL )"
-            ),
-            "resource" to mapOf(
-                "process.runtime.version" to "17.0.4.1+1",
-                "telemetry.auto.version" to "sentry-6.7.0-otel-1.19.2"
+        val otelContext =
+            mapOf(
+                "attributes" to
+                    mapOf(
+                        "db.connection_string" to "hsqldb:mem:",
+                        "db.statement" to
+                            "CREATE TABLE person ( id INTEGER IDENTITY PRIMARY KEY, firstName VARCHAR(?) NOT NULL, lastName VARCHAR(?) NOT NULL )",
+                    ),
+                "resource" to
+                    mapOf(
+                        "process.runtime.version" to "17.0.4.1+1",
+                        "telemetry.auto.version" to "sentry-6.7.0-otel-1.19.2",
+                    ),
             )
-        )
         tracer.setContext("otel", otelContext)
         tracer.finish()
 
@@ -407,7 +425,7 @@ class SentryTracerTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -561,7 +579,7 @@ class SentryTracerTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
 
         assertEquals(SpanStatus.OK, transaction.status)
@@ -653,9 +671,10 @@ class SentryTracerTest {
     @Test
     fun `when waiting for children, finishing transaction calls transactionListener`() {
         var transactionListenerCalled = false
-        val transaction = fixture.getSut(waitForChildren = true, transactionFinishedCallback = {
-            transactionListenerCalled = true
-        })
+        val transaction =
+            fixture.getSut(waitForChildren = true, transactionFinishedCallback = {
+                transactionListenerCalled = true
+            })
         val child = transaction.startChild("op")
         child.finish()
         transaction.finish()
@@ -684,7 +703,7 @@ class SentryTracerTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -713,20 +732,21 @@ class SentryTracerTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `returns trace state`() {
-        val transaction = fixture.getSut({
-            it.isTraceSampling = true
-            it.isSendDefaultPii = true
-        })
+        val transaction =
+            fixture.getSut({
+                it.isTraceSampling = true
+                it.isSendDefaultPii = true
+            })
         fixture.scopes.setUser(
             User().apply {
                 id = "user-id"
-            }
+            },
         )
         val replayId = SentryId()
         fixture.scopes.configureScope { it.replayId = replayId }
@@ -743,13 +763,14 @@ class SentryTracerTest {
 
     @Test
     fun `returns trace state without userId if not send pii`() {
-        val transaction = fixture.getSut({
-            it.isTraceSampling = true
-        })
+        val transaction =
+            fixture.getSut({
+                it.isTraceSampling = true
+            })
         fixture.scopes.setUser(
             User().apply {
                 id = "user-id"
-            }
+            },
         )
         val trace = transaction.traceContext()
         assertNotNull(trace) {
@@ -764,14 +785,15 @@ class SentryTracerTest {
 
     @Test
     fun `trace state does not change once computed`() {
-        val transaction = fixture.getSut({
-            it.isTraceSampling = true
-        })
+        val transaction =
+            fixture.getSut({
+                it.isTraceSampling = true
+            })
         val traceBeforeUserSet = transaction.traceContext()
         fixture.scopes.setUser(
             User().apply {
                 id = "user-id"
-            }
+            },
         )
         val traceAfterUserSet = transaction.traceContext()
         assertNotNull(traceAfterUserSet) {
@@ -789,17 +811,18 @@ class SentryTracerTest {
 
     @Test
     fun `returns baggage header`() {
-        val transaction = fixture.getSut({
-            it.isTraceSampling = true
-            it.environment = "production"
-            it.release = "1.0.99-rc.7"
-            it.isSendDefaultPii = true
-        })
+        val transaction =
+            fixture.getSut({
+                it.isTraceSampling = true
+                it.environment = "production"
+                it.release = "1.0.99-rc.7"
+                it.isSendDefaultPii = true
+            })
 
         fixture.scopes.setUser(
             User().apply {
                 id = "userId12345"
-            }
+            },
         )
         val replayId = SentryId()
         fixture.scopes.configureScope { it.replayId = replayId }
@@ -821,16 +844,17 @@ class SentryTracerTest {
 
     @Test
     fun `returns baggage header without userId if not send pii`() {
-        val transaction = fixture.getSut({
-            it.isTraceSampling = true
-            it.environment = "production"
-            it.release = "1.0.99-rc.7"
-        })
+        val transaction =
+            fixture.getSut({
+                it.isTraceSampling = true
+                it.environment = "production"
+                it.release = "1.0.99-rc.7"
+            })
 
         fixture.scopes.setUser(
             User().apply {
                 id = "userId12345"
-            }
+            },
         )
 
         val header = transaction.toBaggageHeader(null)
@@ -849,12 +873,13 @@ class SentryTracerTest {
 
     @Test
     fun `returns baggage header without userId if send pii and null user`() {
-        val transaction = fixture.getSut({
-            it.isTraceSampling = true
-            it.environment = "production"
-            it.release = "1.0.99-rc.7"
-            it.isSendDefaultPii = true
-        })
+        val transaction =
+            fixture.getSut({
+                it.isTraceSampling = true
+                it.environment = "production"
+                it.release = "1.0.99-rc.7"
+                it.isSendDefaultPii = true
+            })
 
         fixture.scopes.setUser(null)
 
@@ -879,11 +904,16 @@ class SentryTracerTest {
         transaction.finish()
         verify(fixture.scopes).captureTransaction(
             check {
-                assertEquals("val", it.contexts.trace?.data?.get("key"))
+                assertEquals(
+                    "val",
+                    it.contexts.trace
+                        ?.data
+                        ?.get("key"),
+                )
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -902,7 +932,7 @@ class SentryTracerTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -986,7 +1016,7 @@ class SentryTracerTest {
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -1003,7 +1033,7 @@ class SentryTracerTest {
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -1045,7 +1075,13 @@ class SentryTracerTest {
 
     @Test
     fun `when trimEnd, trims idle transaction time to the latest child timestamp`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
+        val transaction =
+            fixture.getSut(
+                waitForChildren = true,
+                idleTimeout = 50,
+                trimEnd = true,
+                samplingDecision = TracesSamplingDecision(true),
+            )
 
         val span = transaction.startChild("op")
         span.finish()
@@ -1065,25 +1101,43 @@ class SentryTracerTest {
             },
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `timer is created if idle timeout is set`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
+        val transaction =
+            fixture.getSut(
+                waitForChildren = true,
+                idleTimeout = 50,
+                trimEnd = true,
+                samplingDecision = TracesSamplingDecision(true),
+            )
         assertNotNull(transaction.timer)
     }
 
     @Test
     fun `timer is not created if idle timeout is not set`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = null, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
+        val transaction =
+            fixture.getSut(
+                waitForChildren = true,
+                idleTimeout = null,
+                trimEnd = true,
+                samplingDecision = TracesSamplingDecision(true),
+            )
         assertNull(transaction.timer)
     }
 
     @Test
     fun `timer is cancelled on finish`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
+        val transaction =
+            fixture.getSut(
+                waitForChildren = true,
+                idleTimeout = 50,
+                trimEnd = true,
+                samplingDecision = TracesSamplingDecision(true),
+            )
         assertNotNull(transaction.timer)
         transaction.finish(SpanStatus.OK)
         assertNull(transaction.timer)
@@ -1106,7 +1160,7 @@ class SentryTracerTest {
             },
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -1124,7 +1178,7 @@ class SentryTracerTest {
             },
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -1142,7 +1196,7 @@ class SentryTracerTest {
             },
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -1154,9 +1208,10 @@ class SentryTracerTest {
 
     @Test
     fun `when transaction is created and profiled compositePerformanceCollector is started`() {
-        val transaction = fixture.getSut(optionsConfiguration = {
-            it.profilesSampleRate = 1.0
-        }, samplingDecision = TracesSamplingDecision(true, null, true, null))
+        val transaction =
+            fixture.getSut(optionsConfiguration = {
+                it.profilesSampleRate = 1.0
+            }, samplingDecision = TracesSamplingDecision(true, null, true, null))
         verify(fixture.compositePerformanceCollector).start(check<ITransaction> { assertEquals(transaction, it) })
     }
 
@@ -1190,12 +1245,19 @@ class SentryTracerTest {
 
     @Test
     fun `when spans have auto-finish enabled, finish them on transaction finish`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
+        val transaction =
+            fixture.getSut(
+                waitForChildren = true,
+                idleTimeout = 50,
+                trimEnd = true,
+                samplingDecision = TracesSamplingDecision(true),
+            )
 
         // when a span is created with auto-finish
-        val spanOptions = SpanOptions().apply {
-            isIdle = true
-        }
+        val spanOptions =
+            SpanOptions().apply {
+                isIdle = true
+            }
         val span = transaction.startChild("composition", null, spanOptions) as Span
 
         // and the transaction is finished
@@ -1212,18 +1274,25 @@ class SentryTracerTest {
             },
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `when spans have auto-finish enabled, finish them on transaction finish using the transaction finish date`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
+        val transaction =
+            fixture.getSut(
+                waitForChildren = true,
+                idleTimeout = 50,
+                trimEnd = true,
+                samplingDecision = TracesSamplingDecision(true),
+            )
 
         // when a span is created with auto-finish
-        val spanOptions = SpanOptions().apply {
-            isIdle = true
-        }
+        val spanOptions =
+            SpanOptions().apply {
+                isIdle = true
+            }
         val span = transaction.startChild("composition", null, spanOptions) as Span
 
         // and the transaction is finished
@@ -1242,18 +1311,25 @@ class SentryTracerTest {
             },
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `when spans have trim-start enabled, trim them on transaction finish`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
+        val transaction =
+            fixture.getSut(
+                waitForChildren = true,
+                idleTimeout = 50,
+                trimEnd = true,
+                samplingDecision = TracesSamplingDecision(true),
+            )
 
         // when a parent span is created
-        val spanOptions = SpanOptions().apply {
-            isTrimStart = true
-        }
+        val spanOptions =
+            SpanOptions().apply {
+                isTrimStart = true
+            }
         val parentSpan = transaction.startChild("composition", null, spanOptions) as Span
 
         // with a child which starts later
@@ -1282,18 +1358,25 @@ class SentryTracerTest {
             },
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `when spans have trim-end enabled, trim them on transaction finish`() {
-        val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50, trimEnd = true, samplingDecision = TracesSamplingDecision(true))
+        val transaction =
+            fixture.getSut(
+                waitForChildren = true,
+                idleTimeout = 50,
+                trimEnd = true,
+                samplingDecision = TracesSamplingDecision(true),
+            )
 
         // when a parent span is created
-        val spanOptions = SpanOptions().apply {
-            isTrimEnd = true
-        }
+        val spanOptions =
+            SpanOptions().apply {
+                isTrimEnd = true
+            }
         val parentSpan = transaction.startChild("composition", null, spanOptions) as Span
 
         // with a child which starts later
@@ -1322,25 +1405,33 @@ class SentryTracerTest {
             },
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `when transaction is finished, collected performance data is cleared`() {
         val data = mutableListOf<PerformanceCollectionData>(mock(), mock())
-        val mockPerformanceCollector = object : CompositePerformanceCollector {
-            override fun start(transaction: ITransaction) {}
-            override fun start(id: String) {}
-            override fun onSpanStarted(span: ISpan) {}
-            override fun onSpanFinished(span: ISpan) {}
-            override fun stop(transaction: ITransaction): MutableList<PerformanceCollectionData> = data
-            override fun stop(id: String): MutableList<PerformanceCollectionData> = data
-            override fun close() {}
-        }
-        val transaction = fixture.getSut(optionsConfiguration = {
-            it.profilesSampleRate = 1.0
-        }, performanceCollector = mockPerformanceCollector)
+        val mockPerformanceCollector =
+            object : CompositePerformanceCollector {
+                override fun start(transaction: ITransaction) {}
+
+                override fun start(id: String) {}
+
+                override fun onSpanStarted(span: ISpan) {}
+
+                override fun onSpanFinished(span: ISpan) {}
+
+                override fun stop(transaction: ITransaction): MutableList<PerformanceCollectionData> = data
+
+                override fun stop(id: String): MutableList<PerformanceCollectionData> = data
+
+                override fun close() {}
+            }
+        val transaction =
+            fixture.getSut(optionsConfiguration = {
+                it.profilesSampleRate = 1.0
+            }, performanceCollector = mockPerformanceCollector)
         transaction.finish()
         assertTrue(data.isEmpty())
     }
@@ -1381,11 +1472,12 @@ class SentryTracerTest {
 
     @Test
     fun `when a transaction is force-finished all spans get finished as well`() {
-        val transaction = fixture.getSut(
-            waitForChildren = true,
-            idleTimeout = 50,
-            samplingDecision = TracesSamplingDecision(true)
-        )
+        val transaction =
+            fixture.getSut(
+                waitForChildren = true,
+                idleTimeout = 50,
+                samplingDecision = TracesSamplingDecision(true),
+            )
 
         // when two spans are created
         val spanOptions = SpanOptions()
@@ -1415,18 +1507,19 @@ class SentryTracerTest {
             },
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `when a transaction with no childs is force-finished with dropIfNoChild set to false it should still be captured`() {
         // when a transaction is created
-        val transaction = fixture.getSut(
-            waitForChildren = true,
-            idleTimeout = 50,
-            samplingDecision = TracesSamplingDecision(true)
-        )
+        val transaction =
+            fixture.getSut(
+                waitForChildren = true,
+                idleTimeout = 50,
+                samplingDecision = TracesSamplingDecision(true),
+            )
 
         // and force-finished but dropping is disabled
         transaction.forceFinish(SpanStatus.ABORTED, false, null)
@@ -1438,18 +1531,19 @@ class SentryTracerTest {
             },
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `when a transaction with no childs is force-finished but dropIfNoChildren is true, it should be dropped`() {
         // when a transaction is created
-        val transaction = fixture.getSut(
-            waitForChildren = true,
-            idleTimeout = 50,
-            samplingDecision = TracesSamplingDecision(true)
-        )
+        val transaction =
+            fixture.getSut(
+                waitForChildren = true,
+                idleTimeout = 50,
+                samplingDecision = TracesSamplingDecision(true),
+            )
 
         // and force-finish with dropping enabled
         transaction.forceFinish(SpanStatus.ABORTED, true, null)
@@ -1459,7 +1553,7 @@ class SentryTracerTest {
             anyOrNull(),
             anyOrNull(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -1488,9 +1582,10 @@ class SentryTracerTest {
         whenever(threadChecker.isMainThread).thenReturn(true)
         whenever(threadChecker.currentThreadName).thenReturn("main")
 
-        val tracer = fixture.getSut(optionsConfiguration = { options ->
-            options.threadChecker = threadChecker
-        })
+        val tracer =
+            fixture.getSut(optionsConfiguration = { options ->
+                options.threadChecker = threadChecker
+            })
         val span = tracer.startChild("span.op")
         assertNotNull(span.getData(SpanDataConvention.THREAD_ID))
         assertEquals("main", span.getData(SpanDataConvention.THREAD_NAME))
@@ -1502,9 +1597,10 @@ class SentryTracerTest {
         whenever(threadChecker.isMainThread).thenReturn(false)
         whenever(threadChecker.currentThreadName).thenReturn("test")
 
-        val tracer = fixture.getSut(optionsConfiguration = { options ->
-            options.threadChecker = threadChecker
-        })
+        val tracer =
+            fixture.getSut(optionsConfiguration = { options ->
+                options.threadChecker = threadChecker
+            })
         val span = tracer.startChild("span.op")
         assertNotNull(span.getData(SpanDataConvention.THREAD_ID))
         assertNotEquals("main", span.getData(SpanDataConvention.THREAD_NAME))
@@ -1527,10 +1623,11 @@ class SentryTracerTest {
 
     @Test
     fun `tracer is not finished when finishCallback is called`() {
-        val transaction = fixture.getSut(transactionFinishedCallback = {
-            assertFalse(it.isFinished)
-            assertNotNull(it.finishDate)
-        })
+        val transaction =
+            fixture.getSut(transactionFinishedCallback = {
+                assertFalse(it.isFinished)
+                assertNotNull(it.finishDate)
+            })
         assertFalse(transaction.isFinished)
         assertNull(transaction.finishDate)
         transaction.finish()

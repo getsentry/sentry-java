@@ -14,7 +14,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.fail
 
 class UserFeedbackSerializationTest {
-
     private class Fixture {
         val logger = mock<ILogger>()
 
@@ -27,6 +26,7 @@ class UserFeedbackSerializationTest {
             }
         }
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -34,8 +34,9 @@ class UserFeedbackSerializationTest {
         val userFeedback = fixture.getSut()
         val actual = serialize(userFeedback)
 
-        val expected = "{\"event_id\":\"${userFeedback.eventId}\",\"name\":\"${userFeedback.name}\"," +
-            "\"email\":\"${userFeedback.email}\",\"comments\":\"${userFeedback.comments}\"}"
+        val expected =
+            "{\"event_id\":\"${userFeedback.eventId}\",\"name\":\"${userFeedback.name}\"," +
+                "\"email\":\"${userFeedback.email}\",\"comments\":\"${userFeedback.comments}\"}"
 
         assertEquals(expected, actual)
     }
@@ -43,8 +44,9 @@ class UserFeedbackSerializationTest {
     @Test
     fun deserialize() {
         val userFeedback = fixture.getSut()
-        val jsonUserFeedback = "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
-            "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"}"
+        val jsonUserFeedback =
+            "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
+                "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"}"
         val reader = JsonObjectReader(StringReader(jsonUserFeedback))
         val actual = UserFeedback.Deserializer().deserialize(reader, fixture.logger)
         assertNotNull(actual)
@@ -56,8 +58,9 @@ class UserFeedbackSerializationTest {
 
     @Test
     fun `deserializing user feedback with missing required fields`() {
-        val jsonUserFeedbackWithoutEventId = "{\"name\":\"John\",\"email\":\"john@me.com\"," +
-            "\"comments\":\"comment\"}"
+        val jsonUserFeedbackWithoutEventId =
+            "{\"name\":\"John\",\"email\":\"john@me.com\"," +
+                "\"comments\":\"comment\"}"
         val reader = JsonObjectReader(StringReader(jsonUserFeedbackWithoutEventId))
 
         try {

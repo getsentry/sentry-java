@@ -24,19 +24,22 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentryJdbcEventListenerTest {
-
     class Fixture {
-        val scopes = mock<IScopes>().apply {
-            whenever(options).thenReturn(
-                SentryOptions().apply {
-                    sdkVersion = SdkVersion("test", "1.2.3")
-                }
-            )
-        }
+        val scopes =
+            mock<IScopes>().apply {
+                whenever(options).thenReturn(
+                    SentryOptions().apply {
+                        sdkVersion = SdkVersion("test", "1.2.3")
+                    },
+                )
+            }
         lateinit var tx: SentryTracer
         val actualDataSource = JDBCDataSource()
 
-        fun getSut(withRunningTransaction: Boolean = true, existingRow: Int? = null): DataSource {
+        fun getSut(
+            withRunningTransaction: Boolean = true,
+            existingRow: Int? = null,
+        ): DataSource {
             tx = SentryTracer(TransactionContext("name", "op"), scopes)
             if (withRunningTransaction) {
                 whenever(scopes.span).thenReturn(tx)
@@ -125,15 +128,27 @@ class SentryJdbcEventListenerTest {
             it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
         }
 
-        assertEquals("auto.db.jdbc", fixture.tx.children.first().spanContext.origin)
+        assertEquals(
+            "auto.db.jdbc",
+            fixture.tx.children
+                .first()
+                .spanContext.origin,
+        )
     }
 
     @Test
     fun `sets SDKVersion Info`() {
         val sut = fixture.getSut()
         assertNotNull(fixture.scopes.options.sdkVersion)
-        assert(fixture.scopes.options.sdkVersion!!.integrationSet.contains("JDBC"))
-        val packageInfo = fixture.scopes.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-jdbc" }
+        assert(
+            fixture.scopes.options.sdkVersion!!
+                .integrationSet
+                .contains("JDBC"),
+        )
+        val packageInfo =
+            fixture.scopes.options.sdkVersion!!
+                .packageSet
+                .firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-jdbc" }
         assertNotNull(packageInfo)
         assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }
@@ -146,15 +161,26 @@ class SentryJdbcEventListenerTest {
             it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate()
         }
 
-        assertEquals("hsqldb", fixture.tx.children.first().data[DB_SYSTEM_KEY])
-        assertEquals("testdb", fixture.tx.children.first().data[DB_NAME_KEY])
+        assertEquals(
+            "hsqldb",
+            fixture.tx.children
+                .first()
+                .data[DB_SYSTEM_KEY],
+        )
+        assertEquals(
+            "testdb",
+            fixture.tx.children
+                .first()
+                .data[DB_NAME_KEY],
+        )
     }
 
     @Test
     fun `only parses database details once`() {
         Mockito.mockStatic(DatabaseUtils::class.java).use { utils ->
             var invocationCount = 0
-            utils.`when`<Any> { DatabaseUtils.readFrom(any<StatementInformation>()) }
+            utils
+                .`when`<Any> { DatabaseUtils.readFrom(any<StatementInformation>()) }
                 .thenAnswer {
                     invocationCount++
                     DatabaseDetails("a", "b")
@@ -171,8 +197,18 @@ class SentryJdbcEventListenerTest {
                 it.prepareStatement("INSERT INTO foo VALUES (4)").executeUpdate()
             }
 
-            assertEquals("a", fixture.tx.children.first().data[DB_SYSTEM_KEY])
-            assertEquals("b", fixture.tx.children.first().data[DB_NAME_KEY])
+            assertEquals(
+                "a",
+                fixture.tx.children
+                    .first()
+                    .data[DB_SYSTEM_KEY],
+            )
+            assertEquals(
+                "b",
+                fixture.tx.children
+                    .first()
+                    .data[DB_NAME_KEY],
+            )
 
             assertEquals(1, invocationCount)
         }

@@ -24,7 +24,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DefaultCompositePerformanceCollectorTest {
-
     private val className = "io.sentry.DefaultCompositePerformanceCollector"
     private val ctorTypes: Array<Class<*>> = arrayOf(SentryOptions::class.java)
     private val fixture = Fixture()
@@ -39,19 +38,25 @@ class DefaultCompositePerformanceCollectorTest {
         var mockTimer: Timer? = null
         val deferredExecutorService = DeferredExecutorService()
 
-        val mockCpuCollector: IPerformanceSnapshotCollector = object :
-            IPerformanceSnapshotCollector {
-            override fun setup() {}
-            override fun collect(performanceCollectionData: PerformanceCollectionData) {
-                performanceCollectionData.addCpuData(mock())
+        val mockCpuCollector: IPerformanceSnapshotCollector =
+            object :
+                IPerformanceSnapshotCollector {
+                override fun setup() {}
+
+                override fun collect(performanceCollectionData: PerformanceCollectionData) {
+                    performanceCollectionData.addCpuData(mock())
+                }
             }
-        }
 
         init {
             whenever(scopes.options).thenReturn(options)
         }
 
-        fun getSut(memoryCollector: IPerformanceSnapshotCollector? = JavaMemoryCollector(), cpuCollector: IPerformanceSnapshotCollector? = mockCpuCollector, executorService: ISentryExecutorService = deferredExecutorService): CompositePerformanceCollector {
+        fun getSut(
+            memoryCollector: IPerformanceSnapshotCollector? = JavaMemoryCollector(),
+            cpuCollector: IPerformanceSnapshotCollector? = mockCpuCollector,
+            executorService: ISentryExecutorService = deferredExecutorService,
+        ): CompositePerformanceCollector {
             options.dsn = "https://key@sentry.io/proj"
             options.executorService = executorService
             if (cpuCollector != null) {
@@ -278,7 +283,13 @@ class DefaultCompositePerformanceCollectorTest {
         fixture.options.isDebug = true
         val sut = fixture.getSut(executorService = executorService)
         sut.start(fixture.transaction1)
-        verify(logger).log(eq(SentryLevel.ERROR), eq("Failed to call the executor. Performance collector will not be automatically finished. Did you call Sentry.close()?"), any())
+        verify(
+            logger,
+        ).log(
+            eq(SentryLevel.ERROR),
+            eq("Failed to call the executor. Performance collector will not be automatically finished. Did you call Sentry.close()?"),
+            any(),
+        )
     }
 
     @Test
@@ -378,8 +389,7 @@ class DefaultCompositePerformanceCollectorTest {
         verify(collector).clear()
     }
 
-    inner class ThreadCheckerCollector :
-        IPerformanceSnapshotCollector {
+    inner class ThreadCheckerCollector : IPerformanceSnapshotCollector {
         override fun setup() {
             if (threadChecker.isMainThread) {
                 throw AssertionError("setup() was called in the main thread")

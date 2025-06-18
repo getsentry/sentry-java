@@ -42,56 +42,71 @@ class AndroidProfilerTest {
     private lateinit var context: Context
 
     private val className = "io.sentry.android.core.AndroidProfiler"
-    private val ctorTypes = arrayOf(String::class.java, Int::class.java, SentryFrameMetricsCollector::class.java, ISentryExecutorService::class.java, ILogger::class.java)
+    private val ctorTypes =
+        arrayOf(
+            String::class.java,
+            Int::class.java,
+            SentryFrameMetricsCollector::class.java,
+            ISentryExecutorService::class.java,
+            ILogger::class.java,
+        )
     private val fixture = Fixture()
 
     private class Fixture {
         private val mockDsn = "http://key@localhost/proj"
         val mockLogger = mock<ILogger>()
         var lastScheduledRunnable: Runnable? = null
-        val mockExecutorService = object : ISentryExecutorService {
-            override fun submit(runnable: Runnable): Future<*> {
-                runnable.run()
-                return FutureTask {}
-            }
-            override fun <T> submit(callable: Callable<T>): Future<T> {
-                val futureTask = mock<FutureTask<T>>()
-                whenever(futureTask.get()).thenAnswer {
-                    return@thenAnswer try {
-                        callable.call()
-                    } catch (e: Exception) {
-                        null
-                    }
+        val mockExecutorService =
+            object : ISentryExecutorService {
+                override fun submit(runnable: Runnable): Future<*> {
+                    runnable.run()
+                    return FutureTask {}
                 }
-                return futureTask
-            }
-            override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
-                lastScheduledRunnable = runnable
-                return FutureTask {}
-            }
-            override fun close(timeoutMillis: Long) {}
-            override fun isClosed() = false
-        }
 
-        val options = spy(SentryAndroidOptions()).apply {
-            dsn = mockDsn
-            profilesSampleRate = 1.0
-            isDebug = true
-            setLogger(mockLogger)
-            executorService = mockExecutorService
-        }
+                override fun <T> submit(callable: Callable<T>): Future<T> {
+                    val futureTask = mock<FutureTask<T>>()
+                    whenever(futureTask.get()).thenAnswer {
+                        return@thenAnswer try {
+                            callable.call()
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                    return futureTask
+                }
+
+                override fun schedule(
+                    runnable: Runnable,
+                    delayMillis: Long,
+                ): Future<*> {
+                    lastScheduledRunnable = runnable
+                    return FutureTask {}
+                }
+
+                override fun close(timeoutMillis: Long) {}
+
+                override fun isClosed() = false
+            }
+
+        val options =
+            spy(SentryAndroidOptions()).apply {
+                dsn = mockDsn
+                profilesSampleRate = 1.0
+                isDebug = true
+                setLogger(mockLogger)
+                executorService = mockExecutorService
+            }
 
         val frameMetricsCollector: SentryFrameMetricsCollector = mock()
 
-        fun getSut(interval: Int = 1): AndroidProfiler {
-            return AndroidProfiler(
+        fun getSut(interval: Int = 1): AndroidProfiler =
+            AndroidProfiler(
                 options.profilingTracesDirPath!!,
                 interval,
                 frameMetricsCollector,
                 options.executorService,
-                options.logger
+                options.logger,
             )
-        }
     }
 
     @BeforeTest
@@ -104,7 +119,7 @@ class AndroidProfilerTest {
             fixture.options,
             context,
             fixture.mockLogger,
-            buildInfoProvider
+            buildInfoProvider,
         )
 
         AndroidOptionsInitializer.installDefaultIntegrations(
@@ -115,7 +130,7 @@ class AndroidProfilerTest {
             activityFramesTracker,
             false,
             false,
-            false
+            false,
         )
 
         AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
@@ -123,7 +138,7 @@ class AndroidProfilerTest {
             context,
             buildInfoProvider,
             loadClass,
-            activityFramesTracker
+            activityFramesTracker,
         )
         // Profiler doesn't start if the folder doesn't exists.
         // Usually it's generated when calling Sentry.init, but for tests we can create it manually.
@@ -273,15 +288,15 @@ class AndroidProfilerTest {
         val data = profiler.endAndCollect(false, performanceCollectionData)
         assertContentEquals(
             listOf(1.4),
-            data!!.measurementsMap[ProfileMeasurement.ID_CPU_USAGE]!!.values.map { it.value }
+            data!!.measurementsMap[ProfileMeasurement.ID_CPU_USAGE]!!.values.map { it.value },
         )
         assertContentEquals(
             listOf(2.0, 3.0),
-            data.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]!!.values.map { it.value }
+            data.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]!!.values.map { it.value },
         )
         assertContentEquals(
             listOf(3.0, 4.0),
-            data.measurementsMap[ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT]!!.values.map { it.value }
+            data.measurementsMap[ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT]!!.values.map { it.value },
         )
     }
 

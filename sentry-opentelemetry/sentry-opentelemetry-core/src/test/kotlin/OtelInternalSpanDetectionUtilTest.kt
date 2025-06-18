@@ -16,7 +16,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class OtelInternalSpanDetectionUtilTest {
-
     private class Fixture {
         val scopes = mock<IScopes>()
         val attributes = AttributesMap.create(100, 100)
@@ -41,8 +40,8 @@ class OtelInternalSpanDetectionUtilTest {
                 UrlAttributes.URL_PATH to "/path/to/123",
                 UrlAttributes.URL_QUERY to "q=123456&b=X",
                 ServerAttributes.SERVER_ADDRESS to "io.sentry",
-                ServerAttributes.SERVER_PORT to 8081L
-            )
+                ServerAttributes.SERVER_PORT to 8081L,
+            ),
         )
 
         thenRequestIsConsideredInternal()
@@ -54,8 +53,8 @@ class OtelInternalSpanDetectionUtilTest {
         givenSpanKind(SpanKind.CLIENT)
         givenAttributes(
             mapOf(
-                UrlAttributes.URL_FULL to "https://io.sentry:8081"
-            )
+                UrlAttributes.URL_FULL to "https://io.sentry:8081",
+            ),
         )
 
         thenRequestIsConsideredInternal()
@@ -67,8 +66,8 @@ class OtelInternalSpanDetectionUtilTest {
         givenSpanKind(SpanKind.CLIENT)
         givenAttributes(
             mapOf(
-                SemanticAttributes.HTTP_URL to "https://io.sentry:8081"
-            )
+                SemanticAttributes.HTTP_URL to "https://io.sentry:8081",
+            ),
         )
 
         thenRequestIsConsideredInternal()
@@ -85,8 +84,8 @@ class OtelInternalSpanDetectionUtilTest {
                 UrlAttributes.URL_PATH to "/path/to/123",
                 UrlAttributes.URL_QUERY to "q=123456&b=X",
                 ServerAttributes.SERVER_ADDRESS to "io.sentry",
-                ServerAttributes.SERVER_PORT to 8081L
-            )
+                ServerAttributes.SERVER_PORT to 8081L,
+            ),
         )
 
         thenRequestIsConsideredInternal()
@@ -98,8 +97,8 @@ class OtelInternalSpanDetectionUtilTest {
         givenSpanKind(SpanKind.INTERNAL)
         givenAttributes(
             mapOf(
-                UrlAttributes.URL_FULL to "https://io.sentry:8081"
-            )
+                UrlAttributes.URL_FULL to "https://io.sentry:8081",
+            ),
         )
 
         thenRequestIsConsideredInternal()
@@ -111,8 +110,8 @@ class OtelInternalSpanDetectionUtilTest {
         givenSpanKind(SpanKind.INTERNAL)
         givenAttributes(
             mapOf(
-                SemanticAttributes.HTTP_URL to "https://io.sentry:8081"
-            )
+                SemanticAttributes.HTTP_URL to "https://io.sentry:8081",
+            ),
         )
 
         thenRequestIsConsideredInternal()
@@ -124,8 +123,8 @@ class OtelInternalSpanDetectionUtilTest {
         givenSpanKind(SpanKind.SERVER)
         givenAttributes(
             mapOf(
-                UrlAttributes.URL_FULL to "https://io.sentry:8081"
-            )
+                UrlAttributes.URL_FULL to "https://io.sentry:8081",
+            ),
         )
 
         thenRequestIsNotConsideredInternal()
@@ -137,8 +136,8 @@ class OtelInternalSpanDetectionUtilTest {
         givenSpanKind(SpanKind.PRODUCER)
         givenAttributes(
             mapOf(
-                UrlAttributes.URL_FULL to "https://io.sentry:8081"
-            )
+                UrlAttributes.URL_FULL to "https://io.sentry:8081",
+            ),
         )
 
         thenRequestIsNotConsideredInternal()
@@ -150,8 +149,8 @@ class OtelInternalSpanDetectionUtilTest {
         givenSpanKind(SpanKind.CONSUMER)
         givenAttributes(
             mapOf(
-                UrlAttributes.URL_FULL to "https://io.sentry:8081"
-            )
+                UrlAttributes.URL_FULL to "https://io.sentry:8081",
+            ),
         )
 
         thenRequestIsNotConsideredInternal()
@@ -164,8 +163,8 @@ class OtelInternalSpanDetectionUtilTest {
         givenSpanKind(SpanKind.CLIENT)
         givenAttributes(
             mapOf(
-                UrlAttributes.URL_FULL to "http://localhost:8969/stream"
-            )
+                UrlAttributes.URL_FULL to "http://localhost:8969/stream",
+            ),
         )
 
         thenRequestIsConsideredInternal()
@@ -179,8 +178,8 @@ class OtelInternalSpanDetectionUtilTest {
         givenSpanKind(SpanKind.CLIENT)
         givenAttributes(
             mapOf(
-                UrlAttributes.URL_FULL to "http://localhost:8090/stream"
-            )
+                UrlAttributes.URL_FULL to "http://localhost:8090/stream",
+            ),
         )
 
         thenRequestIsConsideredInternal()
@@ -193,8 +192,8 @@ class OtelInternalSpanDetectionUtilTest {
         givenSpanKind(SpanKind.CLIENT)
         givenAttributes(
             mapOf(
-                UrlAttributes.URL_FULL to "http://localhost:8080/stream"
-            )
+                UrlAttributes.URL_FULL to "http://localhost:8080/stream",
+            ),
         )
 
         thenRequestIsNotConsideredInternal()
@@ -208,8 +207,8 @@ class OtelInternalSpanDetectionUtilTest {
         givenSpanKind(SpanKind.CLIENT)
         givenAttributes(
             mapOf(
-                UrlAttributes.URL_FULL to "http://localhost:8091/stream"
-            )
+                UrlAttributes.URL_FULL to "http://localhost:8091/stream",
+            ),
         )
 
         thenRequestIsNotConsideredInternal()
@@ -245,7 +244,6 @@ class OtelInternalSpanDetectionUtilTest {
         assertFalse(checkIfInternal())
     }
 
-    private fun checkIfInternal(): Boolean {
-        return OtelInternalSpanDetectionUtil.isSentryRequest(fixture.scopes, fixture.spanKind, fixture.attributes)
-    }
+    private fun checkIfInternal(): Boolean =
+        OtelInternalSpanDetectionUtil.isSentryRequest(fixture.scopes, fixture.spanKind, fixture.attributes)
 }

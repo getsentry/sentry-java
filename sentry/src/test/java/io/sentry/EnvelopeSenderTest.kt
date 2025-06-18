@@ -33,15 +33,14 @@ class EnvelopeSenderTest {
             options.setLogger(logger)
         }
 
-        fun getSut(): EnvelopeSender {
-            return EnvelopeSender(
+        fun getSut(): EnvelopeSender =
+            EnvelopeSender(
                 scopes!!,
                 serializer!!,
                 logger!!,
                 options.flushTimeoutMillis,
-                options.maxQueueSize
+                options.maxQueueSize,
             )
-        }
     }
 
     private lateinit var tempDirectory: Path
@@ -107,7 +106,9 @@ class EnvelopeSenderTest {
 
         val hints = HintUtils.createWithTypeCheckHint(mock<Retryable>())
         sut.processFile(testFile, hints)
-        verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq(expected), eq("Failed to capture cached envelope %s"), eq(testFile.absolutePath))
+        verify(
+            fixture.logger,
+        )!!.log(eq(SentryLevel.ERROR), eq(expected), eq("Failed to capture cached envelope %s"), eq(testFile.absolutePath))
         verifyNoMoreInteractions(fixture.scopes)
         assertFalse(testFile.exists())
     }
@@ -120,7 +121,9 @@ class EnvelopeSenderTest {
         val testFile = File(Files.createTempFile(tempDirectory, "send-cached-event-test", EnvelopeCache.SUFFIX_ENVELOPE_FILE).toUri())
         testFile.deleteOnExit()
         sut.processFile(testFile, Hint())
-        verify(fixture.logger)!!.log(eq(SentryLevel.ERROR), eq(expected), eq("Failed to capture cached envelope %s"), eq(testFile.absolutePath))
+        verify(
+            fixture.logger,
+        )!!.log(eq(SentryLevel.ERROR), eq(expected), eq("Failed to capture cached envelope %s"), eq(testFile.absolutePath))
         verifyNoMoreInteractions(fixture.scopes)
     }
 }

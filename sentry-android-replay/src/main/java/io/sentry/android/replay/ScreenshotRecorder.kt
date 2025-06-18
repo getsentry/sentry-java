@@ -42,23 +42,23 @@ internal class ScreenshotRecorder(
     val options: SentryOptions,
     private val mainLooperHandler: MainLooperHandler,
     private val recorder: ScheduledExecutorService,
-    private val screenshotRecorderCallback: ScreenshotRecorderCallback?
+    private val screenshotRecorderCallback: ScreenshotRecorderCallback?,
 ) : ViewTreeObserver.OnDrawListener {
-
     private var rootView: WeakReference<View>? = null
     private val maskingPaint by lazy(NONE) { Paint() }
     private val singlePixelBitmap: Bitmap by lazy(NONE) {
         Bitmap.createBitmap(
             1,
             1,
-            Bitmap.Config.ARGB_8888
+            Bitmap.Config.ARGB_8888,
         )
     }
-    private val screenshot = Bitmap.createBitmap(
-        config.recordingWidth,
-        config.recordingHeight,
-        Bitmap.Config.ARGB_8888
-    )
+    private val screenshot =
+        Bitmap.createBitmap(
+            config.recordingWidth,
+            config.recordingHeight,
+            Bitmap.Config.ARGB_8888,
+        )
     private val singlePixelBitmapCanvas: Canvas by lazy(NONE) { Canvas(singlePixelBitmap) }
     private val prescaledMatrix by lazy(NONE) {
         Matrix().apply {
@@ -135,27 +135,29 @@ internal class ScreenshotRecorder(
 //                                        return@traverse true
 //                                    }
 
-                                    val (visibleRects, color) = when (node) {
-                                        is ImageViewHierarchyNode -> {
-                                            listOf(node.visibleRect) to
-                                                screenshot.dominantColorForRect(node.visibleRect)
-                                        }
+                                    val (visibleRects, color) =
+                                        when (node) {
+                                            is ImageViewHierarchyNode -> {
+                                                listOf(node.visibleRect) to
+                                                    screenshot.dominantColorForRect(node.visibleRect)
+                                            }
 
-                                        is TextViewHierarchyNode -> {
-                                            val textColor = node.layout?.dominantTextColor
-                                                ?: node.dominantColor
-                                                ?: Color.BLACK
-                                            node.layout.getVisibleRects(
-                                                node.visibleRect,
-                                                node.paddingLeft,
-                                                node.paddingTop
-                                            ) to textColor
-                                        }
+                                            is TextViewHierarchyNode -> {
+                                                val textColor =
+                                                    node.layout?.dominantTextColor
+                                                        ?: node.dominantColor
+                                                        ?: Color.BLACK
+                                                node.layout.getVisibleRects(
+                                                    node.visibleRect,
+                                                    node.paddingLeft,
+                                                    node.paddingTop,
+                                                ) to textColor
+                                            }
 
-                                        else -> {
-                                            listOf(node.visibleRect) to Color.BLACK
+                                            else -> {
+                                                listOf(node.visibleRect) to Color.BLACK
+                                            }
                                         }
-                                    }
 
                                     maskingPaint.setColor(color)
                                     visibleRects.forEach { rect ->
@@ -182,7 +184,7 @@ internal class ScreenshotRecorder(
                             contentChanged.set(false)
                         }
                     },
-                    mainLooperHandler.handler
+                    mainLooperHandler.handler,
                 )
             } catch (e: Throwable) {
                 options.logger.log(WARNING, "Failed to capture replay recording", e)
@@ -261,7 +263,7 @@ internal class ScreenshotRecorder(
             this,
             visibleRect,
             Rect(0, 0, 1, 1),
-            null
+            null,
         )
         // get the pixel color (= dominant color)
         return singlePixelBitmap.getPixel(0, 0)
@@ -274,18 +276,18 @@ public data class ScreenshotRecorderConfig(
     val scaleFactorX: Float,
     val scaleFactorY: Float,
     val frameRate: Int,
-    val bitRate: Int
+    val bitRate: Int,
 ) {
     internal constructor(
         scaleFactorX: Float,
-        scaleFactorY: Float
+        scaleFactorY: Float,
     ) : this(
         recordingWidth = 0,
         recordingHeight = 0,
         scaleFactorX = scaleFactorX,
         scaleFactorY = scaleFactorY,
         frameRate = 0,
-        bitRate = 0
+        bitRate = 0,
     )
 
     internal companion object {
@@ -306,7 +308,7 @@ public data class ScreenshotRecorderConfig(
             context: Context,
             sessionReplay: SentryReplayOptions,
             windowWidth: Int,
-            windowHeight: Int
+            windowHeight: Int,
         ): ScreenshotRecorderConfig {
             // use the baseline density of 1x (mdpi)
             val (height, width) =
@@ -323,7 +325,7 @@ public data class ScreenshotRecorderConfig(
                 scaleFactorX = width.toFloat() / windowWidth,
                 scaleFactorY = height.toFloat() / windowHeight,
                 frameRate = sessionReplay.frameRate,
-                bitRate = sessionReplay.quality.bitRate
+                bitRate = sessionReplay.quality.bitRate,
             )
         }
     }
@@ -348,12 +350,18 @@ public interface ScreenshotRecorderCallback {
      * @param screenshot file containing the frame screenshot
      * @param frameTimestamp the timestamp when the frame screenshot was taken
      */
-    public fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
+    public fun onScreenshotRecorded(
+        screenshot: File,
+        frameTimestamp: Long,
+    )
 }
 
 /**
  * A callback to be invoked when once current window size is determined or changes
  */
 public interface WindowCallback {
-    public fun onWindowSizeChanged(width: Int, height: Int)
+    public fun onWindowSizeChanged(
+        width: Int,
+        height: Int,
+    )
 }

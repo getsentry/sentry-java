@@ -12,7 +12,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryCrashLastRunStateTest {
-
     private val sentryCrashLastRunState = SentryCrashLastRunState.getInstance()
 
     private lateinit var file: File

@@ -6,7 +6,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class FilterStringTest {
-
     @Test
     fun `turns string into pattern`() {
         val filterString = FilterString(".*")

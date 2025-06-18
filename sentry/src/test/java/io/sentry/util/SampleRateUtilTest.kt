@@ -8,7 +8,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SampleRateUtilTest {
-
     @Test
     fun `accepts 0 dot 01 for sample rate`() {
         assertTrue(SampleRateUtils.isValidSampleRate(0.01))

@@ -31,7 +31,6 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class EnvelopeTests : BaseUiTest() {
-
     @Test
     fun checkEnvelopeCaptureMessage() {
         initSentry(true)
@@ -128,47 +127,56 @@ class EnvelopeTests : BaseUiTest() {
                 // We allow measurements to be added since the start up to the end of the profile
                 val maxTimestampAllowed = profilingTraceData.durationNs.toLong()
 
-                profilingTraceData.measurementsMap.entries.filter {
-                    // We need at least two measurements, as one will be dropped by our tests
-                    it.value.values.size > 1
-                }.forEach { entry ->
-                    val name = entry.key
-                    val measurement = entry.value
-                    val values = measurement.values.sortedBy { it.relativeStartNs.toLong() }
+                profilingTraceData.measurementsMap.entries
+                    .filter {
+                        // We need at least two measurements, as one will be dropped by our tests
+                        it.value.values.size > 1
+                    }.forEach { entry ->
+                        val name = entry.key
+                        val measurement = entry.value
+                        val values = measurement.values.sortedBy { it.relativeStartNs.toLong() }
 
-                    // There should be no measurement before the profile starts
-                    assertTrue(
-                        values.first().relativeStartNs.toLong() > 0,
-                        "First measurement value for '$name' is <=0"
-                    )
-
-                    // The last frame measurements could be outside the transaction duration,
-                    //  since when the transaction finishes, the frame callback is removed from the activity,
-                    //  but internally it is already cached and will be called anyway in the next frame.
-                    //  Also, they are not completely accurate, so they could be flaky.
-                    if (entry.key !in listOf(ProfileMeasurement.ID_FROZEN_FRAME_RENDERS, ProfileMeasurement.ID_SLOW_FRAME_RENDERS, ProfileMeasurement.ID_SCREEN_FRAME_RATES)) {
-                        // There should be no measurement after the profile ends
-                        // Due to the nature of frozen frames, they could be measured after the transaction finishes
+                        // There should be no measurement before the profile starts
                         assertTrue(
-                            values.last().relativeStartNs.toLong() <= maxTimestampAllowed,
-                            "Last measurement value for '$name' is outside bounds (was: ${values.last().relativeStartNs.toLong()}ns, max: ${maxTimestampAllowed}ns"
+                            values.first().relativeStartNs.toLong() > 0,
+                            "First measurement value for '$name' is <=0",
                         )
-                    }
 
-                    // Timestamps of measurements should differ at least 10 milliseconds from each other
-                    (1 until values.size).forEach { i ->
-                        assertTrue(
-                            values[i].relativeStartNs.toLong() >= values[i - 1].relativeStartNs.toLong() + TimeUnit.MILLISECONDS.toNanos(
-                                10
-                            ),
-                            "Measurement value timestamp for '$name' does not differ at least 10ms"
-                        )
+                        // The last frame measurements could be outside the transaction duration,
+                        //  since when the transaction finishes, the frame callback is removed from the activity,
+                        //  but internally it is already cached and will be called anyway in the next frame.
+                        //  Also, they are not completely accurate, so they could be flaky.
+                        if (entry.key !in
+                            listOf(
+                                ProfileMeasurement.ID_FROZEN_FRAME_RENDERS,
+                                ProfileMeasurement.ID_SLOW_FRAME_RENDERS,
+                                ProfileMeasurement.ID_SCREEN_FRAME_RATES,
+                            )
+                        ) {
+                            // There should be no measurement after the profile ends
+                            // Due to the nature of frozen frames, they could be measured after the transaction finishes
+                            assertTrue(
+                                values.last().relativeStartNs.toLong() <= maxTimestampAllowed,
+                                "Last measurement value for '$name' is outside bounds (was: ${values.last().relativeStartNs.toLong()}ns, max: ${maxTimestampAllowed}ns",
+                            )
+                        }
+
+                        // Timestamps of measurements should differ at least 10 milliseconds from each other
+                        (1 until values.size).forEach { i ->
+                            assertTrue(
+                                values[i].relativeStartNs.toLong() >= values[i - 1].relativeStartNs.toLong() +
+                                    TimeUnit.MILLISECONDS.toNanos(
+                                        10,
+                                    ),
+                                "Measurement value timestamp for '$name' does not differ at least 10ms",
+                            )
+                        }
                     }
-                }
 
                 // We should find the transaction id that started the profiling in the list of transactions
-                val transactionData = profilingTraceData.transactions
-                    .firstOrNull { t -> t.id == transaction.eventId.toString() }
+                val transactionData =
+                    profilingTraceData.transactions
+                        .firstOrNull { t -> t.id == transaction.eventId.toString() }
                 assertNotNull(transactionData)
             }
             assertNoOtherEnvelopes()
@@ -181,7 +189,7 @@ class EnvelopeTests : BaseUiTest() {
             "Sometimes traceFile does not exist for profiles on emulators and it fails." +
                 " Although, Android Runtime is the one that manages the file, so something" +
                 " must be wrong with Debug.startMethodTracing",
-            BuildInfoProvider(NoOpLogger.getInstance()).isEmulator ?: true
+            BuildInfoProvider(NoOpLogger.getInstance()).isEmulator ?: true,
         )
         // We increase the IdlingResources timeout to exceed the profiling timeout
         IdlingPolicies.setIdlingResourceTimeout(1, TimeUnit.MINUTES)
@@ -242,10 +250,10 @@ class EnvelopeTests : BaseUiTest() {
         File(optionsRef!!.outboxPath, "14779dbf-b2f0-4c00-f4e5-4a287abc4267")
             .writeText(
                 """
-            {"dsn":"https://key@sentry.io/proj","event_id":"729ff878-5539-458d-f657-a1acf423a127","sent_at":"2025-04-02T10:02:04.732577Z"}
-            {"type":"transaction","length":1335}
-            {"event_id":"729ff878-5539-458d-f657-a1acf423a127","platform":"native","transaction":"little.teapot","start_timestamp":"2025-04-02T10:02:04.731697Z","spans":[{"op":"littlest.teapot","span_id":"00028ba394454124","status":"ok","trace_id":"7160e289fe4c4496f02c72bbc7edb392","parent_span_id":"b0dc1649a8ec4101","description":null,"start_timestamp":"2025-04-02T10:02:04.732127Z","timestamp":"2025-04-02T10:02:04.732133Z"},{"op":"littler.teapot","span_id":"b0dc1649a8ec4101","status":"ok","trace_id":"7160e289fe4c4496f02c72bbc7edb392","parent_span_id":"7ad2e40529af4650","description":null,"start_timestamp":"2025-04-02T10:02:04.732118Z","data":{"span_data_says":"hi!"},"timestamp":"2025-04-02T10:02:04.732137Z"}],"type":"transaction","timestamp":"2025-04-02T10:02:04.732142Z","level":"info","contexts":{"trace":{"trace_id":"7160e289fe4c4496f02c72bbc7edb392","span_id":"7ad2e40529af4650","op":"Short and stout here is my handle and here is my spout","status":"ok","data":{"url":"https://example.com"}},"os":{"build":"android14-4-00257-g7e35917775b8-ab9964412","name":"Linux","version":"6.1.23"}},"release":"1.0.0","dist":"dist","environment":"production","sdk":{"name":"io.sentry.ndk","version":"0.8.3","packages":[{"name":"github:getsentry/sentry-native","version":"0.8.3"}],"integrations":["inproc"]},"tags":{},"extra":{},"breadcrumbs":[]}
-                """.trimIndent()
+                {"dsn":"https://key@sentry.io/proj","event_id":"729ff878-5539-458d-f657-a1acf423a127","sent_at":"2025-04-02T10:02:04.732577Z"}
+                {"type":"transaction","length":1335}
+                {"event_id":"729ff878-5539-458d-f657-a1acf423a127","platform":"native","transaction":"little.teapot","start_timestamp":"2025-04-02T10:02:04.731697Z","spans":[{"op":"littlest.teapot","span_id":"00028ba394454124","status":"ok","trace_id":"7160e289fe4c4496f02c72bbc7edb392","parent_span_id":"b0dc1649a8ec4101","description":null,"start_timestamp":"2025-04-02T10:02:04.732127Z","timestamp":"2025-04-02T10:02:04.732133Z"},{"op":"littler.teapot","span_id":"b0dc1649a8ec4101","status":"ok","trace_id":"7160e289fe4c4496f02c72bbc7edb392","parent_span_id":"7ad2e40529af4650","description":null,"start_timestamp":"2025-04-02T10:02:04.732118Z","data":{"span_data_says":"hi!"},"timestamp":"2025-04-02T10:02:04.732137Z"}],"type":"transaction","timestamp":"2025-04-02T10:02:04.732142Z","level":"info","contexts":{"trace":{"trace_id":"7160e289fe4c4496f02c72bbc7edb392","span_id":"7ad2e40529af4650","op":"Short and stout here is my handle and here is my spout","status":"ok","data":{"url":"https://example.com"}},"os":{"build":"android14-4-00257-g7e35917775b8-ab9964412","name":"Linux","version":"6.1.23"}},"release":"1.0.0","dist":"dist","environment":"production","sdk":{"name":"io.sentry.ndk","version":"0.8.3","packages":[{"name":"github:getsentry/sentry-native","version":"0.8.3"}],"integrations":["inproc"]},"tags":{},"extra":{},"breadcrumbs":[]}
+                """.trimIndent(),
             )
 
         relayIdlingResource.increment()

@@ -38,12 +38,13 @@ class SentryGestureListenerScrollTest {
         val window = mock<Window>()
         val context = mock<Context>()
         val resources = mock<Resources>()
-        val options = SentryAndroidOptions().apply {
-            dsn = "https://key@sentry.io/proj"
-            isEnableUserInteractionBreadcrumbs = true
-            isEnableUserInteractionTracing = true
-            gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+                isEnableUserInteractionBreadcrumbs = true
+                isEnableUserInteractionTracing = true
+                gestureTargetLocators = listOf(AndroidViewGestureTargetLocator(true))
+            }
         val scopes = mock<IScopes>()
         val scope = mock<IScope>()
         val propagationContext = PropagationContext()
@@ -57,13 +58,14 @@ class SentryGestureListenerScrollTest {
         internal inline fun <reified T : View> getSut(
             resourceName: String = "test_scroll_view",
             touchWithinBounds: Boolean = true,
-            direction: String = ""
+            direction: String = "",
         ): SentryGestureListener {
-            target = mockView<T>(
-                event = firstEvent,
-                touchWithinBounds = touchWithinBounds,
-                context = context
-            )
+            target =
+                mockView<T>(
+                    event = firstEvent,
+                    touchWithinBounds = touchWithinBounds,
+                    context = context,
+                )
             window.mockDecorView<ViewGroup>(event = firstEvent) {
                 whenever(it.childCount).thenReturn(1)
                 whenever(it.getChildAt(0)).thenReturn(target)
@@ -78,11 +80,14 @@ class SentryGestureListenerScrollTest {
             }
             whenever(activity.window).thenReturn(window)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
-            doAnswer { (it.arguments[0] as Scope.IWithPropagationContext).accept(propagationContext); propagationContext }.whenever(scope).withPropagationContext(any())
+            doAnswer {
+                (it.arguments[0] as Scope.IWithPropagationContext).accept(propagationContext)
+                propagationContext
+            }.whenever(scope).withPropagationContext(any())
             return SentryGestureListener(
                 activity,
                 scopes,
-                options
+                options,
             )
         }
     }
@@ -108,7 +113,7 @@ class SentryGestureListenerScrollTest {
                 assertEquals("left", it.data["direction"])
                 assertEquals(INFO, it.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -153,7 +158,7 @@ class SentryGestureListenerScrollTest {
                     assertEquals("down", it.data["direction"])
                     assertEquals(INFO, it.level)
                 },
-                anyOrNull()
+                anyOrNull(),
             )
             verify(fixture.scopes).configureScope(anyOrNull())
             verify(fixture.scopes).addBreadcrumb(
@@ -165,7 +170,7 @@ class SentryGestureListenerScrollTest {
                     assertEquals("up", it.data["direction"])
                     assertEquals(INFO, it.level)
                 },
-                anyOrNull()
+                anyOrNull(),
             )
         }
         verifyNoMoreInteractions(fixture.scopes)
@@ -237,25 +242,32 @@ class SentryGestureListenerScrollTest {
         verify(fixture.scope).propagationContext = any()
     }
 
-    internal class ScrollableView : View(mock()), ScrollingView {
+    internal class ScrollableView :
+        View(mock()),
+        ScrollingView {
         override fun computeVerticalScrollOffset(): Int = 0
+
         override fun computeVerticalScrollExtent(): Int = 0
+
         override fun computeVerticalScrollRange(): Int = 0
+
         override fun computeHorizontalScrollOffset(): Int = 0
+
         override fun computeHorizontalScrollRange(): Int = 0
+
         override fun computeHorizontalScrollExtent(): Int = 0
     }
 
     internal open class ScrollableListView : AbsListView(mock()) {
         override fun getAdapter(): ListAdapter = mock()
+
         override fun setSelection(position: Int) = Unit
     }
 
     companion object {
-
         private fun MotionEvent.mockDirection(
             firstEvent: MotionEvent,
-            direction: String
+            direction: String,
         ) {
             val initialStartX = firstEvent.x
             val initialStartY = firstEvent.y

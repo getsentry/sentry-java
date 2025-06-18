@@ -36,7 +36,6 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class PerformanceAndroidEventProcessorTest {
-
     private class Fixture {
         val options = SentryAndroidOptions()
 
@@ -47,7 +46,7 @@ class PerformanceAndroidEventProcessorTest {
 
         fun getSut(
             tracesSampleRate: Double? = 1.0,
-            enablePerformanceV2: Boolean = false
+            enablePerformanceV2: Boolean = false,
         ): PerformanceAndroidEventProcessor {
             AppStartMetrics.getInstance().isAppLaunchedInForeground = true
             options.tracesSampleRate = tracesSampleRate
@@ -60,7 +59,10 @@ class PerformanceAndroidEventProcessorTest {
 
     private val fixture = Fixture()
 
-    private fun createAppStartSpan(traceId: SentryId, coldStart: Boolean = true) = SentrySpan(
+    private fun createAppStartSpan(
+        traceId: SentryId,
+        coldStart: Boolean = true,
+    ) = SentrySpan(
         0.0,
         1.0,
         traceId,
@@ -72,7 +74,7 @@ class PerformanceAndroidEventProcessorTest {
         null,
         emptyMap(),
         emptyMap(),
-        null
+        null,
     ).also {
         AppStartMetrics.getInstance().onActivityCreated(mock(), if (coldStart) null else mock())
     }
@@ -207,12 +209,14 @@ class PerformanceAndroidEventProcessorTest {
         val tracer = SentryTracer(context, fixture.scopes)
         var tr = SentryTransaction(tracer)
 
-        val metrics = mapOf(
-            MeasurementValue.KEY_FRAMES_TOTAL to MeasurementValue(
-                1f,
-                MeasurementUnit.Duration.MILLISECOND.apiName()
+        val metrics =
+            mapOf(
+                MeasurementValue.KEY_FRAMES_TOTAL to
+                    MeasurementValue(
+                        1f,
+                        MeasurementUnit.Duration.MILLISECOND.apiName(),
+                    ),
             )
-        )
         whenever(fixture.activityFramesTracker.takeMetrics(any())).thenReturn(metrics)
 
         tr = sut.process(tr, Hint())
@@ -265,20 +269,20 @@ class PerformanceAndroidEventProcessorTest {
             tr.spans.any {
                 "process.load" == it.op &&
                     appStartSpan.spanId == it.parentSpanId
-            }
+            },
         )
 
         assertTrue(
             tr.spans.any {
                 "contentprovider.load" == it.op &&
                     appStartSpan.spanId == it.parentSpanId
-            }
+            },
         )
 
         assertTrue(
             tr.spans.any {
                 "application.load" == it.op
-            }
+            },
         )
     }
 
@@ -377,7 +381,7 @@ class PerformanceAndroidEventProcessorTest {
                     "contentprovider.load" == it.op ||
                     "application.load" == it.op ||
                     "activity.load" == it.op
-            }
+            },
         )
     }
 
@@ -428,7 +432,7 @@ class PerformanceAndroidEventProcessorTest {
                     "contentprovider.load" == it.op ||
                     "application.load" == it.op ||
                     "activity.load" == it.op
-            }
+            },
         )
     }
 
@@ -455,7 +459,7 @@ class PerformanceAndroidEventProcessorTest {
         assertFalse(
             tr.spans.any {
                 "application.load" == it.op
-            }
+            },
         )
     }
 
@@ -488,7 +492,7 @@ class PerformanceAndroidEventProcessorTest {
         assertTrue(
             tr.spans.any {
                 "application.load" == it.op
-            }
+            },
         )
 
         // but not on the second activity transaction
@@ -498,7 +502,7 @@ class PerformanceAndroidEventProcessorTest {
         assertFalse(
             tr2.spans.any {
                 "application.load" == it.op
-            }
+            },
         )
     }
 
@@ -526,7 +530,7 @@ class PerformanceAndroidEventProcessorTest {
         assertFalse(
             tr.spans.any {
                 "process.load" == it.op
-            }
+            },
         )
     }
 
@@ -609,7 +613,7 @@ class PerformanceAndroidEventProcessorTest {
         // start_type should be set as well
         assertEquals(
             "cold",
-            tr.contexts.app!!.startType
+            tr.contexts.app!!.startType,
         )
     }
 
@@ -623,88 +627,93 @@ class PerformanceAndroidEventProcessorTest {
 
         // given a ttid from 0.0 -> 1.0
         //   and a ttfd from 0.0 -> 2.0
-        val ttid = SentrySpan(
-            0.0,
-            1.0,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            ActivityLifecycleIntegration.TTID_OP,
-            "App Start",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null
-        )
+        val ttid =
+            SentrySpan(
+                0.0,
+                1.0,
+                tr.contexts.trace!!.traceId,
+                SpanId(),
+                null,
+                ActivityLifecycleIntegration.TTID_OP,
+                "App Start",
+                SpanStatus.OK,
+                null,
+                emptyMap(),
+                emptyMap(),
+                null,
+            )
 
-        val ttfd = SentrySpan(
-            0.0,
-            2.0,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            ActivityLifecycleIntegration.TTFD_OP,
-            "App Start",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null
-        )
+        val ttfd =
+            SentrySpan(
+                0.0,
+                2.0,
+                tr.contexts.trace!!.traceId,
+                SpanId(),
+                null,
+                ActivityLifecycleIntegration.TTFD_OP,
+                "App Start",
+                SpanStatus.OK,
+                null,
+                emptyMap(),
+                emptyMap(),
+                null,
+            )
         tr.spans.add(ttid)
         tr.spans.add(ttfd)
 
         // and 3 spans
         // one from 0.0 -> 0.5
-        val ttidContrib = SentrySpan(
-            0.0,
-            0.5,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            "example.op",
-            "",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null
-        )
+        val ttidContrib =
+            SentrySpan(
+                0.0,
+                0.5,
+                tr.contexts.trace!!.traceId,
+                SpanId(),
+                null,
+                "example.op",
+                "",
+                SpanStatus.OK,
+                null,
+                emptyMap(),
+                emptyMap(),
+                null,
+            )
 
         // and another from 1.5 -> 3.5
-        val ttfdContrib = SentrySpan(
-            1.5,
-            3.5,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            "example.op",
-            "",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null
-        )
+        val ttfdContrib =
+            SentrySpan(
+                1.5,
+                3.5,
+                tr.contexts.trace!!.traceId,
+                SpanId(),
+                null,
+                "example.op",
+                "",
+                SpanStatus.OK,
+                null,
+                emptyMap(),
+                emptyMap(),
+                null,
+            )
 
         // and another from 2.1 -> 2.2
-        val outsideSpan = SentrySpan(
-            2.1,
-            2.2,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            "example.op",
-            "",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            mutableMapOf<String, Any>(
-                "tag" to "value"
+        val outsideSpan =
+            SentrySpan(
+                2.1,
+                2.2,
+                tr.contexts.trace!!.traceId,
+                SpanId(),
+                null,
+                "example.op",
+                "",
+                SpanStatus.OK,
+                null,
+                emptyMap(),
+                emptyMap(),
+                mutableMapOf<String, Any>(
+                    "tag" to "value",
+                ),
             )
-        )
 
         tr.spans.add(ttidContrib)
         tr.spans.add(ttfdContrib)
@@ -740,20 +749,21 @@ class PerformanceAndroidEventProcessorTest {
         val tracer = SentryTracer(context, fixture.scopes)
         val tr = SentryTransaction(tracer)
 
-        val span = SentrySpan(
-            0.0,
-            1.0,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            "example.op",
-            "",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null
-        )
+        val span =
+            SentrySpan(
+                0.0,
+                1.0,
+                tr.contexts.trace!!.traceId,
+                SpanId(),
+                null,
+                "example.op",
+                "",
+                SpanStatus.OK,
+                null,
+                emptyMap(),
+                emptyMap(),
+                null,
+            )
 
         tr.spans.add(span)
 
@@ -775,89 +785,94 @@ class PerformanceAndroidEventProcessorTest {
 
         // given a ttid from 0.0 -> 1.0
         //   and a ttfd from 0.0 -> 1.0
-        val ttid = SentrySpan(
-            0.0,
-            1.0,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            ActivityLifecycleIntegration.TTID_OP,
-            "App Start",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null
-        )
+        val ttid =
+            SentrySpan(
+                0.0,
+                1.0,
+                tr.contexts.trace!!.traceId,
+                SpanId(),
+                null,
+                ActivityLifecycleIntegration.TTID_OP,
+                "App Start",
+                SpanStatus.OK,
+                null,
+                emptyMap(),
+                emptyMap(),
+                null,
+            )
 
-        val ttfd = SentrySpan(
-            0.0,
-            1.0,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            ActivityLifecycleIntegration.TTFD_OP,
-            "App Start",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null
-        )
+        val ttfd =
+            SentrySpan(
+                0.0,
+                1.0,
+                tr.contexts.trace!!.traceId,
+                SpanId(),
+                null,
+                ActivityLifecycleIntegration.TTFD_OP,
+                "App Start",
+                SpanStatus.OK,
+                null,
+                emptyMap(),
+                emptyMap(),
+                null,
+            )
         tr.spans.add(ttid)
         tr.spans.add(ttfd)
 
         // one span with no thread info
-        val noThreadSpan = SentrySpan(
-            0.0,
-            0.5,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            "example.op",
-            "",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            null
-        )
+        val noThreadSpan =
+            SentrySpan(
+                0.0,
+                0.5,
+                tr.contexts.trace!!.traceId,
+                SpanId(),
+                null,
+                "example.op",
+                "",
+                SpanStatus.OK,
+                null,
+                emptyMap(),
+                emptyMap(),
+                null,
+            )
 
         // one span on the main thread
-        val mainThreadSpan = SentrySpan(
-            0.0,
-            0.5,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            "example.op",
-            "",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            mutableMapOf<String, Any>(
-                "thread.name" to "main"
+        val mainThreadSpan =
+            SentrySpan(
+                0.0,
+                0.5,
+                tr.contexts.trace!!.traceId,
+                SpanId(),
+                null,
+                "example.op",
+                "",
+                SpanStatus.OK,
+                null,
+                emptyMap(),
+                emptyMap(),
+                mutableMapOf<String, Any>(
+                    "thread.name" to "main",
+                ),
             )
-        )
 
         // and another one off the main thread
-        val backgroundThreadSpan = SentrySpan(
-            0.0,
-            0.5,
-            tr.contexts.trace!!.traceId,
-            SpanId(),
-            null,
-            "example.op",
-            "",
-            SpanStatus.OK,
-            null,
-            emptyMap(),
-            emptyMap(),
-            mutableMapOf<String, Any>(
-                "thread.name" to "background"
+        val backgroundThreadSpan =
+            SentrySpan(
+                0.0,
+                0.5,
+                tr.contexts.trace!!.traceId,
+                SpanId(),
+                null,
+                "example.op",
+                "",
+                SpanStatus.OK,
+                null,
+                emptyMap(),
+                emptyMap(),
+                mutableMapOf<String, Any>(
+                    "thread.name" to "background",
+                ),
             )
-        )
 
         tr.spans.add(noThreadSpan)
         tr.spans.add(mainThreadSpan)
@@ -878,12 +893,16 @@ class PerformanceAndroidEventProcessorTest {
         assertTrue(backgroundThreadSpan.data?.get(SpanDataConvention.CONTRIBUTES_TTFD) == true)
     }
 
-    private fun setAppStart(options: SentryAndroidOptions, coldStart: Boolean = true) {
+    private fun setAppStart(
+        options: SentryAndroidOptions,
+        coldStart: Boolean = true,
+    ) {
         AppStartMetrics.getInstance().apply {
-            appStartType = when (coldStart) {
-                true -> AppStartType.COLD
-                false -> AppStartType.WARM
-            }
+            appStartType =
+                when (coldStart) {
+                    true -> AppStartType.COLD
+                    false -> AppStartType.WARM
+                }
             val timeSpan =
                 if (options.isEnablePerformanceV2) appStartTimeSpan else sdkInitTimeSpan
             timeSpan.apply {
@@ -894,11 +913,12 @@ class PerformanceAndroidEventProcessorTest {
     }
 
     private fun getTransaction(type: AppStartType): SentryTransaction {
-        val op = when (type) {
-            AppStartType.COLD -> "app.start.cold"
-            AppStartType.WARM -> "app.start.warm"
-            AppStartType.UNKNOWN -> "ui.load"
-        }
+        val op =
+            when (type) {
+                AppStartType.COLD -> "app.start.cold"
+                AppStartType.WARM -> "app.start.warm"
+                AppStartType.UNKNOWN -> "ui.load"
+            }
         val txn = SentryTransaction(fixture.tracer)
         txn.contexts.setTrace(SpanContext(op, TracesSamplingDecision(false)))
         return txn

@@ -23,7 +23,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 
 class CombinedScopeViewTest {
-
     private class Fixture {
         lateinit var globalScope: IScope
         lateinit var isolationScope: IScope
@@ -105,15 +104,16 @@ class CombinedScopeViewTest {
     @Test
     fun `can add breadcrumb with hint`() {
         var capturedHint: Hint? = null
-        val combined = fixture.getSut(
-            SentryOptions().also {
-                it.beforeBreadcrumb =
-                    SentryOptions.BeforeBreadcrumbCallback { breadcrumb: Breadcrumb, hint: Hint ->
-                        capturedHint = hint
-                        breadcrumb
-                    }
-            }
-        )
+        val combined =
+            fixture.getSut(
+                SentryOptions().also {
+                    it.beforeBreadcrumb =
+                        SentryOptions.BeforeBreadcrumbCallback { breadcrumb: Breadcrumb, hint: Hint ->
+                            capturedHint = hint
+                            breadcrumb
+                        }
+                },
+            )
 
         combined.addBreadcrumb(Breadcrumb.info("aBreadcrumb"), Hint().also { it.set("aTest", "aValue") })
 
@@ -153,9 +153,10 @@ class CombinedScopeViewTest {
 
     @Test
     fun `event processors from options are not returned`() {
-        val options = SentryOptions().also {
-            it.addEventProcessor(MainEventProcessor(it))
-        }
+        val options =
+            SentryOptions().also {
+                it.addEventProcessor(MainEventProcessor(it))
+            }
         val combined = fixture.getSut(options)
 
         assertEquals(0, combined.eventProcessors.size)
@@ -890,7 +891,11 @@ class CombinedScopeViewTest {
         whenever(globalScope.options).thenReturn(options)
 
         val exception = RuntimeException("someEx")
-        val transaction = createTransaction("aTransaction", createTestScopes(options = options, scope = scope, isolationScope = isolationScope, globalScope = globalScope))
+        val transaction =
+            createTransaction(
+                "aTransaction",
+                createTestScopes(options = options, scope = scope, isolationScope = isolationScope, globalScope = globalScope),
+            )
         combined.setSpanContext(exception, transaction, "aTransaction")
 
         verify(scope, never()).setSpanContext(any(), any(), any())
@@ -953,7 +958,8 @@ class CombinedScopeViewTest {
     fun `retrieves propagation context from default scope`() {
         val combined = fixture.getSut()
         fixture.scope.propagationContext = PropagationContext().also { it.traceId = SentryId("c81d4e2e-bcf2-11e6-869b-7df92533d2dc") }
-        fixture.isolationScope.propagationContext = PropagationContext().also { it.traceId = SentryId("d81d4e2e-bcf2-11e6-869b-7df92533d2dd") }
+        fixture.isolationScope.propagationContext =
+            PropagationContext().also { it.traceId = SentryId("d81d4e2e-bcf2-11e6-869b-7df92533d2dd") }
         fixture.globalScope.propagationContext = PropagationContext().also { it.traceId = SentryId("e81d4e2e-bcf2-11e6-869b-7df92533d2de") }
 
         assertEquals(ScopeType.ISOLATION, fixture.options.defaultScopeType)
@@ -967,16 +973,29 @@ class CombinedScopeViewTest {
         combined.propagationContext = PropagationContext().also { it.traceId = SentryId("c81d4e2e-bcf2-11e6-869b-7df92533d2db") }
 
         assertEquals(ScopeType.ISOLATION, fixture.options.defaultScopeType)
-        assertNotEquals("c81d4e2ebcf211e6869b7df92533d2db", fixture.scope.propagationContext.traceId.toString())
-        assertEquals("c81d4e2ebcf211e6869b7df92533d2db", fixture.isolationScope.propagationContext.traceId.toString())
-        assertNotEquals("c81d4e2ebcf211e6869b7df92533d2db", fixture.globalScope.propagationContext.traceId.toString())
+        assertNotEquals(
+            "c81d4e2ebcf211e6869b7df92533d2db",
+            fixture.scope.propagationContext.traceId
+                .toString(),
+        )
+        assertEquals(
+            "c81d4e2ebcf211e6869b7df92533d2db",
+            fixture.isolationScope.propagationContext.traceId
+                .toString(),
+        )
+        assertNotEquals(
+            "c81d4e2ebcf211e6869b7df92533d2db",
+            fixture.globalScope.propagationContext.traceId
+                .toString(),
+        )
     }
 
     @Test
     fun `withPropagationContext uses default scope`() {
         val combined = fixture.getSut()
         fixture.scope.propagationContext = PropagationContext().also { it.traceId = SentryId("c81d4e2e-bcf2-11e6-869b-7df92533d2dc") }
-        fixture.isolationScope.propagationContext = PropagationContext().also { it.traceId = SentryId("d81d4e2e-bcf2-11e6-869b-7df92533d2dd") }
+        fixture.isolationScope.propagationContext =
+            PropagationContext().also { it.traceId = SentryId("d81d4e2e-bcf2-11e6-869b-7df92533d2dd") }
         fixture.globalScope.propagationContext = PropagationContext().also { it.traceId = SentryId("e81d4e2e-bcf2-11e6-869b-7df92533d2de") }
 
         var capturedPropagationContext: PropagationContext? = null
@@ -1198,18 +1217,21 @@ class CombinedScopeViewTest {
         kotlin.test.assertTrue(scope.contexts.isEmpty)
     }
 
-    private fun createTransaction(name: String, scopes: Scopes? = null): ITransaction {
+    private fun createTransaction(
+        name: String,
+        scopes: Scopes? = null,
+    ): ITransaction {
         val scopesToUse = scopes ?: fixture.scopes
         return SentryTracer(TransactionContext(name, "op", TracesSamplingDecision(true)), scopesToUse).also {
             it.startChild("${name}Span")
         }
     }
 
-    private fun createAttachment(name: String): Attachment {
-        return Attachment("a".toByteArray(), name, "image/png", false)
-    }
+    private fun createAttachment(name: String): Attachment = Attachment("a".toByteArray(), name, "image/png", false)
 
-    class TestEventProcessor(val orderNumber: Long?) : EventProcessor {
+    class TestEventProcessor(
+        val orderNumber: Long?,
+    ) : EventProcessor {
         override fun getOrder() = orderNumber
     }
 }

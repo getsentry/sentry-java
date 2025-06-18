@@ -58,8 +58,10 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class AndroidOptionsInitializerTest {
-
-    class Fixture(val context: Context, private val file: File) {
+    class Fixture(
+        val context: Context,
+        private val file: File,
+    ) {
         val sentryOptions = SentryAndroidOptions()
         lateinit var mockContext: Context
         val logger = mock<ILogger>()
@@ -70,18 +72,19 @@ class AndroidOptionsInitializerTest {
             useRealContext: Boolean = false,
             configureOptions: SentryAndroidOptions.() -> Unit = {},
             configureContext: Context.() -> Unit = {},
-            assets: AssetManager? = null
+            assets: AssetManager? = null,
         ) {
             sentryOptions.executorService = ImmediateExecutorService()
-            mockContext = if (metadata != null) {
-                ContextUtilsTestHelper.mockMetaData(
-                    mockContext = ContextUtilsTestHelper.createMockContext(hasAppContext),
-                    metaData = metadata,
-                    assets = assets
-                )
-            } else {
-                ContextUtilsTestHelper.createMockContext(hasAppContext)
-            }
+            mockContext =
+                if (metadata != null) {
+                    ContextUtilsTestHelper.mockMetaData(
+                        mockContext = ContextUtilsTestHelper.createMockContext(hasAppContext),
+                        metaData = metadata,
+                        assets = assets,
+                    )
+                } else {
+                    ContextUtilsTestHelper.createMockContext(hasAppContext)
+                }
             whenever(mockContext.cacheDir).thenReturn(file)
             if (mockContext.applicationContext != null) {
                 whenever(mockContext.applicationContext.cacheDir).thenReturn(file)
@@ -89,7 +92,7 @@ class AndroidOptionsInitializerTest {
             mockContext.configureContext()
             AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
                 sentryOptions,
-                if (useRealContext) context else mockContext
+                if (useRealContext) context else mockContext,
             )
 
             val loadClass = LoadClass()
@@ -103,7 +106,7 @@ class AndroidOptionsInitializerTest {
                 activityFramesTracker,
                 false,
                 false,
-                false
+                false,
             )
 
             sentryOptions.configureOptions()
@@ -111,7 +114,7 @@ class AndroidOptionsInitializerTest {
                 sentryOptions,
                 if (useRealContext) context else mockContext,
                 loadClass,
-                activityFramesTracker
+                activityFramesTracker,
             )
         }
 
@@ -119,14 +122,16 @@ class AndroidOptionsInitializerTest {
             classesToLoad: List<String> = emptyList(),
             isFragmentAvailable: Boolean = false,
             isTimberAvailable: Boolean = false,
-            isReplayAvailable: Boolean = false
+            isReplayAvailable: Boolean = false,
         ) {
-            mockContext = ContextUtilsTestHelper.mockMetaData(
-                mockContext = ContextUtilsTestHelper.createMockContext(hasAppContext = true),
-                metaData = Bundle().apply {
-                    putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
-                }
-            )
+            mockContext =
+                ContextUtilsTestHelper.mockMetaData(
+                    mockContext = ContextUtilsTestHelper.createMockContext(hasAppContext = true),
+                    metaData =
+                        Bundle().apply {
+                            putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
+                        },
+                )
             sentryOptions.isDebug = true
             val buildInfo = createBuildInfo()
             val loadClass = createClassMock(classesToLoad)
@@ -136,7 +141,7 @@ class AndroidOptionsInitializerTest {
                 sentryOptions,
                 context,
                 logger,
-                buildInfo
+                buildInfo,
             )
 
             AndroidOptionsInitializer.installDefaultIntegrations(
@@ -147,7 +152,7 @@ class AndroidOptionsInitializerTest {
                 activityFramesTracker,
                 isFragmentAvailable,
                 isTimberAvailable,
-                isReplayAvailable
+                isReplayAvailable,
             )
 
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
@@ -155,7 +160,7 @@ class AndroidOptionsInitializerTest {
                 context,
                 buildInfo,
                 loadClass,
-                activityFramesTracker
+                activityFramesTracker,
             )
         }
 
@@ -264,8 +269,8 @@ class AndroidOptionsInitializerTest {
 
         assertTrue(
             fixture.sentryOptions.cacheDirPath?.endsWith(
-                "${File.separator}cache${File.separator}sentry"
-            )!!
+                "${File.separator}cache${File.separator}sentry",
+            )!!,
         )
     }
 
@@ -281,8 +286,8 @@ class AndroidOptionsInitializerTest {
 
         assertTrue(
             fixture.sentryOptions.profilingTracesDirPath?.endsWith(
-                "${File.separator}cache${File.separator}sentry${File.separator}profiling_traces"
-            )!!
+                "${File.separator}cache${File.separator}sentry${File.separator}profiling_traces",
+            )!!,
         )
         assertFalse(File(fixture.sentryOptions.profilingTracesDirPath!!).exists())
     }
@@ -293,8 +298,8 @@ class AndroidOptionsInitializerTest {
 
         assertTrue(
             fixture.sentryOptions.outboxPath?.endsWith(
-                "${File.separator}cache${File.separator}sentry${File.separator}outbox"
-            )!!
+                "${File.separator}cache${File.separator}sentry${File.separator}outbox",
+            )!!,
         )
     }
 
@@ -348,7 +353,7 @@ class AndroidOptionsInitializerTest {
             Bundle().apply {
                 putString(ManifestMetadataReader.PROGUARD_UUID, "proguard-uuid")
             },
-            hasAppContext = false
+            hasAppContext = false,
         )
 
         assertEquals("proguard-uuid", fixture.sentryOptions.proguardUuid)
@@ -543,8 +548,9 @@ class AndroidOptionsInitializerTest {
     fun `When given Context is not an Application class, do not add ActivityLifecycleIntegration`() {
         fixture.initSut(hasAppContext = false)
 
-        val actual = fixture.sentryOptions.integrations
-            .firstOrNull { it is ActivityLifecycleIntegration }
+        val actual =
+            fixture.sentryOptions.integrations
+                .firstOrNull { it is ActivityLifecycleIntegration }
         assertNull(actual)
     }
 
@@ -552,8 +558,9 @@ class AndroidOptionsInitializerTest {
     fun `When given Context is not an Application class, do not add ActivityBreadcrumbsIntegration`() {
         fixture.initSut(hasAppContext = false)
 
-        val actual = fixture.sentryOptions.integrations
-            .firstOrNull { it is ActivityBreadcrumbsIntegration }
+        val actual =
+            fixture.sentryOptions.integrations
+                .firstOrNull { it is ActivityBreadcrumbsIntegration }
         assertNull(actual)
     }
 
@@ -561,8 +568,9 @@ class AndroidOptionsInitializerTest {
     fun `When given Context is not an Application class, do not add UserInteractionIntegration`() {
         fixture.initSut(hasAppContext = false)
 
-        val actual = fixture.sentryOptions.integrations
-            .firstOrNull { it is UserInteractionIntegration }
+        val actual =
+            fixture.sentryOptions.integrations
+                .firstOrNull { it is UserInteractionIntegration }
         assertNull(actual)
     }
 
@@ -641,14 +649,15 @@ class AndroidOptionsInitializerTest {
             useRealContext = true,
             configureOptions = {
                 isEnableFramesTracking = true
-            }
+            },
         )
 
-        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
-            .first { it is ActivityLifecycleIntegration }
+        val activityLifeCycleIntegration =
+            fixture.sentryOptions.integrations
+                .first { it is ActivityLifecycleIntegration }
 
         assertFalse(
-            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable,
         )
     }
 
@@ -660,14 +669,15 @@ class AndroidOptionsInitializerTest {
             configureOptions = {
                 isEnablePerformanceV2 = false
                 isEnableFramesTracking = true
-            }
+            },
         )
 
-        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
-            .first { it is ActivityLifecycleIntegration }
+        val activityLifeCycleIntegration =
+            fixture.sentryOptions.integrations
+                .first { it is ActivityLifecycleIntegration }
 
         assertTrue(
-            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable,
         )
     }
 
@@ -677,11 +687,12 @@ class AndroidOptionsInitializerTest {
             isEnableFramesTracking = false
         })
 
-        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
-            .first { it is ActivityLifecycleIntegration }
+        val activityLifeCycleIntegration =
+            fixture.sentryOptions.integrations
+                .first { it is ActivityLifecycleIntegration }
 
         assertFalse(
-            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable,
         )
     }
 
@@ -693,14 +704,15 @@ class AndroidOptionsInitializerTest {
             useRealContext = true,
             configureOptions = {
                 isEnableFramesTracking = true
-            }
+            },
         )
 
-        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
-            .first { it is ActivityLifecycleIntegration }
+        val activityLifeCycleIntegration =
+            fixture.sentryOptions.integrations
+                .first { it is ActivityLifecycleIntegration }
 
         assertFalse(
-            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable,
         )
     }
 
@@ -713,14 +725,15 @@ class AndroidOptionsInitializerTest {
             configureOptions = {
                 isEnablePerformanceV2 = false
                 isEnableFramesTracking = true
-            }
+            },
         )
 
-        val activityLifeCycleIntegration = fixture.sentryOptions.integrations
-            .first { it is ActivityLifecycleIntegration }
+        val activityLifeCycleIntegration =
+            fixture.sentryOptions.integrations
+                .first { it is ActivityLifecycleIntegration }
 
         assertTrue(
-            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable
+            (activityLifeCycleIntegration as ActivityLifecycleIntegration).activityFramesTracker.isFrameMetricsAggregatorAvailable,
         )
     }
 
@@ -756,10 +769,11 @@ class AndroidOptionsInitializerTest {
     @Test
     fun `installs ComposeGestureTargetLocator, if sentry-compose is available`() {
         fixture.initSutWithClassLoader(
-            classesToLoad = listOf(
-                AndroidOptionsInitializer.COMPOSE_CLASS_NAME,
-                AndroidOptionsInitializer.SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME
-            )
+            classesToLoad =
+                listOf(
+                    AndroidOptionsInitializer.COMPOSE_CLASS_NAME,
+                    AndroidOptionsInitializer.SENTRY_COMPOSE_GESTURE_INTEGRATION_CLASS_NAME,
+                ),
         )
 
         assertTrue { fixture.sentryOptions.gestureTargetLocators.size == 2 }
@@ -821,7 +835,7 @@ class AndroidOptionsInitializerTest {
             mock(),
             false,
             false,
-            false
+            false,
         )
         verify(mockOptions, never()).outboxPath
         verify(mockOptions, never()).cacheDirPath

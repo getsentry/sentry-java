@@ -18,18 +18,19 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 
 class SentryEnvelopeHeaderSerializationTest {
-
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = SentryEnvelopeHeader(
-            SentryIdSerializationTest.Fixture().getSut(),
-            SdkVersionSerializationTest.Fixture().getSut(),
-            TraceContextSerializationTest.Fixture().getSut()
-        ).apply {
-            sentAt = DateUtils.getDateTime("2020-02-07T14:16:00.000Z")
-        }
+        fun getSut() =
+            SentryEnvelopeHeader(
+                SentryIdSerializationTest.Fixture().getSut(),
+                SdkVersionSerializationTest.Fixture().getSut(),
+                TraceContextSerializationTest.Fixture().getSut(),
+            ).apply {
+                sentAt = DateUtils.getDateTime("2020-02-07T14:16:00.000Z")
+            }
     }
+
     private val fixture = Fixture()
 
     @Before
@@ -59,11 +60,11 @@ class SentryEnvelopeHeaderSerializationTest {
 
     // Helper
 
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
+    private fun sanitizedFile(path: String): String =
+        FileFromResources
+            .invoke(path)
             .replace(Regex("[\n\r]"), "")
             .replace(" ", "")
-    }
 
     private fun serialize(jsonSerializable: JsonSerializable): String {
         val wrt = StringWriter()

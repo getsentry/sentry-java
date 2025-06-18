@@ -19,7 +19,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertSame
 
 class SentrySpringSubscriptionHandlerTest {
-
     @Test
     fun `reports exception`() {
         val exception = IllegalStateException("some exception")
@@ -27,12 +26,25 @@ class SentrySpringSubscriptionHandlerTest {
         val exceptionReporter = mock<ExceptionReporter>()
         val parameters = mock<InstrumentationFieldFetchParameters>()
         val dataFetchingEnvironment = mock<DataFetchingEnvironment>()
-        val document = Document.newDocument()
-            .definition(OperationDefinition.newOperationDefinition().operation(OperationDefinition.Operation.QUERY).name("testQuery").build())
-            .build()
+        val document =
+            Document
+                .newDocument()
+                .definition(
+                    OperationDefinition
+                        .newOperationDefinition()
+                        .operation(OperationDefinition.Operation.QUERY)
+                        .name("testQuery")
+                        .build(),
+                ).build()
         whenever(dataFetchingEnvironment.document).thenReturn(document)
         whenever(parameters.environment).thenReturn(dataFetchingEnvironment)
-        val resultObject = SentrySpringSubscriptionHandler().onSubscriptionResult(Flux.error<Any?>(exception), scopes, exceptionReporter, parameters)
+        val resultObject =
+            SentrySpringSubscriptionHandler().onSubscriptionResult(
+                Flux.error<Any?>(exception),
+                scopes,
+                exceptionReporter,
+                parameters,
+            )
         assertThrows<IllegalStateException> {
             (resultObject as Flux<Any?>).blockFirst()
         }
@@ -44,7 +56,7 @@ class SentrySpringSubscriptionHandlerTest {
                 assertSame(scopes, it.scopes)
                 assertEquals("query testQuery\n", it.query)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -56,12 +68,25 @@ class SentrySpringSubscriptionHandlerTest {
         val exceptionReporter = mock<ExceptionReporter>()
         val parameters = mock<InstrumentationFieldFetchParameters>()
         val dataFetchingEnvironment = mock<DataFetchingEnvironment>()
-        val document = Document.newDocument()
-            .definition(OperationDefinition.newOperationDefinition().operation(OperationDefinition.Operation.QUERY).name("testQuery").build())
-            .build()
+        val document =
+            Document
+                .newDocument()
+                .definition(
+                    OperationDefinition
+                        .newOperationDefinition()
+                        .operation(OperationDefinition.Operation.QUERY)
+                        .name("testQuery")
+                        .build(),
+                ).build()
         whenever(dataFetchingEnvironment.document).thenReturn(document)
         whenever(parameters.environment).thenReturn(dataFetchingEnvironment)
-        val resultObject = SentrySpringSubscriptionHandler().onSubscriptionResult(Flux.error<Any?>(wrappedException), scopes, exceptionReporter, parameters)
+        val resultObject =
+            SentrySpringSubscriptionHandler().onSubscriptionResult(
+                Flux.error<Any?>(wrappedException),
+                scopes,
+                exceptionReporter,
+                parameters,
+            )
         assertThrows<SubscriptionPublisherException> {
             (resultObject as Flux<Any?>).blockFirst()
         }
@@ -73,7 +98,7 @@ class SentrySpringSubscriptionHandlerTest {
                 assertSame(scopes, it.scopes)
                 assertEquals("query testQuery\n", it.query)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 }

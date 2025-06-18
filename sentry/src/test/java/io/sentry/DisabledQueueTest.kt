@@ -8,7 +8,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DisabledQueueTest {
-
     @Test
     fun `size starts empty`() {
         val queue = DisabledQueue<Int>()

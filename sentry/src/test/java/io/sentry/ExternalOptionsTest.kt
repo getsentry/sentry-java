@@ -15,7 +15,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ExternalOptionsTest {
-
     @Test
     fun `creates options with proxy using external properties`() {
         withPropertiesFile(listOf("proxy.host=proxy.example.com", "proxy.port=9090", "proxy.user=some-user", "proxy.pass=some-pass")) {
@@ -89,10 +88,11 @@ class ExternalOptionsTest {
 
     @Test
     fun `creates options with debug set to null enabled using external properties`() {
-        withPropertiesFile() {
-            val mergeResult = SentryOptions().apply {
-                setDebug(true)
-            }
+        withPropertiesFile {
+            val mergeResult =
+                SentryOptions().apply {
+                    setDebug(true)
+                }
             mergeResult.merge(it)
             assertTrue(mergeResult.isDebug)
         }
@@ -201,7 +201,10 @@ class ExternalOptionsTest {
         // - RuntimeException and IllegalStateException - valid exception classes
         // - NonExistingClass - class that does not exist - should not trigger a failure to create options
         // - io.sentry.Sentry - class that does not extend Throwable - should not trigger a failure
-        withPropertiesFile("ignored-exceptions-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,com.xx.NonExistingClass,io.sentry.Sentry", logger) { options ->
+        withPropertiesFile(
+            "ignored-exceptions-for-type=java.lang.RuntimeException,java.lang.IllegalStateException,com.xx.NonExistingClass,io.sentry.Sentry",
+            logger,
+        ) { options ->
             assertTrue(options.ignoredExceptionsForType.contains(RuntimeException::class.java))
             assertTrue(options.ignoredExceptionsForType.contains(IllegalStateException::class.java))
             verify(logger).log(eq(SentryLevel.WARNING), any<String>(), eq("com.xx.NonExistingClass"), eq("com.xx.NonExistingClass"))
@@ -236,7 +239,9 @@ class ExternalOptionsTest {
     @Test
     fun `creates options with multiple bundle IDs using external properties`() {
         withPropertiesFile("bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411,faa3ab42-b1bd-4659-af8e-1682324aa744") { options ->
-            assertTrue(options.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744")))
+            assertTrue(
+                options.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411", "faa3ab42-b1bd-4659-af8e-1682324aa744")),
+            )
         }
     }
 
@@ -310,7 +315,15 @@ class ExternalOptionsTest {
 
     @Test
     fun `creates options with cron defaults`() {
-        withPropertiesFile(listOf("cron.default-checkin-margin=1", "cron.default-max-runtime=30", "cron.default-timezone=America/New_York", "cron.default-failure-issue-threshold=40", "cron.default-recovery-threshold=50")) { options ->
+        withPropertiesFile(
+            listOf(
+                "cron.default-checkin-margin=1",
+                "cron.default-max-runtime=30",
+                "cron.default-timezone=America/New_York",
+                "cron.default-failure-issue-threshold=40",
+                "cron.default-recovery-threshold=50",
+            ),
+        ) { options ->
             assertEquals(1L, options.cron?.defaultCheckinMargin)
             assertEquals(30L, options.cron?.defaultMaxRuntime)
             assertEquals("America/New_York", options.cron?.defaultTimezone)
@@ -382,7 +395,11 @@ class ExternalOptionsTest {
         }
     }
 
-    private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
+    private fun withPropertiesFile(
+        textLines: List<String> = emptyList(),
+        logger: ILogger = mock(),
+        fn: (ExternalOptions) -> Unit,
+    ) {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()
         temporaryFolder.create()
@@ -399,7 +416,11 @@ class ExternalOptionsTest {
         }
     }
 
-    private fun withPropertiesFile(text: String, logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
+    private fun withPropertiesFile(
+        text: String,
+        logger: ILogger = mock(),
+        fn: (ExternalOptions) -> Unit,
+    ) {
         withPropertiesFile(listOf(text), logger, fn)
     }
 }

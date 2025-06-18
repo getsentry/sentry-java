@@ -38,7 +38,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class NetworkBreadcrumbsIntegrationTest {
-
     private class Fixture {
         val context = mock<Context>()
         var options = SentryAndroidOptions()
@@ -51,24 +50,26 @@ class NetworkBreadcrumbsIntegrationTest {
         init {
             whenever(mockBuildInfoProvider.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
             whenever(context.getSystemService(eq(Context.CONNECTIVITY_SERVICE))).thenReturn(
-                connectivityManager
+                connectivityManager,
             )
         }
 
         fun getSut(
             enableNetworkEventBreadcrumbs: Boolean = true,
             buildInfo: BuildInfoProvider = mockBuildInfoProvider,
-            executor: ISentryExecutorService = ImmediateExecutorService()
+            executor: ISentryExecutorService = ImmediateExecutorService(),
         ): NetworkBreadcrumbsIntegration {
-            options = SentryAndroidOptions().apply {
-                executorService = executor
-                isEnableNetworkEventBreadcrumbs = enableNetworkEventBreadcrumbs
-                dateProvider = SentryDateProvider {
-                    val nowNanos =
-                        TimeUnit.MILLISECONDS.toNanos(nowMs ?: System.currentTimeMillis())
-                    SentryNanotimeDate(DateUtils.nanosToDate(nowNanos), nowNanos)
+            options =
+                SentryAndroidOptions().apply {
+                    executorService = executor
+                    isEnableNetworkEventBreadcrumbs = enableNetworkEventBreadcrumbs
+                    dateProvider =
+                        SentryDateProvider {
+                            val nowNanos =
+                                TimeUnit.MILLISECONDS.toNanos(nowMs ?: System.currentTimeMillis())
+                            SentryNanotimeDate(DateUtils.nanosToDate(nowNanos), nowNanos)
+                        }
                 }
-            }
             return NetworkBreadcrumbsIntegration(context, buildInfo, options.logger)
         }
     }
@@ -130,7 +131,7 @@ class NetworkBreadcrumbsIntegrationTest {
 
         verify(
             fixture.connectivityManager,
-            never()
+            never(),
         ).unregisterNetworkCallback(any<NetworkCallback>())
         assertNull(sut.networkCallback)
     }
@@ -149,7 +150,7 @@ class NetworkBreadcrumbsIntegrationTest {
                 assertEquals("network.event", it.category)
                 assertEquals(SentryLevel.INFO, it.level)
                 assertEquals("NETWORK_AVAILABLE", it.data["action"])
-            }
+            },
         )
     }
 
@@ -182,7 +183,7 @@ class NetworkBreadcrumbsIntegrationTest {
                 assertEquals("network.event", it.category)
                 assertEquals(SentryLevel.INFO, it.level)
                 assertEquals("NETWORK_LOST", it.data["action"])
-            }
+            },
         )
     }
 
@@ -215,8 +216,8 @@ class NetworkBreadcrumbsIntegrationTest {
                 isVpn = true,
                 isEthernet = false,
                 isWifi = true,
-                isCellular = false
-            )
+                isCellular = false,
+            ),
         )
         verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
@@ -230,7 +231,7 @@ class NetworkBreadcrumbsIntegrationTest {
                 assertEquals("wifi", it.data["network_type"])
                 assertEquals(-50, it.data["signal_strength"])
             },
-            any()
+            any(),
         )
     }
 
@@ -518,7 +519,7 @@ class NetworkBreadcrumbsIntegrationTest {
                 val connectionDetail =
                     it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                 check(connectionDetail)
-            }
+            },
         )
     }
 
@@ -529,7 +530,7 @@ class NetworkBreadcrumbsIntegrationTest {
                 val connectionDetail =
                     it[TypeCheckHint.ANDROID_NETWORK_CAPABILITIES] as NetworkBreadcrumbConnectionDetail
                 check(connectionDetail)
-            }
+            },
         )
     }
 
@@ -540,7 +541,7 @@ class NetworkBreadcrumbsIntegrationTest {
         isVpn: Boolean = false,
         isEthernet: Boolean = false,
         isWifi: Boolean = false,
-        isCellular: Boolean = false
+        isCellular: Boolean = false,
     ): NetworkCapabilities {
         val capabilities = mock<NetworkCapabilities>()
         whenever(capabilities.linkDownstreamBandwidthKbps).thenReturn(downstreamBandwidthKbps)
@@ -548,11 +549,11 @@ class NetworkBreadcrumbsIntegrationTest {
         whenever(capabilities.signalStrength).thenReturn(signalStrength)
         whenever(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)).thenReturn(isVpn)
         whenever(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)).thenReturn(
-            isEthernet
+            isEthernet,
         )
         whenever(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)).thenReturn(isWifi)
         whenever(capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)).thenReturn(
-            isCellular
+            isCellular,
         )
         return capabilities
     }
@@ -560,7 +561,7 @@ class NetworkBreadcrumbsIntegrationTest {
     private fun onCapabilitiesChanged(
         callback: NetworkBreadcrumbsNetworkCallback,
         capabilities: NetworkCapabilities,
-        advanceTimeMs: Long = 5000L
+        advanceTimeMs: Long = 5000L,
     ) {
         fixture.nowMs += advanceTimeMs
         callback.onCapabilitiesChanged(fixture.network, capabilities)

@@ -8,7 +8,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class GraphqlProjectSystemTest {
-
     lateinit var testHelper: TestHelper
 
     @Before

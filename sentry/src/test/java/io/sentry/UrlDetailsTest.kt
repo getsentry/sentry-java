@@ -10,7 +10,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class UrlDetailsTest {
-
     @Test
     fun `does not crash on null span`() {
         val urlDetails = UrlUtils.UrlDetails("https://sentry.io/api", "q=1", "top")

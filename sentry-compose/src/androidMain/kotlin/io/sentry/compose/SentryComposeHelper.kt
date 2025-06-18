@@ -12,8 +12,9 @@ import io.sentry.ILogger
 import io.sentry.SentryLevel
 import java.lang.reflect.Field
 
-internal class SentryComposeHelper(logger: ILogger) {
-
+internal class SentryComposeHelper(
+    logger: ILogger,
+) {
     private val testTagElementField: Field? =
         loadField(logger, "androidx.compose.ui.platform.TestTagElement", "tag")
 
@@ -61,7 +62,7 @@ internal class SentryComposeHelper(logger: ILogger) {
         private fun loadField(
             logger: ILogger,
             className: String,
-            fieldName: String
+            fieldName: String,
         ): Field? {
             try {
                 val clazz = Class.forName(className)
@@ -131,33 +132,37 @@ public fun LayoutCoordinates.boundsInWindow(rootCoordinates: LayoutCoordinates?)
  * `kotlin.comparisons.minOf()` for 4 arguments as it avoids allocating an array because of the
  * varargs.
  */
-private fun fastMinOf(a: Float, b: Float, c: Float, d: Float): Float {
-    return minOf(a, minOf(b, minOf(c, d)))
-}
+private fun fastMinOf(
+    a: Float,
+    b: Float,
+    c: Float,
+    d: Float,
+): Float = minOf(a, minOf(b, minOf(c, d)))
 
 /**
  * Returns the largest of the given values. If any value is NaN, returns NaN. Preferred over
  * `kotlin.comparisons.maxOf()` for 4 arguments as it avoids allocating an array because of the
  * varargs.
  */
-private fun fastMaxOf(a: Float, b: Float, c: Float, d: Float): Float {
-    return maxOf(a, maxOf(b, maxOf(c, d)))
-}
+private fun fastMaxOf(
+    a: Float,
+    b: Float,
+    c: Float,
+    d: Float,
+): Float = maxOf(a, maxOf(b, maxOf(c, d)))
 
 /**
  * Returns this float value clamped in the inclusive range defined by [minimumValue] and
  * [maximumValue]. Unlike [Float.coerceIn], the range is not validated: the caller must ensure that
  * [minimumValue] is less than [maximumValue].
  */
-private fun Float.fastCoerceIn(minimumValue: Float, maximumValue: Float) =
-    this.fastCoerceAtLeast(minimumValue).fastCoerceAtMost(maximumValue)
+private fun Float.fastCoerceIn(
+    minimumValue: Float,
+    maximumValue: Float,
+) = this.fastCoerceAtLeast(minimumValue).fastCoerceAtMost(maximumValue)
 
 /** Ensures that this value is not less than the specified [minimumValue]. */
-private fun Float.fastCoerceAtLeast(minimumValue: Float): Float {
-    return if (this < minimumValue) minimumValue else this
-}
+private fun Float.fastCoerceAtLeast(minimumValue: Float): Float = if (this < minimumValue) minimumValue else this
 
 /** Ensures that this value is not greater than the specified [maximumValue]. */
-private fun Float.fastCoerceAtMost(maximumValue: Float): Float {
-    return if (this > maximumValue) maximumValue else this
-}
+private fun Float.fastCoerceAtMost(maximumValue: Float): Float = if (this > maximumValue) maximumValue else this

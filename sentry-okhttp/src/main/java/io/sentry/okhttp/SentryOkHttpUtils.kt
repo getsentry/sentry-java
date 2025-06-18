@@ -14,8 +14,11 @@ import okhttp3.Request
 import okhttp3.Response
 
 internal object SentryOkHttpUtils {
-
-    internal fun captureClientError(scopes: IScopes, request: Request, response: Response) {
+    internal fun captureClientError(
+        scopes: IScopes,
+        request: Request,
+        response: Response,
+    ) {
         // not possible to get a parameterized url, but we remove at least the
         // query string and the fragment.
         // url example: https://api.github.com/users/getsentry/repos/#fragment?query=query
@@ -24,12 +27,14 @@ internal object SentryOkHttpUtils {
         // but that's not possible
         val urlDetails = UrlUtils.parse(request.url.toString())
 
-        val mechanism = Mechanism().apply {
-            type = "SentryOkHttpInterceptor"
-        }
-        val exception = SentryHttpClientException(
-            "HTTP Client Error with status code: ${response.code}"
-        )
+        val mechanism =
+            Mechanism().apply {
+                type = "SentryOkHttpInterceptor"
+            }
+        val exception =
+            SentryHttpClientException(
+                "HTTP Client Error with status code: ${response.code}",
+            )
         val mechanismException = ExceptionMechanismException(mechanism, exception, Thread.currentThread(), true)
         val event = SentryEvent(mechanismException)
 
@@ -37,28 +42,30 @@ internal object SentryOkHttpUtils {
         hint.set(TypeCheckHint.OKHTTP_REQUEST, request)
         hint.set(TypeCheckHint.OKHTTP_RESPONSE, response)
 
-        val sentryRequest = io.sentry.protocol.Request().apply {
-            urlDetails.applyToRequest(this)
-            // Cookie is only sent if isSendDefaultPii is enabled
-            cookies = if (scopes.options.isSendDefaultPii) request.headers["Cookie"] else null
-            method = request.method
-            headers = getHeaders(scopes, request.headers)
+        val sentryRequest =
+            io.sentry.protocol.Request().apply {
+                urlDetails.applyToRequest(this)
+                // Cookie is only sent if isSendDefaultPii is enabled
+                cookies = if (scopes.options.isSendDefaultPii) request.headers["Cookie"] else null
+                method = request.method
+                headers = getHeaders(scopes, request.headers)
 
-            request.body?.contentLength().ifHasValidLength {
-                bodySize = it
+                request.body?.contentLength().ifHasValidLength {
+                    bodySize = it
+                }
             }
-        }
 
-        val sentryResponse = io.sentry.protocol.Response().apply {
-            // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
-            cookies = if (scopes.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
-            headers = getHeaders(scopes, response.headers)
-            statusCode = response.code
+        val sentryResponse =
+            io.sentry.protocol.Response().apply {
+                // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
+                cookies = if (scopes.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
+                headers = getHeaders(scopes, response.headers)
+                statusCode = response.code
 
-            response.body?.contentLength().ifHasValidLength {
-                bodySize = it
+                response.body?.contentLength().ifHasValidLength {
+                    bodySize = it
+                }
             }
-        }
 
         event.request = sentryRequest
         event.contexts.setResponse(sentryResponse)
@@ -72,7 +79,10 @@ internal object SentryOkHttpUtils {
         }
     }
 
-    private fun getHeaders(scopes: IScopes, requestHeaders: Headers): MutableMap<String, String>? {
+    private fun getHeaders(
+        scopes: IScopes,
+        requestHeaders: Headers,
+    ): MutableMap<String, String>? {
         // Headers are only sent if isSendDefaultPii is enabled due to PII
         if (!scopes.options.isSendDefaultPii) {
             return null

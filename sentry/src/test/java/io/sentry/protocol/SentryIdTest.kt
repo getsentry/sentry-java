@@ -6,12 +6,11 @@ import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
-import java.util.*
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SentryIdTest {
-
     @Test
     fun `does not throw when instantiated with corrupted UUID`() {
         val id = SentryId("0000-0000")

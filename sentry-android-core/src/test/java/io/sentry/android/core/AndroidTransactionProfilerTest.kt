@@ -47,47 +47,63 @@ class AndroidTransactionProfilerTest {
     private lateinit var context: Context
 
     private val className = "io.sentry.android.core.AndroidTransactionProfiler"
-    private val ctorTypes = arrayOf(Context::class.java, SentryAndroidOptions::class.java, BuildInfoProvider::class.java, SentryFrameMetricsCollector::class.java)
+    private val ctorTypes =
+        arrayOf(
+            Context::class.java,
+            SentryAndroidOptions::class.java,
+            BuildInfoProvider::class.java,
+            SentryFrameMetricsCollector::class.java,
+        )
     private val fixture = Fixture()
 
     private class Fixture {
         private val mockDsn = "http://key@localhost/proj"
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP_MR1)
-        }
+        val buildInfo =
+            mock<BuildInfoProvider> {
+                whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP_MR1)
+            }
         val mockLogger = mock<ILogger>()
         var lastScheduledRunnable: Runnable? = null
-        val mockExecutorService = object : ISentryExecutorService {
-            override fun submit(runnable: Runnable): Future<*> {
-                runnable.run()
-                return FutureTask {}
-            }
-            override fun <T> submit(callable: Callable<T>): Future<T> {
-                val futureTask = mock<FutureTask<T>>()
-                whenever(futureTask.get()).thenAnswer {
-                    return@thenAnswer try {
-                        callable.call()
-                    } catch (e: Exception) {
-                        null
-                    }
+        val mockExecutorService =
+            object : ISentryExecutorService {
+                override fun submit(runnable: Runnable): Future<*> {
+                    runnable.run()
+                    return FutureTask {}
                 }
-                return futureTask
-            }
-            override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
-                lastScheduledRunnable = runnable
-                return FutureTask {}
-            }
-            override fun close(timeoutMillis: Long) {}
-            override fun isClosed() = false
-        }
 
-        val options = spy(SentryAndroidOptions()).apply {
-            dsn = mockDsn
-            profilesSampleRate = 1.0
-            isDebug = true
-            setLogger(mockLogger)
-            executorService = mockExecutorService
-        }
+                override fun <T> submit(callable: Callable<T>): Future<T> {
+                    val futureTask = mock<FutureTask<T>>()
+                    whenever(futureTask.get()).thenAnswer {
+                        return@thenAnswer try {
+                            callable.call()
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                    return futureTask
+                }
+
+                override fun schedule(
+                    runnable: Runnable,
+                    delayMillis: Long,
+                ): Future<*> {
+                    lastScheduledRunnable = runnable
+                    return FutureTask {}
+                }
+
+                override fun close(timeoutMillis: Long) {}
+
+                override fun isClosed() = false
+            }
+
+        val options =
+            spy(SentryAndroidOptions()).apply {
+                dsn = mockDsn
+                profilesSampleRate = 1.0
+                isDebug = true
+                setLogger(mockLogger)
+                executorService = mockExecutorService
+            }
 
         val scopes: IScopes = mock()
         val frameMetricsCollector: SentryFrameMetricsCollector = mock()
@@ -96,7 +112,10 @@ class AndroidTransactionProfilerTest {
         lateinit var transaction2: SentryTracer
         lateinit var transaction3: SentryTracer
 
-        fun getSut(context: Context, buildInfoProvider: BuildInfoProvider = buildInfo): AndroidTransactionProfiler {
+        fun getSut(
+            context: Context,
+            buildInfoProvider: BuildInfoProvider = buildInfo,
+        ): AndroidTransactionProfiler {
             whenever(scopes.options).thenReturn(options)
             transaction1 = SentryTracer(TransactionContext("", ""), scopes)
             transaction2 = SentryTracer(TransactionContext("", ""), scopes)
@@ -115,7 +134,7 @@ class AndroidTransactionProfilerTest {
             fixture.options,
             context,
             fixture.mockLogger,
-            buildInfoProvider
+            buildInfoProvider,
         )
 
         AndroidOptionsInitializer.installDefaultIntegrations(
@@ -126,7 +145,7 @@ class AndroidTransactionProfilerTest {
             activityFramesTracker,
             false,
             false,
-            false
+            false,
         )
 
         AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
@@ -134,7 +153,7 @@ class AndroidTransactionProfilerTest {
             context,
             buildInfoProvider,
             loadClass,
-            activityFramesTracker
+            activityFramesTracker,
         )
         // Profiler doesn't start if the folder doesn't exists.
         // Usually it's generated when calling Sentry.init, but for tests we can create it manually.
@@ -226,9 +245,10 @@ class AndroidTransactionProfilerTest {
 
     @Test
     fun `profiler works only on api 22+`() {
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
-        }
+        val buildInfo =
+            mock<BuildInfoProvider> {
+                whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
+            }
         val profiler = fixture.getSut(context, buildInfo)
         profiler.start()
         assertEquals(0, profiler.transactionsCounter)
@@ -270,7 +290,7 @@ class AndroidTransactionProfilerTest {
         val profiler = fixture.getSut(context)
         verify(fixture.mockLogger, never()).log(
             SentryLevel.WARNING,
-            "Disabling profiling because no profiling traces dir path is defined in options."
+            "Disabling profiling because no profiling traces dir path is defined in options.",
         )
 
         // Regardless of how many times the profiler is started, the option is evaluated and logged only once
@@ -278,7 +298,7 @@ class AndroidTransactionProfilerTest {
         profiler.start()
         verify(fixture.mockLogger, times(1)).log(
             SentryLevel.WARNING,
-            "Disabling profiling because no profiling traces dir path is defined in options."
+            "Disabling profiling because no profiling traces dir path is defined in options.",
         )
     }
 
@@ -293,7 +313,7 @@ class AndroidTransactionProfilerTest {
         verify(fixture.mockLogger, never()).log(
             SentryLevel.WARNING,
             "Disabling profiling because trace rate is set to %d",
-            0
+            0,
         )
 
         // Regardless of how many times the profiler is started, the option is evaluated and logged only once
@@ -302,7 +322,7 @@ class AndroidTransactionProfilerTest {
         verify(fixture.mockLogger, times(1)).log(
             SentryLevel.WARNING,
             "Disabling profiling because trace rate is set to %d",
-            0
+            0,
         )
     }
 
@@ -473,15 +493,15 @@ class AndroidTransactionProfilerTest {
         val data = profiler.onTransactionFinish(fixture.transaction1, performanceCollectionData, fixture.options)
         assertContentEquals(
             listOf(1.4),
-            data!!.measurementsMap[ProfileMeasurement.ID_CPU_USAGE]!!.values.map { it.value }
+            data!!.measurementsMap[ProfileMeasurement.ID_CPU_USAGE]!!.values.map { it.value },
         )
         assertContentEquals(
             listOf(2.0, 3.0),
-            data.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]!!.values.map { it.value }
+            data.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]!!.values.map { it.value },
         )
         assertContentEquals(
             listOf(3.0, 4.0),
-            data.measurementsMap[ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT]!!.values.map { it.value }
+            data.measurementsMap[ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT]!!.values.map { it.value },
         )
     }
 

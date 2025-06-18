@@ -9,13 +9,13 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class CollectionUtilsTest {
-
     @Test
     fun `filters out map not matching predicate`() {
         val map = mapOf("key1" to 1, "key2" to 2, "key3" to 3)
-        val result = CollectionUtils.filterMapEntries(map) {
-            it.value % 2 == 0
-        }
+        val result =
+            CollectionUtils.filterMapEntries(map) {
+                it.value % 2 == 0
+            }
         assertEquals(2, result["key2"])
         assertEquals(1, result.size)
     }
@@ -23,9 +23,10 @@ class CollectionUtilsTest {
     @Test
     fun `filters out list not matching predicate`() {
         val list = listOf("key1", "key2", "key3")
-        val result = CollectionUtils.filterListEntries(list) {
-            it != "key2"
-        }
+        val result =
+            CollectionUtils.filterListEntries(list) {
+                it != "key2"
+            }
         assertEquals("key1", result[0])
         assertEquals("key3", result[1])
         assertEquals(2, result.size)
@@ -49,13 +50,14 @@ class CollectionUtilsTest {
 
     @Test
     fun `concurrent hashmap creation ignores null values`() {
-        val json = """
+        val json =
+            """
             {
                 "key1": "value1",
                 "key2": null,
                 "key3": "value3"
             }
-        """.trimIndent()
+            """.trimIndent()
         val reader = JsonObjectReader(StringReader(json))
         val deserializedMap = reader.nextObjectOrNull() as Map<String, String>
 

@@ -14,14 +14,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicIntegerArray
 
 internal class JsonObjectSerializerTest {
-
     private inner class Fixture {
         val writer = mock<JsonObjectWriter>()
         val logger = mock<ILogger>()
 
-        fun getSUT(): JsonObjectSerializer {
-            return JsonObjectSerializer(100)
-        }
+        fun getSUT(): JsonObjectSerializer = JsonObjectSerializer(100)
     }
 
     private val fixture = Fixture()
@@ -161,10 +158,11 @@ internal class JsonObjectSerializerTest {
 
     @Test
     fun `serialize unknown object with data`() {
-        val objectWithPrimitiveFields = UnknownClassWithData(
-            17,
-            "fixtureString"
-        )
+        val objectWithPrimitiveFields =
+            UnknownClassWithData(
+                17,
+                "fixtureString",
+            )
         fixture.getSUT().serialize(fixture.writer, fixture.logger, objectWithPrimitiveFields)
         verify(fixture.writer).beginObject()
         verify(fixture.writer).name("integer")
@@ -272,9 +270,14 @@ internal class JsonObjectSerializerTest {
 
     class UnknownClassWithData(
         private val integer: Int,
-        private val string: String
+        private val string: String,
     )
 }
 
-data class ClassWithEnumProperty(val enumProperty: DataCategory)
-data class ClassWithLocaleProperty(val localeProperty: Locale)
+data class ClassWithEnumProperty(
+    val enumProperty: DataCategory,
+)
+
+data class ClassWithLocaleProperty(
+    val localeProperty: Locale,
+)

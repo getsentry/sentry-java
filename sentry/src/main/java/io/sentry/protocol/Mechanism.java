@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class Mechanism implements JsonUnknown, JsonSerializable {
   private final transient @Nullable Thread thread;
+
   /**
    * Mechanism type (required).
    *
@@ -34,14 +35,17 @@ public final class Mechanism implements JsonUnknown, JsonSerializable {
    * exception, while for native it is e.g. `"minidump"` or `"applecrashreport"`.
    */
   private @Nullable String type;
+
   /**
    * Optional human-readable description of the error mechanism.
    *
    * <p>May include a possible hint on how to solve this error.
    */
   private @Nullable String description;
+
   /** Link to online resources describing this error. */
   private @Nullable String helpLink;
+
   /**
    * Flag indicating whether this exception was handled.
    *
@@ -55,25 +59,31 @@ public final class Mechanism implements JsonUnknown, JsonSerializable {
    * as the user explicitly captured the exception (and therefore kind of handled it)
    */
   private @Nullable Boolean handled;
+
   /** Operating system or runtime meta information. */
   private @Nullable Map<String, Object> meta;
+
   /**
    * Arbitrary extra data that might help the user understand the error thrown by this mechanism.
    */
   private @Nullable Map<String, Object> data;
+
   /**
    * If this is set then the exception is not a real exception but some form of synthetic error for
    * instance from a signal handler, a hard segfault or similar where type and value are not useful
    * for grouping or display purposes.
    */
   private @Nullable Boolean synthetic;
+
   /**
    * Exception ID. Used. e.g. for exception groups to build a hierarchy. This is referenced as
    * parent by child exceptions which for Java SDK means Throwable.getSuppressed().
    */
   private @Nullable Integer exceptionId;
+
   /** Parent exception ID. Used e.g. for exception groups to build a hierarchy. */
   private @Nullable Integer parentId;
+
   /**
    * Whether this is a group of exceptions. For Java SDK this means there were suppressed
    * exceptions.

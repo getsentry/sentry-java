@@ -12,17 +12,18 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 
 class ViewHierarchySerializationTest {
-
     private class Fixture {
         val logger = mock<ILogger>()
-        fun getSut() = ViewHierarchy(
-            "android_view_system",
-            listOf(
-                ViewHierarchyNode().apply {
-                    setType("com.example.ui.FancyButton")
-                }
+
+        fun getSut() =
+            ViewHierarchy(
+                "android_view_system",
+                listOf(
+                    ViewHierarchyNode().apply {
+                        setType("com.example.ui.FancyButton")
+                    },
+                ),
             )
-        )
     }
 
     private val fixture = Fixture()
@@ -44,11 +45,11 @@ class ViewHierarchySerializationTest {
 
     // Helper
 
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
+    private fun sanitizedFile(path: String): String =
+        FileFromResources
+            .invoke(path)
             .replace(Regex("[\n\r]"), "")
             .replace(" ", "")
-    }
 
     private fun serialize(jsonSerializable: JsonSerializable): String {
         val wrt = StringWriter()

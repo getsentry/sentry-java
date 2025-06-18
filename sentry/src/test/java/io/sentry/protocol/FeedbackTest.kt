@@ -8,19 +8,20 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class FeedbackTest {
-
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = Feedback("message").apply {
-            name = "name"
-            contactEmail = "contact@email.com"
-            url = "url"
-            setReplayId(SentryId("00000000-0000-0000-0000-000000000001"))
-            setAssociatedEventId(SentryId("00000000-0000-0000-0000-000000000002"))
-            unknown = mapOf(Pair("unknown", "unknown"))
-        }
+        fun getSut() =
+            Feedback("message").apply {
+                name = "name"
+                contactEmail = "contact@email.com"
+                url = "url"
+                setReplayId(SentryId("00000000-0000-0000-0000-000000000001"))
+                setAssociatedEventId(SentryId("00000000-0000-0000-0000-000000000002"))
+                unknown = mapOf(Pair("unknown", "unknown"))
+            }
     }
+
     private val fixture = Fixture()
 
     @Test

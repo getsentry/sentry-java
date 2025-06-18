@@ -22,16 +22,17 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class CacheStrategyTest {
-
     private class Fixture {
         val dir = Files.createTempDirectory("sentry-disk-cache-test").toAbsolutePath().toFile()
-        val sentryOptions = SentryOptions().apply {
-            setSerializer(mock())
-        }
+        val sentryOptions =
+            SentryOptions().apply {
+                setSerializer(mock())
+            }
 
-        fun getSUT(maxSize: Int = 5, options: SentryOptions = sentryOptions): CacheStrategy {
-            return CustomCache(options, dir.absolutePath, maxSize)
-        }
+        fun getSUT(
+            maxSize: Int = 5,
+            options: SentryOptions = sentryOptions,
+        ): CacheStrategy = CustomCache(options, dir.absolutePath, maxSize)
     }
 
     private val fixture = Fixture()
@@ -99,9 +100,10 @@ class CacheStrategyTest {
 
     @Test
     fun `move init flag if state is ok`() {
-        val options = SentryOptions().apply {
-            setSerializer(JsonSerializer(this))
-        }
+        val options =
+            SentryOptions().apply {
+                setSerializer(JsonSerializer(this))
+            }
         val sut = fixture.getSUT(3, options)
 
         val files = createTempFilesSortByOldestToNewest()
@@ -130,9 +132,9 @@ class CacheStrategyTest {
                 DiscardedEvent(
                     DiscardReason.CACHE_OVERFLOW.reason,
                     DataCategory.Session.category,
-                    1
-                )
-            )
+                    1,
+                ),
+            ),
         )
     }
 
@@ -143,7 +145,11 @@ class CacheStrategyTest {
         }
     }
 
-    private class CustomCache(options: SentryOptions, path: String, maxSize: Int) : CacheStrategy(options, path, maxSize)
+    private class CustomCache(
+        options: SentryOptions,
+        path: String,
+        maxSize: Int,
+    ) : CacheStrategy(options, path, maxSize)
 
     private fun createTempFilesSortByOldestToNewest(): Array<File> {
         val f1 = Files.createTempFile(fixture.dir.toPath(), "f1", ".json").toFile()
@@ -158,7 +164,10 @@ class CacheStrategyTest {
         return arrayOf(f1, f2, f3)
     }
 
-    private fun createSessionMockData(state: Session.State = Session.State.Ok, init: Boolean? = true): Session =
+    private fun createSessionMockData(
+        state: Session.State = Session.State.Ok,
+        init: Boolean? = true,
+    ): Session =
         Session(
             state,
             DateUtils.getDateTime("2020-02-07T14:16:00.000Z"),
@@ -173,10 +182,13 @@ class CacheStrategyTest {
             "jamesBond",
             "debug",
             "io.sentry@1.0+123",
-            null
+            null,
         )
 
-    private fun getSessionFromFile(file: File, sut: CacheStrategy): Session {
+    private fun getSessionFromFile(
+        file: File,
+        sut: CacheStrategy,
+    ): Session {
         val envelope = sut.serializer.value.deserializeEnvelope(file.inputStream())
         val item = envelope!!.items.first()
 
@@ -184,15 +196,19 @@ class CacheStrategyTest {
         return sut.serializer.value.deserialize(reader, Session::class.java)!!
     }
 
-    private fun saveSessionToFile(file: File, sut: CacheStrategy, state: Session.State = Session.State.Ok, init: Boolean? = true) {
+    private fun saveSessionToFile(
+        file: File,
+        sut: CacheStrategy,
+        state: Session.State = Session.State.Ok,
+        init: Boolean? = true,
+    ) {
         val okSession = createSessionMockData(state, init)
         val okEnvelope = SentryEnvelope.from(sut.serializer.value, okSession, null)
         sut.serializer.value.serialize(okEnvelope, file.outputStream())
     }
 
-    private fun getOptionsWithRealSerializer(): SentryOptions {
-        return SentryOptions().apply {
+    private fun getOptionsWithRealSerializer(): SentryOptions =
+        SentryOptions().apply {
             setSerializer(JsonSerializer(this))
         }
-    }
 }

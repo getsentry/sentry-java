@@ -13,7 +13,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class AssetsModulesLoaderTest {
-
     class Fixture {
         val context = mock<Context>()
         val assets = mock<AssetManager>()
@@ -22,11 +21,11 @@ class AssetsModulesLoaderTest {
         fun getSut(
             fileName: String = "sentry-external-modules.txt",
             content: String? = null,
-            throws: Boolean = false
+            throws: Boolean = false,
         ): AssetsModulesLoader {
             if (content != null) {
                 whenever(assets.open(fileName)).thenReturn(
-                    content.byteInputStream(Charset.defaultCharset())
+                    content.byteInputStream(Charset.defaultCharset()),
                 )
             }
             if (throws) {
@@ -41,32 +40,34 @@ class AssetsModulesLoaderTest {
 
     @Test
     fun `reads modules from assets into map`() {
-        val sut = fixture.getSut(
-            content =
-            """
-            com.squareup.okhttp3:okhttp:3.14.9
-            com.squareup.okio:okio:1.17.2
-            """.trimIndent()
-        )
+        val sut =
+            fixture.getSut(
+                content =
+                    """
+                    com.squareup.okhttp3:okhttp:3.14.9
+                    com.squareup.okio:okio:1.17.2
+                    """.trimIndent(),
+            )
 
         assertEquals(
             mapOf(
                 "com.squareup.okhttp3:okhttp" to "3.14.9",
-                "com.squareup.okio:okio" to "1.17.2"
+                "com.squareup.okio:okio" to "1.17.2",
             ),
-            sut.orLoadModules
+            sut.orLoadModules,
         )
     }
 
     @Test
     fun `caches modules after first read`() {
-        val sut = fixture.getSut(
-            content =
-            """
-            com.squareup.okhttp3:okhttp:3.14.9
-            com.squareup.okio:okio:1.17.2
-            """.trimIndent()
-        )
+        val sut =
+            fixture.getSut(
+                content =
+                    """
+                    com.squareup.okhttp3:okhttp:3.14.9
+                    com.squareup.okio:okio:1.17.2
+                    """.trimIndent(),
+            )
 
         // first, call method to get modules cached
         sut.orLoadModules
@@ -75,9 +76,9 @@ class AssetsModulesLoaderTest {
         assertEquals(
             mapOf(
                 "com.squareup.okhttp3:okhttp" to "3.14.9",
-                "com.squareup.okio:okio" to "1.17.2"
+                "com.squareup.okio:okio" to "1.17.2",
             ),
-            sut.orLoadModules
+            sut.orLoadModules,
         )
         // the context only called once when there's no in-memory cache
         verify(fixture.context).assets
@@ -92,12 +93,13 @@ class AssetsModulesLoaderTest {
 
     @Test
     fun `when content is malformed, swallows exception and returns empty map`() {
-        val sut = fixture.getSut(
-            content =
-            """
-            com.squareup.okhttp3;3.14.9
-            """.trimIndent()
-        )
+        val sut =
+            fixture.getSut(
+                content =
+                    """
+                    com.squareup.okhttp3;3.14.9
+                    """.trimIndent(),
+            )
 
         assertTrue(sut.orLoadModules!!.isEmpty())
     }

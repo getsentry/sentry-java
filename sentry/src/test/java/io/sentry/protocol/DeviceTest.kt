@@ -8,7 +8,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class DeviceTest {
-
     @Test
     fun `copying device wont have the same references`() {
         val device = Device()

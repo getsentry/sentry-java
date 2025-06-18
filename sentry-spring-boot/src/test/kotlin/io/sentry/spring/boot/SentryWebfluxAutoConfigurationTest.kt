@@ -11,13 +11,20 @@ import reactor.core.scheduler.Schedulers
 import kotlin.test.Test
 
 class SentryWebfluxAutoConfigurationTest {
-
-    private val contextRunner = ReactiveWebApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(WebFluxAutoConfiguration::class.java, SentryWebfluxAutoConfiguration::class.java, SentryAutoConfiguration::class.java))
+    private val contextRunner =
+        ReactiveWebApplicationContextRunner()
+            .withConfiguration(
+                AutoConfigurations.of(
+                    WebFluxAutoConfiguration::class.java,
+                    SentryWebfluxAutoConfiguration::class.java,
+                    SentryAutoConfiguration::class.java,
+                ),
+            )
 
     @Test
     fun `configures sentryWebFilter`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner
+            .withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
                 assertThat(it).hasSingleBean(SentryWebFilter::class.java)
             }

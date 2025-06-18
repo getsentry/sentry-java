@@ -36,17 +36,18 @@ class ActivityLifecycleSpanHelperTest {
 
         init {
             whenever(scopes.options).thenReturn(options)
-            appStartSpan = Span(
-                TransactionContext("name", "op", TracesSamplingDecision(true)),
-                SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), scopes),
-                scopes,
-                SpanOptions()
-            )
+            appStartSpan =
+                Span(
+                    TransactionContext("name", "op", TracesSamplingDecision(true)),
+                    SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), scopes),
+                    scopes,
+                    SpanOptions(),
+                )
         }
-        fun getSut(activityName: String = "ActivityName"): ActivityLifecycleSpanHelper {
-            return ActivityLifecycleSpanHelper(activityName)
-        }
+
+        fun getSut(activityName: String = "ActivityName"): ActivityLifecycleSpanHelper = ActivityLifecycleSpanHelper(activityName)
     }
+
     private val fixture = Fixture()
 
     @BeforeTest

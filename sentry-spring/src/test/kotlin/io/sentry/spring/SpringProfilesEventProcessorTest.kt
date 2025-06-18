@@ -18,11 +18,11 @@ import org.springframework.core.env.Environment
 import kotlin.test.Test
 
 class SpringProfilesEventProcessorTest {
-
-    private val contextRunner = ApplicationContextRunner()
-        .withUserConfiguration(AppConfiguration::class.java)
-        .withUserConfiguration(SpringProfilesEventProcessorConfiguration::class.java)
-        .withUserConfiguration(MockTransportConfiguration::class.java)
+    private val contextRunner =
+        ApplicationContextRunner()
+            .withUserConfiguration(AppConfiguration::class.java)
+            .withUserConfiguration(SpringProfilesEventProcessorConfiguration::class.java)
+            .withUserConfiguration(MockTransportConfiguration::class.java)
 
     @Test
     fun `when default Spring profile is active, sets active_profiles in Spring context to empty list on sent event`() {
@@ -36,7 +36,7 @@ class SpringProfilesEventProcessorTest {
                         expected.activeProfiles = listOf<String>().toTypedArray()
                         assertThat(event.contexts.spring).isEqualTo(expected)
                     },
-                    anyOrNull()
+                    anyOrNull(),
                 )
             }
     }
@@ -45,9 +45,8 @@ class SpringProfilesEventProcessorTest {
     fun `when non-default Spring profiles are active, sets active profiles in Spring context to list of profile names`() {
         contextRunner
             .withPropertyValues(
-                "spring.profiles.active=test1,test2"
-            )
-            .run {
+                "spring.profiles.active=test1,test2",
+            ).run {
                 Sentry.captureMessage("test")
                 val transport = it.getBean(ITransport::class.java)
                 verify(transport).send(
@@ -56,7 +55,7 @@ class SpringProfilesEventProcessorTest {
                         expected.activeProfiles = listOf("test1", "test2").toTypedArray()
                         assertThat(event.contexts.spring).isEqualTo(expected)
                     },
-                    anyOrNull()
+                    anyOrNull(),
                 )
             }
     }
@@ -67,14 +66,12 @@ class SpringProfilesEventProcessorTest {
     @Configuration(proxyBeanMethods = false)
     open class SpringProfilesEventProcessorConfiguration {
         @Bean
-        open fun springProfilesEventProcessor(environment: Environment): SpringProfilesEventProcessor {
-            return SpringProfilesEventProcessor(environment)
-        }
+        open fun springProfilesEventProcessor(environment: Environment): SpringProfilesEventProcessor =
+            SpringProfilesEventProcessor(environment)
     }
 
     @Configuration(proxyBeanMethods = false)
     open class MockTransportConfiguration {
-
         private val transport = mock<ITransport>()
 
         @Bean

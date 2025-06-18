@@ -240,11 +240,14 @@ class EnvelopeCacheTest {
         fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
 
         val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
-        val abnormalHint = object : AbnormalExit {
-            override fun mechanism(): String? = "abnormal_mechanism"
-            override fun ignoreCurrentThread(): Boolean = false
-            override fun timestamp(): Long? = null
-        }
+        val abnormalHint =
+            object : AbnormalExit {
+                override fun mechanism(): String? = "abnormal_mechanism"
+
+                override fun ignoreCurrentThread(): Boolean = false
+
+                override fun timestamp(): Long? = null
+            }
         val hints = HintUtils.createWithTypeCheckHint(abnormalHint)
         cache.store(envelope, hints)
 
@@ -265,11 +268,14 @@ class EnvelopeCacheTest {
         fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
 
         val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
-        val abnormalHint = object : AbnormalExit {
-            override fun mechanism(): String = "abnormal_mechanism"
-            override fun ignoreCurrentThread(): Boolean = false
-            override fun timestamp(): Long = sessionExitedWithAbnormal
-        }
+        val abnormalHint =
+            object : AbnormalExit {
+                override fun mechanism(): String = "abnormal_mechanism"
+
+                override fun ignoreCurrentThread(): Boolean = false
+
+                override fun timestamp(): Long = sessionExitedWithAbnormal
+            }
         val hints = HintUtils.createWithTypeCheckHint(abnormalHint)
         cache.store(envelope, hints)
 
@@ -288,11 +294,14 @@ class EnvelopeCacheTest {
         fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
 
         val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
-        val abnormalHint = object : AbnormalExit {
-            override fun mechanism(): String = "abnormal_mechanism"
-            override fun ignoreCurrentThread(): Boolean = false
-            override fun timestamp(): Long = sessionExitedWithAbnormal
-        }
+        val abnormalHint =
+            object : AbnormalExit {
+                override fun mechanism(): String = "abnormal_mechanism"
+
+                override fun ignoreCurrentThread(): Boolean = false
+
+                override fun timestamp(): Long = sessionExitedWithAbnormal
+            }
         val hints = HintUtils.createWithTypeCheckHint(abnormalHint)
         cache.store(envelope, hints)
 
@@ -301,8 +310,8 @@ class EnvelopeCacheTest {
         assertEquals(null, updatedSession.abnormalMechanism)
     }
 
-    private fun createSession(started: Date? = null): Session {
-        return Session(
+    private fun createSession(started: Date? = null): Session =
+        Session(
             Ok,
             started ?: DateUtils.getCurrentDateTime(),
             DateUtils.getCurrentDateTime(),
@@ -316,9 +325,8 @@ class EnvelopeCacheTest {
             null,
             "env",
             "rel",
-            null
+            null,
         )
-    }
 
     @Test
     fun `two items with the same event id can be stored side-by-side`() {
@@ -326,21 +334,23 @@ class EnvelopeCacheTest {
 
         val eventId = SentryId()
 
-        val envelopeA = SentryEnvelope.from(
-            fixture.options.serializer,
-            SentryEvent().apply {
-                setEventId(eventId)
-            },
-            null
-        )
+        val envelopeA =
+            SentryEnvelope.from(
+                fixture.options.serializer,
+                SentryEvent().apply {
+                    setEventId(eventId)
+                },
+                null,
+            )
 
-        val envelopeB = SentryEnvelope.from(
-            fixture.options.serializer,
-            SentryEvent().apply {
-                setEventId(eventId)
-            },
-            null
-        )
+        val envelopeB =
+            SentryEnvelope.from(
+                fixture.options.serializer,
+                SentryEvent().apply {
+                    setEventId(eventId)
+                },
+                null,
+            )
 
         cache.store(envelopeA, Hint())
         cache.store(envelopeB, Hint())

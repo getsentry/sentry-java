@@ -1,3 +1,5 @@
+@file:Suppress("ktlint")
+
 package io.sentry
 
 // Legacy DSN includes a secret. Sentry 8 and older will require it.

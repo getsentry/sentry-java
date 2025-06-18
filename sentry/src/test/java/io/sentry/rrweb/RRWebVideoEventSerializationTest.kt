@@ -11,20 +11,21 @@ class RRWebVideoEventSerializationTest {
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = RRWebVideoEvent().apply {
-            type = Custom
-            timestamp = 12345678901
-            tag = "video"
-            segmentId = 0
-            size = 4_000_000L
-            durationMs = 5000
-            height = 1920
-            width = 1080
-            frameCount = 5
-            frameRate = 1
-            left = 100
-            top = 100
-        }
+        fun getSut() =
+            RRWebVideoEvent().apply {
+                type = Custom
+                timestamp = 12345678901
+                tag = "video"
+                segmentId = 0
+                size = 4_000_000L
+                durationMs = 5000
+                height = 1920
+                width = 1080
+                frameCount = 5
+                frameRate = 1
+                left = 100
+                top = 100
+            }
     }
 
     private val fixture = Fixture()

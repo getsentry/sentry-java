@@ -17,10 +17,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ClientReportMultiThreadingTest {
-
     lateinit var opts: SentryOptions
     val reasons = DiscardReason.values()
-    val categories = listOf(DataCategory.Error, DataCategory.Attachment, DataCategory.Session, DataCategory.Transaction, DataCategory.UserReport)
+    val categories =
+        listOf(DataCategory.Error, DataCategory.Attachment, DataCategory.Session, DataCategory.Transaction, DataCategory.UserReport)
 
     @Test
     fun testMultiThreadedCountIncrements() {
@@ -48,7 +48,7 @@ class ClientReportMultiThreadingTest {
                     (1..numberOfIncrementsPerThread).forEach {
                         clientReportRecorder.recordLostEvent(randomReason(), randomCategory())
                     }
-                }
+                },
             )
         }
 
@@ -93,7 +93,7 @@ class ClientReportMultiThreadingTest {
                     (1..numberOfIncrementsPerThread).forEach {
                         clientReportRecorder.recordLostEvent(randomReason(), randomCategory())
                     }
-                }
+                },
             )
         }
 
@@ -105,7 +105,7 @@ class ClientReportMultiThreadingTest {
                     clientReportRecorder.resetCountsAndGenerateClientReport()?.let { clientReports.add(it) }
                     Thread.sleep(20)
                 }
-            }
+            },
         )
 
         futures.forEach {
@@ -148,7 +148,7 @@ class ClientReportMultiThreadingTest {
                     (1..numberOfIncrementsPerThread).forEach {
                         clientReportRecorder.recordLostEvent(randomReason(), randomCategory())
                     }
-                }
+                },
             )
         }
 
@@ -166,7 +166,7 @@ class ClientReportMultiThreadingTest {
                         clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
                     }
                 }
-            }
+            },
         )
 
         futures.forEach {
@@ -190,11 +190,7 @@ class ClientReportMultiThreadingTest {
         }
     }
 
-    private fun randomCategory(): DataCategory {
-        return categories.random()
-    }
+    private fun randomCategory(): DataCategory = categories.random()
 
-    private fun randomReason(): DiscardReason {
-        return reasons.random()
-    }
+    private fun randomReason(): DiscardReason = reasons.random()
 }

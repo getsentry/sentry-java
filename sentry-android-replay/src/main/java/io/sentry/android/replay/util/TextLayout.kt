@@ -12,10 +12,19 @@ internal interface TextLayout {
      * returns null.
      */
     val dominantTextColor: Int?
-    fun getPrimaryHorizontal(line: Int, offset: Int): Float
+
+    fun getPrimaryHorizontal(
+        line: Int,
+        offset: Int,
+    ): Float
+
     fun getEllipsisCount(line: Int): Int
+
     fun getLineVisibleEnd(line: Int): Int
+
     fun getLineTop(line: Int): Int
+
     fun getLineBottom(line: Int): Int
+
     fun getLineStart(line: Int): Int
 }

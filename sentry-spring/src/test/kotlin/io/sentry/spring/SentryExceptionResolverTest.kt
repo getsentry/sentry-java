@@ -87,9 +87,13 @@ class SentryExceptionResolverTest {
         val expectedEvent = SentryEvent()
         val eventCaptor = argumentCaptor<SentryEvent>()
         whenever(scopes.captureEvent(eventCaptor.capture(), any<Hint>())).thenReturn(null)
-        val resolver = object : SentryExceptionResolver(scopes, transactionNameProvider, 1) {
-            override fun createEvent(request: HttpServletRequest, ex: Exception) = expectedEvent
-        }
+        val resolver =
+            object : SentryExceptionResolver(scopes, transactionNameProvider, 1) {
+                override fun createEvent(
+                    request: HttpServletRequest,
+                    ex: Exception,
+                ) = expectedEvent
+            }
 
         resolver.resolveException(request, response, null, RuntimeException("test"))
 
@@ -101,9 +105,13 @@ class SentryExceptionResolverTest {
         val expectedHint = Hint()
         val hintCaptor = argumentCaptor<Hint>()
         whenever(scopes.captureEvent(any(), hintCaptor.capture())).thenReturn(null)
-        val resolver = object : SentryExceptionResolver(scopes, transactionNameProvider, 1) {
-            override fun createHint(request: HttpServletRequest, response: HttpServletResponse) = expectedHint
-        }
+        val resolver =
+            object : SentryExceptionResolver(scopes, transactionNameProvider, 1) {
+                override fun createHint(
+                    request: HttpServletRequest,
+                    response: HttpServletResponse,
+                ) = expectedHint
+            }
 
         resolver.resolveException(request, response, null, RuntimeException("test"))
 

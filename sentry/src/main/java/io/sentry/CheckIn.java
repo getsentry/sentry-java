@@ -118,6 +118,7 @@ public final class CheckIn implements JsonUnknown, JsonSerializable {
   public @NotNull MonitorContexts getContexts() {
     return contexts;
   }
+
   // JsonUnknown
 
   @Override

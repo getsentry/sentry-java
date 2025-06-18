@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Configuration
 import kotlin.test.Test
 
 class SentryInitBeanPostProcessorTest {
-
     @Test
     fun closesSentryOnApplicationContextDestroy() {
         val ctx = AnnotationConfigApplicationContext(TestConfig::class.java)
@@ -20,7 +19,6 @@ class SentryInitBeanPostProcessorTest {
 
     @Configuration
     open class TestConfig {
-
         @Bean(destroyMethod = "")
         open fun scopes() = mock<IScopes>()
 

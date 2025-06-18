@@ -55,10 +55,9 @@ import kotlin.test.assertEquals
 @RunWith(AndroidJUnit4::class)
 @Config(
     sdk = [30],
-    shadows = [ReplayShadowMediaCodec::class]
+    shadows = [ReplayShadowMediaCodec::class],
 )
 class AnrWithReplayIntegrationTest {
-
     @get:Rule
     val tmpDir = TemporaryFolder()
 
@@ -68,7 +67,7 @@ class AnrWithReplayIntegrationTest {
         fun addAppExitInfo(
             reason: Int? = ApplicationExitInfo.REASON_ANR,
             timestamp: Long? = null,
-            importance: Int? = null
+            importance: Int? = null,
         ) {
             val builder = ApplicationExitInfoBuilder.newBuilder()
             if (reason != null) {
@@ -80,9 +79,10 @@ class AnrWithReplayIntegrationTest {
             if (importance != null) {
                 builder.setImportance(importance)
             }
-            val exitInfo = spy(builder.build()) {
-                whenever(mock.traceInputStream).thenReturn(
-                    """
+            val exitInfo =
+                spy(builder.build()) {
+                    whenever(mock.traceInputStream).thenReturn(
+                        """
 "main" prio=5 tid=1 Blocked
   | group="main" sCount=1 ucsCount=0 flags=1 obj=0x72a985e0 self=0xb400007cabc57380
   | sysTid=28941 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
@@ -111,9 +111,9 @@ class AnrWithReplayIntegrationTest {
   native: #02 pc 00000000000b63b0  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+208) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
   native: #03 pc 00000000000530b8  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
   (no managed stack frames)
-                    """.trimIndent().byteInputStream()
-                )
-            }
+                        """.trimIndent().byteInputStream(),
+                    )
+                }
             shadowActivityManager.addApplicationExitInfo(exitInfo)
         }
 
@@ -156,33 +156,39 @@ class AnrWithReplayIntegrationTest {
             it.sessionReplay.onErrorSampleRate = 1.0
             // beforeSend is called after event processors are applied, so we can assert here
             // against the enriched ANR event
-            it.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
-                assertEquals(replayId2.toString(), event.contexts[Contexts.REPLAY_ID])
-                event
-            }
-            it.addEventProcessor(object : EventProcessor {
-                override fun process(event: SentryReplayEvent, hint: Hint): SentryReplayEvent {
-                    assertEquals(replayId2, event.replayId)
-                    assertEquals(ReplayType.BUFFER, event.replayType)
-                    assertEquals("0.mp4", event.videoFile?.name)
-
-                    val metaEvents =
-                        hint.replayRecording?.payload?.filterIsInstance<RRWebMetaEvent>()
-                    assertEquals(912, metaEvents?.first()?.height)
-                    assertEquals(416, metaEvents?.first()?.width) // clamped to power of 16
-
-                    val videoEvents =
-                        hint.replayRecording?.payload?.filterIsInstance<RRWebVideoEvent>()
-                    assertEquals(912, videoEvents?.first()?.height)
-                    assertEquals(416, videoEvents?.first()?.width) // clamped to power of 16
-                    assertEquals(1000, videoEvents?.first()?.durationMs)
-                    assertEquals(1, videoEvents?.first()?.frameCount)
-                    assertEquals(1, videoEvents?.first()?.frameRate)
-                    assertEquals(0, videoEvents?.first()?.segmentId)
-                    asserted.set(true)
-                    return event
+            it.beforeSend =
+                SentryOptions.BeforeSendCallback { event, _ ->
+                    assertEquals(replayId2.toString(), event.contexts[Contexts.REPLAY_ID])
+                    event
                 }
-            })
+            it.addEventProcessor(
+                object : EventProcessor {
+                    override fun process(
+                        event: SentryReplayEvent,
+                        hint: Hint,
+                    ): SentryReplayEvent {
+                        assertEquals(replayId2, event.replayId)
+                        assertEquals(ReplayType.BUFFER, event.replayType)
+                        assertEquals("0.mp4", event.videoFile?.name)
+
+                        val metaEvents =
+                            hint.replayRecording?.payload?.filterIsInstance<RRWebMetaEvent>()
+                        assertEquals(912, metaEvents?.first()?.height)
+                        assertEquals(416, metaEvents?.first()?.width) // clamped to power of 16
+
+                        val videoEvents =
+                            hint.replayRecording?.payload?.filterIsInstance<RRWebVideoEvent>()
+                        assertEquals(912, videoEvents?.first()?.height)
+                        assertEquals(416, videoEvents?.first()?.width) // clamped to power of 16
+                        assertEquals(1000, videoEvents?.first()?.durationMs)
+                        assertEquals(1, videoEvents?.first()?.frameCount)
+                        assertEquals(1, videoEvents?.first()?.frameRate)
+                        assertEquals(0, videoEvents?.first()?.segmentId)
+                        asserted.set(true)
+                        return event
+                    }
+                },
+            )
 
             // have to do it after the cacheDir is set to options, because it adds a dsn hash after
             fixture.prefillOptionsCache(it.cacheDirPath!!)
@@ -200,7 +206,7 @@ class AnrWithReplayIntegrationTest {
                     $SEGMENT_KEY_ID=0
                     $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
                     $SEGMENT_KEY_REPLAY_TYPE=BUFFER
-                    """.trimIndent()
+                    """.trimIndent(),
                 )
             }
 
@@ -214,12 +220,16 @@ class AnrWithReplayIntegrationTest {
             replayFolder2.setLastModified(oneDayAgo - 500)
         }
 
-        await.withAlias("Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout")
+        await
+            .withAlias("Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout")
             .untilTrue(asserted)
     }
 }
 
-fun initForTest(context: Context, optionsConfiguration: Sentry.OptionsConfiguration<SentryAndroidOptions>) {
+fun initForTest(
+    context: Context,
+    optionsConfiguration: Sentry.OptionsConfiguration<SentryAndroidOptions>,
+) {
     SentryAndroid.init(context) {
         applyTestOptions(it)
         optionsConfiguration.configure(it)

@@ -371,6 +371,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
     }
     return type;
   }
+
   // endregion
 
   // region scroll logic

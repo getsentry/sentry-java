@@ -17,8 +17,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class TestHelper(backendUrl: String) {
-
+class TestHelper(
+    backendUrl: String,
+) {
     val restClient: RestTestClient
     val graphqlClient: GraphqlTestClient
     val sentryClient: SentryMockServerClient
@@ -90,7 +91,10 @@ class TestHelper(backendUrl: String) {
         }
     }
 
-    private fun checkIfLogsMatch(envelopeString: String, callback: ((SentryLogEvents, SentryEnvelopeHeader) -> Boolean)): Boolean {
+    private fun checkIfLogsMatch(
+        envelopeString: String,
+        callback: ((SentryLogEvents, SentryEnvelopeHeader) -> Boolean),
+    ): Boolean {
         val deserializeEnvelope =
             jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
         if (deserializeEnvelope == null) {
@@ -113,7 +117,10 @@ class TestHelper(backendUrl: String) {
         return callback(logs, envelopeHeader)
     }
 
-    fun doesContainLogWithBody(logs: SentryLogEvents, body: String): Boolean {
+    fun doesContainLogWithBody(
+        logs: SentryLogEvents,
+        body: String,
+    ): Boolean {
         val logItem = logs.items.firstOrNull { logItem -> logItem.body == body }
         if (logItem == null) {
             println("Unable to find log item with body $body in logs:")
@@ -124,7 +131,10 @@ class TestHelper(backendUrl: String) {
         return true
     }
 
-    private fun checkIfTransactionMatches(envelopeString: String, callback: ((SentryTransaction, SentryEnvelopeHeader) -> Boolean)): Boolean {
+    private fun checkIfTransactionMatches(
+        envelopeString: String,
+        callback: ((SentryTransaction, SentryEnvelopeHeader) -> Boolean),
+    ): Boolean {
         val deserializeEnvelope =
             jsonSerializer.deserializeEnvelope(envelopeString.byteInputStream())
         if (deserializeEnvelope == null) {
@@ -204,12 +214,18 @@ class TestHelper(backendUrl: String) {
         assertFalse(response.hasErrors())
     }
 
-    fun <T : Operation.Data> ensureErrorCount(response: ApolloResponse<T>?, errorCount: Int) {
+    fun <T : Operation.Data> ensureErrorCount(
+        response: ApolloResponse<T>?,
+        errorCount: Int,
+    ) {
         response ?: throw RuntimeException("no response")
         assertEquals(errorCount, response.errors?.size)
     }
 
-    fun doesTransactionContainSpanWithOp(transaction: SentryTransaction, op: String): Boolean {
+    fun doesTransactionContainSpanWithOp(
+        transaction: SentryTransaction,
+        op: String,
+    ): Boolean {
         val span = transaction.spans.firstOrNull { span -> span.op == op }
         if (span == null) {
             println("Unable to find span with op $op in transaction:")
@@ -220,7 +236,10 @@ class TestHelper(backendUrl: String) {
         return true
     }
 
-    fun doesTransactionContainSpanWithDescription(transaction: SentryTransaction, description: String): Boolean {
+    fun doesTransactionContainSpanWithDescription(
+        transaction: SentryTransaction,
+        description: String,
+    ): Boolean {
         val span = transaction.spans.firstOrNull { span -> span.description == description }
         if (span == null) {
             println("Unable to find span with description $description in transaction:")
@@ -231,7 +250,10 @@ class TestHelper(backendUrl: String) {
         return true
     }
 
-    fun doesTransactionHaveTraceId(transaction: SentryTransaction, traceId: String): Boolean {
+    fun doesTransactionHaveTraceId(
+        transaction: SentryTransaction,
+        traceId: String,
+    ): Boolean {
         val spanContext = transaction.contexts.trace
         if (spanContext?.traceId?.toString() != traceId) {
             println("Unable to find trace ID $traceId in transaction:")
@@ -242,7 +264,10 @@ class TestHelper(backendUrl: String) {
         return true
     }
 
-    fun doesTransactionHaveOp(transaction: SentryTransaction, op: String): Boolean {
+    fun doesTransactionHaveOp(
+        transaction: SentryTransaction,
+        op: String,
+    ): Boolean {
         val matches = transaction.contexts.trace?.operation == op
         if (!matches) {
             println("Unable to find transaction with op $op:")

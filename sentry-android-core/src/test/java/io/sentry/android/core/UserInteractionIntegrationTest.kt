@@ -29,13 +29,13 @@ import kotlin.test.assertSame
 
 @RunWith(AndroidJUnit4::class)
 class UserInteractionIntegrationTest {
-
     private class Fixture {
         val application = mock<Application>()
         val scopes = mock<Scopes>()
-        val options = SentryAndroidOptions().apply {
-            dsn = "https://key@sentry.io/proj"
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+            }
         val activity: EmptyActivity = buildActivity(EmptyActivity::class.java).setup().get()
         val window: Window = activity.window
         val loadClass = mock<LoadClass>()
@@ -43,10 +43,14 @@ class UserInteractionIntegrationTest {
         fun getSut(
             callback: Window.Callback? = null,
             isAndroidXAvailable: Boolean = true,
-            isLifecycleAvailable: Boolean = true
+            isLifecycleAvailable: Boolean = true,
         ): UserInteractionIntegration {
-            whenever(loadClass.isClassAvailable(eq("androidx.core.view.GestureDetectorCompat"), anyOrNull<SentryAndroidOptions>())).thenReturn(isAndroidXAvailable)
-            whenever(loadClass.isClassAvailable(eq("androidx.lifecycle.Lifecycle"), anyOrNull<SentryAndroidOptions>())).thenReturn(isLifecycleAvailable)
+            whenever(
+                loadClass.isClassAvailable(eq("androidx.core.view.GestureDetectorCompat"), anyOrNull<SentryAndroidOptions>()),
+            ).thenReturn(isAndroidXAvailable)
+            whenever(
+                loadClass.isClassAvailable(eq("androidx.lifecycle.Lifecycle"), anyOrNull<SentryAndroidOptions>()),
+            ).thenReturn(isLifecycleAvailable)
             whenever(scopes.options).thenReturn(options)
             if (callback != null) {
                 window.callback = callback
@@ -156,12 +160,13 @@ class UserInteractionIntegrationTest {
 
     @Test
     fun `does not instrument if the callback is already ours`() {
-        val existingCallback = SentryWindowCallback(
-            NoOpWindowCallback(),
-            fixture.activity,
-            mock(),
-            mock()
-        )
+        val existingCallback =
+            SentryWindowCallback(
+                NoOpWindowCallback(),
+                fixture.activity,
+                mock(),
+                mock(),
+            )
         val sut = fixture.getSut(existingCallback)
 
         sut.register(fixture.scopes, fixture.options)
@@ -212,7 +217,8 @@ class UserInteractionIntegrationTest {
     }
 }
 
-private class EmptyActivity() : Activity(), LifecycleOwner {
-
+private class EmptyActivity :
+    Activity(),
+    LifecycleOwner {
     override val lifecycle: Lifecycle = mock<Lifecycle>()
 }

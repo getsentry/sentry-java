@@ -15,36 +15,30 @@ import androidx.sqlite.db.SupportSQLiteStatement
 internal class SentrySupportSQLiteStatement(
     private val delegate: SupportSQLiteStatement,
     private val sqLiteSpanManager: SQLiteSpanManager,
-    private val sql: String
+    private val sql: String,
 ) : SupportSQLiteStatement by delegate {
-
-    override fun execute() {
-        return sqLiteSpanManager.performSql(sql) {
+    override fun execute() =
+        sqLiteSpanManager.performSql(sql) {
             delegate.execute()
         }
-    }
 
-    override fun executeUpdateDelete(): Int {
-        return sqLiteSpanManager.performSql(sql) {
+    override fun executeUpdateDelete(): Int =
+        sqLiteSpanManager.performSql(sql) {
             delegate.executeUpdateDelete()
         }
-    }
 
-    override fun executeInsert(): Long {
-        return sqLiteSpanManager.performSql(sql) {
+    override fun executeInsert(): Long =
+        sqLiteSpanManager.performSql(sql) {
             delegate.executeInsert()
         }
-    }
 
-    override fun simpleQueryForLong(): Long {
-        return sqLiteSpanManager.performSql(sql) {
+    override fun simpleQueryForLong(): Long =
+        sqLiteSpanManager.performSql(sql) {
             delegate.simpleQueryForLong()
         }
-    }
 
-    override fun simpleQueryForString(): String? {
-        return sqLiteSpanManager.performSql(sql) {
+    override fun simpleQueryForString(): String? =
+        sqLiteSpanManager.performSql(sql) {
             delegate.simpleQueryForString()
         }
-    }
 }

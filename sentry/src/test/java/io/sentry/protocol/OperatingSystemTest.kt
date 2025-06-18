@@ -6,7 +6,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class OperatingSystemTest {
-
     @Test
     fun `copying operating system wont have the same references`() {
         val operatingSystem = OperatingSystem()

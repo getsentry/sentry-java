@@ -8,11 +8,8 @@ import kotlin.test.assertNull
 import kotlin.test.fail
 
 class JsonObjectDeserializerTest {
-
     private class Fixture {
-        fun getSut(): JsonObjectDeserializer {
-            return JsonObjectDeserializer()
-        }
+        fun getSut(): JsonObjectDeserializer = JsonObjectDeserializer()
     }
 
     private val fixture = Fixture()
@@ -146,12 +143,14 @@ class JsonObjectDeserializerTest {
     @Test
     fun `deserialize json object object array`() {
         val json = "{\"fixture-key\":[{\"id\":1},{\"id\":2}]}"
-        val expected = mapOf(
-            "fixture-key" to listOf(
-                mapOf("id" to 1),
-                mapOf("id" to 2)
+        val expected =
+            mapOf(
+                "fixture-key" to
+                    listOf(
+                        mapOf("id" to 1),
+                        mapOf("id" to 2),
+                    ),
             )
-        )
 
         val actual = deserialize(json)
         assertEquals(expected, actual)
@@ -160,12 +159,14 @@ class JsonObjectDeserializerTest {
     @Test
     fun `deserialize json object array array`() {
         val json = "{\"fixture-key\":[[\"a\"],[\"b\"]]}"
-        val expected = mapOf(
-            "fixture-key" to listOf(
-                listOf("a"),
-                listOf("b")
+        val expected =
+            mapOf(
+                "fixture-key" to
+                    listOf(
+                        listOf("a"),
+                        listOf("b"),
+                    ),
             )
-        )
 
         val actual = deserialize(json)
         assertEquals(expected, actual)
@@ -173,18 +174,21 @@ class JsonObjectDeserializerTest {
 
     @Test
     fun `deserialize json object object`() {
-        val json = """
-        {
-            "key": {
-                "key": "value"
+        val json =
+            """
+            {
+                "key": {
+                    "key": "value"
+                }
             }
-        }
-        """.trimIndent()
-        val expected = mapOf<String, Any>(
-            "key" to mapOf(
-                "key" to "value"
+            """.trimIndent()
+        val expected =
+            mapOf<String, Any>(
+                "key" to
+                    mapOf(
+                        "key" to "value",
+                    ),
             )
-        )
 
         val actual = deserialize(json)
         assertEquals(expected, actual)
@@ -192,40 +196,44 @@ class JsonObjectDeserializerTest {
 
     @Test
     fun `deserialize json object object with nesting`() {
-        val json = """
-        {
-            "fixture-key":
+        val json =
+            """
             {
-                "string": "fixture-string",
-                "int": 123,
-                "double": 123.321,
-                "boolean": true,
-                "array":
-                [
-                    "a",
-                    "b",
-                    "c"
-                ],
-                "object":
+                "fixture-key":
                 {
-                    "key": "value"
+                    "string": "fixture-string",
+                    "int": 123,
+                    "double": 123.321,
+                    "boolean": true,
+                    "array":
+                    [
+                        "a",
+                        "b",
+                        "c"
+                    ],
+                    "object":
+                    {
+                        "key": "value"
+                    }
                 }
             }
-        }
-        """.trimIndent()
+            """.trimIndent()
 
-        val expected = mapOf<String, Any>(
-            "fixture-key" to mapOf(
-                "string" to "fixture-string",
-                "int" to 123,
-                "double" to 123.321,
-                "boolean" to true,
-                "array" to listOf("a", "b", "c"),
-                "object" to mapOf(
-                    "key" to "value"
-                )
+        val expected =
+            mapOf<String, Any>(
+                "fixture-key" to
+                    mapOf(
+                        "string" to "fixture-string",
+                        "int" to 123,
+                        "double" to 123.321,
+                        "boolean" to true,
+                        "array" to listOf("a", "b", "c"),
+                        "object" to
+                            mapOf(
+                                "key" to "value",
+                            ),
+                    ),
             )
-        )
 
         val actual = deserialize(json)
         assertEquals(expected, actual)

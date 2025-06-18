@@ -264,6 +264,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     public Builder(Context context, int themeResId) {
       this(context, themeResId, null);
     }
+
     /**
      * Creates a builder for a {@link SentryUserFeedbackDialog} that uses the default alert dialog
      * theme. The {@code configuration} can be used to configure the feedback options for this

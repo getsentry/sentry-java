@@ -9,7 +9,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SentryServletContainerInitializerTest {
-
     private val initializer =
         SentryServletContainerInitializer()
 
@@ -20,7 +19,7 @@ class SentryServletContainerInitializerTest {
         verify(servletContext).addListener(
             check { it: Class<out EventListener> ->
                 assertEquals(SentryServletRequestListener::class.java, it)
-            }
+            },
         )
     }
 }

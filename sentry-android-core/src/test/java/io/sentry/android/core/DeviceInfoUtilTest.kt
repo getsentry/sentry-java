@@ -15,7 +15,6 @@ import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
 class DeviceInfoUtilTest {
-
     private lateinit var context: Context
 
     @Suppress("deprecation")
@@ -23,10 +22,11 @@ class DeviceInfoUtilTest {
     fun `set up`() {
         context = ApplicationProvider.getApplicationContext()
         context.sendStickyBroadcast(
-            Intent(Intent.ACTION_BATTERY_CHANGED).putExtra(
-                BatteryManager.EXTRA_LEVEL,
-                75
-            ).putExtra(BatteryManager.EXTRA_PLUGGED, 0)
+            Intent(Intent.ACTION_BATTERY_CHANGED)
+                .putExtra(
+                    BatteryManager.EXTRA_LEVEL,
+                    75,
+                ).putExtra(BatteryManager.EXTRA_PLUGGED, 0),
         )
         DeviceInfoUtil.resetInstance()
     }
@@ -61,9 +61,10 @@ class DeviceInfoUtilTest {
 
     @Test
     fun `does include device io data when enabled`() {
-        val options = SentryAndroidOptions().apply {
-            isCollectAdditionalContext = true
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isCollectAdditionalContext = true
+            }
         val deviceInfoUtil = DeviceInfoUtil.getInstance(context, options)
         val deviceInfo = deviceInfoUtil.collectDeviceInformation(true, false)
 
@@ -75,9 +76,10 @@ class DeviceInfoUtilTest {
 
     @Test
     fun `does not include device io data when disabled`() {
-        val options = SentryAndroidOptions().apply {
-            isCollectAdditionalContext = true
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isCollectAdditionalContext = true
+            }
         val deviceInfoUtil = DeviceInfoUtil.getInstance(context, options)
         val deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false)
 
@@ -87,9 +89,10 @@ class DeviceInfoUtilTest {
 
     @Test
     fun `does include dynamic data when enabled`() {
-        val options = SentryAndroidOptions().apply {
-            isCollectAdditionalContext = true
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isCollectAdditionalContext = true
+            }
         val deviceInfoUtil = DeviceInfoUtil.getInstance(context, options)
         val deviceInfo = deviceInfoUtil.collectDeviceInformation(true, true)
 
@@ -100,9 +103,10 @@ class DeviceInfoUtilTest {
 
     @Test
     fun `does not include dynamic data when disabled`() {
-        val options = SentryAndroidOptions().apply {
-            isCollectAdditionalContext = true
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isCollectAdditionalContext = true
+            }
         val deviceInfoUtil = DeviceInfoUtil.getInstance(context, options)
         val deviceInfo = deviceInfoUtil.collectDeviceInformation(true, false)
 
@@ -112,18 +116,20 @@ class DeviceInfoUtilTest {
 
     @Test
     fun `does perform root check if root checker is enabled`() {
-        val options = SentryAndroidOptions().apply {
-            isEnableRootCheck = true
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isEnableRootCheck = true
+            }
         val deviceInfoUtil = DeviceInfoUtil.getInstance(context, options)
         assertNotNull(deviceInfoUtil.operatingSystem.isRooted)
     }
 
     @Test
     fun `does not perform root check if root checker is disabled`() {
-        val options = SentryAndroidOptions().apply {
-            isEnableRootCheck = false
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isEnableRootCheck = false
+            }
         val deviceInfoUtil = DeviceInfoUtil.getInstance(context, options)
         assertNull(deviceInfoUtil.operatingSystem.isRooted)
     }

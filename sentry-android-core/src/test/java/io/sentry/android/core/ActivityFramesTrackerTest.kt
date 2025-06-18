@@ -21,7 +21,6 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class ActivityFramesTrackerTest {
-
     private class Fixture {
         val aggregator = mock<FrameMetricsAggregator>()
         val activity = mock<Activity>()
@@ -35,14 +34,14 @@ class ActivityFramesTrackerTest {
             options.isEnablePerformanceV2 = false
         }
 
-        fun getSut(mockAggregator: Boolean = true): ActivityFramesTracker {
-            return if (mockAggregator) {
+        fun getSut(mockAggregator: Boolean = true): ActivityFramesTracker =
+            if (mockAggregator) {
                 ActivityFramesTracker(loadClass, options, handler, aggregator)
             } else {
                 ActivityFramesTracker(loadClass, options, handler)
             }
-        }
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -101,11 +100,13 @@ class ActivityFramesTrackerTest {
     @Test
     fun `sets slow and frozen frames`() {
         val sut = fixture.getSut()
-        val array = SparseIntArray().also {
-            it.put(16, 100)
-            it.put(20, 5)
-            it.put(701, 6)
-        }.let { arrayOf(it) }
+        val array =
+            SparseIntArray()
+                .also {
+                    it.put(16, 100)
+                    it.put(20, 5)
+                    it.put(701, 6)
+                }.let { arrayOf(it) }
 
         whenever(fixture.aggregator.metrics).thenReturn(emptyArray(), array)
 
@@ -127,11 +128,13 @@ class ActivityFramesTrackerTest {
     @Test
     fun `sets slow and frozen frames even if start was null`() {
         val sut = fixture.getSut()
-        val array = SparseIntArray().also {
-            it.put(16, 100)
-            it.put(20, 5)
-            it.put(701, 6)
-        }.let { arrayOf(it) }
+        val array =
+            SparseIntArray()
+                .also {
+                    it.put(16, 100)
+                    it.put(20, 5)
+                    it.put(701, 6)
+                }.let { arrayOf(it) }
 
         whenever(fixture.aggregator.metrics).thenReturn(null, array)
 
@@ -153,37 +156,47 @@ class ActivityFramesTrackerTest {
     @Test
     fun `different activities have separate counts - even when called out of order`() {
         val sut = fixture.getSut()
-        val activityAStartFrameCounts = SparseIntArray().also {
-            it.put(16, 100)
-            it.put(17, 3)
-            it.put(700, 2)
-            it.put(701, 6)
-        }.let { arrayOf(it) }
-        val activityBStartFrameCounts = SparseIntArray().also {
-            it.put(16, 110)
-            it.put(17, 3)
-            it.put(700, 3)
-            it.put(701, 7)
-        }.let { arrayOf(it) }
-        val activityAEndFrameCounts = SparseIntArray().also {
-            it.put(16, 115)
-            it.put(17, 3)
-            it.put(700, 5)
-            it.put(701, 9)
-        }.let { arrayOf(it) }
-        val activityBEndFrameCounts = SparseIntArray().also {
-            it.put(16, 135)
-            it.put(17, 3)
-            it.put(700, 8)
-            it.put(701, 12)
-        }.let { arrayOf(it) }
+        val activityAStartFrameCounts =
+            SparseIntArray()
+                .also {
+                    it.put(16, 100)
+                    it.put(17, 3)
+                    it.put(700, 2)
+                    it.put(701, 6)
+                }.let { arrayOf(it) }
+        val activityBStartFrameCounts =
+            SparseIntArray()
+                .also {
+                    it.put(16, 110)
+                    it.put(17, 3)
+                    it.put(700, 3)
+                    it.put(701, 7)
+                }.let { arrayOf(it) }
+        val activityAEndFrameCounts =
+            SparseIntArray()
+                .also {
+                    it.put(16, 115)
+                    it.put(17, 3)
+                    it.put(700, 5)
+                    it.put(701, 9)
+                }.let { arrayOf(it) }
+        val activityBEndFrameCounts =
+            SparseIntArray()
+                .also {
+                    it.put(16, 135)
+                    it.put(17, 3)
+                    it.put(700, 8)
+                    it.put(701, 12)
+                }.let { arrayOf(it) }
 
         val activityA = fixture.activity
         val activityB = mock<Activity>()
         val sentryIdA = fixture.sentryId
         val sentryIdB = SentryId()
 
-        whenever(fixture.aggregator.metrics).thenReturn(activityAStartFrameCounts, activityBStartFrameCounts, activityAEndFrameCounts, activityBEndFrameCounts)
+        whenever(
+            fixture.aggregator.metrics,
+        ).thenReturn(activityAStartFrameCounts, activityBStartFrameCounts, activityAEndFrameCounts, activityBEndFrameCounts)
 
         sut.addActivity(activityA)
         sut.addActivity(activityB)
@@ -215,29 +228,39 @@ class ActivityFramesTrackerTest {
     @Test
     fun `same activity can be used again later on`() {
         val sut = fixture.getSut()
-        val firstLaunchStartFrameCounts = SparseIntArray().also {
-            it.put(16, 100)
-            it.put(20, 5)
-            it.put(701, 6)
-        }.let { arrayOf(it) }
-        val firstLaunchEndFrameCounts = SparseIntArray().also {
-            it.put(16, 110)
-            it.put(20, 6)
-            it.put(701, 7)
-        }.let { arrayOf(it) }
-        val secondLaunchStartFrameCounts = SparseIntArray().also {
-            it.put(16, 115)
-            it.put(20, 8)
-            it.put(701, 9)
-        }.let { arrayOf(it) }
-        val secondLaunchEndFrameCounts = SparseIntArray().also {
-            it.put(16, 135)
-            it.put(20, 11)
-            it.put(701, 12)
-        }.let { arrayOf(it) }
+        val firstLaunchStartFrameCounts =
+            SparseIntArray()
+                .also {
+                    it.put(16, 100)
+                    it.put(20, 5)
+                    it.put(701, 6)
+                }.let { arrayOf(it) }
+        val firstLaunchEndFrameCounts =
+            SparseIntArray()
+                .also {
+                    it.put(16, 110)
+                    it.put(20, 6)
+                    it.put(701, 7)
+                }.let { arrayOf(it) }
+        val secondLaunchStartFrameCounts =
+            SparseIntArray()
+                .also {
+                    it.put(16, 115)
+                    it.put(20, 8)
+                    it.put(701, 9)
+                }.let { arrayOf(it) }
+        val secondLaunchEndFrameCounts =
+            SparseIntArray()
+                .also {
+                    it.put(16, 135)
+                    it.put(20, 11)
+                    it.put(701, 12)
+                }.let { arrayOf(it) }
         val secondSentryId = SentryId()
 
-        whenever(fixture.aggregator.metrics).thenReturn(firstLaunchStartFrameCounts, firstLaunchEndFrameCounts, secondLaunchStartFrameCounts, secondLaunchEndFrameCounts)
+        whenever(
+            fixture.aggregator.metrics,
+        ).thenReturn(firstLaunchStartFrameCounts, firstLaunchEndFrameCounts, secondLaunchStartFrameCounts, secondLaunchEndFrameCounts)
 
         sut.addActivity(fixture.activity)
         sut.setMetrics(fixture.activity, fixture.sentryId)
@@ -359,9 +382,10 @@ class ActivityFramesTrackerTest {
     fun `addActivity call to FrameMetricsTracker is done on the main thread, even when being called from a background thread`() {
         val sut = fixture.getSut()
 
-        val addThread = Thread {
-            sut.addActivity(fixture.activity)
-        }
+        val addThread =
+            Thread {
+                sut.addActivity(fixture.activity)
+            }
         addThread.start()
         addThread.join(500)
         verify(fixture.handler).post(any())
@@ -371,9 +395,10 @@ class ActivityFramesTrackerTest {
     fun `setMetrics call to FrameMetricsTracker is done on the main thread, even when being called from a background thread`() {
         val sut = fixture.getSut()
 
-        val setMetricsThread = Thread {
-            sut.setMetrics(fixture.activity, fixture.sentryId)
-        }
+        val setMetricsThread =
+            Thread {
+                sut.setMetrics(fixture.activity, fixture.sentryId)
+            }
         setMetricsThread.start()
         setMetricsThread.join(500)
         verify(fixture.handler).post(any())
@@ -383,9 +408,10 @@ class ActivityFramesTrackerTest {
     fun `stop call to FrameMetricsTracker is done on the main thread, even when being called from a background thread`() {
         val sut = fixture.getSut()
 
-        val stopThread = Thread {
-            sut.stop()
-        }
+        val stopThread =
+            Thread {
+                sut.stop()
+            }
         stopThread.start()
         stopThread.join(500)
         verify(fixture.handler).post(any())
@@ -405,7 +431,10 @@ class ActivityFramesTrackerTest {
         assertTrue(sut.isFrameMetricsAggregatorAvailable)
     }
 
-    private fun getArray(frameTime: Int = 1, numFrames: Int = 1): Array<SparseIntArray?> {
+    private fun getArray(
+        frameTime: Int = 1,
+        numFrames: Int = 1,
+    ): Array<SparseIntArray?> {
         val totalArray = SparseIntArray()
         totalArray.put(frameTime, numFrames)
         return arrayOf(totalArray)

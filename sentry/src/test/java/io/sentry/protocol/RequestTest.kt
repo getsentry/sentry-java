@@ -8,7 +8,6 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 
 class RequestTest {
-
     @Test
     fun `copying request wont have the same references`() {
         val request = createRequest()
@@ -79,10 +78,11 @@ class RequestTest {
 
     @Test
     fun `when setEnvs receives immutable map as an argument, its still possible to add more env to the request`() {
-        val request = Request().apply {
-            envs = Collections.unmodifiableMap(mapOf("env1" to "value1"))
-            envs!!["env2"] = "value2"
-        }
+        val request =
+            Request().apply {
+                envs = Collections.unmodifiableMap(mapOf("env1" to "value1"))
+                envs!!["env2"] = "value2"
+            }
         assertNotNull(request.envs) {
             assertEquals(mapOf("env1" to "value1", "env2" to "value2"), it)
         }
@@ -90,10 +90,11 @@ class RequestTest {
 
     @Test
     fun `when setOther receives immutable map as an argument, its still possible to add more others to the request`() {
-        val request = Request().apply {
-            others = Collections.unmodifiableMap(mapOf("key1" to "value1"))
-            others!!["key2"] = "value2"
-        }
+        val request =
+            Request().apply {
+                others = Collections.unmodifiableMap(mapOf("key1" to "value1"))
+                others!!["key2"] = "value2"
+            }
         assertNotNull(request.others) {
             assertEquals(mapOf("key1" to "value1", "key2" to "value2"), it)
         }
@@ -101,17 +102,18 @@ class RequestTest {
 
     @Test
     fun `when setHeaders receives immutable map as an argument, its still possible to add more headers to the request`() {
-        val request = Request().apply {
-            headers = Collections.unmodifiableMap(mapOf("key1" to "value1"))
-            headers!!["key2"] = "value2"
-        }
+        val request =
+            Request().apply {
+                headers = Collections.unmodifiableMap(mapOf("key1" to "value1"))
+                headers!!["key2"] = "value2"
+            }
         assertNotNull(request.headers) {
             assertEquals(mapOf("key1" to "value1", "key2" to "value2"), it)
         }
     }
 
-    private fun createRequest(): Request {
-        return Request().apply {
+    private fun createRequest(): Request =
+        Request().apply {
             method = "get"
             url = "http://localhost:8080"
             queryString = "?foo=bar"
@@ -124,5 +126,4 @@ class RequestTest {
             fragment = "fragment"
             apiTarget = "graphql"
         }
-    }
 }

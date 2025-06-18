@@ -26,7 +26,13 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryHandlerTest {
-    private class Fixture(minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, val configureWithLogManager: Boolean = false, val transport: ITransport = mock(), contextTags: List<String>? = null) {
+    private class Fixture(
+        minimumBreadcrumbLevel: Level? = null,
+        minimumEventLevel: Level? = null,
+        val configureWithLogManager: Boolean = false,
+        val transport: ITransport = mock(),
+        contextTags: List<String>? = null,
+    ) {
         var logger: Logger
         var handler: SentryHandler
 
@@ -75,7 +81,7 @@ class SentryHandlerTest {
             checkEvent { event ->
                 assertEquals("manual-environment", event.environment)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -93,7 +99,7 @@ class SentryHandlerTest {
                 }
                 assertEquals("jul.SentryHandlerTest", event.logger)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -111,7 +117,7 @@ class SentryHandlerTest {
                 }
                 assertEquals("jul.SentryHandlerTest", event.logger)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -124,14 +130,16 @@ class SentryHandlerTest {
 
         verify(fixture.transport).send(
             checkEvent { event ->
-                val eventTime = Instant.ofEpochMilli(event.timestamp.time)
-                    .atZone(ZoneId.of("UTC"))
-                    .toLocalDateTime()
+                val eventTime =
+                    Instant
+                        .ofEpochMilli(event.timestamp.time)
+                        .atZone(ZoneId.of("UTC"))
+                        .toLocalDateTime()
 
                 assertTrue { eventTime.plusSeconds(1).isAfter(utcTime) }
                 assertTrue { eventTime.minusSeconds(1).isBefore(utcTime) }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -144,7 +152,7 @@ class SentryHandlerTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.DEBUG, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -157,7 +165,7 @@ class SentryHandlerTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.DEBUG, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -170,7 +178,7 @@ class SentryHandlerTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.INFO, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -183,7 +191,7 @@ class SentryHandlerTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.WARNING, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -196,7 +204,7 @@ class SentryHandlerTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.ERROR, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -212,7 +220,7 @@ class SentryHandlerTest {
                 assertEquals(SentryHandler.MECHANISM_TYPE, exception.mechanism!!.type)
                 assertEquals("test exc", exception.value)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -225,7 +233,7 @@ class SentryHandlerTest {
             checkEvent { event ->
                 assertNotNull(event.getExtra("thread_id"))
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -243,9 +251,11 @@ class SentryHandlerTest {
                 assertNotNull(event.breadcrumbs) { breadcrumbs ->
                     assertEquals(2, breadcrumbs.size)
                     val breadcrumb = breadcrumbs[0]
-                    val breadcrumbTime = Instant.ofEpochMilli(event.timestamp.time)
-                        .atZone(ZoneId.of("UTC"))
-                        .toLocalDateTime()
+                    val breadcrumbTime =
+                        Instant
+                            .ofEpochMilli(event.timestamp.time)
+                            .atZone(ZoneId.of("UTC"))
+                            .toLocalDateTime()
                     assertTrue { breadcrumbTime.plusSeconds(1).isAfter(utcTime) }
                     assertTrue { breadcrumbTime.minusSeconds(1).isBefore(utcTime) }
                     assertEquals("this should be a breadcrumb #1", breadcrumb.message)
@@ -253,7 +263,7 @@ class SentryHandlerTest {
                     assertEquals(SentryLevel.DEBUG, breadcrumb.level)
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -272,7 +282,7 @@ class SentryHandlerTest {
                     assertEquals("this should be a breadcrumb", breadcrumbs[0].message)
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -293,7 +303,7 @@ class SentryHandlerTest {
                     assertEquals("this should not be sent as the event but be a breadcrumb", breadcrumbs[1].message)
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -306,7 +316,7 @@ class SentryHandlerTest {
             checkEvent { event ->
                 assertEquals("release from sentry.properties", event.release)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -329,7 +339,7 @@ class SentryHandlerTest {
             checkEvent { event ->
                 assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -345,7 +355,7 @@ class SentryHandlerTest {
                 assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
                 assertEquals(mapOf("contextTag1" to "contextTag1Value"), event.tags)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -364,7 +374,7 @@ class SentryHandlerTest {
                     assertEquals("value", contextData["key2"])
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -379,7 +389,7 @@ class SentryHandlerTest {
             checkEvent { event ->
                 assertNull(event.contexts["MDC"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -392,7 +402,7 @@ class SentryHandlerTest {
             checkEvent { event ->
                 assertFalse(event.contexts.containsKey("MDC"))
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -410,14 +420,14 @@ class SentryHandlerTest {
                         it.packageSet.any { pkg ->
                             "maven:io.sentry:sentry-jul" == pkg.name &&
                                 BuildConfig.VERSION_NAME == pkg.version
-                        }
+                        },
                     )
                     assertTrue(
-                        it.integrationSet.contains("Jul")
+                        it.integrationSet.contains("Jul"),
                     )
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 }

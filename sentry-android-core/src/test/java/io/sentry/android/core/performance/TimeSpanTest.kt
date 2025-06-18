@@ -37,11 +37,12 @@ class TimeSpanTest {
 
     @Test
     fun `spans reset`() {
-        val span = TimeSpan().apply {
-            description = "Hello World"
-            setStartedAt(1)
-            setStoppedAt(2)
-        }
+        val span =
+            TimeSpan().apply {
+                description = "Hello World"
+                setStartedAt(1)
+                setStoppedAt(2)
+            }
         span.reset()
 
         assertTrue(span.hasNotStarted())
@@ -51,18 +52,20 @@ class TimeSpanTest {
 
     @Test
     fun `spans description`() {
-        val span = TimeSpan().apply {
-            description = "Hello World"
-        }
+        val span =
+            TimeSpan().apply {
+                description = "Hello World"
+            }
         assertEquals("Hello World", span.description)
     }
 
     @Test
     fun `span duration`() {
-        val span = TimeSpan().apply {
-            setStartedAt(1)
-            setStoppedAt(10)
-        }
+        val span =
+            TimeSpan().apply {
+                setStartedAt(1)
+                setStoppedAt(10)
+            }
         assertEquals(9, span.durationMs)
     }
 
@@ -73,9 +76,10 @@ class TimeSpanTest {
 
     @Test
     fun `span has no duration if not stopped`() {
-        val span = TimeSpan().apply {
-            setStartedAt(1)
-        }
+        val span =
+            TimeSpan().apply {
+                setStartedAt(1)
+            }
         assertEquals(0, span.durationMs)
     }
 
@@ -119,7 +123,7 @@ class TimeSpanTest {
         assertEquals(
             span.startTimestampMs.toDouble(),
             DateUtils.nanosToMillis(span.startTimestamp!!.nanoTimestamp().toDouble()),
-            0.001
+            0.001,
         )
     }
 

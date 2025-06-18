@@ -8,7 +8,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class SentryTraceHeaderTest {
-
     @Test
     fun `when sentry-trace header is incorrect throws exception`() {
         val sentryId = SentryId()

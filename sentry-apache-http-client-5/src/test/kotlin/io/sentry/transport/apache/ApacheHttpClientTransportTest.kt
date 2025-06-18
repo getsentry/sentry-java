@@ -34,7 +34,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
 class ApacheHttpClientTransportTest {
-
     class Fixture {
         val options: SentryOptions
         val logger = mock<ILogger>()
@@ -55,7 +54,10 @@ class ApacheHttpClientTransportTest {
             SentryOptionsManipulator.setClientReportRecorder(options, clientReportRecorder)
         }
 
-        fun getSut(response: SimpleHttpResponse? = null, queueFull: Boolean = false): ApacheHttpClientTransport {
+        fun getSut(
+            response: SimpleHttpResponse? = null,
+            queueFull: Boolean = false,
+        ): ApacheHttpClientTransport {
             val transport = ApacheHttpClientTransport(options, requestDetails, client, rateLimiter, currentlyRunning)
 
             if (response != null) {
@@ -102,7 +104,7 @@ class ApacheHttpClientTransportTest {
                 assertEquals("http://localhost/proj", it.uri.toString())
                 assertEquals("header-value", it.getFirstHeader("header-name").value)
             },
-            any()
+            any(),
         )
     }
 
@@ -181,17 +183,18 @@ class ApacheHttpClientTransportTest {
     @Test
     fun `logs warning when flush timeout was lower than time needed to execute all events`() {
         val sut = fixture.getSut()
-        whenever(fixture.client.execute(any(), any())).then {
-            fixture.executorService.submit {
-                Thread.sleep(1000)
-                (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
+        whenever(fixture.client.execute(any(), any()))
+            .then {
+                fixture.executorService.submit {
+                    Thread.sleep(1000)
+                    (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
+                }
+            }.then {
+                fixture.executorService.submit {
+                    Thread.sleep(20)
+                    (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
+                }
             }
-        }.then {
-            fixture.executorService.submit {
-                Thread.sleep(20)
-                (it.arguments[1] as FutureCallback<SimpleHttpResponse>).completed(SimpleHttpResponse(200))
-            }
-        }
         sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
         sut.send(SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null))
 

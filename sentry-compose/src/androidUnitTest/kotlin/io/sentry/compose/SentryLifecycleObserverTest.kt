@@ -8,14 +8,11 @@ import org.mockito.kotlin.verify
 import kotlin.test.Test
 
 internal class SentryLifecycleObserverTest {
-
     class Fixture {
         val navListener = mock<SentryNavigationListener>()
         val navController = mock<NavController>()
 
-        fun getSut(): SentryLifecycleObserver {
-            return SentryLifecycleObserver(navController, navListener)
-        }
+        fun getSut(): SentryLifecycleObserver = SentryLifecycleObserver(navController, navListener)
     }
 
     private val fixture = Fixture()

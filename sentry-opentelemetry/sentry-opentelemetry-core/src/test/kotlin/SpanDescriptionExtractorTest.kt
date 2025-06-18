@@ -19,7 +19,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class SpanDescriptionExtractorTest {
-
     private class Fixture {
         val sentrySpan = mock<IOtelSpanWrapper>()
         val otelSpan = mock<SpanData>()
@@ -49,8 +48,8 @@ class SpanDescriptionExtractorTest {
         givenSpanKind(SpanKind.SERVER)
         givenAttributes(
             mapOf(
-                HttpAttributes.HTTP_REQUEST_METHOD to "GET"
-            )
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -65,8 +64,8 @@ class SpanDescriptionExtractorTest {
         givenSpanKind(SpanKind.CLIENT)
         givenAttributes(
             mapOf(
-                HttpAttributes.HTTP_REQUEST_METHOD to "GET"
-            )
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -80,8 +79,8 @@ class SpanDescriptionExtractorTest {
     fun `sets op to http without server for root span with http GET`() {
         givenAttributes(
             mapOf(
-                HttpAttributes.HTTP_REQUEST_METHOD to "GET"
-            )
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -96,8 +95,8 @@ class SpanDescriptionExtractorTest {
         givenParentContext(createSpanContext(true))
         givenAttributes(
             mapOf(
-                HttpAttributes.HTTP_REQUEST_METHOD to "GET"
-            )
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -112,8 +111,8 @@ class SpanDescriptionExtractorTest {
         givenParentContext(createSpanContext(false))
         givenAttributes(
             mapOf(
-                HttpAttributes.HTTP_REQUEST_METHOD to "GET"
-            )
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -129,8 +128,8 @@ class SpanDescriptionExtractorTest {
         givenAttributes(
             mapOf(
                 HttpAttributes.HTTP_REQUEST_METHOD to "GET",
-                UrlAttributes.URL_FULL to "https://sentry.io/some/path?q=1#top"
-            )
+                UrlAttributes.URL_FULL to "https://sentry.io/some/path?q=1#top",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -146,8 +145,8 @@ class SpanDescriptionExtractorTest {
         givenAttributes(
             mapOf(
                 HttpAttributes.HTTP_REQUEST_METHOD to "GET",
-                UrlAttributes.URL_PATH to "/some/path"
-            )
+                UrlAttributes.URL_PATH to "/some/path",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -165,8 +164,8 @@ class SpanDescriptionExtractorTest {
                 HttpAttributes.HTTP_REQUEST_METHOD to "GET",
                 HttpAttributes.HTTP_ROUTE to "/some/{id}",
                 HttpIncubatingAttributes.HTTP_TARGET to "some/path?q=1#top",
-                UrlAttributes.URL_PATH to "/some/path"
-            )
+                UrlAttributes.URL_PATH to "/some/path",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -182,8 +181,8 @@ class SpanDescriptionExtractorTest {
         givenSpanName("span name")
         givenAttributes(
             mapOf(
-                HttpAttributes.HTTP_REQUEST_METHOD to "GET"
-            )
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -198,8 +197,8 @@ class SpanDescriptionExtractorTest {
         givenSpanKind(SpanKind.SERVER)
         givenAttributes(
             mapOf(
-                HttpAttributes.HTTP_REQUEST_METHOD to "GET"
-            )
+                HttpAttributes.HTTP_REQUEST_METHOD to "GET",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -214,8 +213,8 @@ class SpanDescriptionExtractorTest {
         givenAttributes(
             mapOf(
                 DbIncubatingAttributes.DB_SYSTEM to "some",
-                DbIncubatingAttributes.DB_QUERY_TEXT to "SELECT * FROM tbl"
-            )
+                DbIncubatingAttributes.DB_QUERY_TEXT to "SELECT * FROM tbl",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -230,8 +229,8 @@ class SpanDescriptionExtractorTest {
         givenAttributes(
             mapOf(
                 DbIncubatingAttributes.DB_SYSTEM to "some",
-                DbIncubatingAttributes.DB_STATEMENT to "SELECT * FROM tbl"
-            )
+                DbIncubatingAttributes.DB_STATEMENT to "SELECT * FROM tbl",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -245,8 +244,8 @@ class SpanDescriptionExtractorTest {
     fun `sets op to db for span with db system`() {
         givenAttributes(
             mapOf(
-                DbIncubatingAttributes.DB_SYSTEM to "some"
-            )
+                DbIncubatingAttributes.DB_SYSTEM to "some",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -261,8 +260,8 @@ class SpanDescriptionExtractorTest {
         givenSpanName("span name")
         givenAttributes(
             mapOf(
-                DbIncubatingAttributes.DB_SYSTEM to "some"
-            )
+                DbIncubatingAttributes.DB_SYSTEM to "some",
+            ),
         )
 
         val info = whenExtractingSpanInfo()
@@ -297,20 +296,24 @@ class SpanDescriptionExtractorTest {
         assertEquals(TransactionNameSource.CUSTOM, info.transactionNameSource)
     }
 
-    private fun createSpanContext(isRemote: Boolean, traceId: String = "f9118105af4a2d42b4124532cd1065ff", spanId: String = "424cffc8f94feeee"): SpanContext {
+    private fun createSpanContext(
+        isRemote: Boolean,
+        traceId: String = "f9118105af4a2d42b4124532cd1065ff",
+        spanId: String = "424cffc8f94feeee",
+    ): SpanContext {
         if (isRemote) {
             return SpanContext.createFromRemoteParent(
                 traceId,
                 spanId,
                 TraceFlags.getSampled(),
-                TraceState.getDefault()
+                TraceState.getDefault(),
             )
         } else {
             return SpanContext.create(
                 traceId,
                 spanId,
                 TraceFlags.getSampled(),
-                TraceState.getDefault()
+                TraceState.getDefault(),
             )
         }
     }

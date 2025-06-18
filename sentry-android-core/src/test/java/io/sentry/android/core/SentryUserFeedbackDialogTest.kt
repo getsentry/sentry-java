@@ -25,7 +25,6 @@ import kotlin.test.assertNotEquals
 
 @RunWith(AndroidJUnit4::class)
 class SentryUserFeedbackDialogTest {
-
     class Fixture {
         val application: Context = ApplicationProvider.getApplicationContext()
         private val mockDsn = "http://key@localhost/proj"
@@ -36,13 +35,14 @@ class SentryUserFeedbackDialogTest {
         val mockLogger = mock<ILogger>()
         val mockReplayController = mock<ReplayController>()
 
-        val options = SentryAndroidOptions().apply {
-            dsn = mockDsn
-            profilesSampleRate = 1.0
-            isDebug = true
-            setLogger(mockLogger)
-            setReplayController(mockReplayController)
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                dsn = mockDsn
+                profilesSampleRate = 1.0
+                isDebug = true
+                setLogger(mockLogger)
+                setReplayController(mockReplayController)
+            }
 
         init {
             whenever(mockScope.user).thenReturn(mock())
@@ -51,9 +51,8 @@ class SentryUserFeedbackDialogTest {
             whenever(mockScopes.isEnabled).thenReturn(true)
         }
 
-        fun getSut(configuration: SentryUserFeedbackDialog.OptionsConfiguration? = null): SentryUserFeedbackDialog {
-            return SentryUserFeedbackDialog(application, 0, configuration)
-        }
+        fun getSut(configuration: SentryUserFeedbackDialog.OptionsConfiguration? = null): SentryUserFeedbackDialog =
+            SentryUserFeedbackDialog(application, 0, configuration)
     }
 
     private val fixture = Fixture()
@@ -97,9 +96,10 @@ class SentryUserFeedbackDialogTest {
     @Test
     fun `when configuration is passed, it is applied to the current dialog only`() {
         fixture.options.isEnabled = true
-        val sut = fixture.getSut { context, options ->
-            options.formTitle = "custom title"
-        }
+        val sut =
+            fixture.getSut { context, options ->
+                options.formTitle = "custom title"
+            }
         assertNotEquals("custom title", fixture.options.feedbackOptions.formTitle)
         sut.show()
         // After showing the dialog, the title should be set

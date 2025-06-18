@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 public final class RequestDetailsResolver {
   /** HTTP Header for the user agent. */
   private static final String USER_AGENT = "User-Agent";
+
   /** HTTP Header for the authentication to Sentry. */
   private static final String SENTRY_AUTH = "X-Sentry-Auth";
 

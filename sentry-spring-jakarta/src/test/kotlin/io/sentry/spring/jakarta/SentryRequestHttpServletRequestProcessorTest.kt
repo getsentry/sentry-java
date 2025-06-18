@@ -17,11 +17,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class SentryRequestHttpServletRequestProcessorTest {
-
     private class Fixture {
         val scopes = mock<IScopes>()
 
-        fun getSut(request: HttpServletRequest, options: SentryOptions = SentryOptions()): SentryRequestHttpServletRequestProcessor {
+        fun getSut(
+            request: HttpServletRequest,
+            options: SentryOptions = SentryOptions(),
+        ): SentryRequestHttpServletRequestProcessor {
             whenever(scopes.options).thenReturn(options)
             return SentryRequestHttpServletRequestProcessor(SpringMvcTransactionNameProvider(), request)
         }
@@ -31,10 +33,11 @@ class SentryRequestHttpServletRequestProcessorTest {
 
     @Test
     fun `when event does not have transaction name, sets the transaction name from the current request`() {
-        val request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .requestAttr(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/some-path")
-            .buildRequest(MockServletContext())
+        val request =
+            MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .requestAttr(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/some-path")
+                .buildRequest(MockServletContext())
         val eventProcessor = fixture.getSut(request)
         val event = SentryEvent()
 
@@ -46,10 +49,11 @@ class SentryRequestHttpServletRequestProcessorTest {
 
     @Test
     fun `when event has transaction name set, does not overwrite transaction name with value from the current request`() {
-        val request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .requestAttr(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/some-path")
-            .buildRequest(MockServletContext())
+        val request =
+            MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .requestAttr(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/some-path")
+                .buildRequest(MockServletContext())
         val eventProcessor = fixture.getSut(request)
         val event = SentryEvent()
         event.transaction = "some-transaction"

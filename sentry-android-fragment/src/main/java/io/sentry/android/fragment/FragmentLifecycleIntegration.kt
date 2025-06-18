@@ -16,15 +16,14 @@ import java.io.Closeable
 public class FragmentLifecycleIntegration(
     private val application: Application,
     private val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
-    private val enableAutoFragmentLifecycleTracing: Boolean
-) :
-    ActivityLifecycleCallbacks,
+    private val enableAutoFragmentLifecycleTracing: Boolean,
+) : ActivityLifecycleCallbacks,
     Integration,
     Closeable {
-
     private companion object {
         init {
-            SentryIntegrationPackageStorage.getInstance()
+            SentryIntegrationPackageStorage
+                .getInstance()
                 .addPackage("maven:io.sentry:sentry-android-fragment", BuildConfig.VERSION_NAME)
         }
     }
@@ -32,25 +31,29 @@ public class FragmentLifecycleIntegration(
     public constructor(application: Application) : this(
         application = application,
         filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states,
-        enableAutoFragmentLifecycleTracing = false
+        enableAutoFragmentLifecycleTracing = false,
     )
 
     public constructor(
         application: Application,
         enableFragmentLifecycleBreadcrumbs: Boolean,
-        enableAutoFragmentLifecycleTracing: Boolean
+        enableAutoFragmentLifecycleTracing: Boolean,
     ) : this(
         application = application,
-        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states
-            .takeIf { enableFragmentLifecycleBreadcrumbs }
-            .orEmpty(),
-        enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
+        filterFragmentLifecycleBreadcrumbs =
+            FragmentLifecycleState.states
+                .takeIf { enableFragmentLifecycleBreadcrumbs }
+                .orEmpty(),
+        enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing,
     )
 
     private lateinit var scopes: IScopes
     private lateinit var options: SentryOptions
 
-    override fun register(scopes: IScopes, options: SentryOptions) {
+    override fun register(
+        scopes: IScopes,
+        options: SentryOptions,
+    ) {
         this.scopes = scopes
         this.options = options
 
@@ -66,16 +69,19 @@ public class FragmentLifecycleIntegration(
         }
     }
 
-    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+    override fun onActivityCreated(
+        activity: Activity,
+        savedInstanceState: Bundle?,
+    ) {
         (activity as? FragmentActivity)
             ?.supportFragmentManager
             ?.registerFragmentLifecycleCallbacks(
                 SentryFragmentLifecycleCallbacks(
                     scopes = scopes,
                     filterFragmentLifecycleBreadcrumbs = filterFragmentLifecycleBreadcrumbs,
-                    enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
+                    enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing,
                 ),
-                true
+                true,
             )
     }
 
@@ -95,10 +101,14 @@ public class FragmentLifecycleIntegration(
         // no-op
     }
 
-    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {
+    override fun onActivitySaveInstanceState(
+        activity: Activity,
+        outState: Bundle,
+    ) {
         // no-op
     }
 
+    @Suppress("ktlint:standard:no-consecutive-comments")
     override fun onActivityDestroyed(activity: Activity) {
         /**
          * It is not needed to unregister [SentryFragmentLifecycleCallbacks] as

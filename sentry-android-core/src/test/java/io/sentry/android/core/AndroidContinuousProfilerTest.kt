@@ -56,9 +56,10 @@ class AndroidContinuousProfilerTest {
 
     private class Fixture {
         private val mockDsn = "http://key@localhost/proj"
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP_MR1)
-        }
+        val buildInfo =
+            mock<BuildInfoProvider> {
+                whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP_MR1)
+            }
         val executor = DeferredExecutorService()
         val mockedSentry = mockStatic(Sentry::class.java)
         val mockLogger = mock<ILogger>()
@@ -71,18 +72,23 @@ class AndroidContinuousProfilerTest {
         lateinit var transaction2: SentryTracer
         lateinit var transaction3: SentryTracer
 
-        val options = spy(SentryAndroidOptions()).apply {
-            dsn = mockDsn
-            profilesSampleRate = 1.0
-            isDebug = true
-            setLogger(mockLogger)
-        }
+        val options =
+            spy(SentryAndroidOptions()).apply {
+                dsn = mockDsn
+                profilesSampleRate = 1.0
+                isDebug = true
+                setLogger(mockLogger)
+            }
 
         init {
             whenever(mockTracesSampler.sampleSessionProfile(any())).thenReturn(true)
         }
 
-        fun getSut(buildInfoProvider: BuildInfoProvider = buildInfo, optionConfig: ((options: SentryAndroidOptions) -> Unit) = {}): AndroidContinuousProfiler {
+        fun getSut(
+            buildInfoProvider: BuildInfoProvider = buildInfo,
+            optionConfig: ((options: SentryAndroidOptions) -> Unit) = {
+            },
+        ): AndroidContinuousProfiler {
             options.executorService = executor
             optionConfig(options)
             whenever(scopes.options).thenReturn(options)
@@ -95,7 +101,7 @@ class AndroidContinuousProfilerTest {
                 options.logger,
                 options.profilingTracesDirPath,
                 options.profilingTracesHz,
-                options.executorService
+                options.executorService,
             )
         }
     }
@@ -110,7 +116,7 @@ class AndroidContinuousProfilerTest {
             fixture.options,
             context,
             fixture.mockLogger,
-            buildInfoProvider
+            buildInfoProvider,
         )
 
         AndroidOptionsInitializer.installDefaultIntegrations(
@@ -121,7 +127,7 @@ class AndroidContinuousProfilerTest {
             activityFramesTracker,
             false,
             false,
-            false
+            false,
         )
 
         AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
@@ -129,7 +135,7 @@ class AndroidContinuousProfilerTest {
             context,
             buildInfoProvider,
             loadClass,
-            activityFramesTracker
+            activityFramesTracker,
         )
         // Profiler doesn't start if the folder doesn't exists.
         // Usually it's generated when calling Sentry.init, but for tests we can create it manually.
@@ -246,9 +252,10 @@ class AndroidContinuousProfilerTest {
 
     @Test
     fun `profiler works only on api 22+`() {
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
-        }
+        val buildInfo =
+            mock<BuildInfoProvider> {
+                whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
+            }
         val profiler = fixture.getSut(buildInfo)
         profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
         assertFalse(profiler.isRunning)
@@ -256,9 +263,10 @@ class AndroidContinuousProfilerTest {
 
     @Test
     fun `profiler ignores profilesSampleRate`() {
-        val profiler = fixture.getSut {
-            it.profilesSampleRate = 0.0
-        }
+        val profiler =
+            fixture.getSut {
+                it.profilesSampleRate = 0.0
+            }
         profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
         assertTrue(profiler.isRunning)
     }
@@ -266,12 +274,13 @@ class AndroidContinuousProfilerTest {
     @Test
     fun `profiler evaluates profilingTracesDirPath options only on first start`() {
         // We create the profiler, and nothing goes wrong
-        val profiler = fixture.getSut {
-            it.cacheDirPath = null
-        }
+        val profiler =
+            fixture.getSut {
+                it.cacheDirPath = null
+            }
         verify(fixture.mockLogger, never()).log(
             SentryLevel.WARNING,
-            "Disabling profiling because no profiling traces dir path is defined in options."
+            "Disabling profiling because no profiling traces dir path is defined in options.",
         )
 
         // Regardless of how many times the profiler is started, the option is evaluated and logged only once
@@ -279,20 +288,21 @@ class AndroidContinuousProfilerTest {
         profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
         verify(fixture.mockLogger, times(1)).log(
             SentryLevel.WARNING,
-            "Disabling profiling because no profiling traces dir path is defined in options."
+            "Disabling profiling because no profiling traces dir path is defined in options.",
         )
     }
 
     @Test
     fun `profiler evaluates profilingTracesHz options only on first start`() {
         // We create the profiler, and nothing goes wrong
-        val profiler = fixture.getSut {
-            it.profilingTracesHz = 0
-        }
+        val profiler =
+            fixture.getSut {
+                it.profilingTracesHz = 0
+            }
         verify(fixture.mockLogger, never()).log(
             SentryLevel.WARNING,
             "Disabling profiling because trace rate is set to %d",
-            0
+            0,
         )
 
         // Regardless of how many times the profiler is started, the option is evaluated and logged only once
@@ -301,42 +311,46 @@ class AndroidContinuousProfilerTest {
         verify(fixture.mockLogger, times(1)).log(
             SentryLevel.WARNING,
             "Disabling profiling because trace rate is set to %d",
-            0
+            0,
         )
     }
 
     @Test
     fun `profiler on tracesDirPath null`() {
-        val profiler = fixture.getSut {
-            it.cacheDirPath = null
-        }
+        val profiler =
+            fixture.getSut {
+                it.cacheDirPath = null
+            }
         profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
         assertFalse(profiler.isRunning)
     }
 
     @Test
     fun `profiler on tracesDirPath empty`() {
-        val profiler = fixture.getSut {
-            it.cacheDirPath = ""
-        }
+        val profiler =
+            fixture.getSut {
+                it.cacheDirPath = ""
+            }
         profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
         assertFalse(profiler.isRunning)
     }
 
     @Test
     fun `profiler on profilingTracesHz 0`() {
-        val profiler = fixture.getSut {
-            it.profilingTracesHz = 0
-        }
+        val profiler =
+            fixture.getSut {
+                it.profilingTracesHz = 0
+            }
         profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
         assertFalse(profiler.isRunning)
     }
 
     @Test
     fun `profiler does not throw if traces cannot be written to disk`() {
-        val profiler = fixture.getSut {
-            File(it.profilingTracesDirPath!!).setWritable(false)
-        }
+        val profiler =
+            fixture.getSut {
+                File(it.profilingTracesDirPath!!).setWritable(false)
+            }
         profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
         profiler.stopProfiler(ProfileLifecycle.MANUAL)
         fixture.executor.runAll()
@@ -344,7 +358,7 @@ class AndroidContinuousProfilerTest {
         assertTrue(
             File(fixture.options.profilingTracesDirPath!!)
                 .list()!!
-                .isEmpty()
+                .isEmpty(),
         )
         verify(fixture.mockLogger).log(eq(SentryLevel.ERROR), eq("Error while stopping profiling: "), any())
     }
@@ -452,7 +466,7 @@ class AndroidContinuousProfilerTest {
                 assertContains(it.measurements, ProfileMeasurement.ID_CPU_USAGE)
                 assertContains(it.measurements, ProfileMeasurement.ID_MEMORY_FOOTPRINT)
                 assertContains(it.measurements, ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT)
-            }
+            },
         )
     }
 
@@ -533,11 +547,13 @@ class AndroidContinuousProfilerTest {
 
     @Test
     fun `profiler does not start when offline`() {
-        val profiler = fixture.getSut {
-            it.connectionStatusProvider = mock { provider ->
-                whenever(provider.connectionStatus).thenReturn(IConnectionStatusProvider.ConnectionStatus.DISCONNECTED)
+        val profiler =
+            fixture.getSut {
+                it.connectionStatusProvider =
+                    mock { provider ->
+                        whenever(provider.connectionStatus).thenReturn(IConnectionStatusProvider.ConnectionStatus.DISCONNECTED)
+                    }
             }
-        }
 
         // If the device is offline, the profiler should never start
         profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
@@ -546,8 +562,9 @@ class AndroidContinuousProfilerTest {
         verify(fixture.mockLogger).log(eq(SentryLevel.WARNING), eq("Device is offline. Stopping profiler."))
     }
 
-    fun withMockScopes(closure: () -> Unit) = Mockito.mockStatic(Sentry::class.java).use {
-        it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
-        closure.invoke()
-    }
+    fun withMockScopes(closure: () -> Unit) =
+        Mockito.mockStatic(Sentry::class.java).use {
+            it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
+            closure.invoke()
+        }
 }

@@ -51,6 +51,7 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
 
   /** The collection to decorate */
   private final Collection<E> collection;
+
   /** The object to lock on, needed for List/SortedSet views */
   final AutoClosableReentrantLock lock;
 

@@ -34,12 +34,16 @@ import kotlin.test.fail
 class ObjectQueueTest {
     enum class QueueFactory {
         FILE {
-            override fun <T> create(queueFile: QueueFile, converter: Converter<T>): ObjectQueue<T> {
-                return ObjectQueue.create(queueFile, converter)
-            }
-        };
+            override fun <T> create(
+                queueFile: QueueFile,
+                converter: Converter<T>,
+            ): ObjectQueue<T> = ObjectQueue.create(queueFile, converter)
+        }, ;
 
-        abstract fun <T> create(queueFile: QueueFile, converter: Converter<T>): ObjectQueue<T>
+        abstract fun <T> create(
+            queueFile: QueueFile,
+            converter: Converter<T>,
+        ): ObjectQueue<T>
     }
 
     @get:Rule
@@ -219,17 +223,19 @@ class ObjectQueueTest {
         val parent = folder.root
         val file = File(parent, "object-queue")
         val queueFile = Builder(file).build()
-        val queue = ObjectQueue.create(
-            queueFile,
-            object : Converter<Any> {
-                override fun from(bytes: ByteArray): String {
-                    throw IOException()
-                }
+        val queue =
+            ObjectQueue.create(
+                queueFile,
+                object : Converter<Any> {
+                    override fun from(bytes: ByteArray): String = throw IOException()
 
-                override fun toStream(o: Any, bytes: OutputStream) {
-                }
-            }
-        )
+                    override fun toStream(
+                        o: Any,
+                        bytes: OutputStream,
+                    ) {
+                    }
+                },
+            )
         queue.add(Any())
         val iterator = queue.iterator()
         try {
@@ -241,11 +247,12 @@ class ObjectQueueTest {
     }
 
     internal class StringConverter : Converter<String> {
-        override fun from(bytes: ByteArray): String {
-            return String(bytes, charset("UTF-8"))
-        }
+        override fun from(bytes: ByteArray): String = String(bytes, charset("UTF-8"))
 
-        override fun toStream(s: String, os: OutputStream) {
+        override fun toStream(
+            s: String,
+            os: OutputStream,
+        ) {
             os.write(s.toByteArray(charset("UTF-8")))
         }
     }

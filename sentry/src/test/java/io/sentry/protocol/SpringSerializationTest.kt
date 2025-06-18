@@ -6,14 +6,15 @@ import org.mockito.kotlin.mock
 import kotlin.test.assertEquals
 
 class SpringSerializationTest {
-
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = Spring().apply {
-            activeProfiles = arrayOf("some", "profiles")
-        }
+        fun getSut() =
+            Spring().apply {
+                activeProfiles = arrayOf("some", "profiles")
+            }
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -27,11 +28,12 @@ class SpringSerializationTest {
     @Test
     fun deserialize() {
         val expectedJson = SerializationUtils.sanitizedFile("json/spring.json")
-        val actual = SerializationUtils.deserializeJson<Spring>(
-            expectedJson,
-            Spring.Deserializer(),
-            fixture.logger
-        )
+        val actual =
+            SerializationUtils.deserializeJson<Spring>(
+                expectedJson,
+                Spring.Deserializer(),
+                fixture.logger,
+            )
         val actualJson = SerializationUtils.serializeToString(actual, fixture.logger)
 
         assertEquals(expectedJson, actualJson)

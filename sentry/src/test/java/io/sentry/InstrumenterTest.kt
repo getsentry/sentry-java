@@ -4,7 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class InstrumenterTest {
-
     @Test
     fun `can create from otel string`() {
         val instrumenter = Instrumenter.valueOf("OTEL")

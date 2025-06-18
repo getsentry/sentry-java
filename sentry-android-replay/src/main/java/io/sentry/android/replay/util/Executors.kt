@@ -30,9 +30,9 @@ internal fun ExecutorService.gracefullyShutdown(options: SentryOptions) {
 internal fun ISentryExecutorService.submitSafely(
     options: SentryOptions,
     taskName: String,
-    task: Runnable
-): Future<*>? {
-    return try {
+    task: Runnable,
+): Future<*>? =
+    try {
         submit {
             try {
                 task.run()
@@ -44,12 +44,11 @@ internal fun ISentryExecutorService.submitSafely(
         options.logger.log(ERROR, "Failed to submit task $taskName to executor", e)
         null
     }
-}
 
 internal fun ExecutorService.submitSafely(
     options: SentryOptions,
     taskName: String,
-    task: Runnable
+    task: Runnable,
 ): Future<*>? {
     if (Thread.currentThread().name.startsWith("SentryReplayIntegration")) {
         // we're already on the worker thread, no need to submit
@@ -77,9 +76,9 @@ internal fun ScheduledExecutorService.scheduleAtFixedRateSafely(
     initialDelay: Long,
     period: Long,
     unit: TimeUnit,
-    task: Runnable
-): ScheduledFuture<*>? {
-    return try {
+    task: Runnable,
+): ScheduledFuture<*>? =
+    try {
         scheduleAtFixedRate({
             try {
                 task.run()
@@ -91,4 +90,3 @@ internal fun ScheduledExecutorService.scheduleAtFixedRateSafely(
         options.logger.log(ERROR, "Failed to submit task $taskName to executor", e)
         null
     }
-}

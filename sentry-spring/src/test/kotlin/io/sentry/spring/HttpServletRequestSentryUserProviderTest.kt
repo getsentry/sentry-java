@@ -13,7 +13,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class HttpServletRequestSentryUserProviderTest {
-
     @Test
     fun `attaches user's IP address to Sentry Event`() {
         val request = MockHttpServletRequest()

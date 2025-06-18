@@ -23,7 +23,6 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class AutomaticSpansTest : BaseUiTest() {
-
     @Test
     fun ttidTtfdSpans() {
         initSentry(true) { options: SentryAndroidOptions ->
@@ -90,7 +89,10 @@ class AutomaticSpansTest : BaseUiTest() {
                 // AGP matrix tests have no frames
                 Assume.assumeTrue(totalFrames > 0)
                 assertNotEquals(totalFrames, 0)
-                assertTrue(totalFrames > slowFrames + frozenFrames, "Expected total frames ($totalFrames) to be higher than the sum of slow ($slowFrames) and frozen ($frozenFrames) frames.")
+                assertTrue(
+                    totalFrames > slowFrames + frozenFrames,
+                    "Expected total frames ($totalFrames) to be higher than the sum of slow ($slowFrames) and frozen ($frozenFrames) frames.",
+                )
             }
             assertNoOtherEnvelopes()
         }
@@ -126,7 +128,10 @@ class AutomaticSpansTest : BaseUiTest() {
                 // AGP matrix tests have no frames
                 Assume.assumeTrue(totalFrames > 0)
                 assertNotEquals(totalFrames, 0)
-                assertTrue(totalFrames > slowFrames + frozenFrames, "Expected total frames ($totalFrames) to be higher than the sum of slow ($slowFrames) and frozen ($frozenFrames) frames.")
+                assertTrue(
+                    totalFrames > slowFrames + frozenFrames,
+                    "Expected total frames ($totalFrames) to be higher than the sum of slow ($slowFrames) and frozen ($frozenFrames) frames.",
+                )
             }
             assertNoOtherEnvelopes()
         }

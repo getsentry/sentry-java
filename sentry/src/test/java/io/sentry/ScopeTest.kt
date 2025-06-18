@@ -24,7 +24,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ScopeTest {
-
     @Test
     fun `copying scope wont have the same references`() {
         val scope = Scope(SentryOptions())
@@ -194,8 +193,8 @@ class ScopeTest {
         scope.setTransaction(
             SentryTracer(
                 TransactionContext("newTransaction", "op"),
-                NoOpScopes.getInstance()
-            )
+                NoOpScopes.getInstance(),
+            ),
         )
 
         // because you can only set a new list to scope
@@ -240,9 +239,10 @@ class ScopeTest {
 
     @Test
     fun `copying scope won't crash if there are concurrent operations`() {
-        val options = SentryOptions().apply {
-            maxBreadcrumbs = 10000
-        }
+        val options =
+            SentryOptions().apply {
+                maxBreadcrumbs = 10000
+            }
         val scope = Scope(options)
         for (i in 0 until options.maxBreadcrumbs) {
             scope.addBreadcrumb(Breadcrumb.info("item"))
@@ -295,9 +295,10 @@ class ScopeTest {
 
     @Test
     fun `when adding breadcrumb, executeBreadcrumb will be executed and breadcrumb will be added`() {
-        val options = SentryOptions().apply {
-            setBeforeBreadcrumb { breadcrumb, _ -> breadcrumb }
-        }
+        val options =
+            SentryOptions().apply {
+                setBeforeBreadcrumb { breadcrumb, _ -> breadcrumb }
+            }
 
         val scope = Scope(options)
         scope.addBreadcrumb(Breadcrumb())
@@ -306,9 +307,10 @@ class ScopeTest {
 
     @Test
     fun `when adding breadcrumb, executeBreadcrumb will be executed and breadcrumb will be discarded`() {
-        val options = SentryOptions().apply {
-            setBeforeBreadcrumb { _, _ -> null }
-        }
+        val options =
+            SentryOptions().apply {
+                setBeforeBreadcrumb { _, _ -> null }
+            }
 
         val scope = Scope(options)
         scope.addBreadcrumb(Breadcrumb())
@@ -319,9 +321,10 @@ class ScopeTest {
     fun `when adding breadcrumb, executeBreadcrumb will be executed and throw, but breadcrumb will be added`() {
         val exception = Exception("test")
 
-        val options = SentryOptions().apply {
-            setBeforeBreadcrumb { _, _ -> throw exception }
-        }
+        val options =
+            SentryOptions().apply {
+                setBeforeBreadcrumb { _, _ -> throw exception }
+            }
 
         val scope = Scope(options)
         val actual = Breadcrumb()
@@ -349,9 +352,10 @@ class ScopeTest {
 
     @Test
     fun `Scope starts a new session with release, env and user`() {
-        val options = SentryOptions().apply {
-            distinctId = "123"
-        }
+        val options =
+            SentryOptions().apply {
+                distinctId = "123"
+            }
         options.release = "rel"
         options.environment = "env"
         val user = User()
@@ -370,9 +374,10 @@ class ScopeTest {
 
     @Test
     fun `Scope ends a session and returns it if theres one`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+            }
 
         val scope = Scope(options)
 
@@ -383,9 +388,10 @@ class ScopeTest {
 
     @Test
     fun `Scope ends a session and returns null if none exist`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+            }
         val scope = Scope(options)
 
         val session = scope.endSession()
@@ -395,11 +401,12 @@ class ScopeTest {
     @Test
     fun `Starting a session multiple times reevaluates profileSessionSampleRate`() {
         val profiler = mock<IContinuousProfiler>()
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-            setContinuousProfiler(profiler)
-            profileSessionSampleRate = 1.0
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+                setContinuousProfiler(profiler)
+                profileSessionSampleRate = 1.0
+            }
 
         val scope = Scope(options)
         // The first time a session is started, sample rate is not reevaluated, as there's no need
@@ -416,11 +423,12 @@ class ScopeTest {
     @Test
     fun `Scope ends a session and reevaluates profileSessionSampleRate`() {
         val profiler = mock<IContinuousProfiler>()
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-            setContinuousProfiler(profiler)
-            profileSessionSampleRate = 1.0
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+                setContinuousProfiler(profiler)
+                profileSessionSampleRate = 1.0
+            }
 
         val scope = Scope(options)
         scope.startSession()
@@ -432,11 +440,12 @@ class ScopeTest {
     @Test
     fun `Scope ends a session and does not reevaluate profileSessionSampleRate if none exist`() {
         val profiler = mock<IContinuousProfiler>()
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-            setContinuousProfiler(profiler)
-            profileSessionSampleRate = 1.0
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+                setContinuousProfiler(profiler)
+                profileSessionSampleRate = 1.0
+            }
 
         val scope = Scope(options)
         scope.endSession()
@@ -445,9 +454,10 @@ class ScopeTest {
 
     @Test
     fun `withSession returns a callback with the current Session`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+            }
         val scope = Scope(options)
 
         scope.startSession()
@@ -458,9 +468,10 @@ class ScopeTest {
 
     @Test
     fun `withSession returns a callback with a null session if theres none`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+            }
         val scope = Scope(options)
 
         scope.withSession {
@@ -470,9 +481,10 @@ class ScopeTest {
 
     @Test
     fun `Scope clones the start and end session objects`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+            }
         val scope = Scope(options)
 
         val sessionPair = scope.startSession()
@@ -492,9 +504,10 @@ class ScopeTest {
 
     @Test
     fun `Scope sets init to null when mutating a session`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+            }
         val scope = Scope(options)
 
         val sessionPair = scope.startSession()
@@ -514,9 +527,10 @@ class ScopeTest {
 
     @Test
     fun `Scope increases session error count when capturing an error`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+            }
         val scope = Scope(options)
 
         val sessionPair = scope.startSession()
@@ -536,9 +550,10 @@ class ScopeTest {
 
     @Test
     fun `Scope sets status when capturing a fatal error`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+            }
         val scope = Scope(options)
 
         val sessionPair = scope.startSession()
@@ -557,9 +572,10 @@ class ScopeTest {
 
     @Test
     fun `Scope sets user agent when capturing an error`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+            }
         val scope = Scope(options)
 
         val sessionPair = scope.startSession()
@@ -578,9 +594,10 @@ class ScopeTest {
 
     @Test
     fun `Scope sets timestamp when capturing an error`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+            }
         val scope = Scope(options)
 
         val sessionPair = scope.startSession()
@@ -597,9 +614,10 @@ class ScopeTest {
 
     @Test
     fun `Scope increases sequence when capturing an error`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+            }
         val scope = Scope(options)
 
         val sessionPair = scope.startSession()
@@ -618,9 +636,10 @@ class ScopeTest {
 
     @Test
     fun `Scope sets duration when ending a session`() {
-        val options = SentryOptions().apply {
-            release = "0.0.1"
-        }
+        val options =
+            SentryOptions().apply {
+                release = "0.0.1"
+            }
         val scope = Scope(options)
 
         val sessionPair = scope.startSession()
@@ -640,9 +659,10 @@ class ScopeTest {
     @Test
     fun `Scope set user sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         val user = User()
@@ -653,9 +673,10 @@ class ScopeTest {
     @Test
     fun `Scope add breadcrumb sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         val breadcrumb = Breadcrumb()
@@ -668,16 +689,17 @@ class ScopeTest {
         verify(observer, times(2)).setBreadcrumbs(
             argThat {
                 elementAt(0) == breadcrumb && elementAt(1).message == "test"
-            }
+            },
         )
     }
 
     @Test
     fun `Scope clear breadcrumbs sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         val breadcrumb = Breadcrumb()
@@ -691,9 +713,10 @@ class ScopeTest {
     @Test
     fun `Scope set tag sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         scope.setTag("a", "b")
@@ -708,9 +731,10 @@ class ScopeTest {
     @Test
     fun `Scope remove tag sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         scope.setTag("a", "b")
@@ -724,9 +748,10 @@ class ScopeTest {
     @Test
     fun `Scope set extra sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         scope.setExtra("a", "b")
@@ -741,9 +766,10 @@ class ScopeTest {
     @Test
     fun `Scope remove extra sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         scope.setExtra("a", "b")
@@ -757,9 +783,10 @@ class ScopeTest {
     @Test
     fun `Scope set level sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         scope.level = WARNING
@@ -769,9 +796,10 @@ class ScopeTest {
     @Test
     fun `Scope set transaction name sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         scope.setTransaction("main")
@@ -781,15 +809,17 @@ class ScopeTest {
     @Test
     fun `Scope set transaction sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
-        scope.transaction = mock {
-            whenever(mock.name).thenReturn("main")
-            whenever(mock.spanContext).thenReturn(SpanContext("ui.load"))
-        }
+        scope.transaction =
+            mock {
+                whenever(mock.name).thenReturn("main")
+                whenever(mock.spanContext).thenReturn(SpanContext("ui.load"))
+            }
         verify(observer).setTransaction(eq("main"))
         verify(observer).setTrace(argThat { operation == "ui.load" }, eq(scope))
     }
@@ -797,9 +827,10 @@ class ScopeTest {
     @Test
     fun `Scope set transaction null sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         scope.transaction = null
@@ -810,15 +841,17 @@ class ScopeTest {
     @Test
     fun `Scope clear transaction sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
-        scope.transaction = mock {
-            whenever(mock.name).thenReturn("main")
-            whenever(mock.spanContext).thenReturn(SpanContext("ui.load"))
-        }
+        scope.transaction =
+            mock {
+                whenever(mock.name).thenReturn("main")
+                whenever(mock.spanContext).thenReturn(SpanContext("ui.load"))
+            }
         verify(observer).setTransaction(eq("main"))
         verify(observer).setTrace(argThat { operation == "ui.load" }, eq(scope))
 
@@ -830,9 +863,10 @@ class ScopeTest {
     @Test
     fun `Scope set request sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         scope.request = Request().apply { url = "https://google.com" }
@@ -842,48 +876,53 @@ class ScopeTest {
     @Test
     fun `Scope set fingerprint sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         scope.fingerprint = listOf("finger", "print")
         verify(observer).setFingerprint(
             argThat {
                 elementAt(0) == "finger" && elementAt(1) == "print"
-            }
+            },
         )
     }
 
     @Test
     fun `Scope set contexts sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
-        data class Obj(val stuff: Int)
+        data class Obj(
+            val stuff: Int,
+        )
         scope.setContexts("test", Obj(3))
         verify(observer).setContexts(
             argThat {
                 (get("test") as Obj).stuff == 3
-            }
+            },
         )
     }
 
     @Test
     fun `Scope set propagation context sync scopes`() {
         val observer = mock<IScopeObserver>()
-        val options = SentryOptions().apply {
-            addScopeObserver(observer)
-        }
+        val options =
+            SentryOptions().apply {
+                addScopeObserver(observer)
+            }
         val scope = Scope(options)
 
         scope.propagationContext = PropagationContext(SentryId("64cf554cc8d74c6eafa3e08b7c984f6d"), SpanId(), null, null, null)
         verify(observer).setTrace(
             argThat { traceId.toString() == "64cf554cc8d74c6eafa3e08b7c984f6d" },
-            eq(scope)
+            eq(scope),
         )
     }
 
@@ -966,7 +1005,7 @@ class ScopeTest {
         assertNotSame(
             scope.attachments,
             scope.attachments,
-            "Scope.attachments must return a new instance on each call."
+            "Scope.attachments must return a new instance on each call.",
         )
     }
 
@@ -1048,10 +1087,11 @@ class ScopeTest {
 
     @Test
     fun `when setFingerprints receives immutable list as an argument, its still possible to add more fingerprints`() {
-        val scope = Scope(SentryOptions()).apply {
-            fingerprint = listOf("a", "b")
-            fingerprint.add("c")
-        }
+        val scope =
+            Scope(SentryOptions()).apply {
+                fingerprint = listOf("a", "b")
+                fingerprint.add("c")
+            }
         assertNotNull(scope.fingerprint) {
             assertEquals(listOf("a", "b", "c"), it)
         }
@@ -1059,9 +1099,10 @@ class ScopeTest {
 
     @Test
     fun `when setting the screen, it's stored in the app context as well`() {
-        val scope = Scope(SentryOptions()).apply {
-            screen = "MainActivity"
-        }
+        val scope =
+            Scope(SentryOptions()).apply {
+                screen = "MainActivity"
+            }
         assertEquals(listOf("MainActivity"), scope.contexts.app!!.viewNames)
     }
 
@@ -1077,15 +1118,16 @@ class ScopeTest {
         verify(observer).setContexts(
             check { contexts ->
                 assertEquals("MainActivity", contexts.app?.viewNames?.first())
-            }
+            },
         )
     }
 
     @Test
     fun `creating a new scope won't crash if max breadcrumbs is set to zero`() {
-        val options = SentryOptions().apply {
-            maxBreadcrumbs = 0
-        }
+        val options =
+            SentryOptions().apply {
+                maxBreadcrumbs = 0
+            }
         val scope = Scope(options)
 
         // expect no exception to be thrown
@@ -1149,11 +1191,11 @@ class ScopeTest {
         assertTrue(scope.contexts.isEmpty)
     }
 
-    private fun eventProcessor(): EventProcessor {
-        return object : EventProcessor {
-            override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
-                return event
-            }
+    private fun eventProcessor(): EventProcessor =
+        object : EventProcessor {
+            override fun process(
+                event: SentryEvent,
+                hint: Hint,
+            ): SentryEvent? = event
         }
-    }
 }

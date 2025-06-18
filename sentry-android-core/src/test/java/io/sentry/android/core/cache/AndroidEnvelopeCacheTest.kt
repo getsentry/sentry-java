@@ -22,14 +22,14 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AndroidEnvelopeCacheTest {
-
     @get:Rule
     val tmpDir = TemporaryFolder()
 
     private class Fixture {
-        val envelope = mock<SentryEnvelope> {
-            whenever(it.header).thenReturn(mock())
-        }
+        val envelope =
+            mock<SentryEnvelope> {
+                whenever(it.header).thenReturn(mock())
+            }
         val options = SentryAndroidOptions()
         val dateProvider = mock<ICurrentDateProvider>()
         lateinit var startupCrashMarkerFile: File
@@ -38,7 +38,7 @@ class AndroidEnvelopeCacheTest {
         fun getSut(
             dir: TemporaryFolder,
             appStartMillis: Long? = null,
-            currentTimeMillis: Long? = null
+            currentTimeMillis: Long? = null,
         ): AndroidEnvelopeCache {
             options.cacheDirPath = dir.newFolder("sentry-cache").absolutePath
             val outboxDir = File(options.outboxPath!!)
@@ -138,15 +138,16 @@ class AndroidEnvelopeCacheTest {
 
         fixture.options.cacheDirPath = null
 
-        val hints = HintUtils.createWithTypeCheckHint(
-            AnrV2Hint(
-                0,
-                NoOpLogger.getInstance(),
-                12345678L,
-                false,
-                false
+        val hints =
+            HintUtils.createWithTypeCheckHint(
+                AnrV2Hint(
+                    0,
+                    NoOpLogger.getInstance(),
+                    12345678L,
+                    false,
+                    false,
+                ),
             )
-        )
         cache.store(fixture.envelope, hints)
 
         assertFalse(fixture.lastReportedAnrFile.exists())
@@ -156,15 +157,16 @@ class AndroidEnvelopeCacheTest {
     fun `when AnrV2 hint exists, writes last anr report timestamp into file`() {
         val cache = fixture.getSut(tmpDir)
 
-        val hints = HintUtils.createWithTypeCheckHint(
-            AnrV2Hint(
-                0,
-                NoOpLogger.getInstance(),
-                12345678L,
-                false,
-                false
+        val hints =
+            HintUtils.createWithTypeCheckHint(
+                AnrV2Hint(
+                    0,
+                    NoOpLogger.getInstance(),
+                    12345678L,
+                    false,
+                    false,
+                ),
             )
-        )
         cache.store(fixture.envelope, hints)
 
         assertTrue(fixture.lastReportedAnrFile.exists())

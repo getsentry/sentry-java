@@ -44,7 +44,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ClientReportTest {
-
     lateinit var opts: SentryOptions
     lateinit var clientReportRecorder: ClientReportRecorder
     lateinit var testHelper: ClientReportTestHelper
@@ -57,27 +56,34 @@ class ClientReportTest {
         val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
         val feedbackEvent = SentryEvent().apply { contexts.setFeedback(Feedback("message")) }
 
-        val lostClientReport = ClientReport(
-            DateUtils.getCurrentDateTime(),
-            listOf(
-                DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 3),
-                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 2),
-                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1)
+        val lostClientReport =
+            ClientReport(
+                DateUtils.getCurrentDateTime(),
+                listOf(
+                    DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 3),
+                    DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 2),
+                    DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1),
+                ),
             )
-        )
 
-        val envelope = testHelper.newEnvelope(
-            SentryEnvelopeItem.fromClientReport(opts.serializer, lostClientReport),
-            SentryEnvelopeItem.fromEvent(opts.serializer, SentryTransaction(transaction)),
-            SentryEnvelopeItem.fromEvent(opts.serializer, SentryEvent()),
-            SentryEnvelopeItem.fromSession(opts.serializer, Session("dis", User(), "env", "0.0.1")),
-            SentryEnvelopeItem.fromUserFeedback(opts.serializer, UserFeedback(SentryId(UUID.randomUUID()))),
-            SentryEnvelopeItem.fromAttachment(opts.serializer, NoOpLogger.getInstance(), Attachment("{ \"number\": 10 }".toByteArray(), "log.json"), 1000),
-            SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, opts.serializer),
-            SentryEnvelopeItem.fromCheckIn(opts.serializer, CheckIn("monitor-slug-1", CheckInStatus.ERROR)),
-            SentryEnvelopeItem.fromReplay(opts.serializer, opts.logger, SentryReplayEvent(), ReplayRecording(), false),
-            SentryEnvelopeItem.fromEvent(opts.serializer, feedbackEvent)
-        )
+        val envelope =
+            testHelper.newEnvelope(
+                SentryEnvelopeItem.fromClientReport(opts.serializer, lostClientReport),
+                SentryEnvelopeItem.fromEvent(opts.serializer, SentryTransaction(transaction)),
+                SentryEnvelopeItem.fromEvent(opts.serializer, SentryEvent()),
+                SentryEnvelopeItem.fromSession(opts.serializer, Session("dis", User(), "env", "0.0.1")),
+                SentryEnvelopeItem.fromUserFeedback(opts.serializer, UserFeedback(SentryId(UUID.randomUUID()))),
+                SentryEnvelopeItem.fromAttachment(
+                    opts.serializer,
+                    NoOpLogger.getInstance(),
+                    Attachment("{ \"number\": 10 }".toByteArray(), "log.json"),
+                    1000,
+                ),
+                SentryEnvelopeItem.fromProfilingTrace(ProfilingTraceData(File(""), transaction), 1000, opts.serializer),
+                SentryEnvelopeItem.fromCheckIn(opts.serializer, CheckIn("monitor-slug-1", CheckInStatus.ERROR)),
+                SentryEnvelopeItem.fromReplay(opts.serializer, opts.logger, SentryReplayEvent(), ReplayRecording(), false),
+                SentryEnvelopeItem.fromEvent(opts.serializer, feedbackEvent),
+            )
 
         clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
 
@@ -109,9 +115,10 @@ class ClientReportTest {
         transaction.startChild("lost span", "span3").finish()
         transaction.startChild("lost span", "span4").finish()
 
-        val envelope = testHelper.newEnvelope(
-            SentryEnvelopeItem.fromEvent(opts.serializer, SentryTransaction(transaction))
-        )
+        val envelope =
+            testHelper.newEnvelope(
+                SentryEnvelopeItem.fromEvent(opts.serializer, SentryTransaction(transaction)),
+            )
 
         clientReportRecorder.recordLostEnvelope(DiscardReason.NETWORK_ERROR, envelope)
 
@@ -136,15 +143,16 @@ class ClientReportTest {
     fun `lost envelope item can be recorded`() {
         givenClientReportRecorder()
 
-        val lostClientReport = ClientReport(
-            DateUtils.getCurrentDateTime(),
-            listOf(
-                DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 3),
-                DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 2),
-                DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1),
-                DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Profile.category, 2)
+        val lostClientReport =
+            ClientReport(
+                DateUtils.getCurrentDateTime(),
+                listOf(
+                    DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Error.category, 3),
+                    DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 2),
+                    DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.Transaction.category, 1),
+                    DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Profile.category, 2),
+                ),
             )
-        )
 
         val envelopeItem = SentryEnvelopeItem.fromClientReport(opts.serializer, lostClientReport)
 
@@ -174,17 +182,47 @@ class ClientReportTest {
 
         val envelopeReport = envelope.items.first().getClientReport(opts.serializer)!!
         assertEquals(4, envelopeReport.discardedEvents.size)
-        assertEquals(2, envelopeReport.discardedEvents.first { it.reason == DiscardReason.CACHE_OVERFLOW.reason && it.category == DataCategory.Attachment.category }.quantity)
-        assertEquals(1, envelopeReport.discardedEvents.first { it.reason == DiscardReason.RATELIMIT_BACKOFF.reason && it.category == DataCategory.Error.category }.quantity)
-        assertEquals(1, envelopeReport.discardedEvents.first { it.reason == DiscardReason.QUEUE_OVERFLOW.reason && it.category == DataCategory.Error.category }.quantity)
-        assertEquals(1, envelopeReport.discardedEvents.first { it.reason == DiscardReason.BEFORE_SEND.reason && it.category == DataCategory.Profile.category }.quantity)
+        assertEquals(
+            2,
+            envelopeReport.discardedEvents
+                .first {
+                    it.reason == DiscardReason.CACHE_OVERFLOW.reason &&
+                        it.category == DataCategory.Attachment.category
+                }.quantity,
+        )
+        assertEquals(
+            1,
+            envelopeReport.discardedEvents
+                .first {
+                    it.reason == DiscardReason.RATELIMIT_BACKOFF.reason &&
+                        it.category == DataCategory.Error.category
+                }.quantity,
+        )
+        assertEquals(
+            1,
+            envelopeReport.discardedEvents
+                .first {
+                    it.reason == DiscardReason.QUEUE_OVERFLOW.reason &&
+                        it.category == DataCategory.Error.category
+                }.quantity,
+        )
+        assertEquals(
+            1,
+            envelopeReport.discardedEvents
+                .first {
+                    it.reason == DiscardReason.BEFORE_SEND.reason &&
+                        it.category == DataCategory.Profile.category
+                }.quantity,
+        )
         assertTrue(
             ChronoUnit.MILLIS.between(
                 LocalDateTime.now(),
-                envelopeReport.timestamp.toInstant().atZone(
-                    ZoneId.systemDefault()
-                ).toLocalDateTime()
-            ) < 10000
+                envelopeReport.timestamp
+                    .toInstant()
+                    .atZone(
+                        ZoneId.systemDefault(),
+                    ).toLocalDateTime(),
+            ) < 10000,
         )
     }
 
@@ -206,67 +244,79 @@ class ClientReportTest {
 }
 
 class DropEverythingEventProcessor : EventProcessor {
-
-    override fun process(event: SentryEvent, hint: Hint): SentryEvent? {
-        return null
-    }
+    override fun process(
+        event: SentryEvent,
+        hint: Hint,
+    ): SentryEvent? = null
 
     override fun process(
         transaction: SentryTransaction,
-        hint: Hint
-    ): SentryTransaction? {
-        return null
-    }
+        hint: Hint,
+    ): SentryTransaction? = null
 }
 
-class ClientReportTestHelper(val options: SentryOptions) {
-
+class ClientReportTestHelper(
+    val options: SentryOptions,
+) {
     val reasons = DiscardReason.values()
     val categories = DataCategory.values()
 
-    fun assertTotalCount(expectedCount: Long, clientReport: ClientReport?) {
+    fun assertTotalCount(
+        expectedCount: Long,
+        clientReport: ClientReport?,
+    ) {
         assertEquals(expectedCount, clientReport?.discardedEvents?.sumOf { it.quantity } ?: 0L)
     }
 
-    fun assertCountFor(reason: DiscardReason, category: DataCategory, expectedCount: Long, clientReport: ClientReport?) {
+    fun assertCountFor(
+        reason: DiscardReason,
+        category: DataCategory,
+        expectedCount: Long,
+        clientReport: ClientReport?,
+    ) {
         val discardedEvent = clientReport?.discardedEvents?.first { it.category == category.category && it.reason == reason.reason }
         assertEquals(expectedCount, discardedEvent?.quantity ?: 0L)
     }
 
-    fun randomCategory(): DataCategory {
-        return categories.random()
-    }
+    fun randomCategory(): DataCategory = categories.random()
 
-    fun randomReason(): DiscardReason {
-        return reasons.random()
-    }
+    fun randomReason(): DiscardReason = reasons.random()
 
     fun newEnvelope(vararg items: SentryEnvelopeItem): SentryEnvelope {
         val header = SentryEnvelopeHeader(SentryId(UUID.randomUUID()))
         return SentryEnvelope(header, items.toList())
     }
 
-    fun toEnvelopeItem(clientReport: ClientReport): SentryEnvelopeItem {
-        return SentryEnvelopeItem.fromClientReport(options.serializer, clientReport)
-    }
+    fun toEnvelopeItem(clientReport: ClientReport): SentryEnvelopeItem =
+        SentryEnvelopeItem.fromClientReport(options.serializer, clientReport)
 
     companion object {
         fun retryableHint() = HintUtils.createWithTypeCheckHint(TestRetryable())
+
         fun uncaughtExceptionHint() = HintUtils.createWithTypeCheckHint(TestUncaughtExceptionHint())
+
         fun retryableUncaughtExceptionHint() = HintUtils.createWithTypeCheckHint(TestRetryableUncaughtException())
 
-        fun assertClientReport(clientReportRecorder: IClientReportRecorder, expectedEvents: List<DiscardedEvent>) {
+        fun assertClientReport(
+            clientReportRecorder: IClientReportRecorder,
+            expectedEvents: List<DiscardedEvent>,
+        ) {
             val recorder = clientReportRecorder as ClientReportRecorder
             val clientReport = recorder.resetCountsAndGenerateClientReport()
             assertClientReport(clientReport, expectedEvents)
         }
 
-        fun assertClientReport(clientReport: ClientReport?, expectedEvents: List<DiscardedEvent>) {
+        fun assertClientReport(
+            clientReport: ClientReport?,
+            expectedEvents: List<DiscardedEvent>,
+        ) {
             assertEquals(expectedEvents.filter { it.quantity > 0 }.size, clientReport?.discardedEvents?.size ?: 0)
 
             expectedEvents.forEach { expectedEvent ->
                 val actualEvent =
-                    clientReport?.discardedEvents?.firstOrNull { it.reason == expectedEvent.reason && it.category == expectedEvent.category }
+                    clientReport?.discardedEvents?.firstOrNull {
+                        it.reason == expectedEvent.reason && it.category == expectedEvent.category
+                    }
                 assertEquals(expectedEvent.quantity, actualEvent?.quantity ?: 0, clientReport?.discardedEvents?.toString())
             }
         }
@@ -280,12 +330,12 @@ class TestRetryable : Retryable {
         this.retry = retry
     }
 
-    override fun isRetry(): Boolean {
-        return this.retry
-    }
+    override fun isRetry(): Boolean = this.retry
 }
 
-class TestRetryableUncaughtException : UncaughtExceptionHint(0, NoOpLogger.getInstance()), Retryable {
+class TestRetryableUncaughtException :
+    UncaughtExceptionHint(0, NoOpLogger.getInstance()),
+    Retryable {
     private var retry = false
     var flushed = false
 
@@ -293,9 +343,7 @@ class TestRetryableUncaughtException : UncaughtExceptionHint(0, NoOpLogger.getIn
         this.retry = retry
     }
 
-    override fun isRetry(): Boolean {
-        return this.retry
-    }
+    override fun isRetry(): Boolean = this.retry
 
     override fun markFlushed() {
         flushed = true

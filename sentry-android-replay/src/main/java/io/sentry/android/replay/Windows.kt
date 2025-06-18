@@ -46,7 +46,6 @@ internal val View.phoneWindow: Window?
 
 @SuppressLint("PrivateApi")
 internal object WindowSpy {
-
     /**
      * DecorView moved out of PhoneWindow into its own class:
      * https://android.googlesource.com/platform/frameworks/base/+/8804af2b63b0584034f7ec7d4dc701d06e6a8754
@@ -59,7 +58,7 @@ internal object WindowSpy {
             Log.d(
                 "WindowSpy",
                 "Unexpected exception loading DecorView on API $SDK_INT",
-                ignored
+                ignored,
             )
             null
         }
@@ -82,15 +81,15 @@ internal object WindowSpy {
                 Log.d(
                     "WindowSpy",
                     "Unexpected exception retrieving $decorViewClass#mWindow on API $SDK_INT",
-                    ignored
+                    ignored,
                 )
                 null
             }
         }
     }
 
-    fun pullWindow(maybeDecorView: View): Window? {
-        return decorViewClass?.let { decorViewClass ->
+    fun pullWindow(maybeDecorView: View): Window? =
+        decorViewClass?.let { decorViewClass ->
             if (decorViewClass.isInstance(maybeDecorView)) {
                 windowField?.let { windowField ->
                     windowField[maybeDecorView] as Window
@@ -99,7 +98,6 @@ internal object WindowSpy {
                 null
             }
         }
-    }
 }
 
 /**
@@ -114,7 +112,7 @@ internal fun interface OnRootViewsChangedListener {
      */
     fun onRootViewsChanged(
         view: View,
-        added: Boolean
+        added: Boolean,
     )
 }
 
@@ -122,43 +120,44 @@ internal fun interface OnRootViewsChangedListener {
  * A utility that holds the list of root views that WindowManager updates.
  */
 internal class RootViewsSpy private constructor() : Closeable {
-
     private val isClosed = AtomicBoolean(false)
     private val viewListLock = AutoClosableReentrantLock()
 
-    val listeners: CopyOnWriteArrayList<OnRootViewsChangedListener> = object : CopyOnWriteArrayList<OnRootViewsChangedListener>() {
-        override fun add(element: OnRootViewsChangedListener?): Boolean {
-            viewListLock.acquire().use {
-                // notify listener about existing root views immediately
-                delegatingViewList.forEach {
-                    element?.onRootViewsChanged(it, true)
+    val listeners: CopyOnWriteArrayList<OnRootViewsChangedListener> =
+        object : CopyOnWriteArrayList<OnRootViewsChangedListener>() {
+            override fun add(element: OnRootViewsChangedListener?): Boolean {
+                viewListLock.acquire().use {
+                    // notify listener about existing root views immediately
+                    delegatingViewList.forEach {
+                        element?.onRootViewsChanged(it, true)
+                    }
                 }
+                return super.add(element)
             }
-            return super.add(element)
         }
-    }
 
-    private val delegatingViewList: ArrayList<View> = object : ArrayList<View>() {
-        override fun addAll(elements: Collection<View>): Boolean {
-            listeners.forEach { listener ->
-                elements.forEach { element ->
-                    listener.onRootViewsChanged(element, true)
+    private val delegatingViewList: ArrayList<View> =
+        object : ArrayList<View>() {
+            override fun addAll(elements: Collection<View>): Boolean {
+                listeners.forEach { listener ->
+                    elements.forEach { element ->
+                        listener.onRootViewsChanged(element, true)
+                    }
                 }
+                return super.addAll(elements)
             }
-            return super.addAll(elements)
-        }
 
-        override fun add(element: View): Boolean {
-            listeners.forEach { it.onRootViewsChanged(element, true) }
-            return super.add(element)
-        }
+            override fun add(element: View): Boolean {
+                listeners.forEach { it.onRootViewsChanged(element, true) }
+                return super.add(element)
+            }
 
-        override fun removeAt(index: Int): View {
-            val removedView = super.removeAt(index)
-            listeners.forEach { it.onRootViewsChanged(removedView, false) }
-            return removedView
+            override fun removeAt(index: Int): View {
+                val removedView = super.removeAt(index)
+                listeners.forEach { it.onRootViewsChanged(removedView, false) }
+                return removedView
+            }
         }
-    }
 
     override fun close() {
         isClosed.set(true)
@@ -186,7 +185,6 @@ internal class RootViewsSpy private constructor() : Closeable {
 }
 
 internal object WindowManagerSpy {
-
     private val windowManagerClass by lazy(NONE) {
         val className = "android.view.WindowManagerGlobal"
         try {

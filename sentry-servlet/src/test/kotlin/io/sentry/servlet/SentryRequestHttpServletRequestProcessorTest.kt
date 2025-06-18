@@ -14,14 +14,14 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryRequestHttpServletRequestProcessorTest {
-
     @Test
     fun `attaches basic information from HTTP request to SentryEvent`() {
-        val request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("some-header", "some-header value")
-            .accept("application/json")
-            .buildRequest(MockServletContext())
+        val request =
+            MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("some-header", "some-header value")
+                .accept("application/json")
+                .buildRequest(MockServletContext())
         val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
         val event = SentryEvent()
 
@@ -33,9 +33,9 @@ class SentryRequestHttpServletRequestProcessorTest {
         assertEquals(
             mapOf(
                 "some-header" to "some-header value",
-                "Accept" to "application/json"
+                "Accept" to "application/json",
             ),
-            eventRequest.headers
+            eventRequest.headers,
         )
         assertEquals("http://example.com", eventRequest.url)
         assertEquals("param1=xyz", eventRequest.queryString)
@@ -43,11 +43,12 @@ class SentryRequestHttpServletRequestProcessorTest {
 
     @Test
     fun `attaches header with multiple values`() {
-        val request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("another-header", "another value")
-            .header("another-header", "another value2")
-            .buildRequest(MockServletContext())
+        val request =
+            MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("another-header", "another value")
+                .header("another-header", "another value2")
+                .buildRequest(MockServletContext())
         val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
         val event = SentryEvent()
 
@@ -56,19 +57,20 @@ class SentryRequestHttpServletRequestProcessorTest {
         assertNotNull(event.request) {
             assertEquals(
                 mapOf(
-                    "another-header" to "another value,another value2"
+                    "another-header" to "another value,another value2",
                 ),
-                it.headers
+                it.headers,
             )
         }
     }
 
     @Test
     fun `does not attach cookies`() {
-        val request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("Cookie", "name=value")
-            .buildRequest(MockServletContext())
+        val request =
+            MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("Cookie", "name=value")
+                .buildRequest(MockServletContext())
         val sentryOptions = SentryOptions()
         sentryOptions.isSendDefaultPii = false
         val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
@@ -83,14 +85,15 @@ class SentryRequestHttpServletRequestProcessorTest {
 
     @Test
     fun `does not attach sensitive headers`() {
-        val request = MockMvcRequestBuilders
-            .get(URI.create("http://example.com?param1=xyz"))
-            .header("some-header", "some-header value")
-            .header("X-FORWARDED-FOR", "192.168.0.1")
-            .header("authorization", "Token")
-            .header("Authorization", "Token")
-            .header("Cookie", "some cookies")
-            .buildRequest(MockServletContext())
+        val request =
+            MockMvcRequestBuilders
+                .get(URI.create("http://example.com?param1=xyz"))
+                .header("some-header", "some-header value")
+                .header("X-FORWARDED-FOR", "192.168.0.1")
+                .header("authorization", "Token")
+                .header("Authorization", "Token")
+                .header("Cookie", "some cookies")
+                .buildRequest(MockServletContext())
         val sentryOptions = SentryOptions()
         sentryOptions.isSendDefaultPii = false
         val eventProcessor = SentryRequestHttpServletRequestProcessor(request)

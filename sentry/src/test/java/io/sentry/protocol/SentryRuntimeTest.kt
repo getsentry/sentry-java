@@ -6,7 +6,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class SentryRuntimeTest {
-
     @Test
     fun `copying Sentry runtime wont have the same references`() {
         val runtime = SentryRuntime()

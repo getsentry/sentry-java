@@ -29,7 +29,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class AndroidConnectionStatusProviderTest {
-
     private lateinit var connectionStatusProvider: AndroidConnectionStatusProvider
     private lateinit var contextMock: Context
     private lateinit var connectivityManager: ConnectivityManager
@@ -64,7 +63,7 @@ class AndroidConnectionStatusProviderTest {
         whenever(networkInfo.isConnected).thenReturn(true)
         assertEquals(
             IConnectionStatusProvider.ConnectionStatus.CONNECTED,
-            connectionStatusProvider.connectionStatus
+            connectionStatusProvider.connectionStatus,
         )
     }
 
@@ -74,7 +73,7 @@ class AndroidConnectionStatusProviderTest {
 
         assertEquals(
             IConnectionStatusProvider.ConnectionStatus.DISCONNECTED,
-            connectionStatusProvider.connectionStatus
+            connectionStatusProvider.connectionStatus,
         )
     }
 
@@ -84,7 +83,7 @@ class AndroidConnectionStatusProviderTest {
 
         assertEquals(
             IConnectionStatusProvider.ConnectionStatus.NO_PERMISSION,
-            connectionStatusProvider.connectionStatus
+            connectionStatusProvider.connectionStatus,
         )
     }
 
@@ -92,7 +91,7 @@ class AndroidConnectionStatusProviderTest {
     fun `When network is not active, return DISCONNECTED for isConnected`() {
         assertEquals(
             IConnectionStatusProvider.ConnectionStatus.DISCONNECTED,
-            connectionStatusProvider.connectionStatus
+            connectionStatusProvider.connectionStatus,
         )
     }
 
@@ -101,7 +100,7 @@ class AndroidConnectionStatusProviderTest {
         whenever(contextMock.getSystemService(any())).thenReturn(null)
         assertEquals(
             IConnectionStatusProvider.ConnectionStatus.UNKNOWN,
-            connectionStatusProvider.connectionStatus
+            connectionStatusProvider.connectionStatus,
         )
     }
 
@@ -142,7 +141,7 @@ class AndroidConnectionStatusProviderTest {
 
         assertEquals(
             "ethernet",
-            AndroidConnectionStatusProvider.getConnectionType(contextMock, mock(), buildInfo)
+            AndroidConnectionStatusProvider.getConnectionType(contextMock, mock(), buildInfo),
         )
     }
 
@@ -152,7 +151,7 @@ class AndroidConnectionStatusProviderTest {
 
         assertEquals(
             "cellular",
-            AndroidConnectionStatusProvider.getConnectionType(contextMock, mock(), buildInfo)
+            AndroidConnectionStatusProvider.getConnectionType(contextMock, mock(), buildInfo),
         )
     }
 
@@ -210,22 +209,22 @@ class AndroidConnectionStatusProviderTest {
     @Test
     fun `When connectivityManager registerDefaultCallback throws an exception, false is returned`() {
         whenever(connectivityManager.registerDefaultNetworkCallback(any())).thenThrow(
-            SecurityException("Android OS Bug")
+            SecurityException("Android OS Bug"),
         )
         assertFalse(
             AndroidConnectionStatusProvider.registerNetworkCallback(
                 contextMock,
                 mock(),
                 buildInfo,
-                mock()
-            )
+                mock(),
+            ),
         )
     }
 
     @Test
     fun `When connectivityManager unregisterDefaultCallback throws an exception, it gets swallowed`() {
         whenever(connectivityManager.registerDefaultNetworkCallback(any())).thenThrow(
-            SecurityException("Android OS Bug")
+            SecurityException("Android OS Bug"),
         )
 
         var failed = false
@@ -248,7 +247,7 @@ class AndroidConnectionStatusProviderTest {
         whenever(networkCapabilities.hasTransport(eq(TRANSPORT_ETHERNET))).thenReturn(true)
         assertEquals(
             "ethernet",
-            connectionStatusProvider.connectionType
+            connectionStatusProvider.connectionType,
         )
     }
 

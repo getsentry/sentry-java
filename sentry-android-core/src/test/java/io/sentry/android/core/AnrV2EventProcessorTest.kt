@@ -75,7 +75,6 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class AnrV2EventProcessorTest {
-
     @get:Rule
     val tmpDir = TemporaryFolder()
 
@@ -83,11 +82,13 @@ class AnrV2EventProcessorTest {
         companion object {
             const val REPLAY_ID = "64cf554cc8d74c6eafa3e08b7c984f6d"
         }
+
         val buildInfo = mock<BuildInfoProvider>()
         lateinit var context: Context
-        val options = SentryAndroidOptions().apply {
-            setLogger(NoOpLogger.getInstance())
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                setLogger(NoOpLogger.getInstance())
+            }
 
         fun getSut(
             dir: TemporaryFolder,
@@ -95,7 +96,7 @@ class AnrV2EventProcessorTest {
             populateScopeCache: Boolean = false,
             populateOptionsCache: Boolean = false,
             replayErrorSampleRate: Double? = null,
-            isSendDefaultPii: Boolean = true
+            isSendDefaultPii: Boolean = true,
         ): AnrV2EventProcessor {
             options.cacheDirPath = dir.newFolder().absolutePath
             options.environment = "release"
@@ -107,11 +108,17 @@ class AnrV2EventProcessorTest {
 
             if (populateScopeCache) {
                 persistScope(TRACE_FILENAME, SpanContext("ui.load"))
-                persistScope(USER_FILENAME, User().apply { username = "bot"; id = "bot@me.com" })
+                persistScope(
+                    USER_FILENAME,
+                    User().apply {
+                        username = "bot"
+                        id = "bot@me.com"
+                    },
+                )
                 persistScope(TAGS_FILENAME, mapOf("one" to "two"))
                 persistScope(
                     BREADCRUMBS_FILENAME,
-                    listOf(Breadcrumb.debug("test"), Breadcrumb.navigation("from", "to"))
+                    listOf(Breadcrumb.debug("test"), Breadcrumb.navigation("from", "to")),
                 )
                 persistScope(EXTRAS_FILENAME, mapOf("key" to 123))
                 persistScope(TRANSACTION_FILENAME, "TestActivity")
@@ -123,11 +130,14 @@ class AnrV2EventProcessorTest {
                         setTrace(SpanContext("test"))
                         setResponse(Response().apply { bodySize = 1024 })
                         setBrowser(Browser().apply { name = "Google Chrome" })
-                    }
+                    },
                 )
                 persistScope(
                     REQUEST_FILENAME,
-                    Request().apply { url = "google.com"; method = "GET" }
+                    Request().apply {
+                        url = "google.com"
+                        method = "GET"
+                    },
                 )
                 persistScope(REPLAY_FILENAME, SentryId(REPLAY_ID))
             }
@@ -147,7 +157,10 @@ class AnrV2EventProcessorTest {
             return AnrV2EventProcessor(context, options, buildInfo)
         }
 
-        fun <T : Any> persistScope(filename: String, entity: T) {
+        fun <T : Any> persistScope(
+            filename: String,
+            entity: T,
+        ) {
             val dir = File(options.cacheDirPath, SCOPE_CACHE).also { it.mkdirs() }
             val file = File(dir, filename)
             if (filename == BREADCRUMBS_FILENAME) {
@@ -162,7 +175,10 @@ class AnrV2EventProcessorTest {
             }
         }
 
-        fun <T : Any> persistOptions(filename: String, entity: T) {
+        fun <T : Any> persistOptions(
+            filename: String,
+            entity: T,
+        ) {
             val dir = File(options.cacheDirPath, OPTIONS_CACHE).also { it.mkdirs() }
             val file = File(dir, filename)
             options.serializer.serialize(entity, file.writer())
@@ -231,9 +247,10 @@ class AnrV2EventProcessorTest {
         val hint = HintUtils.createWithTypeCheckHint(BackfillableHint(shouldEnrich = false))
 
         val linuxOs = OperatingSystem().apply { name = " Linux " }
-        val processed = processEvent(hint) {
-            contexts.setOperatingSystem(linuxOs)
-        }
+        val processed =
+            processEvent(hint) {
+                contexts.setOperatingSystem(linuxOs)
+            }
 
         assertSame(linuxOs, processed.contexts["os_linux"])
         assertEquals("Android", processed.contexts.operatingSystem!!.name)
@@ -244,9 +261,10 @@ class AnrV2EventProcessorTest {
         val hint = HintUtils.createWithTypeCheckHint(BackfillableHint(shouldEnrich = false))
 
         val osNoName = OperatingSystem().apply { version = "1.0" }
-        val processed = processEvent(hint) {
-            contexts.setOperatingSystem(osNoName)
-        }
+        val processed =
+            processEvent(hint) {
+                contexts.setOperatingSystem(osNoName)
+            }
 
         assertSame(osNoName, processed.contexts["os_1"])
         assertEquals("Android", processed.contexts.operatingSystem!!.name)
@@ -421,30 +439,39 @@ class AnrV2EventProcessorTest {
     fun `when event has some fields set, does not override them`() {
         val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
 
-        val processed = processEvent(hint, populateScopeCache = true, populateOptionsCache = true) {
-            contexts.setDevice(
-                Device().apply {
-                    brand = "Pixel"
-                    model = "3XL"
-                    memorySize = 4096
-                }
-            )
-            platform = "NotAndroid"
+        val processed =
+            processEvent(hint, populateScopeCache = true, populateOptionsCache = true) {
+                contexts.setDevice(
+                    Device().apply {
+                        brand = "Pixel"
+                        model = "3XL"
+                        memorySize = 4096
+                    },
+                )
+                platform = "NotAndroid"
 
-            transaction = "MainActivity"
-            level = DEBUG
-            breadcrumbs = listOf(Breadcrumb.debug("test"))
+                transaction = "MainActivity"
+                level = DEBUG
+                breadcrumbs = listOf(Breadcrumb.debug("test"))
 
-            environment = "debug"
-            release = "io.sentry.samples@1.1.0+220"
-            debugMeta = DebugMeta().apply {
-                images = listOf(DebugImage().apply { type = DebugImage.PROGUARD; uuid = "uuid1" })
+                environment = "debug"
+                release = "io.sentry.samples@1.1.0+220"
+                debugMeta =
+                    DebugMeta().apply {
+                        images =
+                            listOf(
+                                DebugImage().apply {
+                                    type = DebugImage.PROGUARD
+                                    uuid = "uuid1"
+                                },
+                            )
+                    }
+                user =
+                    User().apply {
+                        id = "42"
+                        ipAddress = "2.4.8.16"
+                    }
             }
-            user = User().apply {
-                id = "42"
-                ipAddress = "2.4.8.16"
-            }
-        }
 
         assertEquals("NotAndroid", processed.platform)
         assertEquals("Pixel", processed.contexts.device!!.brand)
@@ -483,25 +510,29 @@ class AnrV2EventProcessorTest {
     @Test
     fun `populates exception from main thread`() {
         val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
-        val stacktrace = SentryStackTrace().apply {
-            frames = listOf(
-                SentryStackFrame().apply {
-                    lineno = 777
-                    module = "io.sentry.samples.MainActivity"
-                    function = "run"
-                }
-            )
-        }
+        val stacktrace =
+            SentryStackTrace().apply {
+                frames =
+                    listOf(
+                        SentryStackFrame().apply {
+                            lineno = 777
+                            module = "io.sentry.samples.MainActivity"
+                            function = "run"
+                        },
+                    )
+            }
 
-        val processed = processEvent(hint) {
-            threads = listOf(
-                SentryThread().apply {
-                    name = "main"
-                    id = 13
-                    this.stacktrace = stacktrace
-                }
-            )
-        }
+        val processed =
+            processEvent(hint) {
+                threads =
+                    listOf(
+                        SentryThread().apply {
+                            name = "main"
+                            id = 13
+                            this.stacktrace = stacktrace
+                        },
+                    )
+            }
 
         val exception = processed.exceptions!!.first()
         assertEquals(13, exception.threadId)
@@ -520,9 +551,10 @@ class AnrV2EventProcessorTest {
     fun `populates exception without stacktrace when there is no main thread in threads`() {
         val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
 
-        val processed = processEvent(hint) {
-            threads = listOf(SentryThread())
-        }
+        val processed =
+            processEvent(hint) {
+                threads = listOf(SentryThread())
+            }
 
         val exception = processed.exceptions!!.first()
         assertEquals("AppExitInfo", exception.mechanism!!.type)
@@ -536,14 +568,16 @@ class AnrV2EventProcessorTest {
     fun `adds Background to the message when mechanism is anr_background`() {
         val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_background"))
 
-        val processed = processEvent(hint) {
-            threads = listOf(
-                SentryThread().apply {
-                    name = "main"
-                    stacktrace = SentryStackTrace()
-                }
-            )
-        }
+        val processed =
+            processEvent(hint) {
+                threads =
+                    listOf(
+                        SentryThread().apply {
+                            name = "main"
+                            stacktrace = SentryStackTrace()
+                        },
+                    )
+            }
 
         val exception = processed.exceptions!!.first()
         assertEquals("Background ANR", exception.value)
@@ -553,14 +587,16 @@ class AnrV2EventProcessorTest {
     fun `does not add Background to the message when mechanism is anr_foreground`() {
         val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
 
-        val processed = processEvent(hint) {
-            threads = listOf(
-                SentryThread().apply {
-                    name = "main"
-                    stacktrace = SentryStackTrace()
-                }
-            )
-        }
+        val processed =
+            processEvent(hint) {
+                threads =
+                    listOf(
+                        SentryThread().apply {
+                            name = "main"
+                            stacktrace = SentryStackTrace()
+                        },
+                    )
+            }
 
         val exception = processed.exceptions!!.first()
         assertEquals("ANR", exception.value)
@@ -633,7 +669,10 @@ class AnrV2EventProcessorTest {
         val processed = processor.process(SentryEvent(), hint)!!
 
         assertEquals(replayId1.toString(), processed.contexts[Contexts.REPLAY_ID].toString())
-        assertEquals(replayId1.toString(), fixture.options.findPersistingScopeObserver()?.read(fixture.options, REPLAY_FILENAME, String::class.java))
+        assertEquals(
+            replayId1.toString(),
+            fixture.options.findPersistingScopeObserver()?.read(fixture.options, REPLAY_FILENAME, String::class.java),
+        )
     }
 
     private fun processEvent(
@@ -641,27 +680,36 @@ class AnrV2EventProcessorTest {
         populateScopeCache: Boolean = false,
         populateOptionsCache: Boolean = false,
         isSendDefaultPii: Boolean = true,
-        configureEvent: SentryEvent.() -> Unit = {}
+        configureEvent: SentryEvent.() -> Unit = {},
     ): SentryEvent {
         val original = SentryEvent().apply(configureEvent)
 
-        val processor = fixture.getSut(
-            tmpDir,
-            populateScopeCache = populateScopeCache,
-            populateOptionsCache = populateOptionsCache,
-            isSendDefaultPii = isSendDefaultPii
-        )
+        val processor =
+            fixture.getSut(
+                tmpDir,
+                populateScopeCache = populateScopeCache,
+                populateOptionsCache = populateOptionsCache,
+                isSendDefaultPii = isSendDefaultPii,
+            )
         return processor.process(original, hint)!!
     }
 
-    internal class AbnormalExitHint(val mechanism: String? = null) : AbnormalExit, Backfillable {
+    internal class AbnormalExitHint(
+        val mechanism: String? = null,
+    ) : AbnormalExit,
+        Backfillable {
         override fun mechanism(): String? = mechanism
+
         override fun ignoreCurrentThread(): Boolean = false
+
         override fun timestamp(): Long? = null
+
         override fun shouldEnrich(): Boolean = true
     }
 
-    internal class BackfillableHint(private val shouldEnrich: Boolean = true) : Backfillable {
+    internal class BackfillableHint(
+        private val shouldEnrich: Boolean = true,
+    ) : Backfillable {
         override fun shouldEnrich(): Boolean = shouldEnrich
     }
 }

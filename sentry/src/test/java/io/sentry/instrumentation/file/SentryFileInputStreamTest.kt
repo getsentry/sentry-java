@@ -29,7 +29,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryFileInputStreamTest {
-
     class Fixture {
         val scopes = mock<IScopes>()
         lateinit var sentryTracer: SentryTracer
@@ -39,7 +38,7 @@ class SentryFileInputStreamTest {
             tmpFile: File? = null,
             activeTransaction: Boolean = true,
             fileDescriptor: FileDescriptor? = null,
-            sendDefaultPii: Boolean = false
+            sendDefaultPii: Boolean = false,
         ): FileInputStream {
             tmpFile?.writeText("Text")
             whenever(scopes.options).thenReturn(
@@ -47,7 +46,7 @@ class SentryFileInputStreamTest {
                     isSendDefaultPii = sendDefaultPii
                     threadChecker = ThreadChecker.getInstance()
                     addInAppInclude("org.junit")
-                }
+                },
             )
             sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
             if (activeTransaction) {
@@ -63,7 +62,7 @@ class SentryFileInputStreamTest {
         internal fun getSut(
             tmpFile: File? = null,
             delegate: FileInputStream,
-            tracesSampleRate: Double? = 1.0
+            tracesSampleRate: Double? = 1.0,
         ): FileInputStream {
             options.tracesSampleRate = tracesSampleRate
             whenever(scopes.options).thenReturn(options)
@@ -72,7 +71,7 @@ class SentryFileInputStreamTest {
             return SentryFileInputStream.Factory.create(
                 delegate,
                 tmpFile,
-                scopes
+                scopes,
             )
         }
     }
@@ -88,7 +87,8 @@ class SentryFileInputStreamTest {
 
     @Test
     fun `when no active transaction does not capture a span`() {
-        fixture.getSut(tmpFile, activeTransaction = false)
+        fixture
+            .getSut(tmpFile, activeTransaction = false)
             .use { it.readAllBytes() }
 
         assertEquals(fixture.sentryTracer.children.size, 0)
@@ -299,14 +299,12 @@ class SentryFileInputStreamTest {
     }
 }
 
-class ThrowingFileInputStream(file: File) : FileInputStream(file) {
+class ThrowingFileInputStream(
+    file: File,
+) : FileInputStream(file) {
     val throwable = IOException("Oops!")
 
-    override fun read(): Int {
-        throw throwable
-    }
+    override fun read(): Int = throw throwable
 
-    override fun close() {
-        throw throwable
-    }
+    override fun close(): Unit = throw throwable
 }

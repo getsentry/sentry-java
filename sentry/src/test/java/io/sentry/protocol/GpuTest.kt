@@ -6,7 +6,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class GpuTest {
-
     @Test
     fun `copying gpu wont have the same references`() {
         val gpu = Gpu()

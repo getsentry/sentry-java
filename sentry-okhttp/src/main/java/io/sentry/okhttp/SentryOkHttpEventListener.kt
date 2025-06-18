@@ -42,9 +42,8 @@ import java.util.concurrent.ConcurrentHashMap
 @Suppress("TooManyFunctions")
 public open class SentryOkHttpEventListener(
     private val scopes: IScopes = ScopesAdapter.getInstance(),
-    private val originalEventListenerCreator: ((call: Call) -> EventListener)? = null
+    private val originalEventListenerCreator: ((call: Call) -> EventListener)? = null,
 ) : EventListener() {
-
     private var originalEventListener: EventListener? = null
 
     public companion object {
@@ -63,27 +62,27 @@ public open class SentryOkHttpEventListener(
 
     public constructor() : this(
         ScopesAdapter.getInstance(),
-        originalEventListenerCreator = null
+        originalEventListenerCreator = null,
     )
 
     public constructor(originalEventListener: EventListener) : this(
         ScopesAdapter.getInstance(),
-        originalEventListenerCreator = { originalEventListener }
+        originalEventListenerCreator = { originalEventListener },
     )
 
     public constructor(originalEventListenerFactory: Factory) : this(
         ScopesAdapter.getInstance(),
-        originalEventListenerCreator = { originalEventListenerFactory.create(it) }
+        originalEventListenerCreator = { originalEventListenerFactory.create(it) },
     )
 
     public constructor(scopes: IScopes = ScopesAdapter.getInstance(), originalEventListener: EventListener) : this(
         scopes,
-        originalEventListenerCreator = { originalEventListener }
+        originalEventListenerCreator = { originalEventListener },
     )
 
     public constructor(scopes: IScopes = ScopesAdapter.getInstance(), originalEventListenerFactory: Factory) : this(
         scopes,
-        originalEventListenerCreator = { originalEventListenerFactory.create(it) }
+        originalEventListenerCreator = { originalEventListenerFactory.create(it) },
     )
 
     override fun callStart(call: Call) {
@@ -96,7 +95,10 @@ public open class SentryOkHttpEventListener(
         }
     }
 
-    override fun proxySelectStart(call: Call, url: HttpUrl) {
+    override fun proxySelectStart(
+        call: Call,
+        url: HttpUrl,
+    ) {
         originalEventListener?.proxySelectStart(call, url)
         if (!canCreateEventSpan()) {
             return
@@ -108,7 +110,7 @@ public open class SentryOkHttpEventListener(
     override fun proxySelectEnd(
         call: Call,
         url: HttpUrl,
-        proxies: List<Proxy>
+        proxies: List<Proxy>,
     ) {
         originalEventListener?.proxySelectEnd(call, url, proxies)
         if (!canCreateEventSpan()) {
@@ -122,7 +124,10 @@ public open class SentryOkHttpEventListener(
         }
     }
 
-    override fun dnsStart(call: Call, domainName: String) {
+    override fun dnsStart(
+        call: Call,
+        domainName: String,
+    ) {
         originalEventListener?.dnsStart(call, domainName)
         if (!canCreateEventSpan()) {
             return
@@ -134,7 +139,7 @@ public open class SentryOkHttpEventListener(
     override fun dnsEnd(
         call: Call,
         domainName: String,
-        inetAddressList: List<InetAddress>
+        inetAddressList: List<InetAddress>,
     ) {
         originalEventListener?.dnsEnd(call, domainName, inetAddressList)
         if (!canCreateEventSpan()) {
@@ -152,7 +157,7 @@ public open class SentryOkHttpEventListener(
     override fun connectStart(
         call: Call,
         inetSocketAddress: InetSocketAddress,
-        proxy: Proxy
+        proxy: Proxy,
     ) {
         originalEventListener?.connectStart(call, inetSocketAddress, proxy)
         if (!canCreateEventSpan()) {
@@ -171,7 +176,10 @@ public open class SentryOkHttpEventListener(
         okHttpEvent.onEventStart(SECURE_CONNECT_EVENT)
     }
 
-    override fun secureConnectEnd(call: Call, handshake: Handshake?) {
+    override fun secureConnectEnd(
+        call: Call,
+        handshake: Handshake?,
+    ) {
         originalEventListener?.secureConnectEnd(call, handshake)
         if (!canCreateEventSpan()) {
             return
@@ -184,7 +192,7 @@ public open class SentryOkHttpEventListener(
         call: Call,
         inetSocketAddress: InetSocketAddress,
         proxy: Proxy,
-        protocol: Protocol?
+        protocol: Protocol?,
     ) {
         originalEventListener?.connectEnd(call, inetSocketAddress, proxy, protocol)
         if (!canCreateEventSpan()) {
@@ -200,7 +208,7 @@ public open class SentryOkHttpEventListener(
         inetSocketAddress: InetSocketAddress,
         proxy: Proxy,
         protocol: Protocol?,
-        ioe: IOException
+        ioe: IOException,
     ) {
         originalEventListener?.connectFailed(call, inetSocketAddress, proxy, protocol, ioe)
         if (!canCreateEventSpan()) {
@@ -215,7 +223,10 @@ public open class SentryOkHttpEventListener(
         }
     }
 
-    override fun connectionAcquired(call: Call, connection: Connection) {
+    override fun connectionAcquired(
+        call: Call,
+        connection: Connection,
+    ) {
         originalEventListener?.connectionAcquired(call, connection)
         if (!canCreateEventSpan()) {
             return
@@ -224,7 +235,10 @@ public open class SentryOkHttpEventListener(
         okHttpEvent.onEventStart(CONNECTION_EVENT)
     }
 
-    override fun connectionReleased(call: Call, connection: Connection) {
+    override fun connectionReleased(
+        call: Call,
+        connection: Connection,
+    ) {
         originalEventListener?.connectionReleased(call, connection)
         if (!canCreateEventSpan()) {
             return
@@ -242,7 +256,10 @@ public open class SentryOkHttpEventListener(
         okHttpEvent.onEventStart(REQUEST_HEADERS_EVENT)
     }
 
-    override fun requestHeadersEnd(call: Call, request: Request) {
+    override fun requestHeadersEnd(
+        call: Call,
+        request: Request,
+    ) {
         originalEventListener?.requestHeadersEnd(call, request)
         if (!canCreateEventSpan()) {
             return
@@ -260,7 +277,10 @@ public open class SentryOkHttpEventListener(
         okHttpEvent.onEventStart(REQUEST_BODY_EVENT)
     }
 
-    override fun requestBodyEnd(call: Call, byteCount: Long) {
+    override fun requestBodyEnd(
+        call: Call,
+        byteCount: Long,
+    ) {
         originalEventListener?.requestBodyEnd(call, byteCount)
         if (!canCreateEventSpan()) {
             return
@@ -274,7 +294,10 @@ public open class SentryOkHttpEventListener(
         okHttpEvent.setRequestBodySize(byteCount)
     }
 
-    override fun requestFailed(call: Call, ioe: IOException) {
+    override fun requestFailed(
+        call: Call,
+        ioe: IOException,
+    ) {
         originalEventListener?.requestFailed(call, ioe)
         if (!canCreateEventSpan()) {
             return
@@ -304,7 +327,10 @@ public open class SentryOkHttpEventListener(
         okHttpEvent.onEventStart(RESPONSE_HEADERS_EVENT)
     }
 
-    override fun responseHeadersEnd(call: Call, response: Response) {
+    override fun responseHeadersEnd(
+        call: Call,
+        response: Response,
+    ) {
         originalEventListener?.responseHeadersEnd(call, response)
         if (!canCreateEventSpan()) {
             return
@@ -329,7 +355,10 @@ public open class SentryOkHttpEventListener(
         okHttpEvent.onEventStart(RESPONSE_BODY_EVENT)
     }
 
-    override fun responseBodyEnd(call: Call, byteCount: Long) {
+    override fun responseBodyEnd(
+        call: Call,
+        byteCount: Long,
+    ) {
         originalEventListener?.responseBodyEnd(call, byteCount)
         if (!canCreateEventSpan()) {
             return
@@ -343,7 +372,10 @@ public open class SentryOkHttpEventListener(
         }
     }
 
-    override fun responseFailed(call: Call, ioe: IOException) {
+    override fun responseFailed(
+        call: Call,
+        ioe: IOException,
+    ) {
         originalEventListener?.responseFailed(call, ioe)
         if (!canCreateEventSpan()) {
             return
@@ -370,7 +402,10 @@ public open class SentryOkHttpEventListener(
         okHttpEvent.finish()
     }
 
-    override fun callFailed(call: Call, ioe: IOException) {
+    override fun callFailed(
+        call: Call,
+        ioe: IOException,
+    ) {
         originalEventListener?.callFailed(call, ioe)
         if (!canCreateEventSpan()) {
             return
@@ -387,11 +422,17 @@ public open class SentryOkHttpEventListener(
         originalEventListener?.canceled(call)
     }
 
-    override fun satisfactionFailure(call: Call, response: Response) {
+    override fun satisfactionFailure(
+        call: Call,
+        response: Response,
+    ) {
         originalEventListener?.satisfactionFailure(call, response)
     }
 
-    override fun cacheHit(call: Call, response: Response) {
+    override fun cacheHit(
+        call: Call,
+        response: Response,
+    ) {
         originalEventListener?.cacheHit(call, response)
     }
 
@@ -399,7 +440,10 @@ public open class SentryOkHttpEventListener(
         originalEventListener?.cacheMiss(call)
     }
 
-    override fun cacheConditionalHit(call: Call, cachedResponse: Response) {
+    override fun cacheConditionalHit(
+        call: Call,
+        cachedResponse: Response,
+    ) {
         originalEventListener?.cacheConditionalHit(call, cachedResponse)
     }
 

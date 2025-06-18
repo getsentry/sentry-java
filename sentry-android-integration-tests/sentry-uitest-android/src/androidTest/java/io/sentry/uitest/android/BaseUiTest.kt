@@ -21,7 +21,6 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 
 abstract class BaseUiTest {
-
     /** Runner of the test. */
     protected lateinit var runner: AndroidJUnitRunner
 
@@ -81,7 +80,7 @@ abstract class BaseUiTest {
     protected fun initSentry(
         relayWaitForRequests: Boolean = false,
         context: Context = this.context,
-        optionsConfiguration: ((options: SentryAndroidOptions) -> Unit)? = null
+        optionsConfiguration: ((options: SentryAndroidOptions) -> Unit)? = null,
     ) {
         relay.waitForRequests = relayWaitForRequests
         if (relayWaitForRequests) {
@@ -115,7 +114,10 @@ fun classExists(className: String): Boolean {
     return false
 }
 
-fun initForTest(context: Context, optionsConfiguration: OptionsConfiguration<SentryAndroidOptions>) {
+fun initForTest(
+    context: Context,
+    optionsConfiguration: OptionsConfiguration<SentryAndroidOptions>,
+) {
     SentryAndroid.init(context) {
         applyTestOptions(it)
         optionsConfiguration.configure(it)

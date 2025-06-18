@@ -15,7 +15,6 @@ import java.util.Date
 import kotlin.test.assertFalse
 
 class PreviousSessionFinalizerTest {
-
     @get:Rule
     val tmpDir = TemporaryFolder()
 
@@ -32,7 +31,7 @@ class PreviousSessionFinalizerTest {
             session: Session? = null,
             nativeCrashTimestamp: Date? = null,
             sessionTrackingEnabled: Boolean = true,
-            shouldAwait: Boolean = false
+            shouldAwait: Boolean = false,
         ): PreviousSessionFinalizer {
             options.run {
                 setLogger(this@Fixture.logger)
@@ -68,7 +67,7 @@ class PreviousSessionFinalizerTest {
             val sessionItem = envelope.items.find { it.header.type == SentryItemType.Session }
             return options.serializer.deserialize(
                 sessionItem!!.data.inputStream().bufferedReader(),
-                Session::class.java
+                Session::class.java,
             )!!
         }
     }
@@ -101,10 +100,11 @@ class PreviousSessionFinalizerTest {
 
     @Test
     fun `if previous session exists, sends session update with current end time`() {
-        val finalizer = fixture.getSut(
-            tmpDir,
-            session = Session(null, null, null, "io.sentry.sample@1.0")
-        )
+        val finalizer =
+            fixture.getSut(
+                tmpDir,
+                session = Session(null, null, null, "io.sentry.sample@1.0"),
+            )
         finalizer.run()
 
         verify(fixture.scopes).captureEnvelope(
@@ -112,25 +112,27 @@ class PreviousSessionFinalizerTest {
                 val session = fixture.sessionFromEnvelope(this)
                 session.release == "io.sentry.sample@1.0" &&
                     session.timestamp!!.time - DateUtils.getCurrentDateTime().time < 1000
-            }
+            },
         )
     }
 
     @Test
     fun `if previous session exists with abnormal mechanism, sends session update without changing end timestamp`() {
         val abnormalEndDate = Date(2023, 10, 1)
-        val finalizer = fixture.getSut(
-            tmpDir,
-            session = Session(
-                null,
-                null,
-                null,
-                "io.sentry.sample@1.0"
-            ).apply {
-                update(null, null, false, "mechanism")
-                end(abnormalEndDate)
-            }
-        )
+        val finalizer =
+            fixture.getSut(
+                tmpDir,
+                session =
+                    Session(
+                        null,
+                        null,
+                        null,
+                        "io.sentry.sample@1.0",
+                    ).apply {
+                        update(null, null, false, "mechanism")
+                        end(abnormalEndDate)
+                    },
+            )
         finalizer.run()
 
         verify(fixture.scopes).captureEnvelope(
@@ -138,22 +140,24 @@ class PreviousSessionFinalizerTest {
                 val session = fixture.sessionFromEnvelope(this)
                 session.release == "io.sentry.sample@1.0" &&
                     session.timestamp!! == abnormalEndDate
-            }
+            },
         )
     }
 
     @Test
     fun `if native crash marker exists, marks previous session as crashed`() {
-        val finalizer = fixture.getSut(
-            tmpDir,
-            session = Session(
-                null,
-                null,
-                null,
-                "io.sentry.sample@1.0"
-            ),
-            nativeCrashTimestamp = Date(2023, 10, 1)
-        )
+        val finalizer =
+            fixture.getSut(
+                tmpDir,
+                session =
+                    Session(
+                        null,
+                        null,
+                        null,
+                        "io.sentry.sample@1.0",
+                    ),
+                nativeCrashTimestamp = Date(2023, 10, 1),
+            )
         finalizer.run()
 
         verify(fixture.scopes).captureEnvelope(
@@ -161,7 +165,7 @@ class PreviousSessionFinalizerTest {
                 val session = fixture.sessionFromEnvelope(this)
                 session.release == "io.sentry.sample@1.0" &&
                     session.status == Crashed
-            }
+            },
         )
     }
 
@@ -176,18 +180,19 @@ class PreviousSessionFinalizerTest {
 
     @Test
     fun `if session tracking is disabled, does not wait for previous session flush`() {
-        val finalizer = fixture.getSut(
-            tmpDir,
-            flushTimeoutMillis = 500L,
-            sessionTrackingEnabled = false,
-            shouldAwait = true
-        )
+        val finalizer =
+            fixture.getSut(
+                tmpDir,
+                flushTimeoutMillis = 500L,
+                sessionTrackingEnabled = false,
+                shouldAwait = true,
+            )
         finalizer.run()
 
         verify(fixture.logger, never()).log(
             any(),
             argThat { startsWith("Timed out waiting to flush previous session to its own file in session finalizer.") },
-            any<Any>()
+            any<Any>(),
         )
         verify(fixture.scopes, never()).captureEnvelope(any())
     }
@@ -200,7 +205,7 @@ class PreviousSessionFinalizerTest {
         verify(fixture.logger).log(
             any(),
             argThat { startsWith("Timed out waiting to flush previous session to its own file in session finalizer.") },
-            any<Any>()
+            any<Any>(),
         )
         verify(fixture.scopes, never()).captureEnvelope(any())
     }

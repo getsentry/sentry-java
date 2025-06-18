@@ -10,14 +10,14 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ThreadDumpParserTest {
-
     @Test
     fun `parses thread dump into SentryThread list`() {
         val lines = Lines.readLines(File("src/test/resources/thread_dump.txt"))
-        val parser = ThreadDumpParser(
-            SentryOptions().apply { addInAppInclude("io.sentry.samples") },
-            false
-        )
+        val parser =
+            ThreadDumpParser(
+                SentryOptions().apply { addInAppInclude("io.sentry.samples") },
+                false,
+            )
         parser.parse(lines)
         val threads = parser.threads
         // just verifying a few important threads, as there are many
@@ -64,10 +64,25 @@ class ThreadDumpParserTest {
         assertEquals(false, randomThread.isCurrent)
         assertEquals(
             "/apex/com.android.runtime/lib64/bionic/libc.so",
-            randomThread.stacktrace!!.frames!!.last().`package`
+            randomThread.stacktrace!!
+                .frames!!
+                .last()
+                .`package`,
         )
-        assertEquals("__epoll_pwait", randomThread.stacktrace!!.frames!!.last()!!.function)
-        assertEquals(8, randomThread.stacktrace!!.frames!!.last()!!.lineno)
+        assertEquals(
+            "__epoll_pwait",
+            randomThread.stacktrace!!
+                .frames!!
+                .last()!!
+                .function,
+        )
+        assertEquals(
+            8,
+            randomThread.stacktrace!!
+                .frames!!
+                .last()!!
+                .lineno,
+        )
         val firstFrame = randomThread.stacktrace!!.frames!!.first()
         assertEquals("android.os.HandlerThread", firstFrame.module)
         assertEquals("run", firstFrame.function)
@@ -88,7 +103,7 @@ class ThreadDumpParserTest {
         assertEquals("/system/lib64/libandroid_runtime.so", nativeFrame.`package`)
         assertEquals(
             "android::android_os_MessageQueue_nativePollOnce(_JNIEnv*, _jobject*, long, int)",
-            nativeFrame.function
+            nativeFrame.function,
         )
         assertEquals(44, nativeFrame.lineno)
         assertNull(nativeFrame.isNative) // Confusing, but "isNative" means JVM frame for a JNI method
@@ -98,10 +113,11 @@ class ThreadDumpParserTest {
     @Test
     fun `parses native only thread dump`() {
         val lines = Lines.readLines(File("src/test/resources/thread_dump_native_only.txt"))
-        val parser = ThreadDumpParser(
-            SentryOptions().apply { addInAppInclude("io.sentry.samples") },
-            false
-        )
+        val parser =
+            ThreadDumpParser(
+                SentryOptions().apply { addInAppInclude("io.sentry.samples") },
+                false,
+            )
         parser.parse(lines)
         val threads = parser.threads
         // just verifying a few important threads, as there are many
@@ -135,7 +151,7 @@ class ThreadDumpParserTest {
         assertEquals(
             "[anon:dalvik-classes16.dex extracted in memory from /data/app/~~izn1xSZpFlzfVmWi_I0xlQ==" +
                 "/io.sentry.samples.android-tQSGMNiGA-qdjZm6lPOcNw==/base.apk!classes16.dex]",
-            spaceFrame.`package`
+            spaceFrame.`package`,
         )
         assertNull(spaceFrame.function)
         assertNull(spaceFrame.lineno)
@@ -167,10 +183,11 @@ class ThreadDumpParserTest {
     @Test
     fun `thread dump garbage`() {
         val lines = Lines.readLines(File("src/test/resources/thread_dump_bad_data.txt"))
-        val parser = ThreadDumpParser(
-            SentryOptions().apply { addInAppInclude("io.sentry.samples") },
-            false
-        )
+        val parser =
+            ThreadDumpParser(
+                SentryOptions().apply { addInAppInclude("io.sentry.samples") },
+                false,
+            )
         parser.parse(lines)
         assertTrue(parser.threads.isEmpty())
     }

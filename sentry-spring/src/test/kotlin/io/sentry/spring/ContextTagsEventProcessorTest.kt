@@ -11,10 +11,11 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class ContextTagsEventProcessorTest {
-
     class Fixture {
-
-        fun getSut(contextTags: List<String> = emptyList(), mdcTags: Map<String, String> = emptyMap()): ContextTagsEventProcessor {
+        fun getSut(
+            contextTags: List<String> = emptyList(),
+            mdcTags: Map<String, String> = emptyMap(),
+        ): ContextTagsEventProcessor {
             val options = SentryOptions().apply { contextTags.forEach { tag -> addContextTag(tag) } }
             val sut = ContextTagsEventProcessor(options)
             mdcTags.forEach { MDC.put(it.key, it.value) }
@@ -52,7 +53,15 @@ class ContextTagsEventProcessorTest {
 
     @Test
     fun `does not copy tags not defined in options`() {
-        val sut = fixture.getSut(contextTags = listOf("user-id"), mdcTags = mapOf("user-id" to "user-id-value", "request-id" to "request-id-value"))
+        val sut =
+            fixture.getSut(
+                contextTags = listOf("user-id"),
+                mdcTags =
+                    mapOf(
+                        "user-id" to "user-id-value",
+                        "request-id" to "request-id-value",
+                    ),
+            )
 
         val result = sut.process(SentryEvent(), null)
         val tags = result.tags

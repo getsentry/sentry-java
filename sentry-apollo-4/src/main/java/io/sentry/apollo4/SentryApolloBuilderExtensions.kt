@@ -11,7 +11,7 @@ fun ApolloClient.Builder.sentryTracing(
     scopes: IScopes = ScopesAdapter.getInstance(),
     captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
     failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
-    beforeSpan: SentryApollo4HttpInterceptor.BeforeSpanCallback? = null
+    beforeSpan: SentryApollo4HttpInterceptor.BeforeSpanCallback? = null,
 ): ApolloClient.Builder {
     addInterceptor(SentryApollo4Interceptor())
     addHttpInterceptor(
@@ -19,8 +19,8 @@ fun ApolloClient.Builder.sentryTracing(
             scopes = scopes,
             captureFailedRequests = captureFailedRequests,
             failedRequestTargets = failedRequestTargets,
-            beforeSpan = beforeSpan
-        )
+            beforeSpan = beforeSpan,
+        ),
     )
     return this
 }
@@ -28,12 +28,11 @@ fun ApolloClient.Builder.sentryTracing(
 fun ApolloClient.Builder.sentryTracing(
     captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
     failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
-    beforeSpan: SentryApollo4HttpInterceptor.BeforeSpanCallback? = null
-): ApolloClient.Builder {
-    return sentryTracing(
+    beforeSpan: SentryApollo4HttpInterceptor.BeforeSpanCallback? = null,
+): ApolloClient.Builder =
+    sentryTracing(
         scopes = ScopesAdapter.getInstance(),
         captureFailedRequests = captureFailedRequests,
         failedRequestTargets = failedRequestTargets,
-        beforeSpan = beforeSpan
+        beforeSpan = beforeSpan,
     )
-}

@@ -5,7 +5,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SentryValuesTest {
-
     @Test
     fun `constructor called with values`() {
         val values = listOf(1, 2)

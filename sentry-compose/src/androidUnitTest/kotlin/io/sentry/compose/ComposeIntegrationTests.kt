@@ -29,22 +29,22 @@ import kotlin.test.assertNotNull
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
 class ComposeIntegrationTests {
-
     // workaround for robolectric tests with composeRule
     // from https://github.com/robolectric/robolectric/pull/4736#issuecomment-1831034882
     @get:Rule(order = 1)
-    val addActivityToRobolectricRule = object : TestWatcher() {
-        override fun starting(description: Description?) {
-            super.starting(description)
-            val appContext: Application = ApplicationProvider.getApplicationContext()
-            Shadows.shadowOf(appContext.packageManager).addActivityIfNotPresent(
-                ComponentName(
-                    appContext.packageName,
-                    ComponentActivity::class.java.name
+    val addActivityToRobolectricRule =
+        object : TestWatcher() {
+            override fun starting(description: Description?) {
+                super.starting(description)
+                val appContext: Application = ApplicationProvider.getApplicationContext()
+                Shadows.shadowOf(appContext.packageManager).addActivityIfNotPresent(
+                    ComponentName(
+                        appContext.packageName,
+                        ComponentActivity::class.java.name,
+                    ),
                 )
-            )
+            }
         }
-    }
 
     @get:Rule(order = 2)
     val rule = createAndroidComposeRule<ComponentActivity>()
@@ -90,7 +90,10 @@ class ComposeIntegrationTests {
         return null
     }
 
-    private fun locateNodeByTag(root: ViewHierarchyNode, tag: String): ViewHierarchyNode? {
+    private fun locateNodeByTag(
+        root: ViewHierarchyNode,
+        tag: String,
+    ): ViewHierarchyNode? {
         if (root.tag == tag) {
             return root
         }

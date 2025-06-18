@@ -22,7 +22,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SpanFrameMetricsCollectorTest {
-
     private class Fixture {
         val options = SentryAndroidOptions()
         val frameMetricsCollector = mock<SentryFrameMetricsCollector>()
@@ -31,7 +30,7 @@ class SpanFrameMetricsCollectorTest {
 
         fun getSut(enabled: Boolean = true): SpanFrameMetricsCollector {
             whenever(frameMetricsCollector.startCollection(any())).thenReturn(
-                UUID.randomUUID().toString()
+                UUID.randomUUID().toString(),
             )
             whenever(frameMetricsCollector.getLastKnownFrameStartTimeNanos()).thenAnswer {
                 return@thenAnswer lastKnownChoreographerFrameTimeNanos
@@ -47,7 +46,7 @@ class SpanFrameMetricsCollectorTest {
 
     private fun createFakeSpan(
         startTimeStampNanos: Long = 1000,
-        endTimeStampNanos: Long? = 2000
+        endTimeStampNanos: Long? = 2000,
     ): ISpan {
         val span = mock<ISpan>()
         val spanContext = SpanContext("op.fake")
@@ -55,25 +54,25 @@ class SpanFrameMetricsCollectorTest {
         whenever(span.startDate).thenReturn(
             SentryNanotimeDate(
                 Date(),
-                startTimeStampNanos
-            )
+                startTimeStampNanos,
+            ),
         )
         whenever(span.finishDate).thenReturn(
             if (endTimeStampNanos != null) {
                 SentryNanotimeDate(
                     Date(),
-                    endTimeStampNanos
+                    endTimeStampNanos,
                 )
             } else {
                 null
-            }
+            },
         )
         return span
     }
 
     private fun createFakeTxn(
         startTimeStampNanos: Long = 1000,
-        endTimeStampNanos: Long? = 2000
+        endTimeStampNanos: Long? = 2000,
     ): ITransaction {
         val span = mock<ITransaction>()
         val spanContext = SpanContext("op.fake")
@@ -81,18 +80,18 @@ class SpanFrameMetricsCollectorTest {
         whenever(span.startDate).thenReturn(
             SentryNanotimeDate(
                 Date(),
-                startTimeStampNanos
-            )
+                startTimeStampNanos,
+            ),
         )
         whenever(span.finishDate).thenReturn(
             if (endTimeStampNanos != null) {
                 SentryNanotimeDate(
                     Date(),
-                    endTimeStampNanos
+                    endTimeStampNanos,
                 )
             } else {
                 null
-            }
+            },
         )
         return span
     }
@@ -323,10 +322,11 @@ class SpanFrameMetricsCollectorTest {
 
         // given a span which lasts for 1 second
         fixture.timeNanos = TimeUnit.SECONDS.toNanos(1)
-        val span = createFakeSpan(
-            TimeUnit.SECONDS.toNanos(1),
-            TimeUnit.SECONDS.toNanos(2)
-        )
+        val span =
+            createFakeSpan(
+                TimeUnit.SECONDS.toNanos(1),
+                TimeUnit.SECONDS.toNanos(2),
+            )
 
         sut.onSpanStarted(span)
         // but no frames are drawn
@@ -350,10 +350,11 @@ class SpanFrameMetricsCollectorTest {
 
         // given a span which lasts for 2 seconds
         fixture.timeNanos = TimeUnit.SECONDS.toNanos(1)
-        val span = createFakeSpan(
-            TimeUnit.SECONDS.toNanos(1),
-            TimeUnit.SECONDS.toNanos(3)
-        )
+        val span =
+            createFakeSpan(
+                TimeUnit.SECONDS.toNanos(1),
+                TimeUnit.SECONDS.toNanos(3),
+            )
 
         sut.onSpanStarted(span)
         // but no frames are drawn
@@ -378,10 +379,11 @@ class SpanFrameMetricsCollectorTest {
         val sut = fixture.getSut()
 
         // given a span which lasts for 1 second
-        val span = createFakeSpan(
-            startTimeStampNanos = TimeUnit.SECONDS.toNanos(1),
-            endTimeStampNanos = TimeUnit.SECONDS.toNanos(2)
-        )
+        val span =
+            createFakeSpan(
+                startTimeStampNanos = TimeUnit.SECONDS.toNanos(1),
+                endTimeStampNanos = TimeUnit.SECONDS.toNanos(2),
+            )
 
         fixture.timeNanos = TimeUnit.SECONDS.toNanos(1)
         sut.onSpanStarted(span)
@@ -394,7 +396,7 @@ class SpanFrameMetricsCollectorTest {
             TimeUnit.MILLISECONDS.toNanos(800 - 16),
             false,
             true,
-            60.0f
+            60.0f,
         )
 
         // and the span finishes
@@ -414,10 +416,11 @@ class SpanFrameMetricsCollectorTest {
 
         // given a span has no end date
         fixture.timeNanos = TimeUnit.SECONDS.toNanos(1)
-        val span = createFakeSpan(
-            startTimeStampNanos = TimeUnit.SECONDS.toNanos(1),
-            endTimeStampNanos = null
-        )
+        val span =
+            createFakeSpan(
+                startTimeStampNanos = TimeUnit.SECONDS.toNanos(1),
+                endTimeStampNanos = null,
+            )
 
         sut.onSpanStarted(span)
 
@@ -429,7 +432,7 @@ class SpanFrameMetricsCollectorTest {
             TimeUnit.MILLISECONDS.toNanos(800 - 16),
             false,
             true,
-            60.0f
+            60.0f,
         )
 
         // and the span finishes without a finish date

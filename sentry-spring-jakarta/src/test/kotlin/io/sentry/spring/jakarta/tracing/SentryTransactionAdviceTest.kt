@@ -34,7 +34,6 @@ import kotlin.test.assertTrue
 @RunWith(SpringRunner::class)
 @SpringJUnitConfig(SentryTransactionAdviceTest.Config::class)
 class SentryTransactionAdviceTest {
-
     @Autowired
     lateinit var sampleService: SampleService
 
@@ -58,13 +57,13 @@ class SentryTransactionAdviceTest {
                 check<TransactionOptions> {
                     assertTrue(it.isBindToScope)
                     assertThat(it.origin).isEqualTo("auto.function.spring_jakarta.advice")
-                }
-            )
+                },
+            ),
         ).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
         whenever(scopes.options).thenReturn(
             SentryOptions().apply {
                 dsn = "https://key@sentry.io/proj"
-            }
+            },
         )
         whenever(scopes.forkedScopes(any())).thenReturn(scopes)
         whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
@@ -81,7 +80,7 @@ class SentryTransactionAdviceTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -94,7 +93,7 @@ class SentryTransactionAdviceTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -108,7 +107,7 @@ class SentryTransactionAdviceTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -132,7 +131,7 @@ class SentryTransactionAdviceTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -146,7 +145,7 @@ class SentryTransactionAdviceTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -167,7 +166,6 @@ class SentryTransactionAdviceTest {
     @EnableAspectJAutoProxy(proxyTargetClass = true)
     @Import(SentryTracingConfiguration::class)
     open class Config {
-
         @Bean
         open fun sampleService() = SampleService()
 
@@ -186,7 +184,6 @@ class SentryTransactionAdviceTest {
     }
 
     open class SampleService {
-
         @SentryTransaction(name = "customName", operation = "bean")
         open fun methodWithTransactionNameSet() = Unit
 
@@ -199,13 +196,11 @@ class SentryTransactionAdviceTest {
 
     @SentryTransaction(operation = "op")
     open class ClassAnnotatedSampleService {
-
         open fun hello() = Unit
     }
 
     @SentryTransaction(operation = "my-op")
     open class ClassAnnotatedWithOperationSampleService {
-
         open fun hello() = Unit
     }
 }

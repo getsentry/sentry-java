@@ -41,7 +41,7 @@ class SendCachedEnvelopeIntegrationTest {
             hasSender: Boolean = true,
             delaySend: Long = 0L,
             taskFails: Boolean = false,
-            mockExecutorService: ISentryExecutorService? = null
+            mockExecutorService: ISentryExecutorService? = null,
         ): SendCachedEnvelopeIntegration {
             options.cacheDirPath = cacheDirPath
             options.setLogger(logger)
@@ -61,7 +61,7 @@ class SendCachedEnvelopeIntegrationTest {
                     sender
                 } else {
                     null
-                }
+                },
             )
 
             return SendCachedEnvelopeIntegration(factory, LazyEvaluator { hasStartupCrashMarker })
@@ -129,7 +129,7 @@ class SendCachedEnvelopeIntegrationTest {
         await.atLeast(500, MILLISECONDS)
         verify(fixture.logger).log(
             eq(DEBUG),
-            eq("Synchronous send timed out, continuing in the background.")
+            eq("Synchronous send timed out, continuing in the background."),
         )
 
         // then wait until the async send finishes in background
@@ -156,7 +156,7 @@ class SendCachedEnvelopeIntegrationTest {
         fixture.options.connectionStatusProvider = connectionStatusProvider
 
         whenever(connectionStatusProvider.connectionStatus).thenReturn(
-            ConnectionStatus.DISCONNECTED
+            ConnectionStatus.DISCONNECTED,
         )
 
         sut.register(fixture.scopes, fixture.options)
@@ -171,7 +171,7 @@ class SendCachedEnvelopeIntegrationTest {
         fixture.options.connectionStatusProvider = connectionStatusProvider
 
         whenever(connectionStatusProvider.connectionStatus).thenReturn(
-            ConnectionStatus.UNKNOWN
+            ConnectionStatus.UNKNOWN,
         )
 
         sut.register(fixture.scopes, fixture.options)
@@ -185,7 +185,7 @@ class SendCachedEnvelopeIntegrationTest {
         val connectionStatusProvider = mock<IConnectionStatusProvider>()
         fixture.options.connectionStatusProvider = connectionStatusProvider
         whenever(connectionStatusProvider.connectionStatus).thenReturn(
-            ConnectionStatus.DISCONNECTED
+            ConnectionStatus.DISCONNECTED,
         )
         sut.register(fixture.scopes, fixture.options)
 
@@ -212,9 +212,10 @@ class SendCachedEnvelopeIntegrationTest {
     @Test
     fun `when rate limiter is active, does not send envelopes`() {
         val sut = fixture.getSut(hasStartupCrashMarker = false)
-        val rateLimiter = mock<RateLimiter> {
-            whenever(mock.isActiveForCategory(any())).thenReturn(true)
-        }
+        val rateLimiter =
+            mock<RateLimiter> {
+                whenever(mock.isActiveForCategory(any())).thenReturn(true)
+            }
         whenever(fixture.scopes.rateLimiter).thenReturn(rateLimiter)
 
         sut.register(fixture.scopes, fixture.options)

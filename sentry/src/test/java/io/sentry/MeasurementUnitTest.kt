@@ -4,7 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class MeasurementUnitTest {
-
     @Test
     fun `apiName converts Duration enum to lowercase`() {
         assertEquals("nanosecond", MeasurementUnit.Duration.NANOSECOND.apiName())

@@ -28,7 +28,6 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class OtelSentryPropagatorTest {
-
     val spanStorage: SentryWeakSpanStorage = SentryWeakSpanStorage.getInstance()
 
     @BeforeTest
@@ -50,10 +49,12 @@ class OtelSentryPropagatorTest {
     @Test
     fun `invalid sentry trace header returns context without modification`() {
         val propagator = OtelSentryPropagator()
-        val carrier: Map<String, String> = mapOf(
-            "sentry-trace" to "wrong",
-            "baggage" to "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
-        )
+        val carrier: Map<String, String> =
+            mapOf(
+                "sentry-trace" to "wrong",
+                "baggage" to
+                    "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+            )
         val scopeInContext = Sentry.forkedRootScopes("test")
 
         val newContext = propagator.extract(Context.root().with(SENTRY_SCOPES_KEY, scopeInContext), carrier, MapGetter())
@@ -66,10 +67,12 @@ class OtelSentryPropagatorTest {
     @Test
     fun `uses incoming headers`() {
         val propagator = OtelSentryPropagator()
-        val carrier: Map<String, String> = mapOf(
-            "sentry-trace" to "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1",
-            "baggage" to "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
-        )
+        val carrier: Map<String, String> =
+            mapOf(
+                "sentry-trace" to "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1",
+                "baggage" to
+                    "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+            )
         val newContext = propagator.extract(Context.root(), carrier, MapGetter())
 
         val span = Span.fromContext(newContext)
@@ -78,7 +81,10 @@ class OtelSentryPropagatorTest {
         assertTrue(span.spanContext.isSampled)
 
         assertEquals("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1", newContext.get(SENTRY_TRACE_KEY)?.value)
-        assertEquals("sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d", newContext.get(SENTRY_BAGGAGE_KEY)?.toHeaderString(null))
+        assertEquals(
+            "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+            newContext.get(SENTRY_BAGGAGE_KEY)?.toHeaderString(null),
+        )
     }
 
     @Test
@@ -88,15 +94,30 @@ class OtelSentryPropagatorTest {
 
         val sentrySpan = mock<IOtelSpanWrapper>()
         whenever(sentrySpan.toSentryTrace()).thenReturn(SentryTraceHeader("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"))
-        whenever(sentrySpan.toBaggageHeader(anyOrNull())).thenReturn(BaggageHeader("sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"))
-        val otelSpanContext = SpanContext.create("f9118105af4a2d42b4124532cd1065ff", "424cffc8f94feeee", TraceFlags.getSampled(), TraceState.getDefault())
+        whenever(
+            sentrySpan.toBaggageHeader(anyOrNull()),
+        ).thenReturn(
+            BaggageHeader(
+                "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+            ),
+        )
+        val otelSpanContext =
+            SpanContext.create(
+                "f9118105af4a2d42b4124532cd1065ff",
+                "424cffc8f94feeee",
+                TraceFlags.getSampled(),
+                TraceState.getDefault(),
+            )
         val otelSpan = Span.wrap(otelSpanContext)
         spanStorage.storeSentrySpan(otelSpanContext, sentrySpan)
 
         propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
 
         assertEquals("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1", carrier["sentry-trace"])
-        assertEquals("sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d", carrier["baggage"])
+        assertEquals(
+            "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+            carrier["baggage"],
+        )
     }
 
     @Test
@@ -107,16 +128,31 @@ class OtelSentryPropagatorTest {
         val otelAttributes = Attributes.of(UrlAttributes.URL_FULL, "https://sentry.io/some/path")
         val sentrySpan = mock<IOtelSpanWrapper>()
         whenever(sentrySpan.toSentryTrace()).thenReturn(SentryTraceHeader("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"))
-        whenever(sentrySpan.toBaggageHeader(anyOrNull())).thenReturn(BaggageHeader("sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"))
+        whenever(
+            sentrySpan.toBaggageHeader(anyOrNull()),
+        ).thenReturn(
+            BaggageHeader(
+                "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+            ),
+        )
         whenever(sentrySpan.openTelemetrySpanAttributes).thenReturn(otelAttributes)
-        val otelSpanContext = SpanContext.create("f9118105af4a2d42b4124532cd1065ff", "424cffc8f94feeee", TraceFlags.getSampled(), TraceState.getDefault())
+        val otelSpanContext =
+            SpanContext.create(
+                "f9118105af4a2d42b4124532cd1065ff",
+                "424cffc8f94feeee",
+                TraceFlags.getSampled(),
+                TraceState.getDefault(),
+            )
         val otelSpan = Span.wrap(otelSpanContext)
         spanStorage.storeSentrySpan(otelSpanContext, sentrySpan)
 
         propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
 
         assertEquals("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1", carrier["sentry-trace"])
-        assertEquals("sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d", carrier["baggage"])
+        assertEquals(
+            "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+            carrier["baggage"],
+        )
     }
 
     @Test
@@ -131,16 +167,31 @@ class OtelSentryPropagatorTest {
         val otelAttributes = Attributes.of(UrlAttributes.URL_FULL, "https://sentry.io/some/path")
         val sentrySpan = mock<IOtelSpanWrapper>()
         whenever(sentrySpan.toSentryTrace()).thenReturn(SentryTraceHeader("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"))
-        whenever(sentrySpan.toBaggageHeader(anyOrNull())).thenReturn(BaggageHeader("sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"))
+        whenever(
+            sentrySpan.toBaggageHeader(anyOrNull()),
+        ).thenReturn(
+            BaggageHeader(
+                "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+            ),
+        )
         whenever(sentrySpan.openTelemetrySpanAttributes).thenReturn(otelAttributes)
-        val otelSpanContext = SpanContext.create("f9118105af4a2d42b4124532cd1065ff", "424cffc8f94feeee", TraceFlags.getSampled(), TraceState.getDefault())
+        val otelSpanContext =
+            SpanContext.create(
+                "f9118105af4a2d42b4124532cd1065ff",
+                "424cffc8f94feeee",
+                TraceFlags.getSampled(),
+                TraceState.getDefault(),
+            )
         val otelSpan = Span.wrap(otelSpanContext)
         spanStorage.storeSentrySpan(otelSpanContext, sentrySpan)
 
         propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
 
         assertEquals("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1", carrier["sentry-trace"])
-        assertEquals("sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d", carrier["baggage"])
+        assertEquals(
+            "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+            carrier["baggage"],
+        )
     }
 
     @Test
@@ -155,9 +206,21 @@ class OtelSentryPropagatorTest {
         val otelAttributes = Attributes.of(UrlAttributes.URL_FULL, "https://sentry.io/some/path")
         val sentrySpan = mock<IOtelSpanWrapper>()
         whenever(sentrySpan.toSentryTrace()).thenReturn(SentryTraceHeader("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"))
-        whenever(sentrySpan.toBaggageHeader(anyOrNull())).thenReturn(BaggageHeader("sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"))
+        whenever(
+            sentrySpan.toBaggageHeader(anyOrNull()),
+        ).thenReturn(
+            BaggageHeader(
+                "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+            ),
+        )
         whenever(sentrySpan.openTelemetrySpanAttributes).thenReturn(otelAttributes)
-        val otelSpanContext = SpanContext.create("f9118105af4a2d42b4124532cd1065ff", "424cffc8f94feeee", TraceFlags.getSampled(), TraceState.getDefault())
+        val otelSpanContext =
+            SpanContext.create(
+                "f9118105af4a2d42b4124532cd1065ff",
+                "424cffc8f94feeee",
+                TraceFlags.getSampled(),
+                TraceState.getDefault(),
+            )
         val otelSpan = Span.wrap(otelSpanContext)
         spanStorage.storeSentrySpan(otelSpanContext, sentrySpan)
 
@@ -180,9 +243,21 @@ class OtelSentryPropagatorTest {
         val otelAttributes = Attributes.of(UrlAttributes.URL_FULL, "https://sentry.io/some/path")
         val sentrySpan = mock<IOtelSpanWrapper>()
         whenever(sentrySpan.toSentryTrace()).thenReturn(SentryTraceHeader("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"))
-        whenever(sentrySpan.toBaggageHeader(anyOrNull())).thenReturn(BaggageHeader("sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"))
+        whenever(
+            sentrySpan.toBaggageHeader(anyOrNull()),
+        ).thenReturn(
+            BaggageHeader(
+                "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+            ),
+        )
         whenever(sentrySpan.openTelemetrySpanAttributes).thenReturn(otelAttributes)
-        val otelSpanContext = SpanContext.create("f9118105af4a2d42b4124532cd1065ff", "424cffc8f94feeee", TraceFlags.getSampled(), TraceState.getDefault())
+        val otelSpanContext =
+            SpanContext.create(
+                "f9118105af4a2d42b4124532cd1065ff",
+                "424cffc8f94feeee",
+                TraceFlags.getSampled(),
+                TraceState.getDefault(),
+            )
         val otelSpan = Span.wrap(otelSpanContext)
         spanStorage.storeSentrySpan(otelSpanContext, sentrySpan)
 
@@ -197,7 +272,13 @@ class OtelSentryPropagatorTest {
         val propagator = OtelSentryPropagator()
         val carrier = mutableMapOf<String, String>()
 
-        val otelSpanContext = SpanContext.create("f9118105af4a2d42b4124532cd1065ff", "424cffc8f94feeee", TraceFlags.getSampled(), TraceState.getDefault())
+        val otelSpanContext =
+            SpanContext.create(
+                "f9118105af4a2d42b4124532cd1065ff",
+                "424cffc8f94feeee",
+                TraceFlags.getSampled(),
+                TraceState.getDefault(),
+            )
         val otelSpan = Span.wrap(otelSpanContext)
 
         propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
@@ -213,7 +294,13 @@ class OtelSentryPropagatorTest {
 
         val sentrySpan = mock<IOtelSpanWrapper>()
         whenever(sentrySpan.isNoOp).thenReturn(true)
-        val otelSpanContext = SpanContext.create("f9118105af4a2d42b4124532cd1065ff", "424cffc8f94feeee", TraceFlags.getSampled(), TraceState.getDefault())
+        val otelSpanContext =
+            SpanContext.create(
+                "f9118105af4a2d42b4124532cd1065ff",
+                "424cffc8f94feeee",
+                TraceFlags.getSampled(),
+                TraceState.getDefault(),
+            )
         val otelSpan = Span.wrap(otelSpanContext)
         spanStorage.storeSentrySpan(otelSpanContext, sentrySpan)
 
@@ -246,19 +333,21 @@ class OtelSentryPropagatorTest {
     }
 }
 
-class MapGetter() : TextMapGetter<Map<String, String>> {
+class MapGetter : TextMapGetter<Map<String, String>> {
+    override fun keys(carrier: Map<String, String>): MutableIterable<String> = carrier.keys.toMutableList()
 
-    override fun keys(carrier: Map<String, String>): MutableIterable<String> {
-        return carrier.keys.toMutableList()
-    }
-
-    override fun get(carrier: Map<String, String>?, key: String): String? {
-        return carrier?.get(key)
-    }
+    override fun get(
+        carrier: Map<String, String>?,
+        key: String,
+    ): String? = carrier?.get(key)
 }
 
-class MapSetter() : TextMapSetter<MutableMap<String, String>> {
-    override fun set(carrier: MutableMap<String, String>?, key: String, value: String) {
+class MapSetter : TextMapSetter<MutableMap<String, String>> {
+    override fun set(
+        carrier: MutableMap<String, String>?,
+        key: String,
+        value: String,
+    ) {
         carrier?.set(key, value)
     }
 }

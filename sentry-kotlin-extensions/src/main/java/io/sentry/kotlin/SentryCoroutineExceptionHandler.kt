@@ -15,14 +15,19 @@ import kotlin.coroutines.CoroutineContext
  * Captures exceptions thrown in coroutines (without rethrowing them) and reports them to Sentry as errors.
  */
 @ApiStatus.Experimental
-public open class SentryCoroutineExceptionHandler(private val scopes: IScopes = ScopesAdapter.getInstance()) :
-    AbstractCoroutineContextElement(CoroutineExceptionHandler), CoroutineExceptionHandler {
-
-    override fun handleException(context: CoroutineContext, exception: Throwable) {
-        val mechanism = Mechanism().apply {
-            type = "CoroutineExceptionHandler"
-            isHandled = true
-        }
+public open class SentryCoroutineExceptionHandler(
+    private val scopes: IScopes = ScopesAdapter.getInstance(),
+) : AbstractCoroutineContextElement(CoroutineExceptionHandler),
+    CoroutineExceptionHandler {
+    override fun handleException(
+        context: CoroutineContext,
+        exception: Throwable,
+    ) {
+        val mechanism =
+            Mechanism().apply {
+                type = "CoroutineExceptionHandler"
+                isHandled = true
+            }
         // the current thread is not necessarily the one that threw the exception
         val error = ExceptionMechanismException(mechanism, exception, Thread.currentThread())
         val event = SentryEvent(error)

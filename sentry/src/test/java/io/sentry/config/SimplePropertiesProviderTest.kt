@@ -6,7 +6,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class SimplePropertiesProviderTest {
-
     @Test
     fun `when property is set resolves property`() {
         val properties = Properties()

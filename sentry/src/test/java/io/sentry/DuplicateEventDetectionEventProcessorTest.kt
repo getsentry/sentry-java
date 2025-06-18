@@ -8,14 +8,14 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class DuplicateEventDetectionEventProcessorTest {
-
     class Fixture {
         fun getSut(enableDeduplication: Boolean? = null): DuplicateEventDetectionEventProcessor {
-            val options = SentryOptions().apply {
-                if (enableDeduplication != null) {
-                    this.setEnableDeduplication(enableDeduplication)
+            val options =
+                SentryOptions().apply {
+                    if (enableDeduplication != null) {
+                        this.setEnableDeduplication(enableDeduplication)
+                    }
                 }
-            }
             return DuplicateEventDetectionEventProcessor(options)
         }
     }
@@ -27,10 +27,11 @@ class DuplicateEventDetectionEventProcessorTest {
         val processor = fixture.getSut()
         processor.process(SentryEvent(), Hint())
 
-        val result = processor.process(
-            SentryEvent(RuntimeException()),
-            Hint()
-        )
+        val result =
+            processor.process(
+                SentryEvent(RuntimeException()),
+                Hint(),
+            )
 
         assertNotNull(result)
     }
@@ -51,10 +52,11 @@ class DuplicateEventDetectionEventProcessorTest {
         val event = SentryEvent(RuntimeException())
         processor.process(event, Hint())
 
-        val result = processor.process(
-            SentryEvent(ExceptionMechanismException(Mechanism(), event.throwable!!, Thread.currentThread())),
-            Hint()
-        )
+        val result =
+            processor.process(
+                SentryEvent(ExceptionMechanismException(Mechanism(), event.throwable!!, Thread.currentThread())),
+                Hint(),
+            )
         assertNull(result)
     }
 
@@ -64,10 +66,11 @@ class DuplicateEventDetectionEventProcessorTest {
         val sentryEvent = SentryEvent(ExceptionMechanismException(Mechanism(), RuntimeException(), Thread.currentThread()))
         processor.process(sentryEvent, Hint())
 
-        val result = processor.process(
-            SentryEvent((sentryEvent.throwable as ExceptionMechanismException).throwable),
-            Hint()
-        )
+        val result =
+            processor.process(
+                SentryEvent((sentryEvent.throwable as ExceptionMechanismException).throwable),
+                Hint(),
+            )
 
         assertNull(result)
     }
@@ -78,10 +81,11 @@ class DuplicateEventDetectionEventProcessorTest {
         val event = SentryEvent(RuntimeException())
         processor.process(event, Hint())
 
-        val result = processor.process(
-            SentryEvent(RuntimeException(event.throwable)),
-            Hint()
-        )
+        val result =
+            processor.process(
+                SentryEvent(RuntimeException(event.throwable)),
+                Hint(),
+            )
 
         assertNull(result)
     }
@@ -92,10 +96,11 @@ class DuplicateEventDetectionEventProcessorTest {
         val event = SentryEvent(RuntimeException())
         processor.process(event, Hint())
 
-        val result = processor.process(
-            SentryEvent(RuntimeException(RuntimeException(event.throwable))),
-            Hint()
-        )
+        val result =
+            processor.process(
+                SentryEvent(RuntimeException(RuntimeException(event.throwable))),
+                Hint(),
+            )
 
         assertNull(result)
     }

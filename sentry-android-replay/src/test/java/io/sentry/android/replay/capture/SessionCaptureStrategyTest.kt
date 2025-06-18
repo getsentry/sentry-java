@@ -54,7 +54,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SessionCaptureStrategyTest {
-
     @get:Rule
     val tmpDir = TemporaryFolder()
 
@@ -63,40 +62,44 @@ class SessionCaptureStrategyTest {
             const val VIDEO_DURATION = 5000L
         }
 
-        val options = SentryOptions().apply {
-            setReplayController(
-                mock {
-                    on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter())
-                }
-            )
-        }
-        val scope = Scope(options)
-        val scopes = mock<IScopes> {
-            doAnswer {
-                (it.arguments[0] as ScopeCallback).run(scope)
-            }.whenever(it).configureScope(any())
-        }
-        var persistedSegment = LinkedHashMap<String, String?>()
-        val replayCache = mock<ReplayCache> {
-            on { frames }.thenReturn(mutableListOf(ReplayFrame(File("1720693523997.jpg"), 1720693523997)))
-            on { persistSegmentValues(any(), anyOrNull()) }.then {
-                persistedSegment.put(it.arguments[0].toString(), it.arguments[1]?.toString())
+        val options =
+            SentryOptions().apply {
+                setReplayController(
+                    mock {
+                        on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter())
+                    },
+                )
             }
-            on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), any()) }
-                .thenReturn(GeneratedVideo(File("0.mp4"), 5, VIDEO_DURATION))
-        }
-        val recorderConfig = ScreenshotRecorderConfig(
-            recordingWidth = 1080,
-            recordingHeight = 1920,
-            scaleFactorX = 1f,
-            scaleFactorY = 1f,
-            frameRate = 1,
-            bitRate = 20_000
-        )
+        val scope = Scope(options)
+        val scopes =
+            mock<IScopes> {
+                doAnswer {
+                    (it.arguments[0] as ScopeCallback).run(scope)
+                }.whenever(it).configureScope(any())
+            }
+        var persistedSegment = LinkedHashMap<String, String?>()
+        val replayCache =
+            mock<ReplayCache> {
+                on { frames }.thenReturn(mutableListOf(ReplayFrame(File("1720693523997.jpg"), 1720693523997)))
+                on { persistSegmentValues(any(), anyOrNull()) }.then {
+                    persistedSegment.put(it.arguments[0].toString(), it.arguments[1]?.toString())
+                }
+                on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), any()) }
+                    .thenReturn(GeneratedVideo(File("0.mp4"), 5, VIDEO_DURATION))
+            }
+        val recorderConfig =
+            ScreenshotRecorderConfig(
+                recordingWidth = 1080,
+                recordingHeight = 1920,
+                scaleFactorX = 1f,
+                scaleFactorY = 1f,
+                frameRate = 1,
+                bitRate = 20_000,
+            )
 
         fun getSut(
             dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
-            replayCacheDir: File? = null
+            replayCacheDir: File? = null,
         ): SessionCaptureStrategy {
             replayCacheDir?.let {
                 whenever(replayCache.replayCacheDir).thenReturn(it)
@@ -110,7 +113,7 @@ class SessionCaptureStrategyTest {
                         (invocation.arguments[0] as Runnable).run()
                         null
                     }.whenever(it).submit(any<Runnable>())
-                }
+                },
             ) { _ -> replayCache }
         }
     }
@@ -141,23 +144,23 @@ class SessionCaptureStrategyTest {
         assertEquals(replayId.toString(), fixture.persistedSegment[SEGMENT_KEY_REPLAY_ID])
         assertEquals(
             ReplayType.SESSION.toString(),
-            fixture.persistedSegment[SEGMENT_KEY_REPLAY_TYPE]
+            fixture.persistedSegment[SEGMENT_KEY_REPLAY_TYPE],
         )
         assertEquals(
             fixture.recorderConfig.recordingWidth.toString(),
-            fixture.persistedSegment[SEGMENT_KEY_WIDTH]
+            fixture.persistedSegment[SEGMENT_KEY_WIDTH],
         )
         assertEquals(
             fixture.recorderConfig.recordingHeight.toString(),
-            fixture.persistedSegment[SEGMENT_KEY_HEIGHT]
+            fixture.persistedSegment[SEGMENT_KEY_HEIGHT],
         )
         assertEquals(
             fixture.recorderConfig.frameRate.toString(),
-            fixture.persistedSegment[SEGMENT_KEY_FRAME_RATE]
+            fixture.persistedSegment[SEGMENT_KEY_FRAME_RATE],
         )
         assertEquals(
             fixture.recorderConfig.bitRate.toString(),
-            fixture.persistedSegment[SEGMENT_KEY_BIT_RATE]
+            fixture.persistedSegment[SEGMENT_KEY_BIT_RATE],
         )
         assertTrue(fixture.persistedSegment[SEGMENT_KEY_TIMESTAMP]?.isNotEmpty() == true)
     }
@@ -174,7 +177,7 @@ class SessionCaptureStrategyTest {
             argThat { event ->
                 event is SentryReplayEvent && event.segmentId == 0
             },
-            any()
+            any(),
         )
         assertEquals(1, strategy.currentSegment)
     }
@@ -195,7 +198,7 @@ class SessionCaptureStrategyTest {
             argThat { event ->
                 event is SentryReplayEvent && event.segmentId == 0
             },
-            any()
+            any(),
         )
         assertEquals(SentryId.EMPTY_ID, fixture.scope.replayId)
         assertEquals(SentryId.EMPTY_ID, strategy.currentReplayId)
@@ -218,9 +221,10 @@ class SessionCaptureStrategyTest {
     fun `when process is crashing, onScreenshotRecorded does not create new segment`() {
         val now =
             System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
-        val strategy = fixture.getSut(
-            dateProvider = { now }
-        )
+        val strategy =
+            fixture.getSut(
+                dateProvider = { now },
+            )
         strategy.start()
 
         strategy.captureReplay(true) {}
@@ -233,9 +237,10 @@ class SessionCaptureStrategyTest {
     fun `onScreenshotRecorded creates new segment when segment duration exceeded`() {
         val now =
             System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
-        val strategy = fixture.getSut(
-            dateProvider = { now }
-        )
+        val strategy =
+            fixture.getSut(
+                dateProvider = { now },
+            )
         strategy.start()
         strategy.onConfigurationChanged(fixture.recorderConfig)
 
@@ -249,7 +254,7 @@ class SessionCaptureStrategyTest {
                 segmentTimestamp = event.replayStartTimestamp
                 event is SentryReplayEvent && event.segmentId == 0
             },
-            any()
+            any(),
         )
         assertEquals(1, strategy.currentSegment)
 
@@ -257,7 +262,7 @@ class SessionCaptureStrategyTest {
         // timestamp should be updated with video duration
         assertEquals(
             DateUtils.getTimestamp(segmentTimestamp!!),
-            fixture.persistedSegment[SEGMENT_KEY_TIMESTAMP]
+            fixture.persistedSegment[SEGMENT_KEY_TIMESTAMP],
         )
     }
 
@@ -266,16 +271,17 @@ class SessionCaptureStrategyTest {
         val now =
             System.currentTimeMillis() + (fixture.options.sessionReplay.sessionDuration * 2)
         var count = 0
-        val strategy = fixture.getSut(
-            dateProvider = {
-                // we only need to fake value for the 3rd call (first two is for replayStartTimestamp and frameTimestamp)
-                if (count++ == 2) {
-                    now
-                } else {
-                    System.currentTimeMillis()
-                }
-            }
-        )
+        val strategy =
+            fixture.getSut(
+                dateProvider = {
+                    // we only need to fake value for the 3rd call (first two is for replayStartTimestamp and frameTimestamp)
+                    if (count++ == 2) {
+                        now
+                    } else {
+                        System.currentTimeMillis()
+                    }
+                },
+            )
         strategy.start()
         strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
 
@@ -304,7 +310,7 @@ class SessionCaptureStrategyTest {
                 // should still capture with the old values
                 assertEquals(1920, metaEvents?.first()?.height)
                 assertEquals(1080, metaEvents?.first()?.width)
-            }
+            },
         )
         assertEquals(1, strategy.currentSegment)
 
@@ -314,7 +320,7 @@ class SessionCaptureStrategyTest {
         // timestamp should be updated with video duration
         assertEquals(
             DateUtils.getTimestamp(segmentTimestamp!!),
-            fixture.persistedSegment[SEGMENT_KEY_TIMESTAMP]
+            fixture.persistedSegment[SEGMENT_KEY_TIMESTAMP],
         )
     }
 
@@ -339,7 +345,7 @@ class SessionCaptureStrategyTest {
                     it.replayRecording?.payload?.filterIsInstance<RRWebBreadcrumbEvent>()
                 assertEquals("navigation", breadcrumbEvents?.first()?.category)
                 assertEquals("to", breadcrumbEvents?.first()?.data?.get("to"))
-            }
+            },
         )
     }
 
@@ -364,7 +370,7 @@ class SessionCaptureStrategyTest {
                     it.replayRecording?.payload?.filterIsInstance<RRWebBreadcrumbEvent>()
                 assertEquals("navigation", breadcrumbEvents?.first()?.category)
                 assertNull(breadcrumbEvents?.first()?.data?.get("to"))
-            }
+            },
         )
     }
 
@@ -388,7 +394,7 @@ class SessionCaptureStrategyTest {
                 val breadcrumbEvents =
                     it.replayRecording?.payload?.filterIsInstance<RRWebBreadcrumbEvent>()
                 assertTrue(breadcrumbEvents?.isEmpty() == true)
-            }
+            },
         )
     }
 
@@ -403,7 +409,7 @@ class SessionCaptureStrategyTest {
             replayId.toString(),
             fixture.persistedSegment.values.first(),
             "The replayId must be set first, so when we clean up stale replays" +
-                "the current replay cache folder is not being deleted."
+                "the current replay cache folder is not being deleted.",
         )
     }
 
@@ -445,15 +451,15 @@ class SessionCaptureStrategyTest {
                         "androidx.media3.ui.PlayerView",
                         "com.google.android.exoplayer2.ui.PlayerView",
                         "com.google.android.exoplayer2.ui.StyledPlayerView",
-                        "my.custom.View"
+                        "my.custom.View",
                     ),
-                    optionsEvent[0].optionsPayload["maskedViewClasses"] as Collection<*>
+                    optionsEvent[0].optionsPayload["maskedViewClasses"] as Collection<*>,
                 )
                 assertContentEquals(
                     listOf("android.widget.ImageView"),
-                    optionsEvent[0].optionsPayload["unmaskedViewClasses"] as Collection<*>
+                    optionsEvent[0].optionsPayload["unmaskedViewClasses"] as Collection<*>,
                 )
-            }
+            },
         )
     }
 
@@ -470,7 +476,7 @@ class SessionCaptureStrategyTest {
             argThat { event ->
                 event is SentryReplayEvent && event.segmentId == 0
             },
-            any()
+            any(),
         )
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) {}
@@ -482,7 +488,7 @@ class SessionCaptureStrategyTest {
                 val optionsEvent =
                     it.replayRecording?.payload?.find { it is RRWebOptionsEvent }
                 assertNull(optionsEvent)
-            }
+            },
         )
     }
 }

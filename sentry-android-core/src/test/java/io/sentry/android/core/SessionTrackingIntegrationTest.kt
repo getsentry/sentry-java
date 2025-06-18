@@ -37,7 +37,6 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [31])
 class SessionTrackingIntegrationTest {
-
     private lateinit var context: Context
 
     @BeforeTest
@@ -120,10 +119,11 @@ class SessionTrackingIntegrationTest {
 
     private fun setupLifecycle(options: SentryOptions): LifecycleRegistry {
         val lifecycle = LifecycleRegistry(ProcessLifecycleOwner.get())
-        val lifecycleWatcher = (
-            options.integrations.find {
-                it is AppLifecycleIntegration
-            } as AppLifecycleIntegration
+        val lifecycleWatcher =
+            (
+                options.integrations.find {
+                    it is AppLifecycleIntegration
+                } as AppLifecycleIntegration
             ).watcher
         lifecycle.addObserver(lifecycleWatcher!!)
         return lifecycle
@@ -134,7 +134,11 @@ class SessionTrackingIntegrationTest {
 
         override fun isEnabled(): Boolean = true
 
-        override fun captureEvent(event: SentryEvent, scope: IScope?, hint: Hint?): SentryId {
+        override fun captureEvent(
+            event: SentryEvent,
+            scope: IScope?,
+            hint: Hint?,
+        ): SentryId {
             TODO("Not yet implemented")
         }
 
@@ -150,14 +154,18 @@ class SessionTrackingIntegrationTest {
             TODO("Not yet implemented")
         }
 
-        override fun captureFeedback(feedback: Feedback, hint: Hint?, scope: IScope): SentryId {
+        override fun captureFeedback(
+            feedback: Feedback,
+            hint: Hint?,
+            scope: IScope,
+        ): SentryId {
             TODO("Not yet implemented")
         }
 
         override fun captureReplayEvent(
             event: SentryReplayEvent,
             scope: IScope?,
-            hint: Hint?
+            hint: Hint?,
         ): SentryId {
             TODO("Not yet implemented")
         }
@@ -166,11 +174,17 @@ class SessionTrackingIntegrationTest {
             TODO("Not yet implemented")
         }
 
-        override fun captureSession(session: Session, hint: Hint?) {
+        override fun captureSession(
+            session: Session,
+            hint: Hint?,
+        ) {
             sessionUpdates.add(session)
         }
 
-        override fun captureEnvelope(envelope: SentryEnvelope, hint: Hint?): SentryId? {
+        override fun captureEnvelope(
+            envelope: SentryEnvelope,
+            hint: Hint?,
+        ): SentryId? {
             TODO("Not yet implemented")
         }
 
@@ -179,20 +193,30 @@ class SessionTrackingIntegrationTest {
             traceContext: TraceContext?,
             scope: IScope?,
             hint: Hint?,
-            profilingTraceData: ProfilingTraceData?
+            profilingTraceData: ProfilingTraceData?,
         ): SentryId {
             TODO("Not yet implemented")
         }
 
-        override fun captureProfileChunk(profileChunk: ProfileChunk, scope: IScope?): SentryId {
+        override fun captureProfileChunk(
+            profileChunk: ProfileChunk,
+            scope: IScope?,
+        ): SentryId {
             TODO("Not yet implemented")
         }
 
-        override fun captureCheckIn(checkIn: CheckIn, scope: IScope?, hint: Hint?): SentryId {
+        override fun captureCheckIn(
+            checkIn: CheckIn,
+            scope: IScope?,
+            hint: Hint?,
+        ): SentryId {
             TODO("Not yet implemented")
         }
 
-        override fun captureLog(event: SentryLogEvent, scope: IScope?) {
+        override fun captureLog(
+            event: SentryLogEvent,
+            scope: IScope?,
+        ) {
             TODO("Not yet implemented")
         }
 

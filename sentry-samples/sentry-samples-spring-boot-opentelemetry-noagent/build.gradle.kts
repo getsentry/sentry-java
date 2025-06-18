@@ -72,7 +72,11 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom(libs.otel.instrumentation.bom.get().toString())
+        mavenBom(
+            libs.otel.instrumentation.bom
+                .get()
+                .toString(),
+        )
     }
 }
 

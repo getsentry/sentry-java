@@ -6,7 +6,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SpanUtilsTest {
-
     @Test
     fun `isIgnored returns true for exact match`() {
         val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))

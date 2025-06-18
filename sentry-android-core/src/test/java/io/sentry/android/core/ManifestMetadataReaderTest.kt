@@ -25,17 +25,15 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class ManifestMetadataReaderTest {
-
     private class Fixture {
         val logger = mock<ILogger>()
-        val options = SentryAndroidOptions().apply {
-            setLogger(logger)
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                setLogger(logger)
+            }
         val buildInfoProvider = mock<BuildInfoProvider>()
 
-        fun getContext(metaData: Bundle = Bundle()): Context {
-            return ContextUtilsTestHelper.mockMetaData(metaData = metaData)
-        }
+        fun getContext(metaData: Bundle = Bundle()): Context = ContextUtilsTestHelper.mockMetaData(metaData = metaData)
     }
 
     private val fixture = Fixture()
@@ -469,10 +467,11 @@ class ManifestMetadataReaderTest {
     @Test
     fun `applyMetadata reads diagnosticLevel to options`() {
         // Arrange
-        val bundle = bundleOf(
-            ManifestMetadataReader.DEBUG to true,
-            ManifestMetadataReader.DEBUG_LEVEL to "info"
-        )
+        val bundle =
+            bundleOf(
+                ManifestMetadataReader.DEBUG to true,
+                ManifestMetadataReader.DEBUG_LEVEL to "info",
+            )
         val context = fixture.getContext(metaData = bundle)
 
         // Act
@@ -1454,15 +1453,22 @@ class ManifestMetadataReaderTest {
     @Test
     fun `applyMetadata reads session replay mask flags to options`() {
         // Arrange
-        val bundle = bundleOf(ManifestMetadataReader.REPLAYS_MASK_ALL_TEXT to false, ManifestMetadataReader.REPLAYS_MASK_ALL_IMAGES to false)
+        val bundle =
+            bundleOf(ManifestMetadataReader.REPLAYS_MASK_ALL_TEXT to false, ManifestMetadataReader.REPLAYS_MASK_ALL_IMAGES to false)
         val context = fixture.getContext(metaData = bundle)
 
         // Act
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
-        assertTrue(fixture.options.sessionReplay.unmaskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+        assertTrue(
+            fixture.options.sessionReplay.unmaskViewClasses
+                .contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME),
+        )
+        assertTrue(
+            fixture.options.sessionReplay.unmaskViewClasses
+                .contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME),
+        )
     }
 
     @Test
@@ -1474,8 +1480,14 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
         // Assert
-        assertTrue(fixture.options.sessionReplay.maskViewClasses.contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME))
-        assertTrue(fixture.options.sessionReplay.maskViewClasses.contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME))
+        assertTrue(
+            fixture.options.sessionReplay.maskViewClasses
+                .contains(SentryReplayOptions.IMAGE_VIEW_CLASS_NAME),
+        )
+        assertTrue(
+            fixture.options.sessionReplay.maskViewClasses
+                .contains(SentryReplayOptions.TEXT_VIEW_CLASS_NAME),
+        )
     }
 
     @Test
@@ -1483,13 +1495,14 @@ class ManifestMetadataReaderTest {
         // Arrange
         val expectedSampleRate: Int = 1
 
-        val bundle = bundleOf(
-            ManifestMetadataReader.SAMPLE_RATE to expectedSampleRate,
-            ManifestMetadataReader.TRACES_SAMPLE_RATE to expectedSampleRate,
-            ManifestMetadataReader.PROFILES_SAMPLE_RATE to expectedSampleRate,
-            ManifestMetadataReader.REPLAYS_SESSION_SAMPLE_RATE to expectedSampleRate,
-            ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to expectedSampleRate
-        )
+        val bundle =
+            bundleOf(
+                ManifestMetadataReader.SAMPLE_RATE to expectedSampleRate,
+                ManifestMetadataReader.TRACES_SAMPLE_RATE to expectedSampleRate,
+                ManifestMetadataReader.PROFILES_SAMPLE_RATE to expectedSampleRate,
+                ManifestMetadataReader.REPLAYS_SESSION_SAMPLE_RATE to expectedSampleRate,
+                ManifestMetadataReader.REPLAYS_ERROR_SAMPLE_RATE to expectedSampleRate,
+            )
         val context = fixture.getContext(metaData = bundle)
 
         // Act

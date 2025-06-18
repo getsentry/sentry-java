@@ -22,30 +22,31 @@ private const val TRACE_ORIGIN = "auto.ui.fragment"
 public class SentryFragmentLifecycleCallbacks(
     private val scopes: IScopes = ScopesAdapter.getInstance(),
     internal val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
-    internal val enableAutoFragmentLifecycleTracing: Boolean
+    internal val enableAutoFragmentLifecycleTracing: Boolean,
 ) : FragmentLifecycleCallbacks() {
-
     public constructor(
         scopes: IScopes,
         enableFragmentLifecycleBreadcrumbs: Boolean,
-        enableAutoFragmentLifecycleTracing: Boolean
+        enableAutoFragmentLifecycleTracing: Boolean,
     ) : this(
         scopes = scopes,
-        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states
-            .takeIf { enableFragmentLifecycleBreadcrumbs }
-            .orEmpty(),
-        enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
+        filterFragmentLifecycleBreadcrumbs =
+            FragmentLifecycleState.states
+                .takeIf { enableFragmentLifecycleBreadcrumbs }
+                .orEmpty(),
+        enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing,
     )
 
     public constructor(
         enableFragmentLifecycleBreadcrumbs: Boolean = true,
-        enableAutoFragmentLifecycleTracing: Boolean = false
+        enableAutoFragmentLifecycleTracing: Boolean = false,
     ) : this(
         scopes = ScopesAdapter.getInstance(),
-        filterFragmentLifecycleBreadcrumbs = FragmentLifecycleState.states
-            .takeIf { enableFragmentLifecycleBreadcrumbs }
-            .orEmpty(),
-        enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
+        filterFragmentLifecycleBreadcrumbs =
+            FragmentLifecycleState.states
+                .takeIf { enableFragmentLifecycleBreadcrumbs }
+                .orEmpty(),
+        enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing,
     )
 
     private val isPerformanceEnabled get() = scopes.options.isTracingEnabled && enableAutoFragmentLifecycleTracing
@@ -58,7 +59,7 @@ public class SentryFragmentLifecycleCallbacks(
     override fun onFragmentAttached(
         fragmentManager: FragmentManager,
         fragment: Fragment,
-        context: Context
+        context: Context,
     ) {
         addBreadcrumb(fragment, FragmentLifecycleState.ATTACHED)
     }
@@ -66,7 +67,7 @@ public class SentryFragmentLifecycleCallbacks(
     override fun onFragmentSaveInstanceState(
         fragmentManager: FragmentManager,
         fragment: Fragment,
-        outState: Bundle
+        outState: Bundle,
     ) {
         addBreadcrumb(fragment, FragmentLifecycleState.SAVE_INSTANCE_STATE)
     }
@@ -74,7 +75,7 @@ public class SentryFragmentLifecycleCallbacks(
     override fun onFragmentCreated(
         fragmentManager: FragmentManager,
         fragment: Fragment,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ) {
         addBreadcrumb(fragment, FragmentLifecycleState.CREATED)
 
@@ -92,68 +93,92 @@ public class SentryFragmentLifecycleCallbacks(
         fragmentManager: FragmentManager,
         fragment: Fragment,
         view: View,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ) {
         addBreadcrumb(fragment, FragmentLifecycleState.VIEW_CREATED)
     }
 
-    override fun onFragmentStarted(fragmentManager: FragmentManager, fragment: Fragment) {
+    override fun onFragmentStarted(
+        fragmentManager: FragmentManager,
+        fragment: Fragment,
+    ) {
         addBreadcrumb(fragment, FragmentLifecycleState.STARTED)
 
         // ViewPager2 locks background fragments to STARTED state
         stopTracing(fragment)
     }
 
-    override fun onFragmentResumed(fragmentManager: FragmentManager, fragment: Fragment) {
+    override fun onFragmentResumed(
+        fragmentManager: FragmentManager,
+        fragment: Fragment,
+    ) {
         addBreadcrumb(fragment, FragmentLifecycleState.RESUMED)
     }
 
-    override fun onFragmentPaused(fragmentManager: FragmentManager, fragment: Fragment) {
+    override fun onFragmentPaused(
+        fragmentManager: FragmentManager,
+        fragment: Fragment,
+    ) {
         addBreadcrumb(fragment, FragmentLifecycleState.PAUSED)
     }
 
-    override fun onFragmentStopped(fragmentManager: FragmentManager, fragment: Fragment) {
+    override fun onFragmentStopped(
+        fragmentManager: FragmentManager,
+        fragment: Fragment,
+    ) {
         addBreadcrumb(fragment, FragmentLifecycleState.STOPPED)
     }
 
-    override fun onFragmentViewDestroyed(fragmentManager: FragmentManager, fragment: Fragment) {
+    override fun onFragmentViewDestroyed(
+        fragmentManager: FragmentManager,
+        fragment: Fragment,
+    ) {
         addBreadcrumb(fragment, FragmentLifecycleState.VIEW_DESTROYED)
     }
 
-    override fun onFragmentDestroyed(fragmentManager: FragmentManager, fragment: Fragment) {
+    override fun onFragmentDestroyed(
+        fragmentManager: FragmentManager,
+        fragment: Fragment,
+    ) {
         addBreadcrumb(fragment, FragmentLifecycleState.DESTROYED)
 
         stopTracing(fragment)
     }
 
-    override fun onFragmentDetached(fragmentManager: FragmentManager, fragment: Fragment) {
+    override fun onFragmentDetached(
+        fragmentManager: FragmentManager,
+        fragment: Fragment,
+    ) {
         addBreadcrumb(fragment, FragmentLifecycleState.DETACHED)
     }
 
-    private fun addBreadcrumb(fragment: Fragment, state: FragmentLifecycleState) {
+    private fun addBreadcrumb(
+        fragment: Fragment,
+        state: FragmentLifecycleState,
+    ) {
         if (!filterFragmentLifecycleBreadcrumbs.contains(state)) {
             return
         }
-        val breadcrumb = Breadcrumb().apply {
-            type = "navigation"
-            setData("state", state.breadcrumbName)
-            setData("screen", getFragmentName(fragment))
-            category = "ui.fragment.lifecycle"
-            level = INFO
-        }
+        val breadcrumb =
+            Breadcrumb().apply {
+                type = "navigation"
+                setData("state", state.breadcrumbName)
+                setData("screen", getFragmentName(fragment))
+                category = "ui.fragment.lifecycle"
+                level = INFO
+            }
 
-        val hint = Hint()
-            .also { it.set(ANDROID_FRAGMENT, fragment) }
+        val hint =
+            Hint()
+                .also { it.set(ANDROID_FRAGMENT, fragment) }
 
         scopes.addBreadcrumb(breadcrumb, hint)
     }
 
-    private fun getFragmentName(fragment: Fragment): String {
-        return fragment.javaClass.canonicalName ?: fragment.javaClass.simpleName
-    }
+    private fun getFragmentName(fragment: Fragment): String =
+        fragment.javaClass.canonicalName ?: fragment.javaClass.simpleName
 
-    private fun isRunningSpan(fragment: Fragment): Boolean =
-        fragmentsWithOngoingTransactions.containsKey(fragment)
+    private fun isRunningSpan(fragment: Fragment): Boolean = fragmentsWithOngoingTransactions.containsKey(fragment)
 
     private fun startTracing(fragment: Fragment) {
         if (!isPerformanceEnabled || isRunningSpan(fragment)) {

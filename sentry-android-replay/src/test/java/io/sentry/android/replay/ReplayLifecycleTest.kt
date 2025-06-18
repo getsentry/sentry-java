@@ -105,12 +105,13 @@ class ReplayLifecycleTest {
         assertTrue(lifecycle.isTouchRecordingAllowed())
 
         // Other states don't allow touch recording
-        val otherStates = listOf(
-            ReplayState.INITIAL,
-            ReplayState.PAUSED,
-            ReplayState.STOPPED,
-            ReplayState.CLOSED
-        )
+        val otherStates =
+            listOf(
+                ReplayState.INITIAL,
+                ReplayState.PAUSED,
+                ReplayState.STOPPED,
+                ReplayState.CLOSED,
+            )
 
         otherStates.forEach { state ->
             lifecycle.currentState = state

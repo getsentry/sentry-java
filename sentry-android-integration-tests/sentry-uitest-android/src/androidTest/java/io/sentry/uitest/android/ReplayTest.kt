@@ -16,14 +16,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 
 class ReplayTest : BaseUiTest() {
-
     @Before
     fun setup() {
         // we can't run on GH actions emulator, because they don't allow capturing screenshots properly
         @Suppress("KotlinConstantConditions")
         assumeThat(
             BuildConfig.ENVIRONMENT != "github",
-            `is`(true)
+            `is`(true),
         )
     }
 
@@ -31,35 +30,38 @@ class ReplayTest : BaseUiTest() {
     fun composeReplayDoesNotLeak() {
         val sent = AtomicBoolean(false)
 
-        LeakCanary.config = LeakCanary.config.copy(
-            referenceMatchers = AndroidReferenceMatchers.appDefaults +
-                listOf(
-                    IgnoredReferenceMatcher(
-                        ReferencePattern.InstanceFieldPattern(
-                            "com.saucelabs.rdcinjector.testfairy.TestFairyEventQueue",
-                            "context"
-                        )
-                    ),
-                    // Seems like a false-positive returned by LeakCanary when curtains is used in
-                    // the host application (LeakCanary uses it itself internally). We use kind of
-                    // the same approach which possibly clashes with LeakCanary's internal state.
-                    // Only the case when replay is enabled.
-                    // TODO: check if it's actually a leak on our side, or a false-positive and report to LeakCanary's github issue tracker
-                    IgnoredReferenceMatcher(
-                        ReferencePattern.InstanceFieldPattern(
-                            "curtains.internal.RootViewsSpy",
-                            "delegatingViewList"
-                        )
-                    )
-                ) + ('a'..'z').map { char ->
-                IgnoredReferenceMatcher(
-                    ReferencePattern.StaticFieldPattern(
-                        "com.testfairy.modules.capture.TouchListener",
-                        "$char"
-                    )
-                )
-            }
-        )
+        LeakCanary.config =
+            LeakCanary.config.copy(
+                referenceMatchers =
+                    AndroidReferenceMatchers.appDefaults +
+                        listOf(
+                            IgnoredReferenceMatcher(
+                                ReferencePattern.InstanceFieldPattern(
+                                    "com.saucelabs.rdcinjector.testfairy.TestFairyEventQueue",
+                                    "context",
+                                ),
+                            ),
+                            // Seems like a false-positive returned by LeakCanary when curtains is used in
+                            // the host application (LeakCanary uses it itself internally). We use kind of
+                            // the same approach which possibly clashes with LeakCanary's internal state.
+                            // Only the case when replay is enabled.
+                            // TODO: check if it's actually a leak on our side, or a false-positive and report to LeakCanary's github issue tracker
+                            IgnoredReferenceMatcher(
+                                ReferencePattern.InstanceFieldPattern(
+                                    "curtains.internal.RootViewsSpy",
+                                    "delegatingViewList",
+                                ),
+                            ),
+                        ) +
+                        ('a'..'z').map { char ->
+                            IgnoredReferenceMatcher(
+                                ReferencePattern.StaticFieldPattern(
+                                    "com.testfairy.modules.capture.TouchListener",
+                                    "$char",
+                                ),
+                            )
+                        },
+            )
 
         val activityScenario = launchActivity<ComposeActivity>()
         activityScenario.moveToState(Lifecycle.State.RESUMED)

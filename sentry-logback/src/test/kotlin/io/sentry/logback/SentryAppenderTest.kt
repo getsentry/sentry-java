@@ -40,7 +40,16 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryAppenderTest {
-    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, contextTags: List<String>? = null, encoder: Encoder<ILoggingEvent>? = null, sendDefaultPii: Boolean = false, options: SentryOptions = SentryOptions(), startLater: Boolean = false) {
+    private class Fixture(
+        dsn: String? = "http://key@localhost/proj",
+        minimumBreadcrumbLevel: Level? = null,
+        minimumEventLevel: Level? = null,
+        contextTags: List<String>? = null,
+        encoder: Encoder<ILoggingEvent>? = null,
+        sendDefaultPii: Boolean = false,
+        options: SentryOptions = SentryOptions(),
+        startLater: Boolean = false,
+    ) {
         val logger: Logger = LoggerFactory.getLogger(SentryAppenderTest::class.java)
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
         val transportFactory = mock<ITransportFactory>()
@@ -94,12 +103,14 @@ class SentryAppenderTest {
 
     @Test
     fun `does not initialize Sentry if Sentry is already enabled with higher prio`() {
-        fixture = Fixture(
-            startLater = true,
-            options = SentryOptions().also {
-                it.setTag("only-present-if-logger-init-was-run", "another-value")
-            }
-        )
+        fixture =
+            Fixture(
+                startLater = true,
+                options =
+                    SentryOptions().also {
+                        it.setTag("only-present-if-logger-init-was-run", "another-value")
+                    },
+            )
         initForTest {
             it.dsn = "http://key@localhost/proj"
             it.environment = "manual-environment"
@@ -116,7 +127,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertNull(event.tags?.get("only-present-if-logger-init-was-run"))
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -134,7 +145,7 @@ class SentryAppenderTest {
                 }
                 assertEquals("io.sentry.logback.SentryAppenderTest", event.logger)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -154,7 +165,7 @@ class SentryAppenderTest {
                 }
                 assertEquals("io.sentry.logback.SentryAppenderTest", event.logger)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -174,12 +185,13 @@ class SentryAppenderTest {
                 }
                 assertEquals("io.sentry.logback.SentryAppenderTest", event.logger)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     class ThrowingEncoder : EncoderBase<ILoggingEvent> {
         constructor() : super()
+
         override fun headerBytes(): ByteArray {
             TODO("Not yet implemented")
         }
@@ -207,7 +219,7 @@ class SentryAppenderTest {
                 }
                 assertEquals("io.sentry.logback.SentryAppenderTest", event.logger)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -220,14 +232,16 @@ class SentryAppenderTest {
 
         verify(fixture.transport).send(
             checkEvent { event ->
-                val eventTime = Instant.ofEpochMilli(event.timestamp.time)
-                    .atZone(fixture.utcTimeZone)
-                    .toLocalDateTime()
+                val eventTime =
+                    Instant
+                        .ofEpochMilli(event.timestamp.time)
+                        .atZone(fixture.utcTimeZone)
+                        .toLocalDateTime()
 
                 assertTrue { eventTime.plusSeconds(1).isAfter(utcTime) }
                 assertTrue { eventTime.minusSeconds(1).isBefore(utcTime) }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -240,7 +254,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.DEBUG, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -253,7 +267,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.DEBUG, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -266,7 +280,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.INFO, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -279,7 +293,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.WARNING, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -292,7 +306,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.ERROR, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -308,7 +322,7 @@ class SentryAppenderTest {
                 assertEquals(SentryAppender.MECHANISM_TYPE, exception.mechanism!!.type)
                 assertEquals("test exc", exception.value)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -321,7 +335,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertNotNull(event.getExtra("thread_name"))
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -335,7 +349,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -351,7 +365,7 @@ class SentryAppenderTest {
                 assertEquals(mapOf("key" to "value"), event.contexts["MDC"])
                 assertEquals(mapOf("contextTag1" to "contextTag1Value"), event.tags)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -370,7 +384,7 @@ class SentryAppenderTest {
                     assertEquals("value", contextData["key2"])
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -385,7 +399,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertNull(event.contexts["MDC"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -398,7 +412,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertFalse(event.contexts.containsKey("MDC"))
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -415,7 +429,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals("SQL [ SQL_UPDATE, SQL_QUERY ]", event.getExtra("marker"))
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -433,12 +447,12 @@ class SentryAppenderTest {
                         it.packageSet.any { pkg ->
                             "maven:io.sentry:sentry-logback" == pkg.name &&
                                 BuildConfig.VERSION_NAME == pkg.version
-                        }
+                        },
                     )
                     assertTrue(it.integrationSet.contains("Logback"))
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -456,9 +470,11 @@ class SentryAppenderTest {
                 assertNotNull(event.breadcrumbs) { breadcrumbs ->
                     assertEquals(2, breadcrumbs.size)
                     val breadcrumb = breadcrumbs[0]
-                    val breadcrumbTime = Instant.ofEpochMilli(event.timestamp.time)
-                        .atZone(fixture.utcTimeZone)
-                        .toLocalDateTime()
+                    val breadcrumbTime =
+                        Instant
+                            .ofEpochMilli(event.timestamp.time)
+                            .atZone(fixture.utcTimeZone)
+                            .toLocalDateTime()
                     assertTrue { breadcrumbTime.plusSeconds(1).isAfter(utcTime) }
                     assertTrue { breadcrumbTime.minusSeconds(1).isBefore(utcTime) }
                     assertEquals("this should be a breadcrumb #1", breadcrumb.message)
@@ -466,7 +482,7 @@ class SentryAppenderTest {
                     assertEquals(SentryLevel.DEBUG, breadcrumb.level)
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -485,7 +501,7 @@ class SentryAppenderTest {
                     assertEquals("this should be a breadcrumb", breadcrumbs[0].message)
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -506,7 +522,7 @@ class SentryAppenderTest {
                     assertEquals("this should not be sent as the event but be a breadcrumb", breadcrumbs[1].message)
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -519,7 +535,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals("release from sentry.properties", event.release)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -528,7 +544,10 @@ class SentryAppenderTest {
         // environment variables referenced in the logback.xml that are not set in the OS, have value "ENV_NAME_IS_UNDEFINED"
         fixture = Fixture(dsn = "DSN_IS_UNDEFINED", minimumEventLevel = Level.DEBUG)
 
-        assertTrue(fixture.loggerContext.statusManager.copyOfStatusList.none { it.level == Status.WARN })
+        assertTrue(
+            fixture.loggerContext.statusManager.copyOfStatusList
+                .none { it.level == Status.WARN },
+        )
     }
 
     @Test
@@ -556,7 +575,7 @@ class SentryAppenderTest {
                 assertEquals(SentryLevel.ERROR, event.level)
                 assertNull(event.exceptions)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 }

@@ -23,6 +23,7 @@ public final class Response implements JsonUnknown, JsonSerializable {
    * <p>Can be given unparsed as string, as dictionary, or as a list of tuples.
    */
   private @Nullable String cookies;
+
   /**
    * A dictionary of response headers.
    *

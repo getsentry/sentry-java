@@ -11,11 +11,12 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 
 class SentryIdSerializationTest {
-
     class Fixture {
         val logger = mock<ILogger>()
+
         fun getSut() = SentryId("afcb46b1140ade5187c4bbb5daa804df")
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -34,11 +35,11 @@ class SentryIdSerializationTest {
 
     // Helper
 
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
+    private fun sanitizedFile(path: String): String =
+        FileFromResources
+            .invoke(path)
             .replace(Regex("[\n\r]"), "")
             .replace(" ", "")
-    }
 
     private fun serialize(src: SentryId): String {
         val wrt = StringWriter()

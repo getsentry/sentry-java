@@ -14,13 +14,15 @@ import java.lang.ref.WeakReference
 
 internal class GestureRecorder(
     private val options: SentryOptions,
-    private val touchRecorderCallback: TouchRecorderCallback
+    private val touchRecorderCallback: TouchRecorderCallback,
 ) : OnRootViewsChangedListener {
-
     private val rootViews = ArrayList<WeakReference<View>>()
     private val rootViewsLock = AutoClosableReentrantLock()
 
-    override fun onRootViewsChanged(root: View, added: Boolean) {
+    override fun onRootViewsChanged(
+        root: View,
+        added: Boolean,
+    ) {
         rootViewsLock.acquire().use {
             if (added) {
                 rootViews.add(WeakReference(root))
@@ -69,7 +71,7 @@ internal class GestureRecorder(
     internal class SentryReplayGestureRecorder(
         private val options: SentryOptions,
         private val touchRecorderCallback: TouchRecorderCallback?,
-        delegate: Window.Callback?
+        delegate: Window.Callback?,
     ) : FixedWindowCallback(delegate) {
         override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
             if (event != null) {

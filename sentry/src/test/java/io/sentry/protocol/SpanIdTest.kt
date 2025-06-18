@@ -9,7 +9,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SpanIdTest {
-
     @Test
     fun `ID is not generated on initialization`() {
         val uuid = SentryUUID.generateSpanId()

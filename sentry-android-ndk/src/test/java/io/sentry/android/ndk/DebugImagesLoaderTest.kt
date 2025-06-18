@@ -85,26 +85,30 @@ class DebugImagesLoaderTest {
     fun `find images by address`() {
         val sut = fixture.getSut()
 
-        val image1 = io.sentry.ndk.DebugImage().apply {
-            imageAddr = "0x1000"
-            imageSize = 0x1000L
-        }
+        val image1 =
+            io.sentry.ndk.DebugImage().apply {
+                imageAddr = "0x1000"
+                imageSize = 0x1000L
+            }
 
-        val image2 = io.sentry.ndk.DebugImage().apply {
-            imageAddr = "0x2000"
-            imageSize = 0x1000L
-        }
+        val image2 =
+            io.sentry.ndk.DebugImage().apply {
+                imageAddr = "0x2000"
+                imageSize = 0x1000L
+            }
 
-        val image3 = io.sentry.ndk.DebugImage().apply {
-            imageAddr = "0x3000"
-            imageSize = 0x1000L
-        }
+        val image3 =
+            io.sentry.ndk.DebugImage().apply {
+                imageAddr = "0x3000"
+                imageSize = 0x1000L
+            }
 
         whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2, image3))
 
-        val result = sut.loadDebugImagesForAddresses(
-            setOf("0x1500", "0x2500")
-        )
+        val result =
+            sut.loadDebugImagesForAddresses(
+                setOf("0x1500", "0x2500"),
+            )
 
         assertNotNull(result)
         assertEquals(2, result.size)
@@ -116,15 +120,17 @@ class DebugImagesLoaderTest {
     fun `find images with invalid addresses are not added to the result`() {
         val sut = fixture.getSut()
 
-        val image1 = io.sentry.ndk.DebugImage().apply {
-            imageAddr = "0x1000"
-            imageSize = 0x1000L
-        }
+        val image1 =
+            io.sentry.ndk.DebugImage().apply {
+                imageAddr = "0x1000"
+                imageSize = 0x1000L
+            }
 
-        val image2 = io.sentry.ndk.DebugImage().apply {
-            imageAddr = "0x2000"
-            imageSize = 0x1000L
-        }
+        val image2 =
+            io.sentry.ndk.DebugImage().apply {
+                imageAddr = "0x2000"
+                imageSize = 0x1000L
+            }
 
         whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2))
 
@@ -138,15 +144,17 @@ class DebugImagesLoaderTest {
     fun `find images by address returns null if result is empty`() {
         val sut = fixture.getSut()
 
-        val image1 = io.sentry.ndk.DebugImage().apply {
-            imageAddr = "0x1000"
-            imageSize = 0x1000L
-        }
+        val image1 =
+            io.sentry.ndk.DebugImage().apply {
+                imageAddr = "0x1000"
+                imageSize = 0x1000L
+            }
 
-        val image2 = io.sentry.ndk.DebugImage().apply {
-            imageAddr = "0x2000"
-            imageSize = 0x1000L
-        }
+        val image2 =
+            io.sentry.ndk.DebugImage().apply {
+                imageAddr = "0x2000"
+                imageSize = 0x1000L
+            }
 
         whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2))
 
@@ -160,20 +168,23 @@ class DebugImagesLoaderTest {
     fun `invalid image adresses are ignored for loadDebugImagesForAddresses`() {
         val sut = fixture.getSut()
 
-        val image1 = io.sentry.ndk.DebugImage().apply {
-            imageAddr = "0xNotANumber"
-            imageSize = 0x1000L
-        }
+        val image1 =
+            io.sentry.ndk.DebugImage().apply {
+                imageAddr = "0xNotANumber"
+                imageSize = 0x1000L
+            }
 
-        val image2 = io.sentry.ndk.DebugImage().apply {
-            imageAddr = "0x2000"
-            imageSize = null
-        }
+        val image2 =
+            io.sentry.ndk.DebugImage().apply {
+                imageAddr = "0x2000"
+                imageSize = null
+            }
 
-        val image3 = io.sentry.ndk.DebugImage().apply {
-            imageAddr = "0x5000"
-            imageSize = 0x1000L
-        }
+        val image3 =
+            io.sentry.ndk.DebugImage().apply {
+                imageAddr = "0x5000"
+                imageSize = 0x1000L
+            }
 
         whenever(fixture.nativeLoader.loadModuleList()).thenReturn(arrayOf(image1, image2, image3))
 

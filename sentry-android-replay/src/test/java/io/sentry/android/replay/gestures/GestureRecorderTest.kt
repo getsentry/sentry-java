@@ -23,17 +23,14 @@ import kotlin.test.assertTrue
 @Config(sdk = [30])
 class GestureRecorderTest {
     internal class Fixture {
-
         val options = SentryOptions()
 
-        fun getSut(
-            touchRecorderCallback: TouchRecorderCallback = NoOpTouchRecorderCallback()
-        ): GestureRecorder {
-            return GestureRecorder(options, touchRecorderCallback)
-        }
+        fun getSut(touchRecorderCallback: TouchRecorderCallback = NoOpTouchRecorderCallback()): GestureRecorder =
+            GestureRecorder(options, touchRecorderCallback)
     }
 
     private val fixture = Fixture()
+
     private class NoOpTouchRecorderCallback : TouchRecorderCallback {
         override fun onTouchEvent(event: MotionEvent) = Unit
     }
@@ -54,18 +51,22 @@ class GestureRecorderTest {
         var called = false
         val activity = Robolectric.buildActivity(TestActivity::class.java).setup().get()
         val motionEvent = MotionEvent.obtain(0, 0, MotionEvent.ACTION_DOWN, 0f, 0f, 0)
-        val gestureRecorder = fixture.getSut(
-            touchRecorderCallback = object : TouchRecorderCallback {
-                override fun onTouchEvent(event: MotionEvent) {
-                    assertEquals(MotionEvent.ACTION_DOWN, event.action)
-                    called = true
-                }
-            }
-        )
+        val gestureRecorder =
+            fixture.getSut(
+                touchRecorderCallback =
+                    object : TouchRecorderCallback {
+                        override fun onTouchEvent(event: MotionEvent) {
+                            assertEquals(MotionEvent.ACTION_DOWN, event.action)
+                            called = true
+                        }
+                    },
+            )
 
         gestureRecorder.onRootViewsChanged(activity.root, true)
 
-        activity.root.phoneWindow?.callback?.dispatchTouchEvent(motionEvent)
+        activity.root.phoneWindow
+            ?.callback
+            ?.dispatchTouchEvent(motionEvent)
         assertTrue(called)
     }
 

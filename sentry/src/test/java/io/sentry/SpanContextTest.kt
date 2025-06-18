@@ -7,7 +7,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SpanContextTest {
-
     @Test
     fun `when created with default constructor, generates trace id and span id`() {
         val trace = SpanContext("op")

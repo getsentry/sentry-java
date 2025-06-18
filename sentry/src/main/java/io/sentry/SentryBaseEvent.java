@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public abstract class SentryBaseEvent {
   public static final String DEFAULT_PLATFORM = "java";
+
   /**
    * Unique identifier of this event.
    *
@@ -39,12 +40,16 @@ public abstract class SentryBaseEvent {
    * <p>```json { "event_id": "fc6d8c0c43fc4630ad850ee518f1b9d0" } ```
    */
   private @Nullable SentryId eventId;
+
   /** Contexts describing the environment (e.g. device, os or browser). */
   private final @NotNull Contexts contexts = new Contexts();
+
   /** Information about the Sentry SDK that generated this event. */
   private @Nullable SdkVersion sdk;
+
   /** Information about a web request that occurred during the event. */
   private @Nullable Request request;
+
   /**
    * Custom tags for this event.
    *

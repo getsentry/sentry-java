@@ -21,17 +21,15 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class AnrIntegrationTest {
-
     private class Fixture {
         val context = mock<Context>()
         val scopes = mock<IScopes>()
-        var options: SentryAndroidOptions = SentryAndroidOptions().apply {
-            setLogger(mock())
-        }
+        var options: SentryAndroidOptions =
+            SentryAndroidOptions().apply {
+                setLogger(mock())
+            }
 
-        fun getSut(): AnrIntegration {
-            return AnrIntegration(context)
-        }
+        fun getSut(): AnrIntegration = AnrIntegration(context)
     }
 
     private val fixture = Fixture()
@@ -88,7 +86,7 @@ class AnrIntegrationTest {
             check<Hint> {
                 val hint = HintUtils.getSentrySdkHint(it) as AnrHint
                 assertEquals("anr_foreground", hint.mechanism())
-            }
+            },
         )
     }
 
@@ -130,7 +128,7 @@ class AnrIntegrationTest {
                 assertTrue(ex.isSnapshot)
                 assertEquals("ANR", ex.exceptionMechanism.type)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -149,11 +147,10 @@ class AnrIntegrationTest {
             check<Hint> {
                 val hint = HintUtils.getSentrySdkHint(it) as AnrHint
                 assertEquals("anr_background", hint.mechanism())
-            }
+            },
         )
     }
 
-    private fun getApplicationNotResponding(): ApplicationNotResponding {
-        return ApplicationNotResponding("ApplicationNotResponding", Thread.currentThread())
-    }
+    private fun getApplicationNotResponding(): ApplicationNotResponding =
+        ApplicationNotResponding("ApplicationNotResponding", Thread.currentThread())
 }

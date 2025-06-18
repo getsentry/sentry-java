@@ -10,7 +10,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class FilesystemPropertiesLoaderTest {
-
     @get:Rule
     var folder = TemporaryFolder()
 

@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
 class StackTest {
-
     private class Fixture {
         val options = SentryOptions()
         val client = createSentryClientMock()
@@ -21,8 +20,7 @@ class StackTest {
             return Stack(options.logger, rootItem)
         }
 
-        fun createStackItem(scope: IScope = Scope(options)) =
-            StackItem(this.options, this.client, scope)
+        fun createStackItem(scope: IScope = Scope(options)) = StackItem(this.options, this.client, scope)
     }
 
     private val fixture = Fixture()
@@ -67,19 +65,20 @@ class StackTest {
 
     @Test
     fun `cloning stack clones stack items`() {
-        val stack = fixture.getSut(
-            fixture.createStackItem(
-                Scope(fixture.options).apply {
-                    this.setTag("rootTag", "value")
-                }
+        val stack =
+            fixture.getSut(
+                fixture.createStackItem(
+                    Scope(fixture.options).apply {
+                        this.setTag("rootTag", "value")
+                    },
+                ),
             )
-        )
         stack.push(
             fixture.createStackItem(
                 Scope(fixture.options).apply {
                     this.setTag("childTag", "value")
-                }
-            )
+                },
+            ),
         )
         val clone = Stack(stack)
 
@@ -92,7 +91,10 @@ class StackTest {
         assertStackItems(stack.peek(), clone.peek())
     }
 
-    private fun assertStackItems(item1: StackItem, item2: StackItem) {
+    private fun assertStackItems(
+        item1: StackItem,
+        item2: StackItem,
+    ) {
         assertNotEquals(item1, item2)
         assertNotEquals(item1.scope, item2.scope)
         // assert that scope content is the same

@@ -14,7 +14,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SentryExecutorServiceTest {
-
     @Test
     fun `SentryExecutorService forwards submit call to ExecutorService`() {
         val executor = mock<ScheduledExecutorService>()

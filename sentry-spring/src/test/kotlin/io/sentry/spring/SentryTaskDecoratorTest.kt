@@ -36,9 +36,10 @@ class SentryTaskDecoratorTest {
         val mainScopes = Sentry.getCurrentScopes()
         val threadedScopes = Sentry.getCurrentScopes().forkedCurrentScope("test")
 
-        executor.submit {
-            Sentry.setCurrentScopes(threadedScopes)
-        }.get()
+        executor
+            .submit {
+                Sentry.setCurrentScopes(threadedScopes)
+            }.get()
 
         assertEquals(mainScopes, Sentry.getCurrentScopes())
 
@@ -47,14 +48,15 @@ class SentryTaskDecoratorTest {
                 sut.decorate {
                     assertNotEquals(mainScopes, Sentry.getCurrentScopes())
                     assertNotEquals(threadedScopes, Sentry.getCurrentScopes())
-                }
+                },
             )
 
         callableFuture.get()
 
-        executor.submit {
-            assertNotEquals(mainScopes, Sentry.getCurrentScopes())
-            assertEquals(threadedScopes, Sentry.getCurrentScopes())
-        }.get()
+        executor
+            .submit {
+                assertNotEquals(mainScopes, Sentry.getCurrentScopes())
+                assertEquals(threadedScopes, Sentry.getCurrentScopes())
+            }.get()
     }
 }

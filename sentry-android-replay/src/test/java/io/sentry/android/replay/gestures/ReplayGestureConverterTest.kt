@@ -20,11 +20,8 @@ class ReplayGestureConverterTest {
     internal class Fixture {
         var now: Long = 1000L
 
-        fun getSut(
-            dateProvider: ICurrentDateProvider = ICurrentDateProvider { now }
-        ): ReplayGestureConverter {
-            return ReplayGestureConverter(dateProvider)
-        }
+        fun getSut(dateProvider: ICurrentDateProvider = ICurrentDateProvider { now }): ReplayGestureConverter =
+            ReplayGestureConverter(dateProvider)
     }
 
     private val fixture = Fixture()
@@ -188,11 +185,34 @@ class ReplayGestureConverterTest {
         properties.id = 1
         properties.toolType = MotionEvent.TOOL_TYPE_FINGER
         val pointerProperties = arrayOf(MotionEvent.PointerProperties(), properties)
-        val pointerCoords = arrayOf(
-            MotionEvent.PointerCoords().apply { x = 100f; y = 100f },
-            MotionEvent.PointerCoords().apply { x = 200f; y = 200f }
-        )
-        event = MotionEvent.obtain(0, 1, MotionEvent.ACTION_POINTER_DOWN or (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT), 2, pointerProperties, pointerCoords, 0, 0, 1f, 1f, 0, 0, 0, 0)
+        val pointerCoords =
+            arrayOf(
+                MotionEvent.PointerCoords().apply {
+                    x = 100f
+                    y = 100f
+                },
+                MotionEvent.PointerCoords().apply {
+                    x = 200f
+                    y = 200f
+                },
+            )
+        event =
+            MotionEvent.obtain(
+                0,
+                1,
+                MotionEvent.ACTION_POINTER_DOWN or (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT),
+                2,
+                pointerProperties,
+                pointerCoords,
+                0,
+                0,
+                1f,
+                1f,
+                0,
+                0,
+                0,
+                0,
+            )
         fixture.now += 100 // Increase time by 100ms
         result = sut.convert(event, recorderConfig)
         assertNotNull(result)
@@ -218,7 +238,23 @@ class ReplayGestureConverterTest {
         event.recycle()
 
         // Simulate second finger up
-        event = MotionEvent.obtain(0, 3, MotionEvent.ACTION_POINTER_UP or (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT), 2, pointerProperties, pointerCoords, 0, 0, 1f, 1f, 0, 0, 0, 0)
+        event =
+            MotionEvent.obtain(
+                0,
+                3,
+                MotionEvent.ACTION_POINTER_UP or (1 shl MotionEvent.ACTION_POINTER_INDEX_SHIFT),
+                2,
+                pointerProperties,
+                pointerCoords,
+                0,
+                0,
+                1f,
+                1f,
+                0,
+                0,
+                0,
+                0,
+            )
         fixture.now += 100 // Increase time by 100ms
         result = sut.convert(event, recorderConfig)
         assertNotNull(result)

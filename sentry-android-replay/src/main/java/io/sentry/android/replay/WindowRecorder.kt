@@ -26,9 +26,9 @@ internal class WindowRecorder(
     private val screenshotRecorderCallback: ScreenshotRecorderCallback? = null,
     private val windowCallback: WindowCallback,
     private val mainLooperHandler: MainLooperHandler,
-    private val replayExecutor: ScheduledExecutorService
-) : Recorder, OnRootViewsChangedListener {
-
+    private val replayExecutor: ScheduledExecutorService,
+) : Recorder,
+    OnRootViewsChangedListener {
     internal companion object {
         private const val TAG = "WindowRecorder"
     }
@@ -43,7 +43,10 @@ internal class WindowRecorder(
         Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
     }
 
-    override fun onRootViewsChanged(root: View, added: Boolean) {
+    override fun onRootViewsChanged(
+        root: View,
+        added: Boolean,
+    ) {
         rootViewsLock.acquire().use {
             if (added) {
                 rootViews.add(WeakReference(root))
@@ -71,24 +74,26 @@ internal class WindowRecorder(
                 windowCallback.onWindowSizeChanged(root.width, root.height)
             }
         } else {
-            root.addOnPreDrawListenerSafe(object : ViewTreeObserver.OnPreDrawListener {
-                override fun onPreDraw(): Boolean {
-                    val currentRoot = rootViews.lastOrNull()?.get()
-                    // in case the root changed in the meantime, ignore the preDraw of the outdate root
-                    if (root != currentRoot) {
-                        root.removeOnPreDrawListenerSafe(this)
+            root.addOnPreDrawListenerSafe(
+                object : ViewTreeObserver.OnPreDrawListener {
+                    override fun onPreDraw(): Boolean {
+                        val currentRoot = rootViews.lastOrNull()?.get()
+                        // in case the root changed in the meantime, ignore the preDraw of the outdate root
+                        if (root != currentRoot) {
+                            root.removeOnPreDrawListenerSafe(this)
+                            return true
+                        }
+                        if (root.hasSize()) {
+                            root.removeOnPreDrawListenerSafe(this)
+                            if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
+                                lastKnownWindowSize.set(root.width, root.height)
+                                windowCallback.onWindowSizeChanged(root.width, root.height)
+                            }
+                        }
                         return true
                     }
-                    if (root.hasSize()) {
-                        root.removeOnPreDrawListenerSafe(this)
-                        if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
-                            lastKnownWindowSize.set(root.width, root.height)
-                            windowCallback.onWindowSizeChanged(root.width, root.height)
-                        }
-                    }
-                    return true
-                }
-            })
+                },
+            )
         }
     }
 
@@ -101,13 +106,14 @@ internal class WindowRecorder(
             return
         }
 
-        recorder = ScreenshotRecorder(
-            config,
-            options,
-            mainLooperHandler,
-            replayExecutor,
-            screenshotRecorderCallback
-        )
+        recorder =
+            ScreenshotRecorder(
+                config,
+                options,
+                mainLooperHandler,
+                replayExecutor,
+                screenshotRecorderCallback,
+            )
 
         val newRoot = rootViews.lastOrNull()?.get()
         if (newRoot != null) {
@@ -115,15 +121,16 @@ internal class WindowRecorder(
         }
         // TODO: change this to use MainThreadHandler and just post on the main thread with delay
         // to avoid thread context switch every time
-        capturingTask = capturer.scheduleAtFixedRateSafely(
-            options,
-            "$TAG.capture",
-            100L, // delay the first run by a bit, to allow root view listener to register
-            1000L / config.frameRate,
-            MILLISECONDS
-        ) {
-            recorder?.capture()
-        }
+        capturingTask =
+            capturer.scheduleAtFixedRateSafely(
+                options,
+                "$TAG.capture",
+                100L, // delay the first run by a bit, to allow root view listener to register
+                1000L / config.frameRate,
+                MILLISECONDS,
+            ) {
+                recorder?.capture()
+            }
     }
 
     override fun resume() {
@@ -158,6 +165,7 @@ internal class WindowRecorder(
 
     private class RecorderExecutorServiceThreadFactory : ThreadFactory {
         private var cnt = 0
+
         override fun newThread(r: Runnable): Thread {
             val ret = Thread(r, "SentryWindowRecorder-" + cnt++)
             ret.setDaemon(true)

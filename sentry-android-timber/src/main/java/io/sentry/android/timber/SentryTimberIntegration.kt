@@ -16,19 +16,24 @@ import java.io.Closeable
  */
 public class SentryTimberIntegration(
     public val minEventLevel: SentryLevel = SentryLevel.ERROR,
-    public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO
-) : Integration, Closeable {
+    public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
+) : Integration,
+    Closeable {
     private lateinit var tree: SentryTimberTree
     private lateinit var logger: ILogger
 
     private companion object {
         init {
-            SentryIntegrationPackageStorage.getInstance()
+            SentryIntegrationPackageStorage
+                .getInstance()
                 .addPackage("maven:io.sentry:sentry-android-timber", VERSION_NAME)
         }
     }
 
-    override fun register(scopes: IScopes, options: SentryOptions) {
+    override fun register(
+        scopes: IScopes,
+        options: SentryOptions,
+    ) {
         logger = options.logger
 
         tree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel)

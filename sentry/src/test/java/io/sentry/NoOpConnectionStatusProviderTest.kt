@@ -7,7 +7,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 class NoOpConnectionStatusProviderTest {
-
     private val provider = NoOpConnectionStatusProvider()
 
     @Test

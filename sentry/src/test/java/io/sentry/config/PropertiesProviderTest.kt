@@ -10,7 +10,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class PropertiesProviderTest {
-
     private val propertiesProvider = spy<PropertiesProvider>()
 
     @Test

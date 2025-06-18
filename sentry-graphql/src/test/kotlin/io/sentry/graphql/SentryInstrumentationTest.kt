@@ -37,28 +37,34 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SentryInstrumentationTest {
-
     class Fixture {
         val scopes = mock<IScopes>()
         lateinit var activeSpan: SentryTracer
 
-        fun getSut(isTransactionActive: Boolean = true, dataFetcherThrows: Boolean = false, beforeSpan: SentryGraphqlInstrumentation.BeforeSpanCallback? = null): GraphQL {
+        fun getSut(
+            isTransactionActive: Boolean = true,
+            dataFetcherThrows: Boolean = false,
+            beforeSpan: SentryGraphqlInstrumentation.BeforeSpanCallback? = null,
+        ): GraphQL {
             whenever(scopes.options).thenReturn(SentryOptions())
             activeSpan = SentryTracer(TransactionContext("name", "op"), scopes)
-            val schema = """
-            type Query {
-                shows: [Show]
-            }
+            val schema =
+                """
+                type Query {
+                    shows: [Show]
+                }
 
-            type Show {
-                id: Int
-            }
-            """.trimIndent()
+                type Show {
+                    id: Int
+                }
+                """.trimIndent()
 
             val graphQLSchema = SchemaGenerator().makeExecutableSchema(SchemaParser().parse(schema), buildRuntimeWiring(dataFetcherThrows))
-            val graphQL = GraphQL.newGraphQL(graphQLSchema)
-                .instrumentation(SentryInstrumentation(beforeSpan, NoOpSubscriptionHandler.getInstance(), true))
-                .build()
+            val graphQL =
+                GraphQL
+                    .newGraphQL(graphQLSchema)
+                    .instrumentation(SentryInstrumentation(beforeSpan, NoOpSubscriptionHandler.getInstance(), true))
+                    .build()
 
             if (isTransactionActive) {
                 whenever(scopes.span).thenReturn(activeSpan)
@@ -69,16 +75,18 @@ class SentryInstrumentationTest {
             return graphQL
         }
 
-        private fun buildRuntimeWiring(dataFetcherThrows: Boolean) = RuntimeWiring.newRuntimeWiring()
-            .type("Query") {
-                it.dataFetcher("shows") {
-                    if (dataFetcherThrows) {
-                        throw RuntimeException("error")
-                    } else {
-                        listOf(Show(Random.nextInt()), Show(Random.nextInt()))
+        private fun buildRuntimeWiring(dataFetcherThrows: Boolean) =
+            RuntimeWiring
+                .newRuntimeWiring()
+                .type("Query") {
+                    it.dataFetcher("shows") {
+                        if (dataFetcherThrows) {
+                            throw RuntimeException("error")
+                        } else {
+                            listOf(Show(Random.nextInt()), Show(Random.nextInt()))
+                        }
                     }
-                }
-            }.build()
+                }.build()
     }
 
     private val fixture = Fixture()
@@ -150,7 +158,16 @@ class SentryInstrumentationTest {
 
     @Test
     fun `beforeSpan can modify spans`() {
-        val sut = fixture.getSut(beforeSpan = SentryGraphqlInstrumentation.BeforeSpanCallback { span, _, _ -> span.apply { description = "changed" } })
+        val sut =
+            fixture.getSut(
+                beforeSpan =
+                    SentryGraphqlInstrumentation.BeforeSpanCallback { span, _, _ ->
+                        span.apply {
+                            description =
+                                "changed"
+                        }
+                    },
+            )
 
         withMockScopes {
             val result = sut.execute("{ shows { id } }")
@@ -174,31 +191,44 @@ class SentryInstrumentationTest {
         val dataFetcher = mock<DataFetcher<Any?>>()
         whenever(dataFetcher.get(any())).thenReturn("raw result")
         val graphQLContext = GraphQLContext.newContext().build()
-        val executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(
-            GraphQLScalarType.newScalar().name("MyResponseType").coercing(
-                GraphqlStringCoercing()
-            ).build()
-        ).build()
-        val environment = DataFetchingEnvironmentImpl.newDataFetchingEnvironment()
-            .graphQLContext(graphQLContext)
-            .executionStepInfo(executionStepInfo)
-            .operationDefinition(OperationDefinition.newOperationDefinition().operation(operation).build())
-            .build()
-        val executionContext = ExecutionContextBuilder.newExecutionContextBuilder()
-            .executionId(ExecutionId.generate())
-            .graphQLContext(graphQLContext)
-            .build()
-        val executionStrategyParameters = ExecutionStrategyParameters.newParameters()
-            .executionStepInfo(executionStepInfo)
-            .fields(MergedSelectionSet.newMergedSelectionSet().build())
-            .field(MergedField.newMergedField().addField(Field.newField("myFieldName").build()).build())
-            .build()
-        val parameters = InstrumentationFieldFetchParameters(
-            executionContext,
-            environment,
-            executionStrategyParameters,
-            false
-        ).withNewState(SentryGraphqlInstrumentation.TracingState())
+        val executionStepInfo =
+            ExecutionStepInfo
+                .newExecutionStepInfo()
+                .type(
+                    GraphQLScalarType
+                        .newScalar()
+                        .name("MyResponseType")
+                        .coercing(
+                            GraphqlStringCoercing(),
+                        ).build(),
+                ).build()
+        val environment =
+            DataFetchingEnvironmentImpl
+                .newDataFetchingEnvironment()
+                .graphQLContext(graphQLContext)
+                .executionStepInfo(executionStepInfo)
+                .operationDefinition(OperationDefinition.newOperationDefinition().operation(operation).build())
+                .build()
+        val executionContext =
+            ExecutionContextBuilder
+                .newExecutionContextBuilder()
+                .executionId(ExecutionId.generate())
+                .graphQLContext(graphQLContext)
+                .build()
+        val executionStrategyParameters =
+            ExecutionStrategyParameters
+                .newParameters()
+                .executionStepInfo(executionStepInfo)
+                .fields(MergedSelectionSet.newMergedSelectionSet().build())
+                .field(MergedField.newMergedField().addField(Field.newField("myFieldName").build()).build())
+                .build()
+        val parameters =
+            InstrumentationFieldFetchParameters(
+                executionContext,
+                environment,
+                executionStrategyParameters,
+                false,
+            ).withNewState(SentryGraphqlInstrumentation.TracingState())
         val instrumentedDataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, parameters)
         val result = instrumentedDataFetcher.get(environment)
 
@@ -211,18 +241,27 @@ class SentryInstrumentationTest {
         withMockScopes {
             val sut = fixture.getSut()
             assertNotNull(fixture.scopes.options.sdkVersion)
-            assert(fixture.scopes.options.sdkVersion!!.integrationSet.contains("GraphQL"))
+            assert(
+                fixture.scopes.options.sdkVersion!!
+                    .integrationSet
+                    .contains("GraphQL"),
+            )
             val packageInfo =
-                fixture.scopes.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-graphql" }
+                fixture.scopes.options.sdkVersion!!
+                    .packageSet
+                    .firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-graphql" }
             assertNotNull(packageInfo)
             assert(packageInfo.version == BuildConfig.VERSION_NAME)
         }
     }
 
-    fun withMockScopes(closure: () -> Unit) = Mockito.mockStatic(Sentry::class.java).use {
-        it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
-        closure.invoke()
-    }
+    fun withMockScopes(closure: () -> Unit) =
+        Mockito.mockStatic(Sentry::class.java).use {
+            it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
+            closure.invoke()
+        }
 
-    data class Show(val id: Int)
+    data class Show(
+        val id: Int,
+    )
 }

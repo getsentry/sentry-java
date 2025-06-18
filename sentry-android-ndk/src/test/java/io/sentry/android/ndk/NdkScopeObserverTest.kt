@@ -18,17 +18,15 @@ import org.mockito.kotlin.verify
 import kotlin.test.Test
 
 class NdkScopeObserverTest {
-
     private class Fixture {
         val nativeScope = mock<INativeScope>()
-        val options = SentryOptions().apply {
-            setSerializer(JsonSerializer(mock()))
-            executorService = ImmediateExecutorService()
-        }
+        val options =
+            SentryOptions().apply {
+                setSerializer(JsonSerializer(mock()))
+                executorService = ImmediateExecutorService()
+            }
 
-        fun getSut(): NdkScopeObserver {
-            return NdkScopeObserver(options, nativeScope)
-        }
+        fun getSut(): NdkScopeObserver = NdkScopeObserver(options, nativeScope)
     }
 
     private val fixture = Fixture()
@@ -73,12 +71,13 @@ class NdkScopeObserverTest {
     fun `set user forwards call to scope sync`() {
         val sut = fixture.getSut()
 
-        val user = User().apply {
-            id = "id"
-            email = "email"
-            ipAddress = "ip"
-            username = "username"
-        }
+        val user =
+            User().apply {
+                id = "id"
+                email = "email"
+                ipAddress = "ip"
+                username = "username"
+            }
         sut.setUser(user)
 
         verify(fixture.nativeScope).setUser(eq(user.id), eq(user.email), eq(user.ipAddress), eq(user.username))
@@ -97,13 +96,14 @@ class NdkScopeObserverTest {
     fun `set breadcrumb forwards call to scope sync`() {
         val sut = fixture.getSut()
 
-        val breadcrumb = Breadcrumb().apply {
-            level = SentryLevel.DEBUG
-            message = "message"
-            category = "category"
-            setData("a", "b")
-            type = "type"
-        }
+        val breadcrumb =
+            Breadcrumb().apply {
+                level = SentryLevel.DEBUG
+                message = "message"
+                category = "category"
+                setData("a", "b")
+                type = "type"
+            }
         val timestamp = DateUtils.getTimestamp(breadcrumb.timestamp)
         val data = "{\"a\":\"b\"}"
 
@@ -115,7 +115,7 @@ class NdkScopeObserverTest {
             eq(breadcrumb.category),
             eq(breadcrumb.type),
             eq(timestamp),
-            eq(data)
+            eq(data),
         )
     }
 

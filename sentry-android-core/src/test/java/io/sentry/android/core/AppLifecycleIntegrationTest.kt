@@ -15,7 +15,6 @@ import kotlin.test.assertNull
 
 @RunWith(AndroidJUnit4::class)
 class AppLifecycleIntegrationTest {
-
     private class Fixture {
         val scopes = mock<IScopes>()
         lateinit var handler: MainLooperHandler

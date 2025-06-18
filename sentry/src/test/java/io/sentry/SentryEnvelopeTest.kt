@@ -11,7 +11,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class SentryEnvelopeTest {
-
     class Fixture {
         fun getEnvelopeReader() = EnvelopeReader(JsonSerializer(SentryOptions()))
     }
@@ -66,7 +65,9 @@ class SentryEnvelopeTest {
     @Test
     fun `when envelope terminates with line break, envelope parsed correctly`() {
         val envelopeReader = fixture.getEnvelopeReader()
-        val stream = "{\"event_id\":\"9ec79c33ec9942ab8353589fcb2e04dc\"}\n{\"length\":15,\"type\":\"event\"}\n{\"contexts\":{}}\n".toInputStream()
+        val stream =
+            "{\"event_id\":\"9ec79c33ec9942ab8353589fcb2e04dc\"}\n{\"length\":15,\"type\":\"event\"}\n{\"contexts\":{}}\n"
+                .toInputStream()
 
         val envelope = envelopeReader.read(stream)
 
@@ -108,7 +109,8 @@ class SentryEnvelopeTest {
     @Test
     fun `when envelope has the first item missing length, reader throws illegal argument`() {
         val envelopeReader = fixture.getEnvelopeReader()
-        val stream = """{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc"}
+        val stream =
+            """{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc"}
 {"content_type":"application/json","type":"event"}
 {}""".toInputStream()
         val exception = assertFailsWith<IllegalArgumentException> { envelopeReader.read(stream) }
@@ -118,7 +120,8 @@ class SentryEnvelopeTest {
     @Test
     fun `when envelope two items, returns envelope with items`() {
         val envelopeReader = fixture.getEnvelopeReader()
-        val stream = """{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc"}
+        val stream =
+            """{"event_id":"9ec79c33ec9942ab8353589fcb2e04dc"}
 {"type":"event","length":"2"}
 {}
 {"content_type":"application/octet-stream","type":"attachment","length":"10","filename":"null.bin"}

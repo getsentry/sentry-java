@@ -11,7 +11,6 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 
 class SentrySupportSQLiteOpenHelperTest {
-
     class Fixture {
         val mockOpenHelper = mock<SupportSQLiteOpenHelper>()
 
@@ -20,9 +19,7 @@ class SentrySupportSQLiteOpenHelperTest {
             whenever(mockOpenHelper.readableDatabase).thenReturn(mock())
         }
 
-        fun getSut(): SentrySupportSQLiteOpenHelper {
-            return SentrySupportSQLiteOpenHelper.create(mockOpenHelper) as SentrySupportSQLiteOpenHelper
-        }
+        fun getSut(): SentrySupportSQLiteOpenHelper = SentrySupportSQLiteOpenHelper.create(mockOpenHelper) as SentrySupportSQLiteOpenHelper
     }
 
     private val fixture = Fixture()

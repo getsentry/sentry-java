@@ -6,7 +6,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SentryIntegrationPackageStorageTest {
-
     @AfterTest
     fun teardown() {
         SentryIntegrationPackageStorage.getInstance().clearStorage()

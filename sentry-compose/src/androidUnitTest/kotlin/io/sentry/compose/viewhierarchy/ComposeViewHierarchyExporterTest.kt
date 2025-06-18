@@ -64,16 +64,18 @@ class ComposeViewHierarchyExporterTest {
             tag: String?,
             width: Int,
             height: Int,
-            children: List<LayoutNode> = emptyList()
+            children: List<LayoutNode> = emptyList(),
         ): LayoutNode {
-            val nodeA = Mockito.mock(
-                LayoutNode::class.java
-            )
+            val nodeA =
+                Mockito.mock(
+                    LayoutNode::class.java,
+                )
             whenever(nodeA.isPlaced).thenReturn(isPlaced)
 
-            val modifierInfo = Mockito.mock(
-                ModifierInfo::class.java
-            )
+            val modifierInfo =
+                Mockito.mock(
+                    ModifierInfo::class.java,
+                )
             whenever(modifierInfo.modifier)
                 .thenReturn(
                     object : SemanticsModifier {
@@ -82,13 +84,13 @@ class ComposeViewHierarchyExporterTest {
                                 val config = SemanticsConfiguration()
                                 config.set(
                                     SemanticsPropertyKey(
-                                        "SentryTag"
+                                        "SentryTag",
                                     ) { s: String?, s2: String? -> s },
-                                    tag
+                                    tag,
                                 )
                                 return config
                             }
-                    }
+                    },
                 )
             val modifierInfoList: MutableList<ModifierInfo> = ArrayList()
             modifierInfoList.add(modifierInfo)
@@ -97,12 +99,14 @@ class ComposeViewHierarchyExporterTest {
             whenever((nodeA.zSortedChildren))
                 .thenReturn(mutableVectorOf<LayoutNode>().apply { addAll(children) })
 
-            val coordinates = Mockito.mock(
-                LayoutCoordinates::class.java
-            )
-            val parentCoordinates = Mockito.mock(
-                LayoutCoordinates::class.java
-            )
+            val coordinates =
+                Mockito.mock(
+                    LayoutCoordinates::class.java,
+                )
+            val parentCoordinates =
+                Mockito.mock(
+                    LayoutCoordinates::class.java,
+                )
             whenever(coordinates.parentLayoutCoordinates).thenReturn(parentCoordinates)
             whenever(parentCoordinates.localBoundingBoxOf(any(), any()))
                 .thenReturn(Rect(0f, 0f, width.toFloat(), height.toFloat()))

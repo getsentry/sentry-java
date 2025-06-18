@@ -18,9 +18,7 @@ import java.util.concurrent.Executors
 import kotlin.random.Random
 
 class ProfilingSampleActivity : AppCompatActivity() {
-
     companion object {
-
         /** The activity will set this when scrolling. */
         val scrollingIdlingResource = CountingIdlingResource("sentry-uitest-android-profilingSampleActivityScrolling")
     }
@@ -43,17 +41,22 @@ class ProfilingSampleActivity : AppCompatActivity() {
         binding.profilingSampleList.apply {
             layoutManager = LinearLayoutManager(this@ProfilingSampleActivity)
             adapter = ProfilingSampleListAdapter()
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                    super.onScrollStateChanged(recyclerView, newState)
-                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                        scrollingIdlingResource.increment()
+            addOnScrollListener(
+                object : RecyclerView.OnScrollListener() {
+                    override fun onScrollStateChanged(
+                        recyclerView: RecyclerView,
+                        newState: Int,
+                    ) {
+                        super.onScrollStateChanged(recyclerView, newState)
+                        if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                            scrollingIdlingResource.increment()
+                        }
+                        if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                            scrollingIdlingResource.decrement()
+                        }
                     }
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                        scrollingIdlingResource.decrement()
-                    }
-                }
-            })
+                },
+            )
         }
     }
 
@@ -68,13 +71,12 @@ class ProfilingSampleActivity : AppCompatActivity() {
         }
     }
 
-    private fun fibonacci(n: Int): Int {
-        return when {
+    private fun fibonacci(n: Int): Int =
+        when {
             !resumed -> n // If we destroy the activity we stop this function
             n <= 1 -> 1
             else -> fibonacci(n - 1) + fibonacci(n - 2)
         }
-    }
 
     override fun onPause() {
         super.onPause()
@@ -84,22 +86,29 @@ class ProfilingSampleActivity : AppCompatActivity() {
 
 /** Simple [RecyclerView.Adapter] that generates a bitmap to show for each item. */
 internal class ProfilingSampleListAdapter : RecyclerView.Adapter<ViewHolder>() {
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): ViewHolder {
         val binding = ProfilingSampleItemListBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return ViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: ViewHolder,
+        position: Int,
+    ) {
         holder.imageView.setImageBitmap(generateBitmap())
     }
 
     @Suppress("MagicNumber")
     private fun generateBitmap(): Bitmap {
         val bitmapSize = 256
-        val colors = (0 until (bitmapSize * bitmapSize)).map {
-            Color.rgb(Random.nextInt(256), Random.nextInt(256), Random.nextInt(256))
-        }.toIntArray()
+        val colors =
+            (0 until (bitmapSize * bitmapSize))
+                .map {
+                    Color.rgb(Random.nextInt(256), Random.nextInt(256), Random.nextInt(256))
+                }.toIntArray()
         return Bitmap.createBitmap(colors, bitmapSize, bitmapSize, Bitmap.Config.ARGB_8888)
     }
 
@@ -109,6 +118,8 @@ internal class ProfilingSampleListAdapter : RecyclerView.Adapter<ViewHolder>() {
     override fun getItemCount(): Int = 200
 }
 
-internal class ViewHolder(binding: ProfilingSampleItemListBinding) : RecyclerView.ViewHolder(binding.root) {
+internal class ViewHolder(
+    binding: ProfilingSampleItemListBinding,
+) : RecyclerView.ViewHolder(binding.root) {
     val imageView: ImageView = binding.profilingSampleItemListImage
 }

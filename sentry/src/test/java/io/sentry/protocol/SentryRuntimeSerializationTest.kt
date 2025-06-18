@@ -12,16 +12,17 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 
 class SentryRuntimeSerializationTest {
-
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = SentryRuntime().apply {
-            name = "4ed019c4-9af9-43e0-830e-bfde9fe4461c"
-            version = "16534f6b-1670-4bb8-aec2-647a1b97669b"
-            rawDescription = "773b5b05-a0f9-4ee6-9f3b-13155c37ad6e"
-        }
+        fun getSut() =
+            SentryRuntime().apply {
+                name = "4ed019c4-9af9-43e0-830e-bfde9fe4461c"
+                version = "16534f6b-1670-4bb8-aec2-647a1b97669b"
+                rawDescription = "773b5b05-a0f9-4ee6-9f3b-13155c37ad6e"
+            }
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -41,15 +42,14 @@ class SentryRuntimeSerializationTest {
 
     // Helper
 
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
+    private fun sanitizedFile(path: String): String =
+        FileFromResources
+            .invoke(path)
             .replace(Regex("[\n\r]"), "")
             .replace(" ", "")
-    }
 
-    private fun serializeToString(jsonSerializable: JsonSerializable): String {
-        return this.serializeToString { wrt -> jsonSerializable.serialize(wrt, fixture.logger) }
-    }
+    private fun serializeToString(jsonSerializable: JsonSerializable): String =
+        this.serializeToString { wrt -> jsonSerializable.serialize(wrt, fixture.logger) }
 
     private fun serializeToString(serialize: (JsonObjectWriter) -> Unit): String {
         val wrt = StringWriter()

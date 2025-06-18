@@ -12,7 +12,6 @@ import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class PermissionsTest {
-
     private lateinit var context: Context
 
     @BeforeTest

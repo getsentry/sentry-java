@@ -13,68 +13,72 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryCoroutineExceptionHandlerTest {
-
     class Fixture {
         val scopes = mock<IScopes>()
 
-        fun getSut(): SentryCoroutineExceptionHandler {
-            return SentryCoroutineExceptionHandler(scopes)
+        fun getSut(): SentryCoroutineExceptionHandler = SentryCoroutineExceptionHandler(scopes)
+    }
+
+    @Test
+    fun `captures unhandled exception in launch coroutine`() =
+        runTest {
+            val fixture = Fixture()
+            val handler = fixture.getSut()
+            val exception = RuntimeException("test")
+
+            GlobalScope
+                .launch(handler) {
+                    throw exception
+                }.join()
+
+            verify(fixture.scopes).captureEvent(
+                check {
+                    assertSame(exception, it.throwable)
+                },
+            )
         }
-    }
 
     @Test
-    fun `captures unhandled exception in launch coroutine`() = runTest {
-        val fixture = Fixture()
-        val handler = fixture.getSut()
-        val exception = RuntimeException("test")
+    fun `captures unhandled exception in launch coroutine with child`() =
+        runTest {
+            val fixture = Fixture()
+            val handler = fixture.getSut()
+            val exception = RuntimeException("test")
 
-        GlobalScope.launch(handler) {
-            throw exception
-        }.join()
+            GlobalScope
+                .launch(handler) {
+                    launch {
+                        throw exception
+                    }.join()
+                }.join()
 
-        verify(fixture.scopes).captureEvent(
-            check {
-                assertSame(exception, it.throwable)
-            }
-        )
-    }
-
-    @Test
-    fun `captures unhandled exception in launch coroutine with child`() = runTest {
-        val fixture = Fixture()
-        val handler = fixture.getSut()
-        val exception = RuntimeException("test")
-
-        GlobalScope.launch(handler) {
-            launch {
-                throw exception
-            }.join()
-        }.join()
-
-        verify(fixture.scopes).captureEvent(
-            check {
-                assertSame(exception, it.throwable)
-            }
-        )
-    }
-
-    @Test
-    fun `captures unhandled exception in async coroutine`() = runTest {
-        val fixture = Fixture()
-        val handler = fixture.getSut()
-        val exception = RuntimeException("test")
-
-        val deferred = GlobalScope.async() {
-            throw exception
+            verify(fixture.scopes).captureEvent(
+                check {
+                    assertSame(exception, it.throwable)
+                },
+            )
         }
-        GlobalScope.launch(handler) {
-            deferred.await()
-        }.join()
 
-        verify(fixture.scopes).captureEvent(
-            check {
-                assertTrue { exception.toString().equals(it.throwable.toString()) } // stack trace will differ
-            }
-        )
-    }
+    @Test
+    fun `captures unhandled exception in async coroutine`() =
+        runTest {
+            val fixture = Fixture()
+            val handler = fixture.getSut()
+            val exception = RuntimeException("test")
+
+            val deferred =
+                GlobalScope.async {
+                    throw exception
+                }
+            GlobalScope
+                .launch(handler) {
+                    deferred.await()
+                }.join()
+
+            verify(fixture.scopes).captureEvent(
+                check {
+                    assertTrue { exception.toString().equals(it.throwable.toString()) } // stack trace will differ
+                },
+            )
+        }
 }

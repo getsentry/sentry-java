@@ -4,7 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SentryReplayOptionsTest {
-
     @Test
     fun `uses medium quality as default`() {
         val replayOptions = SentryReplayOptions(true, null)

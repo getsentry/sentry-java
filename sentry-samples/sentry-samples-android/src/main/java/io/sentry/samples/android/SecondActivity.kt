@@ -12,7 +12,6 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class SecondActivity : AppCompatActivity() {
-
     private lateinit var repos: List<Repo>
 
     private lateinit var binding: ActivitySecondBinding
@@ -41,7 +40,10 @@ class SecondActivity : AppCompatActivity() {
         span?.finish(SpanStatus.OK)
     }
 
-    private fun showText(visible: Boolean = true, text: String = "") {
+    private fun showText(
+        visible: Boolean = true,
+        text: String = "",
+    ) {
         binding.text.text = if (visible) text else ""
         binding.text.visibility = if (visible) View.VISIBLE else View.GONE
 
@@ -66,28 +68,37 @@ class SecondActivity : AppCompatActivity() {
         showText(false)
 
         val currentSpan = Sentry.getSpan()
-        val span = currentSpan?.startChild("updateRepos", javaClass.simpleName)
-            ?: Sentry.startTransaction("updateRepos", "task")
+        val span =
+            currentSpan?.startChild("updateRepos", javaClass.simpleName)
+                ?: Sentry.startTransaction("updateRepos", "task")
 
-        GithubAPI.service.listRepos(binding.editRepo.text.toString()).enqueue(object : Callback<List<Repo>> {
-            override fun onFailure(call: Call<List<Repo>>, t: Throwable) {
-                span.finish(SpanStatus.INTERNAL_ERROR)
-                Sentry.captureException(t)
+        GithubAPI.service.listRepos(binding.editRepo.text.toString()).enqueue(
+            object : Callback<List<Repo>> {
+                override fun onFailure(
+                    call: Call<List<Repo>>,
+                    t: Throwable,
+                ) {
+                    span.finish(SpanStatus.INTERNAL_ERROR)
+                    Sentry.captureException(t)
 
-                showText(true, "error: ${t.message}")
+                    showText(true, "error: ${t.message}")
 
-                Sentry.reportFullyDisplayed()
-            }
+                    Sentry.reportFullyDisplayed()
+                }
 
-            override fun onResponse(call: Call<List<Repo>>, response: Response<List<Repo>>) {
-                repos = response.body() ?: emptyList()
+                override fun onResponse(
+                    call: Call<List<Repo>>,
+                    response: Response<List<Repo>>,
+                ) {
+                    repos = response.body() ?: emptyList()
 
-                span.finish(SpanStatus.OK)
+                    span.finish(SpanStatus.OK)
 
-                showText(text = "items: ${repos.size}")
+                    showText(text = "items: ${repos.size}")
 
-                Sentry.reportFullyDisplayed()
-            }
-        })
+                    Sentry.reportFullyDisplayed()
+                }
+            },
+        )
     }
 }

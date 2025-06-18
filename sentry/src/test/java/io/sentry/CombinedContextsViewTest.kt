@@ -18,7 +18,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class CombinedContextsViewTest {
-
     private class Fixture {
         lateinit var current: Contexts
         lateinit var isolation: Contexts

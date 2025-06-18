@@ -86,10 +86,9 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(
     sdk = [Build.VERSION_CODES.N],
-    shadows = [SentryShadowProcess::class]
+    shadows = [SentryShadowProcess::class],
 )
 class SentryAndroidTest {
-
     @get:Rule
     val tmpDir = TemporaryFolder()
 
@@ -100,12 +99,13 @@ class SentryAndroidTest {
             context: Context? = null,
             autoInit: Boolean = false,
             logger: ILogger? = null,
-            options: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null
+            options: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null,
         ) {
-            val metadata = Bundle().apply {
-                putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
-                putBoolean(ManifestMetadataReader.AUTO_INIT, autoInit)
-            }
+            val metadata =
+                Bundle().apply {
+                    putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
+                    putBoolean(ManifestMetadataReader.AUTO_INIT, autoInit)
+                }
             val mockContext = context ?: ContextUtilsTestHelper.mockMetaData(metaData = metadata)
             when {
                 logger != null -> initForTest(mockContext, logger)
@@ -117,7 +117,7 @@ class SentryAndroidTest {
         fun addAppExitInfo(
             reason: Int? = ApplicationExitInfo.REASON_ANR,
             timestamp: Long? = null,
-            importance: Int? = null
+            importance: Int? = null,
         ) {
             val builder = ApplicationExitInfoBuilder.newBuilder()
             if (reason != null) {
@@ -129,9 +129,10 @@ class SentryAndroidTest {
             if (importance != null) {
                 builder.setImportance(importance)
             }
-            val exitInfo = spy(builder.build()) {
-                whenever(mock.traceInputStream).thenReturn(
-                    """
+            val exitInfo =
+                spy(builder.build()) {
+                    whenever(mock.traceInputStream).thenReturn(
+                        """
 "main" prio=5 tid=1 Blocked
   | group="main" sCount=1 ucsCount=0 flags=1 obj=0x72a985e0 self=0xb400007cabc57380
   | sysTid=28941 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
@@ -160,9 +161,9 @@ class SentryAndroidTest {
   native: #02 pc 00000000000b63b0  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+208) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
   native: #03 pc 00000000000530b8  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
   (no managed stack frames)
-                    """.trimIndent().byteInputStream()
-                )
-            }
+                        """.trimIndent().byteInputStream(),
+                    )
+                }
             shadowActivityManager.addApplicationExitInfo(exitInfo)
         }
     }
@@ -242,11 +243,11 @@ class SentryAndroidTest {
 
         fixture.initSut(autoInit = true) {
             it.addIntegration(
-                FragmentLifecycleIntegration(ApplicationProvider.getApplicationContext())
+                FragmentLifecycleIntegration(ApplicationProvider.getApplicationContext()),
             )
 
             it.addIntegration(
-                SentryTimberIntegration(minEventLevel = FATAL, minBreadcrumbLevel = DEBUG)
+                SentryTimberIntegration(minEventLevel = FATAL, minBreadcrumbLevel = DEBUG),
             )
             refOptions = it
         }
@@ -261,7 +262,7 @@ class SentryAndroidTest {
         // but we just verify here that the single integration is preserved
         assertEquals(
             refOptions!!.integrations.filterIsInstance<FragmentLifecycleIntegration>().size,
-            1
+            1,
         )
     }
 
@@ -309,7 +310,7 @@ class SentryAndroidTest {
         assertEquals(expectedCacheDir, options!!.cacheDirPath)
         assertEquals(
             expectedCacheDir,
-            (options!!.envelopeDiskCache as AndroidEnvelopeCache).directory.absolutePath
+            (options!!.envelopeDiskCache as AndroidEnvelopeCache).directory.absolutePath,
         )
     }
 
@@ -347,7 +348,12 @@ class SentryAndroidTest {
     @Config(sdk = [26])
     fun `init starts session replay if app is in foreground`() {
         initSentryWithForegroundImportance(true) { _ ->
-            assertTrue(Sentry.getCurrentHub().options.replayController.isRecording())
+            assertTrue(
+                Sentry
+                    .getCurrentHub()
+                    .options.replayController
+                    .isRecording(),
+            )
         }
     }
 
@@ -355,7 +361,12 @@ class SentryAndroidTest {
     @Config(sdk = [26])
     fun `init does not start session replay if the app is in background`() {
         initSentryWithForegroundImportance(false) { _ ->
-            assertFalse(Sentry.getCurrentHub().options.replayController.isRecording())
+            assertFalse(
+                Sentry
+                    .getCurrentHub()
+                    .options.replayController
+                    .isRecording(),
+            )
         }
     }
 
@@ -371,10 +382,11 @@ class SentryAndroidTest {
     private fun initSentryWithForegroundImportance(
         inForeground: Boolean,
         optionsConfig: (SentryAndroidOptions) -> Unit = {},
-        callback: (session: Session?) -> Unit
+        callback: (session: Session?) -> Unit,
     ) {
         Mockito.mockStatic(ContextUtils::class.java, Mockito.CALLS_REAL_METHODS).use { mockedContextUtils ->
-            mockedContextUtils.`when`<Any> { ContextUtils.isForegroundImportance() }
+            mockedContextUtils
+                .`when`<Any> { ContextUtils.isForegroundImportance() }
                 .thenReturn(inForeground)
             initForTest(context) { options ->
                 options.release = "prod"
@@ -417,15 +429,16 @@ class SentryAndroidTest {
             it.setLogger(SystemOutLogger())
             // beforeSend is called after event processors are applied, so we can assert here
             // against the enriched ANR event
-            it.beforeSend = BeforeSendCallback { event, hint ->
-                assertEquals("MainActivity", event.transaction)
-                assertEquals("Debug!", event.breadcrumbs!![0].message)
-                assertEquals("staging", event.environment)
-                assertEquals("io.sentry.sample@2.0.0", event.release)
-                assertEquals("afcb46b1140ade5187c4bbb5daa804df", event.contexts[Contexts.REPLAY_ID])
-                asserted.set(true)
-                null
-            }
+            it.beforeSend =
+                BeforeSendCallback { event, hint ->
+                    assertEquals("MainActivity", event.transaction)
+                    assertEquals("Debug!", event.breadcrumbs!![0].message)
+                    assertEquals("staging", event.environment)
+                    assertEquals("io.sentry.sample@2.0.0", event.release)
+                    assertEquals("afcb46b1140ade5187c4bbb5daa804df", event.contexts[Contexts.REPLAY_ID])
+                    asserted.set(true)
+                    null
+                }
 
             // have to do it after the cacheDir is set to options, because it adds a dsn hash after
             prefillOptionsCache(it.cacheDirPath!!)
@@ -440,18 +453,19 @@ class SentryAndroidTest {
             // clean state for a new process.
             assertEquals(
                 emptyList<Breadcrumb>(),
-                options.findPersistingScopeObserver()?.read(options, BREADCRUMBS_FILENAME, List::class.java)
+                options.findPersistingScopeObserver()?.read(options, BREADCRUMBS_FILENAME, List::class.java),
             )
             assertEquals(
                 SentryId.EMPTY_ID.toString(),
-                options.findPersistingScopeObserver()?.read(options, REPLAY_FILENAME, String::class.java)
+                options.findPersistingScopeObserver()?.read(options, REPLAY_FILENAME, String::class.java),
             )
         }
         Sentry.configureScope {
             it.setTransaction("TestActivity")
             it.addBreadcrumb(Breadcrumb.error("Error!"))
         }
-        await.withAlias("Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout")
+        await
+            .withAlias("Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout")
             .untilTrue(asserted)
 
         // Execute all posted tasks
@@ -460,11 +474,11 @@ class SentryAndroidTest {
         // assert that persisted values have changed
         assertEquals(
             "TestActivity",
-            options.findPersistingScopeObserver()?.read(options, TRANSACTION_FILENAME, String::class.java)
+            options.findPersistingScopeObserver()?.read(options, TRANSACTION_FILENAME, String::class.java),
         )
         assertEquals(
             "io.sentry.sample@1.1.0+220",
-            PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java)
+            PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java),
         )
     }
 
@@ -540,7 +554,10 @@ class SentryAndroidTest {
         assertTrue(optionsRef.eventProcessors.any { it is AnrV2EventProcessor })
     }
 
-    private fun prefillScopeCache(options: SentryOptions, cacheDir: String) {
+    private fun prefillScopeCache(
+        options: SentryOptions,
+        cacheDir: String,
+    ) {
         val scopeDir = File(cacheDir, SCOPE_CACHE).also { it.mkdirs() }
         val queueFile = QueueFile.Builder(File(scopeDir, BREADCRUMBS_FILENAME)).build()
         val baos = ByteArrayOutputStream()
@@ -550,7 +567,7 @@ class SentryAndroidTest {
                 type = "debug"
                 level = DEBUG
             },
-            baos.writer()
+            baos.writer(),
         )
         queueFile.add(baos.toByteArray())
         File(scopeDir, TRANSACTION_FILENAME).writeText("\"MainActivity\"")
@@ -566,19 +583,30 @@ class SentryAndroidTest {
 
     private class CustomEnvelopCache : IEnvelopeCache {
         override fun iterator(): MutableIterator<SentryEnvelope> = TODO()
-        override fun store(envelope: SentryEnvelope, hint: Hint) = Unit
+
+        override fun store(
+            envelope: SentryEnvelope,
+            hint: Hint,
+        ) = Unit
+
         override fun discard(envelope: SentryEnvelope) = Unit
     }
 }
 
-fun initForTest(context: Context, optionsConfiguration: OptionsConfiguration<SentryAndroidOptions>) {
+fun initForTest(
+    context: Context,
+    optionsConfiguration: OptionsConfiguration<SentryAndroidOptions>,
+) {
     SentryAndroid.init(context) {
         applyTestOptions(it)
         optionsConfiguration.configure(it)
     }
 }
 
-fun initForTest(context: Context, logger: ILogger) {
+fun initForTest(
+    context: Context,
+    logger: ILogger,
+) {
     SentryAndroid.init(context, logger)
 }
 

@@ -37,13 +37,14 @@ class SentryFileOutputStreamTest {
             tmpFile: File? = null,
             activeTransaction: Boolean = true,
             append: Boolean = false,
-            optionsConfiguration: (SentryOptions) -> Unit = {}
+            optionsConfiguration: (SentryOptions) -> Unit = {},
         ): SentryFileOutputStream {
-            val options = SentryOptions().apply {
-                threadChecker = ThreadChecker.getInstance()
-                addInAppInclude("org.junit")
-                optionsConfiguration(this)
-            }
+            val options =
+                SentryOptions().apply {
+                    threadChecker = ThreadChecker.getInstance()
+                    addInAppInclude("org.junit")
+                    optionsConfiguration(this)
+                }
             whenever(scopes.options).thenReturn(options)
             sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
             if (activeTransaction) {
@@ -60,7 +61,7 @@ class SentryFileOutputStreamTest {
         internal fun getSut(
             tmpFile: File? = null,
             delegate: FileOutputStream,
-            tracesSampleRate: Double? = 1.0
+            tracesSampleRate: Double? = 1.0,
         ): FileOutputStream {
             options.tracesSampleRate = tracesSampleRate
             whenever(scopes.options).thenReturn(options)
@@ -69,7 +70,7 @@ class SentryFileOutputStreamTest {
             return SentryFileOutputStream.Factory.create(
                 delegate,
                 tmpFile,
-                scopes
+                scopes,
             )
         }
     }
@@ -85,7 +86,8 @@ class SentryFileOutputStreamTest {
 
     @Test
     fun `when no active transaction does not capture a span`() {
-        fixture.getSut(tmpFile, activeTransaction = false)
+        fixture
+            .getSut(tmpFile, activeTransaction = false)
             .use { it.write("Text".toByteArray()) }
 
         assertEquals(fixture.sentryTracer.children.size, 0)
@@ -116,9 +118,10 @@ class SentryFileOutputStreamTest {
 
     @Test
     fun `captures file name in description and file path when isSendDefaultPii is true`() {
-        val fos = fixture.getSut(tmpFile) {
-            it.isSendDefaultPii = true
-        }
+        val fos =
+            fixture.getSut(tmpFile) {
+                it.isSendDefaultPii = true
+            }
         fos.close()
 
         val fileIOSpan = fixture.sentryTracer.children.first()
@@ -128,9 +131,10 @@ class SentryFileOutputStreamTest {
 
     @Test
     fun `captures only file extension in description when isSendDefaultPii is false`() {
-        val fos = fixture.getSut(tmpFile) {
-            it.isSendDefaultPii = false
-        }
+        val fos =
+            fixture.getSut(tmpFile) {
+                it.isSendDefaultPii = false
+            }
         fos.close()
 
         val fileIOSpan = fixture.sentryTracer.children.first()
@@ -140,9 +144,10 @@ class SentryFileOutputStreamTest {
 
     @Test
     fun `captures only file size if no extension is available when isSendDefaultPii is false`() {
-        val fos = fixture.getSut(tmpFileWithoutExtension) {
-            it.isSendDefaultPii = false
-        }
+        val fos =
+            fixture.getSut(tmpFileWithoutExtension) {
+                it.isSendDefaultPii = false
+            }
         fos.close()
 
         val fileIOSpan = fixture.sentryTracer.children.first()
@@ -245,14 +250,12 @@ class SentryFileOutputStreamTest {
     }
 }
 
-class ThrowingFileOutputStream(file: File) : FileOutputStream(file) {
+class ThrowingFileOutputStream(
+    file: File,
+) : FileOutputStream(file) {
     val throwable = IOException("Oops!")
 
-    override fun write(b: Int) {
-        throw throwable
-    }
+    override fun write(b: Int): Unit = throw throwable
 
-    override fun close() {
-        throw throwable
-    }
+    override fun close(): Unit = throw throwable
 }

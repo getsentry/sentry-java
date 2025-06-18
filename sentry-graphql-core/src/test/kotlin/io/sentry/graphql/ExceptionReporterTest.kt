@@ -32,12 +32,12 @@ import kotlin.test.assertNull
 import kotlin.test.assertSame
 
 class ExceptionReporterTest {
-
     class Fixture {
-        val defaultOptions = SentryOptions().also {
-            it.isSendDefaultPii = true
-            it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS
-        }
+        val defaultOptions =
+            SentryOptions().also {
+                it.isSendDefaultPii = true
+                it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS
+            }
         val exception = IllegalStateException("some exception")
         val scopes = mock<IScopes>()
         lateinit var instrumentationExecutionParameters: InstrumentationExecutionParameters
@@ -46,35 +46,56 @@ class ExceptionReporterTest {
         val query = """query greeting(name: "somename")"""
         val variables = mapOf("variableA" to "value a")
 
-        fun getSut(options: SentryOptions = defaultOptions, captureRequestBodyForNonSubscriptions: Boolean = true): ExceptionReporter {
+        fun getSut(
+            options: SentryOptions = defaultOptions,
+            captureRequestBodyForNonSubscriptions: Boolean = true,
+        ): ExceptionReporter {
             whenever(scopes.options).thenReturn(options)
             scope = Scope(options)
             val exceptionReporter = ExceptionReporter(captureRequestBodyForNonSubscriptions)
-            executionResult = ExecutionResultImpl.newExecutionResult()
-                .data("raw result")
-                .addError(
-                    GraphqlErrorException.newErrorException().message("exception message").errorClassification(
-                        ErrorType.ValidationError
+            executionResult =
+                ExecutionResultImpl
+                    .newExecutionResult()
+                    .data("raw result")
+                    .addError(
+                        GraphqlErrorException
+                            .newErrorException()
+                            .message("exception message")
+                            .errorClassification(
+                                ErrorType.ValidationError,
+                            ).build(),
                     ).build()
-                )
-                .build()
-            val executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .graphQLContext(emptyMap<Any?, Any?>())
-                .variables(variables)
-                .build()
-            val scalarType = GraphQLScalarType.newScalar().name("MyResponseType").coercing(
-                GraphqlStringCoercing()
-            ).build()
-            val field = GraphQLFieldDefinition.newFieldDefinition()
-                .name("myQueryFieldName")
-                .type(scalarType)
-                .build()
-            val schema = GraphQLSchema.newSchema().query(
-                GraphQLObjectType.newObject().name("QueryType").field(
-                    field
-                ).build()
-            ).build()
+            val executionInput =
+                ExecutionInput
+                    .newExecutionInput()
+                    .query(query)
+                    .graphQLContext(emptyMap<Any?, Any?>())
+                    .variables(variables)
+                    .build()
+            val scalarType =
+                GraphQLScalarType
+                    .newScalar()
+                    .name("MyResponseType")
+                    .coercing(
+                        GraphqlStringCoercing(),
+                    ).build()
+            val field =
+                GraphQLFieldDefinition
+                    .newFieldDefinition()
+                    .name("myQueryFieldName")
+                    .type(scalarType)
+                    .build()
+            val schema =
+                GraphQLSchema
+                    .newSchema()
+                    .query(
+                        GraphQLObjectType
+                            .newObject()
+                            .name("QueryType")
+                            .field(
+                                field,
+                            ).build(),
+                    ).build()
             val instrumentationState = SentryGraphqlInstrumentation.TracingState()
             instrumentationExecutionParameters = InstrumentationExecutionParameters(executionInput, schema, instrumentationState)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
@@ -88,7 +109,11 @@ class ExceptionReporterTest {
     @Test
     fun `captures throwable`() {
         val exceptionReporter = fixture.getSut()
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
+        exceptionReporter.captureThrowable(
+            fixture.exception,
+            ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false),
+            fixture.executionResult,
+        )
 
         verify(fixture.scopes).captureEvent(
             org.mockito.kotlin.check {
@@ -103,7 +128,7 @@ class ExceptionReporterTest {
                 assertEquals(fixture.query, data["query"])
                 assertEquals("graphql", request.apiTarget)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -112,7 +137,11 @@ class ExceptionReporterTest {
         val exceptionReporter = fixture.getSut()
         val headers = mapOf("some-header" to "some-header-value")
         fixture.scope.request = Request().also { it.headers = headers }
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
+        exceptionReporter.captureThrowable(
+            fixture.exception,
+            ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false),
+            fixture.executionResult,
+        )
 
         verify(fixture.scopes).captureEvent(
             org.mockito.kotlin.check {
@@ -123,7 +152,7 @@ class ExceptionReporterTest {
                 assertSame(fixture.scope.request, it.request)
                 assertEquals("graphql", it.request!!.apiTarget)
             },
-            any<Hint>()
+            any<Hint>(),
         )
 
         assertNotNull(fixture.scope.request)
@@ -136,7 +165,11 @@ class ExceptionReporterTest {
     @Test
     fun `does not attach query or variables if spring`() {
         val exceptionReporter = fixture.getSut(captureRequestBodyForNonSubscriptions = false)
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
+        exceptionReporter.captureThrowable(
+            fixture.exception,
+            ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false),
+            fixture.executionResult,
+        )
 
         verify(fixture.scopes).captureEvent(
             org.mockito.kotlin.check {
@@ -149,14 +182,18 @@ class ExceptionReporterTest {
                 assertNull(request.data)
                 assertEquals("graphql", request.apiTarget)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
     @Test
     fun `does not attach query or variables if no max body size is set`() {
         val exceptionReporter = fixture.getSut(SentryOptions().also { it.isSendDefaultPii = true }, false)
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
+        exceptionReporter.captureThrowable(
+            fixture.exception,
+            ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false),
+            fixture.executionResult,
+        )
 
         verify(fixture.scopes).captureEvent(
             org.mockito.kotlin.check {
@@ -169,14 +206,18 @@ class ExceptionReporterTest {
                 assertNull(request.data)
                 assertEquals("graphql", request.apiTarget)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
     @Test
     fun `does not attach query or variables if sendDefaultPii is false`() {
         val exceptionReporter = fixture.getSut(SentryOptions().also { it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS }, false)
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false), fixture.executionResult)
+        exceptionReporter.captureThrowable(
+            fixture.exception,
+            ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, false),
+            fixture.executionResult,
+        )
 
         verify(fixture.scopes).captureEvent(
             org.mockito.kotlin.check {
@@ -189,14 +230,18 @@ class ExceptionReporterTest {
                 assertNull(request.data)
                 assertEquals("graphql", request.apiTarget)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
     @Test
     fun `attaches query and variables if spring and subscription`() {
         val exceptionReporter = fixture.getSut(captureRequestBodyForNonSubscriptions = false)
-        exceptionReporter.captureThrowable(fixture.exception, ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, true), fixture.executionResult)
+        exceptionReporter.captureThrowable(
+            fixture.exception,
+            ExceptionReporter.ExceptionDetails(fixture.scopes, fixture.instrumentationExecutionParameters, true),
+            fixture.executionResult,
+        )
 
         verify(fixture.scopes).captureEvent(
             org.mockito.kotlin.check {
@@ -211,7 +256,7 @@ class ExceptionReporterTest {
                 assertEquals(fixture.query, data["query"])
                 assertEquals("graphql", request.apiTarget)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 }

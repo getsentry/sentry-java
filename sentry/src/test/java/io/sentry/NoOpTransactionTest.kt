@@ -8,7 +8,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class NoOpTransactionTest {
-
     private val transaction = NoOpTransaction.getInstance()
 
     @Test

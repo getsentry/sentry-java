@@ -31,9 +31,8 @@ internal class BufferCaptureStrategy(
     private val dateProvider: ICurrentDateProvider,
     private val random: Random,
     executor: ScheduledExecutorService,
-    replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
+    replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
 ) : BaseCaptureStrategy(options, scopes, dateProvider, executor, replayCacheProvider = replayCacheProvider) {
-
     // TODO: capture envelopes for buffered segments instead, but don't send them until buffer is triggered
     private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
 
@@ -64,7 +63,7 @@ internal class BufferCaptureStrategy(
 
     override fun captureReplay(
         isTerminating: Boolean,
-        onSegmentSent: (Date) -> Unit
+        onSegmentSent: (Date) -> Unit,
     ) {
         val sampled = random.sample(options.sessionReplay.onErrorSampleRate)
 
@@ -100,7 +99,10 @@ internal class BufferCaptureStrategy(
         }
     }
 
-    override fun onScreenshotRecorded(bitmap: Bitmap?, store: ReplayCache.(frameTimestamp: Long) -> Unit) {
+    override fun onScreenshotRecorded(
+        bitmap: Bitmap?,
+        store: ReplayCache.(frameTimestamp: Long) -> Unit,
+    ) {
         // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
         // reflecting the exact time of when it was captured
         val frameTimestamp = dateProvider.currentTimeMillis
@@ -189,23 +191,27 @@ internal class BufferCaptureStrategy(
         }
     }
 
-    private fun createCurrentSegment(taskName: String, onSegmentCreated: (ReplaySegment) -> Unit) {
+    private fun createCurrentSegment(
+        taskName: String,
+        onSegmentCreated: (ReplaySegment) -> Unit,
+    ) {
         val currentConfig = recorderConfig
         if (currentConfig == null) {
             options.logger.log(
                 DEBUG,
-                "Recorder config is not set, not creating segment for task: $taskName"
+                "Recorder config is not set, not creating segment for task: $taskName",
             )
             return
         }
         val errorReplayDuration = options.sessionReplay.errorReplayDuration
         val now = dateProvider.currentTimeMillis
-        val currentSegmentTimestamp = if (cache?.frames?.isNotEmpty() == true) {
-            // in buffer mode we have to set the timestamp of the first frame as the actual start
-            DateUtils.getDateTime(cache!!.frames.first().timestamp)
-        } else {
-            DateUtils.getDateTime(now - errorReplayDuration)
-        }
+        val currentSegmentTimestamp =
+            if (cache?.frames?.isNotEmpty() == true) {
+                // in buffer mode we have to set the timestamp of the first frame as the actual start
+                DateUtils.getDateTime(cache!!.frames.first().timestamp)
+            } else {
+                DateUtils.getDateTime(now - errorReplayDuration)
+            }
         val duration = now - currentSegmentTimestamp.time
         val replayId = currentReplayId
 
@@ -219,7 +225,7 @@ internal class BufferCaptureStrategy(
                     currentConfig.recordingHeight,
                     currentConfig.recordingWidth,
                     currentConfig.frameRate,
-                    currentConfig.bitRate
+                    currentConfig.bitRate,
                 )
             onSegmentCreated(segment)
         }

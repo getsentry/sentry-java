@@ -49,7 +49,6 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
 class AnrV2IntegrationTest {
-
     @get:Rule
     val tmpDir = TemporaryFolder()
 
@@ -72,7 +71,7 @@ class AnrV2IntegrationTest {
             lastEventId: SentryId = SentryId(),
             sessionTrackingEnabled: Boolean = true,
             reportHistoricalAnrs: Boolean = true,
-            attachAnrThreadDump: Boolean = false
+            attachAnrThreadDump: Boolean = false,
         ): AnrV2Integration {
             options.run {
                 setLogger(this@Fixture.logger)
@@ -102,7 +101,7 @@ class AnrV2IntegrationTest {
             timestamp: Long? = null,
             importance: Int? = null,
             addTrace: Boolean = true,
-            addBadTrace: Boolean = false
+            addBadTrace: Boolean = false,
         ) {
             val builder = ApplicationExitInfoBuilder.newBuilder()
             if (reason != null) {
@@ -114,40 +113,41 @@ class AnrV2IntegrationTest {
             if (importance != null) {
                 builder.setImportance(importance)
             }
-            val exitInfo = spy(builder.build()) {
-                if (!addTrace) {
-                    return
-                }
-                if (addBadTrace) {
-                    whenever(mock.traceInputStream).thenReturn(
-                        """
-                        Subject: Input dispatching timed out (7985007 com.example.app/com.example.app.ui.MainActivity (server) is not responding. Waited 5000ms for FocusEvent(hasFocus=false))
-                        Here are no Binder-related exception messages available.
-                        Pid(12233) have D state thread(tid:12236 name:Signal Catcher)
+            val exitInfo =
+                spy(builder.build()) {
+                    if (!addTrace) {
+                        return
+                    }
+                    if (addBadTrace) {
+                        whenever(mock.traceInputStream).thenReturn(
+                            """
+                            Subject: Input dispatching timed out (7985007 com.example.app/com.example.app.ui.MainActivity (server) is not responding. Waited 5000ms for FocusEvent(hasFocus=false))
+                            Here are no Binder-related exception messages available.
+                            Pid(12233) have D state thread(tid:12236 name:Signal Catcher)
 
 
-                        RssHwmKb: 823716
-                        RssKb: 548348
-                        RssAnonKb: 382156
-                        RssShmemKb: 13304
-                        VmSwapKb: 82484
+                            RssHwmKb: 823716
+                            RssKb: 548348
+                            RssAnonKb: 382156
+                            RssShmemKb: 13304
+                            VmSwapKb: 82484
 
 
-                        --- CriticalEventLog ---
-                        capacity: 20
-                        timestamp_ms: 1731507490032
-                        window_ms: 300000
+                            --- CriticalEventLog ---
+                            capacity: 20
+                            timestamp_ms: 1731507490032
+                            window_ms: 300000
 
-                        ----- dumping pid: 12233 at 313446151
-                        libdebuggerd_client: unexpected registration response: 0
+                            ----- dumping pid: 12233 at 313446151
+                            libdebuggerd_client: unexpected registration response: 0
 
-                        ----- Waiting Channels: pid 12233 at 2024-11-13 19:48:09.980104540+0530 -----
-                        Cmd line: com.example.app:mainProcess
-                        """.trimIndent().byteInputStream()
-                    )
-                } else {
-                    whenever(mock.traceInputStream).thenReturn(
-                        """
+                            ----- Waiting Channels: pid 12233 at 2024-11-13 19:48:09.980104540+0530 -----
+                            Cmd line: com.example.app:mainProcess
+                            """.trimIndent().byteInputStream(),
+                        )
+                    } else {
+                        whenever(mock.traceInputStream).thenReturn(
+                            """
 "main" prio=5 tid=1 Blocked
   | group="main" sCount=1 ucsCount=0 flags=1 obj=0x72a985e0 self=0xb400007cabc57380
   | sysTid=28941 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
@@ -176,10 +176,10 @@ class AnrV2IntegrationTest {
   native: #02 pc 00000000000b63b0  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+208) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
   native: #03 pc 00000000000530b8  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
   (no managed stack frames)
-                        """.trimIndent().byteInputStream()
-                    )
+                            """.trimIndent().byteInputStream(),
+                        )
+                    }
                 }
-            }
             shadowActivityManager.addApplicationExitInfo(exitInfo)
         }
     }
@@ -236,9 +236,10 @@ class AnrV2IntegrationTest {
 
     @Test
     fun `when latest ANR is older than 90 days, does not capture events`() {
-        val oldTimestamp = System.currentTimeMillis() -
-            AnrV2Integration.NINETY_DAYS_THRESHOLD -
-            TimeUnit.DAYS.toMillis(2)
+        val oldTimestamp =
+            System.currentTimeMillis() -
+                AnrV2Integration.NINETY_DAYS_THRESHOLD -
+                TimeUnit.DAYS.toMillis(2)
         val integration = fixture.getSut(tmpDir)
         fixture.addAppExitInfo(timestamp = oldTimestamp)
 
@@ -284,8 +285,20 @@ class AnrV2IntegrationTest {
                 assertEquals("Blocked", mainThread.state)
                 assertEquals(true, mainThread.isCrashed)
                 assertEquals(true, mainThread.isMain)
-                assertEquals("0x0d3a2f0a", mainThread.heldLocks!!.values.first().address)
-                assertEquals(5, mainThread.heldLocks!!.values.first().threadId)
+                assertEquals(
+                    "0x0d3a2f0a",
+                    mainThread.heldLocks!!
+                        .values
+                        .first()
+                        .address,
+                )
+                assertEquals(
+                    5,
+                    mainThread.heldLocks!!
+                        .values
+                        .first()
+                        .threadId,
+                )
                 val lastFrame = mainThread.stacktrace!!.frames!!.last()
                 assertEquals("io.sentry.samples.android.MainActivity$2", lastFrame.module)
                 assertEquals("MainActivity.java", lastFrame.filename)
@@ -301,7 +314,7 @@ class AnrV2IntegrationTest {
                 val firstFrame = otherThread.stacktrace!!.frames!!.first()
                 assertEquals(
                     "/apex/com.android.runtime/lib64/bionic/libc.so",
-                    firstFrame.`package`
+                    firstFrame.`package`,
                 )
                 assertEquals("__start_thread", firstFrame.function)
                 assertEquals(64, firstFrame.lineno)
@@ -309,16 +322,17 @@ class AnrV2IntegrationTest {
                 assertEquals("native", firstFrame.platform)
                 assertEquals("rel:741f3301-bbb0-b92c-58bd-c15282b8ec7b", firstFrame.addrMode)
 
-                val image = it.debugMeta?.images?.find {
-                    it.debugId == "741f3301-bbb0-b92c-58bd-c15282b8ec7b"
-                }
+                val image =
+                    it.debugMeta?.images?.find {
+                        it.debugId == "741f3301-bbb0-b92c-58bd-c15282b8ec7b"
+                    }
                 assertNotNull(image)
                 assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", image.codeFile)
             },
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
                 (hint as AnrV2Hint).shouldEnrich()
-            }
+            },
         )
     }
 
@@ -327,7 +341,7 @@ class AnrV2IntegrationTest {
         val integration = fixture.getSut(tmpDir, lastReportedAnrTimestamp = oldTimestamp)
         fixture.addAppExitInfo(
             timestamp = newTimestamp,
-            importance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+            importance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
         )
 
         integration.register(fixture.scopes, fixture.options)
@@ -337,22 +351,24 @@ class AnrV2IntegrationTest {
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
                 (hint as AnrV2Hint).mechanism() == "anr_foreground"
-            }
+            },
         )
     }
 
     @Test
     fun `waits for ANR events to be flushed on disk`() {
-        val integration = fixture.getSut(
-            tmpDir,
-            lastReportedAnrTimestamp = oldTimestamp,
-            flushTimeoutMillis = 500L
-        )
+        val integration =
+            fixture.getSut(
+                tmpDir,
+                lastReportedAnrTimestamp = oldTimestamp,
+                flushTimeoutMillis = 500L,
+            )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
         whenever(fixture.scopes.captureEvent(any(), any<Hint>())).thenAnswer { invocation ->
-            val hint = HintUtils.getSentrySdkHint(invocation.getArgument(1))
-                as DiskFlushNotification
+            val hint =
+                HintUtils.getSentrySdkHint(invocation.getArgument(1))
+                    as DiskFlushNotification
             thread {
                 Thread.sleep(200L)
                 hint.markFlushed()
@@ -367,17 +383,18 @@ class AnrV2IntegrationTest {
         verify(fixture.logger, never()).log(
             any(),
             argThat { startsWith("Timed out waiting to flush ANR event to disk.") },
-            any<Any>()
+            any<Any>(),
         )
     }
 
     @Test
     fun `when latest ANR event was dropped, does not block flushing`() {
-        val integration = fixture.getSut(
-            tmpDir,
-            lastReportedAnrTimestamp = oldTimestamp,
-            lastEventId = SentryId.EMPTY_ID
-        )
+        val integration =
+            fixture.getSut(
+                tmpDir,
+                lastReportedAnrTimestamp = oldTimestamp,
+                lastEventId = SentryId.EMPTY_ID,
+            )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
         integration.register(fixture.scopes, fixture.options)
@@ -388,7 +405,7 @@ class AnrV2IntegrationTest {
         verify(fixture.logger, never()).log(
             any(),
             argThat { startsWith("Timed out waiting to flush ANR event to disk.") },
-            any<Any>()
+            any<Any>(),
         )
     }
 
@@ -406,17 +423,18 @@ class AnrV2IntegrationTest {
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
                 !(hint as AnrV2Hint).shouldEnrich()
-            }
+            },
         )
     }
 
     @Test
     fun `when historical ANRs flag is disabled, does not report`() {
-        val integration = fixture.getSut(
-            tmpDir,
-            lastReportedAnrTimestamp = oldTimestamp,
-            reportHistoricalAnrs = false
-        )
+        val integration =
+            fixture.getSut(
+                tmpDir,
+                lastReportedAnrTimestamp = oldTimestamp,
+                reportHistoricalAnrs = false,
+            )
         fixture.addAppExitInfo(timestamp = newTimestamp - 2 * 60 * 1000)
         fixture.addAppExitInfo(timestamp = newTimestamp - 1 * 60 * 1000)
         fixture.addAppExitInfo(timestamp = newTimestamp)
@@ -429,7 +447,7 @@ class AnrV2IntegrationTest {
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
                 (hint as AnrV2Hint).shouldEnrich()
-            }
+            },
         )
     }
 
@@ -448,15 +466,15 @@ class AnrV2IntegrationTest {
         inOrder(fixture.scopes) {
             verify(fixture.scopes).captureEvent(
                 argThat { timestamp.time == newTimestamp - TimeUnit.DAYS.toMillis(2) },
-                anyOrNull<Hint>()
+                anyOrNull<Hint>(),
             )
             verify(fixture.scopes).captureEvent(
                 argThat { timestamp.time == newTimestamp - TimeUnit.DAYS.toMillis(1) },
-                anyOrNull<Hint>()
+                anyOrNull<Hint>(),
             )
             verify(fixture.scopes).captureEvent(
                 argThat { timestamp.time == newTimestamp },
-                anyOrNull<Hint>()
+                anyOrNull<Hint>(),
             )
         }
     }
@@ -473,7 +491,7 @@ class AnrV2IntegrationTest {
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
                 (hint as AnrV2Hint).timestamp() == newTimestamp
-            }
+            },
         )
     }
 
@@ -489,17 +507,18 @@ class AnrV2IntegrationTest {
             argThat<Hint> {
                 val hint = HintUtils.getSentrySdkHint(this)
                 (hint as AnrV2Hint).mechanism() == "anr_background"
-            }
+            },
         )
     }
 
     @Test
     fun `awaits for previous session flush if cache is EnvelopeCache`() {
-        val integration = fixture.getSut(
-            tmpDir,
-            lastReportedAnrTimestamp = oldTimestamp,
-            sessionFlushTimeoutMillis = 500L
-        )
+        val integration =
+            fixture.getSut(
+                tmpDir,
+                lastReportedAnrTimestamp = oldTimestamp,
+                sessionFlushTimeoutMillis = 500L,
+            )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
         thread {
@@ -507,7 +526,7 @@ class AnrV2IntegrationTest {
             val sessionHint = HintUtils.createWithTypeCheckHint(SessionStartHint())
             fixture.options.envelopeDiskCache.store(
                 SentryEnvelope(SentryId.EMPTY_ID, null, emptyList()),
-                sessionHint
+                sessionHint,
             )
         }
 
@@ -518,18 +537,19 @@ class AnrV2IntegrationTest {
         verify(fixture.logger, never()).log(
             any(),
             argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
-            any<Any>()
+            any<Any>(),
         )
     }
 
     @Test
     fun `does not await for previous session flush, if session tracking is disabled`() {
-        val integration = fixture.getSut(
-            tmpDir,
-            lastReportedAnrTimestamp = oldTimestamp,
-            sessionFlushTimeoutMillis = 500L,
-            sessionTrackingEnabled = false
-        )
+        val integration =
+            fixture.getSut(
+                tmpDir,
+                lastReportedAnrTimestamp = oldTimestamp,
+                sessionFlushTimeoutMillis = 500L,
+                sessionTrackingEnabled = false,
+            )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
         integration.register(fixture.scopes, fixture.options)
@@ -537,18 +557,19 @@ class AnrV2IntegrationTest {
         verify(fixture.logger, never()).log(
             any(),
             argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
-            any<Any>()
+            any<Any>(),
         )
         verify(fixture.scopes).captureEvent(any(), any<Hint>())
     }
 
     @Test
     fun `flushes previous session latch, if timed out waiting`() {
-        val integration = fixture.getSut(
-            tmpDir,
-            lastReportedAnrTimestamp = oldTimestamp,
-            sessionFlushTimeoutMillis = 500L
-        )
+        val integration =
+            fixture.getSut(
+                tmpDir,
+                lastReportedAnrTimestamp = oldTimestamp,
+                sessionFlushTimeoutMillis = 500L,
+            )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
         integration.register(fixture.scopes, fixture.options)
@@ -556,7 +577,7 @@ class AnrV2IntegrationTest {
         verify(fixture.logger).log(
             any(),
             argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
-            any<Any>()
+            any<Any>(),
         )
         // should return true, because latch is 0 now
         assertTrue((fixture.options.envelopeDiskCache as EnvelopeCache).waitPreviousSessionFlush())
@@ -564,11 +585,12 @@ class AnrV2IntegrationTest {
 
     @Test
     fun `attaches plain thread dump, if enabled`() {
-        val integration = fixture.getSut(
-            tmpDir,
-            lastReportedAnrTimestamp = oldTimestamp,
-            attachAnrThreadDump = true
-        )
+        val integration =
+            fixture.getSut(
+                tmpDir,
+                lastReportedAnrTimestamp = oldTimestamp,
+                attachAnrThreadDump = true,
+            )
         fixture.addAppExitInfo(timestamp = newTimestamp)
 
         integration.register(fixture.scopes, fixture.options)
@@ -577,7 +599,7 @@ class AnrV2IntegrationTest {
             any(),
             check<Hint> {
                 assertNotNull(it.threadDump)
-            }
+            },
         )
     }
 

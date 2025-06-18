@@ -15,19 +15,26 @@ import org.mockito.kotlin.mock
 import kotlin.test.assertEquals
 
 class RRWebEventSerializationTest {
-
     /**
      * Make subclass, as `RRWebEvent` initializers are protected.
      */
-    class Sut : RRWebEvent(), JsonSerializable {
-        override fun serialize(writer: ObjectWriter, logger: ILogger) {
+    class Sut :
+        RRWebEvent(),
+        JsonSerializable {
+        override fun serialize(
+            writer: ObjectWriter,
+            logger: ILogger,
+        ) {
             writer.beginObject()
             Serializer().serialize(this, writer, logger)
             writer.endObject()
         }
 
         class Deserializer : JsonDeserializer<Sut> {
-            override fun deserialize(reader: ObjectReader, logger: ILogger): Sut {
+            override fun deserialize(
+                reader: ObjectReader,
+                logger: ILogger,
+            ): Sut {
                 val sut = Sut()
                 reader.beginObject()
 
@@ -52,6 +59,7 @@ class RRWebEventSerializationTest {
             }
         }
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -66,11 +74,12 @@ class RRWebEventSerializationTest {
     @Test
     fun deserialize() {
         val expectedJson = sanitizedFile("json/rrweb_event.json")
-        val actual = deserializeJson(
-            expectedJson,
-            Sut.Deserializer(),
-            fixture.logger
-        )
+        val actual =
+            deserializeJson(
+                expectedJson,
+                Sut.Deserializer(),
+                fixture.logger,
+            )
         val actualJson = serializeToString(actual, fixture.logger)
 
         assertEquals(expectedJson, actualJson)

@@ -47,7 +47,10 @@ class SentrySpringFilterTest {
         lateinit var scope: IScope
         lateinit var request: HttpServletRequest
 
-        fun getSut(request: HttpServletRequest? = null, options: SentryOptions = SentryOptions()): SentrySpringFilter {
+        fun getSut(
+            request: HttpServletRequest? = null,
+            options: SentryOptions = SentryOptions(),
+        ): SentrySpringFilter {
             scope = Scope(options)
             whenever(scopesBeforeForking.options).thenReturn(options)
             whenever(scopesBeforeForking.isEnabled).thenReturn(true)
@@ -87,7 +90,7 @@ class SentrySpringFilterTest {
                 Assertions.assertThat(it.getData("method")).isEqualTo("POST")
                 Assertions.assertThat(it.type).isEqualTo("http")
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -114,13 +117,15 @@ class SentrySpringFilterTest {
 
     @Test
     fun `attaches basic information from HTTP request to Scope request`() {
-        val listener = fixture.getSut(
-            request = MockMvcRequestBuilders
-                .get(URI.create("http://example.com?param1=xyz"))
-                .header("some-header", "some-header value")
-                .accept(MediaType.APPLICATION_JSON)
-                .buildRequest(MockServletContext())
-        )
+        val listener =
+            fixture.getSut(
+                request =
+                    MockMvcRequestBuilders
+                        .get(URI.create("http://example.com?param1=xyz"))
+                        .header("some-header", "some-header value")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .buildRequest(MockServletContext()),
+            )
 
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
@@ -129,9 +134,9 @@ class SentrySpringFilterTest {
             assertEquals(
                 mapOf(
                     "some-header" to "some-header value",
-                    "Accept" to "application/json"
+                    "Accept" to "application/json",
                 ),
-                it.headers
+                it.headers,
             )
             assertEquals("http://example.com", it.url)
             assertEquals("param1=xyz", it.queryString)
@@ -140,40 +145,45 @@ class SentrySpringFilterTest {
 
     @Test
     fun `attaches header with multiple values to Scope request`() {
-        val listener = fixture.getSut(
-            request = MockMvcRequestBuilders
-                .get(URI.create("http://example.com?param1=xyz"))
-                .header("another-header", "another value")
-                .header("another-header", "another value2")
-                .buildRequest(MockServletContext())
-        )
+        val listener =
+            fixture.getSut(
+                request =
+                    MockMvcRequestBuilders
+                        .get(URI.create("http://example.com?param1=xyz"))
+                        .header("another-header", "another value")
+                        .header("another-header", "another value2")
+                        .buildRequest(MockServletContext()),
+            )
 
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
         assertNotNull(fixture.scope.request) {
             assertEquals(
                 mapOf(
-                    "another-header" to "another value,another value2"
+                    "another-header" to "another value,another value2",
                 ),
-                it.headers
+                it.headers,
             )
         }
     }
 
     @Test
     fun `when sendDefaultPii is set to true, attaches filtered cookies to Scope request`() {
-        val sentryOptions = SentryOptions().apply {
-            isSendDefaultPii = true
-        }
+        val sentryOptions =
+            SentryOptions().apply {
+                isSendDefaultPii = true
+            }
 
-        val listener = fixture.getSut(
-            request = MockMvcRequestBuilders
-                .get(URI.create("http://example.com?param1=xyz"))
-                .header("Cookie", "name=value; JSESSIONID=123; mysessioncookiename=789")
-                .header("Cookie", "name2=value2; SID=456")
-                .buildRequest(servletContextWithCustomCookieName("mysessioncookiename")),
-            options = sentryOptions
-        )
+        val listener =
+            fixture.getSut(
+                request =
+                    MockMvcRequestBuilders
+                        .get(URI.create("http://example.com?param1=xyz"))
+                        .header("Cookie", "name=value; JSESSIONID=123; mysessioncookiename=789")
+                        .header("Cookie", "name2=value2; SID=456")
+                        .buildRequest(servletContextWithCustomCookieName("mysessioncookiename")),
+                options = sentryOptions,
+            )
 
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
@@ -187,17 +197,20 @@ class SentrySpringFilterTest {
 
     @Test
     fun `when sendDefaultPii is set to false, does not attach cookies to Scope request`() {
-        val sentryOptions = SentryOptions().apply {
-            isSendDefaultPii = false
-        }
+        val sentryOptions =
+            SentryOptions().apply {
+                isSendDefaultPii = false
+            }
 
-        val listener = fixture.getSut(
-            request = MockMvcRequestBuilders
-                .get(URI.create("http://example.com?param1=xyz"))
-                .header("Cookie", "name=value")
-                .buildRequest(MockServletContext()),
-            options = sentryOptions
-        )
+        val listener =
+            fixture.getSut(
+                request =
+                    MockMvcRequestBuilders
+                        .get(URI.create("http://example.com?param1=xyz"))
+                        .header("Cookie", "name=value")
+                        .buildRequest(MockServletContext()),
+                options = sentryOptions,
+            )
 
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
@@ -208,21 +221,24 @@ class SentrySpringFilterTest {
 
     @Test
     fun `when sendDefaultPii is set to false, does not attach sensitive headers`() {
-        val sentryOptions = SentryOptions().apply {
-            isSendDefaultPii = false
-        }
+        val sentryOptions =
+            SentryOptions().apply {
+                isSendDefaultPii = false
+            }
 
-        val listener = fixture.getSut(
-            request = MockMvcRequestBuilders
-                .get(URI.create("http://example.com?param1=xyz"))
-                .header("some-header", "some-header value")
-                .header("X-FORWARDED-FOR", "192.168.0.1")
-                .header("authorization", "Token")
-                .header("Authorization", "Token")
-                .header("Cookie", "some cookies")
-                .buildRequest(MockServletContext()),
-            options = sentryOptions
-        )
+        val listener =
+            fixture.getSut(
+                request =
+                    MockMvcRequestBuilders
+                        .get(URI.create("http://example.com?param1=xyz"))
+                        .header("some-header", "some-header value")
+                        .header("X-FORWARDED-FOR", "192.168.0.1")
+                        .header("authorization", "Token")
+                        .header("Authorization", "Token")
+                        .header("Cookie", "some cookies")
+                        .buildRequest(MockServletContext()),
+                options = sentryOptions,
+            )
 
         listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
@@ -239,36 +255,51 @@ class SentrySpringFilterTest {
 
     @Test
     fun `caches request depending on the maxRequestBodySize value and request body length`() {
-        data class TestParams(val sendDefaultPii: Boolean = true, val maxRequestBodySize: SentryOptions.RequestSize, val body: String, val contentType: String = "application/json", val expectedToBeCached: Boolean)
-
-        val params = listOf(
-            TestParams(maxRequestBodySize = NONE, body = "xxx", expectedToBeCached = false),
-            TestParams(maxRequestBodySize = SMALL, body = "xxx", expectedToBeCached = false, sendDefaultPii = false),
-            TestParams(maxRequestBodySize = SMALL, body = "xxx", expectedToBeCached = true),
-            TestParams(maxRequestBodySize = SMALL, body = "xxx", contentType = "application/octet-stream", expectedToBeCached = false),
-            TestParams(maxRequestBodySize = SMALL, body = "x".repeat(1001), expectedToBeCached = false),
-            TestParams(maxRequestBodySize = MEDIUM, body = "x".repeat(1001), expectedToBeCached = true),
-            TestParams(maxRequestBodySize = MEDIUM, body = "x".repeat(10001), expectedToBeCached = false),
-            TestParams(maxRequestBodySize = ALWAYS, body = "x".repeat(10001), expectedToBeCached = true),
-            TestParams(maxRequestBodySize = SMALL, body = "xxx", contentType = "application/x-www-form-urlencoded", expectedToBeCached = true)
+        data class TestParams(
+            val sendDefaultPii: Boolean = true,
+            val maxRequestBodySize: SentryOptions.RequestSize,
+            val body: String,
+            val contentType: String = "application/json",
+            val expectedToBeCached: Boolean,
         )
+
+        val params =
+            listOf(
+                TestParams(maxRequestBodySize = NONE, body = "xxx", expectedToBeCached = false),
+                TestParams(maxRequestBodySize = SMALL, body = "xxx", expectedToBeCached = false, sendDefaultPii = false),
+                TestParams(maxRequestBodySize = SMALL, body = "xxx", expectedToBeCached = true),
+                TestParams(maxRequestBodySize = SMALL, body = "xxx", contentType = "application/octet-stream", expectedToBeCached = false),
+                TestParams(maxRequestBodySize = SMALL, body = "x".repeat(1001), expectedToBeCached = false),
+                TestParams(maxRequestBodySize = MEDIUM, body = "x".repeat(1001), expectedToBeCached = true),
+                TestParams(maxRequestBodySize = MEDIUM, body = "x".repeat(10001), expectedToBeCached = false),
+                TestParams(maxRequestBodySize = ALWAYS, body = "x".repeat(10001), expectedToBeCached = true),
+                TestParams(
+                    maxRequestBodySize = SMALL,
+                    body = "xxx",
+                    contentType = "application/x-www-form-urlencoded",
+                    expectedToBeCached = true,
+                ),
+            )
 
         params.forEach { param ->
             try {
                 val fixture = Fixture()
-                val sentryOptions = SentryOptions().apply {
-                    maxRequestBodySize = param.maxRequestBodySize
-                    isSendDefaultPii = param.sendDefaultPii
-                }
+                val sentryOptions =
+                    SentryOptions().apply {
+                        maxRequestBodySize = param.maxRequestBodySize
+                        isSendDefaultPii = param.sendDefaultPii
+                    }
 
-                val listener = fixture.getSut(
-                    request = MockMvcRequestBuilders
-                        .post(URI.create("http://example.com?param1=xyz"))
-                        .content(param.body)
-                        .contentType(param.contentType)
-                        .buildRequest(MockServletContext()),
-                    options = sentryOptions
-                )
+                val listener =
+                    fixture.getSut(
+                        request =
+                            MockMvcRequestBuilders
+                                .post(URI.create("http://example.com?param1=xyz"))
+                                .content(param.body)
+                                .contentType(param.contentType)
+                                .buildRequest(MockServletContext()),
+                        options = sentryOptions,
+                    )
 
                 listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
@@ -276,7 +307,7 @@ class SentrySpringFilterTest {
                     check {
                         assertEquals(param.expectedToBeCached, it is ContentCachingRequestWrapper)
                     },
-                    any()
+                    any(),
                 )
             } catch (e: AssertionError) {
                 System.err.println("Failed to run test with params: $param")
@@ -285,7 +316,8 @@ class SentrySpringFilterTest {
         }
     }
 
-    private fun servletContextWithCustomCookieName(name: String): ServletContext {
-        return MockServletContext().also { it.sessionCookieConfig.name = name }
-    }
+    private fun servletContextWithCustomCookieName(name: String): ServletContext =
+        MockServletContext().also {
+            it.sessionCookieConfig.name = name
+        }
 }

@@ -9,13 +9,22 @@ plugins {
 }
 
 android {
-    compileSdk = libs.versions.compileSdk.get().toInt()
+    compileSdk =
+        libs.versions.compileSdk
+            .get()
+            .toInt()
     namespace = "io.sentry.samples.android"
 
     defaultConfig {
         applicationId = "io.sentry.samples.android"
-        minSdk = libs.versions.minSdk.get().toInt()
-        targetSdk = libs.versions.targetSdk.get().toInt()
+        minSdk =
+            libs.versions.minSdk
+                .get()
+                .toInt()
+        targetSdk =
+            libs.versions.targetSdk
+                .get()
+                .toInt()
         versionCode = 2
         versionName = project.version.toString()
 
@@ -42,8 +51,8 @@ android {
                 "TextFields",
                 "ContentDescription",
                 "LabelFor",
-                "HardcodedText"
-            )
+                "HardcodedText",
+            ),
         )
     }
 
@@ -87,8 +96,8 @@ android {
             addManifestPlaceholders(
                 mapOf(
                     "sentryDebug" to true,
-                    "sentryEnvironment" to "debug"
-                )
+                    "sentryEnvironment" to "debug",
+                ),
             )
         }
         getByName("release") {
@@ -100,8 +109,8 @@ android {
             addManifestPlaceholders(
                 mapOf(
                     "sentryDebug" to false,
-                    "sentryEnvironment" to "release"
-                )
+                    "sentryEnvironment" to "release",
+                ),
             )
         }
     }
@@ -116,10 +125,11 @@ android {
 
     androidComponents.onVariants { variant ->
         val taskName = "toggle${variant.name.capitalized()}NativeLogging"
-        val toggleNativeLoggingTask = project.tasks.register<ToggleNativeLoggingTask>(taskName) {
-            mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
-            rootDir.set(project.rootDir.absolutePath)
-        }
+        val toggleNativeLoggingTask =
+            project.tasks.register<ToggleNativeLoggingTask>(taskName) {
+                mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+                rootDir.set(project.rootDir.absolutePath)
+            }
         project.afterEvaluate {
             (variant as? VariantImpl<*>)?.taskContainer?.assembleTask?.configure {
                 finalizedBy(toggleNativeLoggingTask)
@@ -174,7 +184,6 @@ dependencies {
 }
 
 abstract class ToggleNativeLoggingTask : Exec() {
-
     @get:Input
     abstract val rootDir: Property<String>
 
@@ -204,8 +213,9 @@ abstract class ToggleNativeLoggingTask : Exec() {
     }
 
     companion object {
-        private val regex = Regex(
-            """<meta-data\s+[^>]*android:name="io\.sentry\.session-replay\.debug"[^>]*android:value="([^"]+)""""
-        )
+        private val regex =
+            Regex(
+                """<meta-data\s+[^>]*android:name="io\.sentry\.session-replay\.debug"[^>]*android:value="([^"]+)"""",
+            )
     }
 }

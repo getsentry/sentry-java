@@ -56,17 +56,21 @@ class DefaultAndroidEventProcessorTest {
 
     private class Fixture {
         val buildInfo = mock<BuildInfoProvider>()
-        val options = SentryAndroidOptions().apply {
-            isDebug = true
-            setLogger(mock())
-            sdkVersion = SdkVersion("test", "1.2.3")
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isDebug = true
+                setLogger(mock())
+                sdkVersion = SdkVersion("test", "1.2.3")
+            }
 
         val scopes: IScopes = mock<IScopes>()
 
         lateinit var sentryTracer: SentryTracer
 
-        fun getSut(context: Context, isSendDefaultPii: Boolean = false): DefaultAndroidEventProcessor {
+        fun getSut(
+            context: Context,
+            isSendDefaultPii: Boolean = false,
+        ): DefaultAndroidEventProcessor {
             options.isSendDefaultPii = isSendDefaultPii
             whenever(scopes.options).thenReturn(options)
             sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
@@ -144,8 +148,8 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(
             sut.process(
                 SentryTransaction(fixture.sentryTracer),
-                Hint()
-            )
+                Hint(),
+            ),
         ) {
             assertNotNull(it.contexts.app)
             assertNotNull(it.dist)
@@ -156,12 +160,14 @@ class DefaultAndroidEventProcessorTest {
     fun `Current and Main should be true if it comes from main thread`() {
         val sut = fixture.getSut(context)
 
-        val sentryThread = SentryThread().apply {
-            id = Looper.getMainLooper().thread.id
-        }
-        val event = SentryEvent().apply {
-            threads = mutableListOf(sentryThread)
-        }
+        val sentryThread =
+            SentryThread().apply {
+                id = Looper.getMainLooper().thread.id
+            }
+        val event =
+            SentryEvent().apply {
+                threads = mutableListOf(sentryThread)
+            }
 
         assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.threads) { threads ->
@@ -175,13 +181,15 @@ class DefaultAndroidEventProcessorTest {
     fun `Current should be false if it its not the main thread`() {
         val sut = fixture.getSut(context)
 
-        val event = SentryEvent().apply {
-            threads = mutableListOf(
-                SentryThread().apply {
-                    id = 10L
-                }
-            )
-        }
+        val event =
+            SentryEvent().apply {
+                threads =
+                    mutableListOf(
+                        SentryThread().apply {
+                            id = 10L
+                        },
+                    )
+            }
 
         assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.threads) { threads ->
@@ -195,14 +203,16 @@ class DefaultAndroidEventProcessorTest {
     fun `Current should remain true`() {
         val sut = fixture.getSut(context)
 
-        val event = SentryEvent().apply {
-            threads = mutableListOf(
-                SentryThread().apply {
-                    id = 10L
-                    isCurrent = true
-                }
-            )
-        }
+        val event =
+            SentryEvent().apply {
+                threads =
+                    mutableListOf(
+                        SentryThread().apply {
+                            id = 10L
+                            isCurrent = true
+                        },
+                    )
+            }
 
         assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.threads) { threads ->
@@ -257,12 +267,14 @@ class DefaultAndroidEventProcessorTest {
     fun `When user with id is already set, do not overwrite it`() {
         val sut = fixture.getSut(context)
 
-        val user = User().apply {
-            id = "user-id"
-        }
-        val event = SentryEvent().apply {
-            setUser(user)
-        }
+        val user =
+            User().apply {
+                id = "user-id"
+            }
+        val event =
+            SentryEvent().apply {
+                setUser(user)
+            }
 
         assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.user)
@@ -274,9 +286,10 @@ class DefaultAndroidEventProcessorTest {
     fun `When user without id is set, user id is applied`() {
         val sut = fixture.getSut(context)
 
-        val event = SentryEvent().apply {
-            user = User()
-        }
+        val event =
+            SentryEvent().apply {
+                user = User()
+            }
 
         assertNotNull(sut.process(event, Hint())) {
             assertNotNull(it.user)
@@ -287,9 +300,10 @@ class DefaultAndroidEventProcessorTest {
     @Test
     fun `when event user data does not have ip address set, sets no ip address if sendDefaultPii is false`() {
         val sut = fixture.getSut(context, isSendDefaultPii = false)
-        val event = SentryEvent().apply {
-            user = User()
-        }
+        val event =
+            SentryEvent().apply {
+                user = User()
+            }
         sut.process(event, Hint())
         assertNotNull(event.user) {
             assertNull(it.ipAddress)
@@ -299,9 +313,10 @@ class DefaultAndroidEventProcessorTest {
     @Test
     fun `when event user data does not have ip address set, sets {{auto}} if sendDefaultPii is true`() {
         val sut = fixture.getSut(context, isSendDefaultPii = true)
-        val event = SentryEvent().apply {
-            user = User()
-        }
+        val event =
+            SentryEvent().apply {
+                user = User()
+            }
         sut.process(event, Hint())
         assertNotNull(event.user) {
             assertEquals("{{auto}}", it.ipAddress)
@@ -312,9 +327,10 @@ class DefaultAndroidEventProcessorTest {
     fun `when event has ip address set, keeps original ip address`() {
         val sut = fixture.getSut(context)
         val event = SentryEvent()
-        event.user = User().apply {
-            ipAddress = "192.168.0.1"
-        }
+        event.user =
+            User().apply {
+                ipAddress = "192.168.0.1"
+            }
         sut.process(event, Hint())
         assertNotNull(event.user) {
             assertEquals("192.168.0.1", it.ipAddress)
@@ -329,7 +345,7 @@ class DefaultAndroidEventProcessorTest {
 
         verify(
             (fixture.options.logger as DiagnosticLogger).logger,
-            never()
+            never(),
         )!!.log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 
@@ -343,7 +359,7 @@ class DefaultAndroidEventProcessorTest {
 
         verify(
             (fixture.options.logger as DiagnosticLogger).logger,
-            never()
+            never(),
         )!!.log(eq(SentryLevel.ERROR), any<String>(), any())
     }
 
@@ -360,12 +376,14 @@ class DefaultAndroidEventProcessorTest {
     fun `When event already has OS, add OS with custom key`() {
         val sut = fixture.getSut(context)
 
-        val osLinux = OperatingSystem().apply {
-            name = " Linux "
-        }
-        val event = SentryEvent().apply {
-            contexts.setOperatingSystem(osLinux)
-        }
+        val osLinux =
+            OperatingSystem().apply {
+                name = " Linux "
+            }
+        val event =
+            SentryEvent().apply {
+                contexts.setOperatingSystem(osLinux)
+            }
 
         assertNotNull(sut.process(event, Hint())) {
             assertSame(osLinux, (it.contexts["os_linux"] as OperatingSystem))
@@ -377,12 +395,14 @@ class DefaultAndroidEventProcessorTest {
     fun `When event already has OS, add OS with generated key if no name`() {
         val sut = fixture.getSut(context)
 
-        val osNoName = OperatingSystem().apply {
-            version = "1.0"
-        }
-        val event = SentryEvent().apply {
-            contexts.setOperatingSystem(osNoName)
-        }
+        val osNoName =
+            OperatingSystem().apply {
+                version = "1.0"
+            }
+        val event =
+            SentryEvent().apply {
+                contexts.setOperatingSystem(osNoName)
+            }
 
         assertNotNull(sut.process(event, Hint())) {
             assertSame(osNoName, (it.contexts["os_1"] as OperatingSystem))
@@ -418,8 +438,8 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(
             sut.process(
                 SentryTransaction(fixture.sentryTracer),
-                Hint()
-            )
+                Hint(),
+            ),
         ) {
             assertNotNull(it.contexts.device)
         }
@@ -432,8 +452,8 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(
             sut.process(
                 SentryTransaction(fixture.sentryTracer),
-                Hint()
-            )
+                Hint(),
+            ),
         ) {
             assertNotNull(it.contexts.operatingSystem)
         }
@@ -446,8 +466,8 @@ class DefaultAndroidEventProcessorTest {
         assertNotNull(
             sut.process(
                 SentryTransaction(fixture.sentryTracer),
-                Hint()
-            )
+                Hint(),
+            ),
         ) {
             val device = it.contexts.device!!
             assertNull(device.batteryLevel)
@@ -570,14 +590,16 @@ class DefaultAndroidEventProcessorTest {
         val hint = HintUtils.createWithTypeCheckHint(cachedHint)
 
         val sdkVersion = SdkVersion(SENTRY_DART_SDK_NAME, "1.0.0")
-        val event = SentryEvent().apply {
-            sdk = sdkVersion
-            threads = mutableListOf(
-                SentryThread().apply {
-                    id = 10L
-                }
-            )
-        }
+        val event =
+            SentryEvent().apply {
+                sdk = sdkVersion
+                threads =
+                    mutableListOf(
+                        SentryThread().apply {
+                            id = 10L
+                        },
+                    )
+            }
         // set by OutboxSender during event deserialization
         HintUtils.setIsFromHybridSdk(hint, sdkVersion.name)
 
@@ -592,37 +614,41 @@ class DefaultAndroidEventProcessorTest {
     @Test
     fun `the exception list is reversed in case there's an RuntimeException`() {
         val sut = fixture.getSut(context)
-        val event = SentryEvent().apply {
-            exceptions = listOf(
-                SentryException().apply {
-                    type = "IllegalStateException"
-                    module = "com.example"
-                    stacktrace = SentryStackTrace(
-                        listOf(
-                            SentryStackFrame().apply {
-                                function = "onCreate"
-                                module = "com.example.Application"
-                                filename = "Application.java"
-                            }
-                        )
+        val event =
+            SentryEvent().apply {
+                exceptions =
+                    listOf(
+                        SentryException().apply {
+                            type = "IllegalStateException"
+                            module = "com.example"
+                            stacktrace =
+                                SentryStackTrace(
+                                    listOf(
+                                        SentryStackFrame().apply {
+                                            function = "onCreate"
+                                            module = "com.example.Application"
+                                            filename = "Application.java"
+                                        },
+                                    ),
+                                )
+                        },
+                        SentryException().apply {
+                            type = "RuntimeException"
+                            value = "Unable to create application com.example.Application: java.lang.IllegalStateException"
+                            module = "java.lang"
+                            stacktrace =
+                                SentryStackTrace(
+                                    listOf(
+                                        SentryStackFrame().apply {
+                                            function = "run"
+                                            module = "com.android.internal.os.RuntimeInit\$MethodAndArgsCaller"
+                                            filename = "RuntimeInit.java"
+                                        },
+                                    ),
+                                )
+                        },
                     )
-                },
-                SentryException().apply {
-                    type = "RuntimeException"
-                    value = "Unable to create application com.example.Application: java.lang.IllegalStateException"
-                    module = "java.lang"
-                    stacktrace = SentryStackTrace(
-                        listOf(
-                            SentryStackFrame().apply {
-                                function = "run"
-                                module = "com.android.internal.os.RuntimeInit\$MethodAndArgsCaller"
-                                filename = "RuntimeInit.java"
-                            }
-                        )
-                    )
-                }
-            )
-        }
+            }
         val processedEvent = sut.process(event, Hint())
         assertNotNull(processedEvent) {
             assertEquals(2, it.exceptions!!.size)
@@ -634,36 +660,40 @@ class DefaultAndroidEventProcessorTest {
     @Test
     fun `the exception list is kept as-is in case there's no RuntimeException`() {
         val sut = fixture.getSut(context)
-        val event = SentryEvent().apply {
-            exceptions = listOf(
-                SentryException().apply {
-                    type = "IllegalStateException"
-                    module = "com.example"
-                    stacktrace = SentryStackTrace(
-                        listOf(
-                            SentryStackFrame().apply {
-                                function = "onCreate"
-                                module = "com.example.Application"
-                                filename = "Application.java"
-                            }
-                        )
+        val event =
+            SentryEvent().apply {
+                exceptions =
+                    listOf(
+                        SentryException().apply {
+                            type = "IllegalStateException"
+                            module = "com.example"
+                            stacktrace =
+                                SentryStackTrace(
+                                    listOf(
+                                        SentryStackFrame().apply {
+                                            function = "onCreate"
+                                            module = "com.example.Application"
+                                            filename = "Application.java"
+                                        },
+                                    ),
+                                )
+                        },
+                        SentryException().apply {
+                            type = "IllegalArgumentException"
+                            module = "com.example"
+                            stacktrace =
+                                SentryStackTrace(
+                                    listOf(
+                                        SentryStackFrame().apply {
+                                            function = "onCreate"
+                                            module = "com.example.Application"
+                                            filename = "Application.java"
+                                        },
+                                    ),
+                                )
+                        },
                     )
-                },
-                SentryException().apply {
-                    type = "IllegalArgumentException"
-                    module = "com.example"
-                    stacktrace = SentryStackTrace(
-                        listOf(
-                            SentryStackFrame().apply {
-                                function = "onCreate"
-                                module = "com.example.Application"
-                                filename = "Application.java"
-                            }
-                        )
-                    )
-                }
-            )
-        }
+            }
         val processedEvent = sut.process(event, Hint())
         assertNotNull(processedEvent) {
             assertEquals(2, it.exceptions!!.size)
