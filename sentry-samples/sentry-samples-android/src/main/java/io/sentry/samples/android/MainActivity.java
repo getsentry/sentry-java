@@ -78,7 +78,6 @@ public class MainActivity extends AppCompatActivity {
               new Feedback("It broke on Android. I don't know why, but this happens.");
           feedback.setContactEmail("john@me.com");
           feedback.setName("John Me");
-
           Sentry.captureFeedback(feedback);
         });
 

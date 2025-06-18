@@ -185,38 +185,42 @@ public final class LoggerApi implements ILoggerApi {
       }
       if (i > 0) {
         attributes.put(
-            "sentry.message.template", new SentryLogEventAttributeValue("string", message));
+            "sentry.message.template",
+            new SentryLogEventAttributeValue(SentryAttributeType.STRING, message));
       }
     }
 
     final @Nullable SdkVersion sdkVersion = scopes.getOptions().getSdkVersion();
     if (sdkVersion != null) {
       attributes.put(
-          "sentry.sdk.name", new SentryLogEventAttributeValue("string", sdkVersion.getName()));
+          "sentry.sdk.name",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, sdkVersion.getName()));
       attributes.put(
           "sentry.sdk.version",
-          new SentryLogEventAttributeValue("string", sdkVersion.getVersion()));
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, sdkVersion.getVersion()));
     }
 
     final @Nullable String environment = scopes.getOptions().getEnvironment();
     if (environment != null) {
-      attributes.put("sentry.environment", new SentryLogEventAttributeValue("string", environment));
+      attributes.put(
+          "sentry.environment",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, environment));
     }
     final @Nullable String release = scopes.getOptions().getRelease();
     if (release != null) {
-      attributes.put("sentry.release", new SentryLogEventAttributeValue("string", release));
+      attributes.put(
+          "sentry.release", new SentryLogEventAttributeValue(SentryAttributeType.STRING, release));
     }
 
     attributes.put(
-        "sentry.trace.parent_span_id", new SentryLogEventAttributeValue("string", spanId));
+        "sentry.trace.parent_span_id",
+        new SentryLogEventAttributeValue(SentryAttributeType.STRING, spanId));
 
     if (Platform.isJvm()) {
       setServerName(attributes);
     }
 
-    if (scopes.getOptions().isSendDefaultPii()) {
-      setUser(attributes);
-    }
+    setUser(attributes);
 
     return attributes;
   }
@@ -227,11 +231,14 @@ public final class LoggerApi implements ILoggerApi {
     final @Nullable String optionsServerName = options.getServerName();
     if (optionsServerName != null) {
       attributes.put(
-          "server.address", new SentryLogEventAttributeValue("string", optionsServerName));
+          "server.address",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, optionsServerName));
     } else if (options.isAttachServerName()) {
       final @Nullable String hostname = HostnameCache.getInstance().getHostname();
       if (hostname != null) {
-        attributes.put("server.address", new SentryLogEventAttributeValue("string", hostname));
+        attributes.put(
+            "server.address",
+            new SentryLogEventAttributeValue(SentryAttributeType.STRING, hostname));
       }
     }
   }
@@ -241,15 +248,17 @@ public final class LoggerApi implements ILoggerApi {
     if (user != null) {
       final @Nullable String id = user.getId();
       if (id != null) {
-        attributes.put("user.id", new SentryLogEventAttributeValue("string", id));
+        attributes.put("user.id", new SentryLogEventAttributeValue(SentryAttributeType.STRING, id));
       }
       final @Nullable String username = user.getUsername();
       if (username != null) {
-        attributes.put("user.name", new SentryLogEventAttributeValue("string", username));
+        attributes.put(
+            "user.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, username));
       }
       final @Nullable String email = user.getEmail();
       if (email != null) {
-        attributes.put("user.email", new SentryLogEventAttributeValue("string", email));
+        attributes.put(
+            "user.email", new SentryLogEventAttributeValue(SentryAttributeType.STRING, email));
       }
     }
   }
