@@ -46,6 +46,17 @@ public interface EventProcessor {
   }
 
   /**
+   * May mutate or drop a SentryLogEvent
+   *
+   * @param event the SentryLogEvent
+   * @return the event itself, a mutated SentryLogEvent or null
+   */
+  @Nullable
+  default SentryLogEvent process(@NotNull SentryLogEvent event) {
+    return event;
+  }
+
+  /**
    * Controls when this EventProcessor is invoked.
    *
    * @return order higher number = later, lower number = earlier (negative values may also be

@@ -37,8 +37,10 @@ public final class User implements JsonUnknown, JsonSerializable {
   /** Remote IP address of the user. */
   private @Nullable String ipAddress;
 
-  /** Human readable name. */
-  private @Nullable String name;
+  /**
+   * @deprecated please use {@link User#username} Human readable name.
+   */
+  @Deprecated private @Nullable String name;
 
   /** User geo location. */
   private @Nullable Geo geo;
@@ -215,7 +217,9 @@ public final class User implements JsonUnknown, JsonSerializable {
    * Get human readable name.
    *
    * @return Human readable name
+   * @deprecated please use {@link User#getUsername()}
    */
+  @Deprecated
   public @Nullable String getName() {
     return name;
   }
@@ -224,7 +228,9 @@ public final class User implements JsonUnknown, JsonSerializable {
    * Set human readable name.
    *
    * @param name Human readable name
+   * @deprecated please use {@link User#setUsername(String)}
    */
+  @Deprecated
   public void setName(final @Nullable String name) {
     this.name = name;
   }

@@ -470,6 +470,38 @@ public final class SentryClient implements ISentryClient {
     return event;
   }
 
+  @Nullable
+  private SentryLogEvent processLogEvent(
+      @NotNull SentryLogEvent event, final @NotNull List<EventProcessor> eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        event = processor.process(event);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while processing log event by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (event == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Log event was dropped by a processor: %s",
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.LogItem);
+        break;
+      }
+    }
+    return event;
+  }
+
   private @Nullable SentryTransaction processTransaction(
       @NotNull SentryTransaction transaction,
       final @NotNull Hint hint,
@@ -1138,6 +1170,19 @@ public final class SentryClient implements ISentryClient {
   @ApiStatus.Experimental
   @Override
   public void captureLog(@Nullable SentryLogEvent logEvent, @Nullable IScope scope) {
+    if (logEvent != null && scope != null) {
+      logEvent = processLogEvent(logEvent, scope.getEventProcessors());
+      if (logEvent == null) {
+        return;
+      }
+    }
+
+    if (logEvent != null) {
+      logEvent = processLogEvent(logEvent, options.getEventProcessors());
+      if (logEvent == null) {
+        return;
+      }
+    }
 
     if (logEvent != null) {
       logEvent = executeBeforeSendLog(logEvent);

@@ -43,6 +43,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.sentry_dialog_user_feedback);
@@ -104,7 +105,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     if (feedbackOptions.isUseSentryUser()) {
       final @Nullable User user = Sentry.getCurrentScopes().getScope().getUser();
       if (user != null) {
-        edtName.setText(user.getName());
+        edtName.setText(user.getUsername());
         edtEmail.setText(user.getEmail());
       }
     }

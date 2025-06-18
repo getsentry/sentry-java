@@ -3,13 +3,18 @@ package io.sentry.android.core;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import io.sentry.DateUtils;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.IpAddressUtils;
+import io.sentry.NoOpLogger;
+import io.sentry.SentryAttributeType;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.SentryLogEvent;
+import io.sentry.SentryLogEventAttributeValue;
 import io.sentry.SentryReplayEvent;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.performance.AppStartMetrics;
@@ -23,6 +28,7 @@ import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
+import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.util.Collections;
 import java.util.List;
@@ -42,6 +48,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull Future<DeviceInfoUtil> deviceInfoUtil;
+  private final @NotNull LazyEvaluator<String> deviceFamily =
+      new LazyEvaluator<>(() -> ContextUtils.getFamily(NoOpLogger.getInstance()));
 
   public DefaultAndroidEventProcessor(
       final @NotNull Context context,
@@ -78,6 +86,13 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
 
     fixExceptionOrder(event);
 
+    return event;
+  }
+
+  @Override
+  public @Nullable SentryLogEvent process(@NotNull SentryLogEvent event) {
+    setDevice(event);
+    setOs(event);
     return event;
   }
 
@@ -196,6 +211,34 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
         osNameKey = "os_1";
       }
       event.getContexts().put(osNameKey, currentOS);
+    }
+  }
+
+  private void setDevice(final @NotNull SentryLogEvent event) {
+    try {
+      event.setAttribute(
+          "device.brand",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.BRAND));
+      event.setAttribute(
+          "device.model",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.MODEL));
+      event.setAttribute(
+          "device.family",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, deviceFamily.getValue()));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve device info", e);
+    }
+  }
+
+  private void setOs(final @NotNull SentryLogEvent event) {
+    try {
+      event.setAttribute(
+          "os.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, "Android"));
+      event.setAttribute(
+          "os.version",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, Build.VERSION.RELEASE));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to retrieve os system", e);
     }
   }
 
