@@ -15,33 +15,34 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class ViewUtilsTest {
-
     @Test
     fun `getResourceId returns resourceId when available`() {
-        val view = mock<View> {
-            whenever(it.id).doReturn(View.generateViewId())
+        val view =
+            mock<View> {
+                whenever(it.id).doReturn(View.generateViewId())
 
-            val context = mock<Context>()
-            val resources = mock<Resources>()
-            whenever(resources.getResourceEntryName(it.id)).thenReturn("test_view")
-            whenever(context.resources).thenReturn(resources)
-            whenever(it.context).thenReturn(context)
-        }
+                val context = mock<Context>()
+                val resources = mock<Resources>()
+                whenever(resources.getResourceEntryName(it.id)).thenReturn("test_view")
+                whenever(context.resources).thenReturn(resources)
+                whenever(it.context).thenReturn(context)
+            }
 
         assertEquals(ViewUtils.getResourceId(view), "test_view")
     }
 
     @Test
     fun `getResourceId throws when resource id is not available`() {
-        val view = mock<View> {
-            whenever(it.id).doReturn(View.generateViewId())
+        val view =
+            mock<View> {
+                whenever(it.id).doReturn(View.generateViewId())
 
-            val context = mock<Context>()
-            val resources = mock<Resources>()
-            whenever(resources.getResourceEntryName(any())).doThrow(Resources.NotFoundException())
-            whenever(context.resources).thenReturn(resources)
-            whenever(it.context).thenReturn(context)
-        }
+                val context = mock<Context>()
+                val resources = mock<Resources>()
+                whenever(resources.getResourceEntryName(any())).doThrow(Resources.NotFoundException())
+                whenever(context.resources).thenReturn(resources)
+                whenever(it.context).thenReturn(context)
+            }
 
         assertFailsWith<Resources.NotFoundException> { ViewUtils.getResourceId(view) }
     }
@@ -52,10 +53,11 @@ class ViewUtilsTest {
         val resources = mock<Resources>()
         whenever(context.resources).thenReturn(resources)
 
-        val view = mock<View> {
-            whenever(it.id).doReturn(View.NO_ID)
-            whenever(it.context).thenReturn(context)
-        }
+        val view =
+            mock<View> {
+                whenever(it.id).doReturn(View.NO_ID)
+                whenever(it.context).thenReturn(context)
+            }
 
         assertFailsWith<Resources.NotFoundException> { ViewUtils.getResourceId(view) }
         verify(context, never()).resources
@@ -67,11 +69,12 @@ class ViewUtilsTest {
         val resources = mock<Resources>()
         whenever(context.resources).thenReturn(resources)
 
-        val view = mock<View> {
-            // View.generateViewId() starts with 1
-            whenever(it.id).doReturn(1)
-            whenever(it.context).thenReturn(context)
-        }
+        val view =
+            mock<View> {
+                // View.generateViewId() starts with 1
+                whenever(it.id).doReturn(1)
+                whenever(it.context).thenReturn(context)
+            }
 
         assertFailsWith<Resources.NotFoundException> { ViewUtils.getResourceId(view) }
         verify(context, never()).resources
@@ -79,15 +82,16 @@ class ViewUtilsTest {
 
     @Test
     fun `getResourceIdWithFallback falls back to hexadecimal id when resource not found`() {
-        val view = mock<View> {
-            whenever(it.id).doReturn(1234)
+        val view =
+            mock<View> {
+                whenever(it.id).doReturn(1234)
 
-            val context = mock<Context>()
-            val resources = mock<Resources>()
-            whenever(resources.getResourceEntryName(it.id)).thenThrow(Resources.NotFoundException())
-            whenever(context.resources).thenReturn(resources)
-            whenever(it.context).thenReturn(context)
-        }
+                val context = mock<Context>()
+                val resources = mock<Resources>()
+                whenever(resources.getResourceEntryName(it.id)).thenThrow(Resources.NotFoundException())
+                whenever(context.resources).thenReturn(resources)
+                whenever(it.context).thenReturn(context)
+            }
 
         assertEquals(ViewUtils.getResourceIdWithFallback(view), "0x4d2")
     }

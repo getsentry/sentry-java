@@ -32,7 +32,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class HttpConnectionTest {
-
     private class Fixture {
         val serializer = mock<ISerializer>()
         var proxy: Proxy? = null
@@ -172,22 +171,30 @@ class HttpConnectionTest {
     @Test
     fun `When connection error message contains formatting symbols, does not crash the logger`() {
         fixture.options.isDebug = true
-        fixture.options.setLogger(object : ILogger {
-            override fun log(level: SentryLevel, message: String, vararg args: Any?) =
-                println(String.format(message, args))
+        fixture.options.setLogger(
+            object : ILogger {
+                override fun log(
+                    level: SentryLevel,
+                    message: String,
+                    vararg args: Any?,
+                ) = println(String.format(message, args))
 
-            override fun log(level: SentryLevel, message: String, throwable: Throwable?) =
-                println(message)
+                override fun log(
+                    level: SentryLevel,
+                    message: String,
+                    throwable: Throwable?,
+                ) = println(message)
 
-            override fun log(
-                level: SentryLevel,
-                throwable: Throwable?,
-                message: String,
-                vararg args: Any?
-            ) = println(String.format(message))
+                override fun log(
+                    level: SentryLevel,
+                    throwable: Throwable?,
+                    message: String,
+                    vararg args: Any?,
+                ) = println(String.format(message))
 
-            override fun isEnabled(level: SentryLevel?): Boolean = true
-        })
+                override fun isEnabled(level: SentryLevel?): Boolean = true
+            },
+        )
 
         // when error message contains funky formatting symbols
         whenever(fixture.connection.errorStream).thenReturn("Something is off %d, %s, %s\n".byteInputStream(Charset.forName("UTF-8")))
@@ -218,7 +225,7 @@ class HttpConnectionTest {
             check<ProxyAuthenticator> {
                 assertEquals("some-user", it.user)
                 assertEquals("some-password", it.password)
-            }
+            },
         )
     }
 
@@ -245,9 +252,10 @@ class HttpConnectionTest {
 
     @Test
     fun `When Proxy type is set to SOCKS, HTTP connection uses it`() {
-        fixture.proxy = Proxy("proxy.example.com", "8080").apply {
-            type = Type.SOCKS
-        }
+        fixture.proxy =
+            Proxy("proxy.example.com", "8080").apply {
+                type = Type.SOCKS
+            }
         val transport = fixture.getSUT()
 
         transport.send(createEnvelope())
@@ -275,15 +283,11 @@ class HttpConnectionTest {
         verify(fixture.socketTagger).untagSockets()
     }
 
-    private fun createSession(): Session {
-        return Session("123", User(), "env", "release")
-    }
+    private fun createSession(): Session = Session("123", User(), "env", "release")
 
     private fun throwOnEnvelopeSerialize() {
         whenever(fixture.serializer.serialize(any(), any())).thenThrow(IOException())
     }
 
-    private fun createEnvelope(event: SentryEvent = SentryEvent()): SentryEnvelope {
-        return SentryEnvelope.from(fixture.serializer, event, null)
-    }
+    private fun createEnvelope(event: SentryEvent = SentryEvent()): SentryEnvelope = SentryEnvelope.from(fixture.serializer, event, null)
 }

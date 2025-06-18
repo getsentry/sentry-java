@@ -6,7 +6,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TracePropagationTargetsTest {
-
     @Test
     fun `origins contain the url when it contains one of the defined origins`() {
         val origins = listOf("localhost", "^(http|https)://api\\..*$")

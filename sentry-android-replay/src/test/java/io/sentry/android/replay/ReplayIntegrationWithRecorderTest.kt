@@ -41,30 +41,29 @@ import kotlin.test.assertEquals
 @RunWith(AndroidJUnit4::class)
 @Config(
     sdk = [26],
-    shadows = [ReplayShadowMediaCodec::class]
+    shadows = [ReplayShadowMediaCodec::class],
 )
 class ReplayIntegrationWithRecorderTest {
-
     @get:Rule
     val tmpDir = TemporaryFolder()
 
     internal class Fixture {
-        val options = SentryOptions().apply {
-            threadChecker = NoOpThreadChecker.getInstance()
-        }
+        val options =
+            SentryOptions().apply {
+                threadChecker = NoOpThreadChecker.getInstance()
+            }
         val scopes = mock<IScopes>()
 
         fun getSut(
             context: Context,
             recorder: Recorder,
-            dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance()
-        ): ReplayIntegration {
-            return ReplayIntegration(
+            dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
+        ): ReplayIntegration =
+            ReplayIntegration(
                 context,
                 dateProvider,
-                recorderProvider = { recorder }
+                recorderProvider = { recorder },
             )
-        }
     }
 
     private val fixture = Fixture()
@@ -84,46 +83,48 @@ class ReplayIntegrationWithRecorderTest {
         }
         // fake current time to trigger segment creation, CurrentDateProvider.getInstance() should
         // be used in prod
-        val dateProvider = ICurrentDateProvider {
-            System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
-        }
+        val dateProvider =
+            ICurrentDateProvider {
+                System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
+            }
 
         fixture.options.sessionReplay.isTrackConfiguration = false
         fixture.options.sessionReplay.sessionSampleRate = 1.0
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
         val replay: ReplayIntegration
-        val recorder = object : Recorder {
-            var state: LifecycleState = INITALIZED
+        val recorder =
+            object : Recorder {
+                var state: LifecycleState = INITALIZED
 
-            override fun start() {
-                state = STARTED
-            }
+                override fun start() {
+                    state = STARTED
+                }
 
-            override fun onConfigurationChanged(config: ScreenshotRecorderConfig) {
-                // no-op
-            }
+                override fun onConfigurationChanged(config: ScreenshotRecorderConfig) {
+                    // no-op
+                }
 
-            override fun resume() {
-                state = RESUMED
-            }
+                override fun resume() {
+                    state = RESUMED
+                }
 
-            override fun pause() {
-                state = PAUSED
-            }
+                override fun pause() {
+                    state = PAUSED
+                }
 
-            override fun reset() {
-                state = STOPPED
-            }
+                override fun reset() {
+                    state = STOPPED
+                }
 
-            override fun stop() {
-                state = STOPPED
-            }
+                override fun stop() {
+                    state = STOPPED
+                }
 
-            override fun close() {
-                state = CLOSED
+                override fun close() {
+                    state = CLOSED
+                }
             }
-        }
 
         replay = fixture.getSut(context, recorder, dateProvider)
         replay.register(fixture.scopes, fixture.options)
@@ -187,7 +188,7 @@ class ReplayIntegrationWithRecorderTest {
                 assertEquals(5, videoEvents?.first()?.frameCount)
                 assertEquals(1, videoEvents?.first()?.frameRate)
                 assertEquals(0, videoEvents?.first()?.segmentId)
-            }
+            },
         )
 
         replay.close()
@@ -200,6 +201,6 @@ class ReplayIntegrationWithRecorderTest {
         RESUMED,
         PAUSED,
         STOPPED,
-        CLOSED
+        CLOSED,
     }
 }

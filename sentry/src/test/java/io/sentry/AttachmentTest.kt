@@ -8,7 +8,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class AttachmentTest {
-
     private class Fixture {
         val contentType = "application/json"
         val filename = "logs.txt"

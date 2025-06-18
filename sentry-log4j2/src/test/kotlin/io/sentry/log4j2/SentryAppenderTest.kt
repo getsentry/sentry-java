@@ -45,13 +45,30 @@ class SentryAppenderTest {
             whenever(transportFactory.create(any(), any())).thenReturn(transport)
         }
 
-        fun getSut(transportFactory: ITransportFactory? = null, minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, debug: Boolean? = null, contextTags: List<String>? = null): ExtendedLogger {
+        fun getSut(
+            transportFactory: ITransportFactory? = null,
+            minimumBreadcrumbLevel: Level? = null,
+            minimumEventLevel: Level? = null,
+            debug: Boolean? = null,
+            contextTags: List<String>? = null,
+        ): ExtendedLogger {
             if (transportFactory != null) {
                 this.transportFactory = transportFactory
             }
             loggerContext.start()
             val config: Configuration = loggerContext.configuration
-            val appender = SentryAppender("sentry", null, "http://key@localhost/proj", minimumBreadcrumbLevel, minimumEventLevel, debug, this.transportFactory, ScopesAdapter.getInstance(), contextTags?.toTypedArray())
+            val appender =
+                SentryAppender(
+                    "sentry",
+                    null,
+                    "http://key@localhost/proj",
+                    minimumBreadcrumbLevel,
+                    minimumEventLevel,
+                    debug,
+                    this.transportFactory,
+                    ScopesAdapter.getInstance(),
+                    contextTags?.toTypedArray(),
+                )
             config.addAppender(appender)
 
             val ref = AppenderRef.createAppenderRef("sentry", null, null)
@@ -99,7 +116,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals("manual-environment", event.environment)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -117,7 +134,7 @@ class SentryAppenderTest {
                 }
                 assertEquals("io.sentry.log4j2.SentryAppenderTest", event.logger)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -130,14 +147,16 @@ class SentryAppenderTest {
 
         verify(fixture.transport).send(
             checkEvent { event ->
-                val eventTime = Instant.ofEpochMilli(event.timestamp.time)
-                    .atZone(fixture.utcTimeZone)
-                    .toLocalDateTime()
+                val eventTime =
+                    Instant
+                        .ofEpochMilli(event.timestamp.time)
+                        .atZone(fixture.utcTimeZone)
+                        .toLocalDateTime()
 
                 assertTrue { eventTime.plusSeconds(1).isAfter(utcTime) }
                 assertTrue { eventTime.minusSeconds(1).isBefore(utcTime) }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -150,7 +169,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.DEBUG, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -163,7 +182,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.DEBUG, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -176,7 +195,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.INFO, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -189,7 +208,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.WARNING, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -202,7 +221,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.ERROR, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -218,7 +237,7 @@ class SentryAppenderTest {
                 assertEquals(SentryAppender.MECHANISM_TYPE, exception.mechanism!!.type)
                 assertEquals("test exc", exception.value)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -231,7 +250,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(SentryLevel.FATAL, event.level)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -244,7 +263,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertNotNull(event.getExtra("thread_name"))
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -258,7 +277,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals(mapOf("key" to "value"), event.contexts["Context Data"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -274,7 +293,7 @@ class SentryAppenderTest {
                 assertEquals(mapOf("key" to "value"), event.contexts["Context Data"])
                 assertEquals(mapOf("contextTag1" to "contextTag1Value"), event.tags)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -293,7 +312,7 @@ class SentryAppenderTest {
                     assertEquals("value", contextData["key2"])
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -308,7 +327,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertNull(event.contexts["Context Data"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -321,17 +340,18 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertFalse(event.contexts.containsKey("MDC"))
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `attaches marker information`() {
         val logger = fixture.getSut(minimumEventLevel = Level.WARN)
-        val sqlMarker = MarkerManager.getMarker("SQL").setParents(
-            MarkerManager.getMarker("SQL_QUERY"),
-            MarkerManager.getMarker("SQL_UPDATE")
-        )
+        val sqlMarker =
+            MarkerManager.getMarker("SQL").setParents(
+                MarkerManager.getMarker("SQL_QUERY"),
+                MarkerManager.getMarker("SQL_UPDATE"),
+            )
 
         logger.warn(sqlMarker, "testing marker tags")
 
@@ -339,7 +359,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals("SQL[ SQL_QUERY, SQL_UPDATE ]", event.getExtra("marker"))
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -357,12 +377,12 @@ class SentryAppenderTest {
                         it.packageSet.any { pkg ->
                             "maven:io.sentry:sentry-log4j2" == pkg.name &&
                                 BuildConfig.VERSION_NAME == pkg.version
-                        }
+                        },
                     )
                     assertTrue(it.integrationSet.contains("Log4j"))
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -380,9 +400,11 @@ class SentryAppenderTest {
                 assertNotNull(event.breadcrumbs) { breadcrumbs ->
                     assertEquals(2, breadcrumbs.size)
                     val breadcrumb = breadcrumbs[0]
-                    val breadcrumbTime = Instant.ofEpochMilli(event.timestamp.time)
-                        .atZone(fixture.utcTimeZone)
-                        .toLocalDateTime()
+                    val breadcrumbTime =
+                        Instant
+                            .ofEpochMilli(event.timestamp.time)
+                            .atZone(fixture.utcTimeZone)
+                            .toLocalDateTime()
                     assertTrue { breadcrumbTime.plusSeconds(1).isAfter(utcTime) }
                     assertTrue { breadcrumbTime.minusSeconds(1).isBefore(utcTime) }
                     assertEquals("this should be a breadcrumb #1", breadcrumb.message)
@@ -390,7 +412,7 @@ class SentryAppenderTest {
                     assertEquals(SentryLevel.DEBUG, breadcrumb.level)
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -409,7 +431,7 @@ class SentryAppenderTest {
                     assertEquals("this should be a breadcrumb", breadcrumbs[0].message)
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -430,7 +452,7 @@ class SentryAppenderTest {
                     assertEquals("this should not be sent as the event but be a breadcrumb", breadcrumbs[1].message)
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -443,7 +465,7 @@ class SentryAppenderTest {
             checkEvent { event ->
                 assertEquals("release from sentry.properties", event.release)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 

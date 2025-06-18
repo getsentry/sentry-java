@@ -6,7 +6,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class TodoSystemTest {
-
     lateinit var testHelper: TestHelper
 
     @Before

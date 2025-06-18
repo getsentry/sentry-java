@@ -11,7 +11,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
 class SentryWrapperTest {
-
     private val dsn = "http://key@localhost/proj"
     private lateinit var executor: ExecutorService
 
@@ -31,17 +30,19 @@ class SentryWrapperTest {
     fun `scopes is reset to state within the thread after isolated supply is done`() {
         initForTest {
             it.dsn = dsn
-            it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
-                event
-            }
+            it.beforeSend =
+                SentryOptions.BeforeSendCallback { event, hint ->
+                    event
+                }
         }
 
         val mainScopes = Sentry.getCurrentScopes()
         val threadedScopes = Sentry.getCurrentScopes().forkedCurrentScope("test")
 
-        executor.submit {
-            Sentry.setCurrentScopes(threadedScopes)
-        }.get()
+        executor
+            .submit {
+                Sentry.setCurrentScopes(threadedScopes)
+            }.get()
 
         assertEquals(mainScopes, Sentry.getCurrentScopes())
 
@@ -52,15 +53,16 @@ class SentryWrapperTest {
                     assertNotEquals(threadedScopes, Sentry.getCurrentScopes())
                     "Result 1"
                 },
-                executor
+                executor,
             )
 
         callableFuture.join()
 
-        executor.submit {
-            assertNotEquals(mainScopes, Sentry.getCurrentScopes())
-            assertEquals(threadedScopes, Sentry.getCurrentScopes())
-        }.get()
+        executor
+            .submit {
+                assertNotEquals(mainScopes, Sentry.getCurrentScopes())
+                assertEquals(threadedScopes, Sentry.getCurrentScopes())
+            }.get()
     }
 
     @Test
@@ -69,10 +71,11 @@ class SentryWrapperTest {
 
         initForTest {
             it.dsn = dsn
-            it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
-                capturedEvents.add(event)
-                event
-            }
+            it.beforeSend =
+                SentryOptions.BeforeSendCallback { event, hint ->
+                    capturedEvents.add(event)
+                    event
+                }
         }
 
         Sentry.addBreadcrumb("MyOriginalBreadcrumbBefore")
@@ -86,7 +89,7 @@ class SentryWrapperTest {
                     Sentry.captureMessage("ClonedMessage")
                     "Result 1"
                 },
-                executor
+                executor,
             )
 
         val callableFuture2 =
@@ -97,7 +100,7 @@ class SentryWrapperTest {
                     Sentry.captureMessage("ClonedMessage2")
                     "Result 2"
                 },
-                executor
+                executor,
             )
 
         Sentry.addBreadcrumb("MyOriginalBreadcrumb")
@@ -121,33 +124,36 @@ class SentryWrapperTest {
 
         initForTest {
             it.dsn = dsn
-            it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
-                capturedEvents.add(event)
-                event
-            }
+            it.beforeSend =
+                SentryOptions.BeforeSendCallback { event, hint ->
+                    capturedEvents.add(event)
+                    event
+                }
         }
 
         Sentry.addBreadcrumb("MyOriginalBreadcrumbBefore")
         Sentry.captureMessage("OriginalMessageBefore")
         println(Thread.currentThread().name)
 
-        val future1 = executor.submit(
-            SentryWrapper.wrapCallable {
-                Thread.sleep(20)
-                Sentry.addBreadcrumb("MyClonedBreadcrumb")
-                Sentry.captureMessage("ClonedMessage")
-                "Result 1"
-            }
-        )
+        val future1 =
+            executor.submit(
+                SentryWrapper.wrapCallable {
+                    Thread.sleep(20)
+                    Sentry.addBreadcrumb("MyClonedBreadcrumb")
+                    Sentry.captureMessage("ClonedMessage")
+                    "Result 1"
+                },
+            )
 
-        val future2 = executor.submit(
-            SentryWrapper.wrapCallable {
-                Thread.sleep(10)
-                Sentry.addBreadcrumb("MyClonedBreadcrumb2")
-                Sentry.captureMessage("ClonedMessage2")
-                "Result 2"
-            }
-        )
+        val future2 =
+            executor.submit(
+                SentryWrapper.wrapCallable {
+                    Thread.sleep(10)
+                    Sentry.addBreadcrumb("MyClonedBreadcrumb2")
+                    Sentry.captureMessage("ClonedMessage2")
+                    "Result 2"
+                },
+            )
 
         Sentry.addBreadcrumb("MyOriginalBreadcrumb")
         Sentry.captureMessage("OriginalMessage")
@@ -173,9 +179,10 @@ class SentryWrapperTest {
         val mainScopes = Sentry.getCurrentScopes()
         val threadedScopes = Sentry.getCurrentScopes().forkedCurrentScope("test")
 
-        executor.submit {
-            Sentry.setCurrentScopes(threadedScopes)
-        }.get()
+        executor
+            .submit {
+                Sentry.setCurrentScopes(threadedScopes)
+            }.get()
 
         assertEquals(mainScopes, Sentry.getCurrentScopes())
 
@@ -185,15 +192,16 @@ class SentryWrapperTest {
                     assertNotEquals(mainScopes, Sentry.getCurrentScopes())
                     assertNotEquals(threadedScopes, Sentry.getCurrentScopes())
                     "Result 1"
-                }
+                },
             )
 
         callableFuture.get()
 
-        executor.submit {
-            assertNotEquals(mainScopes, Sentry.getCurrentScopes())
-            assertEquals(threadedScopes, Sentry.getCurrentScopes())
-        }.get()
+        executor
+            .submit {
+                assertNotEquals(mainScopes, Sentry.getCurrentScopes())
+                assertEquals(threadedScopes, Sentry.getCurrentScopes())
+            }.get()
     }
 
     @Test
@@ -202,33 +210,36 @@ class SentryWrapperTest {
 
         initForTest {
             it.dsn = dsn
-            it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
-                capturedEvents.add(event)
-                event
-            }
+            it.beforeSend =
+                SentryOptions.BeforeSendCallback { event, hint ->
+                    capturedEvents.add(event)
+                    event
+                }
         }
 
         Sentry.addBreadcrumb("MyOriginalBreadcrumbBefore")
         Sentry.captureMessage("OriginalMessageBefore")
         println(Thread.currentThread().name)
 
-        val future1 = executor.submit(
-            SentryWrapper.wrapRunnable {
-                Thread.sleep(20)
-                Sentry.addBreadcrumb("MyClonedBreadcrumb")
-                Sentry.captureMessage("ClonedMessage")
-                "Result 1"
-            }
-        )
+        val future1 =
+            executor.submit(
+                SentryWrapper.wrapRunnable {
+                    Thread.sleep(20)
+                    Sentry.addBreadcrumb("MyClonedBreadcrumb")
+                    Sentry.captureMessage("ClonedMessage")
+                    "Result 1"
+                },
+            )
 
-        val future2 = executor.submit(
-            SentryWrapper.wrapRunnable {
-                Thread.sleep(10)
-                Sentry.addBreadcrumb("MyClonedBreadcrumb2")
-                Sentry.captureMessage("ClonedMessage2")
-                "Result 2"
-            }
-        )
+        val future2 =
+            executor.submit(
+                SentryWrapper.wrapRunnable {
+                    Thread.sleep(10)
+                    Sentry.addBreadcrumb("MyClonedBreadcrumb2")
+                    Sentry.captureMessage("ClonedMessage2")
+                    "Result 2"
+                },
+            )
 
         Sentry.addBreadcrumb("MyOriginalBreadcrumb")
         Sentry.captureMessage("OriginalMessage")
@@ -254,9 +265,10 @@ class SentryWrapperTest {
         val mainScopes = Sentry.getCurrentScopes()
         val threadedScopes = Sentry.getCurrentScopes().forkedCurrentScope("test")
 
-        executor.submit {
-            Sentry.setCurrentScopes(threadedScopes)
-        }.get()
+        executor
+            .submit {
+                Sentry.setCurrentScopes(threadedScopes)
+            }.get()
 
         assertEquals(mainScopes, Sentry.getCurrentScopes())
 
@@ -266,14 +278,15 @@ class SentryWrapperTest {
                     assertNotEquals(mainScopes, Sentry.getCurrentScopes())
                     assertNotEquals(threadedScopes, Sentry.getCurrentScopes())
                     "Result 1"
-                }
+                },
             )
 
         runnableFuture.get()
 
-        executor.submit {
-            assertNotEquals(mainScopes, Sentry.getCurrentScopes())
-            assertEquals(threadedScopes, Sentry.getCurrentScopes())
-        }.get()
+        executor
+            .submit {
+                assertNotEquals(mainScopes, Sentry.getCurrentScopes())
+                assertEquals(threadedScopes, Sentry.getCurrentScopes())
+            }.get()
     }
 }

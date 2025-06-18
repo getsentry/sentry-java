@@ -50,13 +50,12 @@ class QueueFileTest {
     val folder = TemporaryFolder()
     private lateinit var file: File
 
-    private fun newQueueFile(raf: RandomAccessFile): QueueFile {
-        return QueueFile(this.file, raf, true, -1)
-    }
+    private fun newQueueFile(raf: RandomAccessFile): QueueFile = QueueFile(this.file, raf, true, -1)
 
-    private fun newQueueFile(zero: Boolean = true, size: Int = -1): QueueFile {
-        return Builder(file).zero(zero).size(size).build()
-    }
+    private fun newQueueFile(
+        zero: Boolean = true,
+        size: Int = -1,
+    ): QueueFile = Builder(file).zero(zero).size(size).build()
 
     @Before
     fun setUp() {
@@ -355,7 +354,8 @@ class QueueFileTest {
         try {
             queueFile.add(values[252])
             Assert.fail()
-        } catch (e: IOException) { /* expected */
+        } catch (e: IOException) {
+            // expected
         }
 
         braf.rejectCommit = false
@@ -384,7 +384,8 @@ class QueueFileTest {
         try {
             queueFile.remove()
             fail()
-        } catch (e: IOException) { /* expected */
+        } catch (e: IOException) {
+            // expected
         }
 
         queueFile.close()
@@ -411,7 +412,8 @@ class QueueFileTest {
             // This should trigger an expansion which should fail.
             queueFile.add(ByteArray(8000))
             fail()
-        } catch (e: IOException) { /* expected */
+        } catch (e: IOException) {
+            // expected
         }
 
         queueFile.close()
@@ -622,17 +624,28 @@ class QueueFileTest {
         queueFile.add(values[253])
         queueFile.close()
 
-        class BrokenRandomAccessFile(file: File?, mode: String?) : RandomAccessFile(file, mode) {
+        class BrokenRandomAccessFile(
+            file: File?,
+            mode: String?,
+        ) : RandomAccessFile(file, mode) {
             var fail: Boolean = false
 
-            override fun write(b: ByteArray, off: Int, len: Int) {
+            override fun write(
+                b: ByteArray,
+                off: Int,
+                len: Int,
+            ) {
                 if (fail) {
                     throw IOException()
                 }
                 super.write(b, off, len)
             }
 
-            override fun read(b: ByteArray, off: Int, len: Int): Int {
+            override fun read(
+                b: ByteArray,
+                off: Int,
+                len: Int,
+            ): Int {
                 if (fail) {
                     throw IOException()
                 }
@@ -675,8 +688,8 @@ class QueueFileTest {
             queueFile.toString().contains(
                 "zero=true, length=4096," +
                     " size=15," +
-                    " first=Element[position=32, length=0], last=Element[position=179, length=14]}"
-            )
+                    " first=Element[position=32, length=0], last=Element[position=179, length=14]}",
+            ),
         )
     }
 
@@ -700,9 +713,17 @@ class QueueFileTest {
      * A RandomAccessFile that can break when you go to write the COMMITTED
      * status.
      */
-    internal class BrokenRandomAccessFile(file: File?, mode: String?) : RandomAccessFile(file, mode) {
+    internal class BrokenRandomAccessFile(
+        file: File?,
+        mode: String?,
+    ) : RandomAccessFile(file, mode) {
         var rejectCommit: Boolean = true
-        override fun write(b: ByteArray, off: Int, len: Int) {
+
+        override fun write(
+            b: ByteArray,
+            off: Int,
+            len: Int,
+        ) {
             if (rejectCommit && filePointer == 0L) {
                 throw IOException("No commit for you!")
             }
@@ -711,20 +732,22 @@ class QueueFileTest {
     }
 
     companion object {
-        private val logger: Logger = Logger.getLogger(
-            QueueFileTest::class.java.name
-        )
+        private val logger: Logger =
+            Logger.getLogger(
+                QueueFileTest::class.java.name,
+            )
 
         /**
          * Takes up 33401 bytes in the queue (N*(N+1)/2+4*N). Picked 254 instead of 255 so that the number
          * of bytes isn't a multiple of 4.
          */
         private const val N = 254
-        private val values = Array(N) { i ->
-            val value = ByteArray(i)
-            // Example: values[3] = { 3, 2, 1 }
-            for (ii in 0 until i) value[ii] = (i - ii).toByte()
-            value
-        }
+        private val values =
+            Array(N) { i ->
+                val value = ByteArray(i)
+                // Example: values[3] = { 3, 2, 1 }
+                for (ii in 0 until i) value[ii] = (i - ii).toByte()
+                value
+            }
     }
 }

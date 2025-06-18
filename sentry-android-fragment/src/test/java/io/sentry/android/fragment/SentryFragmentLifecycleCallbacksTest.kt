@@ -29,7 +29,6 @@ import kotlin.test.assertEquals
 
 @Suppress("SameParameterValue")
 class SentryFragmentLifecycleCallbacksTest {
-
     private class Fixture {
         val fragmentManager = mock<FragmentManager>()
         val scopes = mock<IScopes>()
@@ -43,15 +42,15 @@ class SentryFragmentLifecycleCallbacksTest {
             loggedFragmentLifecycleStates: Set<FragmentLifecycleState> = FragmentLifecycleState.states,
             enableAutoFragmentLifecycleTracing: Boolean = false,
             tracesSampleRate: Double? = 1.0,
-            isAdded: Boolean = true
+            isAdded: Boolean = true,
         ): SentryFragmentLifecycleCallbacks {
             whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
                     setTracesSampleRate(tracesSampleRate)
-                }
+                },
             )
             whenever(span.spanContext).thenReturn(
-                SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null)
+                SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null),
             )
             whenever(transaction.startChild(any<String>(), any<String>())).thenReturn(span)
             whenever(scope.transaction).thenReturn(transaction)
@@ -62,7 +61,7 @@ class SentryFragmentLifecycleCallbacksTest {
             return SentryFragmentLifecycleCallbacks(
                 scopes = scopes,
                 filterFragmentLifecycleBreadcrumbs = loggedFragmentLifecycleStates,
-                enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
+                enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing,
             )
         }
     }
@@ -115,7 +114,7 @@ class SentryFragmentLifecycleCallbacksTest {
             fixture.fragmentManager,
             fixture.fragment,
             view = mock(),
-            savedInstanceState = null
+            savedInstanceState = null,
         )
 
         verifyBreadcrumbAdded("view created")
@@ -205,7 +204,7 @@ class SentryFragmentLifecycleCallbacksTest {
             },
             check<String> {
                 assertEquals("androidx.fragment.app.Fragment", it)
-            }
+            },
         )
     }
 
@@ -238,7 +237,7 @@ class SentryFragmentLifecycleCallbacksTest {
         verify(fixture.span).finish(
             check {
                 assertEquals(SpanStatus.OK, it)
-            }
+            },
         )
     }
 
@@ -253,7 +252,7 @@ class SentryFragmentLifecycleCallbacksTest {
         verify(fixture.span).finish(
             check {
                 assertEquals(SpanStatus.ABORTED, it)
-            }
+            },
         )
     }
 
@@ -267,7 +266,7 @@ class SentryFragmentLifecycleCallbacksTest {
         verify(fixture.span).finish(
             check {
                 assertEquals(SpanStatus.OK, it)
-            }
+            },
         )
     }
 
@@ -280,7 +279,7 @@ class SentryFragmentLifecycleCallbacksTest {
                 assertEquals(expectedState, breadcrumb.getData("state"))
                 assertEquals(fixture.fragment.javaClass.canonicalName, breadcrumb.getData("screen"))
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 

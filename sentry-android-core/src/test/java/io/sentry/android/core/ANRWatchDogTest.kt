@@ -20,7 +20,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ANRWatchDogTest {
-
     private var currentTimeMs = 0L
     private val timeProvider = ICurrentDateProvider { currentTimeMs }
 
@@ -52,7 +51,7 @@ class ANRWatchDogTest {
                 { a -> anr = a },
                 mock(),
                 handler,
-                mock()
+                mock(),
             )
         val es = Executors.newSingleThreadExecutor()
         try {
@@ -61,8 +60,8 @@ class ANRWatchDogTest {
             assertTrue(
                 latch.await(
                     10L,
-                    TimeUnit.SECONDS
-                )
+                    TimeUnit.SECONDS,
+                ),
             ) // Wait until worker posts the job for the "UI thread"
             var waitCount = 0
             do {
@@ -101,7 +100,7 @@ class ANRWatchDogTest {
                 { a -> anr = a },
                 mock(),
                 handler,
-                mock()
+                mock(),
             )
         val es = Executors.newSingleThreadExecutor()
         try {
@@ -143,16 +142,17 @@ class ANRWatchDogTest {
         val anrs = listOf(stateInfo)
         whenever(am.processesInErrorState).thenReturn(anrs)
 
-        val sut = ANRWatchDog(
-            timeProvider,
-            interval,
-            1L,
-            true,
-            { a -> anr = a },
-            mock(),
-            handler,
-            context
-        )
+        val sut =
+            ANRWatchDog(
+                timeProvider,
+                interval,
+                1L,
+                true,
+                { a -> anr = a },
+                mock(),
+                handler,
+                context,
+            )
         val es = Executors.newSingleThreadExecutor()
         try {
             es.submit { sut.run() }
@@ -160,8 +160,8 @@ class ANRWatchDogTest {
             assertTrue(
                 latch.await(
                     10L,
-                    TimeUnit.SECONDS
-                )
+                    TimeUnit.SECONDS,
+                ),
             ) // Wait until worker posts the job for the "UI thread"
             var waitCount = 0
             do {
@@ -200,16 +200,17 @@ class ANRWatchDogTest {
         val anrs = listOf(stateInfo)
         whenever(am.processesInErrorState).thenReturn(anrs)
 
-        val sut = ANRWatchDog(
-            timeProvider,
-            interval,
-            1L,
-            true,
-            { a -> anr = a },
-            mock(),
-            handler,
-            context
-        )
+        val sut =
+            ANRWatchDog(
+                timeProvider,
+                interval,
+                1L,
+                true,
+                { a -> anr = a },
+                mock(),
+                handler,
+                context,
+            )
         val es = Executors.newSingleThreadExecutor()
         try {
             es.submit { sut.run() }
@@ -217,8 +218,8 @@ class ANRWatchDogTest {
             assertTrue(
                 latch.await(
                     10L,
-                    TimeUnit.SECONDS
-                )
+                    TimeUnit.SECONDS,
+                ),
             ) // Wait until worker posts the job for the "UI thread"
             var waitCount = 0
             do {

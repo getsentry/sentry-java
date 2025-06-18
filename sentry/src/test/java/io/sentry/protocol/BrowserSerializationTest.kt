@@ -12,15 +12,16 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 
 class BrowserSerializationTest {
-
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = Browser().apply {
-            name = "e1c723db-7408-4043-baa7-f4e96234e5dc"
-            version = "724a48e9-2d35-416b-9f79-132beba2473a"
-        }
+        fun getSut() =
+            Browser().apply {
+                name = "e1c723db-7408-4043-baa7-f4e96234e5dc"
+                version = "724a48e9-2d35-416b-9f79-132beba2473a"
+            }
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -40,11 +41,11 @@ class BrowserSerializationTest {
 
     // Helper
 
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
+    private fun sanitizedFile(path: String): String =
+        FileFromResources
+            .invoke(path)
             .replace(Regex("[\n\r]"), "")
             .replace(" ", "")
-    }
 
     private fun serialize(jsonSerializable: JsonSerializable): String {
         val wrt = StringWriter()

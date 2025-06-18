@@ -13,18 +13,19 @@ class RRWebOptionsEventSerializationTest {
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = RRWebOptionsEvent(
-            SentryOptions().apply {
-                sdkVersion = SdkVersion("sentry.java", "7.19.1")
-                sessionReplay.sessionSampleRate = 0.5
-                sessionReplay.onErrorSampleRate = 0.1
-                sessionReplay.quality = LOW
-                sessionReplay.unmaskViewClasses.add("com.example.MyClass")
-                sessionReplay.maskViewClasses.clear()
+        fun getSut() =
+            RRWebOptionsEvent(
+                SentryOptions().apply {
+                    sdkVersion = SdkVersion("sentry.java", "7.19.1")
+                    sessionReplay.sessionSampleRate = 0.5
+                    sessionReplay.onErrorSampleRate = 0.1
+                    sessionReplay.quality = LOW
+                    sessionReplay.unmaskViewClasses.add("com.example.MyClass")
+                    sessionReplay.maskViewClasses.clear()
+                },
+            ).apply {
+                timestamp = 12345678901
             }
-        ).apply {
-            timestamp = 12345678901
-        }
     }
 
     private val fixture = Fixture()

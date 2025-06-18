@@ -12,7 +12,6 @@ import org.mockito.kotlin.whenever
 import kotlin.test.Test
 
 class FileIOSpanManagerTest {
-
     @After
     fun cleanup() {
         PlatformTestManipulator.pretendIsAndroid(false)

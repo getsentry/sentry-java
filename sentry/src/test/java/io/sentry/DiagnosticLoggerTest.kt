@@ -8,17 +8,15 @@ import org.mockito.kotlin.verify
 import kotlin.test.Test
 
 class DiagnosticLoggerTest {
-
     private class Fixture {
-        val options = SentryOptions().apply {
-            setDebug(true)
-            setLogger(logger)
-        }
+        val options =
+            SentryOptions().apply {
+                setDebug(true)
+                setLogger(logger)
+            }
         var logger: ILogger? = mock()
 
-        fun getSut(): DiagnosticLogger {
-            return DiagnosticLogger(options, logger)
-        }
+        fun getSut(): DiagnosticLogger = DiagnosticLogger(options, logger)
     }
 
     private val fixture = Fixture()
@@ -46,12 +44,24 @@ class DiagnosticLoggerTest {
 
     @Test
     fun `when debug is true, a call to log with null level does not throw`() {
-        fixture.getSut().callMethod("log", parameterTypes = arrayOf(SentryLevel::class.java, String::class.java, arrayOf<Any>()::class.java), null, expectedMessage, null)
+        fixture.getSut().callMethod(
+            "log",
+            parameterTypes = arrayOf(SentryLevel::class.java, String::class.java, arrayOf<Any>()::class.java),
+            null,
+            expectedMessage,
+            null,
+        )
     }
 
     @Test
     fun `when debug is true, a call to log with null level and throwable does not throw`() {
-        fixture.getSut().callMethod("log", parameterTypes = arrayOf(SentryLevel::class.java, String::class.java, Throwable::class.java), null, expectedMessage, expectedThrowable)
+        fixture.getSut().callMethod(
+            "log",
+            parameterTypes = arrayOf(SentryLevel::class.java, String::class.java, Throwable::class.java),
+            null,
+            expectedMessage,
+            expectedThrowable,
+        )
     }
 
     @Test

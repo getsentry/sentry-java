@@ -32,26 +32,29 @@ import kotlin.test.assertTrue
 class ViewHierarchyEventProcessorTest {
     private class Fixture {
         val logger = mock<AndroidLogger>()
-        val serializer: JsonSerializer = mock {
-            on(it.serialize(any<JsonSerializable>(), any())).then { invocationOnMock: InvocationOnMock ->
-                val writer: Writer = invocationOnMock.getArgument(1)
-                writer.write("mock-data")
-                writer.flush()
+        val serializer: JsonSerializer =
+            mock {
+                on(it.serialize(any<JsonSerializable>(), any())).then { invocationOnMock: InvocationOnMock ->
+                    val writer: Writer = invocationOnMock.getArgument(1)
+                    writer.write("mock-data")
+                    writer.flush()
+                }
             }
-        }
-        val emptySerializer: JsonSerializer = mock {
-            on(it.serialize(any<JsonSerializable>(), any())).then { invocationOnMock: InvocationOnMock ->
-                val writer: Writer = invocationOnMock.getArgument(1)
-                writer.flush()
+        val emptySerializer: JsonSerializer =
+            mock {
+                on(it.serialize(any<JsonSerializable>(), any())).then { invocationOnMock: InvocationOnMock ->
+                    val writer: Writer = invocationOnMock.getArgument(1)
+                    writer.flush()
+                }
             }
-        }
         val activity = mock<Activity>()
         val threadChecker = mock<IThreadChecker>()
         val window = mock<Window>()
         val view = mock<View>()
-        val options = SentryAndroidOptions().apply {
-            dsn = "https://key@sentry.io/proj"
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+            }
 
         init {
             whenever(view.width).thenReturn(1)
@@ -76,7 +79,7 @@ class ViewHierarchyEventProcessorTest {
         fun process(
             attachViewHierarchy: Boolean,
             event: SentryEvent,
-            hint: Hint = Hint()
+            hint: Hint = Hint(),
         ): Pair<SentryEvent, Hint> {
             val processor = getSut(attachViewHierarchy)
             processor.process(event, hint)
@@ -94,12 +97,13 @@ class ViewHierarchyEventProcessorTest {
 
     @Test
     fun `should return a view hierarchy as byte array`() {
-        val viewHierarchy = ViewHierarchyEventProcessor.snapshotViewHierarchyAsData(
-            fixture.activity,
-            fixture.threadChecker,
-            fixture.serializer,
-            fixture.logger
-        )
+        val viewHierarchy =
+            ViewHierarchyEventProcessor.snapshotViewHierarchyAsData(
+                fixture.activity,
+                fixture.threadChecker,
+                fixture.serializer,
+                fixture.logger,
+            )
 
         assertNotNull(viewHierarchy)
         assertFalse(viewHierarchy.isEmpty())
@@ -107,12 +111,13 @@ class ViewHierarchyEventProcessorTest {
 
     @Test
     fun `should return null as bytes are empty array`() {
-        val viewHierarchy = ViewHierarchyEventProcessor.snapshotViewHierarchyAsData(
-            fixture.activity,
-            fixture.threadChecker,
-            fixture.emptySerializer,
-            fixture.logger
-        )
+        val viewHierarchy =
+            ViewHierarchyEventProcessor.snapshotViewHierarchyAsData(
+                fixture.activity,
+                fixture.threadChecker,
+                fixture.emptySerializer,
+                fixture.logger,
+            )
 
         assertNull(viewHierarchy)
     }
@@ -121,13 +126,14 @@ class ViewHierarchyEventProcessorTest {
     fun `when an event errored, the view hierarchy should not attached if the event is from hybrid sdk`() {
         val hintFromHybridSdk = Hint()
         hintFromHybridSdk.set(TypeCheckHint.SENTRY_IS_FROM_HYBRID_SDK, true)
-        val (event, hint) = fixture.process(
-            true,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            },
-            hintFromHybridSdk
-        )
+        val (event, hint) =
+            fixture.process(
+                true,
+                SentryEvent().apply {
+                    exceptions = listOf(SentryException())
+                },
+                hintFromHybridSdk,
+            )
 
         assertNotNull(event)
         assertNull(hint.viewHierarchy)
@@ -135,12 +141,13 @@ class ViewHierarchyEventProcessorTest {
 
     @Test
     fun `when an event errored, the view hierarchy should not attached if the feature is disabled`() {
-        val (event, hint) = fixture.process(
-            false,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            }
-        )
+        val (event, hint) =
+            fixture.process(
+                false,
+                SentryEvent().apply {
+                    exceptions = listOf(SentryException())
+                },
+            )
 
         assertNotNull(event)
         assertNull(hint.viewHierarchy)
@@ -148,12 +155,13 @@ class ViewHierarchyEventProcessorTest {
 
     @Test
     fun `when an event errored, the view hierarchy should be attached if the feature is enabled`() {
-        val (event, hint) = fixture.process(
-            true,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            }
-        )
+        val (event, hint) =
+            fixture.process(
+                true,
+                SentryEvent().apply {
+                    exceptions = listOf(SentryException())
+                },
+            )
 
         assertNotNull(event)
         assertNotNull(hint.viewHierarchy)
@@ -163,12 +171,13 @@ class ViewHierarchyEventProcessorTest {
     fun `when an event errored in the background, the view hierarchy should captured on the main thread`() {
         whenever(fixture.threadChecker.isMainThread).thenReturn(false)
 
-        val (event, hint) = fixture.process(
-            true,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            }
-        )
+        val (event, hint) =
+            fixture.process(
+                true,
+                SentryEvent().apply {
+                    exceptions = listOf(SentryException())
+                },
+            )
 
         verify(fixture.activity).runOnUiThread(any())
         assertNotNull(event)
@@ -177,10 +186,11 @@ class ViewHierarchyEventProcessorTest {
 
     @Test
     fun `when an event did not error, the view hierarchy should be attached if the feature is enabled`() {
-        val (event, hint) = fixture.process(
-            false,
-            SentryEvent(null)
-        )
+        val (event, hint) =
+            fixture.process(
+                false,
+                SentryEvent(null),
+            )
 
         assertNotNull(event)
         assertNull(hint.viewHierarchy)
@@ -190,12 +200,13 @@ class ViewHierarchyEventProcessorTest {
     fun `when there's no current activity the view hierarchy is null`() {
         CurrentActivityHolder.getInstance().clearActivity()
 
-        val (event, hint) = fixture.process(
-            true,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            }
-        )
+        val (event, hint) =
+            fixture.process(
+                true,
+                SentryEvent().apply {
+                    exceptions = listOf(SentryException())
+                },
+            )
 
         assertNotNull(event)
         assertNull(hint.viewHierarchy)
@@ -205,12 +216,13 @@ class ViewHierarchyEventProcessorTest {
     fun `when there's no current window the view hierarchy is null`() {
         whenever(fixture.activity.window).thenReturn(null)
 
-        val (event, hint) = fixture.process(
-            true,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            }
-        )
+        val (event, hint) =
+            fixture.process(
+                true,
+                SentryEvent().apply {
+                    exceptions = listOf(SentryException())
+                },
+            )
 
         assertNotNull(event)
         assertNull(hint.viewHierarchy)
@@ -220,12 +232,13 @@ class ViewHierarchyEventProcessorTest {
     fun `when there's no current decor view the view hierarchy is null`() {
         whenever(fixture.window.peekDecorView()).thenReturn(null)
 
-        val (event, hint) = fixture.process(
-            true,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            }
-        )
+        val (event, hint) =
+            fixture.process(
+                true,
+                SentryEvent().apply {
+                    exceptions = listOf(SentryException())
+                },
+            )
 
         assertNotNull(event)
         assertNull(hint.viewHierarchy)
@@ -234,12 +247,13 @@ class ViewHierarchyEventProcessorTest {
     @Test
     fun `when retrieving the view hierarchy crashes no view hierarchy is collected`() {
         whenever(fixture.view.width).thenThrow(IllegalStateException("invalid ui state"))
-        val (event, hint) = fixture.process(
-            true,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            }
-        )
+        val (event, hint) =
+            fixture.process(
+                true,
+                SentryEvent().apply {
+                    exceptions = listOf(SentryException())
+                },
+            )
 
         assertNotNull(event)
         assertNull(hint.viewHierarchy)
@@ -247,18 +261,19 @@ class ViewHierarchyEventProcessorTest {
 
     @Test
     fun `snapshot of android view is properly created`() {
-        val content = mockedView(
-            0.0f,
-            1.0f,
-            200,
-            400,
-            1f,
-            View.VISIBLE,
-            listOf(
-                mockedView(10.0f, 11.0f, 100, 101, 0.5f, View.GONE),
-                mockedView(20.0f, 21.0f, 200, 201, 1f, View.INVISIBLE)
+        val content =
+            mockedView(
+                0.0f,
+                1.0f,
+                200,
+                400,
+                1f,
+                View.VISIBLE,
+                listOf(
+                    mockedView(10.0f, 11.0f, 100, 101, 0.5f, View.GONE),
+                    mockedView(20.0f, 21.0f, 200, 201, 1f, View.INVISIBLE),
+                ),
             )
-        )
 
         val viewHierarchy = ViewHierarchyEventProcessor.snapshotViewHierarchy(content)
         assertEquals("android_view_system", viewHierarchy.renderingSystem)
@@ -294,33 +309,44 @@ class ViewHierarchyEventProcessorTest {
     @Test
     fun `when enabled, the feature is added to the integration list`() {
         SentryIntegrationPackageStorage.getInstance().clearStorage()
-        val (event, hint) = fixture.process(
-            true,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            }
+        val (event, hint) =
+            fixture.process(
+                true,
+                SentryEvent().apply {
+                    exceptions = listOf(SentryException())
+                },
+            )
+        assertTrue(
+            fixture.options.sdkVersion!!
+                .integrationSet
+                .contains("ViewHierarchy"),
         )
-        assertTrue(fixture.options.sdkVersion!!.integrationSet.contains("ViewHierarchy"))
     }
 
     @Test
     fun `when not enabled, the feature is not added to the integration list`() {
         SentryIntegrationPackageStorage.getInstance().clearStorage()
-        val (event, hint) = fixture.process(
-            false,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            }
+        val (event, hint) =
+            fixture.process(
+                false,
+                SentryEvent().apply {
+                    exceptions = listOf(SentryException())
+                },
+            )
+        assertFalse(
+            fixture.options.sdkVersion!!
+                .integrationSet
+                .contains("ViewHierarchy"),
         )
-        assertFalse(fixture.options.sdkVersion!!.integrationSet.contains("ViewHierarchy"))
     }
 
     @Test
     fun `when view hierarchies are captured rapidly, capturing should be debounced`() {
         val processor = fixture.getSut(true)
-        val event = SentryEvent().apply {
-            exceptions = listOf(SentryException())
-        }
+        val event =
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
         var hint0 = Hint()
         processor.process(event, hint0)
         assertNotNull(hint0.viewHierarchy)
@@ -345,9 +371,10 @@ class ViewHierarchyEventProcessorTest {
             debounceFlag = debounce
             true
         }
-        val event = SentryEvent().apply {
-            exceptions = listOf(SentryException())
-        }
+        val event =
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
         val hint0 = Hint()
         processor.process(event, hint0)
         assertFalse(debounceFlag)
@@ -368,9 +395,10 @@ class ViewHierarchyEventProcessorTest {
         fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ ->
             true
         }
-        val event = SentryEvent().apply {
-            exceptions = listOf(SentryException())
-        }
+        val event =
+            SentryEvent().apply {
+                exceptions = listOf(SentryException())
+            }
         val hint0 = Hint()
         processor.process(event, hint0)
         processor.process(event, hint0)
@@ -387,12 +415,13 @@ class ViewHierarchyEventProcessorTest {
         fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ ->
             false
         }
-        val (_, hint) = fixture.process(
-            true,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            }
-        )
+        val (_, hint) =
+            fixture.process(
+                true,
+                SentryEvent().apply {
+                    exceptions = listOf(SentryException())
+                },
+            )
 
         assertNull(hint.viewHierarchy)
     }
@@ -402,12 +431,13 @@ class ViewHierarchyEventProcessorTest {
         fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ ->
             true
         }
-        val (_, hint) = fixture.process(
-            true,
-            SentryEvent().apply {
-                exceptions = listOf(SentryException())
-            }
-        )
+        val (_, hint) =
+            fixture.process(
+                true,
+                SentryEvent().apply {
+                    exceptions = listOf(SentryException())
+                },
+            )
 
         assertNotNull(hint.viewHierarchy)
     }
@@ -419,7 +449,7 @@ class ViewHierarchyEventProcessorTest {
         height: Int,
         alpha: Float,
         visibility: Int,
-        children: List<View> = emptyList()
+        children: List<View> = emptyList(),
     ): View {
         val view = mock<ViewGroup>()
 

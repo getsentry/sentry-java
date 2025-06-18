@@ -6,7 +6,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class UUIDStringUtilsTest {
-
     @Test
     fun `UUID toString matches UUIDStringUtils to String`() {
         val uuid = UUID.randomUUID()

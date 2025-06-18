@@ -13,13 +13,20 @@ import reactor.core.scheduler.Schedulers
 import kotlin.test.Test
 
 class SentryWebfluxAutoConfigurationTest {
-
-    private val contextRunner = ReactiveWebApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(WebFluxAutoConfiguration::class.java, SentryWebfluxAutoConfiguration::class.java, SentryAutoConfiguration::class.java))
+    private val contextRunner =
+        ReactiveWebApplicationContextRunner()
+            .withConfiguration(
+                AutoConfigurations.of(
+                    WebFluxAutoConfiguration::class.java,
+                    SentryWebfluxAutoConfiguration::class.java,
+                    SentryAutoConfiguration::class.java,
+                ),
+            )
 
     @Test
     fun `configures sentryWebFilter`() {
-        contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj")
+        contextRunner
+            .withPropertyValues("sentry.dsn=http://key@localhost/proj")
             .run {
                 assertThat(it).hasSingleBean(SentryWebFilterWithThreadLocalAccessor::class.java)
                 assertThat(it).doesNotHaveBean(SentryWebFilter::class.java)
@@ -59,9 +66,8 @@ class SentryWebfluxAutoConfigurationTest {
         contextRunner
             .withPropertyValues(
                 "sentry.dsn=http://key@localhost/proj",
-                "sentry.reactive.thread-local-accessor-enabled=true"
-            )
-            .run {
+                "sentry.reactive.thread-local-accessor-enabled=true",
+            ).run {
                 assertThat(it).hasSingleBean(SentryWebFilterWithThreadLocalAccessor::class.java)
                 assertThat(it).doesNotHaveBean(SentryWebFilter::class.java)
             }
@@ -72,9 +78,8 @@ class SentryWebfluxAutoConfigurationTest {
         contextRunner
             .withPropertyValues(
                 "sentry.dsn=http://key@localhost/proj",
-                "sentry.reactive.thread-local-accessor-enabled=false"
-            )
-            .run {
+                "sentry.reactive.thread-local-accessor-enabled=false",
+            ).run {
                 assertThat(it).doesNotHaveBean(SentryWebFilterWithThreadLocalAccessor::class.java)
                 assertThat(it).hasSingleBean(SentryWebFilter::class.java)
             }
@@ -85,9 +90,8 @@ class SentryWebfluxAutoConfigurationTest {
         contextRunner
             .withPropertyValues(
                 "sentry.dsn=http://key@localhost/proj",
-                "sentry.reactive.thread-local-accessor-enabled=true"
-            )
-            .withClassLoader(FilteredClassLoader(ThreadLocalAccessor::class.java))
+                "sentry.reactive.thread-local-accessor-enabled=true",
+            ).withClassLoader(FilteredClassLoader(ThreadLocalAccessor::class.java))
             .run {
                 assertThat(it).doesNotHaveBean(SentryWebFilterWithThreadLocalAccessor::class.java)
             }

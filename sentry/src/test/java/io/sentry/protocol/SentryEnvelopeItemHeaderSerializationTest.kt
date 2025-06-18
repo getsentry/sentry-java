@@ -14,20 +14,21 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 
 class SentryEnvelopeItemHeaderSerializationTest {
-
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = SentryEnvelopeItemHeader(
-            SentryItemType.Event,
-            345,
-            "5def420f-3dac-4d7b-948b-49de6e551aef",
-            "54cf4644-8610-4ff3-a535-34ac1f367501",
-            "6f49ad85-a017-4d94-a5d7-6477251da602",
-            "android",
-            99
-        )
+        fun getSut() =
+            SentryEnvelopeItemHeader(
+                SentryItemType.Event,
+                345,
+                "5def420f-3dac-4d7b-948b-49de6e551aef",
+                "54cf4644-8610-4ff3-a535-34ac1f367501",
+                "6f49ad85-a017-4d94-a5d7-6477251da602",
+                "android",
+                99,
+            )
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -47,11 +48,11 @@ class SentryEnvelopeItemHeaderSerializationTest {
 
     // Helper
 
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
+    private fun sanitizedFile(path: String): String =
+        FileFromResources
+            .invoke(path)
             .replace(Regex("[\n\r]"), "")
             .replace(" ", "")
-    }
 
     private fun serialize(jsonSerializable: JsonSerializable): String {
         val wrt = StringWriter()

@@ -13,7 +13,6 @@ import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class InstallationTest {
-
     private lateinit var context: Context
 
     @BeforeTest

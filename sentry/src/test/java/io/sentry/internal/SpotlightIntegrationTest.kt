@@ -11,12 +11,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class SpotlightIntegrationTest {
-
     @Test
     fun `Integration does not register before-envelope callback when disabled`() {
-        val options = SentryOptions().apply {
-            isEnableSpotlight = false
-        }
+        val options =
+            SentryOptions().apply {
+                isEnableSpotlight = false
+            }
 
         val spotlight = SpotlightIntegration()
         spotlight.register(mock<IScopes>(), options)
@@ -27,10 +27,11 @@ class SpotlightIntegrationTest {
     @Test
     fun `Integration does not register before-envelope callback when before-envelope is already set`() {
         val envelopeCallback = mock<BeforeEnvelopeCallback>()
-        val options = SentryOptions().apply {
-            isEnableSpotlight = true
-            beforeEnvelopeCallback = envelopeCallback
-        }
+        val options =
+            SentryOptions().apply {
+                isEnableSpotlight = true
+                beforeEnvelopeCallback = envelopeCallback
+            }
 
         val spotlight = SpotlightIntegration()
         spotlight.register(mock<IScopes>(), options)
@@ -40,9 +41,10 @@ class SpotlightIntegrationTest {
 
     @Test
     fun `Integration does register and un-register before-envelope callback`() {
-        val options = SentryOptions().apply {
-            isEnableSpotlight = true
-        }
+        val options =
+            SentryOptions().apply {
+                isEnableSpotlight = true
+            }
 
         val spotlight = SpotlightIntegration()
         spotlight.register(mock<IScopes>(), options)
@@ -65,10 +67,11 @@ class SpotlightIntegrationTest {
 
     @Test
     fun `respects spotlight connection url set via options`() {
-        val options = SentryOptions().apply {
-            isEnableSpotlight = true
-            spotlightConnectionUrl = "http://example.com:1234/stream"
-        }
+        val options =
+            SentryOptions().apply {
+                isEnableSpotlight = true
+                spotlightConnectionUrl = "http://example.com:1234/stream"
+            }
 
         val spotlight = SpotlightIntegration()
         spotlight.register(mock<IScopes>(), options)

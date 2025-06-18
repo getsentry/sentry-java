@@ -7,7 +7,6 @@ import java.io.StringWriter
 import java.net.URL
 
 class JsonSerializerBenchmarkTests {
-
     class Fixture {
         fun getJsonSerializer() = JsonSerializer(SentryOptions())
     }
@@ -22,22 +21,24 @@ class JsonSerializerBenchmarkTests {
     private fun runBenchmark(serializer: ISerializer) {
         val sessionJson = sanitizedFile("json/session.json")
         val eventJson = sanitizedFile("json/sentry_event.json")
-        val envelopeFileURLs = listOf(
-            resourceFileURL("envelope-session-start.txt"),
-            resourceFileURL("envelope_session.txt"),
-            resourceFileURL("envelope-event-attachment.txt"),
-            resourceFileURL("envelope-transaction.txt"),
-            resourceFileURL("envelope_session_sdkversion.txt"),
-            resourceFileURL("envelope-feedback.txt"),
-            resourceFileURL("envelope_attachment.txt")
-        )
+        val envelopeFileURLs =
+            listOf(
+                resourceFileURL("envelope-session-start.txt"),
+                resourceFileURL("envelope_session.txt"),
+                resourceFileURL("envelope-event-attachment.txt"),
+                resourceFileURL("envelope-transaction.txt"),
+                resourceFileURL("envelope_session_sdkversion.txt"),
+                resourceFileURL("envelope-feedback.txt"),
+                resourceFileURL("envelope_attachment.txt"),
+            )
         simpleMeasureTest(1000) {
             // Deserialize
             val session = serializer.deserialize(StringReader(sessionJson), Session::class.java)
             val event = serializer.deserialize(StringReader(eventJson), SentryEvent::class.java)
-            val envelopes = envelopeFileURLs.map {
-                serializer.deserializeEnvelope(it.openStream())
-            }
+            val envelopes =
+                envelopeFileURLs.map {
+                    serializer.deserializeEnvelope(it.openStream())
+                }
             // Serialize
             serializer.serialize(session!!, StringWriter())
             serializer.serialize(event!!, StringWriter())
@@ -47,15 +48,13 @@ class JsonSerializerBenchmarkTests {
         }
     }
 
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
+    private fun sanitizedFile(path: String): String =
+        FileFromResources
+            .invoke(path)
             .replace(Regex("[\n\r]"), "")
             .replace(" ", "")
-    }
 
-    private fun resourceFileURL(fileName: String): URL {
-        return this::class.java.classLoader.getResource(fileName)!!
-    }
+    private fun resourceFileURL(fileName: String): URL = this::class.java.classLoader.getResource(fileName)!!
 }
 
 // Source: https://gist.github.com/olegcherr/b62a09aba1bff643a049
@@ -68,7 +67,7 @@ fun simpleMeasureTest(
     ITERATIONS: Int = 1000,
     TEST_COUNT: Int = 10,
     WARM_COUNT: Int = 2,
-    callback: () -> Unit
+    callback: () -> Unit,
 ) {
     val results = ArrayList<Long>()
     var totalTime = 0L
@@ -80,8 +79,9 @@ fun simpleMeasureTest(
         val startTime = System.currentTimeMillis()
 
         var i = 0
-        while (i++ < ITERATIONS)
+        while (i++ < ITERATIONS) {
             callback()
+        }
 
         if (t <= WARM_COUNT) {
             println("$PRINT_REFIX Warming $t of $WARM_COUNT")

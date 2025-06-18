@@ -21,13 +21,11 @@ class SentryLogcatAdapterTest {
     private val throwable = RuntimeException("Test Exception")
 
     class Fixture {
-
-        fun initSut(
-            options: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null
-        ) {
-            val metadata = Bundle().apply {
-                putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
-            }
+        fun initSut(options: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null) {
+            val metadata =
+                Bundle().apply {
+                    putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
+                }
             val mockContext = ContextUtilsTestHelper.mockMetaData(metaData = metadata)
             when {
                 options != null -> initForTest(mockContext, options)
@@ -46,10 +44,11 @@ class SentryLogcatAdapterTest {
         breadcrumbs.clear()
 
         fixture.initSut {
-            it.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
-                breadcrumbs.add(breadcrumb)
-                breadcrumb
-            }
+            it.beforeBreadcrumb =
+                SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
+                    breadcrumbs.add(breadcrumb)
+                    breadcrumb
+                }
         }
 
         SentryLogcatAdapter.v(tag, "$commonMsg verbose")
@@ -178,9 +177,10 @@ class SentryLogcatAdapterTest {
     fun `logs add correct number of breadcrumb`() {
         assertEquals(
             6,
-            breadcrumbs.filter {
-                it.message?.contains("SentryLogcatAdapter") ?: false
-            }.size
+            breadcrumbs
+                .filter {
+                    it.message?.contains("SentryLogcatAdapter") ?: false
+                }.size,
         )
     }
 }

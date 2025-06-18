@@ -51,7 +51,6 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class SentryOkHttpInterceptorTest {
-
     class Fixture {
         val scopes = mock<IScopes>()
         val server = MockWebServer()
@@ -70,27 +69,29 @@ class SentryOkHttpInterceptorTest {
             keepDefaultTracePropagationTargets: Boolean = false,
             captureFailedRequests: Boolean? = false,
             failedRequestTargets: List<String> = listOf(".*"),
-            failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
-                HttpStatusCodeRange(
-                    HttpStatusCodeRange.DEFAULT_MIN,
-                    HttpStatusCodeRange.DEFAULT_MAX
-                )
-            ),
+            failedRequestStatusCodes: List<HttpStatusCodeRange> =
+                listOf(
+                    HttpStatusCodeRange(
+                        HttpStatusCodeRange.DEFAULT_MIN,
+                        HttpStatusCodeRange.DEFAULT_MAX,
+                    ),
+                ),
             sendDefaultPii: Boolean = false,
             eventListener: EventListener? = null,
             additionalInterceptors: List<Interceptor> = emptyList(),
-            optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null
+            optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null,
         ): OkHttpClient {
-            options = SentryOptions().also {
-                optionsConfiguration?.configure(it)
-                it.dsn = "https://key@sentry.io/proj"
-                if (includeMockServerInTracePropagationTargets) {
-                    it.setTracePropagationTargets(listOf(server.hostName))
-                } else if (!keepDefaultTracePropagationTargets) {
-                    it.setTracePropagationTargets(listOf("other-api"))
+            options =
+                SentryOptions().also {
+                    optionsConfiguration?.configure(it)
+                    it.dsn = "https://key@sentry.io/proj"
+                    if (includeMockServerInTracePropagationTargets) {
+                        it.setTracePropagationTargets(listOf(server.hostName))
+                    } else if (!keepDefaultTracePropagationTargets) {
+                        it.setTracePropagationTargets(listOf("other-api"))
+                    }
+                    it.isSendDefaultPii = sendDefaultPii
                 }
-                it.isSendDefaultPii = sendDefaultPii
-            }
             scope = Scope(options)
             whenever(scopes.options).thenReturn(options)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(any())
@@ -105,71 +106,79 @@ class SentryOkHttpInterceptorTest {
                     .setBody(responseBody)
                     .addHeader("myResponseHeader", "myValue")
                     .setSocketPolicy(socketPolicy)
-                    .setResponseCode(httpStatusCode)
+                    .setResponseCode(httpStatusCode),
             )
 
-            val interceptor = when (captureFailedRequests) {
-                null -> SentryOkHttpInterceptor(
-                    scopes,
-                    beforeSpan,
-                    failedRequestTargets = failedRequestTargets,
-                    failedRequestStatusCodes = failedRequestStatusCodes
-                )
+            val interceptor =
+                when (captureFailedRequests) {
+                    null ->
+                        SentryOkHttpInterceptor(
+                            scopes,
+                            beforeSpan,
+                            failedRequestTargets = failedRequestTargets,
+                            failedRequestStatusCodes = failedRequestStatusCodes,
+                        )
 
-                else -> SentryOkHttpInterceptor(
-                    scopes,
-                    beforeSpan,
-                    captureFailedRequests = captureFailedRequests,
-                    failedRequestTargets = failedRequestTargets,
-                    failedRequestStatusCodes = failedRequestStatusCodes
-                )
-            }
-            return OkHttpClient.Builder().apply {
-                if (eventListener != null) {
-                    eventListener(eventListener)
+                    else ->
+                        SentryOkHttpInterceptor(
+                            scopes,
+                            beforeSpan,
+                            captureFailedRequests = captureFailedRequests,
+                            failedRequestTargets = failedRequestTargets,
+                            failedRequestStatusCodes = failedRequestStatusCodes,
+                        )
                 }
-                for (additionalInterceptor in additionalInterceptors) {
-                    addInterceptor(additionalInterceptor)
-                }
-                addInterceptor(interceptor)
-            }.build()
+            return OkHttpClient
+                .Builder()
+                .apply {
+                    if (eventListener != null) {
+                        eventListener(eventListener)
+                    }
+                    for (additionalInterceptor in additionalInterceptors) {
+                        addInterceptor(additionalInterceptor)
+                    }
+                    addInterceptor(interceptor)
+                }.build()
         }
     }
 
     private val fixture = Fixture()
 
-    private fun getRequest(url: String = "/hello"): Request {
-        return Request.Builder()
+    private fun getRequest(url: String = "/hello"): Request =
+        Request
+            .Builder()
             .addHeader("myHeader", "myValue")
             .get()
             .url(fixture.server.url(url))
             .build()
-    }
 
     private val getRequestWithBaggageHeader = {
-        Request.Builder()
+        Request
+            .Builder()
             .addHeader("baggage", "thirdPartyBaggage=someValue")
             .addHeader(
                 "baggage",
                 "secondThirdPartyBaggage=secondValue; " +
-                    "property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"
-            )
-            .get()
+                    "property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+            ).get()
             .url(fixture.server.url("/hello"))
             .build()
     }
 
     private fun postRequest(
-        body: RequestBody = "request-body"
-            .toRequestBody(
-                "text/plain"
-                    .toMediaType()
-            )
-    ): Request {
-        return Request.Builder().post(
-            body
-        ).url(fixture.server.url("/hello")).build()
-    }
+        body: RequestBody =
+            "request-body"
+                .toRequestBody(
+                    "text/plain"
+                        .toMediaType(),
+                ),
+    ): Request =
+        Request
+            .Builder()
+            .post(
+                body,
+            ).url(fixture.server.url("/hello"))
+            .build()
 
     @SuppressWarnings("MaxLineLength")
     @Test
@@ -196,7 +205,14 @@ class SentryOkHttpInterceptorTest {
     @Test
     fun `when there is an active span and server is not listed in tracing origins, does not add sentry trace headers to the request`() {
         val sut = fixture.getSut(includeMockServerInTracePropagationTargets = false)
-        sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
+        sut
+            .newCall(
+                Request
+                    .Builder()
+                    .get()
+                    .url(fixture.server.url("/hello"))
+                    .build(),
+            ).execute()
         val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
@@ -207,7 +223,14 @@ class SentryOkHttpInterceptorTest {
     fun `when there is an active span and server tracing origins is empty, does not add sentry trace headers to the request`() {
         val sut = fixture.getSut()
         fixture.options.setTracePropagationTargets(emptyList())
-        sut.newCall(Request.Builder().get().url(fixture.server.url("/hello")).build()).execute()
+        sut
+            .newCall(
+                Request
+                    .Builder()
+                    .get()
+                    .url(fixture.server.url("/hello"))
+                    .build(),
+            ).execute()
         val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
         assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
@@ -224,9 +247,10 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `does not add sentry-trace header when span origin is ignored`() {
-        val sut = fixture.getSut(isSpanActive = false) { options ->
-            options.setIgnoredSpanOrigins(listOf("auto.http.okhttp"))
-        }
+        val sut =
+            fixture.getSut(isSpanActive = false) { options ->
+                options.setIgnoredSpanOrigins(listOf("auto.http.okhttp"))
+            }
         sut.newCall(getRequest()).execute()
         val recorderRequest = fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
@@ -258,8 +282,8 @@ class SentryOkHttpInterceptorTest {
                 "thirdPartyBaggage=someValue," +
                     "secondThirdPartyBaggage=secondValue; " +
                     "property;propertyKey=propertyValue," +
-                    "anotherThirdPartyBaggage=anotherValue"
-            )
+                    "anotherThirdPartyBaggage=anotherValue",
+            ),
         )
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
@@ -316,7 +340,7 @@ class SentryOkHttpInterceptorTest {
                 assertEquals(13L, it.data[SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY])
                 assertEquals(12L, it.data["http.request_content_length"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -341,7 +365,7 @@ class SentryOkHttpInterceptorTest {
             check<Breadcrumb> {
                 assertEquals("http", it.type)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -363,12 +387,13 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `customizer modifies span`() {
-        val sut = fixture.getSut(
-            beforeSpan = { span, _, _ ->
-                span.description = "overwritten description"
-                span
-            }
-        )
+        val sut =
+            fixture.getSut(
+                beforeSpan = { span, _, _ ->
+                    span.description = "overwritten description"
+                    span
+                },
+            )
         val request = getRequest()
         sut.newCall(request).execute()
         assertEquals(1, fixture.sentryTracer.children.size)
@@ -379,25 +404,27 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `customizer receives request and response`() {
-        val sut = fixture.getSut(
-            beforeSpan = { span, request, response ->
-                assertEquals(request.url, request.url)
-                assertEquals(request.method, request.method)
-                assertNotNull(response) {
-                    assertEquals(201, it.code)
-                }
-                span
-            }
-        )
+        val sut =
+            fixture.getSut(
+                beforeSpan = { span, request, response ->
+                    assertEquals(request.url, request.url)
+                    assertEquals(request.method, request.method)
+                    assertNotNull(response) {
+                        assertEquals(201, it.code)
+                    }
+                    span
+                },
+            )
         val request = getRequest()
         sut.newCall(request).execute()
     }
 
     @Test
     fun `customizer can drop the span`() {
-        val sut = fixture.getSut(
-            beforeSpan = { _, _, _ -> null }
-        )
+        val sut =
+            fixture.getSut(
+                beforeSpan = { _, _, _ -> null },
+            )
         sut.newCall(getRequest()).execute()
         val httpClientSpan = fixture.sentryTracer.children.first()
         assertTrue(httpClientSpan.isFinished)
@@ -408,10 +435,11 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `captures failed requests by default`() {
-        val sut = fixture.getSut(
-            httpStatusCode = 500,
-            captureFailedRequests = null
-        )
+        val sut =
+            fixture.getSut(
+                httpStatusCode = 500,
+                captureFailedRequests = null,
+            )
         sut.newCall(getRequest()).execute()
 
         verify(fixture.scopes).captureEvent(any(), any<Hint>())
@@ -419,10 +447,11 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `captures an event if captureFailedRequests is enabled and within the range`() {
-        val sut = fixture.getSut(
-            captureFailedRequests = true,
-            httpStatusCode = 500
-        )
+        val sut =
+            fixture.getSut(
+                captureFailedRequests = true,
+                httpStatusCode = 500,
+            )
         sut.newCall(getRequest()).execute()
 
         verify(fixture.scopes).captureEvent(any(), any<Hint>())
@@ -430,9 +459,10 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `does not capture an event if captureFailedRequests is disabled`() {
-        val sut = fixture.getSut(
-            httpStatusCode = 500
-        )
+        val sut =
+            fixture.getSut(
+                httpStatusCode = 500,
+            )
         sut.newCall(getRequest()).execute()
 
         verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
@@ -441,9 +471,10 @@ class SentryOkHttpInterceptorTest {
     @Test
     fun `does not capture an event if captureFailedRequests is enabled and not within the range`() {
         // default status code 201
-        val sut = fixture.getSut(
-            captureFailedRequests = true
-        )
+        val sut =
+            fixture.getSut(
+                captureFailedRequests = true,
+            )
         sut.newCall(getRequest()).execute()
 
         verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
@@ -451,11 +482,12 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `does not capture an event if captureFailedRequests is enabled and not within the targets`() {
-        val sut = fixture.getSut(
-            captureFailedRequests = true,
-            httpStatusCode = 500,
-            failedRequestTargets = listOf("myapi.com")
-        )
+        val sut =
+            fixture.getSut(
+                captureFailedRequests = true,
+                httpStatusCode = 500,
+                failedRequestTargets = listOf("myapi.com"),
+            )
         sut.newCall(getRequest()).execute()
 
         verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
@@ -463,10 +495,11 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `captures an error event with hints`() {
-        val sut = fixture.getSut(
-            captureFailedRequests = true,
-            httpStatusCode = 500
-        )
+        val sut =
+            fixture.getSut(
+                captureFailedRequests = true,
+                httpStatusCode = 500,
+            )
         sut.newCall(getRequest()).execute()
 
         verify(fixture.scopes).captureEvent(
@@ -474,19 +507,20 @@ class SentryOkHttpInterceptorTest {
             check<Hint> {
                 assertNotNull(it.get(TypeCheckHint.OKHTTP_REQUEST))
                 assertNotNull(it.get(TypeCheckHint.OKHTTP_RESPONSE))
-            }
+            },
         )
     }
 
     @Test
     fun `captures an error event with request and response fields set`() {
         val statusCode = 500
-        val sut = fixture.getSut(
-            captureFailedRequests = true,
-            httpStatusCode = statusCode,
-            responseBody = "fail",
-            sendDefaultPii = true
-        )
+        val sut =
+            fixture.getSut(
+                captureFailedRequests = true,
+                httpStatusCode = statusCode,
+                responseBody = "fail",
+                sendDefaultPii = true,
+            )
 
         val request = getRequest(url = "/hello?myQuery=myValue#myFragment")
         val response = sut.newCall(request).execute()
@@ -513,22 +547,24 @@ class SentryOkHttpInterceptorTest {
 
                 assertTrue(it.throwable is SentryHttpClientException)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
     @Test
     fun `captures an error event with request body size`() {
-        val sut = fixture.getSut(
-            captureFailedRequests = true,
-            httpStatusCode = 500
-        )
-
-        val body = "fail"
-            .toRequestBody(
-                "text/plain"
-                    .toMediaType()
+        val sut =
+            fixture.getSut(
+                captureFailedRequests = true,
+                httpStatusCode = 500,
             )
+
+        val body =
+            "fail"
+                .toRequestBody(
+                    "text/plain"
+                        .toMediaType(),
+                )
 
         sut.newCall(postRequest(body = body)).execute()
 
@@ -537,17 +573,18 @@ class SentryOkHttpInterceptorTest {
                 val sentryRequest = it.request!!
                 assertEquals(body.contentLength(), sentryRequest.bodySize)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
     @Test
     fun `captures an error event with headers`() {
-        val sut = fixture.getSut(
-            captureFailedRequests = true,
-            httpStatusCode = 500,
-            sendDefaultPii = true
-        )
+        val sut =
+            fixture.getSut(
+                captureFailedRequests = true,
+                httpStatusCode = 500,
+                sendDefaultPii = true,
+            )
 
         sut.newCall(getRequest()).execute()
 
@@ -559,7 +596,7 @@ class SentryOkHttpInterceptorTest {
                 val sentryResponse = it.contexts.response!!
                 assertEquals("myValue", sentryResponse.headers!!["myResponseHeader"])
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -568,10 +605,11 @@ class SentryOkHttpInterceptorTest {
     fun `does not capture an error even if it throws`() {
         // to setup mocks
         fixture.getSut()
-        val interceptor = SentryOkHttpInterceptor(
-            fixture.scopes,
-            captureFailedRequests = true
-        )
+        val interceptor =
+            SentryOkHttpInterceptor(
+                fixture.scopes,
+                captureFailedRequests = true,
+            )
         val chain = mock<Interceptor.Chain>()
         whenever(chain.call()).thenReturn(mock())
         whenever(chain.proceed(any())).thenThrow(IOException())
@@ -628,27 +666,42 @@ class SentryOkHttpInterceptorTest {
 
     @Test
     fun `when an interceptor changes the request, the event is updated correctly`() {
-        val client = fixture.getSut(
-            eventListener = SentryOkHttpEventListener(fixture.scopes),
-            additionalInterceptors = listOf(
-                object : Interceptor {
-                    override fun intercept(chain: Interceptor.Chain): Response {
-                        return chain.proceed(
-                            chain.request().newBuilder()
-                                .url(chain.request().url.newBuilder().addPathSegment("v1").build())
-                                .build()
-                        )
-                    }
-                }
+        val client =
+            fixture.getSut(
+                eventListener = SentryOkHttpEventListener(fixture.scopes),
+                additionalInterceptors =
+                    listOf(
+                        object : Interceptor {
+                            override fun intercept(chain: Interceptor.Chain): Response =
+                                chain.proceed(
+                                    chain
+                                        .request()
+                                        .newBuilder()
+                                        .url(
+                                            chain
+                                                .request()
+                                                .url
+                                                .newBuilder()
+                                                .addPathSegment("v1")
+                                                .build(),
+                                        ).build(),
+                                )
+                        },
+                    ),
             )
-        )
 
         val request = getRequest("/hello/")
         val call = client.newCall(request)
         call.execute()
 
         val okHttpEvent = SentryOkHttpEventListener.eventMap[call]!!
-        assertEquals(fixture.server.url("/hello/v1").toUrl().toString(), okHttpEvent.callSpan!!.getData("url"))
+        assertEquals(
+            fixture.server
+                .url("/hello/v1")
+                .toUrl()
+                .toString(),
+            okHttpEvent.callSpan!!.getData("url"),
+        )
     }
 
     @Test

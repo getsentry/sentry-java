@@ -7,7 +7,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class SentryRuntimeEventProcessorTest {
-
     private val eventProcessor = SentryRuntimeEventProcessor("16", "OpenJDK")
 
     @Test

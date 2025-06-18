@@ -44,7 +44,6 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class UserFeedbackUiTest : BaseUiTest() {
-
     @Test
     fun userFeedbackNotShownWhenSdkDisabled() {
         launchActivity<EmptyActivity>().onActivity {
@@ -89,9 +88,9 @@ class UserFeedbackUiTest : BaseUiTest() {
                     matches(
                         allOf(
                             withHint("Test Your Name"),
-                            withText("")
-                        )
-                    )
+                            withText(""),
+                        ),
+                    ),
                 )
             onView(withId(R.id.sentry_dialog_user_feedback_txt_email))
                 .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
@@ -102,9 +101,9 @@ class UserFeedbackUiTest : BaseUiTest() {
                     matches(
                         allOf(
                             withHint("Test your.email@example.org"),
-                            withText("")
-                        )
-                    )
+                            withText(""),
+                        ),
+                    ),
                 )
             onView(withId(R.id.sentry_dialog_user_feedback_txt_description))
                 .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
@@ -115,9 +114,9 @@ class UserFeedbackUiTest : BaseUiTest() {
                     matches(
                         allOf(
                             withHint("Test What's the bug? What did you expect?"),
-                            withText("")
-                        )
-                    )
+                            withText(""),
+                        ),
+                    ),
                 )
         }
     }
@@ -441,7 +440,7 @@ class UserFeedbackUiTest : BaseUiTest() {
                 name = "Test User"
                 username = "Test UserName"
                 email = "Test User Email"
-            }
+            },
         )
         showDialogAndCheck {
             // Name and email are filled with Sentry user properties
@@ -467,7 +466,7 @@ class UserFeedbackUiTest : BaseUiTest() {
                 name = "Test User"
                 username = "Test UserName"
                 email = "Test User Email"
-            }
+            },
         )
         showDialogAndCheck {
             // Name and email are not filled
@@ -503,7 +502,7 @@ class UserFeedbackUiTest : BaseUiTest() {
             findEnvelope {
                 assertEnvelopeFeedback(
                     it.items.toList(),
-                    AndroidLogger()
+                    AndroidLogger(),
                 ).contexts.feedback!!.message == "Description filled"
             }.assert {
                 val event: SentryEvent = it.assertItem()
@@ -519,7 +518,12 @@ class UserFeedbackUiTest : BaseUiTest() {
                 if (enableReplay) {
                     // The current replay should be set in the replayId
                     assertNotNull(feedback.replayId)
-                    assertEquals(Sentry.getCurrentScopes().options.replayController.replayId, feedback.replayId)
+                    assertEquals(
+                        Sentry
+                            .getCurrentScopes()
+                            .options.replayController.replayId,
+                        feedback.replayId,
+                    )
                 }
             }
         }
@@ -614,7 +618,10 @@ class UserFeedbackUiTest : BaseUiTest() {
         assertTrue(customListenerCalled)
     }
 
-    private fun checkViewVisibility(viewId: Int, isGone: Boolean = false) {
+    private fun checkViewVisibility(
+        viewId: Int,
+        isGone: Boolean = false,
+    ) {
         onView(withId(viewId))
             .check(matches(withEffectiveVisibility(if (isGone) Visibility.GONE else Visibility.VISIBLE)))
     }
@@ -622,7 +629,7 @@ class UserFeedbackUiTest : BaseUiTest() {
     private fun fillFormAndSend(
         fillName: Boolean = true,
         fillEmail: Boolean = true,
-        fillDescription: Boolean = true
+        fillDescription: Boolean = true,
     ) {
         if (fillName) {
             onView(withId(R.id.sentry_dialog_user_feedback_edt_name))
@@ -655,19 +662,24 @@ class UserFeedbackUiTest : BaseUiTest() {
         checker(dialog)
     }
 
-    private fun showWidgetAndCheck(widgetConfig: ((widget: SentryUserFeedbackButton) -> Unit)? = null, checker: (widget: SentryUserFeedbackButton) -> Unit = {}) {
+    private fun showWidgetAndCheck(
+        widgetConfig: ((widget: SentryUserFeedbackButton) -> Unit)? = null,
+        checker: (widget: SentryUserFeedbackButton) -> Unit = {
+        },
+    ) {
         val buttonId = Int.MAX_VALUE - 1
         val feedbackScenario = launchActivity<EmptyActivity>()
         feedbackScenario.onActivity {
-            val view = LinearLayout(it).apply {
-                orientation = LinearLayout.VERTICAL
-                addView(
-                    SentryUserFeedbackButton(it).apply {
-                        id = buttonId
-                        widgetConfig?.invoke(this)
-                    }
-                )
-            }
+            val view =
+                LinearLayout(it).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(
+                        SentryUserFeedbackButton(it).apply {
+                            id = buttonId
+                            widgetConfig?.invoke(this)
+                        },
+                    )
+                }
             it.setContentView(view)
         }
         checkViewVisibility(buttonId)

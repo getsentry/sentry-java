@@ -15,13 +15,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class BackpressureMonitorTest {
-
     class Fixture {
-
         val options = SentryOptions()
         val scopes = mock<IScopes>()
         val executor = mock<ISentryExecutorService>()
         val returnedFuture = mock<Future<Any>>()
+
         fun getSut(): BackpressureMonitor {
             options.executorService = executor
             whenever(executor.isClosed).thenReturn(false)

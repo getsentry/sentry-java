@@ -9,7 +9,6 @@ import io.sentry.Sentry
 import io.sentry.samples.android.databinding.ActivityPermissionsBinding
 
 class PermissionsActivity : AppCompatActivity() {
-
     private lateinit var binding: ActivityPermissionsBinding
     private val requestPermissionLauncher =
         registerForActivityResult(RequestPermission()) { isGranted: Boolean ->

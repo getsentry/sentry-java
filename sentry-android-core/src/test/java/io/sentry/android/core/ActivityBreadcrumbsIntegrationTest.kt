@@ -17,20 +17,20 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ActivityBreadcrumbsIntegrationTest {
-
     private class Fixture {
         val application = mock<Application>()
         val scopes = mock<Scopes>()
-        val options = SentryAndroidOptions().apply {
-            dsn = "https://key@sentry.io/proj"
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+            }
         val bundle = mock<Bundle>()
 
         fun getSut(enabled: Boolean = true): ActivityBreadcrumbsIntegration {
             options.isEnableActivityLifecycleBreadcrumbs = enabled
             whenever(scopes.options).thenReturn(options)
             return ActivityBreadcrumbsIntegration(
-                application
+                application,
             )
         }
     }
@@ -71,7 +71,7 @@ class ActivityBreadcrumbsIntegrationTest {
                 assertEquals(SentryLevel.INFO, it.level)
                 // cant assert data, its not a public API
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 

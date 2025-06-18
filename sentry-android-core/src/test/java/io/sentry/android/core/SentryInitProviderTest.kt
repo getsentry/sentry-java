@@ -123,7 +123,12 @@ class SentryInitProviderTest {
         assertFalse(Sentry.isEnabled())
         providerInfo.authority = AUTHORITY
 
-        sentryInitProvider.callMethod("attachInfo", parameterTypes = arrayOf(Context::class.java, ProviderInfo::class.java), null, providerInfo)
+        sentryInitProvider.callMethod(
+            "attachInfo",
+            parameterTypes = arrayOf(Context::class.java, ProviderInfo::class.java),
+            null,
+            providerInfo,
+        )
 
         assertFalse(Sentry.isEnabled())
     }
@@ -148,7 +153,7 @@ class SentryInitProviderTest {
             activityFramesTracker,
             false,
             false,
-            false
+            false,
         )
 
         AndroidOptionsInitializer.initializeIntegrationsAndProcessors(sentryOptions, mockContext, loadClass, activityFramesTracker)

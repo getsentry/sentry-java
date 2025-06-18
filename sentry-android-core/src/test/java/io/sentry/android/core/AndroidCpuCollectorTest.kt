@@ -11,7 +11,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class AndroidCpuCollectorTest {
-
     private val className = "io.sentry.android.core.AndroidCpuCollector"
     private val ctorTypes = arrayOf<Class<*>>(ILogger::class.java)
     private val fixture = Fixture()

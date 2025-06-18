@@ -33,7 +33,7 @@ internal interface CaptureStrategy {
     fun start(
         segmentId: Int = 0,
         replayId: SentryId = SentryId(),
-        replayType: ReplayType? = null
+        replayType: ReplayType? = null,
     )
 
     fun stop()
@@ -42,9 +42,15 @@ internal interface CaptureStrategy {
 
     fun resume()
 
-    fun captureReplay(isTerminating: Boolean, onSegmentSent: (Date) -> Unit)
+    fun captureReplay(
+        isTerminating: Boolean,
+        onSegmentSent: (Date) -> Unit,
+    )
 
-    fun onScreenshotRecorded(bitmap: Bitmap? = null, store: ReplayCache.(frameTimestamp: Long) -> Unit)
+    fun onScreenshotRecorded(
+        bitmap: Bitmap? = null,
+        store: ReplayCache.(frameTimestamp: Long) -> Unit,
+    )
 
     fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig)
 
@@ -76,29 +82,31 @@ internal interface CaptureStrategy {
             bitRate: Int,
             screenAtStart: String?,
             breadcrumbs: List<Breadcrumb>?,
-            events: Deque<RRWebEvent>
+            events: Deque<RRWebEvent>,
         ): ReplaySegment {
-            val generatedVideo = cache?.createVideoOf(
-                minOf(duration, MAX_SEGMENT_DURATION),
-                currentSegmentTimestamp.time,
-                segmentId,
-                height,
-                width,
-                frameRate,
-                bitRate
-            ) ?: return ReplaySegment.Failed
+            val generatedVideo =
+                cache?.createVideoOf(
+                    minOf(duration, MAX_SEGMENT_DURATION),
+                    currentSegmentTimestamp.time,
+                    segmentId,
+                    height,
+                    width,
+                    frameRate,
+                    bitRate,
+                ) ?: return ReplaySegment.Failed
 
             val (video, frameCount, videoDuration) = generatedVideo
 
-            val replayBreadcrumbs: List<Breadcrumb> = if (breadcrumbs == null) {
-                var crumbs = emptyList<Breadcrumb>()
-                scopes?.configureScope { scope ->
-                    crumbs = ArrayList(scope.breadcrumbs)
+            val replayBreadcrumbs: List<Breadcrumb> =
+                if (breadcrumbs == null) {
+                    var crumbs = emptyList<Breadcrumb>()
+                    scopes?.configureScope { scope ->
+                        crumbs = ArrayList(scope.breadcrumbs)
+                    }
+                    crumbs
+                } else {
+                    breadcrumbs
                 }
-                crumbs
-            } else {
-                breadcrumbs
-            }
 
             return buildReplay(
                 options,
@@ -114,7 +122,7 @@ internal interface CaptureStrategy {
                 replayType,
                 screenAtStart,
                 replayBreadcrumbs,
-                events
+                events,
             )
         }
 
@@ -132,38 +140,41 @@ internal interface CaptureStrategy {
             replayType: ReplayType,
             screenAtStart: String?,
             breadcrumbs: List<Breadcrumb>,
-            events: Deque<RRWebEvent>
+            events: Deque<RRWebEvent>,
         ): ReplaySegment {
             val endTimestamp = DateUtils.getDateTime(segmentTimestamp.time + videoDuration)
-            val replay = SentryReplayEvent().apply {
-                this.eventId = currentReplayId
-                this.replayId = currentReplayId
-                this.segmentId = segmentId
-                this.timestamp = endTimestamp
-                this.replayStartTimestamp = segmentTimestamp
-                this.replayType = replayType
-                this.videoFile = video
-            }
+            val replay =
+                SentryReplayEvent().apply {
+                    this.eventId = currentReplayId
+                    this.replayId = currentReplayId
+                    this.segmentId = segmentId
+                    this.timestamp = endTimestamp
+                    this.replayStartTimestamp = segmentTimestamp
+                    this.replayType = replayType
+                    this.videoFile = video
+                }
 
             val recordingPayload = mutableListOf<RRWebEvent>()
-            recordingPayload += RRWebMetaEvent().apply {
-                this.timestamp = segmentTimestamp.time
-                this.height = height
-                this.width = width
-            }
-            recordingPayload += RRWebVideoEvent().apply {
-                this.timestamp = segmentTimestamp.time
-                this.segmentId = segmentId
-                this.durationMs = videoDuration
-                this.frameCount = frameCount
-                this.size = video.length()
-                this.frameRate = frameRate
-                this.height = height
-                this.width = width
-                // TODO: support non-fullscreen windows later
-                this.left = 0
-                this.top = 0
-            }
+            recordingPayload +=
+                RRWebMetaEvent().apply {
+                    this.timestamp = segmentTimestamp.time
+                    this.height = height
+                    this.width = width
+                }
+            recordingPayload +=
+                RRWebVideoEvent().apply {
+                    this.timestamp = segmentTimestamp.time
+                    this.segmentId = segmentId
+                    this.durationMs = videoDuration
+                    this.frameCount = frameCount
+                    this.size = video.length()
+                    this.frameRate = frameRate
+                    this.height = height
+                    this.width = width
+                    // TODO: support non-fullscreen windows later
+                    this.left = 0
+                    this.top = 0
+                }
 
             val urls = LinkedList<String>()
             breadcrumbs.forEach { breadcrumb ->
@@ -173,10 +184,11 @@ internal interface CaptureStrategy {
                 if ((breadcrumb.timestamp.time + BREADCRUMB_START_OFFSET) >= segmentTimestamp.time &&
                     breadcrumb.timestamp.time < endTimestamp.time
                 ) {
-                    val rrwebEvent = options
-                        .replayController
-                        .breadcrumbConverter
-                        .convert(breadcrumb)
+                    val rrwebEvent =
+                        options
+                            .replayController
+                            .breadcrumbConverter
+                            .convert(breadcrumb)
 
                     if (rrwebEvent != null) {
                         recordingPayload += rrwebEvent
@@ -205,22 +217,23 @@ internal interface CaptureStrategy {
                 recordingPayload += RRWebOptionsEvent(options)
             }
 
-            val recording = ReplayRecording().apply {
-                this.segmentId = segmentId
-                this.payload = recordingPayload.sortedBy { it.timestamp }
-            }
+            val recording =
+                ReplayRecording().apply {
+                    this.segmentId = segmentId
+                    this.payload = recordingPayload.sortedBy { it.timestamp }
+                }
 
             replay.urls = urls
             return ReplaySegment.Created(
                 replay = replay,
-                recording = recording
+                recording = recording,
             )
         }
 
         internal fun rotateEvents(
             events: Deque<RRWebEvent>,
             until: Long,
-            callback: ((RRWebEvent) -> Unit)? = null
+            callback: ((RRWebEvent) -> Unit)? = null,
         ) {
             val iter = events.iterator()
             while (iter.hasNext()) {
@@ -235,11 +248,15 @@ internal interface CaptureStrategy {
 
     sealed class ReplaySegment {
         object Failed : ReplaySegment()
+
         data class Created(
             val replay: SentryReplayEvent,
-            val recording: ReplayRecording
+            val recording: ReplayRecording,
         ) : ReplaySegment() {
-            fun capture(scopes: IScopes?, hint: Hint = Hint()) {
+            fun capture(
+                scopes: IScopes?,
+                hint: Hint = Hint(),
+            ) {
                 scopes?.captureReplay(replay, hint.apply { replayRecording = recording })
             }
 

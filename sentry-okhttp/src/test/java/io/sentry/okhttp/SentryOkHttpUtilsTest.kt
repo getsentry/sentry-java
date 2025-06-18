@@ -27,7 +27,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryOkHttpUtilsTest {
-
     class Fixture {
         val scopes = mock<IScopes>()
         val server = MockWebServer()
@@ -36,13 +35,14 @@ class SentryOkHttpUtilsTest {
             httpStatusCode: Int = 500,
             responseBody: String = "success",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            sendDefaultPii: Boolean = false
+            sendDefaultPii: Boolean = false,
         ): OkHttpClient {
-            val options = SentryOptions().apply {
-                dsn = "https://key@sentry.io/proj"
-                setTracePropagationTargets(listOf(server.hostName))
-                isSendDefaultPii = sendDefaultPii
-            }
+            val options =
+                SentryOptions().apply {
+                    dsn = "https://key@sentry.io/proj"
+                    setTracePropagationTargets(listOf(server.hostName))
+                    isSendDefaultPii = sendDefaultPii
+                }
             whenever(scopes.options).thenReturn(options)
 
             val sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
@@ -55,7 +55,7 @@ class SentryOkHttpUtilsTest {
                     .addHeader("myResponseHeader", "myValue")
                     .addHeader("Set-Cookie", "setCookie")
                     .setSocketPolicy(socketPolicy)
-                    .setResponseCode(httpStatusCode)
+                    .setResponseCode(httpStatusCode),
             )
             return OkHttpClient.Builder().build()
         }
@@ -63,14 +63,14 @@ class SentryOkHttpUtilsTest {
 
     private val fixture = Fixture()
 
-    private fun getRequest(url: String = "/hello"): Request {
-        return Request.Builder()
+    private fun getRequest(url: String = "/hello"): Request =
+        Request
+            .Builder()
             .addHeader("myHeader", "myValue")
             .addHeader("Cookie", "cookie")
             .get()
             .url(fixture.server.url(url))
             .build()
-    }
 
     @Test
     fun `captureClientError captures a client error`() {
@@ -93,7 +93,7 @@ class SentryOkHttpUtilsTest {
             argThat<Hint> {
                 get(TypeCheckHint.OKHTTP_REQUEST) != null &&
                     get(TypeCheckHint.OKHTTP_RESPONSE) != null
-            }
+            },
         )
     }
 
@@ -117,7 +117,7 @@ class SentryOkHttpUtilsTest {
                 assertTrue(resp.headers!!.isNotEmpty())
                 assertNotNull(resp.cookies)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -141,7 +141,7 @@ class SentryOkHttpUtilsTest {
                 assertNull(resp.headers)
                 assertNull(resp.cookies)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 }

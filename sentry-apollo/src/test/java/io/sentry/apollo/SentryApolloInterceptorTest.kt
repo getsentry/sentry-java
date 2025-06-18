@@ -42,20 +42,21 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryApolloInterceptorTest {
-
     class Fixture {
         val server = MockWebServer()
-        val options = SentryOptions().apply {
-            dsn = "https://key@sentry.io/proj"
-            sdkVersion = SdkVersion("test", "1.2.3")
-        }
+        val options =
+            SentryOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+                sdkVersion = SdkVersion("test", "1.2.3")
+            }
         val scope = Scope(options)
-        val scopes = mock<IScopes>().also {
-            whenever(it.options).thenReturn(options)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(it).configureScope(
-                any()
-            )
-        }
+        val scopes =
+            mock<IScopes>().also {
+                whenever(it.options).thenReturn(options)
+                doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(it).configureScope(
+                    any(),
+                )
+            }
         private var interceptor = SentryApolloInterceptor(scopes)
 
         @SuppressWarnings("LongParameterList")
@@ -76,19 +77,20 @@ class SentryApolloInterceptorTest {
   }
 }""",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            beforeSpan: SentryApolloInterceptor.BeforeSpanCallback? = null
+            beforeSpan: SentryApolloInterceptor.BeforeSpanCallback? = null,
         ): ApolloClient {
             server.enqueue(
                 MockResponse()
                     .setBody(responseBody)
                     .setSocketPolicy(socketPolicy)
-                    .setResponseCode(httpStatusCode)
+                    .setResponseCode(httpStatusCode),
             )
 
             if (beforeSpan != null) {
                 interceptor = SentryApolloInterceptor(scopes, beforeSpan)
             }
-            return ApolloClient.builder()
+            return ApolloClient
+                .builder()
                 .serverUrl(server.url("/"))
                 .addApplicationInterceptor(interceptor)
                 .build()
@@ -110,11 +112,17 @@ class SentryApolloInterceptorTest {
             check {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.OK, it.spans.first().status)
-                assertEquals("POST", it.spans.first().data?.get(SpanDataConvention.HTTP_METHOD_KEY))
+                assertEquals(
+                    "POST",
+                    it.spans
+                        .first()
+                        .data
+                        ?.get(SpanDataConvention.HTTP_METHOD_KEY),
+                )
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -126,13 +134,24 @@ class SentryApolloInterceptorTest {
             check {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.PERMISSION_DENIED, it.spans.first().status)
-                assertEquals(403, it.spans.first().data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY))
+                assertEquals(
+                    403,
+                    it.spans
+                        .first()
+                        .data
+                        ?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY),
+                )
                 // we do not have access to the request and method in case of an error
-                assertNull(it.spans.first().data?.get(SpanDataConvention.HTTP_METHOD_KEY))
+                assertNull(
+                    it.spans
+                        .first()
+                        .data
+                        ?.get(SpanDataConvention.HTTP_METHOD_KEY),
+                )
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -144,11 +163,16 @@ class SentryApolloInterceptorTest {
             check {
                 assertTransactionDetails(it)
                 assertEquals(SpanStatus.INTERNAL_ERROR, it.spans.first().status)
-                assertNull(it.spans.first().data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY))
+                assertNull(
+                    it.spans
+                        .first()
+                        .data
+                        ?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY),
+                )
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -185,7 +209,7 @@ class SentryApolloInterceptorTest {
             fixture.getSut { span, _, _ ->
                 span.description = "overwritten description"
                 span
-            }
+            },
         )
 
         verify(fixture.scopes).captureTransaction(
@@ -196,7 +220,7 @@ class SentryApolloInterceptorTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -205,7 +229,7 @@ class SentryApolloInterceptorTest {
         executeQuery(
             fixture.getSut { _, _, _ ->
                 null
-            }
+            },
         )
 
         verify(fixture.scopes).captureTransaction(
@@ -214,14 +238,14 @@ class SentryApolloInterceptorTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `when customizer throws, exception is handled`() {
         executeQuery(
-            fixture.getSut { _, _, _ -> throw RuntimeException() }
+            fixture.getSut { _, _, _ -> throw RuntimeException() },
         )
 
         verify(fixture.scopes).captureTransaction(
@@ -230,7 +254,7 @@ class SentryApolloInterceptorTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -243,15 +267,22 @@ class SentryApolloInterceptorTest {
                 assertEquals(280L, it.data["response_body_size"])
                 assertEquals(193L, it.data["request_body_size"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `sets SDKVersion Info`() {
         assertNotNull(fixture.scopes.options.sdkVersion)
-        assert(fixture.scopes.options.sdkVersion!!.integrationSet.contains("Apollo"))
-        val packageInfo = fixture.scopes.options.sdkVersion!!.packageSet.firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-apollo" }
+        assert(
+            fixture.scopes.options.sdkVersion!!
+                .integrationSet
+                .contains("Apollo"),
+        )
+        val packageInfo =
+            fixture.scopes.options.sdkVersion!!
+                .packageSet
+                .firstOrNull { pkg -> pkg.name == "maven:io.sentry:sentry-apollo" }
         assertNotNull(packageInfo)
         assert(packageInfo.version == BuildConfig.VERSION_NAME)
     }
@@ -282,7 +313,10 @@ class SentryApolloInterceptorTest {
         }
     }
 
-    private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true) = runBlocking {
+    private fun executeQuery(
+        sut: ApolloClient = fixture.getSut(),
+        isSpanActive: Boolean = true,
+    ) = runBlocking {
         var tx: ITransaction? = null
         if (isSpanActive) {
             tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
@@ -290,13 +324,14 @@ class SentryApolloInterceptorTest {
             whenever(fixture.scopes.span).thenReturn(tx)
         }
 
-        val coroutine = launch {
-            try {
-                sut.query(LaunchDetailsQuery.builder().id("83").build()).await()
-            } catch (e: ApolloException) {
-                return@launch
+        val coroutine =
+            launch {
+                try {
+                    sut.query(LaunchDetailsQuery.builder().id("83").build()).await()
+                } catch (e: ApolloException) {
+                    return@launch
+                }
             }
-        }
         coroutine.join()
         tx?.finish()
     }

@@ -5,7 +5,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class SpanStatusTest {
-
     @Test
     fun `converts http status code to SpanStatus when code matches range`() {
         assertEquals(SpanStatus.OK, SpanStatus.fromHttpStatusCode(202))

@@ -5,7 +5,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SentryNanotimeDateTest {
-
     @Test
     fun `doubleValue only offers ms precision`() {
         val date = SentryNanotimeDate(Date(1672742031123), 123456789)

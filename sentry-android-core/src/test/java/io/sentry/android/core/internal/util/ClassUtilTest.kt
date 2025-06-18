@@ -7,7 +7,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ClassUtilTest {
-
     class Outer {
         class Inner {
             val x: Callable<Boolean> = Callable<Boolean> { false }

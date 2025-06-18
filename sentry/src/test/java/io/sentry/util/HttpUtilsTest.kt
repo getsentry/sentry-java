@@ -28,7 +28,11 @@ class HttpUtilsTest {
 
     @Test
     fun `enumeration works when filtering security cookies from headers`() {
-        val enumeration: Enumeration<String>? = StringTokenizer("Cookie_2=value2; Cookie_3=value3; JSESSIONID=123456789; mysessioncookiename=1F54D793F432FEE4CFC6A3FAED6D062F|Cookie_1=value1; SID=987654312", "|") as Enumeration<String>
+        val enumeration: Enumeration<String>? =
+            StringTokenizer(
+                "Cookie_2=value2; Cookie_3=value3; JSESSIONID=123456789; mysessioncookiename=1F54D793F432FEE4CFC6A3FAED6D062F|Cookie_1=value1; SID=987654312",
+                "|",
+            ) as Enumeration<String>
         val headers =
             HttpUtils.filterOutSecurityCookiesFromHeader(enumeration, "Cookie", listOf("mysessioncookiename"))
 
@@ -40,7 +44,11 @@ class HttpUtilsTest {
 
     @Test
     fun `list works when filtering security cookies from headers`() {
-        val list: List<String>? = listOf("Cookie_2=value2; Cookie_3=value3; JSESSIONID=123456789; mysessioncookiename=1F54D793F432FEE4CFC6A3FAED6D062F", "Cookie_1=value1; SID=987654312")
+        val list: List<String>? =
+            listOf(
+                "Cookie_2=value2; Cookie_3=value3; JSESSIONID=123456789; mysessioncookiename=1F54D793F432FEE4CFC6A3FAED6D062F",
+                "Cookie_1=value1; SID=987654312",
+            )
         val headers =
             HttpUtils.filterOutSecurityCookiesFromHeader(list, "Cookie", listOf("mysessioncookiename"))
 

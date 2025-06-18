@@ -48,41 +48,51 @@ class SentryOkHttpEventTest {
             whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
                     dsn = "https://key@sentry.io/proj"
-                }
+                },
             )
 
-            span = Span(
-                TransactionContext("name", "op", TracesSamplingDecision(true)),
-                SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), scopes),
-                scopes,
-                SpanOptions()
-            )
+            span =
+                Span(
+                    TransactionContext("name", "op", TracesSamplingDecision(true)),
+                    SentryTracer(TransactionContext("name", "op", TracesSamplingDecision(true)), scopes),
+                    scopes,
+                    SpanOptions(),
+                )
 
-            mockRequest = Request.Builder()
-                .addHeader("myHeader", "myValue")
-                .get()
-                .url(server.url("/hello"))
-                .build()
-
-            response = Response.Builder()
-                .code(200)
-                .message("message")
-                .request(mockRequest)
-                .protocol(Protocol.HTTP_1_1)
-                .build()
-        }
-
-        fun getSut(currentSpan: ISpan? = span, requestUrl: String ? = null): SentryOkHttpEvent {
-            whenever(scopes.span).thenReturn(currentSpan)
-            val request = if (requestUrl == null) {
-                mockRequest
-            } else {
-                Request.Builder()
+            mockRequest =
+                Request
+                    .Builder()
                     .addHeader("myHeader", "myValue")
                     .get()
-                    .url(server.url(requestUrl))
+                    .url(server.url("/hello"))
                     .build()
-            }
+
+            response =
+                Response
+                    .Builder()
+                    .code(200)
+                    .message("message")
+                    .request(mockRequest)
+                    .protocol(Protocol.HTTP_1_1)
+                    .build()
+        }
+
+        fun getSut(
+            currentSpan: ISpan? = span,
+            requestUrl: String? = null,
+        ): SentryOkHttpEvent {
+            whenever(scopes.span).thenReturn(currentSpan)
+            val request =
+                if (requestUrl == null) {
+                    mockRequest
+                } else {
+                    Request
+                        .Builder()
+                        .addHeader("myHeader", "myValue")
+                        .get()
+                        .url(server.url(requestUrl))
+                        .build()
+                }
             return SentryOkHttpEvent(scopes, request)
         }
     }
@@ -231,7 +241,7 @@ class SentryOkHttpEventTest {
             },
             check {
                 assertEquals(fixture.mockRequest, it[TypeCheckHint.OKHTTP_REQUEST])
-            }
+            },
         )
     }
 
@@ -240,10 +250,11 @@ class SentryOkHttpEventTest {
         val sut = fixture.getSut()
 
         sut.setRequest(
-            Request.Builder()
+            Request
+                .Builder()
                 .post("".toRequestBody())
                 .url("https://foo.bar/updated")
-                .build()
+                .build(),
         )
         sut.finish()
 
@@ -254,7 +265,7 @@ class SentryOkHttpEventTest {
                 assertEquals("/updated", it.data["path"])
                 assertEquals("POST", it.data["method"])
             },
-            any()
+            any(),
         )
 
         assertNotNull(sut.callSpan)
@@ -288,7 +299,7 @@ class SentryOkHttpEventTest {
             },
             check {
                 assertEquals(fixture.response, it[TypeCheckHint.OKHTTP_RESPONSE])
-            }
+            },
         )
     }
 
@@ -302,7 +313,7 @@ class SentryOkHttpEventTest {
             check<Breadcrumb> {
                 assertEquals("protocol", it.data["protocol"])
             },
-            any()
+            any(),
         )
     }
 
@@ -316,7 +327,7 @@ class SentryOkHttpEventTest {
             check<Breadcrumb> {
                 assertNull(it.data["protocol"])
             },
-            any()
+            any(),
         )
     }
 
@@ -330,7 +341,7 @@ class SentryOkHttpEventTest {
             check<Breadcrumb> {
                 assertEquals(10L, it.data["request_content_length"])
             },
-            any()
+            any(),
         )
     }
 
@@ -344,7 +355,7 @@ class SentryOkHttpEventTest {
             check<Breadcrumb> {
                 assertNull(it.data["request_content_length"])
             },
-            any()
+            any(),
         )
     }
 
@@ -358,7 +369,7 @@ class SentryOkHttpEventTest {
             check<Breadcrumb> {
                 assertEquals(10L, it.data["response_content_length"])
             },
-            any()
+            any(),
         )
     }
 
@@ -372,7 +383,7 @@ class SentryOkHttpEventTest {
             check<Breadcrumb> {
                 assertNull(it.data["response_content_length"])
             },
-            any()
+            any(),
         )
     }
 
@@ -386,7 +397,7 @@ class SentryOkHttpEventTest {
             check<Breadcrumb> {
                 assertEquals("errorMessage", it.data["error_message"])
             },
-            any()
+            any(),
         )
     }
 
@@ -401,7 +412,7 @@ class SentryOkHttpEventTest {
             check<Breadcrumb> {
                 assertNull(it.data["error_message"])
             },
-            any()
+            any(),
         )
     }
 
@@ -422,7 +433,7 @@ class SentryOkHttpEventTest {
             argThat<Hint> {
                 get(TypeCheckHint.OKHTTP_REQUEST) != null &&
                     get(TypeCheckHint.OKHTTP_RESPONSE) != null
-            }
+            },
         )
     }
 
@@ -443,7 +454,7 @@ class SentryOkHttpEventTest {
             argThat<Hint> {
                 get(TypeCheckHint.OKHTTP_REQUEST) != null &&
                     get(TypeCheckHint.OKHTTP_RESPONSE) != null
-            }
+            },
         )
     }
 

@@ -19,55 +19,52 @@ import androidx.sqlite.db.SupportSQLiteStatement
  */
 internal class SentrySupportSQLiteDatabase(
     private val delegate: SupportSQLiteDatabase,
-    private val sqLiteSpanManager: SQLiteSpanManager
+    private val sqLiteSpanManager: SQLiteSpanManager,
 ) : SupportSQLiteDatabase by delegate {
-
     /**
      * Compiles the given SQL statement. It will return Sentry's wrapper around SupportSQLiteStatement.
      *
      * @param sql The sql query.
      * @return Compiled statement.
      */
-    override fun compileStatement(sql: String): SupportSQLiteStatement {
-        return SentrySupportSQLiteStatement(delegate.compileStatement(sql), sqLiteSpanManager, sql)
-    }
+    override fun compileStatement(sql: String): SupportSQLiteStatement =
+        SentrySupportSQLiteStatement(delegate.compileStatement(sql), sqLiteSpanManager, sql)
 
     @Suppress("AcronymName") // To keep consistency with framework method name.
     override fun execPerConnectionSQL(
         sql: String,
-        @SuppressLint("ArrayReturn") bindArgs: Array<out Any?>?
+        @SuppressLint("ArrayReturn") bindArgs: Array<out Any?>?,
     ) {
         sqLiteSpanManager.performSql(sql) {
             delegate.execPerConnectionSQL(sql, bindArgs)
         }
     }
 
-    override fun query(query: String): Cursor {
-        return sqLiteSpanManager.performSql(query) {
+    override fun query(query: String): Cursor =
+        sqLiteSpanManager.performSql(query) {
             delegate.query(query)
         }
-    }
 
-    override fun query(query: String, bindArgs: Array<out Any?>): Cursor {
-        return sqLiteSpanManager.performSql(query) {
+    override fun query(
+        query: String,
+        bindArgs: Array<out Any?>,
+    ): Cursor =
+        sqLiteSpanManager.performSql(query) {
             delegate.query(query, bindArgs)
         }
-    }
 
-    override fun query(query: SupportSQLiteQuery): Cursor {
-        return sqLiteSpanManager.performSql(query.sql) {
+    override fun query(query: SupportSQLiteQuery): Cursor =
+        sqLiteSpanManager.performSql(query.sql) {
             delegate.query(query)
         }
-    }
 
     override fun query(
         query: SupportSQLiteQuery,
-        cancellationSignal: CancellationSignal?
-    ): Cursor {
-        return sqLiteSpanManager.performSql(query.sql) {
+        cancellationSignal: CancellationSignal?,
+    ): Cursor =
+        sqLiteSpanManager.performSql(query.sql) {
             delegate.query(query, cancellationSignal)
         }
-    }
 
     @Throws(SQLException::class)
     override fun execSQL(sql: String) {
@@ -77,7 +74,10 @@ internal class SentrySupportSQLiteDatabase(
     }
 
     @Throws(SQLException::class)
-    override fun execSQL(sql: String, bindArgs: Array<out Any?>) {
+    override fun execSQL(
+        sql: String,
+        bindArgs: Array<out Any?>,
+    ) {
         sqLiteSpanManager.performSql(sql) {
             delegate.execSQL(sql, bindArgs)
         }

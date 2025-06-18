@@ -22,16 +22,19 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SQLiteSpanManagerTest {
-
     private class Fixture {
         private val scopes = mock<IScopes>()
         lateinit var sentryTracer: SentryTracer
         lateinit var options: SentryOptions
 
-        fun getSut(isSpanActive: Boolean = true, databaseName: String? = null): SQLiteSpanManager {
-            options = SentryOptions().apply {
-                dsn = "https://key@sentry.io/proj"
-            }
+        fun getSut(
+            isSpanActive: Boolean = true,
+            databaseName: String? = null,
+        ): SQLiteSpanManager {
+            options =
+                SentryOptions().apply {
+                    dsn = "https://key@sentry.io/proj"
+                }
             whenever(scopes.options).thenReturn(options)
             sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
 
@@ -84,7 +87,8 @@ class SQLiteSpanManagerTest {
             sut.performSql("error sql") {
                 throw e
             }
-        } catch (_: Throwable) {}
+        } catch (_: Throwable) {
+        }
         val span = fixture.sentryTracer.children.firstOrNull()
         assertNotNull(span)
         assertEquals("db.sql.query", span.operation)

@@ -8,7 +8,6 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 
 class UserTest {
-
     @Test
     fun `copying user wont have the same references`() {
         val user = createUser()
@@ -69,17 +68,18 @@ class UserTest {
 
     @Test
     fun `when setOther receives immutable map as an argument, its still possible to add more data to the user`() {
-        val user = User().apply {
-            data = Collections.unmodifiableMap(mapOf("key1" to "value1"))
-            data!!["key2"] = "value2"
-        }
+        val user =
+            User().apply {
+                data = Collections.unmodifiableMap(mapOf("key1" to "value1"))
+                data!!["key2"] = "value2"
+            }
         assertNotNull(user.data) {
             assertEquals(mapOf("key1" to "value1", "key2" to "value2"), it)
         }
     }
 
-    private fun createUser(): User {
-        return User().apply {
+    private fun createUser(): User =
+        User().apply {
             email = "a@a.com"
             id = "123"
             ipAddress = "123.x"
@@ -89,5 +89,4 @@ class UserTest {
             val unknown = mapOf(Pair("unknown", "unknown"))
             setUnknown(unknown)
         }
-    }
 }

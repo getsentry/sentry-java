@@ -7,7 +7,6 @@ import kotlinx.coroutines.launch
 import java.lang.RuntimeException
 
 object CoroutinesUtil {
-
     fun throwInCoroutine() {
         GlobalScope.launch(SentryContext() + SentryCoroutineExceptionHandler()) {
             throw RuntimeException("Exception in coroutine")

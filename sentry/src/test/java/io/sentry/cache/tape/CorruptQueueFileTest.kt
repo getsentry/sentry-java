@@ -10,7 +10,6 @@ import java.nio.file.Paths
 import kotlin.test.assertEquals
 
 class CorruptQueueFileTest {
-
     @get:Rule
     val folder = TemporaryFolder()
     private lateinit var file: File

@@ -6,7 +6,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class PersonSystemTest {
-
     lateinit var testHelper: TestHelper
 
     @Before
@@ -55,13 +54,15 @@ class PersonSystemTest {
     fun `create person creates transaction if no sampled flag in sentry-trace header`() {
         val restClient = testHelper.restClient
         val person = Person("firstA", "lastB")
-        val returnedPerson = restClient.createPerson(
-            person,
-            mapOf(
-                "sentry-trace" to "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee",
-                "baggage" to "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=f9118105af4a2d42b4124532cd1065ff,sentry-transaction=HTTP%20GET"
+        val returnedPerson =
+            restClient.createPerson(
+                person,
+                mapOf(
+                    "sentry-trace" to "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee",
+                    "baggage" to
+                        "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=f9118105af4a2d42b4124532cd1065ff,sentry-transaction=HTTP%20GET",
+                ),
             )
-        )
         assertEquals(200, restClient.lastKnownStatusCode)
 
         assertEquals(person.firstName, returnedPerson!!.firstName)
@@ -77,13 +78,15 @@ class PersonSystemTest {
     fun `create person creates transaction if sampled true in sentry-trace header`() {
         val restClient = testHelper.restClient
         val person = Person("firstA", "lastB")
-        val returnedPerson = restClient.createPerson(
-            person,
-            mapOf(
-                "sentry-trace" to "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1",
-                "baggage" to "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=f9118105af4a2d42b4124532cd1065ff,sentry-transaction=HTTP%20GET"
+        val returnedPerson =
+            restClient.createPerson(
+                person,
+                mapOf(
+                    "sentry-trace" to "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1",
+                    "baggage" to
+                        "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=f9118105af4a2d42b4124532cd1065ff,sentry-transaction=HTTP%20GET",
+                ),
             )
-        )
         assertEquals(200, restClient.lastKnownStatusCode)
 
         assertEquals(person.firstName, returnedPerson!!.firstName)

@@ -18,14 +18,12 @@ import kotlin.test.assertTrue
 
 class SentryExceptionFactoryTest {
     private class Fixture {
-
         fun getSut(
-            stackTraceFactory: SentryStackTraceFactory = SentryStackTraceFactory(
-                SentryOptions()
-            )
-        ): SentryExceptionFactory {
-            return SentryExceptionFactory(stackTraceFactory)
-        }
+            stackTraceFactory: SentryStackTraceFactory =
+                SentryStackTraceFactory(
+                    SentryOptions(),
+                ),
+        ): SentryExceptionFactory = SentryExceptionFactory(stackTraceFactory)
     }
 
     private val fixture = Fixture()
@@ -150,10 +148,11 @@ class SentryExceptionFactoryTest {
     @Test
     fun `when exception has an unhandled mechanism, it should include sentry frames`() {
         val exception = Exception("message")
-        val mechanism = Mechanism().apply {
-            isHandled = false
-            type = "UncaughtExceptionHandler"
-        }
+        val mechanism =
+            Mechanism().apply {
+                isHandled = false
+                type = "UncaughtExceptionHandler"
+            }
         val thread = Thread()
         val throwable = ExceptionMechanismException(mechanism, exception, thread)
 
@@ -162,7 +161,7 @@ class SentryExceptionFactoryTest {
         assertTrue(
             queue.first.stacktrace!!.frames!!.any {
                 it.module != null && it.module!!.startsWith("io.sentry")
-            }
+            },
         )
     }
 
@@ -179,18 +178,21 @@ class SentryExceptionFactoryTest {
 
     @Test
     fun `returns proper exception backfilled from SentryThread`() {
-        val thread = SentryThread().apply {
-            id = 121
-            stacktrace = SentryStackTrace().apply {
-                frames = listOf(
-                    SentryStackFrame().apply {
-                        lineno = 777
-                        module = "io.sentry.samples.MainActivity"
-                        function = "run"
+        val thread =
+            SentryThread().apply {
+                id = 121
+                stacktrace =
+                    SentryStackTrace().apply {
+                        frames =
+                            listOf(
+                                SentryStackFrame().apply {
+                                    lineno = 777
+                                    module = "io.sentry.samples.MainActivity"
+                                    function = "run"
+                                },
+                            )
                     }
-                )
             }
-        }
         val mechanism = Mechanism().apply { type = "AppExitInfo" }
         val throwable = Exception("msg")
 
@@ -415,8 +417,11 @@ class SentryExceptionFactoryTest {
         assertEquals("chained", outerInQueue.mechanism?.type)
     }
 
-    internal class InnerClassThrowable constructor(cause: Throwable? = null) : Throwable(cause)
+    internal class InnerClassThrowable constructor(
+        cause: Throwable? = null,
+    ) : Throwable(cause)
 
-    private val anonymousException = object : Exception() {
-    }
+    private val anonymousException =
+        object : Exception() {
+        }
 }

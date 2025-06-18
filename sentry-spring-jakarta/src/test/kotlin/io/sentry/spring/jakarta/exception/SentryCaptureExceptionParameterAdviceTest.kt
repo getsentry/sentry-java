@@ -25,7 +25,6 @@ import kotlin.test.assertTrue
 @RunWith(SpringRunner::class)
 @SpringJUnitConfig(SentryCaptureExceptionParameterAdviceTest.Config::class)
 class SentryCaptureExceptionParameterAdviceTest {
-
     @Autowired
     lateinit var sampleService: SampleService
 
@@ -47,7 +46,7 @@ class SentryCaptureExceptionParameterAdviceTest {
                 assertEquals(exception, it.throwable)
                 assertEquals("SentrySpring6CaptureExceptionParameterAdvice", it.exceptionMechanism.type)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -55,7 +54,6 @@ class SentryCaptureExceptionParameterAdviceTest {
     @EnableAspectJAutoProxy(proxyTargetClass = true)
     @Import(SentryCaptureExceptionParameterConfiguration::class)
     open class Config {
-
         @Bean
         open fun sampleService() = SampleService()
 
@@ -68,7 +66,6 @@ class SentryCaptureExceptionParameterAdviceTest {
     }
 
     open class SampleService {
-
         @SentryCaptureExceptionParameter
         open fun methodTakingAnException(e: Exception) = Unit
     }

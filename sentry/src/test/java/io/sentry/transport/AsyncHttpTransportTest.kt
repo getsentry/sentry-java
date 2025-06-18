@@ -37,24 +37,27 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AsyncHttpTransportTest {
-
     private class Fixture {
         var connection = mock<HttpConnection>()
         var transportGate = mock<ITransportGate>()
         var executor = mock<QueuedThreadPoolExecutor>()
         var rateLimiter = mock<RateLimiter>()
-        var sentryOptions: SentryOptions = SentryOptions().apply {
-            dsn = dsnString
-            setSerializer(mock())
-            setEnvelopeDiskCache(mock())
-        }
+        var sentryOptions: SentryOptions =
+            SentryOptions().apply {
+                dsn = dsnString
+                setSerializer(mock())
+                setEnvelopeDiskCache(mock())
+            }
         var clientReportRecorder = NoOpClientReportRecorder()
 
         init {
             // this is an executor service running immediately in the current thread. Of course this defeats the
             // purpose of the AsyncConnection but enables us to easily test the behavior of the send jobs that
             // AsyncConnection creates and submits to the executor.
-            whenever(executor.submit(any())).thenAnswer { (it.arguments[0] as Runnable).run(); null }
+            whenever(executor.submit(any())).thenAnswer {
+                (it.arguments[0] as Runnable).run()
+                null
+            }
         }
 
         fun getSUT(): AsyncHttpTransport {
@@ -234,14 +237,16 @@ class AsyncHttpTransportTest {
         val eventItem = SentryEnvelopeItem.fromEvent(fixture.sentryOptions.serializer, SentryEvent())
         val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(sessionItem, eventItem))
 
-        whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem)) }
+        whenever(
+            fixture.rateLimiter.filter(any(), anyOrNull()),
+        ).thenAnswer { SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem)) }
         whenever(fixture.transportGate.isConnected).thenReturn(true)
         whenever(fixture.connection.send(any<SentryEnvelope>())).thenReturn(TransportResult.success())
         fixture.getSUT().send(envelope)
         verify(fixture.connection).send(
             check {
                 assertEquals(1, it.items.count())
-            }
+            },
         )
     }
 
@@ -301,7 +306,7 @@ class AsyncHttpTransportTest {
         verify(fixture.connection).send(
             check {
                 assertEquals(it.header.sentAt, now)
-            }
+            },
         )
     }
 
@@ -325,7 +330,7 @@ class AsyncHttpTransportTest {
         verify(fixture.connection).send(
             check {
                 assertEquals(it.header.sentAt, now)
-            }
+            },
         )
     }
 
@@ -387,13 +392,16 @@ class AsyncHttpTransportTest {
         whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
 
         var calledFlush = false
-        val sentryHint = object : DiskFlushNotification {
-            override fun markFlushed() {
-                calledFlush = true
+        val sentryHint =
+            object : DiskFlushNotification {
+                override fun markFlushed() {
+                    calledFlush = true
+                }
+
+                override fun isFlushable(eventId: SentryId?): Boolean = false
+
+                override fun setFlushable(eventId: SentryId) = Unit
             }
-            override fun isFlushable(eventId: SentryId?): Boolean = false
-            override fun setFlushable(eventId: SentryId) = Unit
-        }
         val hint = HintUtils.createWithTypeCheckHint(sentryHint)
 
         // when
@@ -411,13 +419,16 @@ class AsyncHttpTransportTest {
         whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
 
         var calledFlush = false
-        val sentryHint = object : DiskFlushNotification {
-            override fun markFlushed() {
-                calledFlush = true
+        val sentryHint =
+            object : DiskFlushNotification {
+                override fun markFlushed() {
+                    calledFlush = true
+                }
+
+                override fun isFlushable(eventId: SentryId?): Boolean = envelope.header.eventId == eventId
+
+                override fun setFlushable(eventId: SentryId) = Unit
             }
-            override fun isFlushable(eventId: SentryId?): Boolean = envelope.header.eventId == eventId
-            override fun setFlushable(eventId: SentryId) = Unit
-        }
         val hint = HintUtils.createWithTypeCheckHint(sentryHint)
 
         // when
@@ -435,11 +446,14 @@ class AsyncHttpTransportTest {
         whenever(fixture.connection.send(any())).thenReturn(TransportResult.success())
 
         var called = false
-        val hint = HintUtils.createWithTypeCheckHint(object : Enqueable {
-            override fun markEnqueued() {
-                called = true
-            }
-        })
+        val hint =
+            HintUtils.createWithTypeCheckHint(
+                object : Enqueable {
+                    override fun markEnqueued() {
+                        called = true
+                    }
+                },
+            )
         fixture.getSUT().send(envelope, hint)
 
         assertTrue(called)
@@ -477,7 +491,5 @@ class AsyncHttpTransportTest {
         assertFalse(fixture.getSUT().isHealthy)
     }
 
-    private fun createSession(): Session {
-        return Session("123", User(), "env", "release")
-    }
+    private fun createSession(): Session = Session("123", User(), "env", "release")
 }

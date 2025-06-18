@@ -12,7 +12,7 @@ import io.sentry.apollo3.selections.LaunchDetailsQuerySelections
 import kotlin.String
 
 public data class LaunchDetailsQuery(
-    public val id: String
+    public val id: String,
 ) : Query<LaunchDetailsQuery.Data> {
     public override fun id(): String = OPERATION_ID
 
@@ -22,39 +22,40 @@ public data class LaunchDetailsQuery(
 
     public override fun serializeVariables(
         writer: JsonWriter,
-        customScalarAdapters: CustomScalarAdapters
+        customScalarAdapters: CustomScalarAdapters,
     ) {
         LaunchDetailsQuery_VariablesAdapter.toJson(writer, customScalarAdapters, this)
     }
 
     public override fun adapter(): Adapter<Data> = LaunchDetailsQuery_ResponseAdapter.Data.obj()
 
-    public override fun rootField(): CompiledField = CompiledField.Builder(
-        name = "data",
-        type = io.sentry.apollo3.type.Query.type
-    )
-        .selections(selections = LaunchDetailsQuerySelections.root)
-        .build()
+    public override fun rootField(): CompiledField =
+        CompiledField
+            .Builder(
+                name = "data",
+                type = io.sentry.apollo3.type.Query.type,
+            ).selections(selections = LaunchDetailsQuerySelections.root)
+            .build()
 
     public data class Data(
-        public val launch: Launch?
+        public val launch: Launch?,
     ) : Query.Data
 
     public data class Launch(
         public val id: String,
         public val site: String?,
         public val mission: Mission?,
-        public val rocket: Rocket?
+        public val rocket: Rocket?,
     )
 
     public data class Mission(
         public val name: String?,
-        public val missionPatch: String?
+        public val missionPatch: String?,
     )
 
     public data class Rocket(
         public val name: String?,
-        public val type: String?
+        public val type: String?,
     )
 
     public companion object {

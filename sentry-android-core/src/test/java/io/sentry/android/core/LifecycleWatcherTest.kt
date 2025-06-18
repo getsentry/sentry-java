@@ -23,7 +23,6 @@ import org.mockito.kotlin.timeout
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.util.*
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,7 +32,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class LifecycleWatcherTest {
-
     private class Fixture {
         val ownerMock = mock<LifecycleOwner>()
         val scopes = mock<IScopes>()
@@ -46,7 +44,7 @@ class LifecycleWatcherTest {
             sessionIntervalMillis: Long = 0L,
             enableAutoSessionTracking: Boolean = true,
             enableAppLifecycleBreadcrumbs: Boolean = true,
-            session: Session? = null
+            session: Session? = null,
         ): LifecycleWatcher {
             val argumentCaptor: ArgumentCaptor<ScopeCallback> = ArgumentCaptor.forClass(ScopeCallback::class.java)
             val scope = mock<IScope>()
@@ -63,7 +61,7 @@ class LifecycleWatcherTest {
                 sessionIntervalMillis,
                 enableAutoSessionTracking,
                 enableAppLifecycleBreadcrumbs,
-                dateProvider
+                dateProvider,
             )
         }
     }
@@ -152,7 +150,7 @@ class LifecycleWatcherTest {
                 assertEquals("navigation", it.type)
                 assertEquals(SentryLevel.INFO, it.level)
                 // cant assert data, its not a public API
-            }
+            },
         )
     }
 
@@ -173,7 +171,7 @@ class LifecycleWatcherTest {
                 assertEquals("navigation", it.type)
                 assertEquals(SentryLevel.INFO, it.level)
                 // cant assert data, its not a public API
-            }
+            },
         )
     }
 
@@ -192,25 +190,27 @@ class LifecycleWatcherTest {
 
     @Test
     fun `if the scopes has already a fresh session running, don't start new one`() {
-        val watcher = fixture.getSUT(
-            enableAppLifecycleBreadcrumbs = false,
-            session = Session(
-                State.Ok,
-                DateUtils.getCurrentDateTime(),
-                DateUtils.getCurrentDateTime(),
-                0,
-                "abc",
-                "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
-                true,
-                0,
-                10.0,
-                null,
-                null,
-                null,
-                "release",
-                null
+        val watcher =
+            fixture.getSUT(
+                enableAppLifecycleBreadcrumbs = false,
+                session =
+                    Session(
+                        State.Ok,
+                        DateUtils.getCurrentDateTime(),
+                        DateUtils.getCurrentDateTime(),
+                        0,
+                        "abc",
+                        "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
+                        true,
+                        0,
+                        10.0,
+                        null,
+                        null,
+                        null,
+                        "release",
+                        null,
+                    ),
             )
-        )
 
         watcher.onStart(fixture.ownerMock)
         verify(fixture.scopes, never()).startSession()
@@ -219,25 +219,27 @@ class LifecycleWatcherTest {
 
     @Test
     fun `if the scopes has a long running session, start new one`() {
-        val watcher = fixture.getSUT(
-            enableAppLifecycleBreadcrumbs = false,
-            session = Session(
-                State.Ok,
-                DateUtils.getDateTime(-1),
-                DateUtils.getDateTime(-1),
-                0,
-                "abc",
-                "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
-                true,
-                0,
-                10.0,
-                null,
-                null,
-                null,
-                "release",
-                null
+        val watcher =
+            fixture.getSUT(
+                enableAppLifecycleBreadcrumbs = false,
+                session =
+                    Session(
+                        State.Ok,
+                        DateUtils.getDateTime(-1),
+                        DateUtils.getDateTime(-1),
+                        0,
+                        "abc",
+                        "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
+                        true,
+                        0,
+                        10.0,
+                        null,
+                        null,
+                        null,
+                        "release",
+                        null,
+                    ),
             )
-        )
 
         watcher.onStart(fixture.ownerMock)
         verify(fixture.scopes).startSession()
@@ -260,25 +262,27 @@ class LifecycleWatcherTest {
 
     @Test
     fun `if the hub has already a fresh session running, resumes replay to invalidate isManualPause flag`() {
-        val watcher = fixture.getSUT(
-            enableAppLifecycleBreadcrumbs = false,
-            session = Session(
-                State.Ok,
-                DateUtils.getCurrentDateTime(),
-                DateUtils.getCurrentDateTime(),
-                0,
-                "abc",
-                "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
-                true,
-                0,
-                10.0,
-                null,
-                null,
-                null,
-                "release",
-                null
+        val watcher =
+            fixture.getSUT(
+                enableAppLifecycleBreadcrumbs = false,
+                session =
+                    Session(
+                        State.Ok,
+                        DateUtils.getCurrentDateTime(),
+                        DateUtils.getCurrentDateTime(),
+                        0,
+                        "abc",
+                        "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
+                        true,
+                        0,
+                        10.0,
+                        null,
+                        null,
+                        null,
+                        "release",
+                        null,
+                    ),
             )
-        )
 
         watcher.onStart(fixture.ownerMock)
         verify(fixture.replayController).resume()
@@ -287,10 +291,11 @@ class LifecycleWatcherTest {
     @Test
     fun `background-foreground replay`() {
         whenever(fixture.dateProvider.currentTimeMillis).thenReturn(1L)
-        val watcher = fixture.getSUT(
-            sessionIntervalMillis = 2L,
-            enableAppLifecycleBreadcrumbs = false
-        )
+        val watcher =
+            fixture.getSUT(
+                sessionIntervalMillis = 2L,
+                enableAppLifecycleBreadcrumbs = false,
+            )
         watcher.onStart(fixture.ownerMock)
         verify(fixture.replayController).start()
 

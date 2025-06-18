@@ -39,10 +39,9 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(
     sdk = [Build.VERSION_CODES.N],
-    shadows = [SentryShadowProcess::class]
+    shadows = [SentryShadowProcess::class],
 )
 class AppStartMetricsTest {
-
     @Before
     fun setup() {
         AppStartMetrics.getInstance().clear()
@@ -89,9 +88,10 @@ class AppStartMetricsTest {
         AppStartMetrics.getInstance().appStartType = AppStartMetrics.AppStartType.WARM
         appStartTimeSpan.start()
 
-        val options = SentryAndroidOptions().apply {
-            isEnablePerformanceV2 = true
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isEnablePerformanceV2 = true
+            }
 
         val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
         assertSame(appStartTimeSpan, timeSpan)
@@ -107,9 +107,10 @@ class AppStartMetricsTest {
         }
         appStartTimeSpan.setStartedAt(123)
 
-        val options = SentryAndroidOptions().apply {
-            isEnablePerformanceV2 = false
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isEnablePerformanceV2 = false
+            }
 
         val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
         val sdkInitSpan = AppStartMetrics.getInstance().sdkInitTimeSpan
@@ -124,9 +125,10 @@ class AppStartMetricsTest {
             setStoppedAt(456)
         }
 
-        val options = SentryAndroidOptions().apply {
-            isEnablePerformanceV2 = true
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isEnablePerformanceV2 = true
+            }
 
         val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
         val sdkInitSpan = AppStartMetrics.getInstance().sdkInitTimeSpan
@@ -149,9 +151,10 @@ class AppStartMetricsTest {
         AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
         Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryAndroidOptions().apply {
-            isEnablePerformanceV2 = false
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isEnablePerformanceV2 = false
+            }
 
         val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
         assertFalse(timeSpan.hasStarted())
@@ -167,7 +170,7 @@ class AppStartMetricsTest {
                 description = "ExampleContentProvider"
                 setStartedAt(1)
                 setStoppedAt(2)
-            }
+            },
         )
 
         metrics.applicationOnCreateTimeSpan.apply {
@@ -229,9 +232,10 @@ class AppStartMetricsTest {
         assertTrue(appStartTimeSpan.hasStarted())
         AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
 
-        val options = SentryAndroidOptions().apply {
-            isEnablePerformanceV2 = true
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isEnablePerformanceV2 = true
+            }
 
         val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
         assertTrue(timeSpan.hasStarted())
@@ -316,9 +320,10 @@ class AppStartMetricsTest {
         assertTrue(appStartTimeSpan.hasStarted())
         AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
 
-        val options = SentryAndroidOptions().apply {
-            isEnablePerformanceV2 = true
-        }
+        val options =
+            SentryAndroidOptions().apply {
+                isEnablePerformanceV2 = true
+            }
 
         val timeSpan = AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options)
         assertFalse(timeSpan.hasStarted())
@@ -331,7 +336,7 @@ class AppStartMetricsTest {
         AppStartMetrics.getInstance().registerLifecycleCallbacks(application)
         verify(
             application,
-            times(1)
+            times(1),
         ).registerActivityLifecycleCallbacks(eq(AppStartMetrics.getInstance()))
     }
 
@@ -433,7 +438,7 @@ class AppStartMetricsTest {
         val metrics = AppStartMetrics.getInstance()
         assertEquals(
             AppStartMetrics.AppStartType.UNKNOWN,
-            AppStartMetrics.getInstance().appStartType
+            AppStartMetrics.getInstance().appStartType,
         )
 
         val app = mock<Application>()
@@ -455,7 +460,7 @@ class AppStartMetricsTest {
         val metrics = AppStartMetrics.getInstance()
         assertEquals(
             AppStartMetrics.AppStartType.UNKNOWN,
-            AppStartMetrics.getInstance().appStartType
+            AppStartMetrics.getInstance().appStartType,
         )
         val app = mock<Application>()
         metrics.registerLifecycleCallbacks(app)
@@ -473,7 +478,7 @@ class AppStartMetricsTest {
         val metrics = AppStartMetrics.getInstance()
         assertEquals(
             AppStartMetrics.AppStartType.UNKNOWN,
-            AppStartMetrics.getInstance().appStartType
+            AppStartMetrics.getInstance().appStartType,
         )
 
         val app = mock<Application>()

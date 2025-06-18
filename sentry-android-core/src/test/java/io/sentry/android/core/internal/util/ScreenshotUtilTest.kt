@@ -24,11 +24,10 @@ import kotlin.test.assertTrue
 
 @Config(
     shadows = [ShadowPixelCopy::class],
-    sdk = [26, 33]
+    sdk = [26, 33],
 )
 @RunWith(AndroidJUnit4::class)
 class ScreenshotUtilTest {
-
     @Test
     fun `when window is null, null is returned`() {
         val activity = mock<Activity>()

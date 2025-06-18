@@ -12,15 +12,12 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class ShutdownHookIntegrationTest {
-
     private class Fixture {
         val runtime = mock<Runtime>()
         val options = SentryOptions()
         val scopes = mock<IScopes>()
 
-        fun getSut(): ShutdownHookIntegration {
-            return ShutdownHookIntegration(runtime)
-        }
+        fun getSut(): ShutdownHookIntegration = ShutdownHookIntegration(runtime)
     }
 
     private val fixture = Fixture()
@@ -123,7 +120,9 @@ class ShutdownHookIntegrationTest {
         integration.register(fixture.scopes, fixture.options)
 
         assertTrue(
-            fixture.options.sdkVersion!!.integrationSet.contains("ShutdownHook")
+            fixture.options.sdkVersion!!
+                .integrationSet
+                .contains("ShutdownHook"),
         )
     }
 }

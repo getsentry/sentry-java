@@ -21,7 +21,10 @@ private const val ERROR_MESSAGE_KEY = "error_message"
 internal const val TRACE_ORIGIN = "auto.http.okhttp"
 
 @Suppress("TooManyFunctions")
-internal class SentryOkHttpEvent(private val scopes: IScopes, private val request: Request) {
+internal class SentryOkHttpEvent(
+    private val scopes: IScopes,
+    private val request: Request,
+) {
     private val eventDates: MutableMap<String, SentryDate> = ConcurrentHashMap()
     private val breadcrumb: Breadcrumb
     internal val callSpan: ISpan?
@@ -41,15 +44,16 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
         callSpan = parentSpan?.startChild("http.client")
         callSpan?.spanContext?.origin = TRACE_ORIGIN
 
-        breadcrumb = Breadcrumb().apply {
-            type = "http"
-            category = "http"
-            // needs this as unix timestamp for rrweb
-            setData(
-                SpanDataConvention.HTTP_START_TIMESTAMP,
-                CurrentDateProvider.getInstance().currentTimeMillis
-            )
-        }
+        breadcrumb =
+            Breadcrumb().apply {
+                type = "http"
+                category = "http"
+                // needs this as unix timestamp for rrweb
+                setData(
+                    SpanDataConvention.HTTP_START_TIMESTAMP,
+                    CurrentDateProvider.getInstance().currentTimeMillis,
+                )
+            }
 
         setRequest(request)
     }
@@ -141,11 +145,17 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
     }
 
     /** Record event finish and runs [beforeFinish] on the call span. */
-    fun onEventFinish(event: String, beforeFinish: ((span: ISpan) -> Unit)? = null) {
+    fun onEventFinish(
+        event: String,
+        beforeFinish: ((span: ISpan) -> Unit)? = null,
+    ) {
         val eventDate = eventDates.remove(event) ?: return
         callSpan ?: return
         beforeFinish?.invoke(callSpan)
-        val eventDurationNanos = scopes.options.dateProvider.now().diff(eventDate)
+        val eventDurationNanos =
+            scopes.options.dateProvider
+                .now()
+                .diff(eventDate)
         callSpan.setData(event, TimeUnit.NANOSECONDS.toMillis(eventDurationNanos))
     }
 

@@ -10,7 +10,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class FullyDisplayedReporterTest {
-
     private val reporter = FullyDisplayedReporter.getInstance()
     private val listeners = reporter.getProperty<MutableList<FullyDisplayedReporterListener>>("listeners")
     private val listener1 = FullyDisplayedReporterListener {}

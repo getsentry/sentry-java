@@ -12,9 +12,7 @@ import kotlin.test.assertNull
 
 class DefaultReplayBreadcrumbConverterTest {
     class Fixture {
-        fun getSut(): DefaultReplayBreadcrumbConverter {
-            return DefaultReplayBreadcrumbConverter()
-        }
+        fun getSut(): DefaultReplayBreadcrumbConverter = DefaultReplayBreadcrumbConverter()
     }
 
     private val fixture = Fixture()
@@ -23,9 +21,10 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `returns null when no category`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            message = "message"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                message = "message"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -36,16 +35,17 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `convert RRWebSpanEvent`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "http"
-            data["url"] = "http://example.com"
-            data["status_code"] = 404
-            data["method"] = "GET"
-            data[SpanDataConvention.HTTP_START_TIMESTAMP] = 1234L
-            data[SpanDataConvention.HTTP_END_TIMESTAMP] = 2234L
-            data["http.response_content_length"] = 300
-            data["http.request_content_length"] = 400
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "http"
+                data["url"] = "http://example.com"
+                data["status_code"] = 404
+                data["method"] = "GET"
+                data[SpanDataConvention.HTTP_START_TIMESTAMP] = 1234L
+                data[SpanDataConvention.HTTP_END_TIMESTAMP] = 2234L
+                data["http.response_content_length"] = 300
+                data["http.request_content_length"] = 400
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -65,16 +65,17 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `convert RRWebSpanEvent works with floating timestamps`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "http"
-            data["url"] = "http://example.com"
-            data["status_code"] = 404
-            data["method"] = "GET"
-            data[SpanDataConvention.HTTP_START_TIMESTAMP] = 1234.0
-            data[SpanDataConvention.HTTP_END_TIMESTAMP] = 2234.0
-            data["http.response_content_length"] = 300
-            data["http.request_content_length"] = 400
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "http"
+                data["url"] = "http://example.com"
+                data["status_code"] = 404
+                data["method"] = "GET"
+                data[SpanDataConvention.HTTP_START_TIMESTAMP] = 1234.0
+                data[SpanDataConvention.HTTP_END_TIMESTAMP] = 2234.0
+                data["http.response_content_length"] = 300
+                data["http.request_content_length"] = 400
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -87,15 +88,16 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `returns null if not eligible for RRWebSpanEvent`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "http"
-            data["status_code"] = 404
-            data["method"] = "GET"
-            data[SpanDataConvention.HTTP_START_TIMESTAMP] = 1234L
-            data[SpanDataConvention.HTTP_END_TIMESTAMP] = 2234L
-            data["http.response_content_length"] = 300
-            data["http.request_content_length"] = 400
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "http"
+                data["status_code"] = 404
+                data["method"] = "GET"
+                data[SpanDataConvention.HTTP_START_TIMESTAMP] = 1234L
+                data[SpanDataConvention.HTTP_END_TIMESTAMP] = 2234L
+                data["http.response_content_length"] = 300
+                data["http.request_content_length"] = 400
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -106,11 +108,12 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `converts app lifecycle breadcrumbs`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "app.lifecycle"
-            type = "navigation"
-            data["state"] = "background"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "app.lifecycle"
+                type = "navigation"
+                data["state"] = "background"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -125,11 +128,12 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `converts device orientation breadcrumbs`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "device.orientation"
-            type = "navigation"
-            data["position"] = "landscape"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "device.orientation"
+                type = "navigation"
+                data["position"] = "landscape"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -142,10 +146,11 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `returns null if no position for orientation breadcrumbs`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "device.orientation"
-            type = "navigation"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "device.orientation"
+                type = "navigation"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -156,12 +161,13 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `converts navigation breadcrumbs`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "navigation"
-            type = "navigation"
-            data["state"] = "resumed"
-            data["screen"] = "io.sentry.MainActivity"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "navigation"
+                type = "navigation"
+                data["state"] = "resumed"
+                data["screen"] = "io.sentry.MainActivity"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -174,11 +180,12 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `converts navigation breadcrumbs with destination`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "navigation"
-            type = "navigation"
-            data["to"] = "/github"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "navigation"
+                type = "navigation"
+                data["to"] = "/github"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -191,12 +198,13 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `returns null when lifecycle state is not 'resumed'`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "navigation"
-            type = "navigation"
-            data["state"] = "started"
-            data["screen"] = "io.sentry.MainActivity"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "navigation"
+                type = "navigation"
+                data["state"] = "started"
+                data["screen"] = "io.sentry.MainActivity"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -207,11 +215,12 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `converts ui click breadcrumbs`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "ui.click"
-            type = "user"
-            data["view.id"] = "button_login"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "ui.click"
+                type = "user"
+                data["view.id"] = "button_login"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -224,10 +233,11 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `returns null if no view identifier in data`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "ui.click"
-            type = "user"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "ui.click"
+                type = "user"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -238,11 +248,12 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `converts network connectivity breadcrumbs`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "network.event"
-            type = "system"
-            data["network_type"] = "cellular"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "network.event"
+                type = "system"
+                data["network_type"] = "cellular"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -255,10 +266,11 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `returns null if no network connectivity state`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "network.event"
-            type = "system"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "network.event"
+                type = "system"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -269,14 +281,15 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `converts battery status breadcrumbs`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "device.event"
-            type = "system"
-            data["action"] = "BATTERY_CHANGED"
-            data["level"] = 85.0f
-            data["charging"] = true
-            data["stuff"] = "shiet"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "device.event"
+                type = "system"
+                data["action"] = "BATTERY_CHANGED"
+                data["level"] = 85.0f
+                data["charging"] = true
+                data["stuff"] = "shiet"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 
@@ -291,13 +304,14 @@ class DefaultReplayBreadcrumbConverterTest {
     fun `converts generic breadcrumbs`() {
         val converter = fixture.getSut()
 
-        val breadcrumb = Breadcrumb(Date(123L)).apply {
-            category = "device.event"
-            type = "system"
-            message = "message"
-            level = SentryLevel.ERROR
-            data["stuff"] = "shiet"
-        }
+        val breadcrumb =
+            Breadcrumb(Date(123L)).apply {
+                category = "device.event"
+                type = "system"
+                message = "message"
+                level = SentryLevel.ERROR
+                data["stuff"] = "shiet"
+            }
 
         val rrwebEvent = converter.convert(breadcrumb)
 

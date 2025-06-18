@@ -52,7 +52,7 @@ class SentryServletRequestListenerTest {
                 assertThat(it.getData("method")).isEqualTo("POST")
                 assertThat(it.type).isEqualTo("http")
             },
-            anyOrNull()
+            anyOrNull(),
         )
         assertSame(fixture.lifecycleToken, fixture.request.getAttribute("sentry-scope-lifecycle"))
     }

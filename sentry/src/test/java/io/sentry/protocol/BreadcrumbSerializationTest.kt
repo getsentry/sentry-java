@@ -17,21 +17,22 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class BreadcrumbSerializationTest {
-
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = Breadcrumb(
-            DateUtils.getDateTime("2009-11-16T01:08:47.000Z")
-        ).apply {
-            message = "46f233c0-7c2d-488a-b05a-7be559173e16"
-            type = "ace57e2e-305e-4048-abf0-6c8538ea7bf4"
-            setData("6607d106-d426-462b-af74-f29fce978e48", "149bb94a-1387-4484-90be-2df15d1322ab")
-            category = "b6eea851-5ae5-40ed-8fdd-5e1a655a879c"
-            origin = "4d8085ef-22fc-49d5-801e-55d509fd1a1c"
-            level = SentryLevel.DEBUG
-        }
+        fun getSut() =
+            Breadcrumb(
+                DateUtils.getDateTime("2009-11-16T01:08:47.000Z"),
+            ).apply {
+                message = "46f233c0-7c2d-488a-b05a-7be559173e16"
+                type = "ace57e2e-305e-4048-abf0-6c8538ea7bf4"
+                setData("6607d106-d426-462b-af74-f29fce978e48", "149bb94a-1387-4484-90be-2df15d1322ab")
+                category = "b6eea851-5ae5-40ed-8fdd-5e1a655a879c"
+                origin = "4d8085ef-22fc-49d5-801e-55d509fd1a1c"
+                level = SentryLevel.DEBUG
+            }
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -52,17 +53,19 @@ class BreadcrumbSerializationTest {
 
     @Test
     fun deserializeFromMap() {
-        val map: Map<String, Any?> = mapOf(
-            "timestamp" to "2009-11-16T01:08:47.000Z",
-            "message" to "46f233c0-7c2d-488a-b05a-7be559173e16",
-            "type" to "ace57e2e-305e-4048-abf0-6c8538ea7bf4",
-            "data" to mapOf(
-                "6607d106-d426-462b-af74-f29fce978e48" to "149bb94a-1387-4484-90be-2df15d1322ab"
-            ),
-            "category" to "b6eea851-5ae5-40ed-8fdd-5e1a655a879c",
-            "origin" to "4d8085ef-22fc-49d5-801e-55d509fd1a1c",
-            "level" to "debug"
-        )
+        val map: Map<String, Any?> =
+            mapOf(
+                "timestamp" to "2009-11-16T01:08:47.000Z",
+                "message" to "46f233c0-7c2d-488a-b05a-7be559173e16",
+                "type" to "ace57e2e-305e-4048-abf0-6c8538ea7bf4",
+                "data" to
+                    mapOf(
+                        "6607d106-d426-462b-af74-f29fce978e48" to "149bb94a-1387-4484-90be-2df15d1322ab",
+                    ),
+                "category" to "b6eea851-5ae5-40ed-8fdd-5e1a655a879c",
+                "origin" to "4d8085ef-22fc-49d5-801e-55d509fd1a1c",
+                "level" to "debug",
+            )
         val actual = Breadcrumb.fromMap(map, SentryOptions())
         val expected = fixture.getSut()
 
@@ -77,33 +80,37 @@ class BreadcrumbSerializationTest {
 
     @Test
     fun deserializeDataWithInvalidKey() {
-        val map: Map<String, Any?> = mapOf(
-            "data" to mapOf(
-                123 to 456 // Invalid key type
+        val map: Map<String, Any?> =
+            mapOf(
+                "data" to
+                    mapOf(
+                        123 to 456, // Invalid key type
+                    ),
             )
-        )
         val actual = Breadcrumb.fromMap(map, SentryOptions())
         assertTrue(actual.data.isEmpty())
     }
 
     @Test
     fun deserializeDataWithNullKey() {
-        val map: Map<String, Any?> = mapOf(
-            "data" to mapOf(
-                "null" to null
+        val map: Map<String, Any?> =
+            mapOf(
+                "data" to
+                    mapOf(
+                        "null" to null,
+                    ),
             )
-        )
         val actual = Breadcrumb.fromMap(map, SentryOptions())
         assertEquals(null, actual?.data?.get("null"))
     }
 
     // Helper
 
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
+    private fun sanitizedFile(path: String): String =
+        FileFromResources
+            .invoke(path)
             .replace(Regex("[\n\r]"), "")
             .replace(" ", "")
-    }
 
     private fun serialize(jsonSerializable: JsonSerializable): String {
         val wrt = StringWriter()

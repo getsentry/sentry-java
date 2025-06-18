@@ -16,7 +16,11 @@ open class LoggingInsecureRestClient {
     val logger = LoggerFactory.getLogger(LoggingInsecureRestClient::class.java)
     var lastKnownStatusCode: Int? = null
 
-    protected inline fun <reified T> callTyped(requestBuilder: Request.Builder, useAuth: Boolean, extraHeaders: Map<String, String>? = null): T? {
+    protected inline fun <reified T> callTyped(
+        requestBuilder: Request.Builder,
+        useAuth: Boolean,
+        extraHeaders: Map<String, String>? = null,
+    ): T? {
         val response = call(requestBuilder, useAuth, extraHeaders)
         val responseBody = response?.body?.string()
         if (response?.isSuccessful != true) {
@@ -25,24 +29,31 @@ open class LoggingInsecureRestClient {
         return responseBody?.let { objectMapper().readValue(it, T::class.java) }
     }
 
-    protected fun call(requestBuilder: Request.Builder, useAuth: Boolean, extraHeaders: Map<String, String>? = null): Response? {
+    protected fun call(
+        requestBuilder: Request.Builder,
+        useAuth: Boolean,
+        extraHeaders: Map<String, String>? = null,
+    ): Response? {
         try {
-            val request = requestBuilder.also { originalRequest ->
-                var modifiedRequest = originalRequest
+            val request =
+                requestBuilder
+                    .also { originalRequest ->
+                        var modifiedRequest = originalRequest
 
-                if (useAuth) {
-                    modifiedRequest = modifiedRequest.header(
-                        "Authorization",
-                        Credentials.basic("user", "password")
-                    )
-                }
+                        if (useAuth) {
+                            modifiedRequest =
+                                modifiedRequest.header(
+                                    "Authorization",
+                                    Credentials.basic("user", "password"),
+                                )
+                        }
 
-                extraHeaders?.forEach { key, value ->
-                    modifiedRequest = modifiedRequest.header(key, value)
-                }
+                        extraHeaders?.forEach { key, value ->
+                            modifiedRequest = modifiedRequest.header(key, value)
+                        }
 
-                modifiedRequest
-            }.build()
+                        modifiedRequest
+                    }.build()
             val call = client().newCall(request)
             val response = call.execute()
             lastKnownStatusCode = response.code
@@ -54,18 +65,16 @@ open class LoggingInsecureRestClient {
         }
     }
 
-    protected fun client(): OkHttpClient {
-        return OkHttpClient.Builder()
+    protected fun client(): OkHttpClient =
+        OkHttpClient
+            .Builder()
             .callTimeout(60, TimeUnit.SECONDS)
             .connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .build()
-    }
 
-    protected fun objectMapper(): ObjectMapper {
-        return jacksonObjectMapper()
-    }
+    protected fun objectMapper(): ObjectMapper = jacksonObjectMapper()
 
     protected fun toRequestBody(o: Any?): RequestBody {
         val stringValue = objectMapper().writeValueAsString(o)

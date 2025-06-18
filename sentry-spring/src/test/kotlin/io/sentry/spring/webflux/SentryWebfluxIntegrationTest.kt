@@ -46,10 +46,9 @@ import kotlin.test.assertNull
 @SpringBootTest(
     classes = [App::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["spring.main.web-application-type=reactive"]
+    properties = ["spring.main.web-application-type=reactive"],
 )
 class SentryWebfluxIntegrationTest {
-
     @Autowired
     lateinit var transport: ITransport
 
@@ -65,7 +64,8 @@ class SentryWebfluxIntegrationTest {
 
     @Test
     fun `attaches request information to SentryEvents`() {
-        testClient.get()
+        testClient
+            .get()
             .uri("http://localhost:$port/hello?param=value#top")
             .exchange()
             .expectStatus()
@@ -80,13 +80,14 @@ class SentryWebfluxIntegrationTest {
                     assertNull(it.fragment)
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `sends events for unhandled exceptions`() {
-        testClient.get()
+        testClient
+            .get()
             .uri("http://localhost:$port/throws")
             .exchange()
             .expectStatus()
@@ -104,13 +105,14 @@ class SentryWebfluxIntegrationTest {
                     }
                 }
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `does not send events for handled exceptions`() {
-        testClient.get()
+        testClient
+            .get()
             .uri("http://localhost:$port/throws-handled")
             .exchange()
             .expectStatus()
@@ -121,14 +123,15 @@ class SentryWebfluxIntegrationTest {
                 checkEvent { event ->
                     assertNotNull(event)
                 },
-                anyOrNull()
+                anyOrNull(),
             )
         }
     }
 
     @Test
     fun `sends transaction`() {
-        testClient.get()
+        testClient
+            .get()
             .uri("http://localhost:$port/hello?param=value#top")
             .exchange()
             .expectStatus()
@@ -138,17 +141,17 @@ class SentryWebfluxIntegrationTest {
             checkTransaction { event ->
                 assertEquals("GET /hello", event.transaction)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 }
 
 @SpringBootApplication(exclude = [ReactiveSecurityAutoConfiguration::class, SecurityAutoConfiguration::class])
 open class App {
-
-    private val transport = mock<ITransport>().also {
-        whenever(it.isHealthy).thenReturn(true)
-    }
+    private val transport =
+        mock<ITransport>().also {
+            whenever(it.isHealthy).thenReturn(true)
+        }
 
     @Bean
     open fun mockTransportFactory(): ITransportFactory {
@@ -170,24 +173,25 @@ open class App {
     open fun sentryWebExceptionHandler(scopes: IScopes) = SentryWebExceptionHandler(scopes)
 
     @Bean
-    open fun sentryScheduleHookRegistrar() = ApplicationRunner {
-        Schedulers.onScheduleHook("sentry", SentryScheduleHook())
-    }
+    open fun sentryScheduleHookRegistrar() =
+        ApplicationRunner {
+            Schedulers.onScheduleHook("sentry", SentryScheduleHook())
+        }
 
     @Bean
-    open fun sentryInitializer(transportFactory: ITransportFactory) = ApplicationRunner {
-        initForTest {
-            it.dsn = "http://key@localhost/proj"
-            it.setDebug(true)
-            it.setTransportFactory(transportFactory)
-            it.tracesSampleRate = 1.0
+    open fun sentryInitializer(transportFactory: ITransportFactory) =
+        ApplicationRunner {
+            initForTest {
+                it.dsn = "http://key@localhost/proj"
+                it.setDebug(true)
+                it.setTransportFactory(transportFactory)
+                it.tracesSampleRate = 1.0
+            }
         }
-    }
 }
 
 @RestController
 class HelloController {
-
     @GetMapping("/hello")
     fun hello(): Mono<Void> {
         Sentry.captureMessage("hello")
@@ -195,21 +199,18 @@ class HelloController {
     }
 
     @GetMapping("/throws")
-    fun throws() {
-        throw RuntimeException("something went wrong")
-    }
+    fun throws(): Unit = throw RuntimeException("something went wrong")
 
     @GetMapping("/throws-handled")
-    fun throwsHandled() {
-        throw CustomException("handled exception")
-    }
+    fun throwsHandled(): Unit = throw CustomException("handled exception")
 }
 
-class CustomException(message: String) : RuntimeException(message)
+class CustomException(
+    message: String,
+) : RuntimeException(message)
 
 @ControllerAdvice
 class ExceptionHandlers {
-
     @ExceptionHandler(CustomException::class)
     fun handle(e: CustomException) = ResponseEntity.badRequest().build<Void>()
 }

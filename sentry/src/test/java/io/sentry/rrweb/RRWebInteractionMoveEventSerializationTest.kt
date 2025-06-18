@@ -11,18 +11,20 @@ class RRWebInteractionMoveEventSerializationTest {
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = RRWebInteractionMoveEvent().apply {
-            timestamp = 12345678901
-            positions = listOf(
-                Position().apply {
-                    id = 1
-                    x = 1.0f
-                    y = 2.0f
-                    timeOffset = 100
-                }
-            )
-            pointerId = 1
-        }
+        fun getSut() =
+            RRWebInteractionMoveEvent().apply {
+                timestamp = 12345678901
+                positions =
+                    listOf(
+                        Position().apply {
+                            id = 1
+                            x = 1.0f
+                            y = 2.0f
+                            timeOffset = 100
+                        },
+                    )
+                pointerId = 1
+            }
     }
 
     private val fixture = Fixture()

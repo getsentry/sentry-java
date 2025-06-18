@@ -54,12 +54,12 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryApollo4HttpInterceptorTestWithV4Implementation : SentryApollo4HttpInterceptorTest(ApolloCall<*>::execute)
+
 class SentryApollo4HttpInterceptorTestWithV3Implementation : SentryApollo4HttpInterceptorTest(ApolloCall<*>::executeV3)
 
 abstract class SentryApollo4HttpInterceptorTest(
-    private val executeQueryImplementation: KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>
+    private val executeQueryImplementation: KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>,
 ) {
-
     class Fixture {
         val server = MockWebServer()
         val options =
@@ -69,10 +69,11 @@ abstract class SentryApollo4HttpInterceptorTest(
                 sdkVersion = SdkVersion("test", "1.2.3")
             }
         val scope = Scope(options)
-        val scopes = mock<IScopes>().also {
-            whenever(it.options).thenReturn(options)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(it).configureScope(any())
-        }
+        val scopes =
+            mock<IScopes>().also {
+                whenever(it.options).thenReturn(options)
+                doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(it).configureScope(any())
+            }
         private var httpInterceptor = SentryApollo4HttpInterceptor(scopes, captureFailedRequests = false)
 
         @SuppressWarnings("LongParameterList")
@@ -95,30 +96,36 @@ abstract class SentryApollo4HttpInterceptorTest(
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             interceptor: HttpInterceptor? = null,
             addThirdPartyBaggageHeader: Boolean = false,
-            beforeSpan: BeforeSpanCallback? = null
+            beforeSpan: BeforeSpanCallback? = null,
         ): ApolloClient {
             server.enqueue(
                 MockResponse()
                     .setBody(responseBody)
                     .setSocketPolicy(socketPolicy)
-                    .setResponseCode(httpStatusCode)
+                    .setResponseCode(httpStatusCode),
             )
 
             if (beforeSpan != null) {
                 httpInterceptor = SentryApollo4HttpInterceptor(scopes, beforeSpan, captureFailedRequests = false)
             }
 
-            val builder = ApolloClient.Builder()
-                .serverUrl(server.url("/").toString())
-                .addHttpInterceptor(httpInterceptor)
+            val builder =
+                ApolloClient
+                    .Builder()
+                    .serverUrl(server.url("/").toString())
+                    .addHttpInterceptor(httpInterceptor)
 
             interceptor?.let {
                 builder.addHttpInterceptor(interceptor)
             }
 
             if (addThirdPartyBaggageHeader) {
-                builder.addHttpHeader("baggage", "thirdPartyBaggage=someValue")
-                    .addHttpHeader("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")
+                builder
+                    .addHttpHeader("baggage", "thirdPartyBaggage=someValue")
+                    .addHttpHeader(
+                        "baggage",
+                        "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+                    )
             }
 
             return builder.build()
@@ -143,7 +150,7 @@ abstract class SentryApollo4HttpInterceptorTest(
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -158,29 +165,43 @@ abstract class SentryApollo4HttpInterceptorTest(
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `get http status from ApolloHttpException in failed request`() {
-        val failingInterceptor = object : HttpInterceptor {
-            override suspend fun intercept(request: HttpRequest, chain: HttpInterceptorChain): HttpResponse {
-                throw ApolloHttpException(404, mock(), mock(), "")
+        val failingInterceptor =
+            object : HttpInterceptor {
+                override suspend fun intercept(
+                    request: HttpRequest,
+                    chain: HttpInterceptorChain,
+                ): HttpResponse = throw ApolloHttpException(404, mock(), mock(), "")
             }
-        }
         executeQuery(fixture.getSut(interceptor = failingInterceptor))
 
         verify(fixture.scopes).captureTransaction(
             check {
                 assertTransactionDetails(it, httpStatusCode = 404, contentLength = null)
-                assertEquals("POST", it.spans.first().data?.get(SpanDataConvention.HTTP_METHOD_KEY))
-                assertEquals(404, it.spans.first().data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY))
+                assertEquals(
+                    "POST",
+                    it.spans
+                        .first()
+                        .data
+                        ?.get(SpanDataConvention.HTTP_METHOD_KEY),
+                )
+                assertEquals(
+                    404,
+                    it.spans
+                        .first()
+                        .data
+                        ?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY),
+                )
                 assertEquals(SpanStatus.NOT_FOUND, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -195,7 +216,7 @@ abstract class SentryApollo4HttpInterceptorTest(
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -245,7 +266,11 @@ abstract class SentryApollo4HttpInterceptorTest(
 
         val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
         assertEquals(baggageHeaderValues.size, 1)
-        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
+        assertTrue(
+            baggageHeaderValues[0].startsWith(
+                "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+            ),
+        )
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-transaction=op"))
         assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
@@ -254,13 +279,12 @@ abstract class SentryApollo4HttpInterceptorTest(
     @Test
     fun `customizer modifies span`() {
         executeQuery(
-
             fixture.getSut(
                 beforeSpan = { span, request, response ->
                     span.description = "overwritten description"
                     span
-                }
-            )
+                },
+            ),
         )
 
         verify(fixture.scopes).captureTransaction(
@@ -271,7 +295,7 @@ abstract class SentryApollo4HttpInterceptorTest(
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -279,8 +303,8 @@ abstract class SentryApollo4HttpInterceptorTest(
     fun `returning null in beforeSpan callback drops span`() {
         executeQuery(
             fixture.getSut(
-                beforeSpan = { _, _, _ -> null }
-            )
+                beforeSpan = { _, _, _ -> null },
+            ),
         )
 
         verify(fixture.scopes).captureTransaction(
@@ -289,7 +313,7 @@ abstract class SentryApollo4HttpInterceptorTest(
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -299,8 +323,8 @@ abstract class SentryApollo4HttpInterceptorTest(
             fixture.getSut(
                 beforeSpan = { _, _, _ ->
                     throw RuntimeException()
-                }
-            )
+                },
+            ),
         )
 
         verify(fixture.scopes).captureTransaction(
@@ -309,7 +333,7 @@ abstract class SentryApollo4HttpInterceptorTest(
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -323,14 +347,18 @@ abstract class SentryApollo4HttpInterceptorTest(
                 assertEquals(0L, it.data["response_body_size"])
                 assertEquals(193L, it.data["request_body_size"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `sets SDKVersion Info`() {
         assertNotNull(fixture.scopes.options.sdkVersion)
-        assert(fixture.scopes.options.sdkVersion!!.integrationSet.contains("Apollo4"))
+        assert(
+            fixture.scopes.options.sdkVersion!!
+                .integrationSet
+                .contains("Apollo4"),
+        )
     }
 
     @Test
@@ -347,7 +375,11 @@ abstract class SentryApollo4HttpInterceptorTest(
         verify(fixture.scopes).span
     }
 
-    private fun assertTransactionDetails(it: SentryTransaction, httpStatusCode: Int? = 200, contentLength: Long? = 0L) {
+    private fun assertTransactionDetails(
+        it: SentryTransaction,
+        httpStatusCode: Int? = 200,
+        contentLength: Long? = 0L,
+    ) {
         assertEquals(1, it.spans.size)
         val httpClientSpan = it.spans.first()
         assertEquals("http.graphql", httpClientSpan.op)
@@ -363,7 +395,11 @@ abstract class SentryApollo4HttpInterceptorTest(
         }
     }
 
-    private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true, id: String = "83") = runBlocking {
+    private fun executeQuery(
+        sut: ApolloClient = fixture.getSut(),
+        isSpanActive: Boolean = true,
+        id: String = "83",
+    ) = runBlocking {
         var tx: ITransaction? = null
         if (isSpanActive) {
             tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
@@ -371,13 +407,14 @@ abstract class SentryApollo4HttpInterceptorTest(
             whenever(fixture.scopes.span).thenReturn(tx)
         }
 
-        val coroutine = launch {
-            try {
-                executeQueryImplementation(sut.query(LaunchDetailsQuery(id)))
-            } catch (e: ApolloException) {
-                return@launch
+        val coroutine =
+            launch {
+                try {
+                    executeQueryImplementation(sut.query(LaunchDetailsQuery(id)))
+                } catch (e: ApolloException) {
+                    return@launch
+                }
             }
-        }
 
         coroutine.join()
         tx?.finish()

@@ -13,9 +13,7 @@ class StdoutTransportTest {
     private class Fixture {
         val serializer = mock<ISerializer>()
 
-        fun getSUT(): ITransport {
-            return StdoutTransport(serializer)
-        }
+        fun getSUT(): ITransport = StdoutTransport(serializer)
     }
 
     private val fixture = Fixture()

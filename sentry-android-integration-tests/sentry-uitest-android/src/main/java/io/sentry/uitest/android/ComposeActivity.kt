@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 class ComposeActivity : AppCompatActivity() {
-
     companion object {
         private const val ITEM_COUNT: Int = 100
     }
@@ -30,31 +29,32 @@ class ComposeActivity : AppCompatActivity() {
         setContent {
             MaterialTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     LazyColumn(
-                        modifier = Modifier.testTag("list")
+                        modifier = Modifier.testTag("list"),
                     ) {
                         item {
                             Box(
-                                modifier = Modifier
-                                    .background(Color.Gray)
-                                    .fillParentMaxWidth()
-                                    .fillParentMaxHeight()
-                                    .clickable {
-                                        // no-op
-                                    }
-                                    .testTag("button_login")
+                                modifier =
+                                    Modifier
+                                        .background(Color.Gray)
+                                        .fillParentMaxWidth()
+                                        .fillParentMaxHeight()
+                                        .clickable {
+                                            // no-op
+                                        }.testTag("button_login"),
                             ) {
                                 Text("Login")
                             }
                         }
                         items(ITEM_COUNT) {
                             Box(
-                                modifier = Modifier
-                                    .size(96.dp)
-                                    .padding(8.dp)
-                                    .background(Color.Gray)
+                                modifier =
+                                    Modifier
+                                        .size(96.dp)
+                                        .padding(8.dp)
+                                        .background(Color.Gray),
                             )
                         }
                     }

@@ -20,24 +20,32 @@ public final class Gpu implements JsonUnknown, JsonSerializable {
 
   /** The name of the graphics device. */
   private @Nullable String name;
+
   /** The PCI identifier of the graphics device. */
   private @Nullable Integer id;
+
   /** The PCI vendor identifier of the graphics device. */
   private @Nullable String vendorId;
+
   /** The vendor name as reported by the graphics device. */
   private @Nullable String vendorName;
+
   /** The total GPU memory available in Megabytes. */
   private @Nullable Integer memorySize;
+
   /**
    * The device low-level API type.
    *
    * <p>Examples: `"Apple Metal"` or `"Direct3D11"`
    */
   private @Nullable String apiType;
+
   /** Whether the GPU has multi-threaded rendering or not. */
   private @Nullable Boolean multiThreadedRendering;
+
   /** The Version of the graphics device. */
   private @Nullable String version;
+
   /** The Non-Power-Of-Two support. */
   private @Nullable String npotSupport;
 

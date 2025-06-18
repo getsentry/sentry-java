@@ -18,7 +18,6 @@ import java.util.concurrent.Executors
 import java.util.zip.GZIPOutputStream
 
 class ProfilingActivity : AppCompatActivity() {
-
     private lateinit var binding: ActivityProfilingBinding
     private val executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
     private var profileFinished = true
@@ -27,22 +26,38 @@ class ProfilingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityProfilingBinding.inflate(layoutInflater)
 
-        binding.profilingDurationSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(p0: SeekBar, p1: Int, p2: Boolean) {
-                binding.profilingDurationText.text = getString(R.string.profiling_duration, getProfileDuration())
-            }
-            override fun onStartTrackingTouch(p0: SeekBar) {}
-            override fun onStopTrackingTouch(p0: SeekBar) {}
-        })
+        binding.profilingDurationSeekbar.setOnSeekBarChangeListener(
+            object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(
+                    p0: SeekBar,
+                    p1: Int,
+                    p2: Boolean,
+                ) {
+                    binding.profilingDurationText.text = getString(R.string.profiling_duration, getProfileDuration())
+                }
+
+                override fun onStartTrackingTouch(p0: SeekBar) {}
+
+                override fun onStopTrackingTouch(p0: SeekBar) {}
+            },
+        )
         binding.profilingDurationText.text = getString(R.string.profiling_duration, getProfileDuration())
 
-        binding.profilingThreadsSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(p0: SeekBar, p1: Int, p2: Boolean) {
-                binding.profilingThreadsText.text = getString(R.string.profiling_threads, getBackgroundThreads())
-            }
-            override fun onStartTrackingTouch(p0: SeekBar) {}
-            override fun onStopTrackingTouch(p0: SeekBar) {}
-        })
+        binding.profilingThreadsSeekbar.setOnSeekBarChangeListener(
+            object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(
+                    p0: SeekBar,
+                    p1: Int,
+                    p2: Boolean,
+                ) {
+                    binding.profilingThreadsText.text = getString(R.string.profiling_threads, getBackgroundThreads())
+                }
+
+                override fun onStartTrackingTouch(p0: SeekBar) {}
+
+                override fun onStopTrackingTouch(p0: SeekBar) {}
+            },
+        )
         binding.profilingThreadsSeekbar.max = Runtime.getRuntime().availableProcessors() - 1
         binding.profilingThreadsText.text = getString(R.string.profiling_threads, getBackgroundThreads())
 
@@ -133,13 +148,12 @@ class ProfilingActivity : AppCompatActivity() {
         }
     }
 
-    private fun fibonacci(n: Int): Int {
-        return when {
+    private fun fibonacci(n: Int): Int =
+        when {
             profileFinished -> n // If we destroy the activity we stop this function
             n <= 1 -> 1
             else -> fibonacci(n - 1) + fibonacci(n - 2)
         }
-    }
 
     override fun onBackPressed() {
         if (profileFinished) {

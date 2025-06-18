@@ -6,7 +6,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class DatabaseUtilsTest {
-
     @Test
     fun `parses to empty details for null`() {
         val details = DatabaseUtils.parse(null)
@@ -136,14 +135,20 @@ class DatabaseUtilsTest {
 
     @Test
     fun `detects db system for oracle2`() {
-        val details = DatabaseUtils.parse("jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=myoracle.db.server)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=my_servicename)))")
+        val details =
+            DatabaseUtils.parse(
+                "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=myoracle.db.server)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=my_servicename)))",
+            )
         assertEquals("oracle", details.dbSystem)
         assertEquals("my_servicename", details.dbName)
     }
 
     @Test
     fun `detects db system for mariadb`() {
-        val details = DatabaseUtils.parse("jdbc:mariadb://example.skysql.net:5001/jdbc_demo?useSsl=true&serverSslCert=/path/to/skysql_chain.pem")
+        val details =
+            DatabaseUtils.parse(
+                "jdbc:mariadb://example.skysql.net:5001/jdbc_demo?useSsl=true&serverSslCert=/path/to/skysql_chain.pem",
+            )
         assertEquals("mariadb", details.dbSystem)
         assertEquals("jdbc_demo", details.dbName)
     }

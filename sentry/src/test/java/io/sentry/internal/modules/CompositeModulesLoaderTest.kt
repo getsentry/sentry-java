@@ -9,7 +9,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class CompositeModulesLoaderTest {
-
     @Test
     fun `reads modules from multiple loaders and caches result`() {
         val logger = mock<ILogger>()
@@ -24,9 +23,9 @@ class CompositeModulesLoaderTest {
         assertEquals(
             mapOf(
                 "spring-core" to "6.0.0",
-                "spring-webmvc" to "6.0.2"
+                "spring-webmvc" to "6.0.2",
             ),
-            sut.orLoadModules
+            sut.orLoadModules,
         )
 
         verify(loader1).orLoadModules
@@ -35,9 +34,9 @@ class CompositeModulesLoaderTest {
         assertEquals(
             mapOf(
                 "spring-core" to "6.0.0",
-                "spring-webmvc" to "6.0.2"
+                "spring-webmvc" to "6.0.2",
             ),
-            sut.orLoadModules
+            sut.orLoadModules,
         )
 
         verifyNoMoreInteractions(loader1, loader2)

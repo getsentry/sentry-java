@@ -13,7 +13,6 @@ import java.util.concurrent.Executors
 /** A simple activity with a list of bitmaps. */
 class BenchmarkActivity : AppCompatActivity() {
     companion object {
-
         /** The activity will set this when scrolling. */
         val scrollingIdlingResource = CountingIdlingResource("sentry-uitest-android-benchmark-activityScrolling")
 
@@ -42,11 +41,12 @@ class BenchmarkActivity : AppCompatActivity() {
             window.setSustainedPerformanceMode(true)
         }
 
-        refreshRate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            display?.refreshRate
-        } else {
-            windowManager.defaultDisplay.refreshRate
-        }
+        refreshRate =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                display?.refreshRate
+            } else {
+                windowManager.defaultDisplay.refreshRate
+            }
         binding = ActivityBenchmarkBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -54,17 +54,22 @@ class BenchmarkActivity : AppCompatActivity() {
         binding.benchmarkTransactionList.apply {
             layoutManager = LinearLayoutManager(this@BenchmarkActivity)
             adapter = BenchmarkTransactionListAdapter()
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                    super.onScrollStateChanged(recyclerView, newState)
-                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
-                        scrollingIdlingResource.increment()
+            addOnScrollListener(
+                object : RecyclerView.OnScrollListener() {
+                    override fun onScrollStateChanged(
+                        recyclerView: RecyclerView,
+                        newState: Int,
+                    ) {
+                        super.onScrollStateChanged(recyclerView, newState)
+                        if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                            scrollingIdlingResource.increment()
+                        }
+                        if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                            scrollingIdlingResource.decrement()
+                        }
                     }
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                        scrollingIdlingResource.decrement()
-                    }
-                }
-            })
+                },
+            )
         }
     }
 

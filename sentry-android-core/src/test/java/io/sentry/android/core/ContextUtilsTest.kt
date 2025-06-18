@@ -42,7 +42,6 @@ import kotlin.test.assertTrue
 @Config(sdk = [33])
 @RunWith(AndroidJUnit4::class)
 class ContextUtilsTest {
-
     private lateinit var shadowActivityManager: ShadowActivityManager
     private lateinit var context: Context
     private lateinit var logger: ILogger
@@ -110,12 +109,14 @@ class ContextUtilsTest {
 
     @Test
     fun `when installerPackageName is not null, sideLoadedInfo returns false and installerStore`() {
-        val mockedContext = spy(context) {
-            val mockedPackageManager = spy(mock.packageManager) {
-                whenever(mock.getInstallerPackageName(any())).thenReturn("play.google.com")
+        val mockedContext =
+            spy(context) {
+                val mockedPackageManager =
+                    spy(mock.packageManager) {
+                        whenever(mock.getInstallerPackageName(any())).thenReturn("play.google.com")
+                    }
+                whenever(mock.packageManager).thenReturn(mockedPackageManager)
             }
-            whenever(mock.packageManager).thenReturn(mockedPackageManager)
-        }
         val sideLoadedInfo =
             ContextUtils.retrieveSideLoadedInfo(mockedContext, logger, BuildInfoProvider(logger))
         assertFalse(sideLoadedInfo!!.isSideLoaded)
@@ -136,15 +137,15 @@ class ContextUtilsTest {
         whenever(
             mockedPackageManager.getApplicationInfo(
                 any<String>(),
-                any<PackageManager.ApplicationInfoFlags>()
-            )
+                any<PackageManager.ApplicationInfoFlags>(),
+            ),
         ).thenReturn(mockedApplicationInfo)
 
         whenever(
             mockedPackageManager.getPackageInfo(
                 any<String>(),
-                any<PackageManager.PackageInfoFlags>()
-            )
+                any<PackageManager.PackageInfoFlags>(),
+            ),
         ).thenReturn(mockedPackageInfo)
 
         whenever(mockedContext.packageManager).thenReturn(mockedPackageManager)
@@ -200,7 +201,7 @@ class ContextUtilsTest {
                 availMem = 128
                 totalMem = 2048
                 lowMemory = true
-            }
+            },
         )
         val memInfo = ContextUtils.getMemInfo(context, logger)
         assertEquals(128, memInfo!!.availMem)
@@ -250,8 +251,8 @@ class ContextUtilsTest {
                     processName = "io.sentry.android.core.test"
                     pid = Process.myPid()
                     importance = RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING
-                }
-            )
+                },
+            ),
         )
         assertFalse(ContextUtils.isForegroundImportance())
     }
@@ -277,21 +278,22 @@ class ContextUtilsTest {
     fun `appIsLibraryForComposePreview is correctly determined`() {
         fun getMockContext(
             packageName: String,
-            activityClassName: String
+            activityClassName: String,
         ): Context {
             val context = mock<Context>()
             val activityManager = mock<ActivityManager>()
             whenever(context.packageName).thenReturn(packageName)
             whenever(context.getSystemService(eq(Context.ACTIVITY_SERVICE))).thenReturn(
-                activityManager
+                activityManager,
             )
             val taskInfo = ActivityManager.RecentTaskInfo()
-            taskInfo.baseIntent = Intent().setComponent(
-                ComponentName(
-                    "com.example.library",
-                    activityClassName
+            taskInfo.baseIntent =
+                Intent().setComponent(
+                    ComponentName(
+                        "com.example.library",
+                        activityClassName,
+                    ),
                 )
-            )
             val appTask = mock<ActivityManager.AppTask>()
             whenever(appTask.taskInfo).thenReturn(taskInfo)
             whenever(activityManager.appTasks).thenReturn(listOf(appTask))
@@ -299,8 +301,29 @@ class ContextUtilsTest {
             return context
         }
 
-        assertTrue(ContextUtils.appIsLibraryForComposePreview(getMockContext("com.example.library.test", "androidx.compose.ui.tooling.PreviewActivity")))
-        assertFalse(ContextUtils.appIsLibraryForComposePreview(getMockContext("com.example.library.test", "com.example.HomeActivity")))
-        assertFalse(ContextUtils.appIsLibraryForComposePreview(getMockContext("com.example.library", "androidx.compose.ui.tooling.PreviewActivity")))
+        assertTrue(
+            ContextUtils.appIsLibraryForComposePreview(
+                getMockContext(
+                    "com.example.library.test",
+                    "androidx.compose.ui.tooling.PreviewActivity",
+                ),
+            ),
+        )
+        assertFalse(
+            ContextUtils.appIsLibraryForComposePreview(
+                getMockContext(
+                    "com.example.library.test",
+                    "com.example.HomeActivity",
+                ),
+            ),
+        )
+        assertFalse(
+            ContextUtils.appIsLibraryForComposePreview(
+                getMockContext(
+                    "com.example.library",
+                    "androidx.compose.ui.tooling.PreviewActivity",
+                ),
+            ),
+        )
     }
 }

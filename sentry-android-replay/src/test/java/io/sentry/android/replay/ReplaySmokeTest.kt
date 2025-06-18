@@ -51,44 +51,50 @@ import kotlin.test.assertNotEquals
 @Config(
     shadows = [ShadowPixelCopy::class, ReplayShadowMediaCodec::class],
     sdk = [28],
-    qualifiers = "w360dp-h640dp-xxhdpi"
+    qualifiers = "w360dp-h640dp-xxhdpi",
 )
 class ReplaySmokeTest {
-
     @get:Rule
     val tmpDir = TemporaryFolder()
 
     internal class Fixture {
         val options = SentryOptions()
         val scope = Scope(options)
-        val scopes = mock<IScopes> {
-            doAnswer {
-                (it.arguments[0] as ScopeCallback).run(scope)
-            }.whenever(it).configureScope(any())
-        }
+        val scopes =
+            mock<IScopes> {
+                doAnswer {
+                    (it.arguments[0] as ScopeCallback).run(scope)
+                }.whenever(it).configureScope(any())
+            }
         var count: Int = 0
 
-        private class ImmediateHandler : Handler(Callback { it.callback?.run(); true })
+        private class ImmediateHandler :
+            Handler(
+                Callback {
+                    it.callback?.run()
+                    true
+                },
+            )
 
         fun getSut(
             context: Context,
-            dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance()
-        ): ReplayIntegration {
-            return ReplayIntegration(
+            dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
+        ): ReplayIntegration =
+            ReplayIntegration(
                 context,
                 dateProvider,
                 recorderProvider = null,
                 replayCaptureStrategyProvider = null,
                 replayCacheProvider = null,
-                mainLooperHandler = mock {
-                    whenever(mock.handler).thenReturn(ImmediateHandler())
-                    whenever(mock.post(any())).then {
-                        (it.arguments[0] as Runnable).run()
-                        count++
-                    }
-                }
+                mainLooperHandler =
+                    mock {
+                        whenever(mock.handler).thenReturn(ImmediateHandler())
+                        whenever(mock.post(any())).then {
+                            (it.arguments[0] as Runnable).run()
+                            count++
+                        }
+                    },
             )
-        }
     }
 
     private val fixture = Fixture()
@@ -141,7 +147,7 @@ class ReplaySmokeTest {
                 assertEquals(5, videoEvents?.first()?.frameCount)
                 assertEquals(1, videoEvents?.first()?.frameRate)
                 assertEquals(0, videoEvents?.first()?.segmentId)
-            }
+            },
         )
     }
 
@@ -197,7 +203,7 @@ class ReplaySmokeTest {
 //                assertEquals(10, videoEvents?.first()?.frameCount)
                 assertEquals(1, videoEvents?.first()?.frameRate)
                 assertEquals(0, videoEvents?.first()?.segmentId)
-            }
+            },
         )
     }
 
@@ -207,11 +213,12 @@ class ReplaySmokeTest {
         fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
 
         // first init + close
-        val falseHub = mock<IScopes> {
-            doAnswer {
-                (it.arguments[0] as ScopeCallback).run(fixture.scope)
-            }.whenever(it).configureScope(any())
-        }
+        val falseHub =
+            mock<IScopes> {
+                doAnswer {
+                    (it.arguments[0] as ScopeCallback).run(fixture.scope)
+                }.whenever(it).configureScope(any())
+            }
         val falseReplay: ReplayIntegration = fixture.getSut(context)
         falseReplay.register(falseHub, fixture.options)
         falseReplay.start()
@@ -239,25 +246,29 @@ class ReplaySmokeTest {
 private class ExampleActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val linearLayout = LinearLayout(this).apply {
-            setBackgroundColor(android.R.color.white)
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-        }
+        val linearLayout =
+            LinearLayout(this).apply {
+                setBackgroundColor(android.R.color.white)
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+            }
 
-        val textView = TextView(this).apply {
-            text = "Hello, World!"
-            layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
-        }
+        val textView =
+            TextView(this).apply {
+                text = "Hello, World!"
+                layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+            }
         linearLayout.addView(textView)
 
         val image = this::class.java.classLoader.getResource("Tongariro.jpg")!!
-        val imageView = ImageView(this).apply {
-            setImageDrawable(Drawable.createFromPath(image.path))
-            layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, 16, 0, 0)
+        val imageView =
+            ImageView(this).apply {
+                setImageDrawable(Drawable.createFromPath(image.path))
+                layoutParams =
+                    LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
+                        setMargins(0, 16, 0, 0)
+                    }
             }
-        }
         linearLayout.addView(imageView)
 
         setContentView(linearLayout)

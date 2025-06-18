@@ -11,7 +11,10 @@ fun initForTest(optionsConfiguration: OptionsConfiguration<SentryOptions>) {
     }
 }
 
-fun initForTest(optionsConfiguration: OptionsConfiguration<SentryOptions>, globalHubMode: Boolean) {
+fun initForTest(
+    optionsConfiguration: OptionsConfiguration<SentryOptions>,
+    globalHubMode: Boolean,
+) {
     Sentry.init({
         applyTestOptions(it)
         optionsConfiguration.configure(it)

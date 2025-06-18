@@ -5,7 +5,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ExceptionUtilsTest {
-
     @Test
     fun `returns same exception when there is no cause`() {
         val ex = RuntimeException()

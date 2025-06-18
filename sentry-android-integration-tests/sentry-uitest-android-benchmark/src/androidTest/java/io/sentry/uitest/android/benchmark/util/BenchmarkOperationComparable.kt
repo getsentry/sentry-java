@@ -8,10 +8,14 @@ internal data class BenchmarkOperationComparable(
     val droppedFrames: List<Double>,
     val durationNanos: List<Long>,
     val fps: List<Int>,
-    val operationName: String
+    val operationName: String,
 ) {
     /** Compare two [BenchmarkOperation], calculating increases of each parameter. */
-    fun compare(other: BenchmarkOperationComparable, iterations: Int, refreshRate: Float): BenchmarkComparisonResult {
+    fun compare(
+        other: BenchmarkOperationComparable,
+        iterations: Int,
+        refreshRate: Float,
+    ): BenchmarkComparisonResult {
         val cores = Runtime.getRuntime().availableProcessors()
         val durationIncreaseNanos = ArrayList<Long>()
         val durationIncreasePercentage = ArrayList<Double>()
@@ -40,7 +44,7 @@ internal data class BenchmarkOperationComparable(
             droppedFramesIncrease.add(droppedFrames[index] - other.droppedFrames[index])
             val totalExpectedFrames = TimeUnit.NANOSECONDS.toMillis(other.durationNanos[index]) * refreshRate / 1000
             droppedFramesIncreasePercentage.add(
-                droppedFramesIncrease[index] * 100 / (totalExpectedFrames - other.droppedFrames[index])
+                droppedFramesIncrease[index] * 100 / (totalExpectedFrames - other.droppedFrames[index]),
             )
         }
 
@@ -65,7 +69,7 @@ internal data class BenchmarkOperationComparable(
             fps,
             other.fps,
             fpsDecrease,
-            fpsDecreasePercentage
+            fpsDecreasePercentage,
         )
     }
 }

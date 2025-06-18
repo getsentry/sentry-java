@@ -5,7 +5,6 @@ import org.junit.Before
 import kotlin.test.Test
 
 class GraphqlGreetingSystemTest {
-
     lateinit var testHelper: TestHelper
 
     @Before

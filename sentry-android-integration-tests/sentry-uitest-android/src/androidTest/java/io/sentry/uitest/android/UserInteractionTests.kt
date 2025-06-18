@@ -24,12 +24,11 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class UserInteractionTests : BaseUiTest() {
-
     @Before
     fun setup() {
         assumeThat(
             classExists("io.sentry.compose.gestures.ComposeGestureTargetLocator"),
-            `is`(true)
+            `is`(true),
         )
     }
 
@@ -55,14 +54,15 @@ class UserInteractionTests : BaseUiTest() {
                 { floatArrayOf(width / 2f, height / 2f) },
                 Press.FINGER,
                 InputDevice.SOURCE_UNKNOWN,
-                MotionEvent.BUTTON_PRIMARY
-            )
+                MotionEvent.BUTTON_PRIMARY,
+            ),
         )
         activity.moveToState(Lifecycle.State.DESTROYED)
         assertTrue(
-            breadcrumbs.filter {
-                it.category == "ui.click" && it.data["view.tag"] == "button_login"
-            }.size == 1
+            breadcrumbs
+                .filter {
+                    it.category == "ui.click" && it.data["view.tag"] == "button_login"
+                }.size == 1,
         )
     }
 
@@ -74,15 +74,16 @@ class UserInteractionTests : BaseUiTest() {
         val activity = launchActivity<ComposeActivity>()
         activity.moveToState(Lifecycle.State.RESUMED)
         Espresso.onView(ViewMatchers.withId(android.R.id.content)).perform(
-            ViewActions.swipeUp()
+            ViewActions.swipeUp(),
         )
         activity.moveToState(Lifecycle.State.DESTROYED)
         assertTrue(
-            breadcrumbs.filter {
-                it.category == "ui.swipe" &&
-                    it.data["view.tag"] == "list" &&
-                    it.data["direction"] == "up"
-            }.size == 1
+            breadcrumbs
+                .filter {
+                    it.category == "ui.swipe" &&
+                        it.data["view.tag"] == "list" &&
+                        it.data["direction"] == "up"
+                }.size == 1,
         )
     }
 

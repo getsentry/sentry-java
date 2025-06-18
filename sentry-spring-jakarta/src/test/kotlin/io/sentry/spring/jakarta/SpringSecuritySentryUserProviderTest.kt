@@ -12,12 +12,15 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class SpringSecuritySentryUserProviderTest {
-
     class Fixture {
-        fun getSut(isSendDefaultPii: Boolean = true, username: String? = null): SpringSecuritySentryUserProvider {
-            val options = SentryOptions().apply {
-                this.isSendDefaultPii = isSendDefaultPii
-            }
+        fun getSut(
+            isSendDefaultPii: Boolean = true,
+            username: String? = null,
+        ): SpringSecuritySentryUserProvider {
+            val options =
+                SentryOptions().apply {
+                    this.isSendDefaultPii = isSendDefaultPii
+                }
             val securityContext = mock<SecurityContext>()
             if (username != null) {
                 val authentication = mock<Authentication>()

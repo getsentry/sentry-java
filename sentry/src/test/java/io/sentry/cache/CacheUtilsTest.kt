@@ -10,7 +10,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 internal class CacheUtilsTest {
-
     @get:Rule
     val tmpDir = TemporaryFolder()
 
@@ -30,7 +29,7 @@ internal class CacheUtilsTest {
             SentryOptions().apply { cacheDirPath = cacheDir },
             "Hallo!",
             "stuff",
-            "test.json"
+            "test.json",
         )
 
         assertEquals("\"Hallo!\"", file.readText())
@@ -40,7 +39,7 @@ internal class CacheUtilsTest {
             SentryOptions().apply { cacheDirPath = cacheDir },
             "Hallo 2!",
             "stuff",
-            "test.json"
+            "test.json",
         )
 
         assertEquals("\"Hallo 2!\"", file.readText())
@@ -48,13 +47,14 @@ internal class CacheUtilsTest {
 
     @Test
     fun `if cacheDir is not set, read returns null`() {
-        val value = CacheUtils.read<String, Any?>(
-            SentryOptions(),
-            "stuff",
-            "test.json",
-            String::class.java,
-            null
-        )
+        val value =
+            CacheUtils.read<String, Any?>(
+                SentryOptions(),
+                "stuff",
+                "test.json",
+                String::class.java,
+                null,
+            )
 
         assertNull(value)
     }
@@ -64,13 +64,14 @@ internal class CacheUtilsTest {
         val (cacheDir, file) = tmpDirAndFile()
         file.writeText("\"Hallo!\"")
 
-        val value = CacheUtils.read<String, Any?>(
-            SentryOptions().apply { cacheDirPath = cacheDir },
-            "stuff",
-            "test.json",
-            String::class.java,
-            null
-        )
+        val value =
+            CacheUtils.read<String, Any?>(
+                SentryOptions().apply { cacheDirPath = cacheDir },
+                "stuff",
+                "test.json",
+                String::class.java,
+                null,
+            )
 
         assertEquals("Hallo!", value)
     }

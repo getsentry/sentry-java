@@ -19,7 +19,9 @@ import java.util.LinkedList
 import java.util.Queue
 
 @OptIn(InternalComposeUiApi::class)
-public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureTargetLocator {
+public class ComposeGestureTargetLocator(
+    private val logger: ILogger,
+) : GestureTargetLocator {
     @Volatile
     private var composeHelper: SentryComposeHelper? = null
     private val lock = AutoClosableReentrantLock()
@@ -32,7 +34,7 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
         root: Any?,
         x: Float,
         y: Float,
-        targetType: UiElement.Type
+        targetType: UiElement.Type,
     ): UiElement? {
         if (root !is Owner) {
             return null
@@ -59,11 +61,12 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
         var lastKnownTag: String? = null
         while (!queue.isEmpty()) {
             val node = queue.poll() ?: continue
-            if (node.isPlaced && layoutNodeBoundsContain(
+            if (node.isPlaced &&
+                layoutNodeBoundsContain(
                     rootLayoutNode,
                     node,
                     x,
-                    y
+                    y,
                 )
             ) {
                 var isClickable = false
@@ -125,7 +128,7 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
                 null,
                 null,
                 targetTag,
-                ORIGIN
+                ORIGIN,
             )
         }
     }
@@ -134,7 +137,7 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
         root: LayoutNode,
         node: LayoutNode,
         x: Float,
-        y: Float
+        y: Float,
     ): Boolean {
         val bounds = node.coordinates.boundsInWindow(root.coordinates)
         return bounds.contains(Offset(x, y))

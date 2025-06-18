@@ -51,21 +51,35 @@ class SentryWebFluxTracingFilterTest {
         lateinit var request: MockServerHttpRequest
         lateinit var exchange: MockServerWebExchange
         val chain = mock<WebFilterChain>()
-        val options = SentryOptions().apply {
-            dsn = "https://key@sentry.io/proj"
-            tracesSampleRate = 1.0
-        }
+        val options =
+            SentryOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+                tracesSampleRate = 1.0
+            }
         val logger = mock<ILogger>()
 
         init {
             whenever(scopes.options).thenReturn(options)
         }
 
-        fun getSut(isEnabled: Boolean = true, status: HttpStatus = HttpStatus.OK, sentryTraceHeader: String? = null, baggageHeaders: List<String>? = null, method: HttpMethod = HttpMethod.POST): SentryWebFilter {
+        fun getSut(
+            isEnabled: Boolean = true,
+            status: HttpStatus = HttpStatus.OK,
+            sentryTraceHeader: String? = null,
+            baggageHeaders: List<String>? = null,
+            method: HttpMethod = HttpMethod.POST,
+        ): SentryWebFilter {
             var requestBuilder = MockServerHttpRequest.method(method, "/product/{id}", 12)
             if (sentryTraceHeader != null) {
                 requestBuilder = requestBuilder.header("sentry-trace", sentryTraceHeader)
-                whenever(scopes.startTransaction(any(), check<TransactionOptions> { it.isBindToScope })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
+                whenever(
+                    scopes.startTransaction(
+                        any(),
+                        check<TransactionOptions> {
+                            it.isBindToScope
+                        },
+                    ),
+                ).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
             }
             if (baggageHeaders != null) {
                 requestBuilder = requestBuilder.header("baggage", *baggageHeaders.toTypedArray())
@@ -75,21 +89,33 @@ class SentryWebFluxTracingFilterTest {
             exchange.attributes.put(SENTRY_SCOPES_KEY, scopes)
             exchange.attributes.put(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, PathPatternParser().parse("/product/{id}"))
             exchange.response.statusCode = status
-            whenever(scopes.startTransaction(any(), check<TransactionOptions> { assertTrue(it.isBindToScope) })).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
+            whenever(
+                scopes.startTransaction(
+                    any(),
+                    check<TransactionOptions> {
+                        assertTrue(it.isBindToScope)
+                    },
+                ),
+            ).thenAnswer { SentryTracer(it.arguments[0] as TransactionContext, scopes) }
             whenever(scopes.isEnabled).thenReturn(isEnabled)
             whenever(chain.filter(any())).thenReturn(Mono.create { s -> s.success() })
-            whenever(scopes.continueTrace(anyOrNull(), anyOrNull())).thenAnswer { TransactionContext.fromPropagationContext(PropagationContext.fromHeaders(logger, it.arguments[0] as String?, it.arguments[1] as List<String>?)) }
+            whenever(scopes.continueTrace(anyOrNull(), anyOrNull())).thenAnswer {
+                TransactionContext.fromPropagationContext(
+                    PropagationContext.fromHeaders(logger, it.arguments[0] as String?, it.arguments[1] as List<String>?),
+                )
+            }
             return SentryWebFilter(scopes)
         }
     }
 
     private val fixture = Fixture()
 
-    fun withMockScopes(closure: () -> Unit) = Mockito.mockStatic(Sentry::class.java).use {
-        it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
-        it.`when`<Any> { Sentry.forkedRootScopes(any()) }.thenReturn(fixture.scopes)
-        closure.invoke()
-    }
+    fun withMockScopes(closure: () -> Unit) =
+        Mockito.mockStatic(Sentry::class.java).use {
+            it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
+            it.`when`<Any> { Sentry.forkedRootScopes(any()) }.thenReturn(fixture.scopes)
+            closure.invoke()
+        }
 
     @Test
     fun `creates transaction around the request`() {
@@ -109,7 +135,7 @@ class SentryWebFluxTracingFilterTest {
                     assertTrue(it.customSamplingContext?.get("request") is ServerHttpRequest)
                     assertTrue(it.isBindToScope)
                     assertThat(it.origin).isEqualTo("auto.spring.webflux")
-                }
+                },
             )
             verify(fixture.chain).filter(fixture.exchange)
             verify(fixture.scopes).captureTransaction(
@@ -121,7 +147,7 @@ class SentryWebFluxTracingFilterTest {
                 },
                 anyOrNull<TraceContext>(),
                 anyOrNull(),
-                anyOrNull()
+                anyOrNull(),
             )
         }
     }
@@ -140,7 +166,7 @@ class SentryWebFluxTracingFilterTest {
                 },
                 anyOrNull<TraceContext>(),
                 anyOrNull(),
-                anyOrNull()
+                anyOrNull(),
             )
         }
     }
@@ -158,7 +184,7 @@ class SentryWebFluxTracingFilterTest {
                 },
                 anyOrNull<TraceContext>(),
                 anyOrNull(),
-                anyOrNull()
+                anyOrNull(),
             )
         }
     }
@@ -176,7 +202,7 @@ class SentryWebFluxTracingFilterTest {
                 },
                 anyOrNull<TraceContext>(),
                 anyOrNull(),
-                anyOrNull()
+                anyOrNull(),
             )
         }
     }
@@ -195,7 +221,7 @@ class SentryWebFluxTracingFilterTest {
                 },
                 anyOrNull<TraceContext>(),
                 anyOrNull(),
-                anyOrNull()
+                anyOrNull(),
             )
         }
     }
@@ -232,7 +258,7 @@ class SentryWebFluxTracingFilterTest {
                 },
                 anyOrNull<TraceContext>(),
                 anyOrNull(),
-                anyOrNull()
+                anyOrNull(),
             )
         }
     }
@@ -274,7 +300,7 @@ class SentryWebFluxTracingFilterTest {
                 },
                 anyOrNull<TraceContext>(),
                 anyOrNull(),
-                anyOrNull()
+                anyOrNull(),
             )
         }
     }
@@ -296,7 +322,7 @@ class SentryWebFluxTracingFilterTest {
                 },
                 anyOrNull<TraceContext>(),
                 anyOrNull(),
-                anyOrNull()
+                anyOrNull(),
             )
         }
     }
@@ -305,7 +331,10 @@ class SentryWebFluxTracingFilterTest {
     fun `continues incoming trace even is performance is disabled`() {
         val parentSpanId = SpanId()
         val sentryTraceHeaderString = "2722d9f6ec019ade60c776169d9a8904-$parentSpanId-1"
-        val baggageHeaderStrings = listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET")
+        val baggageHeaderStrings =
+            listOf(
+                "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET",
+            )
         fixture.options.tracesSampleRate = null
         val filter = fixture.getSut(sentryTraceHeader = sentryTraceHeaderString, baggageHeaders = baggageHeaderStrings)
 
@@ -318,7 +347,7 @@ class SentryWebFluxTracingFilterTest {
                 anyOrNull<SentryTransaction>(),
                 anyOrNull<TraceContext>(),
                 anyOrNull(),
-                anyOrNull()
+                anyOrNull(),
             )
 
             verify(fixture.scopes).continueTrace(eq(sentryTraceHeaderString), eq(baggageHeaderStrings))
@@ -329,7 +358,10 @@ class SentryWebFluxTracingFilterTest {
     fun `does not continue incoming trace if span origin is ignored`() {
         val parentSpanId = SpanId()
         val sentryTraceHeaderString = "2722d9f6ec019ade60c776169d9a8904-$parentSpanId-1"
-        val baggageHeaderStrings = listOf("sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET")
+        val baggageHeaderStrings =
+            listOf(
+                "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-trace_id=2722d9f6ec019ade60c776169d9a8904,sentry-transaction=HTTP%20GET",
+            )
         fixture.options.tracesSampleRate = null
         fixture.options.setIgnoredSpanOrigins(listOf("auto.spring.webflux"))
         val filter = fixture.getSut(sentryTraceHeader = sentryTraceHeaderString, baggageHeaders = baggageHeaderStrings)
@@ -343,7 +375,7 @@ class SentryWebFluxTracingFilterTest {
                 anyOrNull<SentryTransaction>(),
                 anyOrNull<TraceContext>(),
                 anyOrNull(),
-                anyOrNull()
+                anyOrNull(),
             )
 
             verify(fixture.scopes, never()).continueTrace(any(), any())

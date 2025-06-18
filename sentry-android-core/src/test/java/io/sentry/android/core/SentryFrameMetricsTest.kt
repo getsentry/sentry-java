@@ -6,7 +6,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SentryFrameMetricsTest {
-
     @Test
     fun addSlowFrame() {
         val frameMetrics = SentryFrameMetrics()
@@ -86,11 +85,12 @@ class SentryFrameMetricsTest {
 
     @Test
     fun clear() {
-        val frameMetrics = SentryFrameMetrics().apply {
-            addFrame(10, 0, false, false)
-            addFrame(116, 100, true, false)
-            addFrame(1016, 1000, true, true)
-        }
+        val frameMetrics =
+            SentryFrameMetrics().apply {
+                addFrame(10, 0, false, false)
+                addFrame(116, 100, true, false)
+                addFrame(1016, 1000, true, true)
+            }
 
         frameMetrics.clear()
 

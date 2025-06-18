@@ -25,13 +25,14 @@ class SentryFileReaderTest {
         internal fun getSut(
             tmpFile: File,
             activeTransaction: Boolean = true,
-            optionsConfiguration: (SentryOptions) -> Unit = {}
+            optionsConfiguration: (SentryOptions) -> Unit = {},
         ): SentryFileReader {
             tmpFile.writeText("TEXT")
-            val options = SentryOptions().apply {
-                threadChecker = ThreadChecker.getInstance()
-                optionsConfiguration(this)
-            }
+            val options =
+                SentryOptions().apply {
+                    threadChecker = ThreadChecker.getInstance()
+                    optionsConfiguration(this)
+                }
             whenever(scopes.options).thenReturn(options)
             sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
             if (activeTransaction) {
@@ -69,9 +70,10 @@ class SentryFileReaderTest {
 
     @Test
     fun `captures file name in description and file path when isSendDefaultPii is true`() {
-        val reader = fixture.getSut(tmpFile) {
-            it.isSendDefaultPii = true
-        }
+        val reader =
+            fixture.getSut(tmpFile) {
+                it.isSendDefaultPii = true
+            }
         reader.readText()
         reader.close()
 
@@ -82,9 +84,10 @@ class SentryFileReaderTest {
 
     @Test
     fun `captures only file extension in description when isSendDefaultPii is false`() {
-        val reader = fixture.getSut(tmpFile) {
-            it.isSendDefaultPii = false
-        }
+        val reader =
+            fixture.getSut(tmpFile) {
+                it.isSendDefaultPii = false
+            }
         reader.readText()
         reader.close()
 
@@ -95,9 +98,10 @@ class SentryFileReaderTest {
 
     @Test
     fun `captures only file size if no extension is available when isSendDefaultPii is false`() {
-        val reader = fixture.getSut(tmpFileWithoutExtension) {
-            it.isSendDefaultPii = false
-        }
+        val reader =
+            fixture.getSut(tmpFileWithoutExtension) {
+                it.isSendDefaultPii = false
+            }
         reader.readText()
         reader.close()
 

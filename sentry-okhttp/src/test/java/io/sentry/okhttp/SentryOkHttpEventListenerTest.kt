@@ -34,7 +34,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryOkHttpEventListenerTest {
-
     class Fixture {
         val scopes = mock<IScopes>()
         val server = MockWebServer()
@@ -56,13 +55,14 @@ class SentryOkHttpEventListenerTest {
             sendDefaultPii: Boolean = false,
             configureOptions: (options: SentryOptions) -> Unit = {},
             eventListener: EventListener? = null,
-            eventListenerFactory: EventListener.Factory? = null
+            eventListenerFactory: EventListener.Factory? = null,
         ): OkHttpClient {
-            options = SentryOptions().apply {
-                dsn = "https://key@sentry.io/proj"
-                isSendDefaultPii = sendDefaultPii
-                configureOptions(this)
-            }
+            options =
+                SentryOptions().apply {
+                    dsn = "https://key@sentry.io/proj"
+                    isSendDefaultPii = sendDefaultPii
+                    configureOptions(this)
+                }
             whenever(scopes.options).thenReturn(options)
 
             sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
@@ -75,39 +75,43 @@ class SentryOkHttpEventListenerTest {
                     .setBody("responseBody")
                     .addHeader("myResponseHeader", "myValue")
                     .setSocketPolicy(SocketPolicy.KEEP_OPEN)
-                    .setResponseCode(httpStatusCode)
+                    .setResponseCode(httpStatusCode),
             )
 
             val builder = OkHttpClient.Builder()
             if (useInterceptor) {
                 builder.addInterceptor(SentryOkHttpInterceptor(scopes))
             }
-            sentryOkHttpEventListener = when {
-                eventListenerFactory != null -> SentryOkHttpEventListener(scopes, eventListenerFactory)
-                eventListener != null -> SentryOkHttpEventListener(scopes, eventListener)
-                else -> SentryOkHttpEventListener(scopes)
-            }
+            sentryOkHttpEventListener =
+                when {
+                    eventListenerFactory != null -> SentryOkHttpEventListener(scopes, eventListenerFactory)
+                    eventListener != null -> SentryOkHttpEventListener(scopes, eventListener)
+                    else -> SentryOkHttpEventListener(scopes)
+                }
             return builder.eventListener(sentryOkHttpEventListener).build()
         }
     }
 
     private val fixture = Fixture()
 
-    private fun getRequest(url: String = "/hello"): Request {
-        return Request.Builder()
+    private fun getRequest(url: String = "/hello"): Request =
+        Request
+            .Builder()
             .addHeader("myHeader", "myValue")
             .get()
             .url(fixture.server.url(url))
             .build()
-    }
 
-    private fun postRequest(url: String = "/hello", body: String): Request {
-        return Request.Builder()
+    private fun postRequest(
+        url: String = "/hello",
+        body: String,
+    ): Request =
+        Request
+            .Builder()
             .addHeader("myHeader", "myValue")
             .post(body.toRequestBody())
             .url(fixture.server.url(url))
             .build()
-    }
 
     @Test
     fun `when there is an active span and the SentryOkHttpInterceptor, adds sentry trace headers to the request`() {
@@ -202,7 +206,7 @@ class SentryOkHttpEventListenerTest {
         response.close()
         assertEquals(
             responseBytes.size.toLong(),
-            callSpan?.getData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY)
+            callSpan?.getData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY),
         )
     }
 
@@ -304,7 +308,7 @@ class SentryOkHttpEventListenerTest {
         listener: SentryOkHttpEventListener,
         originalListener: EventListener,
         call: Call,
-        response: Response
+        response: Response,
     ) {
         listener.callStart(call)
         verify(originalListener).callStart(eq(call))

@@ -46,15 +46,17 @@ class SentryFrameMetricsCollectorTest {
 
     private class Fixture {
         private val mockDsn = "http://key@localhost/proj"
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
-        }
+        val buildInfo =
+            mock<BuildInfoProvider> {
+                whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
+            }
         val mockLogger = mock<ILogger>()
-        val options = spy(SentryOptions()).apply {
-            dsn = mockDsn
-            isDebug = true
-            setLogger(mockLogger)
-        }
+        val options =
+            spy(SentryOptions()).apply {
+                dsn = mockDsn
+                isDebug = true
+                setLogger(mockLogger)
+            }
 
         val activity = mock<Activity>()
         val window = mock<Window>()
@@ -68,14 +70,14 @@ class SentryFrameMetricsCollectorTest {
                 override fun addOnFrameMetricsAvailableListener(
                     window: Window,
                     frameMetricsAvailableListener: Window.OnFrameMetricsAvailableListener?,
-                    handler: Handler?
+                    handler: Handler?,
                 ) {
                     addOnFrameMetricsAvailableListenerCounter++
                 }
 
                 override fun removeOnFrameMetricsAvailableListener(
                     window: Window,
-                    frameMetricsAvailableListener: Window.OnFrameMetricsAvailableListener?
+                    frameMetricsAvailableListener: Window.OnFrameMetricsAvailableListener?,
                 ) {
                     removeOnFrameMetricsAvailableListenerCounter++
                 }
@@ -83,7 +85,7 @@ class SentryFrameMetricsCollectorTest {
 
         fun getSut(
             context: Context,
-            buildInfoProvider: BuildInfoProvider = buildInfo
+            buildInfoProvider: BuildInfoProvider = buildInfo,
         ): SentryFrameMetricsCollector {
             whenever(activity.window).thenReturn(window)
             whenever(activity2.window).thenReturn(window2)
@@ -93,7 +95,7 @@ class SentryFrameMetricsCollectorTest {
                 context,
                 options,
                 buildInfoProvider,
-                windowFrameMetricsManager
+                windowFrameMetricsManager,
             )
         }
     }
@@ -120,9 +122,10 @@ class SentryFrameMetricsCollectorTest {
 
     @Test
     fun `collector works only on api 24+`() {
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M)
-        }
+        val buildInfo =
+            mock<BuildInfoProvider> {
+                whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M)
+            }
         val collector = fixture.getSut(context, buildInfo)
         val id = collector.startCollection(mock())
         assertNull(id)
@@ -294,10 +297,15 @@ class SentryFrameMetricsCollectorTest {
         val frameMetrics = createMockFrameMetrics()
 
         var timesCalled = 0
-        collector.startCollection { frameStartNanos, frameEndNanos,
-            durationNanos, delayNanos,
-            isSlow, isFrozen,
-            refreshRate ->
+        collector.startCollection {
+            frameStartNanos,
+            frameEndNanos,
+            durationNanos,
+            delayNanos,
+            isSlow,
+            isFrozen,
+            refreshRate,
+            ->
             // The frame end is 100 (Choreographer.mLastFrameTimeNanos) plus frame duration
             assertEquals(100 + durationNanos, frameEndNanos)
             timesCalled++
@@ -309,9 +317,10 @@ class SentryFrameMetricsCollectorTest {
 
     @Test
     fun `collector reads frame start from frameMetrics object on version O+`() {
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
-        }
+        val buildInfo =
+            mock<BuildInfoProvider> {
+                whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
+            }
         val collector = fixture.getSut(context, buildInfo)
         val listener =
             collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
@@ -319,10 +328,15 @@ class SentryFrameMetricsCollectorTest {
         // We don't inject the choreographer field
 
         var timesCalled = 0
-        collector.startCollection { frameStartNanos, frameEndNanos,
-            durationNanos, delayNanos,
-            isSlow, isFrozen,
-            refreshRate ->
+        collector.startCollection {
+            frameStartNanos,
+            frameEndNanos,
+            durationNanos,
+            delayNanos,
+            isSlow,
+            isFrozen,
+            refreshRate,
+            ->
             assertEquals(50 + durationNanos, frameEndNanos)
             timesCalled++
         }
@@ -333,9 +347,10 @@ class SentryFrameMetricsCollectorTest {
 
     @Test
     fun `collector reads only cpu main thread frame duration`() {
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
-        }
+        val buildInfo =
+            mock<BuildInfoProvider> {
+                whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
+            }
         val collector = fixture.getSut(context, buildInfo)
         val listener =
             collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
@@ -343,10 +358,15 @@ class SentryFrameMetricsCollectorTest {
         val frameMetrics = createMockFrameMetrics()
 
         var timesCalled = 0
-        collector.startCollection { frameStartNanos, frameEndNanos,
-            durationNanos, delayNanos,
-            isSlow, isFrozen,
-            refreshRate ->
+        collector.startCollection {
+            frameStartNanos,
+            frameEndNanos,
+            durationNanos,
+            delayNanos,
+            isSlow,
+            isFrozen,
+            refreshRate,
+            ->
             assertEquals(21, durationNanos)
             timesCalled++
         }
@@ -357,9 +377,10 @@ class SentryFrameMetricsCollectorTest {
 
     @Test
     fun `collector adjusts frames start with previous end`() {
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
-        }
+        val buildInfo =
+            mock<BuildInfoProvider> {
+                whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
+            }
         val collector = fixture.getSut(context, buildInfo)
         val listener =
             collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
@@ -367,10 +388,15 @@ class SentryFrameMetricsCollectorTest {
         whenever(frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP)).thenReturn(50)
         var previousEnd = 0L
         var timesCalled = 0
-        collector.startCollection { frameStartNanos, frameEndNanos,
-            durationNanos, delayNanos,
-            isSlow, isFrozen,
-            refreshRate ->
+        collector.startCollection {
+            frameStartNanos,
+            frameEndNanos,
+            durationNanos,
+            delayNanos,
+            isSlow,
+            isFrozen,
+            refreshRate,
+            ->
             // The second time the listener is called, the frame start is shifted to be equal to the previous frame end
             if (timesCalled > 0) {
                 assertEquals(previousEnd + durationNanos, frameEndNanos)
@@ -386,9 +412,10 @@ class SentryFrameMetricsCollectorTest {
 
     @Test
     fun `collector properly reports slow and frozen flags`() {
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
-        }
+        val buildInfo =
+            mock<BuildInfoProvider> {
+                whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
+            }
         val collector = fixture.getSut(context, buildInfo)
         val listener =
             collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
@@ -398,10 +425,15 @@ class SentryFrameMetricsCollectorTest {
         var lastIsFrozen = false
 
         // when a frame takes less than 16ms, it's not considered slow or frozen
-        collector.startCollection { _, _,
-            _, _,
-            isSlow, isFrozen,
-            _ ->
+        collector.startCollection {
+            _,
+            _,
+            _,
+            _,
+            isSlow,
+            isFrozen,
+            _,
+            ->
 
             lastIsSlow = isSlow
             lastIsFrozen = isFrozen
@@ -415,9 +447,9 @@ class SentryFrameMetricsCollectorTest {
         listener.onFrameMetricsAvailable(
             createMockWindow(),
             createMockFrameMetrics(
-                extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(100)
+                extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(100),
             ),
-            0
+            0,
         )
         assertTrue(lastIsSlow)
         assertFalse(lastIsFrozen)
@@ -426,9 +458,9 @@ class SentryFrameMetricsCollectorTest {
         listener.onFrameMetricsAvailable(
             createMockWindow(),
             createMockFrameMetrics(
-                extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(1000)
+                extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(1000),
             ),
-            0
+            0,
         )
         assertTrue(lastIsSlow)
         assertTrue(lastIsFrozen)
@@ -439,9 +471,10 @@ class SentryFrameMetricsCollectorTest {
 
     @Test
     fun `collector properly reports frame delay`() {
-        val buildInfo = mock<BuildInfoProvider> {
-            whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
-        }
+        val buildInfo =
+            mock<BuildInfoProvider> {
+                whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O)
+            }
         val collector = fixture.getSut(context, buildInfo)
         val listener =
             collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
@@ -449,10 +482,15 @@ class SentryFrameMetricsCollectorTest {
         var lastDelay = 0L
 
         // when a frame takes less than 16ms, it's not considered slow or frozen
-        collector.startCollection { _, _,
-            _, delayNanos,
-            _, _,
-            _ ->
+        collector.startCollection {
+            _,
+            _,
+            _,
+            delayNanos,
+            _,
+            _,
+            _,
+            ->
             lastDelay = delayNanos
         }
         // at 60hz, when the total duration is 10ms, the delay is 0
@@ -465,9 +503,9 @@ class SentryFrameMetricsCollectorTest {
                 layoutMeasureNanos = 0,
                 drawNanos = 0,
                 syncNanos = 0,
-                extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(16)
+                extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(16),
             ),
-            0
+            0,
         )
         assertEquals(0, lastDelay)
 
@@ -481,14 +519,14 @@ class SentryFrameMetricsCollectorTest {
                 layoutMeasureNanos = 0,
                 drawNanos = 0,
                 syncNanos = 0,
-                extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(20)
+                extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(20),
             ),
-            0
+            0,
         )
         assertEquals(
             // 20ms - 1/60 (~16.6ms) = 4ms
             TimeUnit.MILLISECONDS.toNanos(20) - (TimeUnit.SECONDS.toNanos(1) / 60.0f).toLong(),
-            lastDelay
+            lastDelay,
         )
 
         // at 120hz, when the total duration is 20ms, the delay is considered ~8ms
@@ -501,14 +539,14 @@ class SentryFrameMetricsCollectorTest {
                 layoutMeasureNanos = 0,
                 drawNanos = 0,
                 syncNanos = 0,
-                extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(20)
+                extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(20),
             ),
-            0
+            0,
         )
         assertEquals(
             // 20ms - 1/120 (~8.33ms) = 8ms
             TimeUnit.MILLISECONDS.toNanos(20) - (TimeUnit.SECONDS.toNanos(1) / 120.0f).toLong(),
-            lastDelay
+            lastDelay,
         )
     }
 
@@ -533,18 +571,18 @@ class SentryFrameMetricsCollectorTest {
         drawNanos: Long = 5,
         syncNanos: Long = 6,
         extraCpuDurationNanos: Long = 0,
-        totalDurationNanos: Long = 60
+        totalDurationNanos: Long = 60,
     ): FrameMetrics {
         val frameMetrics = mock<FrameMetrics>()
         whenever(frameMetrics.getMetric(FrameMetrics.UNKNOWN_DELAY_DURATION)).thenReturn(
-            unknownDelayNanos + extraCpuDurationNanos
+            unknownDelayNanos + extraCpuDurationNanos,
         )
         whenever(frameMetrics.getMetric(FrameMetrics.INPUT_HANDLING_DURATION)).thenReturn(
-            inputHandlingNanos
+            inputHandlingNanos,
         )
         whenever(frameMetrics.getMetric(FrameMetrics.ANIMATION_DURATION)).thenReturn(animationNanos)
         whenever(frameMetrics.getMetric(FrameMetrics.LAYOUT_MEASURE_DURATION)).thenReturn(
-            layoutMeasureNanos
+            layoutMeasureNanos,
         )
         whenever(frameMetrics.getMetric(FrameMetrics.DRAW_DURATION)).thenReturn(drawNanos)
         whenever(frameMetrics.getMetric(FrameMetrics.SYNC_DURATION)).thenReturn(syncNanos)

@@ -9,12 +9,10 @@ class NoOpTransactionProfilerTest {
     private var profiler = NoOpTransactionProfiler.getInstance()
 
     @Test
-    fun `start does not throw`() =
-        profiler.start()
+    fun `start does not throw`() = profiler.start()
 
     @Test
-    fun `bindTransaction does not throw`() =
-        profiler.bindTransaction(mock())
+    fun `bindTransaction does not throw`() = profiler.bindTransaction(mock())
 
     @Test
     fun `isRunning returns false`() {
@@ -27,6 +25,5 @@ class NoOpTransactionProfilerTest {
     }
 
     @Test
-    fun `close does not throw`() =
-        profiler.close()
+    fun `close does not throw`() = profiler.close()
 }

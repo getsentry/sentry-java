@@ -11,10 +11,10 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 
 class SentryItemTypeSerializationTest {
-
     class Fixture {
         val logger = mock<ILogger>()
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -51,9 +51,7 @@ class SentryItemTypeSerializationTest {
         assertEquals(deserialize(json("feedback")), SentryItemType.Feedback)
     }
 
-    private fun json(type: String): String {
-        return "{\"type\":\"${type}\"}"
-    }
+    private fun json(type: String): String = "{\"type\":\"${type}\"}"
 
     private fun serialize(src: SentryItemType): String {
         val wrt = StringWriter()

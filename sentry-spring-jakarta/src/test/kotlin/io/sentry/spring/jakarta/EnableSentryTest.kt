@@ -17,8 +17,9 @@ import org.springframework.context.annotation.Bean
 import kotlin.test.Test
 
 class EnableSentryTest {
-    private val contextRunner = ApplicationContextRunner()
-        .withConfiguration(UserConfigurations.of(AppConfig::class.java))
+    private val contextRunner =
+        ApplicationContextRunner()
+            .withConfiguration(UserConfigurations.of(AppConfig::class.java))
 
     @Test
     fun `sets properties from environment on SentryOptions`() {
@@ -75,24 +76,28 @@ class EnableSentryTest {
     fun `creates SentryExceptionResolver`() {
         contextRunner.run {
             assertThat(it).hasSingleBean(SentryExceptionResolver::class.java)
-            assertThat(it).getBean(SentryExceptionResolver::class.java)
+            assertThat(it)
+                .getBean(SentryExceptionResolver::class.java)
                 .hasFieldOrPropertyWithValue("order", 1)
         }
     }
 
     @Test
     fun `creates SentryExceptionResolver with order set in the @EnableSentry annotation`() {
-        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithExceptionResolverOrderIntegerMaxValue::class.java))
+        ApplicationContextRunner()
+            .withConfiguration(UserConfigurations.of(AppConfigWithExceptionResolverOrderIntegerMaxValue::class.java))
             .run {
                 assertThat(it).hasSingleBean(SentryExceptionResolver::class.java)
-                assertThat(it).getBean(SentryExceptionResolver::class.java)
+                assertThat(it)
+                    .getBean(SentryExceptionResolver::class.java)
                     .hasFieldOrPropertyWithValue("order", Integer.MAX_VALUE)
             }
     }
 
     @Test
     fun `configures custom TracesSamplerCallback`() {
-        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomTracesSamplerCallback::class.java))
+        ApplicationContextRunner()
+            .withConfiguration(UserConfigurations.of(AppConfigWithCustomTracesSamplerCallback::class.java))
             .run {
                 val options = it.getBean(SentryOptions::class.java)
                 val samplerCallback = it.getBean(SentryOptions.TracesSamplerCallback::class.java)
@@ -102,7 +107,8 @@ class EnableSentryTest {
 
     @Test
     fun `configures custom TransportFactory`() {
-        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomTransportFactory::class.java))
+        ApplicationContextRunner()
+            .withConfiguration(UserConfigurations.of(AppConfigWithCustomTransportFactory::class.java))
             .run {
                 val options = it.getBean(SentryOptions::class.java)
                 val transportFactory = it.getBean(ITransportFactory::class.java)
@@ -112,7 +118,8 @@ class EnableSentryTest {
 
     @Test
     fun `configures options with options configuration`() {
-        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomOptionsConfiguration::class.java))
+        ApplicationContextRunner()
+            .withConfiguration(UserConfigurations.of(AppConfigWithCustomOptionsConfiguration::class.java))
             .run {
                 val options = it.getBean(SentryOptions::class.java)
                 assertThat(options.environment).isEqualTo("from-options-configuration")
@@ -121,7 +128,8 @@ class EnableSentryTest {
 
     @Test
     fun `configures custom before send callback`() {
-        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomBeforeSendCallback::class.java))
+        ApplicationContextRunner()
+            .withConfiguration(UserConfigurations.of(AppConfigWithCustomBeforeSendCallback::class.java))
             .run {
                 val beforeSendCallback = it.getBean(SentryOptions.BeforeSendCallback::class.java)
                 val options = it.getBean(SentryOptions::class.java)
@@ -131,7 +139,8 @@ class EnableSentryTest {
 
     @Test
     fun `configures custom before breadcrumb callback`() {
-        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomBeforeBreadcrumbCallback::class.java))
+        ApplicationContextRunner()
+            .withConfiguration(UserConfigurations.of(AppConfigWithCustomBeforeBreadcrumbCallback::class.java))
             .run {
                 val beforeBreadcrumbCallback = it.getBean(SentryOptions.BeforeBreadcrumbCallback::class.java)
                 val options = it.getBean(SentryOptions::class.java)
@@ -141,7 +150,8 @@ class EnableSentryTest {
 
     @Test
     fun `configures custom event processors`() {
-        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomEventProcessors::class.java))
+        ApplicationContextRunner()
+            .withConfiguration(UserConfigurations.of(AppConfigWithCustomEventProcessors::class.java))
             .run {
                 val firstProcessor = it.getBean("firstProcessor", EventProcessor::class.java)
                 val secondProcessor = it.getBean("secondProcessor", EventProcessor::class.java)
@@ -152,7 +162,8 @@ class EnableSentryTest {
 
     @Test
     fun `configures custom integrations`() {
-        ApplicationContextRunner().withConfiguration(UserConfigurations.of(AppConfigWithCustomIntegrations::class.java))
+        ApplicationContextRunner()
+            .withConfiguration(UserConfigurations.of(AppConfigWithCustomIntegrations::class.java))
             .run {
                 val firstIntegration = it.getBean("firstIntegration", Integration::class.java)
                 val secondIntegration = it.getBean("secondIntegration", Integration::class.java)
@@ -175,7 +186,6 @@ class EnableSentryTest {
 
     @EnableSentry(dsn = "http://key@localhost/proj")
     class AppConfigWithCustomTracesSamplerCallback {
-
         @Bean
         fun tracesSampler(): SentryOptions.TracesSamplerCallback {
             return SentryOptions.TracesSamplerCallback {
@@ -186,39 +196,36 @@ class EnableSentryTest {
 
     @EnableSentry(dsn = "http://key@localhost/proj")
     class AppConfigWithCustomTransportFactory {
-
         @Bean
-        fun transport() = mock<ITransportFactory>().also {
-            whenever(it.create(any(), any())).thenReturn(mock<ITransport>())
-        }
+        fun transport() =
+            mock<ITransportFactory>().also {
+                whenever(it.create(any(), any())).thenReturn(mock<ITransport>())
+            }
     }
 
     @EnableSentry(dsn = "http://key@localhost/proj")
     class AppConfigWithCustomOptionsConfiguration {
-
         @Bean
-        fun optionsConfiguration() = Sentry.OptionsConfiguration<SentryOptions> {
-            it.environment = "from-options-configuration"
-        }
+        fun optionsConfiguration() =
+            Sentry.OptionsConfiguration<SentryOptions> {
+                it.environment = "from-options-configuration"
+            }
     }
 
     @EnableSentry(dsn = "http://key@localhost/proj")
     class AppConfigWithCustomBeforeSendCallback {
-
         @Bean
         fun beforeSendCallback() = mock<SentryOptions.BeforeSendCallback>()
     }
 
     @EnableSentry(dsn = "http://key@localhost/proj")
     class AppConfigWithCustomBeforeBreadcrumbCallback {
-
         @Bean
         fun beforeBreadcrumbCallback() = mock<SentryOptions.BeforeBreadcrumbCallback>()
     }
 
     @EnableSentry(dsn = "http://key@localhost/proj")
     class AppConfigWithCustomEventProcessors {
-
         @Bean
         fun firstProcessor() = mock<EventProcessor>()
 
@@ -228,7 +235,6 @@ class EnableSentryTest {
 
     @EnableSentry(dsn = "http://key@localhost/proj")
     class AppConfigWithCustomIntegrations {
-
         @Bean
         fun firstIntegration() = mock<Integration>()
 

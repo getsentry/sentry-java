@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @Implements(MediaCodec::class)
 class ReplayShadowMediaCodec : ShadowMediaCodec() {
-
     companion object {
         var frameRate = 1
         var framesToEncode = 5
@@ -31,12 +30,13 @@ class ReplayShadowMediaCodec : ShadowMediaCodec() {
     }
 
     @Implementation
-    fun getOutputBuffers(): Array<ByteBuffer> {
-        return super.getBuffers(false)
-    }
+    fun getOutputBuffers(): Array<ByteBuffer> = super.getBuffers(false)
 
     @Implementation
-    fun dequeueOutputBuffer(info: BufferInfo, timeoutUs: Long): Int {
+    fun dequeueOutputBuffer(
+        info: BufferInfo,
+        timeoutUs: Long,
+    ): Int {
         val encoderStatus = super.native_dequeueOutputBuffer(info, timeoutUs)
         super.validateOutputByteBuffer(getOutputBuffers(), encoderStatus, info)
         if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER && !encoded.getAndSet(true)) {
@@ -46,7 +46,12 @@ class ReplayShadowMediaCodec : ShadowMediaCodec() {
         return encoderStatus
     }
 
-    private fun encodeFrame(index: Int, frameRate: Int, size: Int = 10, flags: Int = 0) {
+    private fun encodeFrame(
+        index: Int,
+        frameRate: Int,
+        size: Int = 10,
+        flags: Int = 0,
+    ) {
         val presentationTime = MICROSECONDS.convert(index * (1000L / frameRate), MILLISECONDS)
         super.native_dequeueInputBuffer(0)
         super.native_queueInputBuffer(
@@ -54,7 +59,7 @@ class ReplayShadowMediaCodec : ShadowMediaCodec() {
             index * size,
             size,
             presentationTime,
-            flags
+            flags,
         )
     }
 }

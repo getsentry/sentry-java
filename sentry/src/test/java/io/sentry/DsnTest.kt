@@ -7,7 +7,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class DsnTest {
-
     @Test
     fun `dsn parsed with path, sets all properties`() {
         val dsn = Dsn("https://publicKey:secretKey@host/path/id")

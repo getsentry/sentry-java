@@ -21,16 +21,16 @@ internal sealed class ViewHierarchyNode(
     val y: Float,
     val width: Int,
     val height: Int,
-    /* Elevation (in px) */
+    // Elevation (in px)
     val elevation: Float,
-    /* Distance to the parent (index) */
+    // Distance to the parent (index)
     val distance: Int,
     val parent: ViewHierarchyNode? = null,
     val shouldMask: Boolean = false,
-    /* Whether the node is important for content capture (=non-empty container) */
+    // Whether the node is important for content capture (=non-empty container)
     var isImportantForContentCapture: Boolean = false,
     val isVisible: Boolean = false,
-    val visibleRect: Rect? = null
+    val visibleRect: Rect? = null,
 ) {
     var children: List<ViewHierarchyNode>? = null
 
@@ -45,8 +45,20 @@ internal sealed class ViewHierarchyNode(
         shouldMask: Boolean = false,
         isImportantForContentCapture: Boolean = false,
         isVisible: Boolean = false,
-        visibleRect: Rect? = null
-    ) : ViewHierarchyNode(x, y, width, height, elevation, distance, parent, shouldMask, isImportantForContentCapture, isVisible, visibleRect)
+        visibleRect: Rect? = null,
+    ) : ViewHierarchyNode(
+            x,
+            y,
+            width,
+            height,
+            elevation,
+            distance,
+            parent,
+            shouldMask,
+            isImportantForContentCapture,
+            isVisible,
+            visibleRect,
+        )
 
     class TextViewHierarchyNode(
         val layout: TextLayout? = null,
@@ -63,8 +75,20 @@ internal sealed class ViewHierarchyNode(
         shouldMask: Boolean = false,
         isImportantForContentCapture: Boolean = false,
         isVisible: Boolean = false,
-        visibleRect: Rect? = null
-    ) : ViewHierarchyNode(x, y, width, height, elevation, distance, parent, shouldMask, isImportantForContentCapture, isVisible, visibleRect)
+        visibleRect: Rect? = null,
+    ) : ViewHierarchyNode(
+            x,
+            y,
+            width,
+            height,
+            elevation,
+            distance,
+            parent,
+            shouldMask,
+            isImportantForContentCapture,
+            isVisible,
+            visibleRect,
+        )
 
     class ImageViewHierarchyNode(
         x: Float,
@@ -77,8 +101,20 @@ internal sealed class ViewHierarchyNode(
         shouldMask: Boolean = false,
         isImportantForContentCapture: Boolean = false,
         isVisible: Boolean = false,
-        visibleRect: Rect? = null
-    ) : ViewHierarchyNode(x, y, width, height, elevation, distance, parent, shouldMask, isImportantForContentCapture, isVisible, visibleRect)
+        visibleRect: Rect? = null,
+    ) : ViewHierarchyNode(
+            x,
+            y,
+            width,
+            height,
+            elevation,
+            distance,
+            parent,
+            shouldMask,
+            isImportantForContentCapture,
+            isVisible,
+            visibleRect,
+        )
 
     /**
      * Basically replicating this: https://developer.android.com/reference/android/view/View#isImportantForContentCapture()
@@ -188,7 +224,10 @@ internal sealed class ViewHierarchyNode(
      *
      * This method should be called on the root node of the view hierarchy.
      */
-    private fun findLCA(node: ViewHierarchyNode, otherNode: ViewHierarchyNode): LCAResult {
+    private fun findLCA(
+        node: ViewHierarchyNode,
+        otherNode: ViewHierarchyNode,
+    ): LCAResult {
         var nodeSubtree: ViewHierarchyNode? = null
         var otherNodeSubtree: ViewHierarchyNode? = null
         var lca: ViewHierarchyNode? = null
@@ -230,7 +269,7 @@ internal sealed class ViewHierarchyNode(
     private data class LCAResult(
         val lca: ViewHierarchyNode?,
         var nodeSubtree: ViewHierarchyNode?,
-        var otherNodeSubtree: ViewHierarchyNode?
+        var otherNodeSubtree: ViewHierarchyNode?,
     )
 
     companion object {
@@ -288,7 +327,12 @@ internal sealed class ViewHierarchyNode(
             return this.javaClass.name == maskContainer
         }
 
-        fun fromView(view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryOptions): ViewHierarchyNode {
+        fun fromView(
+            view: View,
+            parent: ViewHierarchyNode?,
+            distance: Int,
+            options: SentryOptions,
+        ): ViewHierarchyNode {
             val (isVisible, visibleRect) = view.isVisibleToUser()
             val shouldMask = isVisible && view.shouldMask(options)
             when (view) {
@@ -309,7 +353,7 @@ internal sealed class ViewHierarchyNode(
                         parent = parent,
                         isImportantForContentCapture = true,
                         isVisible = isVisible,
-                        visibleRect = visibleRect
+                        visibleRect = visibleRect,
                     )
                 }
 
@@ -326,7 +370,7 @@ internal sealed class ViewHierarchyNode(
                         isVisible = isVisible,
                         isImportantForContentCapture = true,
                         shouldMask = shouldMask && view.drawable?.isMaskable() == true,
-                        visibleRect = visibleRect
+                        visibleRect = visibleRect,
                     )
                 }
             }
@@ -340,9 +384,9 @@ internal sealed class ViewHierarchyNode(
                 distance = distance,
                 parent = parent,
                 shouldMask = shouldMask,
-                isImportantForContentCapture = false, /* will be set by children */
+                isImportantForContentCapture = false, // will be set by children
                 isVisible = isVisible,
-                visibleRect = visibleRect
+                visibleRect = visibleRect,
             )
         }
     }

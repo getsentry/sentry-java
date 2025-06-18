@@ -11,13 +11,17 @@ import io.sentry.internal.viewhierarchy.ViewHierarchyExporter
 import io.sentry.protocol.ViewHierarchyNode
 import io.sentry.util.AutoClosableReentrantLock
 
-public class ComposeViewHierarchyExporter public constructor(private val logger: ILogger) :
-    ViewHierarchyExporter {
+public class ComposeViewHierarchyExporter public constructor(
+    private val logger: ILogger,
+) : ViewHierarchyExporter {
     @Volatile
     private var composeHelper: SentryComposeHelper? = null
     private val lock = AutoClosableReentrantLock()
 
-    override fun export(parent: ViewHierarchyNode, element: Any): Boolean {
+    override fun export(
+        parent: ViewHierarchyNode,
+        element: Any,
+    ): Boolean {
         if (element !is Owner) {
             return false
         }
@@ -40,7 +44,7 @@ public class ComposeViewHierarchyExporter public constructor(private val logger:
         composeHelper: SentryComposeHelper,
         parent: ViewHierarchyNode,
         rootNode: LayoutNode,
-        node: LayoutNode
+        node: LayoutNode,
     ) {
         if (node.isPlaced) {
             val vhNode = ViewHierarchyNode()
@@ -65,7 +69,7 @@ public class ComposeViewHierarchyExporter public constructor(private val logger:
     private fun setTag(
         helper: SentryComposeHelper,
         node: LayoutNode,
-        vhNode: ViewHierarchyNode
+        vhNode: ViewHierarchyNode,
     ) {
         // needs to be in-sync with ComposeGestureTargetLocator
         val modifiers = node.getModifierInfo()
@@ -79,7 +83,7 @@ public class ComposeViewHierarchyExporter public constructor(private val logger:
 
     private fun setBounds(
         node: LayoutNode,
-        vhNode: ViewHierarchyNode
+        vhNode: ViewHierarchyNode,
     ) {
         // layout coordinates for view hierarchy are relative to the parent node
         val bounds = node.coordinates.boundsInParent()

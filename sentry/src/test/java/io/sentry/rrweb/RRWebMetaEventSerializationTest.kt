@@ -10,17 +10,17 @@ import org.mockito.kotlin.mock
 import kotlin.test.assertEquals
 
 class RRWebMetaEventSerializationTest {
-
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = RRWebMetaEvent().apply {
-            href = "https://sentry.io"
-            height = 1920
-            width = 1080
-            type = Meta
-            timestamp = 1234567890
-        }
+        fun getSut() =
+            RRWebMetaEvent().apply {
+                href = "https://sentry.io"
+                height = 1920
+                width = 1080
+                type = Meta
+                timestamp = 1234567890
+            }
     }
 
     private val fixture = Fixture()

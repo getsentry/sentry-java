@@ -6,7 +6,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SentryLongDateTest {
-
     @Test
     fun `nanos() offers ns precision`() {
         val date = SentryLongDate(1672742031123456789)

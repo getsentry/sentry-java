@@ -23,15 +23,16 @@ class NoOpSentryClientTest {
 
     @Test
     fun `captureMessage returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.callMethod("captureMessage", parameterTypes = arrayOf(String::class.java, SentryLevel::class.java), null, null))
+        assertEquals(
+            SentryId.EMPTY_ID,
+            sut.callMethod("captureMessage", parameterTypes = arrayOf(String::class.java, SentryLevel::class.java), null, null),
+        )
 
     @Test
-    fun `captureEnvelope returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureEnvelope(mock()))
+    fun `captureEnvelope returns empty SentryId`() = assertEquals(SentryId.EMPTY_ID, sut.captureEnvelope(mock()))
 
     @Test
-    fun `captureFeedback returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureFeedback(mock(), mock(), mock()))
+    fun `captureFeedback returns empty SentryId`() = assertEquals(SentryId.EMPTY_ID, sut.captureFeedback(mock(), mock(), mock()))
 
     @Test
     fun `close does not affect captureEvent`() {
@@ -60,16 +61,17 @@ class NoOpSentryClientTest {
     @Test
     fun `close does not affect captureMessage`() {
         sut.close()
-        assertEquals(SentryId.EMPTY_ID, sut.callMethod("captureMessage", parameterTypes = arrayOf(String::class.java, SentryLevel::class.java), null, null))
+        assertEquals(
+            SentryId.EMPTY_ID,
+            sut.callMethod("captureMessage", parameterTypes = arrayOf(String::class.java, SentryLevel::class.java), null, null),
+        )
     }
 
     @Test
-    fun `captureTransaction returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock()))
+    fun `captureTransaction returns empty SentryId`() = assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock()))
 
     @Test
-    fun `captureProfileChunk returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureProfileChunk(mock(), mock()))
+    fun `captureProfileChunk returns empty SentryId`() = assertEquals(SentryId.EMPTY_ID, sut.captureProfileChunk(mock(), mock()))
 
     @Test
     fun `captureCheckIn returns empty id`() {

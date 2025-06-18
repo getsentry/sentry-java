@@ -27,7 +27,6 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
 class ContainerMaskingOptionsTest {
-
     @BeforeTest
     fun setup() {
         System.setProperty("robolectric.areWindowsMarkedVisible", "true")
@@ -37,10 +36,11 @@ class ContainerMaskingOptionsTest {
     fun `when maskAllText is set TextView in Unmask container is unmasked`() {
         buildActivity(MaskingOptionsActivity::class.java).setup()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = true
-            sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = true
+                sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
+            }
 
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textViewInUnmask!!, null, 0, options)
         assertFalse(textNode.shouldMask)
@@ -50,10 +50,11 @@ class ContainerMaskingOptionsTest {
     fun `when maskAllImages is set ImageView in Unmask container is unmasked`() {
         buildActivity(MaskingOptionsActivity::class.java).setup()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllImages = true
-            sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllImages = true
+                sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
+            }
 
         val imageNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.imageViewInUnmask!!, null, 0, options)
         assertFalse(imageNode.shouldMask)
@@ -63,9 +64,10 @@ class ContainerMaskingOptionsTest {
     fun `MaskContainer is always masked`() {
         buildActivity(MaskingOptionsActivity::class.java).setup()
 
-        val options = SentryOptions().apply {
-            sessionReplay.setMaskViewContainerClass(CustomMask::class.java.name)
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.setMaskViewContainerClass(CustomMask::class.java.name)
+            }
 
         val maskContainer = ViewHierarchyNode.fromView(MaskingOptionsActivity.maskWithChildren!!, null, 0, options)
 
@@ -76,10 +78,11 @@ class ContainerMaskingOptionsTest {
     fun `when Views are in UnmaskContainer only direct children are unmasked`() {
         buildActivity(MaskingOptionsActivity::class.java).setup()
 
-        val options = SentryOptions().apply {
-            sessionReplay.addMaskViewClass(CustomView::class.java.name)
-            sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.addMaskViewClass(CustomView::class.java.name)
+                sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
+            }
 
         val maskContainer = ViewHierarchyNode.fromView(MaskingOptionsActivity.unmaskWithChildren!!, null, 0, options)
         val firstChild = ViewHierarchyNode.fromView(MaskingOptionsActivity.customViewInUnmask!!, maskContainer, 0, options)
@@ -94,10 +97,11 @@ class ContainerMaskingOptionsTest {
     fun `when MaskContainer is direct child of UnmaskContainer all children od Mask are masked`() {
         buildActivity(MaskingOptionsActivity::class.java).setup()
 
-        val options = SentryOptions().apply {
-            sessionReplay.setMaskViewContainerClass(CustomMask::class.java.name)
-            sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.setMaskViewContainerClass(CustomMask::class.java.name)
+                sessionReplay.setUnmaskViewContainerClass(CustomUnmask::class.java.name)
+            }
 
         val unmaskNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.unmaskWithMaskChild!!, null, 0, options)
         val maskNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.maskAsDirectChildOfUnmask!!, unmaskNode, 0, options)
@@ -106,14 +110,18 @@ class ContainerMaskingOptionsTest {
         assertTrue(maskNode.shouldMask)
     }
 
-    private class CustomView(context: Context) : View(context) {
+    private class CustomView(
+        context: Context,
+    ) : View(context) {
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
             canvas.drawColor(Color.BLACK)
         }
     }
 
-    private open class CustomGroup(context: Context) : LinearLayout(context) {
+    private open class CustomGroup(
+        context: Context,
+    ) : LinearLayout(context) {
         init {
             setBackgroundColor(android.R.color.white)
             orientation = VERTICAL
@@ -126,11 +134,15 @@ class ContainerMaskingOptionsTest {
         }
     }
 
-    private class CustomMask(context: Context) : CustomGroup(context)
-    private class CustomUnmask(context: Context) : CustomGroup(context)
+    private class CustomMask(
+        context: Context,
+    ) : CustomGroup(context)
+
+    private class CustomUnmask(
+        context: Context,
+    ) : CustomGroup(context)
 
     private class MaskingOptionsActivity : Activity() {
-
         companion object {
             var unmaskWithTextView: ViewGroup? = null
             var textViewInUnmask: TextView? = null
@@ -150,11 +162,12 @@ class ContainerMaskingOptionsTest {
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
-            val linearLayout = LinearLayout(this).apply {
-                setBackgroundColor(android.R.color.white)
-                orientation = LinearLayout.VERTICAL
-                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-            }
+            val linearLayout =
+                LinearLayout(this).apply {
+                    setBackgroundColor(android.R.color.white)
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+                }
 
             val context = this
 
@@ -166,9 +179,9 @@ class ContainerMaskingOptionsTest {
                             textViewInUnmask = this
                             text = "Hello, World!"
                             layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
-                        }
+                        },
                     )
-                }
+                },
             )
 
             linearLayout.addView(
@@ -179,12 +192,13 @@ class ContainerMaskingOptionsTest {
                             imageViewInUnmask = this
                             val image = this::class.java.classLoader.getResource("Tongariro.jpg")!!
                             setImageDrawable(Drawable.createFromPath(image.path))
-                            layoutParams = LayoutParams(50, 50).apply {
-                                setMargins(0, 16, 0, 0)
-                            }
-                        }
+                            layoutParams =
+                                LayoutParams(50, 50).apply {
+                                    setMargins(0, 16, 0, 0)
+                                }
+                        },
                     )
-                }
+                },
             )
 
             linearLayout.addView(
@@ -196,11 +210,11 @@ class ContainerMaskingOptionsTest {
                             this.addView(
                                 CustomView(context).apply {
                                     secondLayerChildInUnmask = this
-                                }
+                                },
                             )
-                        }
+                        },
                     )
-                }
+                },
             )
 
             linearLayout.addView(
@@ -209,9 +223,9 @@ class ContainerMaskingOptionsTest {
                     this.addView(
                         CustomGroup(context).apply {
                             this.addView(CustomView(context))
-                        }
+                        },
                     )
-                }
+                },
             )
 
             linearLayout.addView(
@@ -220,9 +234,9 @@ class ContainerMaskingOptionsTest {
                     this.addView(
                         CustomMask(context).apply {
                             maskAsDirectChildOfUnmask = this
-                        }
+                        },
                     )
-                }
+                },
             )
 
             setContentView(linearLayout)

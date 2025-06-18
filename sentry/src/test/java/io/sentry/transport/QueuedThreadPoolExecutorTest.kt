@@ -14,7 +14,6 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class QueuedThreadPoolExecutorTest {
-
     private class Fixture {
         val maxQueueSize = 5
 
@@ -23,11 +22,12 @@ class QueuedThreadPoolExecutorTest {
         // with a number of jobs. If there weren't enough threads, the main thread could block indefinitely
         // because there wouldn't be enough worker threads to handle all jobs in the queue (because the test
         // code blocks the worker threads).
-        private val threadFactory = ThreadFactory { r ->
-            val t = Thread(r, "RetryingScheduledThreadPoolExecutorTestThread")
-            t.isDaemon = true
-            t
-        }
+        private val threadFactory =
+            ThreadFactory { r ->
+                val t = Thread(r, "RetryingScheduledThreadPoolExecutorTestThread")
+                t.isDaemon = true
+                t
+            }
 
         fun getSut(): QueuedThreadPoolExecutor =
             QueuedThreadPoolExecutor(
@@ -36,7 +36,7 @@ class QueuedThreadPoolExecutorTest {
                 threadFactory,
                 DiscardPolicy(),
                 mock(),
-                SentryNanotimeDateProvider()
+                SentryNanotimeDateProvider(),
             )
     }
 
@@ -99,17 +99,18 @@ class QueuedThreadPoolExecutorTest {
         // this is used to block the main thread until at least 1 of the jobs has finished
         val atLeastOneFinished = CountDownLatch(1)
 
-        val futures = (1..fixture.maxQueueSize).map {
-            sut.submit {
-                sync.countDown()
+        val futures =
+            (1..fixture.maxQueueSize).map {
+                sut.submit {
+                    sync.countDown()
 
-                // using the primitive notify/wait enables us to wake up the jobs 1 by 1.
-                synchronized(jobBlocker) { jobBlocker.wait() }
+                    // using the primitive notify/wait enables us to wake up the jobs 1 by 1.
+                    synchronized(jobBlocker) { jobBlocker.wait() }
 
-                // signal that we're finished
-                atLeastOneFinished.countDown()
+                    // signal that we're finished
+                    atLeastOneFinished.countDown()
+                }
             }
-        }
 
         // wait for the jobs to start
         sync.await()
@@ -142,7 +143,11 @@ class QueuedThreadPoolExecutorTest {
         val jobBlocker2 = CountDownLatch(1)
         val sync2 = CountDownLatch(1)
 
-        f = sut.submit { sync2.countDown(); jobBlocker2.await() }
+        f =
+            sut.submit {
+                sync2.countDown()
+                jobBlocker2.await()
+            }
         assertFalse(f.isCancelled, "A task should be successfully enqueued after making a place in the queue")
         sync2.await()
 

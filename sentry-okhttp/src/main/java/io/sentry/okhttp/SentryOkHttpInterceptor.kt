@@ -44,15 +44,16 @@ public open class SentryOkHttpInterceptor(
     private val scopes: IScopes = ScopesAdapter.getInstance(),
     private val beforeSpan: BeforeSpanCallback? = null,
     private val captureFailedRequests: Boolean = true,
-    private val failedRequestStatusCodes: List<HttpStatusCodeRange> = listOf(
-        HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX)
-    ),
-    private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS)
+    private val failedRequestStatusCodes: List<HttpStatusCodeRange> =
+        listOf(
+            HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX),
+        ),
+    private val failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
 ) : Interceptor {
-
     private companion object {
         init {
-            SentryIntegrationPackageStorage.getInstance()
+            SentryIntegrationPackageStorage
+                .getInstance()
                 .addPackage("maven:io.sentry:sentry-okhttp", BuildConfig.VERSION_NAME)
         }
     }
@@ -101,21 +102,22 @@ public open class SentryOkHttpInterceptor(
             val requestBuilder = request.newBuilder()
 
             if (!isIgnored()) {
-                TracingUtils.traceIfAllowed(
-                    scopes,
-                    request.url.toString(),
-                    request.headers(BaggageHeader.BAGGAGE_HEADER),
-                    span
-                )?.let { tracingHeaders ->
-                    requestBuilder.addHeader(
-                        tracingHeaders.sentryTraceHeader.name,
-                        tracingHeaders.sentryTraceHeader.value
-                    )
-                    tracingHeaders.baggageHeader?.let {
-                        requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
-                        requestBuilder.addHeader(it.name, it.value)
+                TracingUtils
+                    .traceIfAllowed(
+                        scopes,
+                        request.url.toString(),
+                        request.headers(BaggageHeader.BAGGAGE_HEADER),
+                        span,
+                    )?.let { tracingHeaders ->
+                        requestBuilder.addHeader(
+                            tracingHeaders.sentryTraceHeader.name,
+                            tracingHeaders.sentryTraceHeader.value,
+                        )
+                        tracingHeaders.baggageHeader?.let {
+                            requestBuilder.removeHeader(BaggageHeader.BAGGAGE_HEADER)
+                            requestBuilder.addHeader(it.name, it.value)
+                        }
                     }
-                }
             }
 
             request = requestBuilder.build()
@@ -160,15 +162,13 @@ public open class SentryOkHttpInterceptor(
         }
     }
 
-    private fun isIgnored(): Boolean {
-        return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
-    }
+    private fun isIgnored(): Boolean = SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
 
     private fun sendBreadcrumb(
         request: Request,
         code: Int?,
         response: Response?,
-        startTimestamp: Long
+        startTimestamp: Long,
     ) {
         val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
         request.body?.contentLength().ifHasValidLength {
@@ -190,7 +190,13 @@ public open class SentryOkHttpInterceptor(
         scopes.addBreadcrumb(breadcrumb, hint)
     }
 
-    private fun finishSpan(span: ISpan?, request: Request, response: Response?, isFromEventListener: Boolean, okHttpEvent: SentryOkHttpEvent?) {
+    private fun finishSpan(
+        span: ISpan?,
+        request: Request,
+        response: Response?,
+        isFromEventListener: Boolean,
+        okHttpEvent: SentryOkHttpEvent?,
+    ) {
         if (span == null) {
             // tracing can be disabled, or there can be no active span, but we still want to finalize the OkHttpEvent when both SentryOkHttpInterceptor and SentryOkHttpEventListener are used
             okHttpEvent?.finish()
@@ -216,7 +222,10 @@ public open class SentryOkHttpInterceptor(
         }
     }
 
-    private fun shouldCaptureClientError(request: Request, response: Response): Boolean {
+    private fun shouldCaptureClientError(
+        request: Request,
+        response: Response,
+    ): Boolean {
         // return if the feature is disabled or its not within the range
         if (!captureFailedRequests || !containsStatusCode(response.code)) {
             return false
@@ -250,6 +259,10 @@ public open class SentryOkHttpInterceptor(
          * @param request the HTTP request executed by okHttp
          * @param response the HTTP response received by okHttp
          */
-        public fun execute(span: ISpan, request: Request, response: Response?): ISpan?
+        public fun execute(
+            span: ISpan,
+            request: Request,
+            response: Response?,
+        ): ISpan?
     }
 }

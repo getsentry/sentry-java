@@ -10,7 +10,6 @@ import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class AndroidThreadCheckerTest {
-
     @Test
     fun `When calling isMainThread from the same thread, it should return true`() {
         assertTrue(AndroidThreadChecker.getInstance().isMainThread)
@@ -31,18 +30,20 @@ class AndroidThreadCheckerTest {
     @Test
     fun `When calling isMainThread with the current SentryThread, it should return true`() {
         val thread = Thread.currentThread()
-        val sentryThread = SentryThread().apply {
-            id = thread.id
-        }
+        val sentryThread =
+            SentryThread().apply {
+                id = thread.id
+            }
         assertTrue(AndroidThreadChecker.getInstance().isMainThread(sentryThread))
     }
 
     @Test
     fun `When calling isMainThread from a different SentryThread, it should return false`() {
         val thread = Thread()
-        val sentryThread = SentryThread().apply {
-            id = thread.id
-        }
+        val sentryThread =
+            SentryThread().apply {
+                id = thread.id
+            }
         assertFalse(AndroidThreadChecker.getInstance().isMainThread(sentryThread))
     }
 
@@ -56,9 +57,10 @@ class AndroidThreadCheckerTest {
     @Test
     fun `currentThreadName returns the name of the current thread`() {
         var threadName = ""
-        val thread = Thread {
-            threadName = AndroidThreadChecker.getInstance().currentThreadName
-        }
+        val thread =
+            Thread {
+                threadName = AndroidThreadChecker.getInstance().currentThreadName
+            }
         thread.name = "test"
         thread.start()
         thread.join()

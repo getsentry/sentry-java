@@ -19,7 +19,6 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SpanTest {
-
     private class Fixture {
         val scopes = mock<IScopes>()
 
@@ -28,33 +27,33 @@ class SpanTest {
                 SentryOptions().apply {
                     dsn = "https://key@sentry.io/proj"
                     isTraceSampling = true
-                }
+                },
             )
         }
 
         fun getSut(options: SpanOptions = SpanOptions()): Span {
-            val context = SpanContext(
-                SentryId(),
-                SpanId(),
-                SpanId(),
-                "op",
-                null,
-                null,
-                null,
-                null
-            )
+            val context =
+                SpanContext(
+                    SentryId(),
+                    SpanId(),
+                    SpanId(),
+                    "op",
+                    null,
+                    null,
+                    null,
+                    null,
+                )
             return Span(
                 SentryTracer(TransactionContext("name", "op"), scopes),
                 scopes,
                 context,
                 options,
-                null
+                null,
             )
         }
 
-        fun getRootSut(options: TransactionOptions = TransactionOptions()): Span {
-            return SentryTracer(TransactionContext("name", "op"), scopes, options).root
-        }
+        fun getRootSut(options: TransactionOptions = TransactionOptions()): Span =
+            SentryTracer(TransactionContext("name", "op"), scopes, options).root
     }
 
     private val fixture = Fixture()
@@ -108,26 +107,28 @@ class SpanTest {
     fun `converts to Sentry trace header`() {
         val traceId = SentryId()
         val parentSpanId = SpanId()
-        val spanContext = SpanContext(
-            traceId,
-            SpanId(),
-            parentSpanId,
-            "op",
-            null,
-            TracesSamplingDecision(true),
-            null,
-            null
-        )
-        val span = Span(
-            SentryTracer(
-                TransactionContext("name", "op", TracesSamplingDecision(true)),
-                fixture.scopes
-            ),
-            fixture.scopes,
-            spanContext,
-            SpanOptions(),
-            null
-        )
+        val spanContext =
+            SpanContext(
+                traceId,
+                SpanId(),
+                parentSpanId,
+                "op",
+                null,
+                TracesSamplingDecision(true),
+                null,
+                null,
+            )
+        val span =
+            Span(
+                SentryTracer(
+                    TransactionContext("name", "op", TracesSamplingDecision(true)),
+                    fixture.scopes,
+                ),
+                fixture.scopes,
+                spanContext,
+                SpanOptions(),
+                null,
+            )
         val sentryTrace = span.toSentryTrace()
 
         assertEquals(traceId, sentryTrace.traceId)
@@ -141,30 +142,32 @@ class SpanTest {
     fun `transfers span origin from options to span context`() {
         val traceId = SentryId()
         val parentSpanId = SpanId()
-        val spanContext = SpanContext(
-            traceId,
-            SpanId(),
-            parentSpanId,
-            "op",
-            null,
-            TracesSamplingDecision(true),
-            null,
-            "old-origin"
-        )
+        val spanContext =
+            SpanContext(
+                traceId,
+                SpanId(),
+                parentSpanId,
+                "op",
+                null,
+                TracesSamplingDecision(true),
+                null,
+                "old-origin",
+            )
 
         val spanOptions = SpanOptions()
         spanOptions.origin = "new-origin"
 
-        val span = Span(
-            SentryTracer(
-                TransactionContext("name", "op", TracesSamplingDecision(true)),
-                fixture.scopes
-            ),
-            fixture.scopes,
-            spanContext,
-            spanOptions,
-            null
-        )
+        val span =
+            Span(
+                SentryTracer(
+                    TransactionContext("name", "op", TracesSamplingDecision(true)),
+                    fixture.scopes,
+                ),
+                fixture.scopes,
+                spanContext,
+                spanOptions,
+                null,
+            )
 
         assertEquals("new-origin", span.spanContext.origin)
     }
@@ -213,10 +216,11 @@ class SpanTest {
 
     @Test
     fun `when span has throwable set set, it assigns itself to throwable on the Scopes`() {
-        val transaction = SentryTracer(
-            TransactionContext("name", "op"),
-            fixture.scopes
-        )
+        val transaction =
+            SentryTracer(
+                TransactionContext("name", "op"),
+                fixture.scopes,
+            )
         val span = transaction.startChild("op")
         val ex = RuntimeException()
         span.throwable = ex
@@ -281,11 +285,12 @@ class SpanTest {
     @Test
     fun `when span trim-start is enabled, trim to start of child span`() {
         // when trim start is enabled
-        val span = fixture.getSut(
-            SpanOptions().apply {
-                isTrimStart = true
-            }
-        )
+        val span =
+            fixture.getSut(
+                SpanOptions().apply {
+                    isTrimStart = true
+                },
+            )
 
         // and a child span is created
         Thread.sleep(1)
@@ -304,21 +309,23 @@ class SpanTest {
     @Test
     fun `when span trim-start is enabled, do not trim to start of child span if it started earlier`() {
         // when trim start is enabled
-        val span = fixture.getSut(
-            SpanOptions().apply {
-                isTrimStart = true
-            }
-        )
+        val span =
+            fixture.getSut(
+                SpanOptions().apply {
+                    isTrimStart = true
+                },
+            )
         val startDate = span.startDate
 
         // and a child span is created but has an earlier timestamp
-        val child1 = span.startChild(
-            "op1",
-            "desc",
-            SentryLongDate(span.startDate.nanoTimestamp() - 1000L),
-            Instrumenter.SENTRY,
-            SpanOptions()
-        ) as Span
+        val child1 =
+            span.startChild(
+                "op1",
+                "desc",
+                SentryLongDate(span.startDate.nanoTimestamp() - 1000L),
+                Instrumenter.SENTRY,
+                SpanOptions(),
+            ) as Span
         child1.finish()
         span.finish(SpanStatus.OK)
 
@@ -329,11 +336,12 @@ class SpanTest {
     @Test
     fun `when span trim-end is enabled, trim to end of child span`() {
         // when trim end is enabled
-        val span = fixture.getSut(
-            SpanOptions().apply {
-                isTrimEnd = true
-            }
-        )
+        val span =
+            fixture.getSut(
+                SpanOptions().apply {
+                    isTrimEnd = true
+                },
+            )
 
         val startDate = span.startDate
 
@@ -353,11 +361,12 @@ class SpanTest {
     @Test
     fun `when span trim-end is enabled, do not trim to end of child span if parent already finishes earlier`() {
         // when trim end is enabled
-        val span = fixture.getSut(
-            SpanOptions().apply {
-                isTrimEnd = true
-            }
-        )
+        val span =
+            fixture.getSut(
+                SpanOptions().apply {
+                    isTrimEnd = true
+                },
+            )
 
         val startDate = span.startDate
 
@@ -378,12 +387,13 @@ class SpanTest {
     @Test
     fun `when span trimming is enabled, trim to direct children spans only`() {
         // when a span with start+end trimming is enabled
-        val span = fixture.getSut(
-            SpanOptions().apply {
-                isTrimStart = true
-                isTrimEnd = true
-            }
-        )
+        val span =
+            fixture.getSut(
+                SpanOptions().apply {
+                    isTrimStart = true
+                    isTrimEnd = true
+                },
+            )
 
         // and two child spans are started
         val child1 = span.startChild("op1") as Span
@@ -412,12 +422,13 @@ class SpanTest {
     @Test
     fun `when span trimming is enabled, root span trim to all children spans`() {
         // when a root span with start+end trimming is enabled
-        val span = fixture.getRootSut(
-            TransactionOptions().apply {
-                isTrimStart = true
-                isTrimEnd = true
-            }
-        )
+        val span =
+            fixture.getRootSut(
+                TransactionOptions().apply {
+                    isTrimStart = true
+                    isTrimEnd = true
+                },
+            )
 
         // and two child spans are started
         val child1 = span.startChild("op1") as Span
@@ -580,9 +591,8 @@ class SpanTest {
         assertTrue(span.contexts.isEmpty)
     }
 
-    private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer {
-        return SentryTracer(transactionContext, fixture.scopes)
-    }
+    private fun getTransaction(transactionContext: TransactionContext = TransactionContext("name", "op")): SentryTracer =
+        SentryTracer(transactionContext, fixture.scopes)
 
     private fun startChildFromSpan(): Span {
         val transaction = getTransaction()

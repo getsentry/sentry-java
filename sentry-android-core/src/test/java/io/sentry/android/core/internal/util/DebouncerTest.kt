@@ -7,16 +7,15 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class DebouncerTest {
-
     private class Fixture : ICurrentDateProvider {
-
         var currentTimeMs: Long = 0
 
         override fun getCurrentTimeMillis(): Long = currentTimeMs
 
-        fun getDebouncer(waitTimeMs: Long = 3000, maxExecutions: Int = 1): Debouncer {
-            return Debouncer(this, waitTimeMs, maxExecutions)
-        }
+        fun getDebouncer(
+            waitTimeMs: Long = 3000,
+            maxExecutions: Int = 1,
+        ): Debouncer = Debouncer(this, waitTimeMs, maxExecutions)
     }
 
     private val fixture = Fixture()

@@ -19,7 +19,6 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 
 class SentryReactorUtilsTest {
-
     @BeforeTest
     fun setup() {
         Hooks.enableAutomaticContextPropagation()
@@ -35,15 +34,17 @@ class SentryReactorUtilsTest {
     fun `propagates scopes inside mono`() {
         val scopesToUse = mock<IScopes>()
         var scopesInside: IScopes? = null
-        val mono = SentryReactorUtils.withSentryScopes(
-            Mono.just("hello")
-                .publishOn(Schedulers.boundedElastic())
-                .map { it ->
-                    scopesInside = Sentry.getCurrentScopes()
-                    it
-                },
-            scopesToUse
-        )
+        val mono =
+            SentryReactorUtils.withSentryScopes(
+                Mono
+                    .just("hello")
+                    .publishOn(Schedulers.boundedElastic())
+                    .map { it ->
+                        scopesInside = Sentry.getCurrentScopes()
+                        it
+                    },
+                scopesToUse,
+            )
 
         assertEquals("hello", mono.block())
         assertSame(scopesToUse, scopesInside)
@@ -53,15 +54,17 @@ class SentryReactorUtilsTest {
     fun `propagates scopes inside flux`() {
         val scopesToUse = mock<IScopes>()
         var scopesInside: IScopes? = null
-        val flux = SentryReactorUtils.withSentryScopes(
-            Flux.just("hello")
-                .publishOn(Schedulers.boundedElastic())
-                .map { it ->
-                    scopesInside = Sentry.getCurrentScopes()
-                    it
-                },
-            scopesToUse
-        )
+        val flux =
+            SentryReactorUtils.withSentryScopes(
+                Flux
+                    .just("hello")
+                    .publishOn(Schedulers.boundedElastic())
+                    .map { it ->
+                        scopesInside = Sentry.getCurrentScopes()
+                        it
+                    },
+                scopesToUse,
+            )
 
         assertEquals("hello", flux.blockFirst())
         assertSame(scopesToUse, scopesInside)
@@ -71,12 +74,14 @@ class SentryReactorUtilsTest {
     fun `without reactive utils scopes is not propagated to mono`() {
         val scopesToUse = mock<IScopes>()
         var scopesInside: IScopes? = null
-        val mono = Mono.just("hello")
-            .publishOn(Schedulers.boundedElastic())
-            .map { it ->
-                scopesInside = Sentry.getCurrentScopes()
-                it
-            }
+        val mono =
+            Mono
+                .just("hello")
+                .publishOn(Schedulers.boundedElastic())
+                .map { it ->
+                    scopesInside = Sentry.getCurrentScopes()
+                    it
+                }
 
         assertEquals("hello", mono.block())
         assertNotSame(scopesToUse, scopesInside)
@@ -86,12 +91,14 @@ class SentryReactorUtilsTest {
     fun `without reactive utils scopes is not propagated to flux`() {
         val scopesToUse = mock<IScopes>()
         var scopesInside: IScopes? = null
-        val flux = Flux.just("hello")
-            .publishOn(Schedulers.boundedElastic())
-            .map { it ->
-                scopesInside = Sentry.getCurrentScopes()
-                it
-            }
+        val flux =
+            Flux
+                .just("hello")
+                .publishOn(Schedulers.boundedElastic())
+                .map { it ->
+                    scopesInside = Sentry.getCurrentScopes()
+                    it
+                }
 
         assertEquals("hello", flux.blockFirst())
         assertNotSame(scopesToUse, scopesInside)

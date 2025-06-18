@@ -22,7 +22,9 @@ configure<JavaPluginExtension> {
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
-        languageVersion = libs.versions.kotlin.compatible.version.get()
+        languageVersion =
+            libs.versions.kotlin.compatible.version
+                .get()
         freeCompilerArgs = listOf("-Xjsr305=strict")
     }
 }
@@ -126,7 +128,7 @@ tasks.jar {
             "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-spring-jakarta",
             "Implementation-Vendor" to "Sentry",
             "Implementation-Title" to project.name,
-            "Implementation-Version" to project.version
+            "Implementation-Version" to project.version,
         )
     }
 }

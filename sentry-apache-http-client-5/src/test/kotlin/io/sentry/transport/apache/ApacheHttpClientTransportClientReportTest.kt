@@ -33,7 +33,6 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 
 class ApacheHttpClientTransportClientReportTest {
-
     class Fixture {
         val options: SentryOptions
         val logger = mock<ILogger>()
@@ -61,7 +60,10 @@ class ApacheHttpClientTransportClientReportTest {
                 .thenReturn(envelopeAfterClientReportAttached)
         }
 
-        fun getSut(response: SimpleHttpResponse? = null, queueFull: Boolean = false): ApacheHttpClientTransport {
+        fun getSut(
+            response: SimpleHttpResponse? = null,
+            queueFull: Boolean = false,
+        ): ApacheHttpClientTransport {
             val transport = ApacheHttpClientTransport(options, requestDetails, client, rateLimiter, currentlyRunning)
 
             if (response != null) {
@@ -103,7 +105,10 @@ class ApacheHttpClientTransportClientReportTest {
         sut.send(fixture.envelopeBeforeClientReportAttached)
 
         verify(fixture.clientReportRecorder, never()).attachReportToEnvelope(any())
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), eq(fixture.envelopeBeforeClientReportAttached))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), eq(fixture.envelopeBeforeClientReportAttached))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -114,7 +119,10 @@ class ApacheHttpClientTransportClientReportTest {
         sut.send(fixture.envelopeBeforeClientReportAttached, retryableHint())
 
         verify(fixture.clientReportRecorder, never()).attachReportToEnvelope(any())
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeBeforeClientReportAttached))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeBeforeClientReportAttached))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -125,7 +133,10 @@ class ApacheHttpClientTransportClientReportTest {
         sut.send(fixture.envelopeBeforeClientReportAttached)
 
         verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -147,7 +158,10 @@ class ApacheHttpClientTransportClientReportTest {
         sut.send(fixture.envelopeBeforeClientReportAttached)
 
         verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -204,7 +218,10 @@ class ApacheHttpClientTransportClientReportTest {
         sut.send(fixture.envelopeBeforeClientReportAttached)
 
         verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeClientReportAttached))
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterClientReportAttached))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -218,7 +235,5 @@ class TestRetryable : Retryable {
         this.retry = retry
     }
 
-    override fun isRetry(): Boolean {
-        return this.retry
-    }
+    override fun isRetry(): Boolean = this.retry
 }

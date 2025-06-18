@@ -5,7 +5,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AutoClosableReentrantLockTest {
-
     @Test
     fun `calls lock in acquire and unlock on close`() {
         val lock = AutoClosableReentrantLock()

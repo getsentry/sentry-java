@@ -13,39 +13,31 @@ class NoOpHubTest {
     private var sut: NoOpHub = NoOpHub.getInstance()
 
     @Test
-    fun `getLastEventId returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
+    fun `getLastEventId returns empty SentryId`() = assertEquals(SentryId.EMPTY_ID, sut.lastEventId)
 
     @Test
-    fun `addBreadcrumb doesn't throw on null breadcrumb`() =
-        sut.addBreadcrumb("breadcrumb")
+    fun `addBreadcrumb doesn't throw on null breadcrumb`() = sut.addBreadcrumb("breadcrumb")
 
     @Test
     fun `hub is always disabled`() = assertFalse(sut.isEnabled)
 
     @Test
-    fun `captureEvent returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureEvent(SentryEvent()))
+    fun `captureEvent returns empty SentryId`() = assertEquals(SentryId.EMPTY_ID, sut.captureEvent(SentryEvent()))
 
     @Test
-    fun `captureTransaction returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock<Hint>()))
+    fun `captureTransaction returns empty SentryId`() = assertEquals(SentryId.EMPTY_ID, sut.captureTransaction(mock(), mock<Hint>()))
 
     @Test
-    fun `captureProfileChunk returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureProfileChunk(mock()))
+    fun `captureProfileChunk returns empty SentryId`() = assertEquals(SentryId.EMPTY_ID, sut.captureProfileChunk(mock()))
 
     @Test
-    fun `captureException returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureException(RuntimeException()))
+    fun `captureException returns empty SentryId`() = assertEquals(SentryId.EMPTY_ID, sut.captureException(RuntimeException()))
 
     @Test
-    fun `captureMessage returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureMessage("message"))
+    fun `captureMessage returns empty SentryId`() = assertEquals(SentryId.EMPTY_ID, sut.captureMessage("message"))
 
     @Test
-    fun `captureFeedback returns empty SentryId`() =
-        assertEquals(SentryId.EMPTY_ID, sut.captureFeedback(mock()))
+    fun `captureFeedback returns empty SentryId`() = assertEquals(SentryId.EMPTY_ID, sut.captureFeedback(mock()))
 
     @Test
     fun `close does not affect captureEvent`() {

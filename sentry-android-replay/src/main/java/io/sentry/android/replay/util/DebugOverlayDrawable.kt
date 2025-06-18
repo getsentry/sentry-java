@@ -9,7 +9,6 @@ import android.graphics.Rect
 import android.graphics.drawable.Drawable
 
 internal class DebugOverlayDrawable : Drawable() {
-
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val padding = 6f
     private val tmpRect = Rect()
@@ -46,7 +45,7 @@ internal class DebugOverlayDrawable : Drawable() {
                 canvas,
                 topLeftLabel,
                 mask.left.toFloat(),
-                mask.top.toFloat()
+                mask.top.toFloat(),
             )
 
             val bottomRightLabel = "${mask.right}/${mask.bottom}"
@@ -55,7 +54,7 @@ internal class DebugOverlayDrawable : Drawable() {
                 canvas,
                 bottomRightLabel,
                 mask.right.toFloat() - tmpRect.width(),
-                mask.bottom.toFloat() + tmpRect.height()
+                mask.bottom.toFloat() + tmpRect.height(),
             )
         }
     }
@@ -64,7 +63,7 @@ internal class DebugOverlayDrawable : Drawable() {
         canvas: Canvas,
         bottomRightLabel: String,
         x: Float,
-        y: Float
+        y: Float,
     ) {
         paint.setColor(TEXT_OUTLINE_COLOR)
         paint.style = Paint.Style.STROKE
@@ -72,7 +71,7 @@ internal class DebugOverlayDrawable : Drawable() {
             bottomRightLabel,
             x,
             y,
-            paint
+            paint,
         )
 
         paint.setColor(TEXT_COLOR)
@@ -81,7 +80,7 @@ internal class DebugOverlayDrawable : Drawable() {
             bottomRightLabel,
             x,
             y,
-            paint
+            paint,
         )
     }
 

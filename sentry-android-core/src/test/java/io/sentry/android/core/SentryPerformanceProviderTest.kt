@@ -35,10 +35,9 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(
     sdk = [Build.VERSION_CODES.N],
-    shadows = [SentryShadowProcess::class]
+    shadows = [SentryShadowProcess::class],
 )
 class SentryPerformanceProviderTest {
-
     private lateinit var cache: File
     private lateinit var sentryCache: File
     private lateinit var traceDir: File
@@ -50,7 +49,11 @@ class SentryPerformanceProviderTest {
         lateinit var configFile: File
         var activityLifecycleCallbacks: MutableList<ActivityLifecycleCallbacks> = mutableListOf()
 
-        fun getSut(sdkVersion: Int = Build.VERSION_CODES.S, authority: String = AUTHORITY, handleFile: ((config: File) -> Unit)? = null): SentryPerformanceProvider {
+        fun getSut(
+            sdkVersion: Int = Build.VERSION_CODES.S,
+            authority: String = AUTHORITY,
+            handleFile: ((config: File) -> Unit)? = null,
+        ): SentryPerformanceProvider {
             val buildInfoProvider: BuildInfoProvider = mock()
             whenever(buildInfoProvider.sdkInfoVersion).thenReturn(sdkVersion)
             whenever(mockContext.cacheDir).thenReturn(cache)
@@ -148,7 +151,7 @@ class SentryPerformanceProviderTest {
         assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
         verify(fixture.logger).log(
             eq(SentryLevel.WARNING),
-            eq("Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start.")
+            eq("Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start."),
         )
     }
 
@@ -160,7 +163,7 @@ class SentryPerformanceProviderTest {
         assertNull(AppStartMetrics.getInstance().appStartProfiler)
         verify(fixture.logger).log(
             eq(SentryLevel.INFO),
-            eq("Profiling is not enabled. App start profiling will not start.")
+            eq("Profiling is not enabled. App start profiling will not start."),
         )
     }
 
@@ -172,7 +175,7 @@ class SentryPerformanceProviderTest {
         assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
         verify(fixture.logger).log(
             eq(SentryLevel.INFO),
-            eq("Profiling is not enabled. App start profiling will not start.")
+            eq("Profiling is not enabled. App start profiling will not start."),
         )
     }
 
@@ -188,7 +191,7 @@ class SentryPerformanceProviderTest {
         assertFalse(AppStartMetrics.getInstance().appStartSamplingDecision!!.profileSampled)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
-            eq("App start profiling was not sampled. It will not start.")
+            eq("App start profiling was not sampled. It will not start."),
         )
     }
 
@@ -203,7 +206,7 @@ class SentryPerformanceProviderTest {
         assertFalse(AppStartMetrics.getInstance().appStartSamplingDecision!!.profileSampled)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
-            eq("App start profiling was not sampled. It will not start.")
+            eq("App start profiling was not sampled. It will not start."),
         )
     }
 
@@ -216,7 +219,7 @@ class SentryPerformanceProviderTest {
         assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
-            eq("App start profiling was not sampled. It will not start.")
+            eq("App start profiling was not sampled. It will not start."),
         )
     }
 
@@ -231,7 +234,7 @@ class SentryPerformanceProviderTest {
         assertTrue(AppStartMetrics.getInstance().appStartContinuousProfiler!!.isRunning)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
-            eq("App start continuous profiling started.")
+            eq("App start continuous profiling started."),
         )
     }
 
@@ -247,7 +250,7 @@ class SentryPerformanceProviderTest {
         assertTrue(AppStartMetrics.getInstance().appStartSamplingDecision!!.profileSampled)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
-            eq("App start profiling started.")
+            eq("App start profiling started."),
         )
     }
 
@@ -260,15 +263,16 @@ class SentryPerformanceProviderTest {
         assertTrue(AppStartMetrics.getInstance().appStartContinuousProfiler!!.isRunning)
         verify(fixture.logger).log(
             eq(SentryLevel.DEBUG),
-            eq("App start continuous profiling started.")
+            eq("App start continuous profiling started."),
         )
     }
 
     @Test
     fun `when provider is closed, profiler is stopped`() {
-        val provider = fixture.getSut { config ->
-            writeConfig(config, continuousProfilingEnabled = false)
-        }
+        val provider =
+            fixture.getSut { config ->
+                writeConfig(config, continuousProfilingEnabled = false)
+            }
         provider.shutdown()
         assertNotNull(AppStartMetrics.getInstance().appStartProfiler)
         assertFalse(AppStartMetrics.getInstance().appStartProfiler!!.isRunning)
@@ -292,9 +296,10 @@ class SentryPerformanceProviderTest {
 
     @Test
     fun `when provider is closed, continuous profiler is stopped`() {
-        val provider = fixture.getSut { config ->
-            writeConfig(config, profilingEnabled = false)
-        }
+        val provider =
+            fixture.getSut { config ->
+                writeConfig(config, profilingEnabled = false)
+            }
         provider.shutdown()
         assertNotNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
         assertFalse(AppStartMetrics.getInstance().appStartContinuousProfiler!!.isRunning)
@@ -311,7 +316,7 @@ class SentryPerformanceProviderTest {
         continuousProfileSampled: Boolean = true,
         isEnableAppStartProfiling: Boolean = true,
         isStartProfilerOnAppStart: Boolean = true,
-        profilingTracesDirPath: String = traceDir.absolutePath
+        profilingTracesDirPath: String = traceDir.absolutePath,
     ) {
         val appStartProfilingOptions = SentryAppStartProfilingOptions()
         appStartProfilingOptions.isProfilingEnabled = profilingEnabled

@@ -10,9 +10,8 @@ import io.sentry.rrweb.RRWebInteractionMoveEvent.Position
 import io.sentry.transport.ICurrentDateProvider
 
 internal class ReplayGestureConverter(
-    private val dateProvider: ICurrentDateProvider
+    private val dateProvider: ICurrentDateProvider,
 ) {
-
     internal companion object {
         // rrweb values
         private const val TOUCH_MOVE_DEBOUNCE_THRESHOLD = 50
@@ -23,7 +22,10 @@ internal class ReplayGestureConverter(
     private var touchMoveBaseline = 0L
     private var lastCapturedMoveEvent = 0L
 
-    fun convert(event: MotionEvent, recorderConfig: ScreenshotRecorderConfig): List<RRWebIncrementalSnapshotEvent>? {
+    fun convert(
+        event: MotionEvent,
+        recorderConfig: ScreenshotRecorderConfig,
+    ): List<RRWebIncrementalSnapshotEvent>? {
         return when (event.actionMasked) {
             MotionEvent.ACTION_MOVE -> {
                 // we only throttle move events as those can be overwhelming
@@ -46,12 +48,13 @@ internal class ReplayGestureConverter(
                         touchMoveBaseline = now
                     }
 
-                    currentPositions[pId]!! += Position().apply {
-                        x = event.getX(pIndex) * recorderConfig.scaleFactorX
-                        y = event.getY(pIndex) * recorderConfig.scaleFactorY
-                        id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
-                        timeOffset = now - touchMoveBaseline
-                    }
+                    currentPositions[pId]!! +=
+                        Position().apply {
+                            x = event.getX(pIndex) * recorderConfig.scaleFactorX
+                            y = event.getY(pIndex) * recorderConfig.scaleFactorY
+                            id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
+                            timeOffset = now - touchMoveBaseline
+                        }
                 }
 
                 val totalOffset = now - touchMoveBaseline
@@ -59,14 +62,16 @@ internal class ReplayGestureConverter(
                     val moveEvents = ArrayList<RRWebInteractionMoveEvent>(currentPositions.size)
                     for ((pointerId, positions) in currentPositions) {
                         if (positions.isNotEmpty()) {
-                            moveEvents += RRWebInteractionMoveEvent().apply {
-                                this.timestamp = now
-                                this.positions = positions.map { pos ->
-                                    pos.timeOffset -= totalOffset
-                                    pos
+                            moveEvents +=
+                                RRWebInteractionMoveEvent().apply {
+                                    this.timestamp = now
+                                    this.positions =
+                                        positions.map { pos ->
+                                            pos.timeOffset -= totalOffset
+                                            pos
+                                        }
+                                    this.pointerId = pointerId
                                 }
-                                this.pointerId = pointerId
-                            }
                             currentPositions[pointerId]!!.clear()
                         }
                     }
@@ -78,7 +83,8 @@ internal class ReplayGestureConverter(
             }
 
             MotionEvent.ACTION_DOWN,
-            MotionEvent.ACTION_POINTER_DOWN -> {
+            MotionEvent.ACTION_POINTER_DOWN,
+            -> {
                 val pId = event.getPointerId(event.actionIndex)
                 val pIndex = event.findPointerIndex(pId)
 
@@ -97,11 +103,12 @@ internal class ReplayGestureConverter(
                         id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
                         pointerId = pId
                         interactionType = InteractionType.TouchStart
-                    }
+                    },
                 )
             }
             MotionEvent.ACTION_UP,
-            MotionEvent.ACTION_POINTER_UP -> {
+            MotionEvent.ACTION_POINTER_UP,
+            -> {
                 val pId = event.getPointerId(event.actionIndex)
                 val pIndex = event.findPointerIndex(pId)
 
@@ -120,7 +127,7 @@ internal class ReplayGestureConverter(
                         id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
                         pointerId = pId
                         interactionType = InteractionType.TouchEnd
-                    }
+                    },
                 )
             }
             MotionEvent.ACTION_CANCEL -> {
@@ -134,7 +141,7 @@ internal class ReplayGestureConverter(
                         id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
                         pointerId = 0 // the pointerId is not used for TouchCancel, so just set it to 0
                         interactionType = InteractionType.TouchCancel
-                    }
+                    },
                 )
             }
 

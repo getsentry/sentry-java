@@ -21,7 +21,6 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
 class SentryModifierComposeTest {
-
     companion object {
         private const val TAG_VALUE = "ExampleTagValue"
     }
@@ -29,18 +28,19 @@ class SentryModifierComposeTest {
     // workaround for robolectric tests with composeRule
     // from https://github.com/robolectric/robolectric/pull/4736#issuecomment-1831034882
     @get:Rule(order = 1)
-    val addActivityToRobolectricRule = object : TestWatcher() {
-        override fun starting(description: Description?) {
-            super.starting(description)
-            val appContext: Application = ApplicationProvider.getApplicationContext()
-            Shadows.shadowOf(appContext.packageManager).addActivityIfNotPresent(
-                ComponentName(
-                    appContext.packageName,
-                    ComponentActivity::class.java.name
+    val addActivityToRobolectricRule =
+        object : TestWatcher() {
+            override fun starting(description: Description?) {
+                super.starting(description)
+                val appContext: Application = ApplicationProvider.getApplicationContext()
+                Shadows.shadowOf(appContext.packageManager).addActivityIfNotPresent(
+                    ComponentName(
+                        appContext.packageName,
+                        ComponentActivity::class.java.name,
+                    ),
                 )
-            )
+            }
         }
-    }
 
     @get:Rule(order = 2)
     val rule = createAndroidComposeRule<ComponentActivity>()
@@ -50,10 +50,11 @@ class SentryModifierComposeTest {
         rule.setContent {
             Box(modifier = Modifier.sentryTag(TAG_VALUE))
         }
-        rule.onNode(
-            SemanticsMatcher(TAG_VALUE) {
-                it.config.find { (key, _) -> key.name == SentryModifier.TAG }?.value == TAG_VALUE
-            }
-        ).assertExists()
+        rule
+            .onNode(
+                SemanticsMatcher(TAG_VALUE) {
+                    it.config.find { (key, _) -> key.name == SentryModifier.TAG }?.value == TAG_VALUE
+                },
+            ).assertExists()
     }
 }

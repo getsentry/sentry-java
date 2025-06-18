@@ -7,7 +7,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class AppTest {
-
     @Test
     fun `copying app wont have the same references`() {
         val app = App()

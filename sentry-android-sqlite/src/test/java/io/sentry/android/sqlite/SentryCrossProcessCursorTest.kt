@@ -25,10 +25,14 @@ class SentryCrossProcessCursorTest {
         lateinit var options: SentryOptions
         lateinit var sentryTracer: SentryTracer
 
-        fun getSut(sql: String, isSpanActive: Boolean = true): SentryCrossProcessCursor {
-            options = SentryOptions().apply {
-                dsn = "https://key@sentry.io/proj"
-            }
+        fun getSut(
+            sql: String,
+            isSpanActive: Boolean = true,
+        ): SentryCrossProcessCursor {
+            options =
+                SentryOptions().apply {
+                    dsn = "https://key@sentry.io/proj"
+                }
             whenever(scopes.options).thenReturn(options)
             sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
 
@@ -114,7 +118,10 @@ class SentryCrossProcessCursorTest {
         assertEquals(0, fixture.sentryTracer.children.size)
     }
 
-    private fun assertSqlSpanCreated(sql: String, span: ISpan?) {
+    private fun assertSqlSpanCreated(
+        sql: String,
+        span: ISpan?,
+    ) {
         assertNotNull(span)
         assertEquals("db.sql.query", span.operation)
         assertEquals(sql, span.description)

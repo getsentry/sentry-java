@@ -31,7 +31,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class SentryApollo3InterceptorWithVariablesTest {
-
     class Fixture {
         val server = MockWebServer()
         val scopes = mock<IScopes>()
@@ -54,22 +53,24 @@ class SentryApollo3InterceptorWithVariablesTest {
   }
 }""",
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
-            beforeSpan: BeforeSpanCallback? = null
+            beforeSpan: BeforeSpanCallback? = null,
         ): ApolloClient {
             whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
                     dsn = "http://key@localhost/proj"
-                }
+                },
             )
 
             server.enqueue(
                 MockResponse()
                     .setBody(responseBody)
                     .setSocketPolicy(socketPolicy)
-                    .setResponseCode(httpStatusCode)
+                    .setResponseCode(httpStatusCode),
             )
 
-            return ApolloClient.Builder().serverUrl(server.url("/").toString())
+            return ApolloClient
+                .Builder()
+                .serverUrl(server.url("/").toString())
                 .sentryTracing(scopes = scopes, beforeSpan = beforeSpan, captureFailedRequests = false)
                 .build()
         }
@@ -88,7 +89,7 @@ class SentryApollo3InterceptorWithVariablesTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -103,7 +104,7 @@ class SentryApollo3InterceptorWithVariablesTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -118,7 +119,7 @@ class SentryApollo3InterceptorWithVariablesTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -133,7 +134,7 @@ class SentryApollo3InterceptorWithVariablesTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -148,7 +149,7 @@ class SentryApollo3InterceptorWithVariablesTest {
                 assertEquals(193L, it.data["request_body_size"])
                 assertEquals("query", it.data["operation_type"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -172,20 +173,25 @@ class SentryApollo3InterceptorWithVariablesTest {
         }
     }
 
-    private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true, id: String = "83") = runBlocking {
+    private fun executeQuery(
+        sut: ApolloClient = fixture.getSut(),
+        isSpanActive: Boolean = true,
+        id: String = "83",
+    ) = runBlocking {
         var tx: ITransaction? = null
         if (isSpanActive) {
             tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
             whenever(fixture.scopes.span).thenReturn(tx)
         }
 
-        val coroutine = launch {
-            try {
-                sut.query(LaunchDetailsQuery(id)).execute()
-            } catch (e: ApolloException) {
-                return@launch
+        val coroutine =
+            launch {
+                try {
+                    sut.query(LaunchDetailsQuery(id)).execute()
+                } catch (e: ApolloException) {
+                    return@launch
+                }
             }
-        }
 
         coroutine.join()
         tx?.finish()

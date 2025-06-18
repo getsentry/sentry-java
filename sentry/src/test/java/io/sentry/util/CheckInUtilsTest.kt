@@ -24,7 +24,6 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class CheckInUtilsTest {
-
     @Test
     fun `ignores exact match`() {
         assertTrue(CheckInUtils.isIgnored(listOf(FilterString("slugA")), "slugA"))
@@ -67,9 +66,10 @@ class CheckInUtilsTest {
             whenever(scopes.forkedScopes(any())).thenReturn(scopes)
             whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
             whenever(scopes.options).thenReturn(SentryOptions())
-            val returnValue = CheckInUtils.withCheckIn("monitor-1") {
-                return@withCheckIn "test1"
-            }
+            val returnValue =
+                CheckInUtils.withCheckIn("monitor-1") {
+                    return@withCheckIn "test1"
+                }
 
             assertEquals("test1", returnValue)
             inOrder(scopes, lifecycleToken) {
@@ -80,13 +80,13 @@ class CheckInUtilsTest {
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
-                    }
+                    },
                 )
                 verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals(CheckInStatus.OK.apiName(), it.status)
-                    }
+                    },
                 )
                 verify(lifecycleToken).close()
             }
@@ -105,9 +105,10 @@ class CheckInUtilsTest {
             whenever(scopes.forkedScopes(any())).thenReturn(scopes)
             whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
             whenever(scopes.options).thenReturn(SentryOptions())
-            val returnValue = CheckInUtils.withCheckIn("monitor-1", "environment-1") {
-                return@withCheckIn "test1"
-            }
+            val returnValue =
+                CheckInUtils.withCheckIn("monitor-1", "environment-1") {
+                    return@withCheckIn "test1"
+                }
 
             assertEquals("test1", returnValue)
             inOrder(scopes, lifecycleToken) {
@@ -119,14 +120,14 @@ class CheckInUtilsTest {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals("environment-1", it.environment)
                         assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
-                    }
+                    },
                 )
                 verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals("environment-1", it.environment)
                         assertEquals(CheckInStatus.OK.apiName(), it.status)
-                    }
+                    },
                 )
                 verify(lifecycleToken).close()
             }
@@ -162,13 +163,13 @@ class CheckInUtilsTest {
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
-                    }
+                    },
                 )
                 verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals(CheckInStatus.ERROR.apiName(), it.status)
-                    }
+                    },
                 )
                 verify(lifecycleToken).close()
             }
@@ -188,9 +189,10 @@ class CheckInUtilsTest {
             whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
             whenever(scopes.options).thenReturn(SentryOptions())
             val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY))
-            val returnValue = CheckInUtils.withCheckIn("monitor-1", monitorConfig) {
-                "test1"
-            }
+            val returnValue =
+                CheckInUtils.withCheckIn("monitor-1", monitorConfig) {
+                    "test1"
+                }
 
             assertEquals("test1", returnValue)
             inOrder(scopes, lifecycleToken) {
@@ -202,13 +204,13 @@ class CheckInUtilsTest {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertSame(monitorConfig, it.monitorConfig)
                         assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
-                    }
+                    },
                 )
                 verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals(CheckInStatus.OK.apiName(), it.status)
-                    }
+                    },
                 )
                 verify(lifecycleToken).close()
             }
@@ -227,13 +229,15 @@ class CheckInUtilsTest {
             whenever(scopes.forkedScopes(any())).thenReturn(scopes)
             whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
             whenever(scopes.options).thenReturn(SentryOptions())
-            val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY)).apply {
-                failureIssueThreshold = 10
-                recoveryThreshold = 20
-            }
-            val returnValue = CheckInUtils.withCheckIn("monitor-1", monitorConfig) {
-                "test1"
-            }
+            val monitorConfig =
+                MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY)).apply {
+                    failureIssueThreshold = 10
+                    recoveryThreshold = 20
+                }
+            val returnValue =
+                CheckInUtils.withCheckIn("monitor-1", monitorConfig) {
+                    "test1"
+                }
 
             assertEquals("test1", returnValue)
             inOrder(scopes, lifecycleToken) {
@@ -245,13 +249,13 @@ class CheckInUtilsTest {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertSame(monitorConfig, it.monitorConfig)
                         assertEquals(CheckInStatus.IN_PROGRESS.apiName(), it.status)
-                    }
+                    },
                 )
                 verify(scopes).captureCheckIn(
                     check {
                         assertEquals("monitor-1", it.monitorSlug)
                         assertEquals(CheckInStatus.OK.apiName(), it.status)
-                    }
+                    },
                 )
                 verify(lifecycleToken).close()
             }
@@ -265,14 +269,15 @@ class CheckInUtilsTest {
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
             whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
-                    cron = SentryOptions.Cron().apply {
-                        defaultCheckinMargin = 20
-                        defaultMaxRuntime = 30
-                        defaultTimezone = "America/New_York"
-                        defaultFailureIssueThreshold = 40
-                        defaultRecoveryThreshold = 50
-                    }
-                }
+                    cron =
+                        SentryOptions.Cron().apply {
+                            defaultCheckinMargin = 20
+                            defaultMaxRuntime = 30
+                            defaultTimezone = "America/New_York"
+                            defaultFailureIssueThreshold = 40
+                            defaultRecoveryThreshold = 50
+                        }
+                },
             )
 
             val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY))
@@ -292,19 +297,21 @@ class CheckInUtilsTest {
             sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
             whenever(scopes.options).thenReturn(
                 SentryOptions().apply {
-                    cron = SentryOptions.Cron().apply {
-                        defaultCheckinMargin = 20
-                        defaultMaxRuntime = 50
-                        defaultTimezone = "America/New_York"
-                    }
-                }
+                    cron =
+                        SentryOptions.Cron().apply {
+                            defaultCheckinMargin = 20
+                            defaultMaxRuntime = 50
+                            defaultTimezone = "America/New_York"
+                        }
+                },
             )
 
-            val monitorConfig = MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY)).apply {
-                checkinMargin = 10
-                maxRuntime = 30
-                timezone = "America/Los_Angeles"
-            }
+            val monitorConfig =
+                MonitorConfig(MonitorSchedule.interval(7, MonitorScheduleUnit.DAY)).apply {
+                    checkinMargin = 10
+                    maxRuntime = 30
+                    timezone = "America/Los_Angeles"
+                }
 
             assertEquals(10, monitorConfig.checkinMargin)
             assertEquals(30, monitorConfig.maxRuntime)

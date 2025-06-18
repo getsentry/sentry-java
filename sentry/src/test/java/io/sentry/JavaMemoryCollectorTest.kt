@@ -6,7 +6,6 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 
 class JavaMemoryCollectorTest {
-
     private val fixture = Fixture()
 
     private class Fixture {

@@ -20,14 +20,17 @@ import kotlin.test.assertFails
 import kotlin.test.assertTrue
 
 class MapObjectWriterTest {
-
     enum class BasicEnum {
-        A
+        A,
     }
 
     class BasicSerializable : JsonSerializable {
-        override fun serialize(writer: ObjectWriter, logger: ILogger) {
-            writer.beginObject()
+        override fun serialize(
+            writer: ObjectWriter,
+            logger: ILogger,
+        ) {
+            writer
+                .beginObject()
                 .name("key")
                 .value("value")
                 .endObject()
@@ -64,7 +67,7 @@ class MapObjectWriterTest {
         writer.name("Currency").value(logger, Currency.getInstance("EUR"))
         writer.name("Calendar").value(
             logger,
-            Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = 0 }
+            Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = 0 },
         )
         writer.name("Enum").value(logger, BasicEnum.A)
 
@@ -80,9 +83,9 @@ class MapObjectWriterTest {
         assertEquals("GMT", data["TimeZone"])
         assertEquals(
             mapOf(
-                kotlin.Pair("key", "value")
+                kotlin.Pair("key", "value"),
             ),
-            data["JsonSerializable"]
+            data["JsonSerializable"],
         )
 
         assertEquals(listOf("a", "b"), data["Collection"])
@@ -102,9 +105,9 @@ class MapObjectWriterTest {
                 kotlin.Pair("dayOfMonth", 1),
                 kotlin.Pair("hourOfDay", 0),
                 kotlin.Pair("minute", 0),
-                kotlin.Pair("second", 0)
+                kotlin.Pair("second", 0),
             ),
-            data["Calendar"]
+            data["Calendar"],
         )
         assertEquals("A", data["Enum"])
     }

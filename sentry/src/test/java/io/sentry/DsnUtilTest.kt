@@ -5,7 +5,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class DsnUtilTest {
-
     companion object {
         val DSN = "https://publicKey:secretKey@host/path/id?sample.rate=0.1"
     }
@@ -42,17 +41,26 @@ class DsnUtilTest {
 
     @Test
     fun `returns false for same host but different port`() {
-        assertFalse(DsnUtil.urlContainsDsnHost(optionsWithDsn("http://publicKey:secretKey@localhost:8080/path/id?sample.rate=0.1"), "localhost:8081"))
+        assertFalse(
+            DsnUtil.urlContainsDsnHost(
+                optionsWithDsn("http://publicKey:secretKey@localhost:8080/path/id?sample.rate=0.1"),
+                "localhost:8081",
+            ),
+        )
     }
 
     @Test
     fun `returns true for same host and port`() {
-        assertTrue(DsnUtil.urlContainsDsnHost(optionsWithDsn("http://publicKey:secretKey@localhost:8080/path/id?sample.rate=0.1"), "localhost:8080"))
+        assertTrue(
+            DsnUtil.urlContainsDsnHost(
+                optionsWithDsn("http://publicKey:secretKey@localhost:8080/path/id?sample.rate=0.1"),
+                "localhost:8080",
+            ),
+        )
     }
 
-    private fun optionsWithDsn(dsn: String?): SentryOptions {
-        return SentryOptions().also {
+    private fun optionsWithDsn(dsn: String?): SentryOptions =
+        SentryOptions().also {
             it.dsn = dsn
         }
-    }
 }

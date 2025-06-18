@@ -26,17 +26,17 @@ import kotlin.test.Test
 import kotlin.test.assertFailsWith
 
 class AsyncHttpTransportClientReportTest {
-
     private class Fixture {
         var connection = mock<HttpConnection>()
         var transportGate = mock<ITransportGate>()
         var executor = mock<QueuedThreadPoolExecutor>()
         var rateLimiter = mock<RateLimiter>()
-        var sentryOptions: SentryOptions = SentryOptions().apply {
-            dsn = dsnString
-            setSerializer(mock())
-            setEnvelopeDiskCache(mock())
-        }
+        var sentryOptions: SentryOptions =
+            SentryOptions().apply {
+                dsn = dsnString
+                setSerializer(mock())
+                setEnvelopeDiskCache(mock())
+            }
         var clientReportRecorder = mock<IClientReportRecorder>()
         val envelopeBeforeAttachingClientReport = SentryEnvelope.from(sentryOptions.serializer, createSession(), null)
         val envelopeAfterAttachingClientReport = SentryEnvelope.from(sentryOptions.serializer, createSession(), null)
@@ -46,9 +46,7 @@ class AsyncHttpTransportClientReportTest {
             return AsyncHttpTransport(executor, sentryOptions, rateLimiter, transportGate, connection)
         }
 
-        private fun createSession(): Session {
-            return Session("123", User(), "env", "release")
-        }
+        private fun createSession(): Session = Session("123", User(), "env", "release")
     }
 
     private val fixture = Fixture()
@@ -95,7 +93,10 @@ class AsyncHttpTransportClientReportTest {
 
         // then
         verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterAttachingClientReport))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterAttachingClientReport))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -127,7 +128,10 @@ class AsyncHttpTransportClientReportTest {
 
         // then
         verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterAttachingClientReport))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterAttachingClientReport))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -141,7 +145,10 @@ class AsyncHttpTransportClientReportTest {
 
         // then
         verify(fixture.clientReportRecorder, never()).attachReportToEnvelope(any())
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeBeforeAttachingClientReport))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeBeforeAttachingClientReport))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -155,7 +162,10 @@ class AsyncHttpTransportClientReportTest {
 
         // then
         verify(fixture.clientReportRecorder, never()).attachReportToEnvelope(any())
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeBeforeAttachingClientReport))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeBeforeAttachingClientReport))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -169,7 +179,10 @@ class AsyncHttpTransportClientReportTest {
 
         // then
         verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeAfterAttachingClientReport))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeAfterAttachingClientReport))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -183,7 +196,10 @@ class AsyncHttpTransportClientReportTest {
 
         // then
         verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeAfterAttachingClientReport))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.QUEUE_OVERFLOW), same(fixture.envelopeAfterAttachingClientReport))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -200,7 +216,10 @@ class AsyncHttpTransportClientReportTest {
 
         // then
         verify(fixture.clientReportRecorder, times(1)).attachReportToEnvelope(same(fixture.envelopeBeforeAttachingClientReport))
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterAttachingClientReport))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeAfterAttachingClientReport))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -263,7 +282,10 @@ class AsyncHttpTransportClientReportTest {
 
         // then
         verify(fixture.clientReportRecorder, never()).attachReportToEnvelope(any())
-        verify(fixture.clientReportRecorder, times(1)).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeBeforeAttachingClientReport))
+        verify(
+            fixture.clientReportRecorder,
+            times(1),
+        ).recordLostEnvelope(eq(DiscardReason.NETWORK_ERROR), same(fixture.envelopeBeforeAttachingClientReport))
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
@@ -281,11 +303,18 @@ class AsyncHttpTransportClientReportTest {
         verifyNoMoreInteractions(fixture.clientReportRecorder)
     }
 
-    private fun givenSetup(result: TransportResult? = null, cancel: Boolean? = null, transportConnected: Boolean? = null) {
+    private fun givenSetup(
+        result: TransportResult? = null,
+        cancel: Boolean? = null,
+        transportConnected: Boolean? = null,
+    ) {
         if (cancel == true) {
             whenever(fixture.executor.submit(any())).thenAnswer { QueuedThreadPoolExecutor.CancelledFuture<Any>() }
         } else {
-            whenever(fixture.executor.submit(any())).thenAnswer { (it.arguments[0] as Runnable).run(); null }
+            whenever(fixture.executor.submit(any())).thenAnswer {
+                (it.arguments[0] as Runnable).run()
+                null
+            }
         }
 
         whenever(fixture.transportGate.isConnected).thenReturn(transportConnected ?: true)
@@ -297,8 +326,8 @@ class AsyncHttpTransportClientReportTest {
 
         whenever(
             fixture.clientReportRecorder.attachReportToEnvelope(
-                eq(fixture.envelopeBeforeAttachingClientReport)
-            )
+                eq(fixture.envelopeBeforeAttachingClientReport),
+            ),
         ).thenReturn(fixture.envelopeAfterAttachingClientReport)
     }
 }

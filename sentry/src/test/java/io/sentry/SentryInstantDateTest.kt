@@ -5,7 +5,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SentryInstantDateTest {
-
     @Test
     fun `nanos() offers ns precision`() {
         val date = SentryInstantDate(Instant.ofEpochSecond(1672742031, 123456789))

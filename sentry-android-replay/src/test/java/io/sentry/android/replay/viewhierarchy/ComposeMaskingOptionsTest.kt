@@ -64,7 +64,6 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
 class ComposeMaskingOptionsTest {
-
     @Before
     fun setup() {
         System.setProperty("robolectric.areWindowsMarkedVisible", "true")
@@ -80,9 +79,10 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = true
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = true
+            }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
@@ -97,13 +97,21 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = true
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = true
+            }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         // the text should be laid out when fontSize is specified
-        assertEquals("Random repo", (textNodes.first().layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text)
+        assertEquals(
+            "Random repo",
+            (textNodes.first().layout as? ComposeTextLayout)
+                ?.layout
+                ?.layoutInput
+                ?.text
+                ?.text,
+        )
     }
 
     @Test
@@ -115,9 +123,10 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = true
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = true
+            }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         assertTrue(textNodes[1].shouldMask)
@@ -128,9 +137,10 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = false
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = false
+            }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
@@ -142,9 +152,10 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllImages = true
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllImages = true
+            }
 
         val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
         assertEquals(1, imageNodes.size) // [AsyncImage]
@@ -157,11 +168,13 @@ class ComposeMaskingOptionsTest {
         shadowOf(Looper.getMainLooper()).idle()
         val options = SentryOptions()
 
-        Mockito.mockStatic(ComposeViewHierarchyNode.javaClass)
+        Mockito
+            .mockStatic(ComposeViewHierarchyNode.javaClass)
             .use { mock: MockedStatic<ComposeViewHierarchyNode> ->
-                mock.`when`<Any> {
-                    ComposeViewHierarchyNode.retrieveSemanticsConfiguration(any<LayoutNode>())
-                }.thenThrow(RuntimeException())
+                mock
+                    .`when`<Any> {
+                        ComposeViewHierarchyNode.retrieveSemanticsConfiguration(any<LayoutNode>())
+                    }.thenThrow(RuntimeException())
 
                 val root = activity.get().window.decorView
                 val composeView = root.lookupComposeView()
@@ -194,9 +207,10 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllImages = false
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllImages = false
+            }
 
         val imageNodes = activity.get().collectNodesOfType<ImageViewHierarchyNode>(options)
         assertEquals(1, imageNodes.size) // [AsyncImage]
@@ -209,14 +223,20 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = false
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = false
+            }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
         textNodes.forEach {
-            if ((it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text == "Make Request") {
+            if ((it.layout as? ComposeTextLayout)
+                    ?.layout
+                    ?.layoutInput
+                    ?.text
+                    ?.text == "Make Request"
+            ) {
                 assertTrue(it.shouldMask)
             } else {
                 assertFalse(it.shouldMask)
@@ -230,17 +250,29 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = true
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = true
+            }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         assertEquals(4, textNodes.size) // [TextField, Text, Button, Activity Title]
         textNodes.forEach {
-            if ((it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text == "Make Request") {
-                assertFalse(it.shouldMask, "Node with text ${(it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text} should not be masked")
+            if ((it.layout as? ComposeTextLayout)
+                    ?.layout
+                    ?.layoutInput
+                    ?.text
+                    ?.text == "Make Request"
+            ) {
+                assertFalse(
+                    it.shouldMask,
+                    "Node with text ${(it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text} should not be masked",
+                )
             } else {
-                assertTrue(it.shouldMask, "Node with text ${(it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text} should be masked")
+                assertTrue(
+                    it.shouldMask,
+                    "Node with text ${(it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text} should be masked",
+                )
             }
         }
     }
@@ -251,13 +283,19 @@ class ComposeMaskingOptionsTest {
         val activity = buildActivity(ComposeMaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = true
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = true
+            }
 
         val textNodes = activity.get().collectNodesOfType<TextViewHierarchyNode>(options)
         textNodes.forEach {
-            if ((it.layout as? ComposeTextLayout)?.layout?.layoutInput?.text?.text == "Make Request") {
+            if ((it.layout as? ComposeTextLayout)
+                    ?.layout
+                    ?.layoutInput
+                    ?.text
+                    ?.text == "Make Request"
+            ) {
                 assertFalse(it.shouldMask)
             } else {
                 assertTrue(it.shouldMask)
@@ -315,7 +353,6 @@ class ComposeMaskingOptionsTest {
 }
 
 private class ComposeMaskingOptionsActivity : ComponentActivity() {
-
     companion object {
         var textModifierApplier: (() -> Modifier)? = null
         var textFieldModifierApplier: (() -> Modifier)? = null
@@ -331,26 +368,28 @@ private class ComposeMaskingOptionsActivity : ComponentActivity() {
             Column(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(containerModifierApplier?.invoke() ?: Modifier)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .then(containerModifierApplier?.invoke() ?: Modifier),
             ) {
                 AsyncImage(
                     model = Uri.fromFile(File(image.toURI())),
                     contentDescription = null,
-                    modifier = Modifier.padding(vertical = 16.dp)
+                    modifier = Modifier.padding(vertical = 16.dp),
                 )
                 Text("Random repo", fontSize = fontSizeApplier?.invoke() ?: TextUnit.Unspecified)
                 TextField(
                     modifier = textFieldModifierApplier?.invoke() ?: Modifier,
                     value = TextFieldValue("Placeholder"),
-                    onValueChange = { _ -> }
+                    onValueChange = { _ -> },
                 )
                 Button(
                     onClick = {},
-                    modifier = Modifier
-                        .testTag("button_list_repos_async")
-                        .padding(top = 32.dp)
+                    modifier =
+                        Modifier
+                            .testTag("button_list_repos_async")
+                            .padding(top = 32.dp),
                 ) {
                     Text("Make Request", modifier = Modifier.then(textModifierApplier?.invoke() ?: Modifier))
                 }

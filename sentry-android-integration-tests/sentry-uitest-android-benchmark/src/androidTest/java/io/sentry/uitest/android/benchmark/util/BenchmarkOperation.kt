@@ -20,11 +20,9 @@ internal class BenchmarkOperation(
     private val choreographer: Choreographer,
     private val before: (() -> Unit)? = null,
     private val after: (() -> Unit)? = null,
-    private val op: () -> Unit
+    private val op: () -> Unit,
 ) {
-
     companion object {
-
         /**
          * Running two operations sequentially (running 10 times the first and then 10 times the second) results in the
          * first operation to always be slower, so comparing two different operations on equal terms is not possible.
@@ -40,7 +38,7 @@ internal class BenchmarkOperation(
             op2Name: String,
             refreshRate: Float,
             warmupIterations: Int = 2,
-            measuredIterations: Int = 20
+            measuredIterations: Int = 20,
         ): BenchmarkComparisonResult {
             // Android pushes the "installed app" event to other apps and the system itself.
             // Let's give it time to do whatever it wants before starting measuring the operations.
@@ -137,15 +135,14 @@ internal class BenchmarkOperation(
     }
 
     /** Return the [BenchmarkOperationComparable] for the operation. */
-    private fun getResult(operationName: String): BenchmarkOperationComparable {
-        return BenchmarkOperationComparable(
+    private fun getResult(operationName: String): BenchmarkOperationComparable =
+        BenchmarkOperationComparable(
             cpuDurationNanosList,
             droppedFramesList,
             durationNanosList,
             fpsList,
-            operationName
+            operationName,
         )
-    }
 
     /**
      * Helps ensure that operations don't impact one another.
@@ -157,29 +154,29 @@ internal class BenchmarkOperation(
         Thread.sleep(200)
     }
 
-    private val frameCallback = object : Choreographer.FrameCallback {
+    private val frameCallback =
+        object : Choreographer.FrameCallback {
+            private var expectedFrameDurationNanos: Float = TimeUnit.SECONDS.toNanos(1) / 60F
+            var frames = 0
+            var droppedFrames = 0.0
 
-        private var expectedFrameDurationNanos: Float = TimeUnit.SECONDS.toNanos(1) / 60F
-        var frames = 0
-        var droppedFrames = 0.0
-
-        fun setup(refreshRate: Float) {
-            frames = 0
-            droppedFrames = 0.0
-            expectedFrameDurationNanos = TimeUnit.SECONDS.toNanos(1) / refreshRate
-        }
-
-        override fun doFrame(frameTimeNanos: Long) {
-            frames++
-            val timeSinceLastFrameNanos = frameTimeNanos - lastFrameTimeNanos
-            if (timeSinceLastFrameNanos > expectedFrameDurationNanos) {
-                // Fractions of frames dropped are weighted to improve the accuracy of the results.
-                // For example, 31ms between frames is much worse than 17ms, even though both
-                // durations are within the "1 frame dropped" range.
-                droppedFrames += timeSinceLastFrameNanos / expectedFrameDurationNanos - 1
+            fun setup(refreshRate: Float) {
+                frames = 0
+                droppedFrames = 0.0
+                expectedFrameDurationNanos = TimeUnit.SECONDS.toNanos(1) / refreshRate
             }
-            lastFrameTimeNanos = frameTimeNanos
-            choreographer.postFrameCallback(this)
+
+            override fun doFrame(frameTimeNanos: Long) {
+                frames++
+                val timeSinceLastFrameNanos = frameTimeNanos - lastFrameTimeNanos
+                if (timeSinceLastFrameNanos > expectedFrameDurationNanos) {
+                    // Fractions of frames dropped are weighted to improve the accuracy of the results.
+                    // For example, 31ms between frames is much worse than 17ms, even though both
+                    // durations are within the "1 frame dropped" range.
+                    droppedFrames += timeSinceLastFrameNanos / expectedFrameDurationNanos - 1
+                }
+                lastFrameTimeNanos = frameTimeNanos
+                choreographer.postFrameCallback(this)
+            }
         }
-    }
 }

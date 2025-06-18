@@ -37,7 +37,6 @@ import kotlin.test.assertNull
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [31])
 class SentryNavigationListenerTest {
-
     class Fixture {
         val scopes = mock<IScopes>()
         val destination = mock<NavDestination>()
@@ -60,23 +59,24 @@ class SentryNavigationListenerTest {
             tracesSampleRate: Double? = 1.0,
             hasViewIdInRes: Boolean = true,
             transaction: SentryTracer? = null,
-            traceOriginAppendix: String? = null
+            traceOriginAppendix: String? = null,
         ): SentryNavigationListener {
-            options = SentryOptions().apply {
-                dsn = "http://key@localhost/proj"
-                setTracesSampleRate(
-                    tracesSampleRate
-                )
-                isEnableScreenTracking = enableScreenTracking
-            }
+            options =
+                SentryOptions().apply {
+                    dsn = "http://key@localhost/proj"
+                    setTracesSampleRate(
+                        tracesSampleRate,
+                    )
+                    isEnableScreenTracking = enableScreenTracking
+                }
             whenever(scopes.options).thenReturn(options)
 
             this.transaction = transaction ?: SentryTracer(
                 TransactionContext(
                     "/$toRoute",
-                    SentryNavigationListener.NAVIGATION_OP
+                    SentryNavigationListener.NAVIGATION_OP,
                 ),
-                scopes
+                scopes,
             )
 
             whenever(scopes.startTransaction(any<TransactionContext>(), any<TransactionOptions>()))
@@ -91,7 +91,7 @@ class SentryNavigationListenerTest {
                 whenever(resources.getResourceEntryName(1)).thenReturn(toId)
             } else {
                 whenever(resources.getResourceEntryName(destination.id)).thenThrow(
-                    Resources.NotFoundException()
+                    Resources.NotFoundException(),
                 )
             }
             whenever(context.resources).thenReturn(resources)
@@ -101,7 +101,7 @@ class SentryNavigationListenerTest {
                 scopes,
                 enableBreadcrumbs,
                 enableNavigationTracing,
-                traceOriginAppendix
+                traceOriginAppendix,
             )
         }
     }
@@ -121,7 +121,7 @@ class SentryNavigationListenerTest {
                 assertEquals("/route", it.data["to"])
                 assertEquals(SentryLevel.INFO, it.level)
             },
-            any()
+            any(),
         )
     }
 
@@ -132,7 +132,7 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(
             fixture.navController,
             fixture.destination,
-            bundleOf("arg1" to "foo", "arg2" to "bar")
+            bundleOf("arg1" to "foo", "arg2" to "bar"),
         )
 
         verify(fixture.scopes).addBreadcrumb(
@@ -140,7 +140,7 @@ class SentryNavigationListenerTest {
                 assertEquals("/route", it.data["to"])
                 assertEquals(mapOf("arg1" to "foo", "arg2" to "bar"), it.data["to_arguments"])
             },
-            any()
+            any(),
         )
     }
 
@@ -151,7 +151,7 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(
             fixture.navController,
             fixture.destination,
-            bundleOf()
+            bundleOf(),
         )
 
         verify(fixture.scopes).addBreadcrumb(
@@ -159,7 +159,7 @@ class SentryNavigationListenerTest {
                 assertEquals("/route", it.data["to"])
                 assertNull(it.data["to_arguments"])
             },
-            any()
+            any(),
         )
     }
 
@@ -170,16 +170,17 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(
             fixture.navController,
             fixture.destination,
-            bundleOf("from_arg1" to "from_foo")
+            bundleOf("from_arg1" to "from_foo"),
         )
 
-        val toDestination = mock<NavDestination> {
-            whenever(mock.route).thenReturn("route_to")
-        }
+        val toDestination =
+            mock<NavDestination> {
+                whenever(mock.route).thenReturn("route_to")
+            }
         sut.onDestinationChanged(
             fixture.navController,
             toDestination,
-            bundleOf("to_arg1" to "to_foo")
+            bundleOf("to_arg1" to "to_foo"),
         )
         val captor = argumentCaptor<Breadcrumb>()
         verify(fixture.scopes, times(2)).addBreadcrumb(captor.capture(), any())
@@ -209,7 +210,7 @@ class SentryNavigationListenerTest {
 
         verify(fixture.scopes, never()).startTransaction(
             any<TransactionContext>(),
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -221,7 +222,7 @@ class SentryNavigationListenerTest {
 
         verify(fixture.scopes, never()).startTransaction(
             any<TransactionContext>(),
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -234,7 +235,7 @@ class SentryNavigationListenerTest {
 
         verify(fixture.scopes, never()).startTransaction(
             any<TransactionContext>(),
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -246,7 +247,7 @@ class SentryNavigationListenerTest {
 
         verify(fixture.scopes, never()).startTransaction(
             any<TransactionContext>(),
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -262,7 +263,7 @@ class SentryNavigationListenerTest {
                 assertEquals(SentryNavigationListener.NAVIGATION_OP, it.operation)
                 assertEquals(TransactionNameSource.ROUTE, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -277,7 +278,7 @@ class SentryNavigationListenerTest {
                 assertEquals("/github", it.name)
                 assertEquals(TransactionNameSource.ROUTE, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -292,7 +293,7 @@ class SentryNavigationListenerTest {
                 assertEquals("/destination-id-1", it.name)
                 assertEquals(TransactionNameSource.ROUTE, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
     }
 
@@ -303,7 +304,7 @@ class SentryNavigationListenerTest {
         sut.onDestinationChanged(
             fixture.navController,
             fixture.destination,
-            bundleOf("user_id" to 123, "per_page" to 10)
+            bundleOf("user_id" to 123, "per_page" to 10),
         )
 
         verify(fixture.scopes).startTransaction(
@@ -311,7 +312,7 @@ class SentryNavigationListenerTest {
                 assertEquals("/github", it.name)
                 assertEquals(TransactionNameSource.ROUTE, it.transactionNameSource)
             },
-            any<TransactionOptions>()
+            any<TransactionOptions>(),
         )
 
         val capturedArgs = fixture.transaction.data!!["arguments"]
@@ -405,7 +406,7 @@ class SentryNavigationListenerTest {
             any<TransactionContext>(),
             check<TransactionOptions> { options ->
                 assertEquals(TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION, options.deadlineTimeout)
-            }
+            },
         )
     }
 

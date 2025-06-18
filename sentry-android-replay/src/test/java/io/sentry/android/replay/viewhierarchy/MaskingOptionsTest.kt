@@ -33,7 +33,6 @@ import kotlin.test.assertTrue
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
 class MaskingOptionsTest {
-
     @BeforeTest
     fun setup() {
         System.setProperty("robolectric.areWindowsMarkedVisible", "true")
@@ -45,9 +44,10 @@ class MaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = true
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = true
+            }
 
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
         val radioButtonNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.radioButton!!, null, 0, options)
@@ -64,9 +64,10 @@ class MaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = false
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = false
+            }
 
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
         val radioButtonNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.radioButton!!, null, 0, options)
@@ -83,9 +84,10 @@ class MaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllImages = true
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllImages = true
+            }
 
         val imageNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.imageView!!, null, 0, options)
 
@@ -98,9 +100,10 @@ class MaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllImages = false
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllImages = false
+            }
 
         val imageNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.imageView!!, null, 0, options)
 
@@ -113,9 +116,10 @@ class MaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = false
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = false
+            }
 
         MaskingOptionsActivity.textView!!.tag = "sentry-mask"
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
@@ -128,9 +132,10 @@ class MaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = true
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = true
+            }
 
         MaskingOptionsActivity.textView!!.tag = "sentry-unmask"
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
@@ -143,9 +148,10 @@ class MaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = false
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = false
+            }
 
         MaskingOptionsActivity.textView!!.sentryReplayMask()
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
@@ -158,9 +164,10 @@ class MaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = true
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = true
+            }
 
         MaskingOptionsActivity.textView!!.sentryReplayUnmask()
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
@@ -173,9 +180,10 @@ class MaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = true
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = true
+            }
 
         MaskingOptionsActivity.textView!!.visibility = View.GONE
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
@@ -188,9 +196,10 @@ class MaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskViewClasses.add(CustomView::class.java.canonicalName)
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskViewClasses.add(CustomView::class.java.canonicalName)
+            }
 
         val customViewNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.customView!!, null, 0, options)
 
@@ -202,10 +211,11 @@ class MaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.maskAllText = true // all TextView subclasses
-            sessionReplay.unmaskViewClasses.add(RadioButton::class.java.canonicalName)
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.maskAllText = true // all TextView subclasses
+                sessionReplay.unmaskViewClasses.add(RadioButton::class.java.canonicalName)
+            }
 
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
         val radioButtonNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.radioButton!!, null, 0, options)
@@ -219,9 +229,10 @@ class MaskingOptionsTest {
         buildActivity(MaskingOptionsActivity::class.java).setup()
         shadowOf(Looper.getMainLooper()).idle()
 
-        val options = SentryOptions().apply {
-            sessionReplay.unmaskViewClasses.add(LinearLayout::class.java.canonicalName)
-        }
+        val options =
+            SentryOptions().apply {
+                sessionReplay.unmaskViewClasses.add(LinearLayout::class.java.canonicalName)
+            }
 
         val linearLayoutNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!.parent as LinearLayout, null, 0, options)
         val textNode = ViewHierarchyNode.fromView(MaskingOptionsActivity.textView!!, null, 0, options)
@@ -233,8 +244,9 @@ class MaskingOptionsTest {
     }
 }
 
-private class CustomView(context: Context) : View(context) {
-
+private class CustomView(
+    context: Context,
+) : View(context) {
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.drawColor(Color.BLACK)
@@ -242,7 +254,6 @@ private class CustomView(context: Context) : View(context) {
 }
 
 private class MaskingOptionsActivity : Activity() {
-
     companion object {
         var textView: TextView? = null
         var radioButton: RadioButton? = null
@@ -252,40 +263,48 @@ private class MaskingOptionsActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val linearLayout = LinearLayout(this).apply {
-            setBackgroundColor(android.R.color.white)
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-        }
+        val linearLayout =
+            LinearLayout(this).apply {
+                setBackgroundColor(android.R.color.white)
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+            }
 
-        textView = TextView(this).apply {
-            text = "Hello, World!"
-            layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
-        }
+        textView =
+            TextView(this).apply {
+                text = "Hello, World!"
+                layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+            }
         linearLayout.addView(textView)
 
         val image = this::class.java.classLoader.getResource("Tongariro.jpg")!!
-        imageView = ImageView(this).apply {
-            setImageDrawable(Drawable.createFromPath(image.path))
-            layoutParams = LayoutParams(50, 50).apply {
-                setMargins(0, 16, 0, 0)
+        imageView =
+            ImageView(this).apply {
+                setImageDrawable(Drawable.createFromPath(image.path))
+                layoutParams =
+                    LayoutParams(50, 50).apply {
+                        setMargins(0, 16, 0, 0)
+                    }
             }
-        }
         linearLayout.addView(imageView)
 
-        radioButton = RadioButton(this).apply {
-            text = "Radio Button"
-            layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                setMargins(0, 16, 0, 0)
+        radioButton =
+            RadioButton(this).apply {
+                text = "Radio Button"
+                layoutParams =
+                    LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
+                        setMargins(0, 16, 0, 0)
+                    }
             }
-        }
         linearLayout.addView(radioButton)
 
-        customView = CustomView(this).apply {
-            layoutParams = LayoutParams(50, 50).apply {
-                setMargins(0, 16, 0, 0)
+        customView =
+            CustomView(this).apply {
+                layoutParams =
+                    LayoutParams(50, 50).apply {
+                        setMargins(0, 16, 0, 0)
+                    }
             }
-        }
         linearLayout.addView(customView)
 
         setContentView(linearLayout)

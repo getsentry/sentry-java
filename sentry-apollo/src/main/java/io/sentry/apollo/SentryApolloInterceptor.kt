@@ -33,9 +33,8 @@ private const val TRACE_ORIGIN = "auto.graphql.apollo"
 
 class SentryApolloInterceptor(
     private val scopes: IScopes = ScopesAdapter.getInstance(),
-    private val beforeSpan: BeforeSpanCallback? = null
+    private val beforeSpan: BeforeSpanCallback? = null,
 ) : ApolloInterceptor {
-
     private companion object {
         init {
             SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
@@ -49,8 +48,20 @@ class SentryApolloInterceptor(
         addIntegrationToSdkVersion("Apollo")
     }
 
-    override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {
-        val activeSpan = if (io.sentry.util.Platform.isAndroid()) scopes.transaction else scopes.span
+    override fun interceptAsync(
+        request: InterceptorRequest,
+        chain: ApolloInterceptorChain,
+        dispatcher: Executor,
+        callBack: CallBack,
+    ) {
+        val activeSpan =
+            if (io.sentry.util.Platform
+                    .isAndroid()
+            ) {
+                scopes.transaction
+            } else {
+                scopes.span
+            }
         if (activeSpan == null) {
             val headers = addTracingHeaders(request, null)
             val modifiedRequest = request.toBuilder().requestHeaders(headers).build()
@@ -63,7 +74,13 @@ class SentryApolloInterceptor(
             val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
 
             span.setData("operationId", requestWithHeader.operation.operationId())
-            span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
+            span.setData(
+                "variables",
+                requestWithHeader.operation
+                    .variables()
+                    .valueMap()
+                    .toString(),
+            )
 
             chain.proceedAsync(
                 requestWithHeader,
@@ -81,7 +98,7 @@ class SentryApolloInterceptor(
                         response.httpResponse.map { it.request().method() }.orNull()?.let {
                             span.setData(
                                 SpanDataConvention.HTTP_METHOD_KEY,
-                                it.uppercase()
+                                it.uppercase(),
                             )
                         }
 
@@ -95,12 +112,13 @@ class SentryApolloInterceptor(
 
                     override fun onFailure(e: ApolloException) {
                         span.apply {
-                            status = if (e is ApolloHttpException) {
-                                setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, e.code())
-                                SpanStatus.fromHttpStatusCode(e.code(), SpanStatus.INTERNAL_ERROR)
-                            } else {
-                                SpanStatus.INTERNAL_ERROR
-                            }
+                            status =
+                                if (e is ApolloHttpException) {
+                                    setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, e.code())
+                                    SpanStatus.fromHttpStatusCode(e.code(), SpanStatus.INTERNAL_ERROR)
+                                } else {
+                                    SpanStatus.INTERNAL_ERROR
+                                }
                             throwable = e
                         }
                         finish(span, requestWithHeader)
@@ -110,54 +128,64 @@ class SentryApolloInterceptor(
                     override fun onCompleted() {
                         callBack.onCompleted()
                     }
-                }
+                },
             )
         }
     }
 
     override fun dispose() {}
 
-    private fun addTracingHeaders(request: InterceptorRequest, span: ISpan?): RequestHeaders {
+    private fun addTracingHeaders(
+        request: InterceptorRequest,
+        span: ISpan?,
+    ): RequestHeaders {
         val requestHeaderBuilder = request.requestHeaders.toBuilder()
 
         if (scopes.options.isTraceSampling && !isIgnored()) {
             // we have no access to URI, no way to verify tracing origins
-            TracingUtils.trace(
-                scopes,
-                listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)),
-                span
-            )?.let { tracingHeaders ->
-                requestHeaderBuilder.addHeader(
-                    tracingHeaders.sentryTraceHeader.name,
-                    tracingHeaders.sentryTraceHeader.value
-                )
-                tracingHeaders.baggageHeader?.let {
-                    requestHeaderBuilder.addHeader(it.name, it.value)
+            TracingUtils
+                .trace(
+                    scopes,
+                    listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)),
+                    span,
+                )?.let { tracingHeaders ->
+                    requestHeaderBuilder.addHeader(
+                        tracingHeaders.sentryTraceHeader.name,
+                        tracingHeaders.sentryTraceHeader.value,
+                    )
+                    tracingHeaders.baggageHeader?.let {
+                        requestHeaderBuilder.addHeader(it.name, it.value)
+                    }
                 }
-            }
         }
 
         return requestHeaderBuilder.build()
     }
 
-    private fun isIgnored(): Boolean {
-        return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
-    }
+    private fun isIgnored(): Boolean = SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
 
-    private fun startChild(request: InterceptorRequest, activeSpan: ISpan): ISpan {
+    private fun startChild(
+        request: InterceptorRequest,
+        activeSpan: ISpan,
+    ): ISpan {
         val operation = request.operation.name().name()
-        val operationType = when (request.operation) {
-            is Query -> "query"
-            is Mutation -> "mutation"
-            is Subscription -> "subscription"
-            else -> request.operation.javaClass.simpleName
-        }
+        val operationType =
+            when (request.operation) {
+                is Query -> "query"
+                is Mutation -> "mutation"
+                is Subscription -> "subscription"
+                else -> request.operation.javaClass.simpleName
+            }
         val op = "http.graphql.$operationType"
         val description = "$operationType $operation"
         return activeSpan.startChild(op, description)
     }
 
-    private fun finish(span: ISpan, request: InterceptorRequest, response: InterceptorResponse? = null) {
+    private fun finish(
+        span: ISpan,
+        request: InterceptorRequest,
+        response: InterceptorResponse? = null,
+    ) {
         var newSpan: ISpan? = span
         if (beforeSpan != null) {
             try {
@@ -187,10 +215,11 @@ class SentryApolloInterceptor(
                     breadcrumb.setData("response_body_size", contentLength)
                 }
 
-                val hint = Hint().apply {
-                    set(APOLLO_REQUEST, httpRequest)
-                    set(APOLLO_RESPONSE, httpResponse)
-                }
+                val hint =
+                    Hint().apply {
+                        set(APOLLO_REQUEST, httpRequest)
+                        set(APOLLO_RESPONSE, httpResponse)
+                    }
                 scopes.addBreadcrumb(breadcrumb, hint)
             }
         }
@@ -213,6 +242,10 @@ class SentryApolloInterceptor(
          * @param request the HTTP request executed by okHttp
          * @param response the HTTP response received by okHttp
          */
-        fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan?
+        fun execute(
+            span: ISpan,
+            request: InterceptorRequest,
+            response: InterceptorResponse?,
+        ): ISpan?
     }
 }

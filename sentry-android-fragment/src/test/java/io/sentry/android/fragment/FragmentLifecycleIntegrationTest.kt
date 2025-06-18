@@ -17,25 +17,25 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class FragmentLifecycleIntegrationTest {
-
     private class Fixture {
         val application = mock<Application>()
         val fragmentManager = mock<FragmentManager>()
-        val fragmentActivity = mock<FragmentActivity> {
-            on { supportFragmentManager } doReturn fragmentManager
-        }
+        val fragmentActivity =
+            mock<FragmentActivity> {
+                on { supportFragmentManager } doReturn fragmentManager
+            }
         val scopes = mock<IScopes>()
         val options = SentryOptions()
 
         fun getSut(
             enableFragmentLifecycleBreadcrumbs: Boolean = true,
-            enableAutoFragmentLifecycleTracing: Boolean = false
+            enableAutoFragmentLifecycleTracing: Boolean = false,
         ): FragmentLifecycleIntegration {
             whenever(scopes.options).thenReturn(options)
             return FragmentLifecycleIntegration(
                 application = application,
                 enableFragmentLifecycleBreadcrumbs = enableFragmentLifecycleBreadcrumbs,
-                enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing
+                enableAutoFragmentLifecycleTracing = enableAutoFragmentLifecycleTracing,
             )
         }
     }
@@ -65,9 +65,10 @@ class FragmentLifecycleIntegrationTest {
     fun `When FragmentActivity is created, it should register fragment lifecycle callbacks`() {
         val sut = fixture.getSut()
         val fragmentManager = mock<FragmentManager>()
-        val fragmentActivity = mock<FragmentActivity> {
-            on { supportFragmentManager } doReturn fragmentManager
-        }
+        val fragmentActivity =
+            mock<FragmentActivity> {
+                on { supportFragmentManager } doReturn fragmentManager
+            }
 
         sut.register(fixture.scopes, fixture.options)
         sut.onActivityCreated(fragmentActivity, savedInstanceState = null)
@@ -76,7 +77,7 @@ class FragmentLifecycleIntegrationTest {
             check { fragmentCallbacks ->
                 fragmentCallbacks is SentryFragmentLifecycleCallbacks
             },
-            eq(true)
+            eq(true),
         )
     }
 
@@ -93,7 +94,7 @@ class FragmentLifecycleIntegrationTest {
                 assertTrue(callback.enableAutoFragmentLifecycleTracing)
                 assertEquals(emptySet(), callback.filterFragmentLifecycleBreadcrumbs)
             },
-            eq(true)
+            eq(true),
         )
     }
 

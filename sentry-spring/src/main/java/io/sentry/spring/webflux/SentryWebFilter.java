@@ -36,6 +36,7 @@ import reactor.core.publisher.Mono;
 @ApiStatus.Experimental
 public final class SentryWebFilter implements WebFilter {
   public static final String SENTRY_SCOPES_KEY = "sentry-scopes";
+
   /**
    * @deprecated please use {@link SentryWebFilter#SENTRY_SCOPES_KEY} instead.
    */

@@ -71,41 +71,45 @@ class SentryApollo3InterceptorClientErrors {
             httpStatusCode: Int = 200,
             responseBody: String = responseBodyOk,
             sendDefaultPii: Boolean = false,
-            socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN
+            socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
         ): ApolloClient {
             SentryIntegrationPackageStorage.getInstance().clearStorage()
 
-            scopes = mock<IScopes>().apply {
-                whenever(options).thenReturn(
-                    SentryOptions().apply {
-                        dsn = "https://key@sentry.io/proj"
-                        sdkVersion = SdkVersion("test", "1.2.3")
-                        isSendDefaultPii = sendDefaultPii
-                    }
-                )
-            }
+            scopes =
+                mock<IScopes>().apply {
+                    whenever(options).thenReturn(
+                        SentryOptions().apply {
+                            dsn = "https://key@sentry.io/proj"
+                            sdkVersion = SdkVersion("test", "1.2.3")
+                            isSendDefaultPii = sendDefaultPii
+                        },
+                    )
+                }
             whenever(scopes.captureEvent(any(), any<Hint>())).thenReturn(SentryId.EMPTY_ID)
 
-            val response = MockResponse()
-                .setBody(responseBody)
-                .setSocketPolicy(socketPolicy)
-                .setResponseCode(httpStatusCode)
+            val response =
+                MockResponse()
+                    .setBody(responseBody)
+                    .setSocketPolicy(socketPolicy)
+                    .setResponseCode(httpStatusCode)
 
             if (sendDefaultPii) {
                 response.addHeader("Set-Cookie", "Test")
             }
 
             server.enqueue(
-                response
+                response,
             )
 
-            val builder = ApolloClient.Builder()
-                .serverUrl(server.url("?myQuery=query#myFragment").toString())
-                .sentryTracing(
-                    scopes = scopes,
-                    captureFailedRequests = captureFailedRequests,
-                    failedRequestTargets = failedRequestTargets
-                )
+            val builder =
+                ApolloClient
+                    .Builder()
+                    .serverUrl(server.url("?myQuery=query#myFragment").toString())
+                    .sentryTracing(
+                        scopes = scopes,
+                        captureFailedRequests = captureFailedRequests,
+                        failedRequestTargets = failedRequestTargets,
+                    )
             if (sendDefaultPii) {
                 builder.addHttpHeader("Cookie", "Test")
             }
@@ -159,10 +163,11 @@ class SentryApollo3InterceptorClientErrors {
 
     @Test
     fun `does not capture errors if failedRequestTargets does not match`() {
-        val sut = fixture.getSut(
-            failedRequestTargets = listOf("nope.com"),
-            responseBody = fixture.responseBodyNotOk
-        )
+        val sut =
+            fixture.getSut(
+                failedRequestTargets = listOf("nope.com"),
+                responseBody = fixture.responseBodyNotOk,
+            )
         executeQuery(sut)
 
         verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
@@ -192,7 +197,7 @@ class SentryApollo3InterceptorClientErrors {
                 val throwable = (it.throwableMechanism as ExceptionMechanismException)
                 assertEquals("SentryApollo3Interceptor", throwable.exceptionMechanism.type)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -207,7 +212,7 @@ class SentryApollo3InterceptorClientErrors {
                 val throwable = (it.throwableMechanism as ExceptionMechanismException)
                 assertEquals("GraphQL Request failed, name: LaunchDetails, type: query", throwable.throwable.message)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -222,7 +227,7 @@ class SentryApollo3InterceptorClientErrors {
                 val throwable = (it.throwableMechanism as ExceptionMechanismException)
                 assertTrue(throwable.isSnapshot)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -252,7 +257,7 @@ class SentryApollo3InterceptorClientErrors {
                 assertNull(request.cookies)
                 assertNull(request.headers)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -270,7 +275,7 @@ class SentryApollo3InterceptorClientErrors {
                 assertNotNull(request.headers)
                 assertEquals("LaunchDetails", request.headers?.get("X-APOLLO-OPERATION-NAME"))
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -290,7 +295,7 @@ class SentryApollo3InterceptorClientErrors {
                 assertNull(response.cookies)
                 assertNull(response.headers)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -308,7 +313,7 @@ class SentryApollo3InterceptorClientErrors {
                 assertNotNull(response.headers)
                 assertEquals(200, response.headers?.get("Content-Length")?.toInt())
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -322,7 +327,7 @@ class SentryApollo3InterceptorClientErrors {
             check {
                 assertEquals(listOf("LaunchDetails", "query", "200"), it.fingerprints)
             },
-            any<Hint>()
+            any<Hint>(),
         )
     }
 
@@ -370,20 +375,24 @@ class SentryApollo3InterceptorClientErrors {
                 val response = it.get(TypeCheckHint.APOLLO_RESPONSE)
                 assertNotNull(response)
                 assertTrue(response is HttpResponse)
-            }
+            },
         )
     }
 
     // endregion
 
-    private fun executeQuery(sut: ApolloClient, id: String = "83") = runBlocking {
-        val coroutine = launch {
-            try {
-                sut.query(LaunchDetailsQuery(id)).execute()
-            } catch (e: ApolloException) {
-                return@launch
+    private fun executeQuery(
+        sut: ApolloClient,
+        id: String = "83",
+    ) = runBlocking {
+        val coroutine =
+            launch {
+                try {
+                    sut.query(LaunchDetailsQuery(id)).execute()
+                } catch (e: ApolloException) {
+                    return@launch
+                }
             }
-        }
 
         coroutine.join()
     }

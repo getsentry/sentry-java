@@ -14,13 +14,14 @@ import java.io.File
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val outboxPath = Sentry.getCurrentHub().options.outboxPath
-            ?: throw RuntimeException("Outbox path is not set.")
+        val outboxPath =
+            Sentry.getCurrentHub().options.outboxPath
+                ?: throw RuntimeException("Outbox path is not set.")
 
         setContent {
             MaterialTheme {
-                Surface() {
-                    Column() {
+                Surface {
+                    Column {
                         Text(text = "Welcome!")
                         Button(onClick = {
                             throw RuntimeException("Crash the test app.")
@@ -34,10 +35,11 @@ class MainActivity : ComponentActivity() {
                         }
                         Button(onClick = {
                             val file = File(outboxPath, "corrupted.envelope")
-                            val corruptedEnvelopeContent = """
-                              {"event_id":"1990b5bc31904b7395fd07feb72daf1c","sdk":{"name":"sentry.java.android","version":"7.21.0"}}
-                              {"type":"test","length":50}
-                            """.trimIndent()
+                            val corruptedEnvelopeContent =
+                                """
+                                {"event_id":"1990b5bc31904b7395fd07feb72daf1c","sdk":{"name":"sentry.java.android","version":"7.21.0"}}
+                                {"type":"test","length":50}
+                                """.trimIndent()
                             file.writeText(corruptedEnvelopeContent)
                             println("Wrote corrupted envelope to: ${file.absolutePath}")
                         }) {

@@ -11,7 +11,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
 class SentryScheduleHookTest {
-
     private val dsn = "http://key@localhost/proj"
     private lateinit var executor: ExecutorService
 
@@ -37,9 +36,10 @@ class SentryScheduleHookTest {
         val mainScopes = Sentry.getCurrentScopes()
         val threadedScopes = Sentry.getCurrentScopes().forkedCurrentScope("test")
 
-        executor.submit {
-            Sentry.setCurrentScopes(threadedScopes)
-        }.get()
+        executor
+            .submit {
+                Sentry.setCurrentScopes(threadedScopes)
+            }.get()
 
         assertEquals(mainScopes, Sentry.getCurrentScopes())
 
@@ -48,14 +48,15 @@ class SentryScheduleHookTest {
                 sut.apply {
                     assertNotEquals(mainScopes, Sentry.getCurrentScopes())
                     assertNotEquals(threadedScopes, Sentry.getCurrentScopes())
-                }
+                },
             )
 
         callableFuture.get()
 
-        executor.submit {
-            assertNotEquals(mainScopes, Sentry.getCurrentScopes())
-            assertEquals(threadedScopes, Sentry.getCurrentScopes())
-        }.get()
+        executor
+            .submit {
+                assertNotEquals(mainScopes, Sentry.getCurrentScopes())
+                assertEquals(threadedScopes, Sentry.getCurrentScopes())
+            }.get()
     }
 }

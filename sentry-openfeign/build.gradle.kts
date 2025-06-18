@@ -79,7 +79,7 @@ tasks.jar {
             "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-openfeign",
             "Implementation-Vendor" to "Sentry",
             "Implementation-Title" to project.name,
-            "Implementation-Version" to project.version
+            "Implementation-Version" to project.version,
         )
     }
 }

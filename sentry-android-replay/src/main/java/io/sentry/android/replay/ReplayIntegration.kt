@@ -58,7 +58,7 @@ public class ReplayIntegration(
     private val context: Context,
     private val dateProvider: ICurrentDateProvider,
     private val recorderProvider: (() -> Recorder)? = null,
-    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null
+    private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
 ) : Integration,
     Closeable,
     ScreenshotRecorderCallback,
@@ -67,10 +67,10 @@ public class ReplayIntegration(
     IConnectionStatusObserver,
     IRateLimitObserver,
     WindowCallback {
-
     private companion object {
         init {
-            SentryIntegrationPackageStorage.getInstance()
+            SentryIntegrationPackageStorage
+                .getInstance()
                 .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
         }
     }
@@ -80,7 +80,7 @@ public class ReplayIntegration(
         context.appContext(),
         dateProvider,
         null,
-        null
+        null,
     )
 
     internal constructor(
@@ -90,12 +90,13 @@ public class ReplayIntegration(
         replayCacheProvider: ((replayId: SentryId) -> ReplayCache)?,
         replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
         mainLooperHandler: MainLooperHandler? = null,
-        gestureRecorderProvider: (() -> GestureRecorder)? = null
+        gestureRecorderProvider: (() -> GestureRecorder)? = null,
     ) : this(context.appContext(), dateProvider, recorderProvider, replayCacheProvider) {
         this.replayCaptureStrategyProvider = replayCaptureStrategyProvider
         this.mainLooperHandler = mainLooperHandler ?: MainLooperHandler()
         this.gestureRecorderProvider = gestureRecorderProvider
     }
+
     private var debugMaskingEnabled: Boolean = false
     private lateinit var options: SentryOptions
     private var scopes: IScopes? = null
@@ -118,7 +119,10 @@ public class ReplayIntegration(
     private val lifecycleLock = AutoClosableReentrantLock()
     private val lifecycle = ReplayLifecycle()
 
-    override fun register(scopes: IScopes, options: SentryOptions) {
+    override fun register(
+        scopes: IScopes,
+        options: SentryOptions,
+    ) {
         this.options = options
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -157,14 +161,17 @@ public class ReplayIntegration(
             if (!lifecycle.isAllowed(STARTED)) {
                 options.logger.log(
                     DEBUG,
-                    "Session replay is already being recorded, not starting a new one"
+                    "Session replay is already being recorded, not starting a new one",
                 )
                 return
             }
 
             val isFullSession = random.sample(options.sessionReplay.sessionSampleRate)
             if (!isFullSession && !options.sessionReplay.isSessionReplayForErrorsEnabled) {
-                options.logger.log(INFO, "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified")
+                options.logger.log(
+                    INFO,
+                    "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified",
+                )
                 return
             }
 
@@ -192,7 +199,8 @@ public class ReplayIntegration(
                 return
             }
 
-            if (isManualPause.get() || options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
+            if (isManualPause.get() ||
+                options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
                 scopes?.rateLimiter?.isActiveForCategory(All) == true ||
                 scopes?.rateLimiter?.isActiveForCategory(Replay) == true
             ) {
@@ -282,7 +290,10 @@ public class ReplayIntegration(
         }
     }
 
-    override fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long) {
+    override fun onScreenshotRecorded(
+        screenshot: File,
+        frameTimestamp: Long,
+    ) {
         captureStrategy?.onScreenshotRecorded { _ ->
             addFrame(screenshot, frameTimestamp)
             checkCanRecord()
@@ -350,7 +361,7 @@ public class ReplayIntegration(
                 options.connectionStatusProvider.connectionStatus == DISCONNECTED ||
                     scopes?.rateLimiter?.isActiveForCategory(All) == true ||
                     scopes?.rateLimiter?.isActiveForCategory(Replay) == true
-                )
+            )
         ) {
             pauseInternal()
         }
@@ -391,39 +402,42 @@ public class ReplayIntegration(
 
         options.executorService.submitSafely(options, "ReplayIntegration.finalize_previous_replay") {
             val persistingScopeObserver = options.findPersistingScopeObserver()
-            val previousReplayIdString = persistingScopeObserver?.read(options, REPLAY_FILENAME, String::class.java) ?: run {
-                cleanupReplays()
-                return@submitSafely
-            }
+            val previousReplayIdString =
+                persistingScopeObserver?.read(options, REPLAY_FILENAME, String::class.java) ?: run {
+                    cleanupReplays()
+                    return@submitSafely
+                }
             val previousReplayId = SentryId(previousReplayIdString)
             if (previousReplayId == SentryId.EMPTY_ID) {
                 cleanupReplays()
                 return@submitSafely
             }
-            val lastSegment = ReplayCache.fromDisk(options, previousReplayId, replayCacheProvider) ?: run {
-                cleanupReplays()
-                return@submitSafely
-            }
+            val lastSegment =
+                ReplayCache.fromDisk(options, previousReplayId, replayCacheProvider) ?: run {
+                    cleanupReplays()
+                    return@submitSafely
+                }
 
             @Suppress("UNCHECKED_CAST")
             val breadcrumbs = persistingScopeObserver.read(options, BREADCRUMBS_FILENAME, List::class.java) as? List<Breadcrumb>
-            val segment = CaptureStrategy.createSegment(
-                scopes = scopes,
-                options = options,
-                duration = lastSegment.duration,
-                currentSegmentTimestamp = lastSegment.timestamp,
-                replayId = previousReplayId,
-                segmentId = lastSegment.id,
-                height = lastSegment.recorderConfig.recordingHeight,
-                width = lastSegment.recorderConfig.recordingWidth,
-                frameRate = lastSegment.recorderConfig.frameRate,
-                bitRate = lastSegment.recorderConfig.bitRate,
-                cache = lastSegment.cache,
-                replayType = lastSegment.replayType,
-                screenAtStart = lastSegment.screenAtStart,
-                breadcrumbs = breadcrumbs,
-                events = LinkedList(lastSegment.events)
-            )
+            val segment =
+                CaptureStrategy.createSegment(
+                    scopes = scopes,
+                    options = options,
+                    duration = lastSegment.duration,
+                    currentSegmentTimestamp = lastSegment.timestamp,
+                    replayId = previousReplayId,
+                    segmentId = lastSegment.id,
+                    height = lastSegment.recorderConfig.recordingHeight,
+                    width = lastSegment.recorderConfig.recordingWidth,
+                    frameRate = lastSegment.recorderConfig.frameRate,
+                    bitRate = lastSegment.recorderConfig.bitRate,
+                    cache = lastSegment.cache,
+                    replayType = lastSegment.replayType,
+                    screenAtStart = lastSegment.screenAtStart,
+                    breadcrumbs = breadcrumbs,
+                    events = LinkedList(lastSegment.events),
+                )
 
             if (segment is ReplaySegment.Created) {
                 val hint = HintUtils.createWithTypeCheckHint(PreviousReplayHint())
@@ -433,7 +447,10 @@ public class ReplayIntegration(
         }
     }
 
-    override fun onWindowSizeChanged(width: Int, height: Int) {
+    override fun onWindowSizeChanged(
+        width: Int,
+        height: Int,
+    ) {
         if (!isEnabled.get() || !isRecording()) {
             return
         }
@@ -463,6 +480,7 @@ public class ReplayIntegration(
 
     private class ReplayExecutorServiceThreadFactory : ThreadFactory {
         private var cnt = 0
+
         override fun newThread(r: Runnable): Thread {
             val ret = Thread(r, "SentryReplayIntegration-" + cnt++)
             ret.setDaemon(true)

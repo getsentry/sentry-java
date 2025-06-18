@@ -4,7 +4,6 @@ import java.io.File
 import java.util.Scanner
 
 object FileFromResources {
-
     operator fun invoke(fileName: String): String {
         val result = StringBuilder()
         val classLoader = FileFromResources::class.java.classLoader

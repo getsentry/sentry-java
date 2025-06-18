@@ -4,7 +4,6 @@ import junit.framework.TestCase.assertEquals
 import kotlin.test.Test
 
 class SentryUUIDTest {
-
     @Test
     fun `generated SentryID is 32 characters long`() {
         val sentryId = SentryUUID.generateSentryId()

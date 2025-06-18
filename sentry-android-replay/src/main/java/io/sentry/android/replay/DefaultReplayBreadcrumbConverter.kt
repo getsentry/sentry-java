@@ -12,14 +12,15 @@ import kotlin.LazyThreadSafetyMode.NONE
 public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
     internal companion object {
         private val snakecasePattern by lazy(NONE) { "_[a-z]".toRegex() }
-        private val supportedNetworkData = HashSet<String>().apply {
-            add("status_code")
-            add("method")
-            add("response_content_length")
-            add("request_content_length")
-            add("http.response_content_length")
-            add("http.request_content_length")
-        }
+        private val supportedNetworkData =
+            HashSet<String>().apply {
+                add("status_code")
+                add("method")
+                add("response_content_length")
+                add("request_content_length")
+                add("http.response_content_length")
+                add("http.request_content_length")
+            }
     }
 
     private var lastConnectivityState: String? = null
@@ -65,22 +66,24 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
                     breadcrumb.data["view.id"]
                         ?: breadcrumb.data["view.tag"]
                         ?: breadcrumb.data["view.class"]
-                    ) as? String ?: return null
+                ) as? String ?: return null
                 breadcrumbData.putAll(breadcrumb.data)
             }
 
             breadcrumb.type == "system" && breadcrumb.category == "network.event" -> {
                 breadcrumbCategory = "device.connectivity"
-                breadcrumbData["state"] = when {
-                    breadcrumb.data["action"] == "NETWORK_LOST" -> "offline"
-                    "network_type" in breadcrumb.data -> if (!(breadcrumb.data["network_type"] as? String).isNullOrEmpty()) {
-                        breadcrumb.data["network_type"]
-                    } else {
-                        return null
-                    }
+                breadcrumbData["state"] =
+                    when {
+                        breadcrumb.data["action"] == "NETWORK_LOST" -> "offline"
+                        "network_type" in breadcrumb.data ->
+                            if (!(breadcrumb.data["network_type"] as? String).isNullOrEmpty()) {
+                                breadcrumb.data["network_type"]
+                            } else {
+                                return null
+                            }
 
-                    else -> return null
-                }
+                        else -> return null
+                    }
 
                 if (lastConnectivityState == breadcrumbData["state"]) {
                     // debounce same state
@@ -93,7 +96,7 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
             breadcrumb.data["action"] == "BATTERY_CHANGED" -> {
                 breadcrumbCategory = "device.battery"
                 breadcrumbData.putAll(
-                    breadcrumb.data.filterKeys { it == "level" || it == "charging" }
+                    breadcrumb.data.filterKeys { it == "level" || it == "charging" },
                 )
             }
 
@@ -119,17 +122,18 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
         }
     }
 
-    private fun Breadcrumb.isValidForRRWebSpan(): Boolean {
-        return !(data["url"] as? String).isNullOrEmpty() &&
+    private fun Breadcrumb.isValidForRRWebSpan(): Boolean =
+        !(data["url"] as? String).isNullOrEmpty() &&
             SpanDataConvention.HTTP_START_TIMESTAMP in data &&
             SpanDataConvention.HTTP_END_TIMESTAMP in data
-    }
 
-    private fun String.snakeToCamelCase(): String {
-        return replace(snakecasePattern) {
-            it.value.last().toString().uppercase()
+    private fun String.snakeToCamelCase(): String =
+        replace(snakecasePattern) {
+            it.value
+                .last()
+                .toString()
+                .uppercase()
         }
-    }
 
     private fun Breadcrumb.toRRWebSpanEvent(): RRWebSpanEvent {
         val breadcrumb = this
@@ -140,16 +144,18 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
             op = "resource.http"
             description = breadcrumb.data["url"] as String
             // can be double if it was serialized to disk
-            startTimestamp = if (httpStartTimestamp is Double) {
-                httpStartTimestamp / 1000.0
-            } else {
-                (httpStartTimestamp as Long) / 1000.0
-            }
-            endTimestamp = if (httpEndTimestamp is Double) {
-                httpEndTimestamp / 1000.0
-            } else {
-                (httpEndTimestamp as Long) / 1000.0
-            }
+            startTimestamp =
+                if (httpStartTimestamp is Double) {
+                    httpStartTimestamp / 1000.0
+                } else {
+                    (httpStartTimestamp as Long) / 1000.0
+                }
+            endTimestamp =
+                if (httpEndTimestamp is Double) {
+                    httpEndTimestamp / 1000.0
+                } else {
+                    (httpEndTimestamp as Long) / 1000.0
+                }
 
             val breadcrumbData = mutableMapOf<String, Any?>()
             for ((key, value) in breadcrumb.data) {
@@ -158,7 +164,7 @@ public open class DefaultReplayBreadcrumbConverter : ReplayBreadcrumbConverter {
                         key
                             .replace("content_length", "body_size")
                             .substringAfter(".")
-                            .snakeToCamelCase()
+                            .snakeToCamelCase(),
                     ] = value
                 }
             }

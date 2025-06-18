@@ -12,29 +12,31 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 
 class ViewHierarchyNodeSerializationTest {
-
     private class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = ViewHierarchyNode().apply {
-            type = "com.example.ui.FancyButton"
-            identifier = "button_logout"
-            children = listOf(
-                ViewHierarchyNode().apply {
-                    renderingSystem = "compose"
-                    type = "Clickable"
-                }
-            )
-            width = 100.0
-            height = 200.0
-            x = 0.0
-            y = 2.0
-            visibility = "visible"
-            alpha = 1.0
-            unknown = mapOf(
-                "extra_property" to 42
-            )
-        }
+        fun getSut() =
+            ViewHierarchyNode().apply {
+                type = "com.example.ui.FancyButton"
+                identifier = "button_logout"
+                children =
+                    listOf(
+                        ViewHierarchyNode().apply {
+                            renderingSystem = "compose"
+                            type = "Clickable"
+                        },
+                    )
+                width = 100.0
+                height = 200.0
+                x = 0.0
+                y = 2.0
+                visibility = "visible"
+                alpha = 1.0
+                unknown =
+                    mapOf(
+                        "extra_property" to 42,
+                    )
+            }
     }
 
     private val fixture = Fixture()
@@ -56,11 +58,11 @@ class ViewHierarchyNodeSerializationTest {
 
     // Helper
 
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
+    private fun sanitizedFile(path: String): String =
+        FileFromResources
+            .invoke(path)
             .replace(Regex("[\n\r]"), "")
             .replace(" ", "")
-    }
 
     private fun serialize(jsonSerializable: JsonSerializable): String {
         val wrt = StringWriter()

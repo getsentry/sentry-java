@@ -26,12 +26,13 @@ class SentryFileWriterTest {
             tmpFile: File,
             activeTransaction: Boolean = true,
             append: Boolean = false,
-            optionsConfiguration: (SentryOptions) -> Unit = {}
+            optionsConfiguration: (SentryOptions) -> Unit = {},
         ): SentryFileWriter {
-            val options = SentryOptions().apply {
-                threadChecker = ThreadChecker.getInstance()
-                optionsConfiguration(this)
-            }
+            val options =
+                SentryOptions().apply {
+                    threadChecker = ThreadChecker.getInstance()
+                    optionsConfiguration(this)
+                }
             whenever(scopes.options).thenReturn(options)
             sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
             if (activeTransaction) {
@@ -85,9 +86,10 @@ class SentryFileWriterTest {
 
     @Test
     fun `captures file name in description and file path when isSendDefaultPii is true`() {
-        val writer = fixture.getSut(tmpFile) {
-            it.isSendDefaultPii = true
-        }
+        val writer =
+            fixture.getSut(tmpFile) {
+                it.isSendDefaultPii = true
+            }
         writer.write("TEXT")
         writer.close()
 
@@ -98,9 +100,10 @@ class SentryFileWriterTest {
 
     @Test
     fun `captures only file extension in description when isSendDefaultPii is false`() {
-        val writer = fixture.getSut(tmpFile) {
-            it.isSendDefaultPii = false
-        }
+        val writer =
+            fixture.getSut(tmpFile) {
+                it.isSendDefaultPii = false
+            }
         writer.write("TEXT")
         writer.close()
 
@@ -111,9 +114,10 @@ class SentryFileWriterTest {
 
     @Test
     fun `captures only file size if no extension is available when isSendDefaultPii is false`() {
-        val writer = fixture.getSut(tmpFileWithoutExtension) {
-            it.isSendDefaultPii = false
-        }
+        val writer =
+            fixture.getSut(tmpFileWithoutExtension) {
+                it.isSendDefaultPii = false
+            }
         writer.write("TEXT")
         writer.close()
 

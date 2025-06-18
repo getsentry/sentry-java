@@ -15,7 +15,7 @@ private const val TRACE_ORIGIN = "auto.db.sqlite"
 
 internal class SQLiteSpanManager(
     private val scopes: IScopes = ScopesAdapter.getInstance(),
-    private val databaseName: String? = null
+    private val databaseName: String? = null,
 ) {
     private val stackTraceFactory = SentryStackTraceFactory(scopes.options)
 
@@ -32,7 +32,10 @@ internal class SQLiteSpanManager(
      */
     @Suppress("TooGenericExceptionCaught", "UNCHECKED_CAST")
     @Throws(SQLException::class)
-    fun <T> performSql(sql: String, operation: () -> T): T {
+    fun <T> performSql(
+        sql: String,
+        operation: () -> T,
+    ): T {
         val startTimestamp = scopes.getOptions().dateProvider.now()
         var span: ISpan? = null
         return try {

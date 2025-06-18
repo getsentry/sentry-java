@@ -23,9 +23,8 @@ private const val TRACE_ORIGIN_APPENDIX = "jetpack_compose"
 internal class SentryLifecycleObserver(
     private val navController: NavController,
     private val navListener: NavController.OnDestinationChangedListener =
-        SentryNavigationListener(traceOriginAppendix = TRACE_ORIGIN_APPENDIX)
+        SentryNavigationListener(traceOriginAppendix = TRACE_ORIGIN_APPENDIX),
 ) : LifecycleEventObserver {
-
     private companion object {
         init {
             SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
@@ -36,7 +35,10 @@ internal class SentryLifecycleObserver(
         addIntegrationToSdkVersion("ComposeNavigation")
     }
 
-    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+    override fun onStateChanged(
+        source: LifecycleOwner,
+        event: Lifecycle.Event,
+    ) {
         if (event == Lifecycle.Event.ON_RESUME) {
             navController.addOnDestinationChangedListener(navListener)
         } else if (event == Lifecycle.Event.ON_PAUSE) {
@@ -58,18 +60,17 @@ internal class SentryLifecycleObserver(
  */
 @Composable
 @NonRestartableComposable
-public fun NavHostController.withSentryObservableEffect(
-    navListener: SentryNavigationListener
-): NavHostController {
+public fun NavHostController.withSentryObservableEffect(navListener: SentryNavigationListener): NavHostController {
     val navListenerSnapshot by rememberUpdatedState(navListener)
 
     // As described in https://developer.android.com/codelabs/jetpack-compose-advanced-state-side-effects#6
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, this) {
-        val observer = SentryLifecycleObserver(
-            this@withSentryObservableEffect,
-            navListener = navListenerSnapshot
-        )
+        val observer =
+            SentryLifecycleObserver(
+                this@withSentryObservableEffect,
+                navListener = navListenerSnapshot,
+            )
 
         lifecycle.addObserver(observer)
 
@@ -95,17 +96,18 @@ public fun NavHostController.withSentryObservableEffect(
 @NonRestartableComposable
 public fun NavHostController.withSentryObservableEffect(
     enableNavigationBreadcrumbs: Boolean = true,
-    enableNavigationTracing: Boolean = true
+    enableNavigationTracing: Boolean = true,
 ): NavHostController {
     val enableBreadcrumbsSnapshot by rememberUpdatedState(enableNavigationBreadcrumbs)
     val enableTracingSnapshot by rememberUpdatedState(enableNavigationTracing)
 
     return withSentryObservableEffect(
-        navListener = SentryNavigationListener(
-            enableNavigationBreadcrumbs = enableBreadcrumbsSnapshot,
-            enableNavigationTracing = enableTracingSnapshot,
-            traceOriginAppendix = TRACE_ORIGIN_APPENDIX
-        )
+        navListener =
+            SentryNavigationListener(
+                enableNavigationBreadcrumbs = enableBreadcrumbsSnapshot,
+                enableNavigationTracing = enableTracingSnapshot,
+                traceOriginAppendix = TRACE_ORIGIN_APPENDIX,
+            ),
     )
 }
 
@@ -117,9 +119,8 @@ public fun NavHostController.withSentryObservableEffect(
  *
  */
 @Composable
-internal fun NavHostController.withSentryObservableEffect(): NavHostController {
-    return withSentryObservableEffect(
+internal fun NavHostController.withSentryObservableEffect(): NavHostController =
+    withSentryObservableEffect(
         enableNavigationBreadcrumbs = true,
-        enableNavigationTracing = true
+        enableNavigationTracing = true,
     )
-}

@@ -34,7 +34,6 @@ import kotlin.test.assertNull
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
 class SystemEventsBreadcrumbsIntegrationTest {
-
     private class Fixture {
         val context = mock<Context>()
         var options = SentryAndroidOptions()
@@ -44,17 +43,18 @@ class SystemEventsBreadcrumbsIntegrationTest {
         fun getSut(
             enableSystemEventBreadcrumbs: Boolean = true,
             executorService: ISentryExecutorService = ImmediateExecutorService(),
-            mockHandler: Boolean = true
+            mockHandler: Boolean = true,
         ): SystemEventsBreadcrumbsIntegration {
             handler = if (mockHandler) mock() else MainLooperHandler()
-            options = SentryAndroidOptions().apply {
-                isEnableSystemEventBreadcrumbs = enableSystemEventBreadcrumbs
-                this.executorService = executorService
-            }
+            options =
+                SentryAndroidOptions().apply {
+                    isEnableSystemEventBreadcrumbs = enableSystemEventBreadcrumbs
+                    this.executorService = executorService
+                }
             return SystemEventsBreadcrumbsIntegration(
                 context,
                 SystemEventsBreadcrumbsIntegration.getDefaultActions().toTypedArray(),
-                handler
+                handler,
             )
         }
     }
@@ -117,11 +117,12 @@ class SystemEventsBreadcrumbsIntegrationTest {
         val sut = fixture.getSut()
 
         sut.register(fixture.scopes, fixture.options)
-        val intent = Intent().apply {
-            action = Intent.ACTION_TIME_CHANGED
-            putExtra("test", 10)
-            putExtra("test2", 20)
-        }
+        val intent =
+            Intent().apply {
+                action = Intent.ACTION_TIME_CHANGED
+                putExtra("test", 10)
+                putExtra("test2", 20)
+            }
         sut.receiver!!.onReceive(fixture.context, intent)
 
         verify(fixture.scopes).addBreadcrumb(
@@ -131,7 +132,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
                 assertEquals(SentryLevel.INFO, it.level)
                 // cant assert data, its not a public API
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -140,12 +141,13 @@ class SystemEventsBreadcrumbsIntegrationTest {
         val sut = fixture.getSut()
 
         sut.register(fixture.scopes, fixture.options)
-        val intent = Intent().apply {
-            action = Intent.ACTION_BATTERY_CHANGED
-            putExtra(BatteryManager.EXTRA_LEVEL, 75)
-            putExtra(BatteryManager.EXTRA_SCALE, 100)
-            putExtra(BatteryManager.EXTRA_PLUGGED, BatteryManager.BATTERY_PLUGGED_USB)
-        }
+        val intent =
+            Intent().apply {
+                action = Intent.ACTION_BATTERY_CHANGED
+                putExtra(BatteryManager.EXTRA_LEVEL, 75)
+                putExtra(BatteryManager.EXTRA_SCALE, 100)
+                putExtra(BatteryManager.EXTRA_PLUGGED, BatteryManager.BATTERY_PLUGGED_USB)
+            }
         sut.receiver!!.onReceive(fixture.context, intent)
 
         verify(fixture.scopes).addBreadcrumb(
@@ -156,7 +158,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
                 assertEquals(it.data["level"], 75f)
                 assertEquals(it.data["charging"], true)
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -165,17 +167,19 @@ class SystemEventsBreadcrumbsIntegrationTest {
         val sut = fixture.getSut()
 
         sut.register(fixture.scopes, fixture.options)
-        val intent1 = Intent().apply {
-            action = Intent.ACTION_BATTERY_CHANGED
-            putExtra(BatteryManager.EXTRA_LEVEL, 80)
-            putExtra(BatteryManager.EXTRA_SCALE, 100)
-        }
-        val intent2 = Intent().apply {
-            action = Intent.ACTION_BATTERY_CHANGED
-            putExtra(BatteryManager.EXTRA_LEVEL, 75)
-            putExtra(BatteryManager.EXTRA_SCALE, 100)
-            putExtra(BatteryManager.EXTRA_PLUGGED, BatteryManager.BATTERY_PLUGGED_USB)
-        }
+        val intent1 =
+            Intent().apply {
+                action = Intent.ACTION_BATTERY_CHANGED
+                putExtra(BatteryManager.EXTRA_LEVEL, 80)
+                putExtra(BatteryManager.EXTRA_SCALE, 100)
+            }
+        val intent2 =
+            Intent().apply {
+                action = Intent.ACTION_BATTERY_CHANGED
+                putExtra(BatteryManager.EXTRA_LEVEL, 75)
+                putExtra(BatteryManager.EXTRA_SCALE, 100)
+                putExtra(BatteryManager.EXTRA_PLUGGED, BatteryManager.BATTERY_PLUGGED_USB)
+            }
         sut.receiver!!.onReceive(fixture.context, intent1)
         sut.receiver!!.onReceive(fixture.context, intent2)
 
@@ -185,7 +189,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
                 assertEquals(it.data["level"], 80f)
                 assertEquals(it.data["charging"], false)
             },
-            anyOrNull()
+            anyOrNull(),
         )
         verifyNoMoreInteractions(fixture.scopes)
     }

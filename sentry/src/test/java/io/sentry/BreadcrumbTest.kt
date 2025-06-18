@@ -10,7 +10,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class BreadcrumbTest {
-
     @Test
     fun `copying breadcrumb wont have the same references`() {
         val breadcrumb = Breadcrumb()
@@ -254,7 +253,13 @@ class BreadcrumbTest {
 
     @Test
     fun `serializes Long keys for graphql data loader breadcrumb`() {
-        val breadcrumb = Breadcrumb.graphqlDataLoader(listOf(java.lang.Long.valueOf(1), java.lang.Long.valueOf(2)), java.lang.Long::class.java, Throwable::class.java, null)
+        val breadcrumb =
+            Breadcrumb.graphqlDataLoader(
+                listOf(java.lang.Long.valueOf(1), java.lang.Long.valueOf(2)),
+                java.lang.Long::class.java,
+                Throwable::class.java,
+                null,
+            )
         assertEquals("graphql", breadcrumb.type)
         assertEquals("graphql.data_loader", breadcrumb.category)
         assertEquals(listOf("1", "2"), breadcrumb.data["keys"] as? Iterable<String>)
@@ -312,9 +317,9 @@ class BreadcrumbTest {
         breadcrumb.removeData(null)
     }
 
-    class TestKey(val id: Long) {
-        override fun toString(): String {
-            return id.toString()
-        }
+    class TestKey(
+        val id: Long,
+    ) {
+        override fun toString(): String = id.toString()
     }
 }

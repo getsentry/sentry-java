@@ -11,7 +11,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class DeviceOrientationsTest {
-
     @Test
     fun `ORIENTATION_UNDEFINED returns null`() {
         assertNull(getOrientation(ORIENTATION_UNDEFINED))

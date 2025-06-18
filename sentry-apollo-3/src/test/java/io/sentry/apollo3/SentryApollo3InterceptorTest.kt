@@ -49,7 +49,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryApollo3InterceptorTest {
-
     class Fixture {
         val server = MockWebServer()
         val options =
@@ -59,10 +58,11 @@ class SentryApollo3InterceptorTest {
                 sdkVersion = SdkVersion("test", "1.2.3")
             }
         val scope = Scope(options)
-        val scopes = mock<IScopes>().also {
-            whenever(it.options).thenReturn(options)
-            doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(it).configureScope(any())
-        }
+        val scopes =
+            mock<IScopes>().also {
+                whenever(it.options).thenReturn(options)
+                doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(it).configureScope(any())
+            }
         private var httpInterceptor = SentryApollo3HttpInterceptor(scopes, captureFailedRequests = false)
 
         @SuppressWarnings("LongParameterList")
@@ -85,30 +85,36 @@ class SentryApollo3InterceptorTest {
             socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
             interceptor: HttpInterceptor? = null,
             addThirdPartyBaggageHeader: Boolean = false,
-            beforeSpan: BeforeSpanCallback? = null
+            beforeSpan: BeforeSpanCallback? = null,
         ): ApolloClient {
             server.enqueue(
                 MockResponse()
                     .setBody(responseBody)
                     .setSocketPolicy(socketPolicy)
-                    .setResponseCode(httpStatusCode)
+                    .setResponseCode(httpStatusCode),
             )
 
             if (beforeSpan != null) {
                 httpInterceptor = SentryApollo3HttpInterceptor(scopes, beforeSpan, captureFailedRequests = false)
             }
 
-            val builder = ApolloClient.Builder()
-                .serverUrl(server.url("/").toString())
-                .addHttpInterceptor(httpInterceptor)
+            val builder =
+                ApolloClient
+                    .Builder()
+                    .serverUrl(server.url("/").toString())
+                    .addHttpInterceptor(httpInterceptor)
 
             interceptor?.let {
                 builder.addHttpInterceptor(interceptor)
             }
 
             if (addThirdPartyBaggageHeader) {
-                builder.addHttpHeader("baggage", "thirdPartyBaggage=someValue")
-                    .addHttpHeader("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")
+                builder
+                    .addHttpHeader("baggage", "thirdPartyBaggage=someValue")
+                    .addHttpHeader(
+                        "baggage",
+                        "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+                    )
             }
 
             return builder.build()
@@ -133,7 +139,7 @@ class SentryApollo3InterceptorTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -148,29 +154,43 @@ class SentryApollo3InterceptorTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `get http status from ApolloHttpException in failed request`() {
-        val failingInterceptor = object : HttpInterceptor {
-            override suspend fun intercept(request: HttpRequest, chain: HttpInterceptorChain): HttpResponse {
-                throw ApolloHttpException(404, mock(), mock(), "")
+        val failingInterceptor =
+            object : HttpInterceptor {
+                override suspend fun intercept(
+                    request: HttpRequest,
+                    chain: HttpInterceptorChain,
+                ): HttpResponse = throw ApolloHttpException(404, mock(), mock(), "")
             }
-        }
         executeQuery(fixture.getSut(interceptor = failingInterceptor))
 
         verify(fixture.scopes).captureTransaction(
             check {
                 assertTransactionDetails(it, httpStatusCode = 404, contentLength = null)
-                assertEquals("POST", it.spans.first().data?.get(SpanDataConvention.HTTP_METHOD_KEY))
-                assertEquals(404, it.spans.first().data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY))
+                assertEquals(
+                    "POST",
+                    it.spans
+                        .first()
+                        .data
+                        ?.get(SpanDataConvention.HTTP_METHOD_KEY),
+                )
+                assertEquals(
+                    404,
+                    it.spans
+                        .first()
+                        .data
+                        ?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY),
+                )
                 assertEquals(SpanStatus.NOT_FOUND, it.spans.first().status)
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -185,7 +205,7 @@ class SentryApollo3InterceptorTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -235,7 +255,11 @@ class SentryApollo3InterceptorTest {
 
         val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
         assertEquals(baggageHeaderValues.size, 1)
-        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
+        assertTrue(
+            baggageHeaderValues[0].startsWith(
+                "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+            ),
+        )
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-transaction=op"))
         assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
@@ -244,13 +268,12 @@ class SentryApollo3InterceptorTest {
     @Test
     fun `customizer modifies span`() {
         executeQuery(
-
             fixture.getSut(
                 beforeSpan = { span, request, response ->
                     span.description = "overwritten description"
                     span
-                }
-            )
+                },
+            ),
         )
 
         verify(fixture.scopes).captureTransaction(
@@ -261,7 +284,7 @@ class SentryApollo3InterceptorTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -269,8 +292,8 @@ class SentryApollo3InterceptorTest {
     fun `returning null in beforeSpan callback drops span`() {
         executeQuery(
             fixture.getSut(
-                beforeSpan = { _, _, _ -> null }
-            )
+                beforeSpan = { _, _, _ -> null },
+            ),
         )
 
         verify(fixture.scopes).captureTransaction(
@@ -279,7 +302,7 @@ class SentryApollo3InterceptorTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -289,8 +312,8 @@ class SentryApollo3InterceptorTest {
             fixture.getSut(
                 beforeSpan = { _, _, _ ->
                     throw RuntimeException()
-                }
-            )
+                },
+            ),
         )
 
         verify(fixture.scopes).captureTransaction(
@@ -299,7 +322,7 @@ class SentryApollo3InterceptorTest {
             },
             anyOrNull<TraceContext>(),
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -315,14 +338,18 @@ class SentryApollo3InterceptorTest {
                 assertEquals("LaunchDetails", it.data["operation_name"])
                 assertNotNull(it.data["operation_id"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
     @Test
     fun `sets SDKVersion Info`() {
         assertNotNull(fixture.scopes.options.sdkVersion)
-        assert(fixture.scopes.options.sdkVersion!!.integrationSet.contains("Apollo3"))
+        assert(
+            fixture.scopes.options.sdkVersion!!
+                .integrationSet
+                .contains("Apollo3"),
+        )
     }
 
     @Test
@@ -339,7 +366,11 @@ class SentryApollo3InterceptorTest {
         verify(fixture.scopes).span
     }
 
-    private fun assertTransactionDetails(it: SentryTransaction, httpStatusCode: Int? = 200, contentLength: Long? = 0L) {
+    private fun assertTransactionDetails(
+        it: SentryTransaction,
+        httpStatusCode: Int? = 200,
+        contentLength: Long? = 0L,
+    ) {
         assertEquals(1, it.spans.size)
         val httpClientSpan = it.spans.first()
         assertEquals("http.graphql", httpClientSpan.op)
@@ -356,7 +387,11 @@ class SentryApollo3InterceptorTest {
         }
     }
 
-    private fun executeQuery(sut: ApolloClient = fixture.getSut(), isSpanActive: Boolean = true, id: String = "83") = runBlocking {
+    private fun executeQuery(
+        sut: ApolloClient = fixture.getSut(),
+        isSpanActive: Boolean = true,
+        id: String = "83",
+    ) = runBlocking {
         var tx: ITransaction? = null
         if (isSpanActive) {
             tx = SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
@@ -364,13 +399,14 @@ class SentryApollo3InterceptorTest {
             whenever(fixture.scopes.span).thenReturn(tx)
         }
 
-        val coroutine = launch {
-            try {
-                sut.query(LaunchDetailsQuery(id)).execute()
-            } catch (e: ApolloException) {
-                return@launch
+        val coroutine =
+            launch {
+                try {
+                    sut.query(LaunchDetailsQuery(id)).execute()
+                } catch (e: ApolloException) {
+                    return@launch
+                }
             }
-        }
 
         coroutine.join()
         tx?.finish()

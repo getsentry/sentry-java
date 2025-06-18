@@ -16,7 +16,6 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class ScopesAdapterTest {
-
     val scopes: IScopes = mock()
 
     @BeforeTest

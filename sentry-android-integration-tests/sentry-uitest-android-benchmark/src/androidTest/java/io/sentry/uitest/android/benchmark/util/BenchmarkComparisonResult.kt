@@ -45,9 +45,8 @@ internal data class BenchmarkComparisonResult(
     /** Decrease of fps. */
     val fpsDecreases: List<Int>,
     /** Decrease of fps in percentage. */
-    val fpsDecreasePercentages: List<Double>
+    val fpsDecreasePercentages: List<Double>,
 ) {
-
     /**
      * Prints the raw results of all runs of the comparison.
      * Each printed line is prefixed by [prefix], to allow parsers to easily parse log files to read raw values.
@@ -57,21 +56,25 @@ internal data class BenchmarkComparisonResult(
 
             println("$prefix ==================== Iteration $index ====================")
 
-            println("$prefix [$op2Name]: duration=${op2Duration[index]} ns, cpuTime=${op2CpuTime[index]}, fps=${op2Fps[index]}, droppedFrames=${op2DroppedFrames[index]}")
-            println("$prefix [$op1Name]: duration=${op1Duration[index]} ns, cpuTime=${op1CpuTime[index]}, fps=${op1Fps[index]}, droppedFrames=${op1DroppedFrames[index]}")
+            println(
+                "$prefix [$op2Name]: duration=${op2Duration[index]} ns, cpuTime=${op2CpuTime[index]}, fps=${op2Fps[index]}, droppedFrames=${op2DroppedFrames[index]}",
+            )
+            println(
+                "$prefix [$op1Name]: duration=${op1Duration[index]} ns, cpuTime=${op1CpuTime[index]}, fps=${op1Fps[index]}, droppedFrames=${op1DroppedFrames[index]}",
+            )
             println(
                 "$prefix Duration increase: %.2f%% (%d ns = %d ms)".format(
                     durationIncreasePercentage[index],
                     durationIncreaseNanos[index],
-                    TimeUnit.NANOSECONDS.toMillis(durationIncreaseNanos[index])
-                )
+                    TimeUnit.NANOSECONDS.toMillis(durationIncreaseNanos[index]),
+                ),
             )
 
             println(
                 "$prefix CPU time overhead, over $cores cores: %.2f%% (%d ms)".format(
                     cpuTimeIncreasePercentages[index],
-                    TimeUnit.NANOSECONDS.toMillis(cpuTimeIncreases[index])
-                )
+                    TimeUnit.NANOSECONDS.toMillis(cpuTimeIncreases[index]),
+                ),
             )
 
             println("$prefix FPS decrease: %.2f%% (%d fps)".format(fpsDecreasePercentages[index], fpsDecreases[index]))
@@ -80,25 +83,29 @@ internal data class BenchmarkComparisonResult(
             println(
                 "$prefix Frame drop increase, over $expectedFrames total frames, with $refreshRate hz: %.2f%% (%.2f)".format(
                     droppedFramesIncreasePercentages[index],
-                    droppedFramesIncreases[index]
-                )
+                    droppedFramesIncreases[index],
+                ),
             )
         }
     }
 
-    fun getSummaryResult() = BenchmarkSummaryResult(
-        calculatePercentile(cpuTimeIncreases, 90),
-        calculatePercentile(cpuTimeIncreasePercentages, 90),
-        calculatePercentile(droppedFramesIncreases, 90),
-        calculatePercentile(droppedFramesIncreasePercentages, 90),
-        calculatePercentile(durationIncreaseNanos, 90),
-        calculatePercentile(durationIncreasePercentage, 90),
-        calculatePercentile(fpsDecreases, 90),
-        calculatePercentile(fpsDecreasePercentages, 90)
-    )
+    fun getSummaryResult() =
+        BenchmarkSummaryResult(
+            calculatePercentile(cpuTimeIncreases, 90),
+            calculatePercentile(cpuTimeIncreasePercentages, 90),
+            calculatePercentile(droppedFramesIncreases, 90),
+            calculatePercentile(droppedFramesIncreasePercentages, 90),
+            calculatePercentile(durationIncreaseNanos, 90),
+            calculatePercentile(durationIncreasePercentage, 90),
+            calculatePercentile(fpsDecreases, 90),
+            calculatePercentile(fpsDecreasePercentages, 90),
+        )
 
     /** Calculate the [percentile] of the [list]. [percentile] should be in the range 0, 100. */
-    private fun <T : Number> calculatePercentile(list: List<T>, percentile: Int): T {
+    private fun <T : Number> calculatePercentile(
+        list: List<T>,
+        percentile: Int,
+    ): T {
         if (list.isEmpty()) {
             return 0 as T
         }
@@ -134,17 +141,16 @@ internal data class BenchmarkSummaryResult(
      */
     val fpsDecrease: Int,
     /** Decrease of fps in percentage. */
-    val fpsDecreasePercentage: Double
+    val fpsDecreasePercentage: Double,
 ) {
-
     /** Prints the summary results of the comparison. */
     fun printResults() {
         println(
             "Duration increase: %.2f%% (%d ns = %d ms)".format(
                 durationIncreasePercentage,
                 durationIncreaseNanos,
-                TimeUnit.NANOSECONDS.toMillis(durationIncreaseNanos)
-            )
+                TimeUnit.NANOSECONDS.toMillis(durationIncreaseNanos),
+            ),
         )
         println("CPU time overhead: %.2f%% (%d ms)".format(cpuTimeIncreasePercentage, cpuTimeIncreaseNanos))
         println("FPS decrease: %.2f%% (%d fps)".format(fpsDecreasePercentage, fpsDecrease))

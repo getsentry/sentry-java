@@ -17,22 +17,29 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class MapObjectReaderTest {
-
     enum class BasicEnum {
-        A
+        A,
     }
 
-    data class BasicSerializable(var test: String = "string") : JsonSerializable {
-
-        override fun serialize(writer: ObjectWriter, logger: ILogger) {
-            writer.beginObject()
+    data class BasicSerializable(
+        var test: String = "string",
+    ) : JsonSerializable {
+        override fun serialize(
+            writer: ObjectWriter,
+            logger: ILogger,
+        ) {
+            writer
+                .beginObject()
                 .name("test")
                 .value(test)
                 .endObject()
         }
 
         class Deserializer : JsonDeserializer<BasicSerializable> {
-            override fun deserialize(reader: ObjectReader, logger: ILogger): BasicSerializable {
+            override fun deserialize(
+                reader: ObjectReader,
+                logger: ILogger,
+            ): BasicSerializable {
                 val basicSerializable = BasicSerializable()
                 reader.beginObject()
                 if (reader.nextName() == "test") {
@@ -62,7 +69,7 @@ class MapObjectReaderTest {
         writer.name("TimeZone").value(logger, TimeZone.getTimeZone("Vienna"))
         writer.name("JsonSerializable").value(
             logger,
-            BasicSerializable()
+            BasicSerializable(),
         )
         writer.name("Collection").value(logger, listOf("a", "b"))
         writer.name("Arrays").value(logger, arrayOf("b", "c"))
@@ -96,7 +103,7 @@ class MapObjectReaderTest {
         assertEquals("UUID", reader.nextName())
         assertEquals(
             "00000000-1111-2222-3333-444444444444",
-            reader.nextString()
+            reader.nextString(),
         )
         assertEquals("URI", reader.nextName())
         assertEquals(URI.create("http://www.example.com"), URI.create(reader.nextString()))

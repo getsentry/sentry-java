@@ -12,16 +12,16 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class SentrySpanTest {
-
     @Test
     fun `end timestamps is kept null if not provided`() {
         // when a span with a start timestamp is generated
-        val span = Span(
-            TransactionContext("name", "op"),
-            mock<SentryTracer>(),
-            mock<IScopes>(),
-            SpanOptions().also { it.startTimestamp = SentryLongDate(1000000) }
-        )
+        val span =
+            Span(
+                TransactionContext("name", "op"),
+                mock<SentryTracer>(),
+                mock<IScopes>(),
+                SpanOptions().also { it.startTimestamp = SentryLongDate(1000000) },
+            )
 
         val sentrySpan = SentrySpan(span)
 

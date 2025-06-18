@@ -42,7 +42,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class BufferCaptureStrategyTest {
-
     @get:Rule
     val tmpDir = TemporaryFolder()
 
@@ -51,41 +50,45 @@ class BufferCaptureStrategyTest {
             const val VIDEO_DURATION = 5000L
         }
 
-        val options = SentryOptions().apply {
-            setReplayController(
-                mock {
-                    on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter())
-                }
-            )
-        }
-        val scope = Scope(options)
-        val scopes = mock<IScopes> {
-            doAnswer {
-                (it.arguments[0] as ScopeCallback).run(scope)
-            }.whenever(it).configureScope(any())
-        }
-        var persistedSegment = LinkedHashMap<String, String?>()
-        val replayCache = mock<ReplayCache> {
-            on { frames }.thenReturn(mutableListOf(ReplayFrame(File("1720693523997.jpg"), 1720693523997)))
-            on { persistSegmentValues(any(), anyOrNull()) }.then {
-                persistedSegment.put(it.arguments[0].toString(), it.arguments[1]?.toString())
+        val options =
+            SentryOptions().apply {
+                setReplayController(
+                    mock {
+                        on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter())
+                    },
+                )
             }
-            on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), any()) }
-                .thenReturn(GeneratedVideo(File("0.mp4"), 5, VIDEO_DURATION))
-        }
-        val recorderConfig = ScreenshotRecorderConfig(
-            recordingWidth = 1080,
-            recordingHeight = 1920,
-            scaleFactorX = 1f,
-            scaleFactorY = 1f,
-            frameRate = 1,
-            bitRate = 20_000
-        )
+        val scope = Scope(options)
+        val scopes =
+            mock<IScopes> {
+                doAnswer {
+                    (it.arguments[0] as ScopeCallback).run(scope)
+                }.whenever(it).configureScope(any())
+            }
+        var persistedSegment = LinkedHashMap<String, String?>()
+        val replayCache =
+            mock<ReplayCache> {
+                on { frames }.thenReturn(mutableListOf(ReplayFrame(File("1720693523997.jpg"), 1720693523997)))
+                on { persistSegmentValues(any(), anyOrNull()) }.then {
+                    persistedSegment.put(it.arguments[0].toString(), it.arguments[1]?.toString())
+                }
+                on { createVideoOf(anyLong(), anyLong(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), any()) }
+                    .thenReturn(GeneratedVideo(File("0.mp4"), 5, VIDEO_DURATION))
+            }
+        val recorderConfig =
+            ScreenshotRecorderConfig(
+                recordingWidth = 1080,
+                recordingHeight = 1920,
+                scaleFactorX = 1f,
+                scaleFactorY = 1f,
+                frameRate = 1,
+                bitRate = 20_000,
+            )
 
         fun getSut(
             onErrorSampleRate: Double = 1.0,
             dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
-            replayCacheDir: File? = null
+            replayCacheDir: File? = null,
         ): BufferCaptureStrategy {
             replayCacheDir?.let {
                 whenever(replayCache.replayCacheDir).thenReturn(it)
@@ -103,17 +106,18 @@ class BufferCaptureStrategyTest {
                         (invocation.arguments[0] as Runnable).run()
                         null
                     }.whenever(it).submit(any<Runnable>())
-                }
+                },
             ) { _ -> replayCache }
         }
 
-        fun mockedMotionEvent(action: Int): MotionEvent = mock {
-            on { actionMasked }.thenReturn(action)
-            on { getPointerId(anyInt()) }.thenReturn(0)
-            on { findPointerIndex(anyInt()) }.thenReturn(0)
-            on { getX(anyInt()) }.thenReturn(1f)
-            on { getY(anyInt()) }.thenReturn(1f)
-        }
+        fun mockedMotionEvent(action: Int): MotionEvent =
+            mock {
+                on { actionMasked }.thenReturn(action)
+                on { getPointerId(anyInt()) }.thenReturn(0)
+                on { findPointerIndex(anyInt()) }.thenReturn(0)
+                on { getX(anyInt()) }.thenReturn(1f)
+                on { getY(anyInt()) }.thenReturn(1f)
+            }
     }
 
     private val fixture = Fixture()
@@ -141,7 +145,7 @@ class BufferCaptureStrategyTest {
         assertEquals(replayId.toString(), fixture.persistedSegment[SEGMENT_KEY_REPLAY_ID])
         assertEquals(
             ReplayType.BUFFER.toString(),
-            fixture.persistedSegment[SEGMENT_KEY_REPLAY_TYPE]
+            fixture.persistedSegment[SEGMENT_KEY_REPLAY_TYPE],
         )
         assertTrue(fixture.persistedSegment[SEGMENT_KEY_TIMESTAMP]?.isNotEmpty() == true)
     }
@@ -183,9 +187,10 @@ class BufferCaptureStrategyTest {
     fun `onScreenshotRecorded adds screenshot to cache`() {
         val now =
             System.currentTimeMillis() + (fixture.options.sessionReplay.errorReplayDuration * 5)
-        val strategy = fixture.getSut(
-            dateProvider = { now }
-        )
+        val strategy =
+            fixture.getSut(
+                dateProvider = { now },
+            )
         strategy.start()
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) { frameTimestamp ->
@@ -197,9 +202,10 @@ class BufferCaptureStrategyTest {
     fun `onScreenshotRecorded rotates screenshots when out of buffer bounds`() {
         val now =
             System.currentTimeMillis() + (fixture.options.sessionReplay.errorReplayDuration * 5)
-        val strategy = fixture.getSut(
-            dateProvider = { now }
-        )
+        val strategy =
+            fixture.getSut(
+                dateProvider = { now },
+            )
         strategy.start()
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) { frameTimestamp ->
@@ -252,7 +258,7 @@ class BufferCaptureStrategyTest {
         val converted = strategy.convert()
         assertEquals(
             ReplayType.BUFFER,
-            converted.replayType
+            converted.replayType,
         )
     }
 
@@ -311,7 +317,7 @@ class BufferCaptureStrategyTest {
             replayId.toString(),
             fixture.persistedSegment.values.first(),
             "The replayId must be set first, so when we clean up stale replays" +
-                "the current replay cache folder is not being deleted."
+                "the current replay cache folder is not being deleted.",
         )
     }
 }

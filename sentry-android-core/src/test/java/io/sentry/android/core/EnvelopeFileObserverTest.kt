@@ -24,16 +24,13 @@ import kotlin.test.assertFalse
 
 @RunWith(AndroidJUnit4::class)
 class EnvelopeFileObserverTest {
-
     private class Fixture {
         val fileName = "file-name.txt"
         var path: String? = "."
         val envelopeSender = mock<IEnvelopeSender>()
         val logger = mock<ILogger>()
 
-        fun getSut(flushTimeoutMillis: Long): EnvelopeFileObserver {
-            return EnvelopeFileObserver(path, envelopeSender, logger, flushTimeoutMillis)
-        }
+        fun getSut(flushTimeoutMillis: Long): EnvelopeFileObserver = EnvelopeFileObserver(path, envelopeSender, logger, flushTimeoutMillis)
     }
 
     private val fixture = Fixture()
@@ -74,7 +71,7 @@ class EnvelopeFileObserverTest {
 
         verify(fixture.envelopeSender).processEnvelopeFile(
             eq(fixture.path + File.separator + fixture.fileName),
-            check { HintUtils.hasType(it, ApplyScopeData::class.java) }
+            check { HintUtils.hasType(it, ApplyScopeData::class.java) },
         )
     }
 
@@ -84,7 +81,7 @@ class EnvelopeFileObserverTest {
 
         verify(fixture.envelopeSender).processEnvelopeFile(
             eq(fixture.path + File.separator + fixture.fileName),
-            check { HintUtils.hasType(it, Resettable::class.java) }
+            check { HintUtils.hasType(it, Resettable::class.java) },
         )
     }
 
@@ -102,14 +99,14 @@ class EnvelopeFileObserverTest {
 
                 assertFalse((HintUtils.getSentrySdkHint(hints) as Retryable).isRetry)
                 assertFalse((HintUtils.getSentrySdkHint(hints) as SubmissionResult).isSuccess)
-            }
+            },
         )
     }
 
     private fun triggerEvent(
         flushTimeoutMillis: Long = 15_000,
         eventType: Int = FileObserver.CLOSE_WRITE,
-        relativePath: String? = fixture.fileName
+        relativePath: String? = fixture.fileName,
     ) {
         val sut = fixture.getSut(flushTimeoutMillis)
         sut.onEvent(eventType, relativePath)

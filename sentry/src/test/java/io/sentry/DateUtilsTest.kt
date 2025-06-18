@@ -11,7 +11,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class DateUtilsTest {
-
     private val utcTimeZone: ZoneId = ZoneId.of("UTC")
     private val isoFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 
@@ -48,14 +47,15 @@ class DateUtilsTest {
 
     @Test
     fun `Millis timestamp with millis precision, it should be UTC`() {
-        val input = listOf(
-            Pair("1591533492.631", "2020-06-07T12:38:12.631Z"),
-            Pair("1591533492.63", "2020-06-07T12:38:12.630Z"),
-            Pair("1591533492.6", "2020-06-07T12:38:12.600Z"),
-            Pair("1591533492", "2020-06-07T12:38:12.000Z"),
-            Pair("1591533492.631631", "2020-06-07T12:38:12.631Z"),
-            Pair("1591533492.999999", "2020-06-07T12:38:12.999Z")
-        )
+        val input =
+            listOf(
+                Pair("1591533492.631", "2020-06-07T12:38:12.631Z"),
+                Pair("1591533492.63", "2020-06-07T12:38:12.630Z"),
+                Pair("1591533492.6", "2020-06-07T12:38:12.600Z"),
+                Pair("1591533492", "2020-06-07T12:38:12.000Z"),
+                Pair("1591533492.631631", "2020-06-07T12:38:12.631Z"),
+                Pair("1591533492.999999", "2020-06-07T12:38:12.999Z"),
+            )
 
         input.forEach {
             val actual = DateUtils.getDateTimeWithMillisPrecision(it.first)
@@ -117,13 +117,16 @@ class DateUtilsTest {
         assertClose(0.000123456, seconds)
     }
 
-    private fun convertDate(date: Date): LocalDateTime {
-        return Instant.ofEpochMilli(date.time)
+    private fun convertDate(date: Date): LocalDateTime =
+        Instant
+            .ofEpochMilli(date.time)
             .atZone(utcTimeZone)
             .toLocalDateTime()
-    }
 
-    private fun assertClose(expected: Double, actual: Double?) {
+    private fun assertClose(
+        expected: Double,
+        actual: Double?,
+    ) {
         assertNotNull(actual)
         val diff = Math.abs(expected - actual)
         val threshold = 0.000001

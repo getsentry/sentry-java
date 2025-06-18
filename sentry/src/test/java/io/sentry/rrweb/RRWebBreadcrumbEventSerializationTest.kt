@@ -11,18 +11,20 @@ class RRWebBreadcrumbEventSerializationTest {
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = RRWebBreadcrumbEvent().apply {
-            timestamp = 12345678901
-            breadcrumbType = "default"
-            breadcrumbTimestamp = 12345678.901
-            category = "navigation"
-            message = "message"
-            level = INFO
-            data = mapOf(
-                "screen" to "MainActivity",
-                "state" to "resumed"
-            )
-        }
+        fun getSut() =
+            RRWebBreadcrumbEvent().apply {
+                timestamp = 12345678901
+                breadcrumbType = "default"
+                breadcrumbTimestamp = 12345678.901
+                category = "navigation"
+                message = "message"
+                level = INFO
+                data =
+                    mapOf(
+                        "screen" to "MainActivity",
+                        "state" to "resumed",
+                    )
+            }
     }
 
     private val fixture = Fixture()

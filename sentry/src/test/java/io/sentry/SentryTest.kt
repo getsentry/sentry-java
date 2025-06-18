@@ -57,7 +57,6 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class SentryTest {
-
     private val dsn = "http://key@localhost/proj"
 
     @get:Rule
@@ -128,10 +127,11 @@ class SentryTest {
     @Test
     fun `if a single integration crashes, the SDK and other integrations are still initialized`() {
         val goodIntegrationInitialized = AtomicBoolean(false)
-        val goodIntegration = Integration { scopes, options ->
-            // no-op
-            goodIntegrationInitialized.set(true)
-        }
+        val goodIntegration =
+            Integration { scopes, options ->
+                // no-op
+                goodIntegrationInitialized.set(true)
+            }
 
         val badIntegration = Integration { scopes, options -> throw IllegalStateException("bad integration") }
 
@@ -146,7 +146,9 @@ class SentryTest {
         assertTrue(goodIntegrationInitialized.get())
     }
 
-    interface CloseableIntegration : Integration, Closeable
+    interface CloseableIntegration :
+        Integration,
+        Closeable
 
     @Test
     fun `global client is enabled after restart`() {
@@ -256,15 +258,16 @@ class SentryTest {
             it.setTag("a", "a")
         }
 
-        CompletableFuture.runAsync {
-            Sentry.configureScope {
-                it.setTag("b", "b")
-            }
+        CompletableFuture
+            .runAsync {
+                Sentry.configureScope {
+                    it.setTag("b", "b")
+                }
 
-            Sentry.configureScope {
-                assertEquals(setOf("a", "b"), it.tags.keys)
-            }
-        }.get()
+                Sentry.configureScope {
+                    assertEquals(setOf("a", "b"), it.tags.keys)
+                }
+            }.get()
 
         Sentry.configureScope {
             assertEquals(setOf("a"), it.tags.keys)
@@ -284,7 +287,7 @@ class SentryTest {
         }
         verify(logger).log(
             eq(SentryLevel.WARNING),
-            eq("Sentry has been already initialized. Previous configuration will be overwritten.")
+            eq("Sentry has been already initialized. Previous configuration will be overwritten."),
         )
     }
 
@@ -299,7 +302,7 @@ class SentryTest {
         }
         verify(logger).log(
             eq(SentryLevel.WARNING),
-            eq("Sentry has been already initialized. Previous configuration will be overwritten.")
+            eq("Sentry has been already initialized. Previous configuration will be overwritten."),
         )
     }
 
@@ -363,7 +366,7 @@ class SentryTest {
             assertThrows(java.lang.IllegalArgumentException::class.java) { initForTest() }
         assertEquals(
             "DSN is required. Use empty string or set enabled to false in SentryOptions to disable SDK.",
-            exception.message
+            exception.message,
         )
     }
 
@@ -380,7 +383,7 @@ class SentryTest {
         verify(client).captureUserFeedback(
             argThat {
                 eventId == userFeedback.eventId
-            }
+            },
         )
     }
 
@@ -455,10 +458,11 @@ class SentryTest {
     @Test
     fun `only old profiles in profilingTracesDirPath should be cleared when profiling is enabled`() {
         val tempPath = getTempPath()
-        val options = SentryOptions().also {
-            it.dsn = dsn
-            it.cacheDirPath = tempPath
-        }
+        val options =
+            SentryOptions().also {
+                it.dsn = dsn
+                it.cacheDirPath = tempPath
+            }
         val dir = File(options.profilingTracesDirPath!!)
         val oldProfile = File(dir, "oldProfile")
         val newProfile = File(dir, "newProfile")
@@ -510,12 +514,13 @@ class SentryTest {
         assertTrue(Sentry.getCurrentScopes().isNoOp)
 
         // init Sentry in another thread
-        val thread = Thread() {
-            initForTest {
-                it.dsn = dsn
-                it.isDebug = true
+        val thread =
+            Thread {
+                initForTest {
+                    it.dsn = dsn
+                    it.isDebug = true
+                }
             }
-        }
         thread.start()
         thread.join()
 
@@ -537,16 +542,18 @@ class SentryTest {
         val capturedEvents = mutableListOf<SentryEvent>()
 
         // init Sentry in another thread
-        val thread = Thread() {
-            initForTest {
-                it.dsn = dsn
-                it.isDebug = true
-                it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
-                    capturedEvents.add(event)
-                    event
+        val thread =
+            Thread {
+                initForTest {
+                    it.dsn = dsn
+                    it.isDebug = true
+                    it.beforeSend =
+                        SentryOptions.BeforeSendCallback { event, hint ->
+                            capturedEvents.add(event)
+                            event
+                        }
                 }
             }
-        }
         thread.start()
         thread.join()
 
@@ -588,16 +595,18 @@ class SentryTest {
         val capturedEvents = mutableListOf<SentryEvent>()
 
         // init Sentry in another thread
-        val thread = Thread() {
-            initForTest({
-                it.dsn = dsn
-                it.isDebug = true
-                it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
-                    capturedEvents.add(event)
-                    event
-                }
-            }, true)
-        }
+        val thread =
+            Thread {
+                initForTest({
+                    it.dsn = dsn
+                    it.isDebug = true
+                    it.beforeSend =
+                        SentryOptions.BeforeSendCallback { event, hint ->
+                            capturedEvents.add(event)
+                            event
+                        }
+                }, true)
+            }
         thread.start()
         thread.join()
 
@@ -799,7 +808,13 @@ class SentryTest {
             it.executorService.close(0)
             it.isDebug = true
         }
-        verify(logger).log(eq(SentryLevel.ERROR), eq("Failed to call the executor. Old profiles will not be deleted. Did you call Sentry.close()?"), any())
+        verify(
+            logger,
+        ).log(
+            eq(SentryLevel.ERROR),
+            eq("Failed to call the executor. Old profiles will not be deleted. Did you call Sentry.close()?"),
+            any(),
+        )
     }
 
     @Test
@@ -874,10 +889,11 @@ class SentryTest {
 
     @Test
     fun `if there is work enqueued, init notifies options observers after that work is done`() {
-        val optionsObserver = InMemoryOptionsObserver().apply {
-            setRelease("io.sentry.sample@2.0.0")
-            setEnvironment("production")
-        }
+        val optionsObserver =
+            InMemoryOptionsObserver().apply {
+                setRelease("io.sentry.sample@2.0.0")
+                setEnvironment("production")
+            }
         val triggered = AtomicBoolean(false)
 
         initForTest {
@@ -924,11 +940,11 @@ class SentryTest {
             previousSessionFile.parentFile.mkdirs()
             it.serializer.serialize(
                 Session(null, null, "release", "io.sentry.samples@2.0"),
-                previousSessionFile.bufferedWriter()
+                previousSessionFile.bufferedWriter(),
             )
             assertEquals(
                 "release",
-                it.serializer.deserialize(previousSessionFile.bufferedReader(), Session::class.java)!!.environment
+                it.serializer.deserialize(previousSessionFile.bufferedReader(), Session::class.java)!!.environment,
             )
 
             it.addIntegration { scopes, _ ->
@@ -957,7 +973,7 @@ class SentryTest {
             previousSessionFile.parentFile.mkdirs()
             it.serializer.serialize(
                 Session(null, null, "release", "io.sentry.sample@1.0"),
-                previousSessionFile.bufferedWriter()
+                previousSessionFile.bufferedWriter(),
             )
 
             it.executorService.submit {
@@ -999,12 +1015,12 @@ class SentryTest {
         verify(client).captureFeedback(
             eq(feedback),
             eq(hint),
-            check { assertFalse(it.tags.containsKey("testKey")) }
+            check { assertFalse(it.tags.containsKey("testKey")) },
         )
         verify(client).captureFeedback(
             eq(feedback),
             eq(hint),
-            check { assertEquals("testValue", it.tags["testKey"]) }
+            check { assertEquals("testValue", it.tags["testKey"]) },
         )
     }
 
@@ -1023,7 +1039,7 @@ class SentryTest {
                 checkInId == checkIn.checkInId
             },
             anyOrNull(),
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -1169,14 +1185,14 @@ class SentryTest {
                 assertEquals("app.launch", it.transactionContext.name)
                 assertEquals("profile", it.transactionContext.operation)
                 assertTrue(it.transactionContext.isForNextAppStart)
-            }
+            },
         )
         verify(mockProfilesSampler).sample(
             check {
                 assertEquals("app.launch", it.transactionContext.name)
                 assertEquals("profile", it.transactionContext.operation)
                 assertTrue(it.transactionContext.isForNextAppStart)
-            }
+            },
         )
     }
 
@@ -1347,10 +1363,11 @@ class SentryTest {
     @Test
     fun `init on Android works when using SentryAndroidOptions`() {
         PlatformTestManipulator.pretendIsAndroid(true)
-        val options = CustomAndroidOptions().also {
-            it.dsn = dsn
-            it.mockName()
-        }
+        val options =
+            CustomAndroidOptions().also {
+                it.dsn = dsn
+                it.mockName()
+            }
         initForTest(options)
         options.resetName()
         PlatformTestManipulator.pretendIsAndroid(false)
@@ -1381,7 +1398,10 @@ class SentryTest {
 
     @Test
     fun `if globalHubMode on options is set, ignores false from init param`() {
-        initForTest({ o -> o.dsn = dsn; o.isGlobalHubMode = true }, false)
+        initForTest({ o ->
+            o.dsn = dsn
+            o.isGlobalHubMode = true
+        }, false)
         val s1 = Sentry.forkedRootScopes("s1")
         val s2 = Sentry.forkedRootScopes("s2")
         assertSame(s1, s2)
@@ -1389,7 +1409,10 @@ class SentryTest {
 
     @Test
     fun `if globalHubMode on options is set, ignores true from init param`() {
-        initForTest({ o -> o.dsn = dsn; o.isGlobalHubMode = false }, true)
+        initForTest({ o ->
+            o.dsn = dsn
+            o.isGlobalHubMode = false
+        }, true)
         val s1 = Sentry.forkedRootScopes("s1")
         val s2 = Sentry.forkedRootScopes("s2")
         assertNotSame(s1, s2)
@@ -1436,7 +1459,7 @@ class SentryTest {
         verify(logger).log(
             eq(SentryLevel.WARNING),
             eq("Profiling lifecycle is %s. Profiling cannot be started manually."),
-            eq(ProfileLifecycle.TRACE.name)
+            eq(ProfileLifecycle.TRACE.name),
         )
     }
 
@@ -1525,16 +1548,21 @@ class SentryTest {
 
     private class CustomThreadChecker : IThreadChecker {
         override fun isMainThread(threadId: Long): Boolean = false
+
         override fun isMainThread(thread: Thread): Boolean = false
+
         override fun isMainThread(): Boolean = false
+
         override fun isMainThread(sentryThread: SentryThread): Boolean = false
+
         override fun currentThreadSystemId(): Long = 0
+
         override fun getCurrentThreadName(): String = ""
     }
 
-    private class CustomMemoryCollector :
-        IPerformanceSnapshotCollector {
+    private class CustomMemoryCollector : IPerformanceSnapshotCollector {
         override fun setup() {}
+
         override fun collect(performanceCollectionData: PerformanceCollectionData) {}
     }
 
@@ -1548,7 +1576,12 @@ class SentryTest {
 
     private class CustomEnvelopCache : IEnvelopeCache {
         override fun iterator(): MutableIterator<SentryEnvelope> = TODO()
-        override fun store(envelope: SentryEnvelope, hint: Hint) = Unit
+
+        override fun store(
+            envelope: SentryEnvelope,
+            hint: Hint,
+        ) = Unit
+
         override fun discard(envelope: SentryEnvelope) = Unit
     }
 
@@ -1573,9 +1606,11 @@ class SentryTest {
         init {
             resetName()
         }
+
         fun mockName() {
             javaClass.injectForField("name", "io.sentry.android.core.SentryAndroidOptions")
         }
+
         fun resetName() {
             javaClass.injectForField("name", "io.sentry.SentryTest\$CustomAndroidOptions")
         }

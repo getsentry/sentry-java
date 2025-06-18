@@ -10,17 +10,19 @@ class RRWebSpanEventSerializationTest {
     class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = RRWebSpanEvent().apply {
-            timestamp = 12345678901
-            op = "resource.http"
-            description = "https://api.github.com/users/getsentry/repos"
-            startTimestamp = 12345678.901
-            endTimestamp = 12345679.901
-            data = mapOf(
-                "method" to "POST",
-                "status_code" to 200
-            )
-        }
+        fun getSut() =
+            RRWebSpanEvent().apply {
+                timestamp = 12345678901
+                op = "resource.http"
+                description = "https://api.github.com/users/getsentry/repos"
+                startTimestamp = 12345678.901
+                endTimestamp = 12345679.901
+                data =
+                    mapOf(
+                        "method" to "POST",
+                        "status_code" to 200,
+                    )
+            }
     }
 
     private val fixture = Fixture()

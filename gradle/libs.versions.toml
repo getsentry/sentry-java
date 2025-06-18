@@ -32,6 +32,7 @@ springboot3 = "3.5.0"
 targetSdk = "34"
 compileSdk = "34"
 minSdk = "21"
+spotless = "7.0.4"
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -43,7 +44,7 @@ binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibil
 compose-compiler = { id = "org.jetbrains.compose", version.ref = "jetbrainsCompose" }
 errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
 gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
-spotless = { id = "com.diffplug.spotless", version = "6.11.0" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8" }
 jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.0" }
 kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.3" }
@@ -121,6 +122,7 @@ servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version 
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 slf4j2-api = { module = "org.slf4j:slf4j-api", version = "2.0.5" }
+spotlessLib = { module = "com.diffplug.spotless:com.diffplug.spotless.gradle.plugin", version.ref = "spotless"}
 springboot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot2" }
 springboot-starter-graphql = { module = "org.springframework.boot:spring-boot-starter-graphql", version.ref = "springboot2" }
 springboot-starter-quartz = { module = "org.springframework.boot:spring-boot-starter-quartz", version.ref = "springboot2" }

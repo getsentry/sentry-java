@@ -12,13 +12,22 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 
 class MeasurementValueSerializationTest {
-
     class Fixture {
         val logger = mock<ILogger>()
 
         // float cannot represent 0.3 correctly https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html
-        fun getSut(value: Number = 0.30000001192092896, unit: String = "test") = MeasurementValue(value, unit, mapOf<String, Any>("new_type" to "newtype"))
+        fun getSut(
+            value: Number = 0.30000001192092896,
+            unit: String = "test",
+        ) = MeasurementValue(
+            value,
+            unit,
+            mapOf<String, Any>(
+                "new_type" to "newtype",
+            ),
+        )
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -59,11 +68,11 @@ class MeasurementValueSerializationTest {
 
     // Helper
 
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
+    private fun sanitizedFile(path: String): String =
+        FileFromResources
+            .invoke(path)
             .replace(Regex("[\n\r]"), "")
             .replace(" ", "")
-    }
 
     private fun serialize(jsonSerializable: JsonSerializable): String {
         val wrt = StringWriter()

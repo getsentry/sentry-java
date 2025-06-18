@@ -46,9 +46,8 @@ import kotlin.test.assertEquals
 class JsonUnknownSerializationTest(
     private val jsonUnknown: JsonUnknown,
     private val jsonSerializable: JsonSerializable,
-    private val deserializer: (JsonObjectReader, ILogger) -> JsonUnknown
+    private val deserializer: (JsonObjectReader, ILogger) -> JsonUnknown,
 ) {
-
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
@@ -69,7 +68,8 @@ class JsonUnknownSerializationTest(
             val sentryEnvelopeItemHeader = givenJsonUnknown(SentryEnvelopeItemHeaderSerializationTest.Fixture().getSut())
             val sentryEvent = givenJsonUnknown(SentryEvent())
             val sentryException = givenJsonUnknown(SentryException())
-            val sentryPackage = givenJsonUnknown(SentryPackage("b59a1949-9950-4203-b394-ddd8d02c9633", "3d7790f3-7f32-43f7-b82f-9f5bc85205a8"))
+            val sentryPackage =
+                givenJsonUnknown(SentryPackage("b59a1949-9950-4203-b394-ddd8d02c9633", "3d7790f3-7f32-43f7-b82f-9f5bc85205a8"))
             val sentryRuntime = givenJsonUnknown(SentryRuntime())
             val sentrySpan = givenJsonUnknown(SentrySpanSerializationTest.Fixture().getSut())
             val sentryStackFrame = givenJsonUnknown(SentryStackFrame())
@@ -119,17 +119,17 @@ class JsonUnknownSerializationTest(
                 arrayOf(traceContext, traceContext, TraceContext.Deserializer()::deserialize),
                 arrayOf(user, user, User.Deserializer()::deserialize),
                 arrayOf(userFeedback, userFeedback, UserFeedback.Deserializer()::deserialize),
-                arrayOf(geo, geo, Geo.Deserializer()::deserialize)
+                arrayOf(geo, geo, Geo.Deserializer()::deserialize),
             )
         }
 
-        private fun <T : JsonUnknown> givenJsonUnknown(jsonUnknown: T): T {
-            return jsonUnknown.apply {
-                unknown = mapOf(
-                    "fixture-key" to "fixture-value"
-                )
+        private fun <T : JsonUnknown> givenJsonUnknown(jsonUnknown: T): T =
+            jsonUnknown.apply {
+                unknown =
+                    mapOf(
+                        "fixture-key" to "fixture-value",
+                    )
             }
-        }
     }
 
     @Test

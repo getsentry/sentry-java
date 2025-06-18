@@ -7,12 +7,10 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AndroidTransportGateTest {
-
     private class Fixture {
-        fun getSut(): AndroidTransportGate {
-            return AndroidTransportGate(SentryAndroidOptions())
-        }
+        fun getSut(): AndroidTransportGate = AndroidTransportGate(SentryAndroidOptions())
     }
+
     private val fixture = Fixture()
 
     @Test

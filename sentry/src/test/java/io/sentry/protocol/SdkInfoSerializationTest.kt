@@ -12,17 +12,18 @@ import java.io.StringWriter
 import kotlin.test.assertEquals
 
 class SdkInfoSerializationTest {
-
     private class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut() = SdkInfo().apply {
-            sdkName = "182c4407-c1e1-4427-9b5a-ad2e22b1046a"
-            versionMajor = 2045114005
-            versionMinor = 1436566288
-            versionPatchlevel = 1637914973
-        }
+        fun getSut() =
+            SdkInfo().apply {
+                sdkName = "182c4407-c1e1-4427-9b5a-ad2e22b1046a"
+                versionMajor = 2045114005
+                versionMinor = 1436566288
+                versionPatchlevel = 1637914973
+            }
     }
+
     private val fixture = Fixture()
 
     @Test
@@ -42,11 +43,11 @@ class SdkInfoSerializationTest {
 
     // Helper
 
-    private fun sanitizedFile(path: String): String {
-        return FileFromResources.invoke(path)
+    private fun sanitizedFile(path: String): String =
+        FileFromResources
+            .invoke(path)
             .replace(Regex("[\n\r]"), "")
             .replace(" ", "")
-    }
 
     private fun serialize(jsonSerializable: JsonSerializable): String {
         val wrt = StringWriter()

@@ -24,9 +24,7 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 class DirectoryProcessorTest {
-
     private class Fixture {
-
         var scopes: IScopes = mock()
         var envelopeReader: IEnvelopeReader = mock()
         var serializer: ISerializer = mock()
@@ -38,26 +36,30 @@ class DirectoryProcessorTest {
             options.setLogger(logger)
         }
 
-        fun getSut(isRetryable: Boolean = false, isRateLimitingActive: Boolean = false): OutboxSender {
+        fun getSut(
+            isRetryable: Boolean = false,
+            isRateLimitingActive: Boolean = false,
+        ): OutboxSender {
             val hintCaptor = argumentCaptor<Hint>()
             whenever(scopes.captureEvent(any(), hintCaptor.capture())).then {
                 HintUtils.runIfHasType(
                     hintCaptor.firstValue,
-                    Enqueable::class.java
+                    Enqueable::class.java,
                 ) { enqueable: Enqueable ->
                     enqueable.markEnqueued()
 
                     // activate rate limiting when a first envelope was processed
                     if (isRateLimitingActive) {
-                        val rateLimiter = mock<RateLimiter> {
-                            whenever(mock.isActiveForCategory(any())).thenReturn(true)
-                        }
+                        val rateLimiter =
+                            mock<RateLimiter> {
+                                whenever(mock.isActiveForCategory(any())).thenReturn(true)
+                            }
                         whenever(scopes.rateLimiter).thenReturn(rateLimiter)
                     }
                 }
                 HintUtils.runIfHasType(
                     hintCaptor.firstValue,
-                    Retryable::class.java
+                    Retryable::class.java,
                 ) { retryable ->
                     retryable.isRetry = isRetryable
                 }

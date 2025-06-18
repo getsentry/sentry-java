@@ -16,16 +16,13 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class SentryTimberTreeTest {
-
     private class Fixture {
         val scopes = mock<IScopes>()
 
         fun getSut(
             minEventLevel: SentryLevel = SentryLevel.ERROR,
-            minBreadcrumbLevel: SentryLevel = SentryLevel.INFO
-        ): SentryTimberTree {
-            return SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel)
-        }
+            minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
+        ): SentryTimberTree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel)
     }
 
     private val fixture = Fixture()
@@ -63,7 +60,7 @@ class SentryTimberTreeTest {
         verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.DEBUG, it.level)
-            }
+            },
         )
     }
 
@@ -74,7 +71,7 @@ class SentryTimberTreeTest {
         verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.INFO, it.level)
-            }
+            },
         )
     }
 
@@ -85,7 +82,7 @@ class SentryTimberTreeTest {
         verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.WARNING, it.level)
-            }
+            },
         )
     }
 
@@ -96,7 +93,7 @@ class SentryTimberTreeTest {
         verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.ERROR, it.level)
-            }
+            },
         )
     }
 
@@ -107,7 +104,7 @@ class SentryTimberTreeTest {
         verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.FATAL, it.level)
-            }
+            },
         )
     }
 
@@ -118,7 +115,7 @@ class SentryTimberTreeTest {
         verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(SentryLevel.DEBUG, it.level)
-            }
+            },
         )
     }
 
@@ -130,7 +127,7 @@ class SentryTimberTreeTest {
         verify(fixture.scopes).captureEvent(
             check {
                 assertEquals(throwable, it.throwable)
-            }
+            },
         )
     }
 
@@ -141,7 +138,7 @@ class SentryTimberTreeTest {
         verify(fixture.scopes).captureEvent(
             check {
                 assertNull(it.throwable)
-            }
+            },
         )
     }
 
@@ -152,7 +149,7 @@ class SentryTimberTreeTest {
         verify(fixture.scopes).captureEvent(
             check {
                 assertEquals("Timber", it.logger)
-            }
+            },
         )
     }
 
@@ -166,7 +163,7 @@ class SentryTimberTreeTest {
         verify(fixture.scopes).captureEvent(
             check {
                 assertEquals("tag", it.getTag("TimberTag"))
-            }
+            },
         )
     }
 
@@ -178,7 +175,7 @@ class SentryTimberTreeTest {
         verify(fixture.scopes).captureEvent(
             check {
                 assertNull(it.getTag("TimberTag"))
-            }
+            },
         )
     }
 
@@ -191,7 +188,7 @@ class SentryTimberTreeTest {
                 assertNotNull(it.message) { message ->
                     assertEquals("message", message.message)
                 }
-            }
+            },
         )
     }
 
@@ -206,7 +203,7 @@ class SentryTimberTreeTest {
                     assertEquals("test count: 32", message.formatted)
                     assertEquals("32", message.params!!.first())
                 }
-            }
+            },
         )
     }
 
@@ -218,7 +215,7 @@ class SentryTimberTreeTest {
         verify(fixture.scopes).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals("test count: 32", it.message)
-            }
+            },
         )
     }
 
@@ -252,7 +249,7 @@ class SentryTimberTreeTest {
                 assertEquals("Timber", it.category)
                 assertEquals(SentryLevel.INFO, it.level)
                 assertEquals("message", it.message)
-            }
+            },
         )
     }
 
@@ -265,7 +262,7 @@ class SentryTimberTreeTest {
                 assertEquals("exception", it.category)
                 assertEquals(SentryLevel.ERROR, it.level)
                 assertEquals("test", it.message)
-            }
+            },
         )
     }
 

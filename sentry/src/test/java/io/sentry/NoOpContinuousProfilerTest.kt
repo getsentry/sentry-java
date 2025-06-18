@@ -10,12 +10,10 @@ class NoOpContinuousProfilerTest {
     private var profiler = NoOpContinuousProfiler.getInstance()
 
     @Test
-    fun `start does not throw`() =
-        profiler.startProfiler(mock(), mock())
+    fun `start does not throw`() = profiler.startProfiler(mock(), mock())
 
     @Test
-    fun `stop does not throw`() =
-        profiler.stopProfiler(mock())
+    fun `stop does not throw`() = profiler.stopProfiler(mock())
 
     @Test
     fun `isRunning returns false`() {
@@ -23,8 +21,7 @@ class NoOpContinuousProfilerTest {
     }
 
     @Test
-    fun `close does not throw`() =
-        profiler.close(true)
+    fun `close does not throw`() = profiler.close(true)
 
     @Test
     fun `getProfilerId returns Empty SentryId`() {

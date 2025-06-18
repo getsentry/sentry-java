@@ -15,7 +15,11 @@ class ClasspathPropertiesLoaderTest {
         val classLoader = mock<ClassLoader>()
         lateinit var loader: ClasspathPropertiesLoader
 
-        fun getSut(fileName: String = "sentry.properties", content: String? = null, throws: Boolean = false): ClasspathPropertiesLoader {
+        fun getSut(
+            fileName: String = "sentry.properties",
+            content: String? = null,
+            throws: Boolean = false,
+        ): ClasspathPropertiesLoader {
             loader = ClasspathPropertiesLoader(fileName, classLoader, NoOpLogger.getInstance())
             if (content != null) {
                 whenever(classLoader.getResourceAsStream(fileName)).thenReturn(content.byteInputStream(Charset.defaultCharset()))

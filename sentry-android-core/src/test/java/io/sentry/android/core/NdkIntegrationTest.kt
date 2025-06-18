@@ -13,14 +13,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class NdkIntegrationTest {
-
     private class Fixture {
         val scopes = mock<IScopes>()
         val logger = mock<ILogger>()
 
-        fun getSut(clazz: Class<*>? = SentryNdk::class.java): NdkIntegration {
-            return NdkIntegration(clazz)
-        }
+        fun getSut(clazz: Class<*>? = SentryNdk::class.java): NdkIntegration = NdkIntegration(clazz)
     }
 
     private val fixture = Fixture()
@@ -158,23 +155,23 @@ class NdkIntegrationTest {
         assertFalse(options.isEnableScopeSync)
     }
 
-    private fun getOptions(enableNdk: Boolean = true, cacheDir: String? = "abc"): SentryAndroidOptions {
-        return SentryAndroidOptions().apply {
+    private fun getOptions(
+        enableNdk: Boolean = true,
+        cacheDir: String? = "abc",
+    ): SentryAndroidOptions =
+        SentryAndroidOptions().apply {
             setLogger(fixture.logger)
             isDebug = true
             isEnableNdk = enableNdk
             cacheDirPath = cacheDir
         }
-    }
 
     private class SentryNdkNoInit
 
     private class SentryNdkThrows {
         companion object {
             @JvmStatic
-            fun init(options: SentryAndroidOptions) {
-                throw RuntimeException("damn")
-            }
+            fun init(options: SentryAndroidOptions): Unit = throw RuntimeException("damn")
         }
     }
 

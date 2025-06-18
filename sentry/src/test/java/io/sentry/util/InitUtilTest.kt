@@ -8,7 +8,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class InitUtilTest {
-
     private var previousOptions: SentryOptions? = null
     private var newOptions: SentryOptions? = null
     private var clientEnabled: Boolean = true
@@ -72,7 +71,7 @@ class InitUtilTest {
             SentryOptions().also {
                 it.initPriority = InitPriority.LOWEST
                 it.isForceInit = true
-            }
+            },
         )
         givenClientEnabled()
 

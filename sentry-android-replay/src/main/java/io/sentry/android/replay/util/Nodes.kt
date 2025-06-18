@@ -13,10 +13,17 @@ import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.text.TextLayoutResult
 import kotlin.math.roundToInt
 
-internal class ComposeTextLayout(internal val layout: TextLayoutResult, private val hasFillModifier: Boolean) : TextLayout {
+internal class ComposeTextLayout(
+    internal val layout: TextLayoutResult,
+    private val hasFillModifier: Boolean,
+) : TextLayout {
     override val lineCount: Int get() = layout.lineCount
     override val dominantTextColor: Int? get() = null
-    override fun getPrimaryHorizontal(line: Int, offset: Int): Float {
+
+    override fun getPrimaryHorizontal(
+        line: Int,
+        offset: Int,
+    ): Float {
         val horizontalPos = layout.getHorizontalPosition(offset, usePrimaryDirection = true)
         // when there's no `fill` modifier on a Text composable, compose still thinks that there's
         // one and wrongly calculates horizontal position relative to node's start, not text's start
@@ -28,10 +35,15 @@ internal class ComposeTextLayout(internal val layout: TextLayoutResult, private 
             horizontalPos
         }
     }
+
     override fun getEllipsisCount(line: Int): Int = if (layout.isLineEllipsized(line)) 1 else 0
+
     override fun getLineVisibleEnd(line: Int): Int = layout.getLineEnd(line, visibleEnd = true)
+
     override fun getLineTop(line: Int): Int = layout.getLineTop(line).roundToInt()
+
     override fun getLineBottom(line: Int): Int = layout.getLineBottom(line).roundToInt()
+
     override fun getLineStart(line: Int): Int = layout.getLineStart(line)
 }
 
@@ -54,7 +66,8 @@ internal fun LayoutNode.findPainter(): Painter? {
         val modifier = modifierInfos[index].modifier
         if (modifier::class.java.name.contains("Painter")) {
             return try {
-                modifier::class.java.getDeclaredField("painter")
+                modifier::class.java
+                    .getDeclaredField("painter")
                     .apply { isAccessible = true }
                     .get(modifier) as? Painter
             } catch (e: Throwable) {
@@ -81,7 +94,10 @@ internal fun Painter.isMaskable(): Boolean {
         !className.contains("Brush")
 }
 
-internal data class TextAttributes(val color: Color?, val hasFillModifier: Boolean)
+internal data class TextAttributes(
+    val color: Color?,
+    val hasFillModifier: Boolean,
+)
 
 /**
  * This method is necessary to mask text in Compose.
@@ -105,16 +121,17 @@ internal fun LayoutNode.findTextAttributes(): TextAttributes {
         val modifier = modifierInfos[index].modifier
         val modifierClassName = modifier::class.java.name
         if (modifierClassName.contains("Text")) {
-            color = try {
-                (
-                    modifier::class.java.getDeclaredField("color")
-                        .apply { isAccessible = true }
-                        .get(modifier) as? ColorProducer
-                    )
-                    ?.invoke()
-            } catch (e: Throwable) {
-                null
-            }
+            color =
+                try {
+                    (
+                        modifier::class.java
+                            .getDeclaredField("color")
+                            .apply { isAccessible = true }
+                            .get(modifier) as? ColorProducer
+                    )?.invoke()
+                } catch (e: Throwable) {
+                    null
+                }
         } else if (modifierClassName.contains("Fill")) {
             hasFillModifier = true
         }
@@ -127,36 +144,40 @@ internal fun LayoutNode.findTextAttributes(): TextAttributes {
  * `kotlin.comparisons.minOf()` for 4 arguments as it avoids allocating an array because of the
  * varargs.
  */
-private inline fun fastMinOf(a: Float, b: Float, c: Float, d: Float): Float {
-    return minOf(a, minOf(b, minOf(c, d)))
-}
+private inline fun fastMinOf(
+    a: Float,
+    b: Float,
+    c: Float,
+    d: Float,
+): Float = minOf(a, minOf(b, minOf(c, d)))
 
 /**
  * Returns the largest of the given values. If any value is NaN, returns NaN. Preferred over
  * `kotlin.comparisons.maxOf()` for 4 arguments as it avoids allocating an array because of the
  * varargs.
  */
-private inline fun fastMaxOf(a: Float, b: Float, c: Float, d: Float): Float {
-    return maxOf(a, maxOf(b, maxOf(c, d)))
-}
+private inline fun fastMaxOf(
+    a: Float,
+    b: Float,
+    c: Float,
+    d: Float,
+): Float = maxOf(a, maxOf(b, maxOf(c, d)))
 
 /**
  * Returns this float value clamped in the inclusive range defined by [minimumValue] and
  * [maximumValue]. Unlike [Float.coerceIn], the range is not validated: the caller must ensure that
  * [minimumValue] is less than [maximumValue].
  */
-private inline fun Float.fastCoerceIn(minimumValue: Float, maximumValue: Float) =
-    this.fastCoerceAtLeast(minimumValue).fastCoerceAtMost(maximumValue)
+private inline fun Float.fastCoerceIn(
+    minimumValue: Float,
+    maximumValue: Float,
+) = this.fastCoerceAtLeast(minimumValue).fastCoerceAtMost(maximumValue)
 
 /** Ensures that this value is not less than the specified [minimumValue]. */
-private inline fun Float.fastCoerceAtLeast(minimumValue: Float): Float {
-    return if (this < minimumValue) minimumValue else this
-}
+private inline fun Float.fastCoerceAtLeast(minimumValue: Float): Float = if (this < minimumValue) minimumValue else this
 
 /** Ensures that this value is not greater than the specified [maximumValue]. */
-private inline fun Float.fastCoerceAtMost(maximumValue: Float): Float {
-    return if (this > maximumValue) maximumValue else this
-}
+private inline fun Float.fastCoerceAtMost(maximumValue: Float): Float = if (this > maximumValue) maximumValue else this
 
 /**
  * A faster copy of https://github.com/androidx/androidx/blob/fc7df0dd68466ac3bb16b1c79b7a73dd0bfdd4c1/compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/layout/LayoutCoordinates.kt#L187

@@ -21,10 +21,11 @@ class SentryServletRequestListenerTest {
         val lifecycleToken = mock<ISentryLifecycleToken>()
         val listener =
             SentryServletRequestListener(scopes)
-        val request = mockRequest(
-            url = "http://localhost:8080/some-uri",
-            method = "POST"
-        )
+        val request =
+            mockRequest(
+                url = "http://localhost:8080/some-uri",
+                method = "POST",
+            )
         val event = mock<ServletRequestEvent>()
 
         init {
@@ -54,7 +55,7 @@ class SentryServletRequestListenerTest {
                 assertEquals("POST", it.getData("method"))
                 assertEquals("http", it.type)
             },
-            anyOrNull()
+            anyOrNull(),
         )
         verify(fixture.request).setAttribute(eq("sentry-scope-lifecycle"), same(fixture.lifecycleToken))
     }

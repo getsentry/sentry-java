@@ -41,10 +41,11 @@ class SentrySpanRestTemplateCustomizerTest {
     class Fixture {
         val sentryOptions = SentryOptions()
         val scopes = mock<IScopes>()
-        val restTemplate = RestTemplateBuilder()
-            .setConnectTimeout(Duration.ofSeconds(2))
-            .setReadTimeout(Duration.ofSeconds(2))
-            .build()
+        val restTemplate =
+            RestTemplateBuilder()
+                .setConnectTimeout(Duration.ofSeconds(2))
+                .setReadTimeout(Duration.ofSeconds(2))
+                .build()
         var mockServer = MockWebServer()
         val transaction: SentryTracer
         internal val customizer = SentrySpanRestTemplateCustomizer(scopes)
@@ -54,12 +55,17 @@ class SentrySpanRestTemplateCustomizerTest {
         init {
             whenever(scopes.options).thenReturn(sentryOptions)
             doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }.whenever(scopes).configureScope(
-                any()
+                any(),
             )
             transaction = SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), scopes)
         }
 
-        fun getSut(isTransactionActive: Boolean, status: HttpStatus = HttpStatus.OK, socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN, includeMockServerInTracingOrigins: Boolean = true): RestTemplate {
+        fun getSut(
+            isTransactionActive: Boolean,
+            status: HttpStatus = HttpStatus.OK,
+            socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
+            includeMockServerInTracingOrigins: Boolean = true,
+        ): RestTemplate {
             customizer.customize(restTemplate)
 
             if (includeMockServerInTracingOrigins) {
@@ -75,7 +81,7 @@ class SentrySpanRestTemplateCustomizerTest {
                 MockResponse()
                     .setBody("OK")
                     .setSocketPolicy(socketPolicy)
-                    .setResponseCode(status.value())
+                    .setResponseCode(status.value()),
             )
 
             if (isTransactionActive) {
@@ -100,10 +106,19 @@ class SentrySpanRestTemplateCustomizerTest {
         assertThat(span.status).isEqualTo(SpanStatus.OK)
 
         val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
-        assertThat(recordedRequest.headers["sentry-trace"]!!).startsWith(fixture.transaction.spanContext.traceId.toString())
-            .endsWith("-1")
-            .doesNotContain(fixture.transaction.spanContext.spanId.toString())
-        assertThat(recordedRequest.headers["baggage"]!!).contains(fixture.transaction.spanContext.traceId.toString())
+        assertThat(recordedRequest.headers["sentry-trace"]!!)
+            .startsWith(
+                fixture.transaction.spanContext.traceId
+                    .toString(),
+            ).endsWith("-1")
+            .doesNotContain(
+                fixture.transaction.spanContext.spanId
+                    .toString(),
+            )
+        assertThat(recordedRequest.headers["baggage"]!!).contains(
+            fixture.transaction.spanContext.traceId
+                .toString(),
+        )
     }
 
     @Test
@@ -111,7 +126,10 @@ class SentrySpanRestTemplateCustomizerTest {
         val sut = fixture.getSut(isTransactionActive = true)
         val headers = HttpHeaders()
         headers.add("baggage", "thirdPartyBaggage=someValue")
-        headers.add("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")
+        headers.add(
+            "baggage",
+            "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+        )
 
         val requestEntity = HttpEntity<Unit>(headers)
 
@@ -123,7 +141,11 @@ class SentrySpanRestTemplateCustomizerTest {
 
         val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
         assertEquals(baggageHeaderValues.size, 1)
-        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
+        assertTrue(
+            baggageHeaderValues[0].startsWith(
+                "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+            ),
+        )
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-transaction=aTransaction"))
         assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
@@ -131,7 +153,8 @@ class SentrySpanRestTemplateCustomizerTest {
 
     @Test
     fun `when transaction is active and server is not listed in tracing origins, does not add sentry trace header to the request`() {
-        fixture.getSut(isTransactionActive = true, includeMockServerInTracingOrigins = false)
+        fixture
+            .getSut(isTransactionActive = true, includeMockServerInTracingOrigins = false)
             .getForObject(fixture.url, String::class.java)
         val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER]).isNull()
@@ -139,7 +162,8 @@ class SentrySpanRestTemplateCustomizerTest {
 
     @Test
     fun `when transaction is active and server is listed in tracing origins, adds sentry trace header to the request`() {
-        fixture.getSut(isTransactionActive = true, includeMockServerInTracingOrigins = true)
+        fixture
+            .getSut(isTransactionActive = true, includeMockServerInTracingOrigins = true)
             .getForObject(fixture.url, String::class.java)
         val recordedRequest = fixture.mockServer.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
         assertThat(recordedRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER]).isNotNull()
@@ -148,7 +172,11 @@ class SentrySpanRestTemplateCustomizerTest {
     @Test
     fun `when transaction is active and response code is not 2xx, creates span with error status around RestTemplate HTTP call`() {
         try {
-            fixture.getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject(fixture.url, String::class.java)
+            fixture
+                .getSut(
+                    isTransactionActive = true,
+                    status = HttpStatus.INTERNAL_SERVER_ERROR,
+                ).getForObject(fixture.url, String::class.java)
         } catch (e: Throwable) {
         }
         assertThat(fixture.transaction.spans).hasSize(1)
@@ -161,7 +189,11 @@ class SentrySpanRestTemplateCustomizerTest {
     @Test
     fun `when transaction is active and throws IO exception, creates span with error status around RestTemplate HTTP call`() {
         try {
-            fixture.getSut(isTransactionActive = true, socketPolicy = SocketPolicy.DISCONNECT_AT_START).getForObject(fixture.url, String::class.java)
+            fixture
+                .getSut(
+                    isTransactionActive = true,
+                    socketPolicy = SocketPolicy.DISCONNECT_AT_START,
+                ).getForObject(fixture.url, String::class.java)
         } catch (e: Throwable) {
         }
         assertThat(fixture.transaction.spans).hasSize(1)
@@ -184,7 +216,10 @@ class SentrySpanRestTemplateCustomizerTest {
         val sut = fixture.getSut(isTransactionActive = false)
         val headers = HttpHeaders()
         headers.add("baggage", "thirdPartyBaggage=someValue")
-        headers.add("baggage", "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue")
+        headers.add(
+            "baggage",
+            "secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+        )
 
         val requestEntity = HttpEntity<Unit>(headers)
 
@@ -196,7 +231,11 @@ class SentrySpanRestTemplateCustomizerTest {
 
         val baggageHeaderValues = recorderRequest.headers.values(BaggageHeader.BAGGAGE_HEADER)
         assertEquals(baggageHeaderValues.size, 1)
-        assertTrue(baggageHeaderValues[0].startsWith("thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"))
+        assertTrue(
+            baggageHeaderValues[0].startsWith(
+                "thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue",
+            ),
+        )
         assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
         assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
     }
@@ -235,7 +274,7 @@ class SentrySpanRestTemplateCustomizerTest {
                 assertEquals("POST", it.data["method"])
                 assertEquals(7, it.data["request_body_size"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -243,7 +282,11 @@ class SentrySpanRestTemplateCustomizerTest {
     @Test
     fun `when transaction is active adds breadcrumb when http calls results in exception`() {
         try {
-            fixture.getSut(isTransactionActive = true, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject(fixture.url, String::class.java)
+            fixture
+                .getSut(
+                    isTransactionActive = true,
+                    status = HttpStatus.INTERNAL_SERVER_ERROR,
+                ).getForObject(fixture.url, String::class.java)
         } catch (e: Throwable) {
         }
         verify(fixture.scopes).addBreadcrumb(
@@ -252,7 +295,7 @@ class SentrySpanRestTemplateCustomizerTest {
                 assertEquals(fixture.url, it.data["url"])
                 assertEquals("GET", it.data["method"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -266,7 +309,7 @@ class SentrySpanRestTemplateCustomizerTest {
                 assertEquals("POST", it.data["method"])
                 assertEquals(7, it.data["request_body_size"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 
@@ -274,7 +317,11 @@ class SentrySpanRestTemplateCustomizerTest {
     @Test
     fun `when transaction is not active adds breadcrumb when http calls results in exception`() {
         try {
-            fixture.getSut(isTransactionActive = false, status = HttpStatus.INTERNAL_SERVER_ERROR).getForObject(fixture.url, String::class.java)
+            fixture
+                .getSut(
+                    isTransactionActive = false,
+                    status = HttpStatus.INTERNAL_SERVER_ERROR,
+                ).getForObject(fixture.url, String::class.java)
         } catch (e: Throwable) {
         }
         verify(fixture.scopes).addBreadcrumb(
@@ -283,7 +330,7 @@ class SentrySpanRestTemplateCustomizerTest {
                 assertEquals(fixture.url, it.data["url"])
                 assertEquals("GET", it.data["method"])
             },
-            anyOrNull()
+            anyOrNull(),
         )
     }
 }

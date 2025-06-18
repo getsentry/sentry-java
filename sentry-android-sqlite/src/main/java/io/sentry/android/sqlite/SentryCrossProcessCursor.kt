@@ -14,7 +14,7 @@ import android.database.CursorWindow
 internal class SentryCrossProcessCursor(
     private val delegate: CrossProcessCursor,
     private val spanManager: SQLiteSpanManager,
-    private val sql: String
+    private val sql: String,
 ) : CrossProcessCursor by delegate {
     // We have to start the span only the first time, regardless of how many times its methods get called.
     private var isSpanStarted = false
@@ -29,7 +29,10 @@ internal class SentryCrossProcessCursor(
         }
     }
 
-    override fun onMove(oldPosition: Int, newPosition: Int): Boolean {
+    override fun onMove(
+        oldPosition: Int,
+        newPosition: Int,
+    ): Boolean {
         if (isSpanStarted) {
             return delegate.onMove(oldPosition, newPosition)
         }
@@ -39,7 +42,10 @@ internal class SentryCrossProcessCursor(
         }
     }
 
-    override fun fillWindow(position: Int, window: CursorWindow?) {
+    override fun fillWindow(
+        position: Int,
+        window: CursorWindow?,
+    ) {
         if (isSpanStarted) {
             return delegate.fillWindow(position, window)
         }

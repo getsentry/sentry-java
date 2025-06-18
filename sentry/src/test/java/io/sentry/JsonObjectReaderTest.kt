@@ -10,13 +10,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class JsonObjectReaderTest {
-
     class Fixture {
         val logger = mock<ILogger>()
-        fun getSut(jsonString: String): JsonObjectReader {
-            return JsonObjectReader(StringReader(jsonString))
-        }
+
+        fun getSut(jsonString: String): JsonObjectReader = JsonObjectReader(StringReader(jsonString))
     }
+
     val fixture = Fixture()
 
     // nextStringOrNull
@@ -141,10 +140,11 @@ class JsonObjectReaderTest {
         reader.beginObject()
         reader.nextName()
 
-        val expected = listOf(
-            Deserializable("foo", "bar"),
-            Deserializable("fooo", "baar")
-        )
+        val expected =
+            listOf(
+                Deserializable("foo", "bar"),
+                Deserializable("fooo", "baar"),
+            )
         val actual = reader.nextListOrNull(logger, Deserializable.Deserializer())
         assertEquals(expected, actual)
     }
@@ -184,10 +184,11 @@ class JsonObjectReaderTest {
         reader.beginObject()
         reader.nextName()
 
-        val expected = mapOf(
-            "a" to Deserializable("foo", "bar"),
-            "b" to Deserializable("fooo", "baar")
-        )
+        val expected =
+            mapOf(
+                "a" to Deserializable("foo", "bar"),
+                "b" to Deserializable("fooo", "baar"),
+            )
         val actual = reader.nextMapOrNull(fixture.logger, Deserializable.Deserializer())
         assertEquals(expected, actual)
     }
@@ -282,11 +283,14 @@ class JsonObjectReaderTest {
 
     data class Deserializable(
         var foo: String? = null,
-        var bar: String? = null
+        var bar: String? = null,
     ) {
         class Deserializer : JsonDeserializer<Deserializable> {
-            override fun deserialize(reader: ObjectReader, logger: ILogger): Deserializable {
-                return Deserializable().apply {
+            override fun deserialize(
+                reader: ObjectReader,
+                logger: ILogger,
+            ): Deserializable =
+                Deserializable().apply {
                     reader.beginObject()
                     reader.nextName()
                     foo = reader.nextStringOrNull()
@@ -294,7 +298,6 @@ class JsonObjectReaderTest {
                     bar = reader.nextStringOrNull()
                     reader.endObject()
                 }
-            }
         }
     }
 }

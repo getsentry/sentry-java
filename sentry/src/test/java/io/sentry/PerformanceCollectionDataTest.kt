@@ -7,7 +7,6 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 
 class PerformanceCollectionDataTest {
-
     private val fixture = Fixture()
 
     private class Fixture {

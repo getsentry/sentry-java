@@ -10,7 +10,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class ApacheHttpClientTransportFactoryTest {
-
     class Fixture {
         fun getSut(options: SentryOptions = SentryOptions()) =
             ApacheHttpClientTransportFactory().create(options, mock()) as ApacheHttpClientTransport
@@ -25,12 +24,13 @@ class ApacheHttpClientTransportFactoryTest {
 
     @Test
     fun `options timeouts are applied to http client`() {
-        val transport = fixture.getSut(
-            SentryOptions().apply {
-                this.connectionTimeoutMillis = 1500
-                this.readTimeoutMillis = 2500
-            }
-        )
+        val transport =
+            fixture.getSut(
+                SentryOptions().apply {
+                    this.connectionTimeoutMillis = 1500
+                    this.readTimeoutMillis = 2500
+                },
+            )
         val requestConfig = transport.getClient().getRequestConfig()
         assertEquals(1500, requestConfig.connectTimeout.toMilliseconds())
         assertEquals(1500, requestConfig.connectionRequestTimeout.toMilliseconds())
@@ -38,5 +38,6 @@ class ApacheHttpClientTransportFactoryTest {
     }
 
     private fun ApacheHttpClientTransport.getClient(): InternalHttpAsyncClient = this.getProperty("httpclient")
+
     private fun InternalHttpAsyncClient.getRequestConfig(): RequestConfig = this.getProperty("defaultConfig")
 }

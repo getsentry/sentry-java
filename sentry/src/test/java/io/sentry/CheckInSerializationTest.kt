@@ -16,22 +16,22 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class CheckInSerializationTest {
-
     private class Fixture {
         val logger = mock<ILogger>()
 
-        fun getSut(type: MonitorScheduleType): CheckIn {
-            return CheckIn("some_slug", CheckInStatus.ERROR).apply {
+        fun getSut(type: MonitorScheduleType): CheckIn =
+            CheckIn("some_slug", CheckInStatus.ERROR).apply {
                 contexts.setTrace(
-                    TransactionContext.fromPropagationContext(
-                        PropagationContext().also {
-                            it.traceId = SentryId("f382e3180c714217a81371f8c644aefe")
-                            it.spanId = SpanId("85694b9f567145a6")
-                        }
-                    ).apply {
-                        data[SpanDataConvention.THREAD_ID] = 10
-                        data[SpanDataConvention.THREAD_NAME] = "test"
-                    }
+                    TransactionContext
+                        .fromPropagationContext(
+                            PropagationContext().also {
+                                it.traceId = SentryId("f382e3180c714217a81371f8c644aefe")
+                                it.spanId = SpanId("85694b9f567145a6")
+                            },
+                        ).apply {
+                            data[SpanDataConvention.THREAD_ID] = 10
+                            data[SpanDataConvention.THREAD_NAME] = "test"
+                        },
                 )
                 duration = 12.3
                 environment = "env"
@@ -42,24 +42,27 @@ class CheckInSerializationTest {
                     } else {
                         MonitorConfig(MonitorSchedule.interval(42, MonitorScheduleUnit.MINUTE))
                     }
-                monitorConfig = monitorConfigTmp.apply {
-                    checkinMargin = 8L
-                    maxRuntime = 9L
-                    timezone = ZoneId.of("Europe/Vienna").id
-                    failureIssueThreshold = 10
-                    recoveryThreshold = 20
-                }
+                monitorConfig =
+                    monitorConfigTmp.apply {
+                        checkinMargin = 8L
+                        maxRuntime = 9L
+                        timezone = ZoneId.of("Europe/Vienna").id
+                        failureIssueThreshold = 10
+                        recoveryThreshold = 20
+                    }
             }
-        }
     }
+
     private val fixture = Fixture()
 
     @Test
     fun serializeInterval() {
         val checkIn = fixture.getSut(MonitorScheduleType.INTERVAL)
         val actual = serialize(checkIn)
-        val expected = SerializationUtils.sanitizedFile("json/checkin_interval.json")
-            .replace("6d55218195564d6d88cf3883b84666f1", checkIn.checkInId.toString())
+        val expected =
+            SerializationUtils
+                .sanitizedFile("json/checkin_interval.json")
+                .replace("6d55218195564d6d88cf3883b84666f1", checkIn.checkInId.toString())
 
         assertEquals(expected, actual)
     }
@@ -68,9 +71,11 @@ class CheckInSerializationTest {
     fun serializeCrontab() {
         val checkIn = fixture.getSut(MonitorScheduleType.CRONTAB)
         val actual = serialize(checkIn)
-        val expected = SerializationUtils.sanitizedFile("json/checkin_crontab.json")
-            .replace("6d55218195564d6d88cf3883b84666f1", checkIn.checkInId.toString())
-            .replace("0_*_*_*_*", "0 * * * *")
+        val expected =
+            SerializationUtils
+                .sanitizedFile("json/checkin_crontab.json")
+                .replace("6d55218195564d6d88cf3883b84666f1", checkIn.checkInId.toString())
+                .replace("0_*_*_*_*", "0 * * * *")
 
         assertEquals(expected, actual)
     }
@@ -78,8 +83,10 @@ class CheckInSerializationTest {
     @Test
     fun deserializeCrontab() {
         val checkIn = fixture.getSut(MonitorScheduleType.CRONTAB)
-        val jsonCheckIn = SerializationUtils.sanitizedFile("json/checkin_crontab.json")
-            .replace("0_*_*_*_*", "0 * * * *")
+        val jsonCheckIn =
+            SerializationUtils
+                .sanitizedFile("json/checkin_crontab.json")
+                .replace("0_*_*_*_*", "0 * * * *")
         val reader = JsonObjectReader(StringReader(jsonCheckIn))
         val actual = CheckIn.Deserializer().deserialize(reader, fixture.logger)
         assertNotNull(actual)

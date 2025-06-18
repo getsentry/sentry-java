@@ -14,23 +14,23 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SentryTimberIntegrationTest {
-
     private class Fixture {
         val scopes = mock<IScopes>()
-        val options = SentryOptions().apply {
-            sdkVersion = SdkVersion("test", "1.2.3")
-        }
+        val options =
+            SentryOptions().apply {
+                sdkVersion = SdkVersion("test", "1.2.3")
+            }
 
         fun getSut(
             minEventLevel: SentryLevel = SentryLevel.ERROR,
-            minBreadcrumbLevel: SentryLevel = SentryLevel.INFO
-        ): SentryTimberIntegration {
-            return SentryTimberIntegration(
+            minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
+        ): SentryTimberIntegration =
+            SentryTimberIntegration(
                 minEventLevel = minEventLevel,
-                minBreadcrumbLevel = minBreadcrumbLevel
+                minBreadcrumbLevel = minBreadcrumbLevel,
             )
-        }
     }
+
     private val fixture = Fixture()
 
     @BeforeTest
@@ -80,10 +80,11 @@ class SentryTimberIntegrationTest {
 
     @Test
     fun `Integrations pass the right min levels`() {
-        val sut = fixture.getSut(
-            minEventLevel = SentryLevel.INFO,
-            minBreadcrumbLevel = SentryLevel.DEBUG
-        )
+        val sut =
+            fixture.getSut(
+                minEventLevel = SentryLevel.INFO,
+                minBreadcrumbLevel = SentryLevel.DEBUG,
+            )
         sut.register(fixture.scopes, fixture.options)
 
         assertEquals(sut.minEventLevel, SentryLevel.INFO)
@@ -99,7 +100,7 @@ class SentryTimberIntegrationTest {
             fixture.options.sdkVersion!!.packageSet.any {
                 it.name == "maven:io.sentry:sentry-android-timber" &&
                     it.version == BuildConfig.VERSION_NAME
-            }
+            },
         )
     }
 
@@ -109,7 +110,9 @@ class SentryTimberIntegrationTest {
         sut.register(fixture.scopes, fixture.options)
 
         assertTrue(
-            fixture.options.sdkVersion!!.integrationSet.contains("Timber")
+            fixture.options.sdkVersion!!
+                .integrationSet
+                .contains("Timber"),
         )
     }
 }

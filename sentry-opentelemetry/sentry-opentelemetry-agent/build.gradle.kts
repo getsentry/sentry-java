@@ -30,22 +30,25 @@ fun relocatePackages(shadowJar: ShadowJar) {
 }
 
 // this configuration collects libs that will be placed in the bootstrap classloader
-val bootstrapLibs = configurations.create("bootstrapLibs") {
-    isCanBeResolved = true
-    isCanBeConsumed = false
-}
+val bootstrapLibs =
+    configurations.create("bootstrapLibs") {
+        isCanBeResolved = true
+        isCanBeConsumed = false
+    }
 
 // this configuration collects libs that will be placed in the agent classloader, isolated from the instrumented application code
-val javaagentLibs = configurations.create("javaagentLibs") {
-    isCanBeResolved = true
-    isCanBeConsumed = false
-}
+val javaagentLibs =
+    configurations.create("javaagentLibs") {
+        isCanBeResolved = true
+        isCanBeConsumed = false
+    }
 
 // this configuration stores the upstream agent dep that's extended by this project
-val upstreamAgent = configurations.create("upstreamAgent") {
-    isCanBeResolved = true
-    isCanBeConsumed = false
-}
+val upstreamAgent =
+    configurations.create("upstreamAgent") {
+        isCanBeResolved = true
+        isCanBeConsumed = false
+    }
 
 dependencies {
     bootstrapLibs(projects.sentry)
@@ -54,8 +57,8 @@ dependencies {
     upstreamAgent(libs.otel.javaagent)
 }
 
-fun isolateClasses(jars: Iterable<File>): CopySpec {
-    return copySpec {
+fun isolateClasses(jars: Iterable<File>): CopySpec =
+    copySpec {
         jars.forEach {
             from(zipTree(it)) {
                 into("inst")
@@ -68,7 +71,6 @@ fun isolateClasses(jars: Iterable<File>): CopySpec {
             }
         }
     }
-}
 
 // Don't publish non-shadowed jar (shadowJar is in shadowRuntimeElements)
 with(components["java"] as AdhocComponentWithVariants) {
@@ -119,7 +121,12 @@ tasks {
         dependsOn(findByName("relocateJavaagentLibs"))
         with(isolateClasses(findByName("relocateJavaagentLibs")!!.outputs.files))
 
-        into(project.layout.buildDirectory.file("isolated/javaagentLibs").get().asFile)
+        into(
+            project.layout.buildDirectory
+                .file("isolated/javaagentLibs")
+                .get()
+                .asFile,
+        )
     }
 
     // 3. the relocated and isolated javaagent libs are merged together with the bootstrap libs (which undergo relocation
