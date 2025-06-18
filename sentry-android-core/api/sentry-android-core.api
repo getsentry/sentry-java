@@ -385,6 +385,14 @@ public final class io/sentry/android/core/SentryPerformanceProvider {
 	public fun shutdown ()V
 }
 
+public class io/sentry/android/core/SentryUserFeedbackButton : android/widget/Button {
+	public fun <init> (Landroid/content/Context;)V
+	public fun <init> (Landroid/content/Context;Landroid/util/AttributeSet;)V
+	public fun <init> (Landroid/content/Context;Landroid/util/AttributeSet;I)V
+	public fun <init> (Landroid/content/Context;Landroid/util/AttributeSet;II)V
+	public fun setOnClickListener (Landroid/view/View$OnClickListener;)V
+}
+
 public final class io/sentry/android/core/SentryUserFeedbackDialog : android/app/AlertDialog {
 	public fun setCancelable (Z)V
 	public fun setOnDismissListener (Landroid/content/DialogInterface$OnDismissListener;)V
