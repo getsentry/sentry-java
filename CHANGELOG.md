@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix tag extraction logic for Timber ([#4489](https://github.com/getsentry/sentry-java/pull/4489))
+
 ## 8.14.0
 
 ### Fixes
