@@ -1,6 +1,8 @@
 package io.sentry.samples.android;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import androidx.appcompat.app.AlertDialog;
@@ -38,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    SharedState.INSTANCE.setOrientationChange(
+        getIntent().getBooleanExtra("isOrientationChange", false));
     final ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
 
     final File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
@@ -74,7 +78,6 @@ public class MainActivity extends AppCompatActivity {
               new Feedback("It broke on Android. I don't know why, but this happens.");
           feedback.setContactEmail("john@me.com");
           feedback.setName("John Me");
-
           Sentry.captureFeedback(feedback);
         });
 
@@ -282,7 +285,16 @@ public class MainActivity extends AppCompatActivity {
               .setPositiveButton(
                   "Close",
                   (dialog, which) -> {
-                    dialog.dismiss();
+                    if (SharedState.INSTANCE.isOrientationChange()) {
+                      int currentOrientation = getResources().getConfiguration().orientation;
+                      if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                      } else if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                      }
+                    } else {
+                      dialog.dismiss();
+                    }
                   })
               .show();
         });

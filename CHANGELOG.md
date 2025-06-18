@@ -4,11 +4,52 @@
 
 ### Fixes
 
+- No longer send out empty log envelopes ([#4497](https://github.com/getsentry/sentry-java/pull/4497))
+
+## 8.14.0
+
+### Fixes
+
+- Fix Session Replay masking for newer versions of Jetpack Compose (1.8+) ([#4485](https://github.com/getsentry/sentry-java/pull/4485))
+
+### Features
+
+- Add New User Feedback Widget ([#4450](https://github.com/getsentry/sentry-java/pull/4450))
+    - This widget is a custom button that can be used to show the user feedback form
+- Add New User Feedback form ([#4384](https://github.com/getsentry/sentry-java/pull/4384))
+    - We now introduce SentryUserFeedbackDialog, which extends AlertDialog, inheriting the show() and cancel() methods, among others.
+      To use it, just instantiate it and call show() on the instance (Sentry must be previously initialized).
+      For customization options, please check the [User Feedback documentation](https://docs.sentry.io/platforms/android/user-feedback/configuration/).
+      ```java
+      import io.sentry.android.core.SentryUserFeedbackDialog;
+      
+      new SentryUserFeedbackDialog.Builder(context).create().show();
+      ```
+      ```kotlin
+      import io.sentry.android.core.SentryUserFeedbackDialog
+    
+      SentryUserFeedbackDialog.Builder(context).create().show()
+      ```
+- Add `user.id`, `user.name` and `user.email` to log attributes ([#4486](https://github.com/getsentry/sentry-java/pull/4486))
+- User `name` attribute has been deprecated, please use `username` instead ([#4486](https://github.com/getsentry/sentry-java/pull/4486))
+- Add device (`device.brand`, `device.model` and `device.family`) and OS (`os.name` and `os.version`) attributes to logs ([#4493](https://github.com/getsentry/sentry-java/pull/4493))
+- Serialize `preContext` and `postContext` in `SentryStackFrame` ([#4482](https://github.com/getsentry/sentry-java/pull/4482))
+
+### Internal
+
+- User Feedback now uses SentryUser.username instead of SentryUser.name ([#4494](https://github.com/getsentry/sentry-java/pull/4494))
+
+## 8.13.3
+
+### Fixes
+
 - Send UI Profiling app start chunk when it finishes ([#4423](https://github.com/getsentry/sentry-java/pull/4423))
 - Republish Javadoc [#4457](https://github.com/getsentry/sentry-java/pull/4457)
 - Finalize `OkHttpEvent` even if no active span in `SentryOkHttpInterceptor` [#4469](https://github.com/getsentry/sentry-java/pull/4469)
+- Session Replay: Do not capture current replay for cached events from the past ([#4474](https://github.com/getsentry/sentry-java/pull/4474))
 - Session Replay: Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
 - Session Replay: Fix inconsistent `segment_id` ([#4471](https://github.com/getsentry/sentry-java/pull/4471))
+- Session Replay: Fix crash on devices with the Unisoc/Spreadtrum T606 chipset ([#4477](https://github.com/getsentry/sentry-java/pull/4477))
 
 ## 8.13.2
 
