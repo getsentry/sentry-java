@@ -230,20 +230,17 @@ subprojects {
 spotless {
     lineEndings = LineEnding.UNIX
     java {
-        target("**/*.java")
+        target("*.java")
         removeUnusedImports()
         googleJavaFormat()
-        targetExclude("**/generated/**", "**/vendor/**", "**/sentry-native/**")
     }
     kotlin {
-        target("**/*.kt")
+        target("*.kt")
         ktlint()
-        targetExclude("**/sentry-native/**", "**/build/**")
     }
     kotlinGradle {
-        target("**/*.kts")
+        target("*.kts")
         ktlint()
-        targetExclude("**/sentry-native/**")
     }
 }
 
