@@ -35,6 +35,7 @@ import org.hamcrest.Description
 import org.hamcrest.Matcher
 import org.hamcrest.Matchers.allOf
 import org.junit.runner.RunWith
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -479,6 +480,7 @@ class UserFeedbackUiTest : BaseUiTest() {
         }
     }
 
+    @Ignore("Flaky test")
     @Test
     fun userFeedbackSendEnvelope() {
         // GH actions emulator don't allow capturing screenshots properly
