@@ -1615,4 +1615,154 @@ class ManifestMetadataReaderTest {
         // Assert
         assertTrue(fixture.options.logs.isEnabled)
     }
+
+    @Test
+    fun `applyMetadata reads feedback name required and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.feedbackOptions.isNameRequired)
+    }
+
+    @Test
+    fun `applyMetadata reads feedback name required to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.FEEDBACK_NAME_REQUIRED to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.feedbackOptions.isNameRequired)
+    }
+
+    @Test
+    fun `applyMetadata reads feedback show name and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.feedbackOptions.isShowName)
+    }
+
+    @Test
+    fun `applyMetadata reads feedback show name to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.FEEDBACK_SHOW_NAME to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.feedbackOptions.isShowName)
+    }
+
+    @Test
+    fun `applyMetadata reads feedback email required and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.feedbackOptions.isEmailRequired)
+    }
+
+    @Test
+    fun `applyMetadata reads feedback email required to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.FEEDBACK_EMAIL_REQUIRED to true)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.feedbackOptions.isEmailRequired)
+    }
+
+    @Test
+    fun `applyMetadata reads feedback show email and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.feedbackOptions.isShowEmail)
+    }
+
+    @Test
+    fun `applyMetadata reads feedback show email to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.FEEDBACK_SHOW_EMAIL to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.feedbackOptions.isShowEmail)
+    }
+
+    @Test
+    fun `applyMetadata reads feedback use sentry user and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.feedbackOptions.isUseSentryUser)
+    }
+
+    @Test
+    fun `applyMetadata reads feedback use sentry user to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.FEEDBACK_USE_SENTRY_USER to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.feedbackOptions.isUseSentryUser)
+    }
+
+    @Test
+    fun `applyMetadata reads feedback show branding and keep default value if not found`() {
+        // Arrange
+        val context = fixture.getContext()
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertTrue(fixture.options.feedbackOptions.isShowBranding)
+    }
+
+    @Test
+    fun `applyMetadata reads feedback show branding to options`() {
+        // Arrange
+        val bundle = bundleOf(ManifestMetadataReader.FEEDBACK_SHOW_BRANDING to false)
+        val context = fixture.getContext(metaData = bundle)
+
+        // Act
+        ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+        // Assert
+        assertFalse(fixture.options.feedbackOptions.isShowBranding)
+    }
 }

@@ -112,6 +112,30 @@ public final class Feedback implements JsonUnknown, JsonSerializable {
   }
 
   @Override
+  public String toString() {
+    return "Feedback{"
+        + "message='"
+        + message
+        + '\''
+        + ", contactEmail='"
+        + contactEmail
+        + '\''
+        + ", name='"
+        + name
+        + '\''
+        + ", associatedEventId="
+        + associatedEventId
+        + ", replayId="
+        + replayId
+        + ", url='"
+        + url
+        + '\''
+        + ", unknown="
+        + unknown
+        + '}';
+  }
+
+  @Override
   public int hashCode() {
     return Objects.hash(message, contactEmail, name, associatedEventId, replayId, url, unknown);
   }
