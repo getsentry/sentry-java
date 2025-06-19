@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        agp: [ '8.7.0','8.8.0','8.9.0-beta01' ]
+        agp: [ '8.7.0','8.8.0','8.9.0' ]
         integrations: [ true, false ]
 
     name: AGP Matrix Release - AGP ${{ matrix.agp }} - Integrations ${{ matrix.integrations }}

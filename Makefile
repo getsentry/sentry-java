@@ -1,4 +1,4 @@
-.PHONY: all clean compile javadocs dryRelease update stop checkFormat format api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical check preMerge publish
 
 all: stop clean javadocs compile createCoverageReports
 assembleBenchmarks: assembleBenchmarkTestRelease
@@ -26,18 +26,9 @@ dryRelease:
 update:
 	./gradlew dependencyUpdates -Drevision=release
 
-# We stop gradle at the end to make sure the cache folders
-# don't contain any lock files and are free to be cached.
-stop:
-	./gradlew --stop
-
 # Spotless check's code
 checkFormat:
 	./gradlew spotlessJavaCheck spotlessKotlinCheck
-
-# Spotless format's code
-format:
-	./gradlew spotlessApply
 
 # Binary compatibility validator
 api:
