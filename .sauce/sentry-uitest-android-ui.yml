@@ -17,30 +17,30 @@ espresso:
   app: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/release/sentry-uitest-android-release.apk
   testApp: ./sentry-android-integration-tests/sentry-uitest-android/build/outputs/apk/androidTest/release/sentry-uitest-android-release-androidTest.apk
 suites:
-
-  - name: "Android 14 Ui test (api 34)"
+  - name: "Emulator 11"
     testOptions:
       clearPackageData: true
       useTestOrchestrator: true
-    devices:
-      - name: ".*"
-        platformVersion: "14"
-
-  - name: "Android 13 Ui test (api 33)"
+    emulators:
+      - name: "Android GoogleApi Emulator"
+        platformVersions:
+         - "11.0"
+  - name: "Emulator 13"
     testOptions:
       clearPackageData: true
       useTestOrchestrator: true
-    devices:
-      - name: ".*"
-        platformVersion: "13"
-
-  - name: "Android 11 Ui test (api 31)"
+    emulators:
+      - name: "Android GoogleApi Emulator"
+        platformVersions:
+          - "13.0"
+  - name: "Emulator 14"
     testOptions:
       clearPackageData: true
       useTestOrchestrator: true
-    devices:
-      - name: ".*"
-        platformVersion: "11"
+    emulators:
+      - name: "Android GoogleApi Emulator"
+        platformVersions:
+          - "14.0"
 
 # Controls what artifacts to fetch when the suite on Sauce Cloud has finished.
 artifacts:
