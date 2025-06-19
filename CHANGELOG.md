@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- No longer send out empty log envelopes ([#4497](https://github.com/getsentry/sentry-java/pull/4497))
+
 ## 8.14.0
 
 ### Fixes
