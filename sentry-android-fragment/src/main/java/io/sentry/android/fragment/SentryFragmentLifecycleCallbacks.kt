@@ -175,8 +175,7 @@ public class SentryFragmentLifecycleCallbacks(
         scopes.addBreadcrumb(breadcrumb, hint)
     }
 
-    private fun getFragmentName(fragment: Fragment): String =
-        fragment.javaClass.canonicalName ?: fragment.javaClass.simpleName
+    private fun getFragmentName(fragment: Fragment): String = fragment.javaClass.canonicalName ?: fragment.javaClass.simpleName
 
     private fun isRunningSpan(fragment: Fragment): Boolean = fragmentsWithOngoingTransactions.containsKey(fragment)
 
