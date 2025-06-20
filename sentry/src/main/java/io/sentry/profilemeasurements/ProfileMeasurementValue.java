@@ -43,6 +43,13 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
     this.timestamp = DateUtils.nanosToSeconds(timestamp.nanoTimestamp());
   }
 
+  public ProfileMeasurementValue(
+      final @NotNull Long relativeStartNs, final @NotNull Number value, final long nanoTimestamp) {
+    this.relativeStartNs = relativeStartNs.toString();
+    this.value = value.doubleValue();
+    this.timestamp = DateUtils.nanosToSeconds(nanoTimestamp);
+  }
+
   public @Nullable Double getTimestamp() {
     return timestamp;
   }

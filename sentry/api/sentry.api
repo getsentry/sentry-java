@@ -334,12 +334,6 @@ public abstract interface class io/sentry/CompositePerformanceCollector {
 	public abstract fun stop (Ljava/lang/String;)Ljava/util/List;
 }
 
-public final class io/sentry/CpuCollectionData {
-	public fun <init> (DLio/sentry/SentryDate;)V
-	public fun getCpuUsagePercentage ()D
-	public fun getTimestamp ()Lio/sentry/SentryDate;
-}
-
 public final class io/sentry/CustomSamplingContext {
 	public fun <init> ()V
 	public fun get (Ljava/lang/String;)Ljava/lang/Object;
@@ -789,10 +783,6 @@ public abstract interface class io/sentry/ILogger {
 	public abstract fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
 	public abstract fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
-}
-
-public abstract interface class io/sentry/IMemoryCollector {
-	public abstract fun collect ()Lio/sentry/MemoryCollectionData;
 }
 
 public abstract interface class io/sentry/IOptionsObserver {
@@ -1347,14 +1337,6 @@ public final class io/sentry/MeasurementUnit$Information : java/lang/Enum, io/se
 	public fun apiName ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MeasurementUnit$Information;
 	public static fun values ()[Lio/sentry/MeasurementUnit$Information;
-}
-
-public final class io/sentry/MemoryCollectionData {
-	public fun <init> (JJLio/sentry/SentryDate;)V
-	public fun <init> (JLio/sentry/SentryDate;)V
-	public fun getTimestamp ()Lio/sentry/SentryDate;
-	public fun getUsedHeapMemory ()J
-	public fun getUsedNativeMemory ()J
 }
 
 public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -1931,11 +1913,14 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 }
 
 public final class io/sentry/PerformanceCollectionData {
-	public fun <init> ()V
-	public fun addCpuData (Lio/sentry/CpuCollectionData;)V
-	public fun addMemoryData (Lio/sentry/MemoryCollectionData;)V
-	public fun getCpuData ()Lio/sentry/CpuCollectionData;
-	public fun getMemoryData ()Lio/sentry/MemoryCollectionData;
+	public fun <init> (J)V
+	public fun getCpuUsagePercentage ()Ljava/lang/Double;
+	public fun getNanoTimestamp ()J
+	public fun getUsedHeapMemory ()Ljava/lang/Long;
+	public fun getUsedNativeMemory ()Ljava/lang/Long;
+	public fun setCpuUsagePercentage (Ljava/lang/Double;)V
+	public fun setUsedHeapMemory (Ljava/lang/Long;)V
+	public fun setUsedNativeMemory (Ljava/lang/Long;)V
 }
 
 public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -4915,6 +4900,7 @@ public final class io/sentry/profilemeasurements/ProfileMeasurement$JsonKeys {
 
 public final class io/sentry/profilemeasurements/ProfileMeasurementValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/Number;J)V
 	public fun <init> (Ljava/lang/Long;Ljava/lang/Number;Lio/sentry/SentryDate;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getRelativeStartNs ()Ljava/lang/String;

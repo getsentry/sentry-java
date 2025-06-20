@@ -4,11 +4,9 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.CpuCollectionData
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
-import io.sentry.MemoryCollectionData
 import io.sentry.PerformanceCollectionData
 import io.sentry.ProfilingTraceData
 import io.sentry.SentryLevel
@@ -459,13 +457,15 @@ class AndroidTransactionProfilerTest {
     fun `profiler includes performance measurements when passed on transaction finish`() {
         val profiler = fixture.getSut(context)
         val performanceCollectionData = ArrayList<PerformanceCollectionData>()
-        var singleData = PerformanceCollectionData()
-        singleData.addMemoryData(MemoryCollectionData(2, 3, mock()))
-        singleData.addCpuData(CpuCollectionData(1.4, mock()))
+        var singleData = PerformanceCollectionData(10)
+        singleData.usedHeapMemory = 2
+        singleData.usedNativeMemory = 3
+        singleData.cpuUsagePercentage = 1.4
         performanceCollectionData.add(singleData)
 
-        singleData = PerformanceCollectionData()
-        singleData.addMemoryData(MemoryCollectionData(3, 4, mock()))
+        singleData = PerformanceCollectionData(20)
+        singleData.usedHeapMemory = 3
+        singleData.usedNativeMemory = 4
         performanceCollectionData.add(singleData)
 
         profiler.start()

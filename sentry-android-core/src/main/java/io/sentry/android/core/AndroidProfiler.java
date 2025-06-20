@@ -4,12 +4,10 @@ import android.annotation.SuppressLint;
 import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
-import io.sentry.CpuCollectionData;
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.ISentryExecutorService;
 import io.sentry.ISentryLifecycleToken;
-import io.sentry.MemoryCollectionData;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
@@ -318,32 +316,28 @@ public class AndroidProfiler {
           new ArrayDeque<>(performanceCollectionData.size());
 
       synchronized (performanceCollectionData) {
-        for (PerformanceCollectionData performanceData : performanceCollectionData) {
-          CpuCollectionData cpuData = performanceData.getCpuData();
-          MemoryCollectionData memoryData = performanceData.getMemoryData();
-          if (cpuData != null) {
+        for (final @NotNull PerformanceCollectionData data : performanceCollectionData) {
+          final long nanoTimestamp = data.getNanoTimestamp();
+          final long relativeStartNs = nanoTimestamp + timestampDiff;
+          final @Nullable Double cpuUsagePercentage = data.getCpuUsagePercentage();
+          final @Nullable Long usedHeapMemory = data.getUsedHeapMemory();
+          final @Nullable Long usedNativeMemory = data.getUsedNativeMemory();
+
+          if (cpuUsagePercentage != null) {
             cpuUsageMeasurements.add(
-                new ProfileMeasurementValue(
-                    cpuData.getTimestamp().nanoTimestamp() + timestampDiff,
-                    cpuData.getCpuUsagePercentage(),
-                    cpuData.getTimestamp()));
+                new ProfileMeasurementValue(relativeStartNs, cpuUsagePercentage, nanoTimestamp));
           }
-          if (memoryData != null && memoryData.getUsedHeapMemory() > -1) {
+          if (usedHeapMemory != null) {
             memoryUsageMeasurements.add(
-                new ProfileMeasurementValue(
-                    memoryData.getTimestamp().nanoTimestamp() + timestampDiff,
-                    memoryData.getUsedHeapMemory(),
-                    memoryData.getTimestamp()));
+                new ProfileMeasurementValue(relativeStartNs, usedHeapMemory, nanoTimestamp));
           }
-          if (memoryData != null && memoryData.getUsedNativeMemory() > -1) {
+          if (usedNativeMemory != null) {
             nativeMemoryUsageMeasurements.add(
-                new ProfileMeasurementValue(
-                    memoryData.getTimestamp().nanoTimestamp() + timestampDiff,
-                    memoryData.getUsedNativeMemory(),
-                    memoryData.getTimestamp()));
+                new ProfileMeasurementValue(relativeStartNs, usedNativeMemory, nanoTimestamp));
           }
         }
       }
+
       if (!cpuUsageMeasurements.isEmpty()) {
         measurementsMap.put(
             ProfileMeasurement.ID_CPU_USAGE,
