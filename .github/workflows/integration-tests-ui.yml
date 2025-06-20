@@ -72,3 +72,10 @@ jobs:
           fi
         if: env.SAUCE_USERNAME != null
 
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@47f89e9acb64b76debcd5ea40642d25a4adced9f
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./artifacts/*.xml
