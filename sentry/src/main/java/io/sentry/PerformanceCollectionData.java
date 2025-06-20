@@ -5,28 +5,41 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class PerformanceCollectionData {
-  private @Nullable MemoryCollectionData memoryData = null;
-  private @Nullable CpuCollectionData cpuData = null;
+  private @Nullable Double cpuUsagePercentage = null;
+  private @Nullable Long usedHeapMemory = null;
+  private @Nullable Long usedNativeMemory = null;
+  private final long nanoTimestamp;
 
-  /** Store a {@link io.sentry.MemoryCollectionData}, if not null. */
-  public void addMemoryData(final @Nullable MemoryCollectionData memoryCollectionData) {
-    if (memoryCollectionData != null) {
-      memoryData = memoryCollectionData;
-    }
+  public PerformanceCollectionData(final long nanoTimestamp) {
+    this.nanoTimestamp = nanoTimestamp;
   }
 
-  /** Store a {@link io.sentry.CpuCollectionData}, if not null. */
-  public void addCpuData(final @Nullable CpuCollectionData cpuCollectionData) {
-    if (cpuCollectionData != null) {
-      cpuData = cpuCollectionData;
-    }
+  /** Set the cpu usage percentage. */
+  public void setCpuUsagePercentage(final @Nullable Double cpuUsagePercentage) {
+    this.cpuUsagePercentage = cpuUsagePercentage;
   }
 
-  public @Nullable CpuCollectionData getCpuData() {
-    return cpuData;
+  public @Nullable Double getCpuUsagePercentage() {
+    return cpuUsagePercentage;
   }
 
-  public @Nullable MemoryCollectionData getMemoryData() {
-    return memoryData;
+  public void setUsedHeapMemory(final @Nullable Long usedHeapMemory) {
+    this.usedHeapMemory = usedHeapMemory;
+  }
+
+  public @Nullable Long getUsedHeapMemory() {
+    return usedHeapMemory;
+  }
+
+  public void setUsedNativeMemory(final @Nullable Long usedNativeMemory) {
+    this.usedNativeMemory = usedNativeMemory;
+  }
+
+  public @Nullable Long getUsedNativeMemory() {
+    return usedNativeMemory;
+  }
+
+  public long getNanoTimestamp() {
+    return nanoTimestamp;
   }
 }

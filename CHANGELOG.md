@@ -6,6 +6,10 @@
 
 - No longer send out empty log envelopes ([#4497](https://github.com/getsentry/sentry-java/pull/4497))
 
+### Internal
+
+- Flattened PerformanceCollectionData ([#4505](https://github.com/getsentry/sentry-java/pull/4505))
+
 ### Dependencies
 
 - Bump Gradle from v8.14.1 to v8.14.2 ([#4473](https://github.com/getsentry/sentry-java/pull/4473))
