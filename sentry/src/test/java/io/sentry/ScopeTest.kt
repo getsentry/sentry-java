@@ -1,7 +1,6 @@
 package io.sentry
 
 import io.sentry.SentryLevel.WARNING
-import io.sentry.protocol.Contexts
 import io.sentry.protocol.Request
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
@@ -346,7 +345,7 @@ class ScopeTest {
         var called = false
         val options = SentryOptions().apply {
             maxBreadcrumbs = 0
-            beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback{ breadcrumb, _ ->
+            beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
                 called = true
                 breadcrumb
             }
