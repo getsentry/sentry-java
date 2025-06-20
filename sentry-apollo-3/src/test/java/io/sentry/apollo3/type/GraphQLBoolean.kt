@@ -7,11 +7,9 @@ package io.sentry.apollo3.type
 
 import com.apollographql.apollo3.api.CustomScalarType
 
-/**
- * The `Boolean` scalar type represents `true` or `false`.
- */
+/** The `Boolean` scalar type represents `true` or `false`. */
 public class GraphQLBoolean {
-    public companion object {
-        public val type: CustomScalarType = CustomScalarType("Boolean", "kotlin.Boolean")
-    }
+  public companion object {
+    public val type: CustomScalarType = CustomScalarType("Boolean", "kotlin.Boolean")
+  }
 }

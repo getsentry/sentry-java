@@ -19,47 +19,37 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 class ComposeActivity : AppCompatActivity() {
-    companion object {
-        private const val ITEM_COUNT: Int = 100
-    }
+  companion object {
+    private const val ITEM_COUNT: Int = 100
+  }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
 
-        setContent {
-            MaterialTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    LazyColumn(
-                        modifier = Modifier.testTag("list"),
-                    ) {
-                        item {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .background(Color.Gray)
-                                        .fillParentMaxWidth()
-                                        .fillParentMaxHeight()
-                                        .clickable {
-                                            // no-op
-                                        }.testTag("button_login"),
-                            ) {
-                                Text("Login")
-                            }
-                        }
-                        items(ITEM_COUNT) {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(96.dp)
-                                        .padding(8.dp)
-                                        .background(Color.Gray),
-                            )
-                        }
+    setContent {
+      MaterialTheme {
+        Surface(modifier = Modifier.fillMaxSize()) {
+          LazyColumn(modifier = Modifier.testTag("list")) {
+            item {
+              Box(
+                modifier =
+                  Modifier.background(Color.Gray)
+                    .fillParentMaxWidth()
+                    .fillParentMaxHeight()
+                    .clickable {
+                      // no-op
                     }
-                }
+                    .testTag("button_login")
+              ) {
+                Text("Login")
+              }
             }
+            items(ITEM_COUNT) {
+              Box(modifier = Modifier.size(96.dp).padding(8.dp).background(Color.Gray))
+            }
+          }
         }
+      }
     }
+  }
 }

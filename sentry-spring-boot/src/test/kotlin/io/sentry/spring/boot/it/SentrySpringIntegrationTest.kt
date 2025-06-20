@@ -10,6 +10,8 @@ import io.sentry.checkEvent
 import io.sentry.checkTransaction
 import io.sentry.spring.tracing.SentrySpan
 import io.sentry.transport.ITransport
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -49,287 +51,294 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
-import kotlin.test.BeforeTest
-import kotlin.test.Test
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
-    classes = [App::class],
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["sentry.dsn=http://key@localhost/proj", "sentry.send-default-pii=true", "sentry.traces-sample-rate=1.0", "sentry.max-request-body-size=medium", "sentry.enable-backpressure-handling=false"]
+  classes = [App::class],
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  properties =
+    [
+      "sentry.dsn=http://key@localhost/proj",
+      "sentry.send-default-pii=true",
+      "sentry.traces-sample-rate=1.0",
+      "sentry.max-request-body-size=medium",
+      "sentry.enable-backpressure-handling=false",
+    ],
 )
 class SentrySpringIntegrationTest {
 
-    @Autowired
-    lateinit var transport: ITransport
+  @Autowired lateinit var transport: ITransport
 
-    @SpyBean
-    lateinit var scopes: IScopes
+  @SpyBean lateinit var scopes: IScopes
 
-    @LocalServerPort
-    var port: Int? = null
+  @LocalServerPort var port: Int? = null
 
-    @BeforeTest
-    fun reset() {
-        reset(transport)
-    }
+  @BeforeTest
+  fun reset() {
+    reset(transport)
+  }
 
-    @Test
-    fun `attaches request and user information to SentryEvents`() {
-        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
-        val headers = HttpHeaders()
-        headers["X-FORWARDED-FOR"] = listOf("169.128.0.1")
-        val entity = HttpEntity<Void>(headers)
+  @Test
+  fun `attaches request and user information to SentryEvents`() {
+    val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+    val headers = HttpHeaders()
+    headers["X-FORWARDED-FOR"] = listOf("169.128.0.1")
+    val entity = HttpEntity<Void>(headers)
 
-        restTemplate.exchange("http://localhost:$port/hello", HttpMethod.GET, entity, Void::class.java)
+    restTemplate.exchange("http://localhost:$port/hello", HttpMethod.GET, entity, Void::class.java)
 
-        verify(transport).send(
-            checkEvent { event ->
-                assertThat(event.request).isNotNull()
-                assertThat(event.request!!.url).isEqualTo("http://localhost:$port/hello")
-                assertThat(event.user).isNotNull()
-                assertThat(event.user!!.username).isEqualTo("user")
-                assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
-            },
-            anyOrNull()
-        )
-    }
+    verify(transport)
+      .send(
+        checkEvent { event ->
+          assertThat(event.request).isNotNull()
+          assertThat(event.request!!.url).isEqualTo("http://localhost:$port/hello")
+          assertThat(event.user).isNotNull()
+          assertThat(event.user!!.username).isEqualTo("user")
+          assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
+        },
+        anyOrNull(),
+      )
+  }
 
-    @Test
-    fun `attaches request body to SentryEvents`() {
-        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
-        val headers = HttpHeaders().apply {
-            this.contentType = MediaType.APPLICATION_JSON
-        }
-        val httpEntity = HttpEntity("""{"body":"content"}""", headers)
-        restTemplate.exchange("http://localhost:$port/bodyAsParam", HttpMethod.POST, httpEntity, Void::class.java)
+  @Test
+  fun `attaches request body to SentryEvents`() {
+    val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+    val headers = HttpHeaders().apply { this.contentType = MediaType.APPLICATION_JSON }
+    val httpEntity = HttpEntity("""{"body":"content"}""", headers)
+    restTemplate.exchange(
+      "http://localhost:$port/bodyAsParam",
+      HttpMethod.POST,
+      httpEntity,
+      Void::class.java,
+    )
 
-        verify(transport).send(
-            checkEvent { event ->
-                assertThat(event.request).isNotNull()
-                assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
-            },
-            anyOrNull()
-        )
-    }
+    verify(transport)
+      .send(
+        checkEvent { event ->
+          assertThat(event.request).isNotNull()
+          assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
+        },
+        anyOrNull(),
+      )
+  }
 
-    @Test
-    fun `attaches request body to SentryEvents on empty ControllerMethod Params`() {
-        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
-        val headers = HttpHeaders().apply {
-            this.contentType = MediaType.APPLICATION_JSON
-        }
-        val httpEntity = HttpEntity("""{"body":"content"}""", headers)
-        restTemplate.exchange("http://localhost:$port/body", HttpMethod.POST, httpEntity, Void::class.java)
+  @Test
+  fun `attaches request body to SentryEvents on empty ControllerMethod Params`() {
+    val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+    val headers = HttpHeaders().apply { this.contentType = MediaType.APPLICATION_JSON }
+    val httpEntity = HttpEntity("""{"body":"content"}""", headers)
+    restTemplate.exchange(
+      "http://localhost:$port/body",
+      HttpMethod.POST,
+      httpEntity,
+      Void::class.java,
+    )
 
-        verify(transport).send(
-            checkEvent { event ->
-                assertThat(event.request).isNotNull()
-                assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
-            },
-            anyOrNull()
-        )
-    }
+    verify(transport)
+      .send(
+        checkEvent { event ->
+          assertThat(event.request).isNotNull()
+          assertThat(event.request!!.data).isEqualTo("""{"body":"content"}""")
+        },
+        anyOrNull(),
+      )
+  }
 
-    @Test
-    fun `attaches first ip address if multiple addresses exist in a header`() {
-        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
-        val headers = HttpHeaders()
-        headers["X-FORWARDED-FOR"] = listOf("169.128.0.1, 192.168.0.1")
-        val entity = HttpEntity<Void>(headers)
+  @Test
+  fun `attaches first ip address if multiple addresses exist in a header`() {
+    val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+    val headers = HttpHeaders()
+    headers["X-FORWARDED-FOR"] = listOf("169.128.0.1, 192.168.0.1")
+    val entity = HttpEntity<Void>(headers)
 
-        restTemplate.exchange("http://localhost:$port/hello", HttpMethod.GET, entity, Void::class.java)
+    restTemplate.exchange("http://localhost:$port/hello", HttpMethod.GET, entity, Void::class.java)
 
-        verify(transport).send(
-            checkEvent { event ->
-                assertThat(event.user).isNotNull()
-                assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
-            },
-            anyOrNull()
-        )
-    }
+    verify(transport)
+      .send(
+        checkEvent { event ->
+          assertThat(event.user).isNotNull()
+          assertThat(event.user!!.ipAddress).isEqualTo("169.128.0.1")
+        },
+        anyOrNull(),
+      )
+  }
 
-    @Test
-    fun `sends events for unhandled exceptions`() {
-        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+  @Test
+  fun `sends events for unhandled exceptions`() {
+    val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
 
-        restTemplate.getForEntity("http://localhost:$port/throws", String::class.java)
+    restTemplate.getForEntity("http://localhost:$port/throws", String::class.java)
 
-        verify(transport).send(
-            checkEvent { event ->
-                assertThat(event.exceptions).isNotNull().isNotEmpty
-                val ex = event.exceptions!!.first()
-                assertThat(ex.value).isEqualTo("something went wrong")
-                assertThat(ex.mechanism).isNotNull()
-                assertThat(ex.mechanism!!.isHandled).isFalse()
-            },
-            anyOrNull()
-        )
-    }
+    verify(transport)
+      .send(
+        checkEvent { event ->
+          assertThat(event.exceptions).isNotNull().isNotEmpty
+          val ex = event.exceptions!!.first()
+          assertThat(ex.value).isEqualTo("something went wrong")
+          assertThat(ex.mechanism).isNotNull()
+          assertThat(ex.mechanism!!.isHandled).isFalse()
+        },
+        anyOrNull(),
+      )
+  }
 
-    @Test
-    fun `sends events for error logs`() {
-        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+  @Test
+  fun `sends events for error logs`() {
+    val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
 
-        restTemplate.getForEntity("http://localhost:$port/logging", String::class.java)
+    restTemplate.getForEntity("http://localhost:$port/logging", String::class.java)
 
-        verify(transport).send(
-            checkEvent { event ->
-                assertThat(event.message).isNotNull()
-                assertThat(event.message!!.message).isEqualTo("event from logger")
-            },
-            anyOrNull()
-        )
-    }
+    verify(transport)
+      .send(
+        checkEvent { event ->
+          assertThat(event.message).isNotNull()
+          assertThat(event.message!!.message).isEqualTo("event from logger")
+        },
+        anyOrNull(),
+      )
+  }
 
-    @Test
-    fun `attaches span context to events triggered within transaction`() {
-        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+  @Test
+  fun `attaches span context to events triggered within transaction`() {
+    val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
 
-        restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
+    restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
 
-        verify(transport).send(
-            checkEvent { event ->
-                assertThat(event.contexts.trace).isNotNull()
-            },
-            anyOrNull()
-        )
-    }
+    verify(transport)
+      .send(checkEvent { event -> assertThat(event.contexts.trace).isNotNull() }, anyOrNull())
+  }
 
-    @Test
-    fun `tracing filter does not overwrite resposne status code`() {
-        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+  @Test
+  fun `tracing filter does not overwrite resposne status code`() {
+    val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
 
-        val response = restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
-        assertThat(response.statusCode).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
-    }
+    val response =
+      restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
+    assertThat(response.statusCode).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+  }
 
-    @Test
-    fun `does not send events for handled exceptions`() {
-        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+  @Test
+  fun `does not send events for handled exceptions`() {
+    val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
 
-        restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
+    restTemplate.getForEntity("http://localhost:$port/throws-handled", String::class.java)
 
-        verify(scopes, never()).captureEvent(any())
-    }
+    verify(scopes, never()).captureEvent(any())
+  }
 
-    @Test
-    fun `sets user on transaction`() {
-        val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+  @Test
+  fun `sets user on transaction`() {
+    val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
 
-        restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
+    restTemplate.getForEntity("http://localhost:$port/performance", String::class.java)
 
-        verify(transport).send(
-            checkTransaction { transaction ->
-                assertThat(transaction.transaction).isEqualTo("GET /performance")
-                assertThat(transaction.user).isNotNull()
-                assertThat(transaction.user!!.username).isEqualTo("user")
-            },
-            anyOrNull()
-        )
-    }
+    verify(transport)
+      .send(
+        checkTransaction { transaction ->
+          assertThat(transaction.transaction).isEqualTo("GET /performance")
+          assertThat(transaction.user).isNotNull()
+          assertThat(transaction.user!!.username).isEqualTo("user")
+        },
+        anyOrNull(),
+      )
+  }
 }
 
 @SpringBootApplication
 open class App {
-    private val transport = mock<ITransport>().also {
-        whenever(it.isHealthy).thenReturn(true)
-    }
+  private val transport = mock<ITransport>().also { whenever(it.isHealthy).thenReturn(true) }
 
-    @Bean
-    open fun mockTransportFactory(): ITransportFactory {
-        val factory = mock<ITransportFactory>()
-        whenever(factory.create(any(), any())).thenReturn(transport)
-        return factory
-    }
+  @Bean
+  open fun mockTransportFactory(): ITransportFactory {
+    val factory = mock<ITransportFactory>()
+    whenever(factory.create(any(), any())).thenReturn(transport)
+    return factory
+  }
 
-    @Bean
-    open fun mockTransport() = transport
+  @Bean open fun mockTransport() = transport
 
-    @Bean
-    open fun optionsCallback() = Sentry.OptionsConfiguration<SentryOptions> { options ->
-        // due to OTel being on the classpath we need to set the default again
-        options.spanFactory = DefaultSpanFactory()
-        // to test the actual spring implementation
-        options.openTelemetryMode = SentryOpenTelemetryMode.OFF
+  @Bean
+  open fun optionsCallback() =
+    Sentry.OptionsConfiguration<SentryOptions> { options ->
+      // due to OTel being on the classpath we need to set the default again
+      options.spanFactory = DefaultSpanFactory()
+      // to test the actual spring implementation
+      options.openTelemetryMode = SentryOpenTelemetryMode.OFF
     }
 }
 
 @RestController
 class HelloController(private val helloService: HelloService) {
-    private val logger = LoggerFactory.getLogger(HelloController::class.java)
+  private val logger = LoggerFactory.getLogger(HelloController::class.java)
 
-    @GetMapping("/hello")
-    fun hello() {
-        Sentry.captureMessage("hello")
-    }
+  @GetMapping("/hello")
+  fun hello() {
+    Sentry.captureMessage("hello")
+  }
 
-    @GetMapping("/throws")
-    fun throws() {
-        throw RuntimeException("something went wrong")
-    }
+  @GetMapping("/throws")
+  fun throws() {
+    throw RuntimeException("something went wrong")
+  }
 
-    @GetMapping("/throws-handled")
-    fun throwsHandled() {
-        throw CustomException("handled exception")
-    }
+  @GetMapping("/throws-handled")
+  fun throwsHandled() {
+    throw CustomException("handled exception")
+  }
 
-    @GetMapping("/performance")
-    fun performance() {
-        helloService.throws()
-    }
+  @GetMapping("/performance")
+  fun performance() {
+    helloService.throws()
+  }
 
-    @GetMapping("/logging")
-    fun logging() {
-        logger.error("event from logger")
-    }
+  @GetMapping("/logging")
+  fun logging() {
+    logger.error("event from logger")
+  }
 
-    @PostMapping("/body")
-    fun body() {
-        Sentry.captureMessage("body")
-    }
+  @PostMapping("/body")
+  fun body() {
+    Sentry.captureMessage("body")
+  }
 
-    @PostMapping("/bodyAsParam")
-    fun bodyWithReadingBodyInController(@RequestBody body: String) {
-        Sentry.captureMessage("body")
-    }
+  @PostMapping("/bodyAsParam")
+  fun bodyWithReadingBodyInController(@RequestBody body: String) {
+    Sentry.captureMessage("body")
+  }
 }
 
 @Service
 open class HelloService {
 
-    @SentrySpan
-    open fun throws() {
-        throw RuntimeException("something went wrong")
-    }
+  @SentrySpan
+  open fun throws() {
+    throw RuntimeException("something went wrong")
+  }
 }
 
 @Configuration
 open class SecurityConfiguration {
 
-    @Bean
-    open fun userDetailsService(): InMemoryUserDetailsManager {
-        val encoder: PasswordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder()
-        val user: UserDetails = User
-            .builder()
-            .passwordEncoder { rawPassword -> encoder.encode(rawPassword) }
-            .username("user")
-            .password("password")
-            .roles("USER")
-            .build()
-        return InMemoryUserDetailsManager(user)
-    }
+  @Bean
+  open fun userDetailsService(): InMemoryUserDetailsManager {
+    val encoder: PasswordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder()
+    val user: UserDetails =
+      User.builder()
+        .passwordEncoder { rawPassword -> encoder.encode(rawPassword) }
+        .username("user")
+        .password("password")
+        .roles("USER")
+        .build()
+    return InMemoryUserDetailsManager(user)
+  }
 
-    @Bean
-    @Throws(Exception::class)
-    open fun filterChain(http: HttpSecurity): SecurityFilterChain {
-        http.csrf().disable()
-            .authorizeRequests().anyRequest().authenticated()
-            .and()
-            .httpBasic()
+  @Bean
+  @Throws(Exception::class)
+  open fun filterChain(http: HttpSecurity): SecurityFilterChain {
+    http.csrf().disable().authorizeRequests().anyRequest().authenticated().and().httpBasic()
 
-        return http.build()
-    }
+    return http.build()
+  }
 }
 
 class CustomException(message: String) : RuntimeException(message)
@@ -337,6 +346,6 @@ class CustomException(message: String) : RuntimeException(message)
 @ControllerAdvice
 class ExceptionHandlers {
 
-    @ExceptionHandler(CustomException::class)
-    fun handle(e: CustomException) = ResponseEntity.badRequest().build<Void>()
+  @ExceptionHandler(CustomException::class)
+  fun handle(e: CustomException) = ResponseEntity.badRequest().build<Void>()
 }

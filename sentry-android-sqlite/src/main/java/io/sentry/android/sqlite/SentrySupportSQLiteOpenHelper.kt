@@ -4,12 +4,13 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 
 /**
- * The Sentry's [SentrySupportSQLiteOpenHelper], it will automatically add a span
- *  out of the active span bound to the scope for each database query.
- * It's a wrapper around an instance of [SupportSQLiteOpenHelper].
+ * The Sentry's [SentrySupportSQLiteOpenHelper], it will automatically add a span out of the active
+ * span bound to the scope for each database query. It's a wrapper around an instance of
+ * [SupportSQLiteOpenHelper].
  *
- * You can wrap your custom [SupportSQLiteOpenHelper] instance with `SentrySupportSQLiteOpenHelper(myHelper)`.
- * If you're using the Sentry Android Gradle plugin, this will be applied automatically.
+ * You can wrap your custom [SupportSQLiteOpenHelper] instance with
+ * `SentrySupportSQLiteOpenHelper(myHelper)`. If you're using the Sentry Android Gradle plugin, this
+ * will be applied automatically.
  *
  * Usage - wrap your custom [SupportSQLiteOpenHelper] instance in [SentrySupportSQLiteOpenHelper]
  *
@@ -18,7 +19,6 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper
  * ```
  *
  * If you use Room you can wrap the default [FrameworkSQLiteOpenHelperFactory]:
- *
  * ```
  * val database = Room.databaseBuilder(context, MyDatabase::class.java, "dbName")
  *     .openHelperFactory { configuration ->
@@ -30,33 +30,33 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper
  *
  * @param delegate The [SupportSQLiteOpenHelper] instance to delegate calls to.
  */
-public class SentrySupportSQLiteOpenHelper private constructor(
-    private val delegate: SupportSQLiteOpenHelper,
-) : SupportSQLiteOpenHelper by delegate {
-    private val sqLiteSpanManager = SQLiteSpanManager(databaseName = delegate.databaseName)
+public class SentrySupportSQLiteOpenHelper
+private constructor(private val delegate: SupportSQLiteOpenHelper) :
+  SupportSQLiteOpenHelper by delegate {
+  private val sqLiteSpanManager = SQLiteSpanManager(databaseName = delegate.databaseName)
 
-    private val sentryWritableDatabase: SupportSQLiteDatabase by lazy {
-        SentrySupportSQLiteDatabase(delegate.writableDatabase, sqLiteSpanManager)
-    }
+  private val sentryWritableDatabase: SupportSQLiteDatabase by lazy {
+    SentrySupportSQLiteDatabase(delegate.writableDatabase, sqLiteSpanManager)
+  }
 
-    private val sentryReadableDatabase: SupportSQLiteDatabase by lazy {
-        SentrySupportSQLiteDatabase(delegate.readableDatabase, sqLiteSpanManager)
-    }
+  private val sentryReadableDatabase: SupportSQLiteDatabase by lazy {
+    SentrySupportSQLiteDatabase(delegate.readableDatabase, sqLiteSpanManager)
+  }
 
-    override val writableDatabase: SupportSQLiteDatabase
-        get() = sentryWritableDatabase
+  override val writableDatabase: SupportSQLiteDatabase
+    get() = sentryWritableDatabase
 
-    override val readableDatabase: SupportSQLiteDatabase
-        get() = sentryReadableDatabase
+  override val readableDatabase: SupportSQLiteDatabase
+    get() = sentryReadableDatabase
 
-    public companion object {
-        // @JvmStatic is needed to let this method be accessed by our gradle plugin
-        @JvmStatic
-        public fun create(delegate: SupportSQLiteOpenHelper): SupportSQLiteOpenHelper =
-            if (delegate is SentrySupportSQLiteOpenHelper) {
-                delegate
-            } else {
-                SentrySupportSQLiteOpenHelper(delegate)
-            }
-    }
+  public companion object {
+    // @JvmStatic is needed to let this method be accessed by our gradle plugin
+    @JvmStatic
+    public fun create(delegate: SupportSQLiteOpenHelper): SupportSQLiteOpenHelper =
+      if (delegate is SentrySupportSQLiteOpenHelper) {
+        delegate
+      } else {
+        SentrySupportSQLiteOpenHelper(delegate)
+      }
+  }
 }
