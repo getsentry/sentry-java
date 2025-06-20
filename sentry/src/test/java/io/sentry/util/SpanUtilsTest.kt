@@ -6,75 +6,75 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SpanUtilsTest {
-    @Test
-    fun `isIgnored returns true for exact match`() {
-        val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
-        assertTrue(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring_jakarta.webmvc"))
-    }
+  @Test
+  fun `isIgnored returns true for exact match`() {
+    val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
+    assertTrue(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring_jakarta.webmvc"))
+  }
 
-    @Test
-    fun `isIgnored returns true for exact match with multiple invocations`() {
-        val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
-        assertTrue(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring_jakarta.webmvc"))
-        assertTrue(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring_jakarta.webmvc"))
-    }
+  @Test
+  fun `isIgnored returns true for exact match with multiple invocations`() {
+    val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
+    assertTrue(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring_jakarta.webmvc"))
+    assertTrue(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring_jakarta.webmvc"))
+  }
 
-    @Test
-    fun `isIgnored returns true for regex match`() {
-        val ignoredOrigins = listOf(FilterString("auto.http.spring.*"))
-        assertTrue(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring_jakarta.webmvc"))
-    }
+  @Test
+  fun `isIgnored returns true for regex match`() {
+    val ignoredOrigins = listOf(FilterString("auto.http.spring.*"))
+    assertTrue(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring_jakarta.webmvc"))
+  }
 
-    @Test
-    fun `isIgnored returns true for regex match with multiple invocations`() {
-        val ignoredOrigins = listOf(FilterString("auto.http.spring.*"))
-        assertTrue(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring_jakarta.webmvc"))
-        assertTrue(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring_jakarta.webmvc"))
-    }
+  @Test
+  fun `isIgnored returns true for regex match with multiple invocations`() {
+    val ignoredOrigins = listOf(FilterString("auto.http.spring.*"))
+    assertTrue(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring_jakarta.webmvc"))
+    assertTrue(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring_jakarta.webmvc"))
+  }
 
-    @Test
-    fun `isIgnored returns false for no match`() {
-        val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
-        assertFalse(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring.webflux"))
-    }
+  @Test
+  fun `isIgnored returns false for no match`() {
+    val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
+    assertFalse(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring.webflux"))
+  }
 
-    @Test
-    fun `isIgnored returns false for no match with multiple invocations`() {
-        val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
-        assertFalse(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring.webflux"))
-    }
+  @Test
+  fun `isIgnored returns false for no match with multiple invocations`() {
+    val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
+    assertFalse(SpanUtils.isIgnored(ignoredOrigins, "auto.http.spring.webflux"))
+  }
 
-    @Test
-    fun `isIgnored returns false for null origin`() {
-        val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
-        assertFalse(SpanUtils.isIgnored(ignoredOrigins, null))
-    }
+  @Test
+  fun `isIgnored returns false for null origin`() {
+    val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
+    assertFalse(SpanUtils.isIgnored(ignoredOrigins, null))
+  }
 
-    @Test
-    fun `isIgnored returns false for null origin with multiple invocations`() {
-        val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
-        assertFalse(SpanUtils.isIgnored(ignoredOrigins, null))
-    }
+  @Test
+  fun `isIgnored returns false for null origin with multiple invocations`() {
+    val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))
+    assertFalse(SpanUtils.isIgnored(ignoredOrigins, null))
+  }
 
-    @Test
-    fun `isIgnored returns false for null ignoredOrigins`() {
-        assertFalse(SpanUtils.isIgnored(null, "auto.http.spring_jakarta.webmvc"))
-    }
+  @Test
+  fun `isIgnored returns false for null ignoredOrigins`() {
+    assertFalse(SpanUtils.isIgnored(null, "auto.http.spring_jakarta.webmvc"))
+  }
 
-    @Test
-    fun `isIgnored returns false for null ignoredOrigins with multiple invocations`() {
-        assertFalse(SpanUtils.isIgnored(null, "auto.http.spring_jakarta.webmvc"))
-        assertFalse(SpanUtils.isIgnored(null, "auto.http.spring_jakarta.webmvc"))
-    }
+  @Test
+  fun `isIgnored returns false for null ignoredOrigins with multiple invocations`() {
+    assertFalse(SpanUtils.isIgnored(null, "auto.http.spring_jakarta.webmvc"))
+    assertFalse(SpanUtils.isIgnored(null, "auto.http.spring_jakarta.webmvc"))
+  }
 
-    @Test
-    fun `isIgnored returns false for empty ignoredOrigins`() {
-        assertFalse(SpanUtils.isIgnored(emptyList(), "auto.http.spring_jakarta.webmvc"))
-    }
+  @Test
+  fun `isIgnored returns false for empty ignoredOrigins`() {
+    assertFalse(SpanUtils.isIgnored(emptyList(), "auto.http.spring_jakarta.webmvc"))
+  }
 
-    @Test
-    fun `isIgnored returns false for empty ignoredOrigins with multiple invocations`() {
-        assertFalse(SpanUtils.isIgnored(emptyList(), "auto.http.spring_jakarta.webmvc"))
-        assertFalse(SpanUtils.isIgnored(emptyList(), "auto.http.spring_jakarta.webmvc"))
-    }
+  @Test
+  fun `isIgnored returns false for empty ignoredOrigins with multiple invocations`() {
+    assertFalse(SpanUtils.isIgnored(emptyList(), "auto.http.spring_jakarta.webmvc"))
+    assertFalse(SpanUtils.isIgnored(emptyList(), "auto.http.spring_jakarta.webmvc"))
+  }
 }

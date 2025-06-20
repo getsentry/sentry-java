@@ -12,6 +12,12 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.android.core.BuildInfoProvider
 import io.sentry.test.getProperty
+import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.inOrder
@@ -21,168 +27,162 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows
-import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertIs
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
 class FirstDrawDoneListenerTest {
-    private class Fixture {
-        val application: Context = ApplicationProvider.getApplicationContext()
-        val buildInfo = mock<BuildInfoProvider>()
-        lateinit var onDrawListeners: ArrayList<ViewTreeObserver.OnDrawListener>
+  private class Fixture {
+    val application: Context = ApplicationProvider.getApplicationContext()
+    val buildInfo = mock<BuildInfoProvider>()
+    lateinit var onDrawListeners: ArrayList<ViewTreeObserver.OnDrawListener>
 
-        fun getSut(apiVersion: Int = Build.VERSION_CODES.O): View {
-            whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
-            val view = View(application)
+    fun getSut(apiVersion: Int = Build.VERSION_CODES.O): View {
+      whenever(buildInfo.sdkInfoVersion).thenReturn(apiVersion)
+      val view = View(application)
 
-            // Adding a listener forces ViewTreeObserver.mOnDrawListeners to be initialized and non-null.
-            val dummyListener = ViewTreeObserver.OnDrawListener {}
-            view.viewTreeObserver.addOnDrawListener(dummyListener)
-            view.viewTreeObserver.removeOnDrawListener(dummyListener)
+      // Adding a listener forces ViewTreeObserver.mOnDrawListeners to be initialized and non-null.
+      val dummyListener = ViewTreeObserver.OnDrawListener {}
+      view.viewTreeObserver.addOnDrawListener(dummyListener)
+      view.viewTreeObserver.removeOnDrawListener(dummyListener)
 
-            // Obtain mOnDrawListeners field through reflection
-            onDrawListeners = view.viewTreeObserver.getProperty("mOnDrawListeners")
-            assertTrue(onDrawListeners.isEmpty())
+      // Obtain mOnDrawListeners field through reflection
+      onDrawListeners = view.viewTreeObserver.getProperty("mOnDrawListeners")
+      assertTrue(onDrawListeners.isEmpty())
 
-            return view
-        }
+      return view
+    }
+  }
+
+  private val fixture = Fixture()
+
+  @Test
+  fun `registerForNextDraw adds listener on attach state changed on sdk 25-`() {
+    val view = fixture.getSut(Build.VERSION_CODES.N_MR1)
+
+    // OnDrawListener is not registered, it is delayed for later
+    FirstDrawDoneListener.registerForNextDraw(view, {}, fixture.buildInfo)
+    assertTrue(fixture.onDrawListeners.isEmpty())
+
+    // Register listener after the view is attached to a window
+    val listenerInfo = Class.forName("android.view.View\$ListenerInfo")
+    val mListenerInfo: Any = view.getProperty("mListenerInfo")
+    val mOnAttachStateChangeListeners: CopyOnWriteArrayList<View.OnAttachStateChangeListener> =
+      mListenerInfo.getProperty(listenerInfo, "mOnAttachStateChangeListeners")
+    assertFalse(mOnAttachStateChangeListeners.isEmpty())
+
+    // Dispatch onViewAttachedToWindow()
+    for (listener in mOnAttachStateChangeListeners) {
+      listener.onViewAttachedToWindow(view)
     }
 
-    private val fixture = Fixture()
+    assertFalse(fixture.onDrawListeners.isEmpty())
+    assertIs<FirstDrawDoneListener>(fixture.onDrawListeners[0])
 
-    @Test
-    fun `registerForNextDraw adds listener on attach state changed on sdk 25-`() {
-        val view = fixture.getSut(Build.VERSION_CODES.N_MR1)
+    // mOnAttachStateChangeListeners is automatically removed
+    assertTrue(mOnAttachStateChangeListeners.isEmpty())
+  }
 
-        // OnDrawListener is not registered, it is delayed for later
-        FirstDrawDoneListener.registerForNextDraw(view, {}, fixture.buildInfo)
-        assertTrue(fixture.onDrawListeners.isEmpty())
+  @Test
+  fun `registerForNextDraw adds listener on sdk 26+`() {
+    val view = fixture.getSut()
 
-        // Register listener after the view is attached to a window
-        val listenerInfo = Class.forName("android.view.View\$ListenerInfo")
-        val mListenerInfo: Any = view.getProperty("mListenerInfo")
-        val mOnAttachStateChangeListeners: CopyOnWriteArrayList<View.OnAttachStateChangeListener> =
-            mListenerInfo.getProperty(listenerInfo, "mOnAttachStateChangeListeners")
-        assertFalse(mOnAttachStateChangeListeners.isEmpty())
+    // Immediately register an OnDrawListener to ViewTreeObserver
+    FirstDrawDoneListener.registerForNextDraw(view, {}, fixture.buildInfo)
+    assertFalse(fixture.onDrawListeners.isEmpty())
+    assertIs<FirstDrawDoneListener>(fixture.onDrawListeners[0])
+  }
 
-        // Dispatch onViewAttachedToWindow()
-        for (listener in mOnAttachStateChangeListeners) {
-            listener.onViewAttachedToWindow(view)
-        }
+  @Test
+  fun `registerForNextDraw posts callback to front of queue`() {
+    val view = fixture.getSut()
+    val handler = Handler(Looper.getMainLooper())
+    val drawDoneCallback = mock<Runnable>()
+    val otherCallback = mock<Runnable>()
+    val inOrder = inOrder(drawDoneCallback, otherCallback)
+    FirstDrawDoneListener.registerForNextDraw(view, drawDoneCallback, fixture.buildInfo)
+    handler.post(otherCallback) // 3rd in queue
+    handler.postAtFrontOfQueue(otherCallback) // 2nd in queue
+    view.viewTreeObserver.dispatchOnDraw() // 1st in queue
+    verify(drawDoneCallback, never()).run()
+    verify(otherCallback, never()).run()
 
-        assertFalse(fixture.onDrawListeners.isEmpty())
-        assertIs<FirstDrawDoneListener>(fixture.onDrawListeners[0])
+    // Execute all posted tasks
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    inOrder.verify(drawDoneCallback).run()
+    inOrder.verify(otherCallback, times(2)).run()
+    inOrder.verifyNoMoreInteractions()
+  }
 
-        // mOnAttachStateChangeListeners is automatically removed
-        assertTrue(mOnAttachStateChangeListeners.isEmpty())
-    }
+  @Test
+  fun `registerForNextDraw unregister itself after onDraw`() {
+    val view = fixture.getSut()
+    FirstDrawDoneListener.registerForNextDraw(view, {}, fixture.buildInfo)
+    assertFalse(fixture.onDrawListeners.isEmpty())
 
-    @Test
-    fun `registerForNextDraw adds listener on sdk 26+`() {
-        val view = fixture.getSut()
+    // Does not remove OnDrawListener before onDraw, even if OnGlobalLayout is triggered
+    view.viewTreeObserver.dispatchOnGlobalLayout()
+    assertFalse(fixture.onDrawListeners.isEmpty())
 
-        // Immediately register an OnDrawListener to ViewTreeObserver
-        FirstDrawDoneListener.registerForNextDraw(view, {}, fixture.buildInfo)
-        assertFalse(fixture.onDrawListeners.isEmpty())
-        assertIs<FirstDrawDoneListener>(fixture.onDrawListeners[0])
-    }
+    // Removes OnDrawListener in the next OnGlobalLayout after onDraw
+    view.viewTreeObserver.dispatchOnDraw()
+    view.viewTreeObserver.dispatchOnGlobalLayout()
+    assertTrue(fixture.onDrawListeners.isEmpty())
+  }
 
-    @Test
-    fun `registerForNextDraw posts callback to front of queue`() {
-        val view = fixture.getSut()
-        val handler = Handler(Looper.getMainLooper())
-        val drawDoneCallback = mock<Runnable>()
-        val otherCallback = mock<Runnable>()
-        val inOrder = inOrder(drawDoneCallback, otherCallback)
-        FirstDrawDoneListener.registerForNextDraw(view, drawDoneCallback, fixture.buildInfo)
-        handler.post(otherCallback) // 3rd in queue
-        handler.postAtFrontOfQueue(otherCallback) // 2nd in queue
-        view.viewTreeObserver.dispatchOnDraw() // 1st in queue
-        verify(drawDoneCallback, never()).run()
-        verify(otherCallback, never()).run()
+  @Test
+  fun `registerForNextDraw calls the given callback on the main thread after onDraw`() {
+    val view = fixture.getSut()
+    val r: Runnable = mock()
+    FirstDrawDoneListener.registerForNextDraw(view, r, fixture.buildInfo)
+    view.viewTreeObserver.dispatchOnDraw()
 
-        // Execute all posted tasks
-        Shadows.shadowOf(Looper.getMainLooper()).idle()
-        inOrder.verify(drawDoneCallback).run()
-        inOrder.verify(otherCallback, times(2)).run()
-        inOrder.verifyNoMoreInteractions()
-    }
+    // Execute all tasks posted to main looper
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    verify(r).run()
+  }
 
-    @Test
-    fun `registerForNextDraw unregister itself after onDraw`() {
-        val view = fixture.getSut()
-        FirstDrawDoneListener.registerForNextDraw(view, {}, fixture.buildInfo)
-        assertFalse(fixture.onDrawListeners.isEmpty())
+  @Test
+  fun `registerForNextDraw uses the activity decor view`() {
+    val view = fixture.getSut()
 
-        // Does not remove OnDrawListener before onDraw, even if OnGlobalLayout is triggered
-        view.viewTreeObserver.dispatchOnGlobalLayout()
-        assertFalse(fixture.onDrawListeners.isEmpty())
+    val activity = mock<Activity>()
+    val window = mock<Window>()
+    whenever(activity.window).thenReturn(window)
+    whenever(window.peekDecorView()).thenReturn(view)
 
-        // Removes OnDrawListener in the next OnGlobalLayout after onDraw
-        view.viewTreeObserver.dispatchOnDraw()
-        view.viewTreeObserver.dispatchOnGlobalLayout()
-        assertTrue(fixture.onDrawListeners.isEmpty())
-    }
+    val r: Runnable = mock()
+    FirstDrawDoneListener.registerForNextDraw(activity, r, fixture.buildInfo)
 
-    @Test
-    fun `registerForNextDraw calls the given callback on the main thread after onDraw`() {
-        val view = fixture.getSut()
-        val r: Runnable = mock()
-        FirstDrawDoneListener.registerForNextDraw(view, r, fixture.buildInfo)
-        view.viewTreeObserver.dispatchOnDraw()
+    assertFalse(fixture.onDrawListeners.isEmpty())
+  }
 
-        // Execute all tasks posted to main looper
-        Shadows.shadowOf(Looper.getMainLooper()).idle()
-        verify(r).run()
-    }
+  @Test
+  fun `registerForNextDraw uses the activity decor view once it's available`() {
+    val view = fixture.getSut()
 
-    @Test
-    fun `registerForNextDraw uses the activity decor view`() {
-        val view = fixture.getSut()
+    val activity = mock<Activity>()
+    val window = mock<Window>()
+    whenever(activity.window).thenReturn(window)
+    whenever(window.peekDecorView()).thenReturn(null)
+    val callbackCapture = argumentCaptor<Window.Callback>()
 
-        val activity = mock<Activity>()
-        val window = mock<Window>()
-        whenever(activity.window).thenReturn(window)
-        whenever(window.peekDecorView()).thenReturn(view)
+    // when registerForNextDraw is called, but the activity has no window yet
+    val r: Runnable = mock()
+    FirstDrawDoneListener.registerForNextDraw(activity, r, fixture.buildInfo)
 
-        val r: Runnable = mock()
-        FirstDrawDoneListener.registerForNextDraw(activity, r, fixture.buildInfo)
+    // then a window callback is installed
+    verify(window).callback = callbackCapture.capture()
 
-        assertFalse(fixture.onDrawListeners.isEmpty())
-    }
+    // once the window is available
+    whenever(window.peekDecorView()).thenReturn(view)
+    callbackCapture.firstValue.onContentChanged()
 
-    @Test
-    fun `registerForNextDraw uses the activity decor view once it's available`() {
-        val view = fixture.getSut()
+    // then a window callback should be set back to the original one
+    verify(window, times(2)).callback = callbackCapture.capture()
+    assertNull(callbackCapture.lastValue)
 
-        val activity = mock<Activity>()
-        val window = mock<Window>()
-        whenever(activity.window).thenReturn(window)
-        whenever(window.peekDecorView()).thenReturn(null)
-        val callbackCapture = argumentCaptor<Window.Callback>()
+    // and the onDrawListener should be registered
+    assertFalse(fixture.onDrawListeners.isEmpty())
 
-        // when registerForNextDraw is called, but the activity has no window yet
-        val r: Runnable = mock()
-        FirstDrawDoneListener.registerForNextDraw(activity, r, fixture.buildInfo)
-
-        // then a window callback is installed
-        verify(window).callback = callbackCapture.capture()
-
-        // once the window is available
-        whenever(window.peekDecorView()).thenReturn(view)
-        callbackCapture.firstValue.onContentChanged()
-
-        // then a window callback should be set back to the original one
-        verify(window, times(2)).callback = callbackCapture.capture()
-        assertNull(callbackCapture.lastValue)
-
-        // and the onDrawListener should be registered
-        assertFalse(fixture.onDrawListeners.isEmpty())
-
-        listOf(1, 2).isNotEmpty()
-    }
+    listOf(1, 2).isNotEmpty()
+  }
 }

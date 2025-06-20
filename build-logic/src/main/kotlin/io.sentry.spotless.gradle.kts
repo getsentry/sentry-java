@@ -7,31 +7,19 @@ plugins {
 spotless {
     lineEndings = LineEnding.UNIX
     java {
-        target("**/*.java")
+        target("src/*/java/**/*.java")
         removeUnusedImports()
         googleJavaFormat()
         targetExclude("src/**/java/io/sentry/vendor/**")
     }
     kotlin {
-        target("**/*.kt")
-        ktlint()
+        target("src/*/kotlin/**/*.kt", "src/*/java/**/*.kt")
+        ktfmt().googleStyle()
         targetExclude("src/test/java/io/sentry/apollo4/generated/**", "src/test/java/io/sentry/apollo3/adapter/**")
-        suppressLintsFor {
-            step = "ktlint"
-            shortCode = "standard:max-line-length"
-        }
-        suppressLintsFor {
-            step = "ktlint"
-            shortCode = "standard:property-naming"
-        }
-        suppressLintsFor {
-            step = "ktlint"
-            shortCode = "standard:function-naming"
-        }
     }
     kotlinGradle {
-        target("**/*.kts")
-        ktlint()
+        target("*.gradle.kts")
+        ktfmt().googleStyle()
     }
 }
 

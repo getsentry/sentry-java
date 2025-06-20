@@ -12,46 +12,35 @@ import android.database.CursorWindow
  *   CrossProcessCursor is an interface and we can use Kotlin delegation.
  */
 internal class SentryCrossProcessCursor(
-    private val delegate: CrossProcessCursor,
-    private val spanManager: SQLiteSpanManager,
-    private val sql: String,
+  private val delegate: CrossProcessCursor,
+  private val spanManager: SQLiteSpanManager,
+  private val sql: String,
 ) : CrossProcessCursor by delegate {
-    // We have to start the span only the first time, regardless of how many times its methods get called.
-    private var isSpanStarted = false
+  // We have to start the span only the first time, regardless of how many times its methods get
+  // called.
+  private var isSpanStarted = false
 
-    override fun getCount(): Int {
-        if (isSpanStarted) {
-            return delegate.count
-        }
-        isSpanStarted = true
-        return spanManager.performSql(sql) {
-            delegate.count
-        }
+  override fun getCount(): Int {
+    if (isSpanStarted) {
+      return delegate.count
     }
+    isSpanStarted = true
+    return spanManager.performSql(sql) { delegate.count }
+  }
 
-    override fun onMove(
-        oldPosition: Int,
-        newPosition: Int,
-    ): Boolean {
-        if (isSpanStarted) {
-            return delegate.onMove(oldPosition, newPosition)
-        }
-        isSpanStarted = true
-        return spanManager.performSql(sql) {
-            delegate.onMove(oldPosition, newPosition)
-        }
+  override fun onMove(oldPosition: Int, newPosition: Int): Boolean {
+    if (isSpanStarted) {
+      return delegate.onMove(oldPosition, newPosition)
     }
+    isSpanStarted = true
+    return spanManager.performSql(sql) { delegate.onMove(oldPosition, newPosition) }
+  }
 
-    override fun fillWindow(
-        position: Int,
-        window: CursorWindow?,
-    ) {
-        if (isSpanStarted) {
-            return delegate.fillWindow(position, window)
-        }
-        isSpanStarted = true
-        return spanManager.performSql(sql) {
-            delegate.fillWindow(position, window)
-        }
+  override fun fillWindow(position: Int, window: CursorWindow?) {
+    if (isSpanStarted) {
+      return delegate.fillWindow(position, window)
     }
+    isSpanStarted = true
+    return spanManager.performSql(sql) { delegate.fillWindow(position, window) }
+  }
 }

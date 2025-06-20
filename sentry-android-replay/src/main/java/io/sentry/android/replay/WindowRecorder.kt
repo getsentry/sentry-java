@@ -22,154 +22,150 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @TargetApi(26)
 internal class WindowRecorder(
-    private val options: SentryOptions,
-    private val screenshotRecorderCallback: ScreenshotRecorderCallback? = null,
-    private val windowCallback: WindowCallback,
-    private val mainLooperHandler: MainLooperHandler,
-    private val replayExecutor: ScheduledExecutorService,
-) : Recorder,
-    OnRootViewsChangedListener {
-    internal companion object {
-        private const val TAG = "WindowRecorder"
-    }
+  private val options: SentryOptions,
+  private val screenshotRecorderCallback: ScreenshotRecorderCallback? = null,
+  private val windowCallback: WindowCallback,
+  private val mainLooperHandler: MainLooperHandler,
+  private val replayExecutor: ScheduledExecutorService,
+) : Recorder, OnRootViewsChangedListener {
+  internal companion object {
+    private const val TAG = "WindowRecorder"
+  }
 
-    private val isRecording = AtomicBoolean(false)
-    private val rootViews = ArrayList<WeakReference<View>>()
-    private var lastKnownWindowSize: Point = Point()
-    private val rootViewsLock = AutoClosableReentrantLock()
-    private var recorder: ScreenshotRecorder? = null
-    private var capturingTask: ScheduledFuture<*>? = null
-    private val capturer by lazy {
-        Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
-    }
+  private val isRecording = AtomicBoolean(false)
+  private val rootViews = ArrayList<WeakReference<View>>()
+  private var lastKnownWindowSize: Point = Point()
+  private val rootViewsLock = AutoClosableReentrantLock()
+  private var recorder: ScreenshotRecorder? = null
+  private var capturingTask: ScheduledFuture<*>? = null
+  private val capturer by lazy {
+    Executors.newSingleThreadScheduledExecutor(RecorderExecutorServiceThreadFactory())
+  }
 
-    override fun onRootViewsChanged(
-        root: View,
-        added: Boolean,
-    ) {
-        rootViewsLock.acquire().use {
-            if (added) {
-                rootViews.add(WeakReference(root))
-                recorder?.bind(root)
-                determineWindowSize(root)
-            } else {
-                recorder?.unbind(root)
-                rootViews.removeAll { it.get() == root }
-
-                val newRoot = rootViews.lastOrNull()?.get()
-                if (newRoot != null && root != newRoot) {
-                    recorder?.bind(newRoot)
-                    determineWindowSize(newRoot)
-                } else {
-                    Unit // synchronized block wants us to return something lol
-                }
-            }
-        }
-    }
-
-    fun determineWindowSize(root: View) {
-        if (root.hasSize()) {
-            if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
-                lastKnownWindowSize.set(root.width, root.height)
-                windowCallback.onWindowSizeChanged(root.width, root.height)
-            }
-        } else {
-            root.addOnPreDrawListenerSafe(
-                object : ViewTreeObserver.OnPreDrawListener {
-                    override fun onPreDraw(): Boolean {
-                        val currentRoot = rootViews.lastOrNull()?.get()
-                        // in case the root changed in the meantime, ignore the preDraw of the outdate root
-                        if (root != currentRoot) {
-                            root.removeOnPreDrawListenerSafe(this)
-                            return true
-                        }
-                        if (root.hasSize()) {
-                            root.removeOnPreDrawListenerSafe(this)
-                            if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
-                                lastKnownWindowSize.set(root.width, root.height)
-                                windowCallback.onWindowSizeChanged(root.width, root.height)
-                            }
-                        }
-                        return true
-                    }
-                },
-            )
-        }
-    }
-
-    override fun start() {
-        isRecording.getAndSet(true)
-    }
-
-    override fun onConfigurationChanged(config: ScreenshotRecorderConfig) {
-        if (!isRecording.get()) {
-            return
-        }
-
-        recorder =
-            ScreenshotRecorder(
-                config,
-                options,
-                mainLooperHandler,
-                replayExecutor,
-                screenshotRecorderCallback,
-            )
+  override fun onRootViewsChanged(root: View, added: Boolean) {
+    rootViewsLock.acquire().use {
+      if (added) {
+        rootViews.add(WeakReference(root))
+        recorder?.bind(root)
+        determineWindowSize(root)
+      } else {
+        recorder?.unbind(root)
+        rootViews.removeAll { it.get() == root }
 
         val newRoot = rootViews.lastOrNull()?.get()
-        if (newRoot != null) {
-            recorder?.bind(newRoot)
+        if (newRoot != null && root != newRoot) {
+          recorder?.bind(newRoot)
+          determineWindowSize(newRoot)
+        } else {
+          Unit // synchronized block wants us to return something lol
         }
-        // TODO: change this to use MainThreadHandler and just post on the main thread with delay
-        // to avoid thread context switch every time
-        capturingTask =
-            capturer.scheduleAtFixedRateSafely(
-                options,
-                "$TAG.capture",
-                100L, // delay the first run by a bit, to allow root view listener to register
-                1000L / config.frameRate,
-                MILLISECONDS,
-            ) {
-                recorder?.capture()
+      }
+    }
+  }
+
+  fun determineWindowSize(root: View) {
+    if (root.hasSize()) {
+      if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
+        lastKnownWindowSize.set(root.width, root.height)
+        windowCallback.onWindowSizeChanged(root.width, root.height)
+      }
+    } else {
+      root.addOnPreDrawListenerSafe(
+        object : ViewTreeObserver.OnPreDrawListener {
+          override fun onPreDraw(): Boolean {
+            val currentRoot = rootViews.lastOrNull()?.get()
+            // in case the root changed in the meantime, ignore the preDraw of the outdate root
+            if (root != currentRoot) {
+              root.removeOnPreDrawListenerSafe(this)
+              return true
             }
-    }
-
-    override fun resume() {
-        recorder?.resume()
-    }
-
-    override fun pause() {
-        recorder?.pause()
-    }
-
-    override fun reset() {
-        lastKnownWindowSize.set(0, 0)
-        rootViewsLock.acquire().use {
-            rootViews.forEach { recorder?.unbind(it.get()) }
-            rootViews.clear()
+            if (root.hasSize()) {
+              root.removeOnPreDrawListenerSafe(this)
+              if (root.width != lastKnownWindowSize.x && root.height != lastKnownWindowSize.y) {
+                lastKnownWindowSize.set(root.width, root.height)
+                windowCallback.onWindowSizeChanged(root.width, root.height)
+              }
+            }
+            return true
+          }
         }
+      )
+    }
+  }
+
+  override fun start() {
+    isRecording.getAndSet(true)
+  }
+
+  override fun onConfigurationChanged(config: ScreenshotRecorderConfig) {
+    if (!isRecording.get()) {
+      return
     }
 
-    override fun stop() {
-        recorder?.close()
-        recorder = null
-        capturingTask?.cancel(false)
-        capturingTask = null
-        isRecording.set(false)
-    }
+    recorder =
+      ScreenshotRecorder(
+        config,
+        options,
+        mainLooperHandler,
+        replayExecutor,
+        screenshotRecorderCallback,
+      )
 
-    override fun close() {
-        reset()
-        stop()
-        capturer.gracefullyShutdown(options)
+    val newRoot = rootViews.lastOrNull()?.get()
+    if (newRoot != null) {
+      recorder?.bind(newRoot)
     }
+    // TODO: change this to use MainThreadHandler and just post on the main thread with delay
+    // to avoid thread context switch every time
+    capturingTask =
+      capturer.scheduleAtFixedRateSafely(
+        options,
+        "$TAG.capture",
+        100L, // delay the first run by a bit, to allow root view listener to register
+        1000L / config.frameRate,
+        MILLISECONDS,
+      ) {
+        recorder?.capture()
+      }
+  }
 
-    private class RecorderExecutorServiceThreadFactory : ThreadFactory {
-        private var cnt = 0
+  override fun resume() {
+    recorder?.resume()
+  }
 
-        override fun newThread(r: Runnable): Thread {
-            val ret = Thread(r, "SentryWindowRecorder-" + cnt++)
-            ret.setDaemon(true)
-            return ret
-        }
+  override fun pause() {
+    recorder?.pause()
+  }
+
+  override fun reset() {
+    lastKnownWindowSize.set(0, 0)
+    rootViewsLock.acquire().use {
+      rootViews.forEach { recorder?.unbind(it.get()) }
+      rootViews.clear()
     }
+  }
+
+  override fun stop() {
+    recorder?.close()
+    recorder = null
+    capturingTask?.cancel(false)
+    capturingTask = null
+    isRecording.set(false)
+  }
+
+  override fun close() {
+    reset()
+    stop()
+    capturer.gracefullyShutdown(options)
+  }
+
+  private class RecorderExecutorServiceThreadFactory : ThreadFactory {
+    private var cnt = 0
+
+    override fun newThread(r: Runnable): Thread {
+      val ret = Thread(r, "SentryWindowRecorder-" + cnt++)
+      ret.setDaemon(true)
+      return ret
+    }
+  }
 }

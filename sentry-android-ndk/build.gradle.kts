@@ -1,100 +1,77 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 
 plugins {
-    id("com.android.library")
-    kotlin("android")
-    jacoco
-    alias(libs.plugins.jacoco.android)
-    alias(libs.plugins.gradle.versions)
+  id("com.android.library")
+  kotlin("android")
+  jacoco
+  alias(libs.plugins.jacoco.android)
+  alias(libs.plugins.gradle.versions)
 }
 
 android {
-    compileSdk =
-        libs.versions.compileSdk
-            .get()
-            .toInt()
-    namespace = "io.sentry.android.ndk"
+  compileSdk = libs.versions.compileSdk.get().toInt()
+  namespace = "io.sentry.android.ndk"
 
-    defaultConfig {
-        minSdk =
-            libs.versions.minSdk
-                .get()
-                .toInt()
+  defaultConfig {
+    minSdk = libs.versions.minSdk.get().toInt()
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        ndk {
-            abiFilters.addAll(Config.Android.abiFilters)
-        }
+    ndk { abiFilters.addAll(Config.Android.abiFilters) }
 
-        // for AGP 4.1
-        buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+    // for AGP 4.1
+    buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+  }
+
+  buildTypes {
+    getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
+    getByName("release") { consumerProguardFiles("proguard-rules.pro") }
+  }
+
+  kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8.toString() }
+
+  testOptions {
+    animationsDisabled = true
+    unitTests.apply {
+      isReturnDefaultValues = true
+      isIncludeAndroidResources = true
     }
+  }
 
-    buildTypes {
-        getByName("debug") {
-            consumerProguardFiles("proguard-rules.pro")
-        }
-        getByName("release") {
-            consumerProguardFiles("proguard-rules.pro")
-        }
-    }
+  lint {
+    warningsAsErrors = true
+    checkDependencies = true
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
-    }
+    // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+    checkReleaseBuilds = false
+  }
 
-    testOptions {
-        animationsDisabled = true
-        unitTests.apply {
-            isReturnDefaultValues = true
-            isIncludeAndroidResources = true
-        }
-    }
+  // needed because of Kotlin 1.4.x
+  configurations.all { resolutionStrategy.force(libs.jetbrains.annotations.get()) }
 
-    lint {
-        warningsAsErrors = true
-        checkDependencies = true
+  buildFeatures { buildConfig = true }
 
-        // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
-        checkReleaseBuilds = false
-    }
+  androidComponents.beforeVariants {
+    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+  }
 
-    // needed because of Kotlin 1.4.x
-    configurations.all {
-        resolutionStrategy.force(libs.jetbrains.annotations.get())
-    }
+  // the default AGP version is too high, we keep this low for compatibility reasons
+  // see https://developer.android.com/build/releases/past-releases/ to find the AGP-NDK mapping
+  ndkVersion = "23.1.7779620"
 
-    buildFeatures {
-        buildConfig = true
-    }
-
-    androidComponents.beforeVariants {
-        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
-    }
-
-    // the default AGP version is too high, we keep this low for compatibility reasons
-    // see https://developer.android.com/build/releases/past-releases/ to find the AGP-NDK mapping
-    ndkVersion = "23.1.7779620"
-
-    @Suppress("UnstableApiUsage")
-    packagingOptions {
-        jniLibs {
-            useLegacyPackaging = true
-        }
-    }
+  @Suppress("UnstableApiUsage") packagingOptions { jniLibs { useLegacyPackaging = true } }
 }
 
 dependencies {
-    api(projects.sentry)
-    api(projects.sentryAndroidCore)
+  api(projects.sentry)
+  api(projects.sentryAndroidCore)
 
-    compileOnly(libs.jetbrains.annotations)
+  compileOnly(libs.jetbrains.annotations)
 
-    implementation(libs.sentry.native.ndk)
+  implementation(libs.sentry.native.ndk)
 
-    testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-    testImplementation(libs.kotlin.test.junit)
-    testImplementation(libs.mockito.kotlin)
-    testImplementation(projects.sentryTestSupport)
+  testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.mockito.kotlin)
+  testImplementation(projects.sentryTestSupport)
 }

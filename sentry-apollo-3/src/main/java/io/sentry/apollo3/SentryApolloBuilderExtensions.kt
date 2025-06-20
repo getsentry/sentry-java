@@ -8,31 +8,31 @@ import io.sentry.apollo3.SentryApollo3HttpInterceptor.Companion.DEFAULT_CAPTURE_
 
 @JvmOverloads
 fun ApolloClient.Builder.sentryTracing(
-    scopes: IScopes = ScopesAdapter.getInstance(),
-    captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
-    failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
-    beforeSpan: SentryApollo3HttpInterceptor.BeforeSpanCallback? = null,
+  scopes: IScopes = ScopesAdapter.getInstance(),
+  captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
+  failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
+  beforeSpan: SentryApollo3HttpInterceptor.BeforeSpanCallback? = null,
 ): ApolloClient.Builder {
-    addInterceptor(SentryApollo3Interceptor())
-    addHttpInterceptor(
-        SentryApollo3HttpInterceptor(
-            scopes = scopes,
-            captureFailedRequests = captureFailedRequests,
-            failedRequestTargets = failedRequestTargets,
-            beforeSpan = beforeSpan,
-        ),
+  addInterceptor(SentryApollo3Interceptor())
+  addHttpInterceptor(
+    SentryApollo3HttpInterceptor(
+      scopes = scopes,
+      captureFailedRequests = captureFailedRequests,
+      failedRequestTargets = failedRequestTargets,
+      beforeSpan = beforeSpan,
     )
-    return this
+  )
+  return this
 }
 
 fun ApolloClient.Builder.sentryTracing(
-    captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
-    failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
-    beforeSpan: SentryApollo3HttpInterceptor.BeforeSpanCallback? = null,
+  captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
+  failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
+  beforeSpan: SentryApollo3HttpInterceptor.BeforeSpanCallback? = null,
 ): ApolloClient.Builder =
-    sentryTracing(
-        scopes = ScopesAdapter.getInstance(),
-        captureFailedRequests = captureFailedRequests,
-        failedRequestTargets = failedRequestTargets,
-        beforeSpan = beforeSpan,
-    )
+  sentryTracing(
+    scopes = ScopesAdapter.getInstance(),
+    captureFailedRequests = captureFailedRequests,
+    failedRequestTargets = failedRequestTargets,
+    beforeSpan = beforeSpan,
+  )

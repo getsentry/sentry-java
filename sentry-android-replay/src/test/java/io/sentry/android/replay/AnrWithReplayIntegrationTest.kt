@@ -34,6 +34,12 @@ import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.test.applyTestOptions
+import java.io.File
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.withAlias
 import org.junit.Rule
@@ -45,44 +51,35 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
-import java.io.File
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
-@Config(
-    sdk = [30],
-    shadows = [ReplayShadowMediaCodec::class],
-)
+@Config(sdk = [30], shadows = [ReplayShadowMediaCodec::class])
 class AnrWithReplayIntegrationTest {
-    @get:Rule
-    val tmpDir = TemporaryFolder()
+  @get:Rule val tmpDir = TemporaryFolder()
 
-    private class Fixture {
-        lateinit var shadowActivityManager: ShadowActivityManager
+  private class Fixture {
+    lateinit var shadowActivityManager: ShadowActivityManager
 
-        fun addAppExitInfo(
-            reason: Int? = ApplicationExitInfo.REASON_ANR,
-            timestamp: Long? = null,
-            importance: Int? = null,
-        ) {
-            val builder = ApplicationExitInfoBuilder.newBuilder()
-            if (reason != null) {
-                builder.setReason(reason)
-            }
-            if (timestamp != null) {
-                builder.setTimestamp(timestamp)
-            }
-            if (importance != null) {
-                builder.setImportance(importance)
-            }
-            val exitInfo =
-                spy(builder.build()) {
-                    whenever(mock.traceInputStream).thenReturn(
-                        """
+    fun addAppExitInfo(
+      reason: Int? = ApplicationExitInfo.REASON_ANR,
+      timestamp: Long? = null,
+      importance: Int? = null,
+    ) {
+      val builder = ApplicationExitInfoBuilder.newBuilder()
+      if (reason != null) {
+        builder.setReason(reason)
+      }
+      if (timestamp != null) {
+        builder.setTimestamp(timestamp)
+      }
+      if (importance != null) {
+        builder.setImportance(importance)
+      }
+      val exitInfo =
+        spy(builder.build()) {
+          whenever(mock.traceInputStream)
+            .thenReturn(
+              """
 "main" prio=5 tid=1 Blocked
   | group="main" sCount=1 ucsCount=0 flags=1 obj=0x72a985e0 self=0xb400007cabc57380
   | sysTid=28941 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
@@ -111,94 +108,91 @@ class AnrWithReplayIntegrationTest {
   native: #02 pc 00000000000b63b0  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+208) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
   native: #03 pc 00000000000530b8  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+64) (BuildId: 01331f74b0bb2cb958bdc15282b8ec7b)
   (no managed stack frames)
-                        """.trimIndent().byteInputStream(),
-                    )
-                }
-            shadowActivityManager.addApplicationExitInfo(exitInfo)
-        }
-
-        fun prefillOptionsCache(cacheDir: String) {
-            val optionsDir = File(cacheDir, OPTIONS_CACHE).also { it.mkdirs() }
-            File(optionsDir, REPLAY_ERROR_SAMPLE_RATE_FILENAME).writeText("\"1.0\"")
-        }
-    }
-
-    private val fixture = Fixture()
-    private lateinit var context: Context
-
-    @BeforeTest
-    fun `set up`() {
-        ReplayShadowMediaCodec.framesToEncode = 5
-        Sentry.close()
-        AppStartMetrics.getInstance().clear()
-        context = ApplicationProvider.getApplicationContext()
-        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
-        fixture.shadowActivityManager = Shadow.extract(activityManager)
-    }
-
-    @Test
-    fun `replay is being captured for ANRs in buffer mode`() {
-        ReplayShadowMediaCodec.framesToEncode = 1
-
-        val cacheDir = tmpDir.newFolder().absolutePath
-        val oneDayAgo = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1)
-        fixture.addAppExitInfo(timestamp = oneDayAgo)
-        val asserted = AtomicBoolean(false)
-
-        val replayId1 = SentryId()
-        val replayId2 = SentryId()
-
-        initForTest(context) {
-            it.dsn = "https://key@sentry.io/123"
-            it.cacheDirPath = cacheDir
-            it.isDebug = true
-            it.setLogger(SystemOutLogger())
-            it.sessionReplay.onErrorSampleRate = 1.0
-            // beforeSend is called after event processors are applied, so we can assert here
-            // against the enriched ANR event
-            it.beforeSend =
-                SentryOptions.BeforeSendCallback { event, _ ->
-                    assertEquals(replayId2.toString(), event.contexts[Contexts.REPLAY_ID])
-                    event
-                }
-            it.addEventProcessor(
-                object : EventProcessor {
-                    override fun process(
-                        event: SentryReplayEvent,
-                        hint: Hint,
-                    ): SentryReplayEvent {
-                        assertEquals(replayId2, event.replayId)
-                        assertEquals(ReplayType.BUFFER, event.replayType)
-                        assertEquals("0.mp4", event.videoFile?.name)
-
-                        val metaEvents =
-                            hint.replayRecording?.payload?.filterIsInstance<RRWebMetaEvent>()
-                        assertEquals(912, metaEvents?.first()?.height)
-                        assertEquals(416, metaEvents?.first()?.width) // clamped to power of 16
-
-                        val videoEvents =
-                            hint.replayRecording?.payload?.filterIsInstance<RRWebVideoEvent>()
-                        assertEquals(912, videoEvents?.first()?.height)
-                        assertEquals(416, videoEvents?.first()?.width) // clamped to power of 16
-                        assertEquals(1000, videoEvents?.first()?.durationMs)
-                        assertEquals(1, videoEvents?.first()?.frameCount)
-                        assertEquals(1, videoEvents?.first()?.frameRate)
-                        assertEquals(0, videoEvents?.first()?.segmentId)
-                        asserted.set(true)
-                        return event
-                    }
-                },
+                        """
+                .trimIndent()
+                .byteInputStream()
             )
+        }
+      shadowActivityManager.addApplicationExitInfo(exitInfo)
+    }
 
-            // have to do it after the cacheDir is set to options, because it adds a dsn hash after
-            fixture.prefillOptionsCache(it.cacheDirPath!!)
+    fun prefillOptionsCache(cacheDir: String) {
+      val optionsDir = File(cacheDir, OPTIONS_CACHE).also { it.mkdirs() }
+      File(optionsDir, REPLAY_ERROR_SAMPLE_RATE_FILENAME).writeText("\"1.0\"")
+    }
+  }
 
-            val replayFolder1 = File(it.cacheDirPath!!, "replay_$replayId1").also { it.mkdirs() }
-            val replayFolder2 = File(it.cacheDirPath!!, "replay_$replayId2").also { it.mkdirs() }
+  private val fixture = Fixture()
+  private lateinit var context: Context
 
-            File(replayFolder2, ONGOING_SEGMENT).also { file ->
-                file.writeText(
-                    """
+  @BeforeTest
+  fun `set up`() {
+    ReplayShadowMediaCodec.framesToEncode = 5
+    Sentry.close()
+    AppStartMetrics.getInstance().clear()
+    context = ApplicationProvider.getApplicationContext()
+    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
+    fixture.shadowActivityManager = Shadow.extract(activityManager)
+  }
+
+  @Test
+  fun `replay is being captured for ANRs in buffer mode`() {
+    ReplayShadowMediaCodec.framesToEncode = 1
+
+    val cacheDir = tmpDir.newFolder().absolutePath
+    val oneDayAgo = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1)
+    fixture.addAppExitInfo(timestamp = oneDayAgo)
+    val asserted = AtomicBoolean(false)
+
+    val replayId1 = SentryId()
+    val replayId2 = SentryId()
+
+    initForTest(context) {
+      it.dsn = "https://key@sentry.io/123"
+      it.cacheDirPath = cacheDir
+      it.isDebug = true
+      it.setLogger(SystemOutLogger())
+      it.sessionReplay.onErrorSampleRate = 1.0
+      // beforeSend is called after event processors are applied, so we can assert here
+      // against the enriched ANR event
+      it.beforeSend =
+        SentryOptions.BeforeSendCallback { event, _ ->
+          assertEquals(replayId2.toString(), event.contexts[Contexts.REPLAY_ID])
+          event
+        }
+      it.addEventProcessor(
+        object : EventProcessor {
+          override fun process(event: SentryReplayEvent, hint: Hint): SentryReplayEvent {
+            assertEquals(replayId2, event.replayId)
+            assertEquals(ReplayType.BUFFER, event.replayType)
+            assertEquals("0.mp4", event.videoFile?.name)
+
+            val metaEvents = hint.replayRecording?.payload?.filterIsInstance<RRWebMetaEvent>()
+            assertEquals(912, metaEvents?.first()?.height)
+            assertEquals(416, metaEvents?.first()?.width) // clamped to power of 16
+
+            val videoEvents = hint.replayRecording?.payload?.filterIsInstance<RRWebVideoEvent>()
+            assertEquals(912, videoEvents?.first()?.height)
+            assertEquals(416, videoEvents?.first()?.width) // clamped to power of 16
+            assertEquals(1000, videoEvents?.first()?.durationMs)
+            assertEquals(1, videoEvents?.first()?.frameCount)
+            assertEquals(1, videoEvents?.first()?.frameRate)
+            assertEquals(0, videoEvents?.first()?.segmentId)
+            asserted.set(true)
+            return event
+          }
+        }
+      )
+
+      // have to do it after the cacheDir is set to options, because it adds a dsn hash after
+      fixture.prefillOptionsCache(it.cacheDirPath!!)
+
+      val replayFolder1 = File(it.cacheDirPath!!, "replay_$replayId1").also { it.mkdirs() }
+      val replayFolder2 = File(it.cacheDirPath!!, "replay_$replayId2").also { it.mkdirs() }
+
+      File(replayFolder2, ONGOING_SEGMENT).also { file ->
+        file.writeText(
+          """
                     $SEGMENT_KEY_HEIGHT=912
                     $SEGMENT_KEY_WIDTH=416
                     $SEGMENT_KEY_FRAME_RATE=1
@@ -206,32 +200,35 @@ class AnrWithReplayIntegrationTest {
                     $SEGMENT_KEY_ID=0
                     $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
                     $SEGMENT_KEY_REPLAY_TYPE=BUFFER
-                    """.trimIndent(),
-                )
-            }
+                    """
+            .trimIndent()
+        )
+      }
 
-            val screenshot = File(replayFolder2, "1720693523997.jpg").also { it.createNewFile() }
-            screenshot.outputStream().use { os ->
-                Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, os)
-                os.flush()
-            }
+      val screenshot = File(replayFolder2, "1720693523997.jpg").also { it.createNewFile() }
+      screenshot.outputStream().use { os ->
+        Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, os)
+        os.flush()
+      }
 
-            replayFolder1.setLastModified(oneDayAgo - 1000)
-            replayFolder2.setLastModified(oneDayAgo - 500)
-        }
-
-        await
-            .withAlias("Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout")
-            .untilTrue(asserted)
+      replayFolder1.setLastModified(oneDayAgo - 1000)
+      replayFolder2.setLastModified(oneDayAgo - 500)
     }
+
+    await
+      .withAlias(
+        "Failed because of BeforeSend callback above, but we swallow BeforeSend exceptions, hence the timeout"
+      )
+      .untilTrue(asserted)
+  }
 }
 
 fun initForTest(
-    context: Context,
-    optionsConfiguration: Sentry.OptionsConfiguration<SentryAndroidOptions>,
+  context: Context,
+  optionsConfiguration: Sentry.OptionsConfiguration<SentryAndroidOptions>,
 ) {
-    SentryAndroid.init(context) {
-        applyTestOptions(it)
-        optionsConfiguration.configure(it)
-    }
+  SentryAndroid.init(context) {
+    applyTestOptions(it)
+    optionsConfiguration.configure(it)
+  }
 }
