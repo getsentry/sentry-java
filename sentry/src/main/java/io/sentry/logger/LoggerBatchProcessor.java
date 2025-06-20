@@ -75,6 +75,11 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
     }
   }
 
+  @Override
+  public void flush(long timeoutMillis) {
+    maybeSchedule(true, true);
+  }
+
   private void flush() {
     flushInternal();
     try (final @NotNull ISentryLifecycleToken ignored = scheduleLock.acquire()) {
