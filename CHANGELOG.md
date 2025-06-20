@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Optimize scope when maxBreadcrumb is 0 ([#4504](https://github.com/getsentry/sentry-java/pull/4504))
 - No longer send out empty log envelopes ([#4497](https://github.com/getsentry/sentry-java/pull/4497))
 
 ### Dependencies

@@ -1,6 +1,7 @@
 package io.sentry
 
 import io.sentry.SentryLevel.WARNING
+import io.sentry.protocol.Contexts
 import io.sentry.protocol.Request
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
@@ -13,6 +14,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
@@ -337,6 +339,37 @@ class ScopeTest {
         val scope = Scope(options)
         scope.addBreadcrumb(Breadcrumb())
         assertEquals(1, scope.breadcrumbs.count())
+    }
+
+    @Test
+    fun `when adding breadcrumb and maxBreadcrumb is 0, beforeBreadcrumb is not executed`() {
+        var called = false
+        val options = SentryOptions().apply {
+            maxBreadcrumbs = 0
+            beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback{ breadcrumb, _ ->
+                called = true
+                breadcrumb
+            }
+        }
+
+        val scope = Scope(options)
+        scope.addBreadcrumb(Breadcrumb())
+        assertEquals(0, scope.breadcrumbs.count())
+        assertFalse(called)
+    }
+
+    @Test
+    fun `when adding breadcrumb and maxBreadcrumb is 0, scopesObservers are not called`() {
+        val observer = mock<IScopeObserver>()
+        val options = SentryOptions().apply {
+            maxBreadcrumbs = 0
+            addScopeObserver(observer)
+        }
+
+        val scope = Scope(options)
+        scope.addBreadcrumb(Breadcrumb())
+        assertEquals(0, scope.breadcrumbs.count())
+        verifyNoInteractions(observer)
     }
 
     @Test
