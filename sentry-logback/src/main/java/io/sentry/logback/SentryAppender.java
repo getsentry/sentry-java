@@ -80,10 +80,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
   @Override
   protected void append(@NotNull ILoggingEvent eventObject) {
-    if (eventObject.getLevel().isGreaterOrEqual(minimumLevel)) {
-      final Hint hint = new Hint();
-      hint.set(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
-
+    if (options.getLogs().isEnabled() && eventObject.getLevel().isGreaterOrEqual(minimumLevel)) {
       captureLog(eventObject);
     }
     if (eventObject.getLevel().isGreaterOrEqual(minimumEventLevel)) {
