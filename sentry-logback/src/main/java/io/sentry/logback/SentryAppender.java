@@ -306,6 +306,16 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     return minimumEventLevel;
   }
 
+  public void setMinimumLevel(final @Nullable Level minimumLevel) {
+    if (minimumLevel != null) {
+      this.minimumLevel = minimumLevel;
+    }
+  }
+
+  public @NotNull Level getMinimumLevel() {
+    return minimumLevel;
+  }
+
   @ApiStatus.Internal
   void setTransportFactory(final @Nullable ITransportFactory transportFactory) {
     this.transportFactory = transportFactory;

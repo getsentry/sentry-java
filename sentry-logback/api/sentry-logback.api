@@ -13,9 +13,11 @@ public class io/sentry/logback/SentryAppender : ch/qos/logback/core/Unsynchroniz
 	protected fun createEvent (Lch/qos/logback/classic/spi/ILoggingEvent;)Lio/sentry/SentryEvent;
 	public fun getMinimumBreadcrumbLevel ()Lch/qos/logback/classic/Level;
 	public fun getMinimumEventLevel ()Lch/qos/logback/classic/Level;
+	public fun getMinimumLevel ()Lch/qos/logback/classic/Level;
 	public fun setEncoder (Lch/qos/logback/core/encoder/Encoder;)V
 	public fun setMinimumBreadcrumbLevel (Lch/qos/logback/classic/Level;)V
 	public fun setMinimumEventLevel (Lch/qos/logback/classic/Level;)V
+	public fun setMinimumLevel (Lch/qos/logback/classic/Level;)V
 	public fun setOptions (Lio/sentry/SentryOptions;)V
 	public fun start ()V
 }
