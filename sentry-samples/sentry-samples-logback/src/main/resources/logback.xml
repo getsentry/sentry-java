@@ -13,12 +13,17 @@
       <dsn>https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563</dsn>
       <contextTag>userId</contextTag>
       <contextTag>requestId</contextTag>
+      <logs>
+        <enabled>true</enabled>
+      </logs>
     </options>
     <!-- Demonstrates how to modify the minimum values -->
     <!-- Default for Events is ERROR -->
     <minimumEventLevel>WARN</minimumEventLevel>
     <!-- Default for Breadcrumbs is INFO -->
     <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
+    <!-- Default for Breadcrumbs is INFO -->
+    <minimumLevel>INFO</minimumLevel>
   </appender>
 
   <!-- it's important to set logger level to equal or lower than minimumBreadcrumbLevel and minimumEventLevel -->
