@@ -14,8 +14,10 @@ import io.sentry.ITransportFactory
 import io.sentry.InitPriority
 import io.sentry.Sentry
 import io.sentry.SentryLevel
+import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.checkLogs
 import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import org.mockito.kotlin.any
@@ -40,7 +42,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SentryAppenderTest {
-    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, contextTags: List<String>? = null, encoder: Encoder<ILoggingEvent>? = null, sendDefaultPii: Boolean = false, options: SentryOptions = SentryOptions(), startLater: Boolean = false) {
+    private class Fixture(dsn: String? = "http://key@localhost/proj", minimumBreadcrumbLevel: Level? = null, minimumEventLevel: Level? = null, minimumLevel: Level? = null, contextTags: List<String>? = null, encoder: Encoder<ILoggingEvent>? = null, sendDefaultPii: Boolean = false, enableLogs: Boolean = false, options: SentryOptions = SentryOptions(), startLater: Boolean = false) {
         val logger: Logger = LoggerFactory.getLogger(SentryAppenderTest::class.java)
         val loggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
         val transportFactory = mock<ITransportFactory>()
@@ -54,10 +56,12 @@ class SentryAppenderTest {
             this.encoder = encoder
             options.dsn = dsn
             options.isSendDefaultPii = sendDefaultPii
+            options.logs.isEnabled = enableLogs
             contextTags?.forEach { options.addContextTag(it) }
             appender.setOptions(options)
             appender.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
             appender.setMinimumEventLevel(minimumEventLevel)
+            appender.setMinimumLevel(minimumLevel)
             appender.context = loggerContext
             appender.setTransportFactory(transportFactory)
             encoder?.context = loggerContext
@@ -309,6 +313,76 @@ class SentryAppenderTest {
                 assertEquals("test exc", exception.value)
             },
             anyOrNull()
+        )
+    }
+
+    @Test
+    fun `converts trace log level to Sentry log level`() {
+        fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true)
+        fixture.logger.trace("testing trace level")
+
+        Sentry.flush(1000)
+
+        verify(fixture.transport).send(
+            checkLogs { logs ->
+                assertEquals(SentryLogLevel.TRACE, logs.items.first().level)
+            }
+        )
+    }
+
+    @Test
+    fun `converts debug log level to Sentry log level`() {
+        fixture = Fixture(minimumLevel = Level.DEBUG, enableLogs = true)
+        fixture.logger.debug("testing debug level")
+
+        Sentry.flush(1000)
+
+        verify(fixture.transport).send(
+            checkLogs { logs ->
+                assertEquals(SentryLogLevel.DEBUG, logs.items.first().level)
+            }
+        )
+    }
+
+    @Test
+    fun `converts info log level to Sentry log level`() {
+        fixture = Fixture(minimumLevel = Level.INFO, enableLogs = true)
+        fixture.logger.info("testing info level")
+
+        Sentry.flush(1000)
+
+        verify(fixture.transport).send(
+            checkLogs { logs ->
+                assertEquals(SentryLogLevel.INFO, logs.items.first().level)
+            }
+        )
+    }
+
+    @Test
+    fun `converts warn log level to Sentry log level`() {
+        fixture = Fixture(minimumLevel = Level.WARN, enableLogs = true)
+        fixture.logger.warn("testing warn level")
+
+        Sentry.flush(1000)
+
+        verify(fixture.transport).send(
+            checkLogs { logs ->
+                assertEquals(SentryLogLevel.WARN, logs.items.first().level)
+            }
+        )
+    }
+
+    @Test
+    fun `converts error log level to Sentry log level`() {
+        fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
+        fixture.logger.error("testing error level")
+
+        Sentry.flush(1000)
+
+        verify(fixture.transport).send(
+            checkLogs { logs ->
+                assertEquals(SentryLogLevel.ERROR, logs.items.first().level)
+            }
         )
     }
 
