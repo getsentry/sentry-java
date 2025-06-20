@@ -18,6 +18,20 @@ fun checkEvent(predicate: (SentryEvent) -> Unit): SentryEnvelope {
     }
 }
 
+/**
+ * Verifies is [SentryEnvelope] contains log events matching a predicate.
+ */
+fun checkLogs(predicate: (SentryLogEvents) -> Unit): SentryEnvelope {
+    return check {
+        val events: SentryLogEvents? = it.items.first().getLogs(JsonSerializer(SentryOptions.empty()))
+        if (events != null) {
+            predicate(events)
+        } else {
+            throw SkipError("event is null")
+        }
+    }
+}
+
 fun checkTransaction(predicate: (SentryTransaction) -> Unit): SentryEnvelope {
     return check {
         val transaction = it.items.first().getTransaction(JsonSerializer(SentryOptions.empty()))

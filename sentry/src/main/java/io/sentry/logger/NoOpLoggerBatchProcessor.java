@@ -24,4 +24,9 @@ public final class NoOpLoggerBatchProcessor implements ILoggerBatchProcessor {
   public void close(final boolean isRestarting) {
     // do nothing
   }
+
+  @Override
+  public void flush(long timeoutMillis) {
+    // do nothing
+  }
 }
