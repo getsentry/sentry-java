@@ -17,8 +17,10 @@ import org.jetbrains.annotations.Nullable;
 
 public final class Browser implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "browser";
+
   /** Display name of the browser application. */
   private @Nullable String name;
+
   /** Version string of the browser. */
   private @Nullable String version;
 

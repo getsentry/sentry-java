@@ -13,80 +13,79 @@ import io.sentry.util.AutoClosableReentrantLock
 import java.lang.ref.WeakReference
 
 internal class GestureRecorder(
-    private val options: SentryOptions,
-    private val touchRecorderCallback: TouchRecorderCallback
+  private val options: SentryOptions,
+  private val touchRecorderCallback: TouchRecorderCallback,
 ) : OnRootViewsChangedListener {
+  private val rootViews = ArrayList<WeakReference<View>>()
+  private val rootViewsLock = AutoClosableReentrantLock()
 
-    private val rootViews = ArrayList<WeakReference<View>>()
-    private val rootViewsLock = AutoClosableReentrantLock()
+  override fun onRootViewsChanged(root: View, added: Boolean) {
+    rootViewsLock.acquire().use {
+      if (added) {
+        rootViews.add(WeakReference(root))
+        root.startGestureTracking()
+      } else {
+        root.stopGestureTracking()
+        rootViews.removeAll { it.get() == root }
+      }
+    }
+  }
 
-    override fun onRootViewsChanged(root: View, added: Boolean) {
-        rootViewsLock.acquire().use {
-            if (added) {
-                rootViews.add(WeakReference(root))
-                root.startGestureTracking()
-            } else {
-                root.stopGestureTracking()
-                rootViews.removeAll { it.get() == root }
-            }
-        }
+  fun stop() {
+    rootViewsLock.acquire().use {
+      rootViews.forEach { it.get()?.stopGestureTracking() }
+      rootViews.clear()
+    }
+  }
+
+  private fun View.startGestureTracking() {
+    val window = phoneWindow
+    if (window == null) {
+      options.logger.log(DEBUG, "Window is invalid, not tracking gestures")
+      return
     }
 
-    fun stop() {
-        rootViewsLock.acquire().use {
-            rootViews.forEach { it.get()?.stopGestureTracking() }
-            rootViews.clear()
-        }
+    val delegate = window.callback
+    if (delegate !is SentryReplayGestureRecorder) {
+      window.callback = SentryReplayGestureRecorder(options, touchRecorderCallback, delegate)
+    }
+  }
+
+  private fun View.stopGestureTracking() {
+    val window = phoneWindow
+    if (window == null) {
+      options.logger.log(DEBUG, "Window was null in stopGestureTracking")
+      return
     }
 
-    private fun View.startGestureTracking() {
-        val window = phoneWindow
-        if (window == null) {
-            options.logger.log(DEBUG, "Window is invalid, not tracking gestures")
-            return
-        }
-
-        val delegate = window.callback
-        if (delegate !is SentryReplayGestureRecorder) {
-            window.callback = SentryReplayGestureRecorder(options, touchRecorderCallback, delegate)
-        }
+    val callback = window.callback
+    if (callback is SentryReplayGestureRecorder) {
+      val delegate = callback.delegate
+      window.callback = delegate
     }
+  }
 
-    private fun View.stopGestureTracking() {
-        val window = phoneWindow
-        if (window == null) {
-            options.logger.log(DEBUG, "Window was null in stopGestureTracking")
-            return
+  internal class SentryReplayGestureRecorder(
+    private val options: SentryOptions,
+    private val touchRecorderCallback: TouchRecorderCallback?,
+    delegate: Window.Callback?,
+  ) : FixedWindowCallback(delegate) {
+    override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
+      if (event != null) {
+        val copy: MotionEvent = MotionEvent.obtainNoHistory(event)
+        try {
+          touchRecorderCallback?.onTouchEvent(copy)
+        } catch (e: Throwable) {
+          options.logger.log(ERROR, "Error dispatching touch event", e)
+        } finally {
+          copy.recycle()
         }
-
-        val callback = window.callback
-        if (callback is SentryReplayGestureRecorder) {
-            val delegate = callback.delegate
-            window.callback = delegate
-        }
+      }
+      return super.dispatchTouchEvent(event)
     }
-
-    internal class SentryReplayGestureRecorder(
-        private val options: SentryOptions,
-        private val touchRecorderCallback: TouchRecorderCallback?,
-        delegate: Window.Callback?
-    ) : FixedWindowCallback(delegate) {
-        override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
-            if (event != null) {
-                val copy: MotionEvent = MotionEvent.obtainNoHistory(event)
-                try {
-                    touchRecorderCallback?.onTouchEvent(copy)
-                } catch (e: Throwable) {
-                    options.logger.log(ERROR, "Error dispatching touch event", e)
-                } finally {
-                    copy.recycle()
-                }
-            }
-            return super.dispatchTouchEvent(event)
-        }
-    }
+  }
 }
 
 public interface TouchRecorderCallback {
-    public fun onTouchEvent(event: MotionEvent)
+  public fun onTouchEvent(event: MotionEvent)
 }

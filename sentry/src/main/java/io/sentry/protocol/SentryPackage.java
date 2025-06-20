@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryPackage implements JsonUnknown, JsonSerializable {
   /** Name of the package. */
   private @NotNull String name;
+
   /** Version of the package. */
   private @NotNull String version;
 

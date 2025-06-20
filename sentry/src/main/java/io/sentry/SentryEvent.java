@@ -37,10 +37,13 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
 
   /** Logger that created the event. */
   private @Nullable String logger;
+
   /** Threads that were active when the event occurred. */
   private @Nullable SentryValues<SentryThread> threads;
+
   /** One or multiple chained (nested) exceptions. */
   private @Nullable SentryValues<SentryException> exception;
+
   /**
    * Severity level of the event. Defaults to `error`.
    *
@@ -49,6 +52,7 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
    * <p>```json {"level": "warning"} ```
    */
   private @Nullable SentryLevel level;
+
   /**
    * Transaction name of the event.
    *
@@ -69,6 +73,7 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
   private @Nullable List<String> fingerprint;
 
   private @Nullable Map<String, Object> unknown;
+
   /**
    * Name and versions of all installed modules/packages/dependencies in the current
    * environment/application.

@@ -39,6 +39,7 @@ public class SpanOptions {
    * <p>Currently only relevant for non-root spans.
    */
   private boolean trimStart = false;
+
   /**
    * If `trimEnd` is true, sets the end timestamp of the transaction to the highest timestamp of
    * child spans, trimming the duration of the transaction. This is useful to discard extra time in

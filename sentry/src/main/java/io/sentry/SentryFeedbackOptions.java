@@ -10,50 +10,65 @@ public final class SentryFeedbackOptions {
   // User and Form
   /** Requires the name field on the feedback form to be filled in. Defaults to false. */
   private boolean isNameRequired = false;
+
   /**
    * Displays the name field on the feedback form. Ignored if isNameRequired is true. Defaults to
    * true.
    */
   private boolean showName = true;
+
   /** Requires the email field on the feedback form to be filled in. Defaults to false. */
   private boolean isEmailRequired = false;
+
   /**
    * Displays the email field on the feedback form. Ignored if isEmailRequired is true. Defaults to
    * true.
    */
   private boolean showEmail = true;
+
   /**
    * Sets the email and name fields to the corresponding Sentry SDK user fields that were called
    * with SentrySDK.setUser. Defaults to true.
    */
   private boolean useSentryUser = true;
+
   /** Displays the Sentry logo inside of the form. Defaults to true. */
   private boolean showBranding = true;
 
   // Text Customization
   /** The title of the feedback form. Defaults to "Report a Bug". */
   private @NotNull CharSequence formTitle = "Report a Bug";
+
   /** The label of the submit button. Defaults to "Send Bug Report". */
   private @NotNull CharSequence submitButtonLabel = "Send Bug Report";
+
   /** The label of the cancel button. Defaults to "Cancel". */
   private @NotNull CharSequence cancelButtonLabel = "Cancel";
+
   /** The label next to the name input field. Defaults to "Name". */
   private @NotNull CharSequence nameLabel = "Name";
+
   /** The placeholder in the name input field. Defaults to "Your Name". */
   private @NotNull CharSequence namePlaceholder = "Your Name";
+
   /** The label next to the email input field. Defaults to "Email". */
   private @NotNull CharSequence emailLabel = "Email";
+
   /** The placeholder in the email input field. Defaults to "your.email@example.org". */
   private @NotNull CharSequence emailPlaceholder = "your.email@example.org";
+
   /** The text to attach to the title label for a required field. Defaults to " (Required)". */
   private @NotNull CharSequence isRequiredLabel = " (Required)";
+
   /** The label of the feedback description input field. Defaults to "Description". */
   private @NotNull CharSequence messageLabel = "Description";
+
   /**
    * The placeholder in the feedback description input field. Defaults to "What's the bug? What did
    * you expect?".
    */
   private @NotNull CharSequence messagePlaceholder = "What's the bug? What did you expect?";
+
   /**
    * The message displayed after a successful feedback submission. Defaults to "Thank you for your
    * report!".
@@ -63,10 +78,13 @@ public final class SentryFeedbackOptions {
   // Callbacks
   /** Callback called when the feedback form is opened. */
   private @Nullable Runnable onFormOpen;
+
   /** Callback called when the feedback form is closed. */
   private @Nullable Runnable onFormClose;
+
   /** Callback called when feedback is successfully submitted via the prepared form. */
   private @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitSuccess;
+
   /** Callback called when there is an error submitting feedback via the prepared form. */
   private @Nullable SentryFeedbackCallback onSubmitError;
 

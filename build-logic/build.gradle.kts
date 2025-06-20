@@ -1,7 +1,11 @@
 plugins {
-    `kotlin-dsl`
+  `kotlin-dsl`
 }
 
 repositories {
-    gradlePluginPortal()
+  gradlePluginPortal()
+}
+
+dependencies {
+  implementation(libs.spotlessLib)
 }

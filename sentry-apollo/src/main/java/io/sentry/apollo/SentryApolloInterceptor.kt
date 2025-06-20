@@ -32,187 +32,204 @@ import java.util.concurrent.Executor
 private const val TRACE_ORIGIN = "auto.graphql.apollo"
 
 class SentryApolloInterceptor(
-    private val scopes: IScopes = ScopesAdapter.getInstance(),
-    private val beforeSpan: BeforeSpanCallback? = null
+  private val scopes: IScopes = ScopesAdapter.getInstance(),
+  private val beforeSpan: BeforeSpanCallback? = null,
 ) : ApolloInterceptor {
-
-    private companion object {
-        init {
-            SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
-        }
-    }
-
-    constructor(scopes: IScopes) : this(scopes, null)
-    constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
-
+  private companion object {
     init {
-        addIntegrationToSdkVersion("Apollo")
+      SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-apollo", BuildConfig.VERSION_NAME)
     }
+  }
 
-    override fun interceptAsync(request: InterceptorRequest, chain: ApolloInterceptorChain, dispatcher: Executor, callBack: CallBack) {
-        val activeSpan = if (io.sentry.util.Platform.isAndroid()) scopes.transaction else scopes.span
-        if (activeSpan == null) {
-            val headers = addTracingHeaders(request, null)
-            val modifiedRequest = request.toBuilder().requestHeaders(headers).build()
-            chain.proceedAsync(modifiedRequest, dispatcher, callBack)
-        } else {
-            val span = startChild(request, activeSpan)
-            span.spanContext.origin = TRACE_ORIGIN
+  constructor(scopes: IScopes) : this(scopes, null)
 
-            val headers = addTracingHeaders(request, span)
-            val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
+  constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
 
-            span.setData("operationId", requestWithHeader.operation.operationId())
-            span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
+  init {
+    addIntegrationToSdkVersion("Apollo")
+  }
 
-            chain.proceedAsync(
-                requestWithHeader,
-                dispatcher,
-                object : CallBack {
-                    override fun onResponse(response: InterceptorResponse) {
-                        // onResponse is called only for statuses 2xx
-                        val statusCode: Int? = response.httpResponse.map { it.code() }.orNull()
-                        if (statusCode != null) {
-                            span.status = SpanStatus.fromHttpStatusCode(statusCode, SpanStatus.UNKNOWN)
-                            span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode)
-                        } else {
-                            span.status = SpanStatus.UNKNOWN
-                        }
-                        response.httpResponse.map { it.request().method() }.orNull()?.let {
-                            span.setData(
-                                SpanDataConvention.HTTP_METHOD_KEY,
-                                it.uppercase()
-                            )
-                        }
+  override fun interceptAsync(
+    request: InterceptorRequest,
+    chain: ApolloInterceptorChain,
+    dispatcher: Executor,
+    callBack: CallBack,
+  ) {
+    val activeSpan =
+      if (io.sentry.util.Platform.isAndroid()) {
+        scopes.transaction
+      } else {
+        scopes.span
+      }
+    if (activeSpan == null) {
+      val headers = addTracingHeaders(request, null)
+      val modifiedRequest = request.toBuilder().requestHeaders(headers).build()
+      chain.proceedAsync(modifiedRequest, dispatcher, callBack)
+    } else {
+      val span = startChild(request, activeSpan)
+      span.spanContext.origin = TRACE_ORIGIN
 
-                        finish(span, requestWithHeader, response)
-                        callBack.onResponse(response)
-                    }
+      val headers = addTracingHeaders(request, span)
+      val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
 
-                    override fun onFetch(sourceType: FetchSourceType) {
-                        callBack.onFetch(sourceType)
-                    }
+      span.setData("operationId", requestWithHeader.operation.operationId())
+      span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
 
-                    override fun onFailure(e: ApolloException) {
-                        span.apply {
-                            status = if (e is ApolloHttpException) {
-                                setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, e.code())
-                                SpanStatus.fromHttpStatusCode(e.code(), SpanStatus.INTERNAL_ERROR)
-                            } else {
-                                SpanStatus.INTERNAL_ERROR
-                            }
-                            throwable = e
-                        }
-                        finish(span, requestWithHeader)
-                        callBack.onFailure(e)
-                    }
-
-                    override fun onCompleted() {
-                        callBack.onCompleted()
-                    }
-                }
-            )
-        }
-    }
-
-    override fun dispose() {}
-
-    private fun addTracingHeaders(request: InterceptorRequest, span: ISpan?): RequestHeaders {
-        val requestHeaderBuilder = request.requestHeaders.toBuilder()
-
-        if (scopes.options.isTraceSampling && !isIgnored()) {
-            // we have no access to URI, no way to verify tracing origins
-            TracingUtils.trace(
-                scopes,
-                listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)),
-                span
-            )?.let { tracingHeaders ->
-                requestHeaderBuilder.addHeader(
-                    tracingHeaders.sentryTraceHeader.name,
-                    tracingHeaders.sentryTraceHeader.value
-                )
-                tracingHeaders.baggageHeader?.let {
-                    requestHeaderBuilder.addHeader(it.name, it.value)
-                }
+      chain.proceedAsync(
+        requestWithHeader,
+        dispatcher,
+        object : CallBack {
+          override fun onResponse(response: InterceptorResponse) {
+            // onResponse is called only for statuses 2xx
+            val statusCode: Int? = response.httpResponse.map { it.code() }.orNull()
+            if (statusCode != null) {
+              span.status = SpanStatus.fromHttpStatusCode(statusCode, SpanStatus.UNKNOWN)
+              span.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode)
+            } else {
+              span.status = SpanStatus.UNKNOWN
             }
-        }
+            response.httpResponse
+              .map { it.request().method() }
+              .orNull()
+              ?.let { span.setData(SpanDataConvention.HTTP_METHOD_KEY, it.uppercase()) }
 
-        return requestHeaderBuilder.build()
-    }
+            finish(span, requestWithHeader, response)
+            callBack.onResponse(response)
+          }
 
-    private fun isIgnored(): Boolean {
-        return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
-    }
+          override fun onFetch(sourceType: FetchSourceType) {
+            callBack.onFetch(sourceType)
+          }
 
-    private fun startChild(request: InterceptorRequest, activeSpan: ISpan): ISpan {
-        val operation = request.operation.name().name()
-        val operationType = when (request.operation) {
-            is Query -> "query"
-            is Mutation -> "mutation"
-            is Subscription -> "subscription"
-            else -> request.operation.javaClass.simpleName
-        }
-        val op = "http.graphql.$operationType"
-        val description = "$operationType $operation"
-        return activeSpan.startChild(op, description)
-    }
-
-    private fun finish(span: ISpan, request: InterceptorRequest, response: InterceptorResponse? = null) {
-        var newSpan: ISpan? = span
-        if (beforeSpan != null) {
-            try {
-                newSpan = beforeSpan.execute(span, request, response)
-            } catch (e: Exception) {
-                scopes.options.logger.log(SentryLevel.ERROR, "An error occurred while executing beforeSpan on ApolloInterceptor", e)
+          override fun onFailure(e: ApolloException) {
+            span.apply {
+              status =
+                if (e is ApolloHttpException) {
+                  setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, e.code())
+                  SpanStatus.fromHttpStatusCode(e.code(), SpanStatus.INTERNAL_ERROR)
+                } else {
+                  SpanStatus.INTERNAL_ERROR
+                }
+              throwable = e
             }
-        }
-        if (newSpan == null) {
-            // span is dropped
-            span.spanContext.sampled = false
-        } else {
-            span.finish()
-        }
+            finish(span, requestWithHeader)
+            callBack.onFailure(e)
+          }
 
-        response?.let {
-            if (it.httpResponse.isPresent) {
-                val httpResponse = it.httpResponse.get()
-                val httpRequest = httpResponse.request()
+          override fun onCompleted() {
+            callBack.onCompleted()
+          }
+        },
+      )
+    }
+  }
 
-                val breadcrumb = Breadcrumb.http(httpRequest.url().toString(), httpRequest.method(), httpResponse.code())
+  override fun dispose() {}
 
-                httpRequest.body()?.contentLength().ifHasValidLength { contentLength ->
-                    breadcrumb.setData("request_body_size", contentLength)
-                }
-                httpResponse.body()?.contentLength().ifHasValidLength { contentLength ->
-                    breadcrumb.setData("response_body_size", contentLength)
-                }
+  private fun addTracingHeaders(request: InterceptorRequest, span: ISpan?): RequestHeaders {
+    val requestHeaderBuilder = request.requestHeaders.toBuilder()
 
-                val hint = Hint().apply {
-                    set(APOLLO_REQUEST, httpRequest)
-                    set(APOLLO_RESPONSE, httpResponse)
-                }
-                scopes.addBreadcrumb(breadcrumb, hint)
-            }
+    if (scopes.options.isTraceSampling && !isIgnored()) {
+      // we have no access to URI, no way to verify tracing origins
+      TracingUtils.trace(
+          scopes,
+          listOf(request.requestHeaders.headerValue(BaggageHeader.BAGGAGE_HEADER)),
+          span,
+        )
+        ?.let { tracingHeaders ->
+          requestHeaderBuilder.addHeader(
+            tracingHeaders.sentryTraceHeader.name,
+            tracingHeaders.sentryTraceHeader.value,
+          )
+          tracingHeaders.baggageHeader?.let { requestHeaderBuilder.addHeader(it.name, it.value) }
         }
     }
 
-    private fun Long?.ifHasValidLength(fn: (Long) -> Unit) {
-        if (this != null && this != -1L) {
-            fn.invoke(this)
-        }
+    return requestHeaderBuilder.build()
+  }
+
+  private fun isIgnored(): Boolean =
+    SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
+
+  private fun startChild(request: InterceptorRequest, activeSpan: ISpan): ISpan {
+    val operation = request.operation.name().name()
+    val operationType =
+      when (request.operation) {
+        is Query -> "query"
+        is Mutation -> "mutation"
+        is Subscription -> "subscription"
+        else -> request.operation.javaClass.simpleName
+      }
+    val op = "http.graphql.$operationType"
+    val description = "$operationType $operation"
+    return activeSpan.startChild(op, description)
+  }
+
+  private fun finish(
+    span: ISpan,
+    request: InterceptorRequest,
+    response: InterceptorResponse? = null,
+  ) {
+    var newSpan: ISpan? = span
+    if (beforeSpan != null) {
+      try {
+        newSpan = beforeSpan.execute(span, request, response)
+      } catch (e: Exception) {
+        scopes.options.logger.log(
+          SentryLevel.ERROR,
+          "An error occurred while executing beforeSpan on ApolloInterceptor",
+          e,
+        )
+      }
+    }
+    if (newSpan == null) {
+      // span is dropped
+      span.spanContext.sampled = false
+    } else {
+      span.finish()
     }
 
+    response?.let {
+      if (it.httpResponse.isPresent) {
+        val httpResponse = it.httpResponse.get()
+        val httpRequest = httpResponse.request()
+
+        val breadcrumb =
+          Breadcrumb.http(httpRequest.url().toString(), httpRequest.method(), httpResponse.code())
+
+        httpRequest.body()?.contentLength().ifHasValidLength { contentLength ->
+          breadcrumb.setData("request_body_size", contentLength)
+        }
+        httpResponse.body()?.contentLength().ifHasValidLength { contentLength ->
+          breadcrumb.setData("response_body_size", contentLength)
+        }
+
+        val hint =
+          Hint().apply {
+            set(APOLLO_REQUEST, httpRequest)
+            set(APOLLO_RESPONSE, httpResponse)
+          }
+        scopes.addBreadcrumb(breadcrumb, hint)
+      }
+    }
+  }
+
+  private fun Long?.ifHasValidLength(fn: (Long) -> Unit) {
+    if (this != null && this != -1L) {
+      fn.invoke(this)
+    }
+  }
+
+  /** The BeforeSpan callback */
+  fun interface BeforeSpanCallback {
     /**
-     * The BeforeSpan callback
+     * Mutates span before being added.
+     *
+     * @param span the span to mutate or drop
+     * @param request the HTTP request executed by okHttp
+     * @param response the HTTP response received by okHttp
      */
-    fun interface BeforeSpanCallback {
-        /**
-         * Mutates span before being added.
-         *
-         * @param span the span to mutate or drop
-         * @param request the HTTP request executed by okHttp
-         * @param response the HTTP response received by okHttp
-         */
-        fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan?
-    }
+    fun execute(span: ISpan, request: InterceptorRequest, response: InterceptorResponse?): ISpan?
+  }
 }

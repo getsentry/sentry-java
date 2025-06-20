@@ -19,8 +19,10 @@ public final class SentryRuntime implements JsonUnknown, JsonSerializable {
 
   /** Runtime name. */
   private @Nullable String name;
+
   /** Runtime version string. */
   private @Nullable String version;
+
   /**
    * Unprocessed runtime info.
    *

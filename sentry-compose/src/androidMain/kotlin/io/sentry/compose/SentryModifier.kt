@@ -10,55 +10,48 @@ import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 
 public object SentryModifier {
+  public const val TAG: String = "SentryTag"
 
-    public const val TAG: String = "SentryTag"
-
-    // Based on TestTag
-    // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/semantics/SemanticsProperties.kt;l=166;drc=76bc6975d1b520c545b6f8786ff5c9f0bc22bd1f
-    private val SentryTag = SemanticsPropertyKey<String>(
-        name = TAG,
-        mergePolicy = { parentValue, _ ->
-            // Never merge SentryTags, to avoid leaking internal test tags to parents.
-            parentValue
-        }
+  // Based on TestTag
+  // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/semantics/SemanticsProperties.kt;l=166;drc=76bc6975d1b520c545b6f8786ff5c9f0bc22bd1f
+  private val SentryTag =
+    SemanticsPropertyKey<String>(
+      name = TAG,
+      mergePolicy = { parentValue, _ ->
+        // Never merge SentryTags, to avoid leaking internal test tags to parents.
+        parentValue
+      },
     )
 
-    @JvmStatic
-    public fun Modifier.sentryTag(tag: String): Modifier =
-        this then SentryTagModifierNodeElement(tag)
+  @JvmStatic
+  public fun Modifier.sentryTag(tag: String): Modifier = this then SentryTagModifierNodeElement(tag)
 
-    private data class SentryTagModifierNodeElement(val tag: String) :
-        ModifierNodeElement<SentryTagModifierNode>(), SemanticsModifier {
+  private data class SentryTagModifierNodeElement(val tag: String) :
+    ModifierNodeElement<SentryTagModifierNode>(), SemanticsModifier {
+    override val semanticsConfiguration: SemanticsConfiguration =
+      SemanticsConfiguration().also { it[SentryTag] = tag }
 
-        override val semanticsConfiguration: SemanticsConfiguration =
-            SemanticsConfiguration().also {
-                it[SentryTag] = tag
-            }
+    override fun create(): SentryTagModifierNode = SentryTagModifierNode(tag)
 
-        override fun create(): SentryTagModifierNode = SentryTagModifierNode(tag)
-
-        override fun update(node: SentryTagModifierNode) {
-            node.tag = tag
-        }
-
-        override fun InspectorInfo.inspectableProperties() {
-            name = "sentryTag"
-            properties["tag"] = tag
-        }
+    override fun update(node: SentryTagModifierNode) {
+      node.tag = tag
     }
 
-    private class SentryTagModifierNode(var tag: String) :
-        Modifier.Node(),
-        SemanticsModifierNode {
-
-        override val shouldClearDescendantSemantics: Boolean
-            get() = false
-
-        override val shouldMergeDescendantSemantics: Boolean
-            get() = false
-
-        override fun SemanticsPropertyReceiver.applySemantics() {
-            this[SentryTag] = tag
-        }
+    override fun InspectorInfo.inspectableProperties() {
+      name = "sentryTag"
+      properties["tag"] = tag
     }
+  }
+
+  private class SentryTagModifierNode(var tag: String) : Modifier.Node(), SemanticsModifierNode {
+    override val shouldClearDescendantSemantics: Boolean
+      get() = false
+
+    override val shouldMergeDescendantSemantics: Boolean
+      get() = false
+
+    override fun SemanticsPropertyReceiver.applySemantics() {
+      this[SentryTag] = tag
+    }
+  }
 }

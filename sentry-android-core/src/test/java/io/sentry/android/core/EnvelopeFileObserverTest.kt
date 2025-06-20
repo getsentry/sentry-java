@@ -9,6 +9,10 @@ import io.sentry.hints.Resettable
 import io.sentry.hints.Retryable
 import io.sentry.hints.SubmissionResult
 import io.sentry.util.HintUtils
+import java.io.File
+import kotlin.test.Test
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -17,101 +21,99 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
-import java.io.File
-import kotlin.test.Test
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 
 @RunWith(AndroidJUnit4::class)
 class EnvelopeFileObserverTest {
+  private class Fixture {
+    val fileName = "file-name.txt"
+    var path: String? = "."
+    val envelopeSender = mock<IEnvelopeSender>()
+    val logger = mock<ILogger>()
 
-    private class Fixture {
-        val fileName = "file-name.txt"
-        var path: String? = "."
-        val envelopeSender = mock<IEnvelopeSender>()
-        val logger = mock<ILogger>()
+    fun getSut(flushTimeoutMillis: Long): EnvelopeFileObserver =
+      EnvelopeFileObserver(path, envelopeSender, logger, flushTimeoutMillis)
+  }
 
-        fun getSut(flushTimeoutMillis: Long): EnvelopeFileObserver {
-            return EnvelopeFileObserver(path, envelopeSender, logger, flushTimeoutMillis)
-        }
-    }
+  private val fixture = Fixture()
 
-    private val fixture = Fixture()
+  @Test
+  fun `envelope sender is called with fully qualified path`() {
+    triggerEvent()
 
-    @Test
-    fun `envelope sender is called with fully qualified path`() {
-        triggerEvent()
+    verify(fixture.envelopeSender)
+      .processEnvelopeFile(eq(fixture.path + File.separator + fixture.fileName), any())
+  }
 
-        verify(fixture.envelopeSender).processEnvelopeFile(eq(fixture.path + File.separator + fixture.fileName), any())
-    }
+  @Test
+  fun `when event type is not close write, envelope sender is not called`() {
+    triggerEvent(eventType = FileObserver.CLOSE_WRITE.inv())
 
-    @Test
-    fun `when event type is not close write, envelope sender is not called`() {
-        triggerEvent(eventType = FileObserver.CLOSE_WRITE.inv())
+    verify(fixture.envelopeSender, never()).processEnvelopeFile(any(), anyOrNull())
+  }
 
-        verify(fixture.envelopeSender, never()).processEnvelopeFile(any(), anyOrNull())
-    }
+  @Test
+  fun `when event is fired with null path, envelope reader is not called`() {
+    triggerEvent(relativePath = null)
 
-    @Test
-    fun `when event is fired with null path, envelope reader is not called`() {
-        triggerEvent(relativePath = null)
+    verify(fixture.envelopeSender, never()).processEnvelopeFile(anyOrNull(), any())
+  }
 
-        verify(fixture.envelopeSender, never()).processEnvelopeFile(anyOrNull(), any())
-    }
+  @Test
+  fun `when null is passed as a path, ctor throws`() {
+    fixture.path = null
 
-    @Test
-    fun `when null is passed as a path, ctor throws`() {
-        fixture.path = null
+    // since EnvelopeFileObserver extends FileObserver and FileObserver requires a File(path),
+    // it throws NullPointerException instead of our own IllegalArgumentException
+    assertFailsWith<NullPointerException> { fixture.getSut(0) }
+  }
 
-        // since EnvelopeFileObserver extends FileObserver and FileObserver requires a File(path),
-        // it throws NullPointerException instead of our own IllegalArgumentException
-        assertFailsWith<NullPointerException> { fixture.getSut(0) }
-    }
+  @Test
+  fun `envelope sender is called with fully qualified path and ApplyScopeData hint`() {
+    triggerEvent()
 
-    @Test
-    fun `envelope sender is called with fully qualified path and ApplyScopeData hint`() {
-        triggerEvent()
+    verify(fixture.envelopeSender)
+      .processEnvelopeFile(
+        eq(fixture.path + File.separator + fixture.fileName),
+        check { HintUtils.hasType(it, ApplyScopeData::class.java) },
+      )
+  }
 
-        verify(fixture.envelopeSender).processEnvelopeFile(
-            eq(fixture.path + File.separator + fixture.fileName),
-            check { HintUtils.hasType(it, ApplyScopeData::class.java) }
-        )
-    }
+  @Test
+  fun `envelope sender Hint is Resettable`() {
+    triggerEvent()
 
-    @Test
-    fun `envelope sender Hint is Resettable`() {
-        triggerEvent()
+    verify(fixture.envelopeSender)
+      .processEnvelopeFile(
+        eq(fixture.path + File.separator + fixture.fileName),
+        check { HintUtils.hasType(it, Resettable::class.java) },
+      )
+  }
 
-        verify(fixture.envelopeSender).processEnvelopeFile(
-            eq(fixture.path + File.separator + fixture.fileName),
-            check { HintUtils.hasType(it, Resettable::class.java) }
-        )
-    }
+  @Test
+  fun `Hint resets its state`() {
+    triggerEvent(flushTimeoutMillis = 0)
 
-    @Test
-    fun `Hint resets its state`() {
-        triggerEvent(flushTimeoutMillis = 0)
+    verify(fixture.envelopeSender)
+      .processEnvelopeFile(
+        eq(fixture.path + File.separator + fixture.fileName),
+        check { hints ->
+          HintUtils.runIfHasType(hints, SubmissionResult::class.java) { it.setResult(true) }
+          HintUtils.runIfHasType(hints, Retryable::class.java) { it.isRetry = true }
 
-        verify(fixture.envelopeSender).processEnvelopeFile(
-            eq(fixture.path + File.separator + fixture.fileName),
-            check { hints ->
-                HintUtils.runIfHasType(hints, SubmissionResult::class.java) { it.setResult(true) }
-                HintUtils.runIfHasType(hints, Retryable::class.java) { it.isRetry = true }
+          HintUtils.runIfHasType(hints, Resettable::class.java) { it.reset() }
 
-                HintUtils.runIfHasType(hints, Resettable::class.java) { it.reset() }
+          assertFalse((HintUtils.getSentrySdkHint(hints) as Retryable).isRetry)
+          assertFalse((HintUtils.getSentrySdkHint(hints) as SubmissionResult).isSuccess)
+        },
+      )
+  }
 
-                assertFalse((HintUtils.getSentrySdkHint(hints) as Retryable).isRetry)
-                assertFalse((HintUtils.getSentrySdkHint(hints) as SubmissionResult).isSuccess)
-            }
-        )
-    }
-
-    private fun triggerEvent(
-        flushTimeoutMillis: Long = 15_000,
-        eventType: Int = FileObserver.CLOSE_WRITE,
-        relativePath: String? = fixture.fileName
-    ) {
-        val sut = fixture.getSut(flushTimeoutMillis)
-        sut.onEvent(eventType, relativePath)
-    }
+  private fun triggerEvent(
+    flushTimeoutMillis: Long = 15_000,
+    eventType: Int = FileObserver.CLOSE_WRITE,
+    relativePath: String? = fixture.fileName,
+  ) {
+    val sut = fixture.getSut(flushTimeoutMillis)
+    sut.onEvent(eventType, relativePath)
+  }
 }

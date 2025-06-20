@@ -9,20 +9,20 @@ import io.sentry.Sentry
 import io.sentry.samples.android.databinding.FragmentSampleInnerBinding
 
 class SampleInnerFragment : Fragment() {
+  override fun onCreateView(
+    inflater: LayoutInflater,
+    container: ViewGroup?,
+    savedInstanceState: Bundle?,
+  ): View =
+    FragmentSampleInnerBinding.inflate(inflater)
+      .apply {
+        this.sendMessage.setOnClickListener {
+          Sentry.captureMessage("Some message from inner Fragment Lifecycle events in breadcrumbs.")
+        }
+      }
+      .root
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        return FragmentSampleInnerBinding.inflate(inflater).apply {
-            this.sendMessage.setOnClickListener {
-                Sentry.captureMessage("Some message from inner Fragment Lifecycle events in breadcrumbs.")
-            }
-        }.root
-    }
-
-    companion object {
-        @JvmStatic fun newInstance() = SampleInnerFragment()
-    }
+  companion object {
+    @JvmStatic fun newInstance() = SampleInnerFragment()
+  }
 }

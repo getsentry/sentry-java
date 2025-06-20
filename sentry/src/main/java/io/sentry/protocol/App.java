@@ -22,35 +22,47 @@ public final class App implements JsonUnknown, JsonSerializable {
 
   /** Version-independent application identifier, often a dotted bundle ID. */
   private @Nullable String appIdentifier;
+
   /**
    * Start time of the app.
    *
    * <p>Formatted UTC timestamp when the user started the application.
    */
   private @Nullable Date appStartTime;
+
   /** Application-specific device identifier. */
   private @Nullable String deviceAppHash;
+
   /** String identifying the kind of build. For example, `testflight`. */
   private @Nullable String buildType;
+
   /** Application name as it appears on the platform. */
   private @Nullable String appName;
+
   /** Application version as it appears on the platform. */
   private @Nullable String appVersion;
+
   /** Internal build ID as it appears on the platform. */
   private @Nullable String appBuild;
+
   /** Application permissions in the form of "permission_name" : "granted|not_granted" */
   private @Nullable Map<String, String> permissions;
+
   /** The list of the visible UI screens * */
   private @Nullable List<String> viewNames;
+
   /** the app start type */
   private @Nullable String startType;
+
   /**
    * A flag indicating whether the app is in foreground or not. An app is in foreground when it's
    * visible to the user.
    */
   private @Nullable Boolean inForeground;
+
   /** A flag indicating whether the app is split into multiple APKs */
   private @Nullable Boolean isSplitApks;
+
   /* The list of split APKs */
   private @Nullable List<String> splitNames;
 

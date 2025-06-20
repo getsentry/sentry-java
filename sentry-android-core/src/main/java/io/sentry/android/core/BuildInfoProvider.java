@@ -17,6 +17,7 @@ public final class BuildInfoProvider {
   public BuildInfoProvider(final @NotNull ILogger logger) {
     this.logger = Objects.requireNonNull(logger, "The ILogger object is required.");
   }
+
   /**
    * Returns the Build.VERSION.SDK_INT
    *

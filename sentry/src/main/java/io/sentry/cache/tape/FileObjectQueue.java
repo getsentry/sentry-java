@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 final class FileObjectQueue<T> extends ObjectQueue<T> {
   /** Backing storage implementation. */
   private final QueueFile queueFile;
+
   /** Reusable byte output buffer. */
   private final DirectByteArrayOutputStream bytes = new DirectByteArrayOutputStream();
 

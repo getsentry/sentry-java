@@ -20,127 +20,109 @@ import java.util.Queue
 
 @OptIn(InternalComposeUiApi::class)
 public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureTargetLocator {
-    @Volatile
-    private var composeHelper: SentryComposeHelper? = null
-    private val lock = AutoClosableReentrantLock()
+  @Volatile private var composeHelper: SentryComposeHelper? = null
+  private val lock = AutoClosableReentrantLock()
 
-    init {
-        SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
+  init {
+    SentryIntegrationPackageStorage.getInstance()
+      .addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
+  }
+
+  override fun locate(root: Any?, x: Float, y: Float, targetType: UiElement.Type): UiElement? {
+    if (root !is Owner) {
+      return null
     }
 
-    override fun locate(
-        root: Any?,
-        x: Float,
-        y: Float,
-        targetType: UiElement.Type
-    ): UiElement? {
-        if (root !is Owner) {
-            return null
-        }
-
-        // lazy init composeHelper as it's using some reflection under the hood
+    // lazy init composeHelper as it's using some reflection under the hood
+    if (composeHelper == null) {
+      lock.acquire().use {
         if (composeHelper == null) {
-            lock.acquire().use {
-                if (composeHelper == null) {
-                    composeHelper = SentryComposeHelper(logger)
-                }
-            }
+          composeHelper = SentryComposeHelper(logger)
         }
+      }
+    }
 
-        val rootLayoutNode = root.root
+    val rootLayoutNode = root.root
 
-        val queue: Queue<LayoutNode> = LinkedList()
-        queue.add(rootLayoutNode)
+    val queue: Queue<LayoutNode> = LinkedList()
+    queue.add(rootLayoutNode)
 
-        // the final tag to return
-        var targetTag: String? = null
+    // the final tag to return
+    var targetTag: String? = null
 
-        // the last known tag when iterating the node tree
-        var lastKnownTag: String? = null
-        while (!queue.isEmpty()) {
-            val node = queue.poll() ?: continue
-            if (node.isPlaced && layoutNodeBoundsContain(
-                    rootLayoutNode,
-                    node,
-                    x,
-                    y
-                )
+    // the last known tag when iterating the node tree
+    var lastKnownTag: String? = null
+    while (!queue.isEmpty()) {
+      val node = queue.poll() ?: continue
+      if (node.isPlaced && layoutNodeBoundsContain(rootLayoutNode, node, x, y)) {
+        var isClickable = false
+        var isScrollable = false
+
+        val modifiers = node.getModifierInfo()
+        for (index in modifiers.indices) {
+          val modifierInfo = modifiers[index]
+          val tag = composeHelper!!.extractTag(modifierInfo.modifier)
+          if (tag != null) {
+            lastKnownTag = tag
+          }
+
+          if (modifierInfo.modifier is SemanticsModifier) {
+            val semanticsModifierCore = modifierInfo.modifier as SemanticsModifier
+            val semanticsConfiguration = semanticsModifierCore.semanticsConfiguration
+
+            for (item in semanticsConfiguration) {
+              val key: String = item.key.name
+              if ("ScrollBy" == key) {
+                isScrollable = true
+              } else if ("OnClick" == key) {
+                isClickable = true
+              }
+            }
+          } else {
+            val modifier = modifierInfo.modifier
+            // Newer Jetpack Compose 1.5 uses Node modifiers for clicks/scrolls
+            val type = modifier.javaClass.name
+            if (
+              "androidx.compose.foundation.ClickableElement" == type ||
+                "androidx.compose.foundation.CombinedClickableElement" == type
             ) {
-                var isClickable = false
-                var isScrollable = false
-
-                val modifiers = node.getModifierInfo()
-                for (index in modifiers.indices) {
-                    val modifierInfo = modifiers[index]
-                    val tag = composeHelper!!.extractTag(modifierInfo.modifier)
-                    if (tag != null) {
-                        lastKnownTag = tag
-                    }
-
-                    if (modifierInfo.modifier is SemanticsModifier) {
-                        val semanticsModifierCore =
-                            modifierInfo.modifier as SemanticsModifier
-                        val semanticsConfiguration =
-                            semanticsModifierCore.semanticsConfiguration
-
-                        for (item in semanticsConfiguration) {
-                            val key: String = item.key.name
-                            if ("ScrollBy" == key) {
-                                isScrollable = true
-                            } else if ("OnClick" == key) {
-                                isClickable = true
-                            }
-                        }
-                    } else {
-                        val modifier = modifierInfo.modifier
-                        // Newer Jetpack Compose 1.5 uses Node modifiers for clicks/scrolls
-                        val type = modifier.javaClass.name
-                        if ("androidx.compose.foundation.ClickableElement" == type ||
-                            "androidx.compose.foundation.CombinedClickableElement" == type
-                        ) {
-                            isClickable = true
-                        } else if ("androidx.compose.foundation.ScrollingLayoutElement" == type) {
-                            isScrollable = true
-                        }
-                    }
-                }
-
-                if (isClickable && targetType == UiElement.Type.CLICKABLE) {
-                    targetTag = lastKnownTag
-                }
-                if (isScrollable && targetType == UiElement.Type.SCROLLABLE) {
-                    targetTag = lastKnownTag
-                    // skip any children for scrollable targets
-                    break
-                }
+              isClickable = true
+            } else if ("androidx.compose.foundation.ScrollingLayoutElement" == type) {
+              isScrollable = true
             }
-            queue.addAll(node.zSortedChildren.asMutableList())
+          }
         }
 
-        return if (targetTag == null) {
-            null
-        } else {
-            UiElement(
-                null,
-                null,
-                null,
-                targetTag,
-                ORIGIN
-            )
+        if (isClickable && targetType == UiElement.Type.CLICKABLE) {
+          targetTag = lastKnownTag
         }
+        if (isScrollable && targetType == UiElement.Type.SCROLLABLE) {
+          targetTag = lastKnownTag
+          // skip any children for scrollable targets
+          break
+        }
+      }
+      queue.addAll(node.zSortedChildren.asMutableList())
     }
 
-    private fun layoutNodeBoundsContain(
-        root: LayoutNode,
-        node: LayoutNode,
-        x: Float,
-        y: Float
-    ): Boolean {
-        val bounds = node.coordinates.boundsInWindow(root.coordinates)
-        return bounds.contains(Offset(x, y))
+    return if (targetTag == null) {
+      null
+    } else {
+      UiElement(null, null, null, targetTag, ORIGIN)
     }
+  }
 
-    public companion object {
-        private const val ORIGIN = "jetpack_compose"
-    }
+  private fun layoutNodeBoundsContain(
+    root: LayoutNode,
+    node: LayoutNode,
+    x: Float,
+    y: Float,
+  ): Boolean {
+    val bounds = node.coordinates.boundsInWindow(root.coordinates)
+    return bounds.contains(Offset(x, y))
+  }
+
+  public companion object {
+    private const val ORIGIN = "jetpack_compose"
+  }
 }

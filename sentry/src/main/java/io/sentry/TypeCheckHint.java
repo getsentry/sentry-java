@@ -24,18 +24,25 @@ public final class TypeCheckHint {
 
   /** Used for Activity breadcrumbs. */
   public static final String ANDROID_ACTIVITY = "android:activity";
+
   /** Used for Configuration changes breadcrumbs. */
   public static final String ANDROID_CONFIGURATION = "android:configuration";
+
   /** Used for System breadcrumbs. */
   public static final String ANDROID_INTENT = "android:intent";
+
   /** Used for Sensor breadcrumbs. */
   public static final String ANDROID_SENSOR_EVENT = "android:sensorEvent";
+
   /** Used for Gesture breadcrumbs. */
   public static final String ANDROID_MOTION_EVENT = "android:motionEvent";
+
   /** Used for View breadcrumbs. */
   public static final String ANDROID_VIEW = "android:view";
+
   /** Used for Fragment breadcrumbs. */
   public static final String ANDROID_FRAGMENT = "android:fragment";
+
   /** Used for Navigation breadrcrumbs. */
   public static final String ANDROID_NAV_DESTINATION = "android:navigationDestination";
 
@@ -44,11 +51,13 @@ public final class TypeCheckHint {
 
   /** Used for OkHttp response breadcrumbs. */
   public static final String OKHTTP_RESPONSE = "okHttp:response";
+
   /** Used for OkHttp Request breadcrumbs. */
   public static final String OKHTTP_REQUEST = "okHttp:request";
 
   /** Used for Apollo response breadcrumbs. */
   public static final String APOLLO_RESPONSE = "apollo:response";
+
   /** Used for Apollo Request breadcrumbs. */
   public static final String APOLLO_REQUEST = "apollo:request";
 
@@ -69,6 +78,7 @@ public final class TypeCheckHint {
 
   /** Used for OpenFeign response breadcrumbs. */
   public static final String OPEN_FEIGN_RESPONSE = "openFeign:response";
+
   /** Used for OpenFeign Request breadcrumbs. */
   public static final String OPEN_FEIGN_REQUEST = "openFeign:request";
 
@@ -77,20 +87,24 @@ public final class TypeCheckHint {
 
   /** Used for Spring resolver exceptions. */
   public static final String SPRING_RESOLVER_RESPONSE = "springResolver:response";
+
   /** Used for Spring resolver exceptions. */
   public static final String SPRING_RESOLVER_REQUEST = "springResolver:request";
 
   /** Used for Spring request filter breadcrumbs. */
   public static final String SPRING_REQUEST_FILTER_RESPONSE = "springRequestFilter:response";
+
   /** Used for Spring request filter breadcrumbs. */
   public static final String SPRING_REQUEST_FILTER_REQUEST = "springRequestFilter:request";
 
   /** Used for Spring request interceptor breadcrumbs. */
   public static final String SPRING_REQUEST_INTERCEPTOR_RESPONSE =
       "springRequestInterceptor:response";
+
   /** Used for Spring request interceptor breadcrumbs. */
   public static final String SPRING_REQUEST_INTERCEPTOR_REQUEST =
       "springRequestInterceptor:request";
+
   /** Used for Spring request interceptor breadcrumbs. */
   public static final String SPRING_REQUEST_INTERCEPTOR_REQUEST_BODY =
       "springRequestInterceptor:requestBody";
@@ -98,19 +112,23 @@ public final class TypeCheckHint {
   /** Used for Spring WebFlux exception handler. */
   public static final String WEBFLUX_EXCEPTION_HANDLER_RESPONSE =
       "webFluxExceptionHandler:response";
+
   /** Used for Spring WebFlux exception handler. */
   public static final String WEBFLUX_EXCEPTION_HANDLER_REQUEST = "webFluxExceptionHandler:request";
+
   /** Used for Spring WebFlux exception handler. */
   public static final String WEBFLUX_EXCEPTION_HANDLER_EXCHANGE =
       "webFluxExceptionHandler:exchange";
 
   /** Used for Spring WebFlux filter breadcrumbs. */
   public static final String WEBFLUX_FILTER_RESPONSE = "webFluxFilter:response";
+
   /** Used for Spring WebFlux filter breadcrumbs. */
   public static final String WEBFLUX_FILTER_REQUEST = "webFluxFilter:request";
 
   /** Used for Spring exchange filter breadcrumbs. */
   public static final String SPRING_EXCHANGE_FILTER_RESPONSE = "springExchangeFilter:response";
+
   /** Used for Spring exchange filter breadcrumbs. */
   public static final String SPRING_EXCHANGE_FILTER_REQUEST = "springExchangeFilter:request";
 }

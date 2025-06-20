@@ -9,10 +9,6 @@ import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.cache.EnvelopeCache
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.HintUtils
-import org.junit.Rule
-import org.junit.rules.TemporaryFolder
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import java.io.File
 import java.lang.IllegalArgumentException
 import kotlin.test.BeforeTest
@@ -20,188 +16,178 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 class AndroidEnvelopeCacheTest {
+  @get:Rule val tmpDir = TemporaryFolder()
 
-    @get:Rule
-    val tmpDir = TemporaryFolder()
+  private class Fixture {
+    val envelope = mock<SentryEnvelope> { whenever(it.header).thenReturn(mock()) }
+    val options = SentryAndroidOptions()
+    val dateProvider = mock<ICurrentDateProvider>()
+    lateinit var startupCrashMarkerFile: File
+    lateinit var lastReportedAnrFile: File
 
-    private class Fixture {
-        val envelope = mock<SentryEnvelope> {
-            whenever(it.header).thenReturn(mock())
+    fun getSut(
+      dir: TemporaryFolder,
+      appStartMillis: Long? = null,
+      currentTimeMillis: Long? = null,
+    ): AndroidEnvelopeCache {
+      options.cacheDirPath = dir.newFolder("sentry-cache").absolutePath
+      val outboxDir = File(options.outboxPath!!)
+      outboxDir.mkdirs()
+
+      startupCrashMarkerFile = File(outboxDir, EnvelopeCache.STARTUP_CRASH_MARKER_FILE)
+      lastReportedAnrFile = File(options.cacheDirPath!!, AndroidEnvelopeCache.LAST_ANR_REPORT)
+
+      if (appStartMillis != null) {
+        AppStartMetrics.getInstance().apply {
+          if (options.isEnablePerformanceV2) {
+            appStartTimeSpan.setStartedAt(appStartMillis)
+            sdkInitTimeSpan.setStartedAt(appStartMillis)
+          } else {
+            sdkInitTimeSpan.setStartedAt(appStartMillis)
+          }
         }
-        val options = SentryAndroidOptions()
-        val dateProvider = mock<ICurrentDateProvider>()
-        lateinit var startupCrashMarkerFile: File
-        lateinit var lastReportedAnrFile: File
+      }
+      if (currentTimeMillis != null) {
+        whenever(dateProvider.currentTimeMillis).thenReturn(currentTimeMillis)
+      }
 
-        fun getSut(
-            dir: TemporaryFolder,
-            appStartMillis: Long? = null,
-            currentTimeMillis: Long? = null
-        ): AndroidEnvelopeCache {
-            options.cacheDirPath = dir.newFolder("sentry-cache").absolutePath
-            val outboxDir = File(options.outboxPath!!)
-            outboxDir.mkdirs()
-
-            startupCrashMarkerFile = File(outboxDir, EnvelopeCache.STARTUP_CRASH_MARKER_FILE)
-            lastReportedAnrFile = File(options.cacheDirPath!!, AndroidEnvelopeCache.LAST_ANR_REPORT)
-
-            if (appStartMillis != null) {
-                AppStartMetrics.getInstance().apply {
-                    if (options.isEnablePerformanceV2) {
-                        appStartTimeSpan.setStartedAt(appStartMillis)
-                        sdkInitTimeSpan.setStartedAt(appStartMillis)
-                    } else {
-                        sdkInitTimeSpan.setStartedAt(appStartMillis)
-                    }
-                }
-            }
-            if (currentTimeMillis != null) {
-                whenever(dateProvider.currentTimeMillis).thenReturn(currentTimeMillis)
-            }
-
-            return AndroidEnvelopeCache(options, dateProvider)
-        }
+      return AndroidEnvelopeCache(options, dateProvider)
     }
+  }
 
-    private val fixture = Fixture()
+  private val fixture = Fixture()
 
-    @BeforeTest
-    fun `set up`() {
-        AppStartMetrics.getInstance().clear()
+  @BeforeTest
+  fun `set up`() {
+    AppStartMetrics.getInstance().clear()
+  }
+
+  @Test
+  fun `when no uncaught hint exists, does not write startup crash file`() {
+    val cache = fixture.getSut(tmpDir)
+
+    cache.store(fixture.envelope)
+
+    assertFalse(fixture.startupCrashMarkerFile.exists())
+  }
+
+  @Test
+  fun `when startup time is null, does not write startup crash file`() {
+    val cache = fixture.getSut(tmpDir)
+
+    val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
+    cache.store(fixture.envelope, hints)
+
+    assertFalse(fixture.startupCrashMarkerFile.exists())
+  }
+
+  @Test
+  fun `when time since sdk init is more than duration threshold, does not write startup crash file`() {
+    val cache = fixture.getSut(dir = tmpDir, appStartMillis = 1000L, currentTimeMillis = 5000L)
+
+    val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
+    cache.store(fixture.envelope, hints)
+
+    assertFalse(fixture.startupCrashMarkerFile.exists())
+  }
+
+  @Test
+  fun `when outbox dir is not set, does not write startup crash file`() {
+    val cache = fixture.getSut(dir = tmpDir, appStartMillis = 1000L, currentTimeMillis = 2000L)
+
+    fixture.options.cacheDirPath = null
+
+    val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
+    cache.store(fixture.envelope, hints)
+
+    assertFalse(fixture.startupCrashMarkerFile.exists())
+  }
+
+  @Test
+  fun `when time since sdk init is less than duration threshold, writes startup crash file`() {
+    val cache = fixture.getSut(dir = tmpDir, appStartMillis = 1000L, currentTimeMillis = 2000L)
+
+    val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
+    cache.store(fixture.envelope, hints)
+
+    assertTrue(fixture.startupCrashMarkerFile.exists())
+  }
+
+  @Test
+  fun `when no AnrV2 hint exists, does not write last anr report file`() {
+    val cache = fixture.getSut(tmpDir)
+
+    cache.store(fixture.envelope)
+
+    assertFalse(fixture.lastReportedAnrFile.exists())
+  }
+
+  @Test
+  fun `when cache dir is not set, does not write last anr report file`() {
+    val cache = fixture.getSut(tmpDir)
+
+    fixture.options.cacheDirPath = null
+
+    val hints =
+      HintUtils.createWithTypeCheckHint(
+        AnrV2Hint(0, NoOpLogger.getInstance(), 12345678L, false, false)
+      )
+    cache.store(fixture.envelope, hints)
+
+    assertFalse(fixture.lastReportedAnrFile.exists())
+  }
+
+  @Test
+  fun `when AnrV2 hint exists, writes last anr report timestamp into file`() {
+    val cache = fixture.getSut(tmpDir)
+
+    val hints =
+      HintUtils.createWithTypeCheckHint(
+        AnrV2Hint(0, NoOpLogger.getInstance(), 12345678L, false, false)
+      )
+    cache.store(fixture.envelope, hints)
+
+    assertTrue(fixture.lastReportedAnrFile.exists())
+    assertEquals("12345678", fixture.lastReportedAnrFile.readText())
+  }
+
+  @Test
+  fun `when cache dir is not set, throws upon reading last reported anr file`() {
+    fixture.getSut(tmpDir)
+
+    fixture.options.cacheDirPath = null
+
+    try {
+      AndroidEnvelopeCache.lastReportedAnr(fixture.options)
+    } catch (e: Throwable) {
+      assertTrue { e is IllegalArgumentException }
     }
+  }
 
-    @Test
-    fun `when no uncaught hint exists, does not write startup crash file`() {
-        val cache = fixture.getSut(tmpDir)
+  @Test
+  fun `when last reported anr file does not exist, returns null upon reading`() {
+    fixture.getSut(tmpDir)
 
-        cache.store(fixture.envelope)
+    val lastReportedAnr = AndroidEnvelopeCache.lastReportedAnr(fixture.options)
 
-        assertFalse(fixture.startupCrashMarkerFile.exists())
-    }
+    assertEquals(null, lastReportedAnr)
+  }
 
-    @Test
-    fun `when startup time is null, does not write startup crash file`() {
-        val cache = fixture.getSut(tmpDir)
+  @Test
+  fun `when last reported anr file exists, returns timestamp from the file upon reading`() {
+    fixture.getSut(tmpDir)
+    fixture.lastReportedAnrFile.writeText("87654321")
 
-        val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
-        cache.store(fixture.envelope, hints)
+    val lastReportedAnr = AndroidEnvelopeCache.lastReportedAnr(fixture.options)
 
-        assertFalse(fixture.startupCrashMarkerFile.exists())
-    }
+    assertEquals(87654321L, lastReportedAnr)
+  }
 
-    @Test
-    fun `when time since sdk init is more than duration threshold, does not write startup crash file`() {
-        val cache = fixture.getSut(dir = tmpDir, appStartMillis = 1000L, currentTimeMillis = 5000L)
-
-        val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
-        cache.store(fixture.envelope, hints)
-
-        assertFalse(fixture.startupCrashMarkerFile.exists())
-    }
-
-    @Test
-    fun `when outbox dir is not set, does not write startup crash file`() {
-        val cache = fixture.getSut(dir = tmpDir, appStartMillis = 1000L, currentTimeMillis = 2000L)
-
-        fixture.options.cacheDirPath = null
-
-        val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
-        cache.store(fixture.envelope, hints)
-
-        assertFalse(fixture.startupCrashMarkerFile.exists())
-    }
-
-    @Test
-    fun `when time since sdk init is less than duration threshold, writes startup crash file`() {
-        val cache = fixture.getSut(dir = tmpDir, appStartMillis = 1000L, currentTimeMillis = 2000L)
-
-        val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
-        cache.store(fixture.envelope, hints)
-
-        assertTrue(fixture.startupCrashMarkerFile.exists())
-    }
-
-    @Test
-    fun `when no AnrV2 hint exists, does not write last anr report file`() {
-        val cache = fixture.getSut(tmpDir)
-
-        cache.store(fixture.envelope)
-
-        assertFalse(fixture.lastReportedAnrFile.exists())
-    }
-
-    @Test
-    fun `when cache dir is not set, does not write last anr report file`() {
-        val cache = fixture.getSut(tmpDir)
-
-        fixture.options.cacheDirPath = null
-
-        val hints = HintUtils.createWithTypeCheckHint(
-            AnrV2Hint(
-                0,
-                NoOpLogger.getInstance(),
-                12345678L,
-                false,
-                false
-            )
-        )
-        cache.store(fixture.envelope, hints)
-
-        assertFalse(fixture.lastReportedAnrFile.exists())
-    }
-
-    @Test
-    fun `when AnrV2 hint exists, writes last anr report timestamp into file`() {
-        val cache = fixture.getSut(tmpDir)
-
-        val hints = HintUtils.createWithTypeCheckHint(
-            AnrV2Hint(
-                0,
-                NoOpLogger.getInstance(),
-                12345678L,
-                false,
-                false
-            )
-        )
-        cache.store(fixture.envelope, hints)
-
-        assertTrue(fixture.lastReportedAnrFile.exists())
-        assertEquals("12345678", fixture.lastReportedAnrFile.readText())
-    }
-
-    @Test
-    fun `when cache dir is not set, throws upon reading last reported anr file`() {
-        fixture.getSut(tmpDir)
-
-        fixture.options.cacheDirPath = null
-
-        try {
-            AndroidEnvelopeCache.lastReportedAnr(fixture.options)
-        } catch (e: Throwable) {
-            assertTrue { e is IllegalArgumentException }
-        }
-    }
-
-    @Test
-    fun `when last reported anr file does not exist, returns null upon reading`() {
-        fixture.getSut(tmpDir)
-
-        val lastReportedAnr = AndroidEnvelopeCache.lastReportedAnr(fixture.options)
-
-        assertEquals(null, lastReportedAnr)
-    }
-
-    @Test
-    fun `when last reported anr file exists, returns timestamp from the file upon reading`() {
-        fixture.getSut(tmpDir)
-        fixture.lastReportedAnrFile.writeText("87654321")
-
-        val lastReportedAnr = AndroidEnvelopeCache.lastReportedAnr(fixture.options)
-
-        assertEquals(87654321L, lastReportedAnr)
-    }
-
-    internal class UncaughtHint : UncaughtExceptionHint(0, NoOpLogger.getInstance())
+  internal class UncaughtHint : UncaughtExceptionHint(0, NoOpLogger.getInstance())
 }
