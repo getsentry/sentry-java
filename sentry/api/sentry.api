@@ -4901,10 +4901,9 @@ public final class io/sentry/profilemeasurements/ProfileMeasurement$JsonKeys {
 public final class io/sentry/profilemeasurements/ProfileMeasurementValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/Long;Ljava/lang/Number;J)V
-	public fun <init> (Ljava/lang/Long;Ljava/lang/Number;Lio/sentry/SentryDate;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getRelativeStartNs ()Ljava/lang/String;
-	public fun getTimestamp ()Ljava/lang/Double;
+	public fun getTimestamp ()D
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getValue ()D
 	public fun hashCode ()I

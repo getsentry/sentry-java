@@ -9,7 +9,6 @@ import io.sentry.ILogger;
 import io.sentry.ISentryExecutorService;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.PerformanceCollectionData;
-import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryUUID;
@@ -154,7 +153,7 @@ public class AndroidProfiler {
                   // profileStartNanos is calculated through SystemClock.elapsedRealtimeNanos(),
                   // but frameEndNanos uses System.nanotime(), so we convert it to get the timestamp
                   // relative to profileStartNanos
-                  final SentryDate timestamp = new SentryNanotimeDate();
+                  final long timestampNanos = new SentryNanotimeDate().nanoTimestamp();
                   final long frameTimestampRelativeNanos =
                       frameEndNanos
                           - System.nanoTime()
@@ -169,17 +168,17 @@ public class AndroidProfiler {
                   if (isFrozen) {
                     frozenFrameRenderMeasurements.addLast(
                         new ProfileMeasurementValue(
-                            frameTimestampRelativeNanos, durationNanos, timestamp));
+                            frameTimestampRelativeNanos, durationNanos, timestampNanos));
                   } else if (isSlow) {
                     slowFrameRenderMeasurements.addLast(
                         new ProfileMeasurementValue(
-                            frameTimestampRelativeNanos, durationNanos, timestamp));
+                            frameTimestampRelativeNanos, durationNanos, timestampNanos));
                   }
                   if (refreshRate != lastRefreshRate) {
                     lastRefreshRate = refreshRate;
                     screenFrameRateMeasurements.addLast(
                         new ProfileMeasurementValue(
-                            frameTimestampRelativeNanos, refreshRate, timestamp));
+                            frameTimestampRelativeNanos, refreshRate, timestampNanos));
                   }
                 }
               });

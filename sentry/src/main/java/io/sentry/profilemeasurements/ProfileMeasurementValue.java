@@ -7,8 +7,6 @@ import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
-import io.sentry.SentryDate;
-import io.sentry.SentryNanotimeDate;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
@@ -25,22 +23,13 @@ import org.jetbrains.annotations.Nullable;
 public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializable {
 
   private @Nullable Map<String, Object> unknown;
-  private @Nullable Double timestamp;
+  private double timestamp;
   private @NotNull String relativeStartNs; // timestamp in nanoseconds this frame was started
   private double value; // frame duration in nanoseconds
 
   @SuppressWarnings("JavaUtilDate")
   public ProfileMeasurementValue() {
-    this(0L, 0, new SentryNanotimeDate(new Date(0), 0));
-  }
-
-  public ProfileMeasurementValue(
-      final @NotNull Long relativeStartNs,
-      final @NotNull Number value,
-      final @NotNull SentryDate timestamp) {
-    this.relativeStartNs = relativeStartNs.toString();
-    this.value = value.doubleValue();
-    this.timestamp = DateUtils.nanosToSeconds(timestamp.nanoTimestamp());
+    this(0L, 0, 0);
   }
 
   public ProfileMeasurementValue(
@@ -50,7 +39,7 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
     this.timestamp = DateUtils.nanosToSeconds(nanoTimestamp);
   }
 
-  public @Nullable Double getTimestamp() {
+  public double getTimestamp() {
     return timestamp;
   }
 
@@ -70,7 +59,7 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
     return Objects.equals(unknown, that.unknown)
         && relativeStartNs.equals(that.relativeStartNs)
         && value == that.value
-        && Objects.equals(timestamp, that.timestamp);
+        && timestamp == that.timestamp;
   }
 
   @Override
@@ -92,9 +81,7 @@ public final class ProfileMeasurementValue implements JsonUnknown, JsonSerializa
     writer.beginObject();
     writer.name(JsonKeys.VALUE).value(logger, value);
     writer.name(JsonKeys.START_NS).value(logger, relativeStartNs);
-    if (timestamp != null) {
-      writer.name(JsonKeys.TIMESTAMP).value(logger, doubleToBigDecimal(timestamp));
-    }
+    writer.name(JsonKeys.TIMESTAMP).value(logger, doubleToBigDecimal(timestamp));
     if (unknown != null) {
       for (String key : unknown.keySet()) {
         Object value = unknown.get(key);
