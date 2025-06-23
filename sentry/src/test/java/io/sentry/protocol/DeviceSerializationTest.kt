@@ -56,6 +56,7 @@ class DeviceSerializationTest {
             connectionType = "9ceb3a6c-5292-4ed9-8665-5732495e8ed4"
             batteryTemperature = 0.14775127f
             cpuDescription = "cpu0"
+            chipset = "unisoc t606"
             processorCount = 4
             processorFrequency = 800.0
         }
