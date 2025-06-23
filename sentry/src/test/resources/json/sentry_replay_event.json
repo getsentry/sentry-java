@@ -84,7 +84,8 @@
             "battery_temperature": 0.14775127,
             "processor_count": 4,
             "processor_frequency": 800.0,
-            "cpu_description": "cpu0"
+            "cpu_description": "cpu0",
+            "chipset": "unisoc"
         },
         "gpu":
         {

@@ -39,5 +39,5 @@
     "processor_count": 4,
     "processor_frequency": 800.0,
     "cpu_description": "cpu0",
-    "chipset": "unisoc t606"
+    "chipset": "unisoc"
 }
