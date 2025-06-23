@@ -184,9 +184,11 @@ public final class LoggerApi implements ILoggerApi {
         i++;
       }
       if (i > 0) {
-        attributes.put(
-            "sentry.message.template",
-            new SentryLogEventAttributeValue(SentryAttributeType.STRING, message));
+        if (attributes.get("sentry.message.template") == null) {
+          attributes.put(
+              "sentry.message.template",
+              new SentryLogEventAttributeValue(SentryAttributeType.STRING, message));
+        }
       }
     }
 

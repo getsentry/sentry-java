@@ -387,6 +387,83 @@ class SentryAppenderTest {
     }
 
     @Test
+    fun `sends formatted log message if no encoder`() {
+        fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true)
+        fixture.logger.trace("Testing {} level", "TRACE")
+
+        Sentry.flush(1000)
+
+        verify(fixture.transport).send(
+            checkLogs { logs ->
+                val log = logs.items.first()
+                assertEquals("Testing TRACE level", log.body)
+                val attributes = log.attributes!!
+                assertEquals("Testing {} level", attributes["sentry.message.template"]?.value)
+                assertEquals("TRACE", attributes["sentry.message.parameter.0"]?.value)
+            }
+        )
+    }
+
+    @Test
+    fun `does not send formatted log message if encoder is available but sendDefaultPii is off`() {
+        var encoder = PatternLayoutEncoder()
+        encoder.pattern = "encoderadded %msg"
+        fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true, encoder = encoder)
+        fixture.logger.trace("Testing {} level", "TRACE")
+
+        Sentry.flush(1000)
+
+        verify(fixture.transport).send(
+            checkLogs { logs ->
+                val log = logs.items.first()
+                assertEquals("encoderadded Testing TRACE level", log.body)
+                val attributes = log.attributes!!
+                assertNull(attributes["sentry.message.template"])
+                assertNull(attributes["sentry.message.parameter.0"])
+            }
+        )
+    }
+
+    @Test
+    fun `sends formatted log message if encoder is available and sendDefaultPii is on but encoder throws`() {
+        var encoder = ThrowingEncoder()
+        fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true, sendDefaultPii = true, encoder = encoder)
+        fixture.logger.trace("Testing {} level", "TRACE")
+
+        Sentry.flush(1000)
+
+        verify(fixture.transport).send(
+            checkLogs { logs ->
+                val log = logs.items.first()
+                assertEquals("Testing TRACE level", log.body)
+                val attributes = log.attributes!!
+                assertEquals("Testing {} level", attributes["sentry.message.template"]?.value)
+                assertEquals("TRACE", attributes["sentry.message.parameter.0"]?.value)
+            }
+        )
+    }
+
+    @Test
+    fun `sends formatted log message if encoder is available and sendDefaultPii is on`() {
+        var encoder = PatternLayoutEncoder()
+        encoder.pattern = "encoderadded %msg"
+        fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true, sendDefaultPii = true, encoder = encoder)
+        fixture.logger.trace("Testing {} level", "TRACE")
+
+        Sentry.flush(1000)
+
+        verify(fixture.transport).send(
+            checkLogs { logs ->
+                val log = logs.items.first()
+                assertEquals("encoderadded Testing TRACE level", log.body)
+                val attributes = log.attributes!!
+                assertEquals("Testing {} level", attributes["sentry.message.template"]?.value)
+                assertEquals("TRACE", attributes["sentry.message.parameter.0"]?.value)
+            }
+        )
+    }
+
+    @Test
     fun `attaches thread information`() {
         fixture = Fixture(minimumEventLevel = Level.WARN)
         fixture.logger.warn("testing thread information")

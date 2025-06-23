@@ -16,12 +16,15 @@ import io.sentry.ITransportFactory;
 import io.sentry.InitPriority;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
+import io.sentry.SentryAttribute;
+import io.sentry.SentryAttributes;
 import io.sentry.SentryEvent;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLogLevel;
 import io.sentry.SentryOptions;
 import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.logger.SentryLogParameters;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
@@ -177,14 +180,20 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   protected void captureLog(@NotNull ILoggingEvent loggingEvent) {
     final @NotNull SentryLogLevel sentryLevel = toSentryLogLevel(loggingEvent.getLevel());
 
-    //    // if encoder is set we treat message+params as PII as encoders may be used to mask/strip
-    // PII
-    //    if (encoder == null || options.isSendDefaultPii()) {
-    //      message.setMessage(loggingEvent.getMessage());
-    //      message.setParams(toParams(loggingEvent.getArgumentArray()));
-    //    }
+    @Nullable Object[] arguments = null;
+    final @NotNull SentryAttributes attributes = SentryAttributes.of();
 
-    Sentry.logger().log(sentryLevel, formatted(loggingEvent), loggingEvent.getArgumentArray());
+    // if encoder is set we treat message+params as PII as encoders may be used to mask/strip PII
+    if (encoder == null || options.isSendDefaultPii()) {
+      attributes.add(
+          SentryAttribute.stringAttribute("sentry.message.template", loggingEvent.getMessage()));
+      arguments = loggingEvent.getArgumentArray();
+    }
+
+    final @NotNull String formattedMessage = formatted(loggingEvent);
+    final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
+
+    Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
   }
 
   private String formatted(@NotNull ILoggingEvent loggingEvent) {
