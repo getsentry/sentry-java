@@ -215,6 +215,10 @@
 
 - Make `SystemEventsBreadcrumbsIntegration` faster ([#4330](https://github.com/getsentry/sentry-java/pull/4330))
 
+### Internal
+
+- Read build tool info from `sentry-debug-meta.properties` and attach it to events ([#4314](https://github.com/getsentry/sentry-java/pull/4314))
+
 ## 8.7.0
 
 ### Features
