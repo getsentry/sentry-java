@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add chipset to device context ([#4512](https://github.com/getsentry/sentry-java/pull/4512))
+
 ### Fixes
 
 - No longer send out empty log envelopes ([#4497](https://github.com/getsentry/sentry-java/pull/4497))
