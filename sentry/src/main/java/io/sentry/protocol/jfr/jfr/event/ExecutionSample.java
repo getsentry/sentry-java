@@ -5,23 +5,23 @@
 
 package io.sentry.protocol.jfr.jfr.event;
 
-public class ExecutionSample extends Event {
-    public final int threadState;
-    public final int samples;
+public final class ExecutionSample extends Event {
+  public final int threadState;
+  public final int samples;
 
-    public ExecutionSample(long time, int tid, int stackTraceId, int threadState, int samples) {
-        super(time, tid, stackTraceId);
-        this.threadState = threadState;
-        this.samples = samples;
-    }
+  public ExecutionSample(long time, int tid, int stackTraceId, int threadState, int samples) {
+    super(time, tid, stackTraceId);
+    this.threadState = threadState;
+    this.samples = samples;
+  }
 
-    @Override
-    public long samples() {
-        return samples;
-    }
+  @Override
+  public long samples() {
+    return samples;
+  }
 
-    @Override
-    public long value() {
-        return samples;
-    }
+  @Override
+  public long value() {
+    return samples;
+  }
 }

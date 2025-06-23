@@ -5,8 +5,11 @@
 
 package io.sentry.protocol.jfr.jfr;
 
-class Element {
+abstract class Element {
 
-    void addChild(Element e) {
-    }
+  void addChild(Element e) {}
+
+  static final class NoOpElement extends Element {
+    // Empty implementation for unhandled element types
+  }
 }

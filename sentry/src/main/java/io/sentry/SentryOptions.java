@@ -16,7 +16,6 @@ import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
-import io.sentry.protocol.profiling.JavaContinuousProfiler;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -555,7 +554,7 @@ public class SentryOptions {
    * means never, 1.0 means always. The value needs to be >= 0.0 and <= 1.0 The default is null
    * (disabled).
    */
-  private @Nullable Double profileSessionSampleRate = 1.0;
+  private @Nullable Double profileSessionSampleRate;
 
   /**
    * Whether the profiling lifecycle is controlled manually or based on the trace lifecycle.
@@ -3049,7 +3048,10 @@ public class SentryOptions {
       setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       setSdkVersion(sdkVersion);
       addPackageInfo();
-      setContinuousProfiler(new JavaContinuousProfiler(new SystemOutLogger(), "", 10, executorService));
+      // TODO: make this configurable
+      //      setProfileSessionSampleRate(1.0);
+      //      setContinuousProfiler(
+      //          new JavaContinuousProfiler(new SystemOutLogger(), "", 10, executorService));
     }
   }
 

@@ -6,15 +6,17 @@
 package io.sentry.protocol.jfr.jfr;
 
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class JfrField extends Element {
-    final String name;
-    final int type;
-    final boolean constantPool;
+public final class JfrField extends Element {
+  final @Nullable String name;
+  final int type;
+  final boolean constantPool;
 
-    JfrField(Map<String, String> attributes) {
-        this.name = attributes.get("name");
-        this.type = Integer.parseInt(attributes.get("class"));
-        this.constantPool = "true".equals(attributes.get("constantPool"));
-    }
+  JfrField(@NotNull Map<String, String> attributes) {
+    this.name = attributes.get("name");
+    this.type = Integer.parseInt(attributes.get("class"));
+    this.constantPool = "true".equals(attributes.get("constantPool"));
+  }
 }

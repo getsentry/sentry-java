@@ -63,19 +63,19 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     this.clientSdk = options.getSdkVersion();
     this.release = options.getRelease() != null ? options.getRelease() : "";
     this.environment = options.getEnvironment();
-    this.platform = "java";
+    this.platform = "android";
     this.version = "2";
     this.timestamp = timestamp;
   }
 
   public ProfileChunk(
-    final @NotNull SentryId profilerId,
-    final @NotNull SentryId chunkId,
-    final @NotNull File traceFile,
-    final @NotNull Map<String, ProfileMeasurement> measurements,
-    final @NotNull Double timestamp,
-    final @NotNull String platform,
-    final @NotNull SentryOptions options) {
+      final @NotNull SentryId profilerId,
+      final @NotNull SentryId chunkId,
+      final @NotNull File traceFile,
+      final @NotNull Map<String, ProfileMeasurement> measurements,
+      final @NotNull Double timestamp,
+      final @NotNull String platform,
+      final @NotNull SentryOptions options) {
     this.profilerId = profilerId;
     this.chunkId = chunkId;
     this.traceFile = traceFile;

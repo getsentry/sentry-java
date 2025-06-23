@@ -1,43 +1,43 @@
-//package io.sentry.protocol.profiling;
+// package io.sentry.protocol.profiling;
 //
-//import io.sentry.EnvelopeReader;
-//import io.sentry.JsonSerializer;
-//import io.sentry.SentryNanotimeDate;
-//import io.sentry.SentryOptions;
-//import jdk.jfr.consumer.RecordedClass;
-//import jdk.jfr.consumer.RecordedEvent;
-//import jdk.jfr.consumer.RecordedFrame;
-//import jdk.jfr.consumer.RecordedMethod;
-//import jdk.jfr.consumer.RecordedStackTrace;
-//import jdk.jfr.consumer.RecordedThread;
-//import jdk.jfr.consumer.RecordingFile;
+// import io.sentry.EnvelopeReader;
+// import io.sentry.JsonSerializer;
+// import io.sentry.SentryNanotimeDate;
+// import io.sentry.SentryOptions;
+// import jdk.jfr.consumer.RecordedClass;
+// import jdk.jfr.consumer.RecordedEvent;
+// import jdk.jfr.consumer.RecordedFrame;
+// import jdk.jfr.consumer.RecordedMethod;
+// import jdk.jfr.consumer.RecordedStackTrace;
+// import jdk.jfr.consumer.RecordedThread;
+// import jdk.jfr.consumer.RecordingFile;
 //
-//import java.io.File;
-//import java.io.IOException;
-//import java.io.StringWriter;
-//import java.nio.file.Path;
-//import java.time.Instant;
-//import java.util.ArrayList;
-//import java.util.Collections;
-//import java.util.HashMap;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.Objects;
-//import jdk.jfr.consumer.*;
+// import java.io.File;
+// import java.io.IOException;
+// import java.io.StringWriter;
+// import java.nio.file.Path;
+// import java.time.Instant;
+// import java.util.ArrayList;
+// import java.util.Collections;
+// import java.util.HashMap;
+// import java.util.List;
+// import java.util.Map;
+// import java.util.Objects;
+// import jdk.jfr.consumer.*;
 //
-//import java.io.IOException;
-//import java.nio.file.Files; // For main method example write
-//import java.nio.file.Path;
-//import java.time.Instant;
-//import java.util.ArrayList;
-//import java.util.Collections;
-//import java.util.HashMap;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.Objects;
-//import java.util.concurrent.ConcurrentHashMap;
+// import java.io.IOException;
+// import java.nio.file.Files; // For main method example write
+// import java.nio.file.Path;
+// import java.time.Instant;
+// import java.util.ArrayList;
+// import java.util.Collections;
+// import java.util.HashMap;
+// import java.util.List;
+// import java.util.Map;
+// import java.util.Objects;
+// import java.util.concurrent.ConcurrentHashMap;
 //
-//public final class JfrToSentryProfileConverter {
+// public final class JfrToSentryProfileConverter {
 //
 //  // FrameSignature now converts to JfrFrame
 //  private static class FrameSignature {
@@ -70,7 +70,8 @@
 //        this.sourceFile = fileNameFromClass;
 //      } else if (rf.isJavaFrame() && this.className != null && !this.className.startsWith("[")) {
 //        int lastDot = this.className.lastIndexOf('.');
-//        String simpleClassName = lastDot > 0 ? this.className.substring(lastDot + 1) : this.className;
+//        String simpleClassName = lastDot > 0 ? this.className.substring(lastDot + 1) :
+// this.className;
 //        int firstDollar = simpleClassName.indexOf('$');
 //        if (firstDollar > 0) simpleClassName = simpleClassName.substring(0, firstDollar);
 //        this.sourceFile = simpleClassName + ".java";
@@ -164,12 +165,14 @@
 //
 //          if (thread != null) {
 //            long osId = thread.getOSThreadId();
-//            String name = thread.getJavaName() != null ? thread.getJavaName() : thread.getOSName();
+//            String name = thread.getJavaName() != null ? thread.getJavaName() :
+// thread.getOSName();
 //            if (osId > 0 && name != null) threadNamesByOSId.put(osId, name);
 //          }
 //          if (eventThread != null) {
 //            long osId = eventThread.getOSThreadId();
-//            String name = eventThread.getJavaName() != null ? eventThread.getJavaName() : eventThread.getOSName();
+//            String name = eventThread.getJavaName() != null ? eventThread.getJavaName() :
+// eventThread.getOSName();
 //            if (osId > 0 && name != null) threadNamesByOSId.put(osId, name);
 //          }
 //          try {
@@ -221,24 +224,29 @@
 //            try {
 //              if (event.hasField("sampledThread")) {
 //                RecordedThread eventThreadRef = event.getValue("sampledThread");
-//                threadName = eventThreadRef.getJavaName() != null ? eventThreadRef.getJavaName() : eventThreadRef.getOSName();
+//                threadName = eventThreadRef.getJavaName() != null ? eventThreadRef.getJavaName() :
+// eventThreadRef.getOSName();
 //                if (eventThreadRef != null) osThreadId = eventThreadRef.getOSThreadId();
 //              }
 ////              if (osThreadId <= 0 && event.hasField("tid")) osThreadId = event.getLong("tid");
-////              if (osThreadId <= 0 && event.hasField("osThreadId")) osThreadId = event.getLong("osThreadId");
+////              if (osThreadId <= 0 && event.hasField("osThreadId")) osThreadId =
+// event.getLong("osThreadId");
 ////              if (osThreadId <= 0) {
-////                System.err.println("WARN: Could not determine OS Thread ID for sample at " + timestamp + ". Skipping.");
+////                System.err.println("WARN: Could not determine OS Thread ID for sample at " +
+// timestamp + ". Skipping.");
 ////                continue;
 ////              }
 //              threadsFoundInMetadata++;
 //            } catch (Exception e) {
-//              System.err.println("WARN: Error accessing thread ID field for sample at " + timestamp + ". Skipping. Error: " + e.getMessage());
+//              System.err.println("WARN: Error accessing thread ID field for sample at " +
+// timestamp + ". Skipping. Error: " + e.getMessage());
 //              continue;
 //            }
 //          }
 //
 //          if (osThreadId <= 0) {
-//            System.err.println("WARN: Invalid OS Thread ID (<= 0) for sample at " + timestamp + ". Skipping.");
+//            System.err.println("WARN: Invalid OS Thread ID (<= 0) for sample at " + timestamp + ".
+// Skipping.");
 //            continue;
 //          }
 //          String threadIdStr = String.valueOf(osThreadId);
@@ -247,7 +255,8 @@
 //          // --- Thread Metadata ---
 //          threadMetadata.computeIfAbsent(threadIdStr, tid -> {
 //            ThreadMetadata meta = new ThreadMetadata();
-//            meta.name = intermediateThreadName;//threadNamesByOSId.getOrDefault(intermediateThreadId, "Thread " + tid);
+//            meta.name =
+// intermediateThreadName;//threadNamesByOSId.getOrDefault(intermediateThreadId, "Thread " + tid);
 //            // meta.priority = ...; // Priority logic if needed
 //            return meta;
 //          });
@@ -344,4 +353,4 @@
 //      System.exit(1);
 //    }
 //  }
-//}
+// }

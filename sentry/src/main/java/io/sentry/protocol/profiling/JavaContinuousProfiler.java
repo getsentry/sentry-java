@@ -1,5 +1,8 @@
 package io.sentry.protocol.profiling;
 
+import static io.sentry.DataCategory.All;
+import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
+
 import io.sentry.DataCategory;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
@@ -20,12 +23,6 @@ import io.sentry.protocol.SentryId;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.SentryRandom;
-import one.profiler.AsyncProfiler;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,13 +31,15 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static io.sentry.DataCategory.All;
-import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
+import one.profiler.AsyncProfiler;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 @ApiStatus.Internal
 public final class JavaContinuousProfiler
-  implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
+    implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
   private static final long MAX_CHUNK_DURATION_MILLIS = 10000;
 
   private final @NotNull ILogger logger;
@@ -69,10 +68,10 @@ public final class JavaContinuousProfiler
   private final AutoClosableReentrantLock payloadLock = new AutoClosableReentrantLock();
 
   public JavaContinuousProfiler(
-    final @NotNull ILogger logger,
-    final @Nullable String profilingTracesDirPath,
-    final int profilingTracesHz,
-    final @NotNull ISentryExecutorService executorService) {
+      final @NotNull ILogger logger,
+      final @Nullable String profilingTracesDirPath,
+      final int profilingTracesHz,
+      final @NotNull ISentryExecutorService executorService) {
     this.logger = logger;
     this.profilingTracesDirPath = profilingTracesDirPath;
     this.profilingTracesHz = profilingTracesHz;
@@ -88,37 +87,37 @@ public final class JavaContinuousProfiler
     isInitialized = true;
     if (profilingTracesDirPath == null) {
       logger.log(
-        SentryLevel.WARNING,
-        "Disabling profiling because no profiling traces dir path is defined in options.");
+          SentryLevel.WARNING,
+          "Disabling profiling because no profiling traces dir path is defined in options.");
       return;
     }
     if (profilingTracesHz <= 0) {
       logger.log(
-        SentryLevel.WARNING,
-        "Disabling profiling because trace rate is set to %d",
-        profilingTracesHz);
+          SentryLevel.WARNING,
+          "Disabling profiling because trace rate is set to %d",
+          profilingTracesHz);
       return;
     }
 
-//    profiler =
-//      new AndroidProfiler(
-//        profilingTracesDirPath,
-//        (int) SECONDS.toMicros(1) / profilingTracesHz,
-//        frameMetricsCollector,
-//        null,
-//        logger);
+    //    profiler =
+    //      new AndroidProfiler(
+    //        profilingTracesDirPath,
+    //        (int) SECONDS.toMicros(1) / profilingTracesHz,
+    //        frameMetricsCollector,
+    //        null,
+    //        logger);
   }
 
   @SuppressWarnings("ReferenceEquality")
   @Override
   public void startProfiler(
-    final @NotNull ProfileLifecycle profileLifecycle,
-    final @NotNull TracesSampler tracesSampler) {
+      final @NotNull ProfileLifecycle profileLifecycle,
+      final @NotNull TracesSampler tracesSampler) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (shouldSample) {
         isSampled = tracesSampler.sampleSessionProfile(SentryRandom.current().nextDouble());
-        //Kepp TRUE for now
-//        shouldSample = false;
+        // Kepp TRUE for now
+        //        shouldSample = false;
       }
       if (!isSampled) {
         logger.log(SentryLevel.DEBUG, "Profiler was not started due to sampling decision.");
@@ -135,7 +134,7 @@ public final class JavaContinuousProfiler
   @SuppressWarnings("ReferenceEquality")
   private void start() {
     if ((scopes == null || scopes == NoOpScopes.getInstance())
-      && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
+        && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
       this.scopes = Sentry.forkedRootScopes("profiler");
       final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
       if (rateLimiter != null) {
@@ -153,8 +152,8 @@ public final class JavaContinuousProfiler
     if (scopes != null) {
       final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
       if (rateLimiter != null
-        && (rateLimiter.isActiveForCategory(All)
-        || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk))) {
+          && (rateLimiter.isActiveForCategory(All)
+              || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk))) {
         logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
         // Let's stop and reset profiler id, as the profile is now broken anyway
         stop(false);
@@ -175,7 +174,7 @@ public final class JavaContinuousProfiler
     filename = SentryUUID.generateSentryId() + ".jfr";
     final String startData;
     try {
-//      System.out.println("### Starting profiler with start,jfr,event=wall,file");
+      //      System.out.println("### Starting profiler with start,jfr,event=wall,file");
       startData = profiler.execute("start,jfr,event=cpu,alloc,file=" + filename);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -199,9 +198,9 @@ public final class JavaContinuousProfiler
       stopFuture = executorService.schedule(() -> stop(true), MAX_CHUNK_DURATION_MILLIS);
     } catch (RejectedExecutionException e) {
       logger.log(
-        SentryLevel.ERROR,
-        "Failed to schedule profiling chunk finish. Did you call Sentry.close()?",
-        e);
+          SentryLevel.ERROR,
+          "Failed to schedule profiling chunk finish. Did you call Sentry.close()?",
+          e);
       shouldStop = true;
     }
   }
@@ -237,20 +236,20 @@ public final class JavaContinuousProfiler
       // check if profiler end successfully
       if (endData == null) {
         logger.log(
-          SentryLevel.ERROR,
-          "An error occurred while collecting a profile chunk, and it won't be sent.");
+            SentryLevel.ERROR,
+            "An error occurred while collecting a profile chunk, and it won't be sent.");
       } else {
         // The scopes can be null if the profiler is started before the SDK is initialized (app
         // start profiling), meaning there's no scopes to send the chunks. In that case, we store
         // the data in a list and send it when the next chunk is finished.
         try (final @NotNull ISentryLifecycleToken ignored2 = payloadLock.acquire()) {
           payloadBuilders.add(
-            new ProfileChunk.Builder(
-              profilerId,
-              chunkId,
-              new HashMap<>(),
-              new File(filename),
-              startProfileChunkTimestamp));
+              new ProfileChunk.Builder(
+                  profilerId,
+                  chunkId,
+                  new HashMap<>(),
+                  new File(filename),
+                  startProfileChunkTimestamp));
         }
       }
 
@@ -300,24 +299,24 @@ public final class JavaContinuousProfiler
   private void sendChunks(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     try {
       options
-        .getExecutorService()
-        .submit(
-          () -> {
-            // SDK is closed, we don't send the chunks
-            if (isClosed.get()) {
-              return;
-            }
-            final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
-            try (final @NotNull ISentryLifecycleToken ignored = payloadLock.acquire()) {
-              for (ProfileChunk.Builder builder : payloadBuilders) {
-                payloads.add(builder.build(options));
-              }
-              payloadBuilders.clear();
-            }
-            for (ProfileChunk payload : payloads) {
-              scopes.captureProfileChunk(payload);
-            }
-          });
+          .getExecutorService()
+          .submit(
+              () -> {
+                // SDK is closed, we don't send the chunks
+                if (isClosed.get()) {
+                  return;
+                }
+                final ArrayList<ProfileChunk> payloads = new ArrayList<>(payloadBuilders.size());
+                try (final @NotNull ISentryLifecycleToken ignored = payloadLock.acquire()) {
+                  for (ProfileChunk.Builder builder : payloadBuilders) {
+                    payloads.add(builder.build(options));
+                  }
+                  payloadBuilders.clear();
+                }
+                for (ProfileChunk payload : payloads) {
+                  scopes.captureProfileChunk(payload);
+                }
+              });
     } catch (Throwable e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunks.", e);
     }
@@ -342,13 +341,12 @@ public final class JavaContinuousProfiler
   @Override
   public void onRateLimitChanged(@NotNull RateLimiter rateLimiter) {
     // We stop the profiler as soon as we are rate limited, to avoid the performance overhead
-//    if (rateLimiter.isActiveForCategory(All)
-//      || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)) {
-//      logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
-//      stop(false);
-//    }
+    //    if (rateLimiter.isActiveForCategory(All)
+    //      || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)) {
+    //      logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
+    //      stop(false);
+    //    }
     // If we are not rate limited anymore, we don't do anything: the profile is broken, so it's
     // useless to restart it automatically
   }
 }
-

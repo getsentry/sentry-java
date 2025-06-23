@@ -5,39 +5,40 @@
 
 package io.sentry.protocol.jfr.jfr.event;
 
-public class AllocationSample extends Event {
-    public final int classId;
-    public final long allocationSize;
-    public final long tlabSize;
+public final class AllocationSample extends Event {
+  public final int classId;
+  public final long allocationSize;
+  public final long tlabSize;
 
-    public AllocationSample(long time, int tid, int stackTraceId, int classId, long allocationSize, long tlabSize) {
-        super(time, tid, stackTraceId);
-        this.classId = classId;
-        this.allocationSize = allocationSize;
-        this.tlabSize = tlabSize;
-    }
+  public AllocationSample(
+      long time, int tid, int stackTraceId, int classId, long allocationSize, long tlabSize) {
+    super(time, tid, stackTraceId);
+    this.classId = classId;
+    this.allocationSize = allocationSize;
+    this.tlabSize = tlabSize;
+  }
 
-    @Override
-    public int hashCode() {
-        return classId * 127 + stackTraceId + (tlabSize == 0 ? 17 : 0);
-    }
+  @Override
+  public int hashCode() {
+    return classId * 127 + stackTraceId + (tlabSize == 0 ? 17 : 0);
+  }
 
-    @Override
-    public boolean sameGroup(Event o) {
-        if (o instanceof AllocationSample) {
-            AllocationSample a = (AllocationSample) o;
-            return classId == a.classId && (tlabSize == 0) == (a.tlabSize == 0);
-        }
-        return false;
+  @Override
+  public boolean sameGroup(Event o) {
+    if (o instanceof AllocationSample) {
+      AllocationSample a = (AllocationSample) o;
+      return classId == a.classId && (tlabSize == 0) == (a.tlabSize == 0);
     }
+    return false;
+  }
 
-    @Override
-    public long classId() {
-        return classId;
-    }
+  @Override
+  public long classId() {
+    return classId;
+  }
 
-    @Override
-    public long value() {
-        return tlabSize != 0 ? tlabSize : allocationSize;
-    }
+  @Override
+  public long value() {
+    return tlabSize != 0 ? tlabSize : allocationSize;
+  }
 }

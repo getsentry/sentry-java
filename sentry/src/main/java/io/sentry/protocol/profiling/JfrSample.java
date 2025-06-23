@@ -1,18 +1,16 @@
 package io.sentry.protocol.profiling;
 
+import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
+import io.sentry.JsonSerializable;
+import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
+import io.sentry.ObjectWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import io.sentry.ILogger;
-import io.sentry.JsonSerializable;
-import io.sentry.JsonUnknown;
-import io.sentry.ObjectWriter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class JfrSample implements JsonUnknown, JsonSerializable {
 
@@ -34,7 +32,7 @@ public final class JfrSample implements JsonUnknown, JsonSerializable {
     writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
     writer.name(JsonKeys.STACK_ID).value(logger, stackId);
 
-    if(threadId != null) {
+    if (threadId != null) {
       writer.name(JsonKeys.THREAD_ID).value(logger, threadId);
     }
 
@@ -47,14 +45,13 @@ public final class JfrSample implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void setUnknown(@Nullable Map<String, Object> unknown) {
-
-  }
+  public void setUnknown(@Nullable Map<String, Object> unknown) {}
 
   public static final class Deserializer implements JsonDeserializer<JfrSample> {
 
     @Override
-    public @NotNull JfrSample deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull JfrSample deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
       JfrSample data = new JfrSample();
       return data;

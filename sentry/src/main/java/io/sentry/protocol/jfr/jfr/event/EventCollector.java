@@ -7,18 +7,18 @@ package io.sentry.protocol.jfr.jfr.event;
 
 public interface EventCollector {
 
-    void collect(Event e);
+  void collect(Event e);
 
-    void beforeChunk();
+  void beforeChunk();
 
-    void afterChunk();
+  void afterChunk();
 
-    // Returns true if this collector has remaining data to process
-    boolean finish();
+  // Returns true if this collector has remaining data to process
+  boolean finish();
 
-    void forEach(Visitor visitor);
+  void forEach(Visitor visitor);
 
-    interface Visitor {
-        void visit(Event event, long samples, long value);
-    }
+  interface Visitor {
+    void visit(Event event, long samples, long value);
+  }
 }

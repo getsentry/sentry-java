@@ -1,12 +1,4 @@
 package io.sentry.protocol.profiling;
-import io.sentry.profilemeasurements.ProfileMeasurement;
-import io.sentry.protocol.DebugMeta;
-import io.sentry.protocol.SdkVersion;
-import io.sentry.protocol.SentryId;
-import io.sentry.protocol.SentryStackFrame;
-import io.sentry.vendor.gson.stream.JsonToken;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
@@ -14,13 +6,12 @@ import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
-import io.sentry.ProfileChunk;
-
+import io.sentry.protocol.SentryStackFrame;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class JfrProfile implements JsonUnknown, JsonSerializable {
   public @Nullable List<JfrSample> samples;
@@ -48,12 +39,12 @@ public final class JfrProfile implements JsonUnknown, JsonSerializable {
 
     if (threadMetadata != null) {
       writer.name(JsonKeys.THREAD_METADATA).value(logger, threadMetadata);
-//      writer.beginObject();
-//      for (String key : threadMetadata.keySet()) {
-//        ThreadMetadata value = threadMetadata.get(key);
-//        writer.name(key).value(logger, value);
-//      }
-//      writer.endObject();
+      //      writer.beginObject();
+      //      for (String key : threadMetadata.keySet()) {
+      //        ThreadMetadata value = threadMetadata.get(key);
+      //        writer.name(key).value(logger, value);
+      //      }
+      //      writer.endObject();
     }
 
     if (unknown != null) {
@@ -85,47 +76,49 @@ public final class JfrProfile implements JsonUnknown, JsonSerializable {
   public static final class Deserializer implements JsonDeserializer<JfrProfile> {
 
     @Override
-    public @NotNull JfrProfile deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull JfrProfile deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+        throws Exception {
       reader.beginObject();
       JfrProfile data = new JfrProfile();
       return data;
-//      Map<String, Object> unknown = null;
-//
-//      while (reader.peek() == JsonToken.NAME) {
-//        final String nextName = reader.nextName();
-//        switch (nextName) {
-//          case JsonKeys.FRAMES:
-//            List<JfrFrame> jfrFrame = reader.nextListOrNull(logger, new JfrFrame().Deserializer());
-//            if (jfrFrame != null) {
-//              data.frames = jfrFrame;
-//            }
-//            break;
-//          case JsonKeys.SAMPLES:
-//            List<JfrSample> jfrSamples = reader.nextListOrNull(logger, new JfrSample().Deserializer());
-//            if (jfrSamples != null) {
-//              data.samples = jfrSamples;
-//            }
-//            break;
-//
-////          case JsonKeys.STACKS:
-////            List<List<Integer>> jfrStacks = reader.nextListOrNull(logger);
-////            if (jfrSamples != null) {
-////              data.samples = jfrSamples;
-////            }
-////            break;
-//
-//          default:
-//            if (unknown == null) {
-//              unknown = new ConcurrentHashMap<>();
-//            }
-//            reader.nextUnknown(logger, unknown, nextName);
-//            break;
-//        }
-//      }
-//      data.setUnknown(unknown);
-//      reader.endObject();
-//      return data;
+      //      Map<String, Object> unknown = null;
+      //
+      //      while (reader.peek() == JsonToken.NAME) {
+      //        final String nextName = reader.nextName();
+      //        switch (nextName) {
+      //          case JsonKeys.FRAMES:
+      //            List<JfrFrame> jfrFrame = reader.nextListOrNull(logger, new
+      // JfrFrame().Deserializer());
+      //            if (jfrFrame != null) {
+      //              data.frames = jfrFrame;
+      //            }
+      //            break;
+      //          case JsonKeys.SAMPLES:
+      //            List<JfrSample> jfrSamples = reader.nextListOrNull(logger, new
+      // JfrSample().Deserializer());
+      //            if (jfrSamples != null) {
+      //              data.samples = jfrSamples;
+      //            }
+      //            break;
+      //
+      ////          case JsonKeys.STACKS:
+      ////            List<List<Integer>> jfrStacks = reader.nextListOrNull(logger);
+      ////            if (jfrSamples != null) {
+      ////              data.samples = jfrSamples;
+      ////            }
+      ////            break;
+      //
+      //          default:
+      //            if (unknown == null) {
+      //              unknown = new ConcurrentHashMap<>();
+      //            }
+      //            reader.nextUnknown(logger, unknown, nextName);
+      //            break;
+      //        }
+      //      }
+      //      data.setUnknown(unknown);
+      //      reader.endObject();
+      //      return data;
     }
   }
-
 }

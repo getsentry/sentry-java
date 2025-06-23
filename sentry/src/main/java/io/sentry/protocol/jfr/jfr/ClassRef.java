@@ -5,10 +5,10 @@
 
 package io.sentry.protocol.jfr.jfr;
 
-public class ClassRef {
-    public final long name;
+public final class ClassRef {
+  public final long name;
 
-    public ClassRef(long name) {
-        this.name = name;
-    }
+  public ClassRef(long name) {
+    this.name = name;
+  }
 }

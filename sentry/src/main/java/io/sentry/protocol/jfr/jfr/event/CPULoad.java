@@ -7,15 +7,15 @@ package io.sentry.protocol.jfr.jfr.event;
 
 import io.sentry.protocol.jfr.jfr.JfrReader;
 
-public class CPULoad extends Event {
-    public final float jvmUser;
-    public final float jvmSystem;
-    public final float machineTotal;
+public final class CPULoad extends Event {
+  public final float jvmUser;
+  public final float jvmSystem;
+  public final float machineTotal;
 
-    public CPULoad(JfrReader jfr) {
-        super(jfr.getVarlong(), 0, 0);
-        this.jvmUser = jfr.getFloat();
-        this.jvmSystem = jfr.getFloat();
-        this.machineTotal = jfr.getFloat();
-    }
+  public CPULoad(JfrReader jfr) {
+    super(jfr.getVarlong(), 0, 0);
+    this.jvmUser = jfr.getFloat();
+    this.jvmSystem = jfr.getFloat();
+    this.machineTotal = jfr.getFloat();
+  }
 }

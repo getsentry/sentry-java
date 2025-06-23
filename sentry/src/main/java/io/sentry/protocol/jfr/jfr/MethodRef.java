@@ -5,14 +5,14 @@
 
 package io.sentry.protocol.jfr.jfr;
 
-public class MethodRef {
-    public final long cls;
-    public final long name;
-    public final long sig;
+public final class MethodRef {
+  public final long cls;
+  public final long name;
+  public final long sig;
 
-    public MethodRef(long cls, long name, long sig) {
-        this.cls = cls;
-        this.name = name;
-        this.sig = sig;
-    }
+  public MethodRef(long cls, long name, long sig) {
+    this.cls = cls;
+    this.name = name;
+    this.sig = sig;
+  }
 }

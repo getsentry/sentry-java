@@ -6,12 +6,11 @@ import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class ThreadMetadata implements JsonUnknown, JsonSerializable {
   public @Nullable String name; // e.g., "com.example.MyClass.myMethod"
@@ -22,7 +21,6 @@ public final class ThreadMetadata implements JsonUnknown, JsonSerializable {
     public static final String NAME = "name";
     public static final String PRIORITY = "priority";
   }
-
 
   @Override
   public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
@@ -40,18 +38,16 @@ public final class ThreadMetadata implements JsonUnknown, JsonSerializable {
   }
 
   @Override
-  public void setUnknown(@Nullable Map<String, Object> unknown) {
-
-  }
+  public void setUnknown(@Nullable Map<String, Object> unknown) {}
 
   public static final class Deserializer implements JsonDeserializer<ThreadMetadata> {
 
     @Override
-    public @NotNull ThreadMetadata deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
+    public @NotNull ThreadMetadata deserialize(
+        @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {
       reader.beginObject();
       ThreadMetadata data = new ThreadMetadata();
       return data;
     }
   }
 }
-
