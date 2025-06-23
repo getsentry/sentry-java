@@ -161,15 +161,15 @@ internal class SimpleVideoEncoder(
          * ---
          * Same for Motorola devices.
          * ---
-         * As for the T606, it's a Spreadtrum/Unisoc chipset and can be spread across various
-         * devices, so we have to check the SOC_MODEL property, as the manufacturer name might have
-         * changed.
+         * As for the Spreadtrum/Unisoc chipset, it can be spread across various devices, so we have
+         * to check the SOC_MANUFACTURER property, as the manufacturer name might have changed.
          * https://github.com/getsentry/sentry-android-gradle-plugin/issues/861#issuecomment-2867021256
          */
         val canvas = if (
             Build.MANUFACTURER.contains("xiaomi", ignoreCase = true) ||
             Build.MANUFACTURER.contains("motorola", ignoreCase = true) ||
-            SystemProperties.get(SystemProperties.Property.SOC_MODEL).equals("T606", ignoreCase = true)
+            SystemProperties.get(SystemProperties.Property.SOC_MANUFACTURER).equals("spreadtrum", ignoreCase = true) ||
+            SystemProperties.get(SystemProperties.Property.SOC_MANUFACTURER).equals("unisoc", ignoreCase = true)
         ) {
             surface?.lockCanvas(null)
         } else {
