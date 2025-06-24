@@ -34,6 +34,10 @@
           "type": "boolean",
           "value": true
         },
+        "custom.point2": {
+          "type": "string",
+          "value": "Point{x:21,y:31}-Hello"
+        },
         "custom.double": {
           "type": "double",
           "value": 11.12

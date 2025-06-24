@@ -2,9 +2,50 @@
 
 ## Unreleased
 
+### Features
+
+- Add chipset to device context ([#4512](https://github.com/getsentry/sentry-java/pull/4512))
+
 ### Fixes
 
 - No longer send out empty log envelopes ([#4497](https://github.com/getsentry/sentry-java/pull/4497))
+- Session Replay: Expand fix for crash on devices to all Unisoc/Spreadtrum chipsets ([#4510](https://github.com/getsentry/sentry-java/pull/4510))
+- Log parameter objects are now turned into `String` via `toString` ([#4515](https://github.com/getsentry/sentry-java/pull/4515))
+  - One of the two `SentryLogEventAttributeValue` constructors did not convert the value previously.
+
+### Features
+
+- Send Logback logs to Sentry as logs ([#4502](https://github.com/getsentry/sentry-java/pull/4502))
+  - You need to enable the logs feature and can also set the `minimumLevel` for log events:
+    ```xml
+    <appender name="sentry" class="io.sentry.logback.SentryAppender">
+      <options>
+        <!-- NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard -->
+        <dsn>https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563</dsn>
+        <logs>
+          <enabled>true</enabled>
+        </logs>
+      </options>
+      <!-- Demonstrates how to modify the minimum values -->
+      <!-- Default for Events is ERROR -->
+      <minimumEventLevel>WARN</minimumEventLevel>
+      <!-- Default for Breadcrumbs is INFO -->
+      <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
+      <!-- Default for Log Events is INFO -->
+      <minimumLevel>INFO</minimumLevel>
+    </appender>
+    ```
+  - If you manually initialize Sentry, you may also enable logs on `Sentry.init`:
+    ```java
+    Sentry.init(options -> {
+      ...
+      options.getLogs().setEnabled(true);
+    });
+    ```
+  - Enabling via `sentry.properties` is also possible:
+    ```properties
+    logs.enabled=true
+    ```
 
 ### Dependencies
 
