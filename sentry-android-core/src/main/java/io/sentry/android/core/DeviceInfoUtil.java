@@ -96,6 +96,7 @@ public final class DeviceInfoUtil {
 
   // we can get some inspiration here
   // https://github.com/flutter/plugins/blob/master/packages/device_info/android/src/main/java/io/flutter/plugins/deviceinfo/DeviceInfoPlugin.java
+  @SuppressLint("NewApi")
   @NotNull
   public Device collectDeviceInformation(
       final boolean collectDeviceIO, final boolean collectDynamicData) {
@@ -107,6 +108,9 @@ public final class DeviceInfoUtil {
     device.setModel(Build.MODEL);
     device.setModelId(Build.ID);
     device.setArchs(ContextUtils.getArchitectures());
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.S) {
+      device.setChipset(Build.SOC_MANUFACTURER + " " + Build.SOC_MODEL);
+    }
 
     device.setOrientation(getOrientation());
     if (isEmulator != null) {

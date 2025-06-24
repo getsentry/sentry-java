@@ -8,6 +8,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 
 class DeviceTest {
+
   @Test
   fun `copying device wont have the same references`() {
     val device = Device()
@@ -61,6 +62,7 @@ class DeviceTest {
     device.batteryTemperature = 30f
     device.locale = "en-US"
     device.cpuDescription = "cpu0"
+    device.chipset = "unisoc t606"
     device.processorCount = 4
     device.processorFrequency = 800.0
     val unknown = mapOf(Pair("unknown", "unknown"))
@@ -100,6 +102,7 @@ class DeviceTest {
     assertEquals("connection type", clone.connectionType)
     assertEquals(30f, clone.batteryTemperature)
     assertEquals("cpu0", clone.cpuDescription)
+    assertEquals("unisoc t606", clone.chipset)
     assertEquals(4, clone.processorCount)
     assertEquals(800.0, clone.processorFrequency)
     device.processorFrequency = 800.0
