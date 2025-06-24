@@ -6,6 +6,7 @@ import io.sentry.ILogger
 import io.sentry.JsonObjectReader
 import io.sentry.JsonObjectWriter
 import io.sentry.JsonSerializable
+import io.sentry.SentryAttributeType
 import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEventAttributeValue
 import io.sentry.SentryLogEvents
@@ -39,6 +40,8 @@ class SentryLogsSerializationTest {
                   "sentry.trace.parent_span_id" to
                     SentryLogEventAttributeValue("string", "f28b86350e534671"),
                   "custom.boolean" to SentryLogEventAttributeValue("boolean", true),
+                  "custom.point2" to
+                    SentryLogEventAttributeValue(SentryAttributeType.STRING, Point(21, 31)),
                   "custom.double" to SentryLogEventAttributeValue("double", 11.12.toDouble()),
                   "custom.point" to SentryLogEventAttributeValue("string", Point(20, 30)),
                   "custom.integer" to SentryLogEventAttributeValue("integer", 10),
