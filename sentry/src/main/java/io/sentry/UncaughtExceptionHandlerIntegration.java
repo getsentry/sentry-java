@@ -166,6 +166,12 @@ public final class UncaughtExceptionHandlerIntegration
     return new ExceptionMechanismException(mechanism, thrown, thread);
   }
 
+  /**
+   * Remove this UncaughtExceptionHandlerIntegration from the exception handler chain.
+   *
+   * <p>If this integration is currently the default handler, restore the initial handler, if this
+   * integration is not the current default call removeFromHandlerTree
+   */
   @Override
   public void close() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
@@ -183,6 +189,21 @@ public final class UncaughtExceptionHandlerIntegration
     }
   }
 
+  /**
+   * Recursively traverses the chain of UncaughtExceptionHandlerIntegrations to find and remove this
+   * specific integration instance.
+   *
+   * <p>Checks if this instance is the defaultExceptionHandler of the current handler, if so replace
+   * with its own defaultExceptionHandler, thus removing it from the chain.
+   *
+   * <p>If not, recursively calls itself on the next handler in
+   * the chain.
+   *
+   * <p>Recursion stops if the current handler is not an instance of
+   * UncaughtExceptionHandlerIntegration or the handler was found and removed.
+   *
+   * @param currentHandler The current handler in the chain to examine
+   */
   private void removeFromHandlerTree(@Nullable Thread.UncaughtExceptionHandler currentHandler) {
     if (currentHandler instanceof UncaughtExceptionHandlerIntegration) {
       final UncaughtExceptionHandlerIntegration currentHandlerIntegration =
