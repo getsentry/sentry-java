@@ -83,13 +83,11 @@ class DeviceSerializationTest {
 
   // Helper
 
-  private fun sanitizedFile(path: String): String {
-    return FileFromResources.invoke(path).replace(Regex("[\n\r]"), "").replace(" ", "")
-  }
+  private fun sanitizedFile(path: String): String =
+    FileFromResources.invoke(path).replace(Regex("[\n\r]"), "").replace(" ", "")
 
-  private fun serializeToString(jsonSerializable: JsonSerializable): String {
-    return this.serializeToString { wrt -> jsonSerializable.serialize(wrt, fixture.logger) }
-  }
+  private fun serializeToString(jsonSerializable: JsonSerializable): String =
+    this.serializeToString { wrt -> jsonSerializable.serialize(wrt, fixture.logger) }
 
   private fun serializeToString(serialize: (JsonObjectWriter) -> Unit): String {
     val wrt = StringWriter()
