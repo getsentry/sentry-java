@@ -38,8 +38,10 @@ import org.slf4j.MDC;
 @Open
 public class SentryHandler extends Handler {
   public static final String MECHANISM_TYPE = "JulSentryHandler";
+
   /** Name of the {@link SentryEvent} extra property containing the Thread id. */
   public static final String THREAD_ID = "thread_id";
+
   /**
    * If true, <code>String.format()</code> is used to render parameterized log messages instead of
    * <code>MessageFormat.format()</code>; Defaults to false.

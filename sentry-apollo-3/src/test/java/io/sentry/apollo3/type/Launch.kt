@@ -8,7 +8,7 @@ package io.sentry.apollo3.type
 import com.apollographql.apollo3.api.ObjectType
 
 public class Launch {
-    public companion object {
-        public val type: ObjectType = ObjectType(name = "Launch")
-    }
+  public companion object {
+    public val type: ObjectType = ObjectType(name = "Launch")
+  }
 }

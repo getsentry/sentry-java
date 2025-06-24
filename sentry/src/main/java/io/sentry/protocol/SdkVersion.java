@@ -37,6 +37,7 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
    * `sentry.javascript.react-native`. Please use a different entity for your own SDKs.
    */
   private @NotNull String name;
+
   /**
    * The version of the SDK. _Required._
    *
@@ -56,6 +57,7 @@ public final class SdkVersion implements JsonUnknown, JsonSerializable {
    * the version should be a Git reference (branch, tag or SHA).
    */
   private @Nullable Set<SentryPackage> deserializedPackages;
+
   /**
    * List of integrations that are enabled in the SDK. _Optional._
    *

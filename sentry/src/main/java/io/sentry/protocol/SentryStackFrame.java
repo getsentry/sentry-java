@@ -24,14 +24,18 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
   /** Source code leading up to `lineno`. */
   private @Nullable List<String> preContext;
+
   /** Source code of the lines after `lineno`. */
   private @Nullable List<String> postContext;
+
   /** Mapping of local variables and expression names that were available in this frame. */
   private @Nullable Map<String, String> vars;
 
   private @Nullable List<Integer> framesOmitted;
+
   /** The source file name (basename only). */
   private @Nullable String filename;
+
   /**
    * Name of the frame's function. This might include the name of a class.
    *
@@ -39,6 +43,7 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
    * it for some platforms. The original function name will be stored in `raw_function`.
    */
   private @Nullable String function;
+
   /**
    * Name of the module the frame is contained in.
    *
@@ -46,14 +51,19 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
    * considers to be part of the stack (for instance in Java).
    */
   private @Nullable String module;
+
   /** Line number within the source file, starting at 1. */
   private @Nullable Integer lineno;
+
   /** Column number within the source file, starting at 1. */
   private @Nullable Integer colno;
+
   /** Absolute path to the source file. */
   private @Nullable String absPath;
+
   /** Source code of the current line (`lineno`). */
   private @Nullable String contextLine;
+
   /**
    * Override whether this frame should be considered part of application code, or part of
    * libraries/frameworks/dependencies.
@@ -77,6 +87,7 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
 
   /** (C/C++/Native) Start address of the containing code module (image). */
   private @Nullable String imageAddr;
+
   /**
    * (C/C++/Native) Start address of the frame's function.
    *
@@ -84,6 +95,7 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
    * instruction offset automatically.
    */
   private @Nullable String symbolAddr;
+
   /**
    * (C/C++/Native) An optional instruction address for symbolication.
    *
@@ -93,6 +105,7 @@ public final class SentryStackFrame implements JsonUnknown, JsonSerializable {
    * take place.
    */
   private @Nullable String instructionAddr;
+
   /**
    * Defines the addressing mode for addresses.
    *
