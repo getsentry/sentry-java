@@ -37,6 +37,7 @@ public final class Message implements JsonUnknown, JsonSerializable {
    * <p>It must not exceed 8192 characters. Longer messages will be truncated.
    */
   private @Nullable String formatted;
+
   /**
    * The log message with parameter placeholders.
    *
@@ -47,6 +48,7 @@ public final class Message implements JsonUnknown, JsonSerializable {
    * <p>It must not exceed 8192 characters. Longer messages will be truncated.
    */
   private @Nullable String message;
+
   /**
    * Parameters to be interpolated into the log message. This can be an array of positional
    * parameters as well as a mapping of named arguments to their values.

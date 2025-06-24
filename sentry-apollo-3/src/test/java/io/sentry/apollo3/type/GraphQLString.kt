@@ -12,7 +12,7 @@ import com.apollographql.apollo3.api.CustomScalarType
  * String type is most often used by GraphQL to represent free-form human-readable text.
  */
 public class GraphQLString {
-    public companion object {
-        public val type: CustomScalarType = CustomScalarType("String", "kotlin.String")
-    }
+  public companion object {
+    public val type: CustomScalarType = CustomScalarType("String", "kotlin.String")
+  }
 }
