@@ -45,27 +45,8 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
         new File("dummy"),
         new HashMap<>(),
         0.0,
+        "android",
         SentryOptions.empty());
-  }
-
-  public ProfileChunk(
-      final @NotNull SentryId profilerId,
-      final @NotNull SentryId chunkId,
-      final @NotNull File traceFile,
-      final @NotNull Map<String, ProfileMeasurement> measurements,
-      final @NotNull Double timestamp,
-      final @NotNull SentryOptions options) {
-    this.profilerId = profilerId;
-    this.chunkId = chunkId;
-    this.traceFile = traceFile;
-    this.measurements = measurements;
-    this.debugMeta = null;
-    this.clientSdk = options.getSdkVersion();
-    this.release = options.getRelease() != null ? options.getRelease() : "";
-    this.environment = options.getEnvironment();
-    this.platform = "android";
-    this.version = "2";
-    this.timestamp = timestamp;
   }
 
   public ProfileChunk(
@@ -196,21 +177,26 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     private final @NotNull File traceFile;
     private final double timestamp;
 
+    private final @NotNull String platform;
+
     public Builder(
         final @NotNull SentryId profilerId,
         final @NotNull SentryId chunkId,
         final @NotNull Map<String, ProfileMeasurement> measurements,
         final @NotNull File traceFile,
-        final @NotNull SentryDate timestamp) {
+        final @NotNull SentryDate timestamp,
+        final @NotNull String platform) {
       this.profilerId = profilerId;
       this.chunkId = chunkId;
       this.measurements = new ConcurrentHashMap<>(measurements);
       this.traceFile = traceFile;
       this.timestamp = DateUtils.nanosToSeconds(timestamp.nanoTimestamp());
+      this.platform = platform;
     }
 
     public ProfileChunk build(SentryOptions options) {
-      return new ProfileChunk(profilerId, chunkId, traceFile, measurements, timestamp, options);
+      return new ProfileChunk(
+          profilerId, chunkId, traceFile, measurements, timestamp, platform, options);
     }
   }
 

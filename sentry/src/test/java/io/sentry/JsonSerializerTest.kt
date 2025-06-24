@@ -887,7 +887,7 @@ class JsonSerializerTest {
         fixture.options.sdkVersion = SdkVersion("test", "1.2.3")
         fixture.options.release = "release"
         fixture.options.environment = "environment"
-        val profileChunk = ProfileChunk(profilerId, chunkId, fixture.traceFile, HashMap(), 5.3, fixture.options)
+        val profileChunk = ProfileChunk(profilerId, chunkId, fixture.traceFile, HashMap(), 5.3, "android", fixture.options)
         val measurementNow = SentryNanotimeDate()
         val measurementNowSeconds =
             BigDecimal.valueOf(DateUtils.nanosToSeconds(measurementNow.nanoTimestamp())).setScale(6, RoundingMode.DOWN)

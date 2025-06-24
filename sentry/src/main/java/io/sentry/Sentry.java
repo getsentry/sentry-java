@@ -18,6 +18,7 @@ import io.sentry.opentelemetry.OpenTelemetryUtil;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.protocol.profiling.JavaContinuousProfiler;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.DebugMetaPropertiesApplier;
@@ -650,6 +651,19 @@ public final class Sentry {
       }
       options.getBackpressureMonitor().start();
     }
+
+    // TODO: make this configurable
+    if (options.isContinuousProfilingEnabled()) {
+      options.setContinuousProfiler(
+          new JavaContinuousProfiler(new SystemOutLogger(), "", 10, options.getExecutorService()));
+    }
+
+    options
+        .getLogger()
+        .log(
+            SentryLevel.INFO,
+            "Continuous profiler is enabled %s",
+            options.isContinuousProfilingEnabled());
   }
 
   /** Close the SDK */

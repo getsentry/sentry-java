@@ -102,7 +102,7 @@ class SentryClientTest {
             whenever(scopes.options).thenReturn(sentryOptions)
             sentryTracer = SentryTracer(TransactionContext("a-transaction", "op", TracesSamplingDecision(true)), scopes)
             sentryTracer.startChild("a-span", "span 1").finish()
-            profileChunk = ProfileChunk(SentryId(), SentryId(), profilingTraceFile, emptyMap(), 1.0, sentryOptions)
+            profileChunk = ProfileChunk(SentryId(), SentryId(), profilingTraceFile, emptyMap(), 1.0, "android", sentryOptions)
         }
 
         var attachment = Attachment("hello".toByteArray(), "hello.txt", "text/plain", true)

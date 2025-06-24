@@ -249,7 +249,8 @@ public final class JavaContinuousProfiler
                   chunkId,
                   new HashMap<>(),
                   new File(filename),
-                  startProfileChunkTimestamp));
+                  startProfileChunkTimestamp,
+                  "java"));
         }
       }
 
