@@ -56,6 +56,8 @@ public final class ExternalOptions {
   private @Nullable Boolean forceInit;
   private @Nullable Boolean captureOpenTelemetryEvents;
 
+  private @Nullable Double profileSessionSampleRate;
+
   private @Nullable SentryOptions.Cron cron;
 
   @SuppressWarnings("unchecked")
@@ -202,6 +204,8 @@ public final class ExternalOptions {
 
     options.setEnableSpotlight(propertiesProvider.getBooleanProperty("enable-spotlight"));
     options.setSpotlightConnectionUrl(propertiesProvider.getProperty("spotlight-connection-url"));
+    options.setProfileSessionSampleRate(
+        propertiesProvider.getDoubleProperty("profile-session-sample-rate"));
 
     return options;
   }
@@ -530,5 +534,13 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable Boolean isEnableLogs() {
     return enableLogs;
+  }
+
+  public @Nullable Double getProfileSessionSampleRate() {
+    return profileSessionSampleRate;
+  }
+
+  public void setProfileSessionSampleRate(@Nullable Double profileSessionSampleRate) {
+    this.profileSessionSampleRate = profileSessionSampleRate;
   }
 }

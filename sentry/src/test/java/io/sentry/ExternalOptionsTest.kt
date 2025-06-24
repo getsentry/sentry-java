@@ -382,6 +382,13 @@ class ExternalOptionsTest {
         }
     }
 
+    @Test
+    fun `creates options with profileSessionSampleRate set to 0_8`() {
+        withPropertiesFile("profile-session-sample-rate=0.8") { options ->
+            assertTrue(options.profileSessionSampleRate == 0.8)
+        }
+    }
+
     private fun withPropertiesFile(textLines: List<String> = emptyList(), logger: ILogger = mock(), fn: (ExternalOptions) -> Unit) {
         // create a sentry.properties file in temporary folder
         val temporaryFolder = TemporaryFolder()

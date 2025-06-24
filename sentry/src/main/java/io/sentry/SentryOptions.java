@@ -3048,10 +3048,6 @@ public class SentryOptions {
       setSentryClientName(BuildConfig.SENTRY_JAVA_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
       setSdkVersion(sdkVersion);
       addPackageInfo();
-      // TODO: make this configurable
-      //      setProfileSessionSampleRate(1.0);
-      //      setContinuousProfiler(
-      //          new JavaContinuousProfiler(new SystemOutLogger(), "", 10, executorService));
     }
   }
 
@@ -3210,6 +3206,10 @@ public class SentryOptions {
 
     if (options.isEnableLogs() != null) {
       getLogs().setEnabled(options.isEnableLogs());
+    }
+
+    if (options.getProfileSessionSampleRate() != null) {
+      setProfileSessionSampleRate(options.getProfileSessionSampleRate());
     }
   }
 
