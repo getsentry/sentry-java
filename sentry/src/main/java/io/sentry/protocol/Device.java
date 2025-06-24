@@ -25,10 +25,13 @@ public final class Device implements JsonUnknown, JsonSerializable {
 
   /** Name of the device. */
   private @Nullable String name;
+
   /** Manufacturer of the device. */
   private @Nullable String manufacturer;
+
   /** Brand of the device. */
   private @Nullable String brand;
+
   /**
    * Family of the device model.
    *
@@ -36,12 +39,14 @@ public final class Device implements JsonUnknown, JsonSerializable {
    * would be a reasonable family, so would be `Samsung Galaxy`.
    */
   private @Nullable String family;
+
   /**
    * Device model.
    *
    * <p>This, for example, can be `Samsung Galaxy S3`.
    */
   private @Nullable String model;
+
   /**
    * Device model (internal identifier).
    *
@@ -51,6 +56,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
 
   /** Supported CPU architectures of the device. */
   private @Nullable String[] archs;
+
   /**
    * Current battery level in %.
    *
@@ -58,32 +64,44 @@ public final class Device implements JsonUnknown, JsonSerializable {
    * (in the range 0-100).
    */
   private @Nullable Float batteryLevel;
+
   /** Whether the device was charging or not. */
   private @Nullable Boolean charging;
+
   /** Whether the device was online or not. */
   private @Nullable Boolean online;
+
   /**
    * Current screen orientation.
    *
    * <p>This can be a string `portrait` or `landscape` to define the orientation of a device.
    */
   private @Nullable DeviceOrientation orientation;
+
   /** Simulator/prod indicator. */
   private @Nullable Boolean simulator;
+
   /** Total memory available in bytes. */
   private @Nullable Long memorySize;
+
   /** How much memory is still available in bytes. */
   private @Nullable Long freeMemory;
+
   /** How much memory is usable for the app in bytes. */
   private @Nullable Long usableMemory;
+
   /** Whether the device was low on memory. */
   private @Nullable Boolean lowMemory;
+
   /** Total storage size of the device in bytes. */
   private @Nullable Long storageSize;
+
   /** How much storage is free in bytes. */
   private @Nullable Long freeStorage;
+
   /** Total size of the attached external storage in bytes (eg: android SDK card). */
   private @Nullable Long externalStorageSize;
+
   /** Free size of the attached external storage in bytes (eg: android SDK card). */
   private @Nullable Long externalFreeStorage;
 
@@ -92,12 +110,16 @@ public final class Device implements JsonUnknown, JsonSerializable {
 
   /** Device Height screen resolution. */
   private @Nullable Integer screenHeightPixels;
+
   /** Device screen density. */
   private @Nullable Float screenDensity;
+
   /** Screen density as dots-per-inch. */
   private @Nullable Integer screenDpi;
+
   /** Indicator when the device was booted. */
   private @Nullable Date bootTime;
+
   /** Timezone of the device. */
   private @Nullable TimeZone timezone;
 
