@@ -10,6 +10,8 @@
 
 - No longer send out empty log envelopes ([#4497](https://github.com/getsentry/sentry-java/pull/4497))
 - Session Replay: Expand fix for crash on devices to all Unisoc/Spreadtrum chipsets ([#4510](https://github.com/getsentry/sentry-java/pull/4510))
+- Log parameter objects are now turned into `String` via `toString` ([#4515](https://github.com/getsentry/sentry-java/pull/4515))
+  - One of the two `SentryLogEventAttributeValue` constructors did not convert the value previously.
 
 ### Features
 
@@ -29,7 +31,7 @@
       <minimumEventLevel>WARN</minimumEventLevel>
       <!-- Default for Breadcrumbs is INFO -->
       <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
-      <!-- Default for Breadcrumbs is INFO -->
+      <!-- Default for Log Events is INFO -->
       <minimumLevel>INFO</minimumLevel>
     </appender>
     ```
