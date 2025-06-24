@@ -146,6 +146,8 @@ public final class Device implements JsonUnknown, JsonSerializable {
   /** Optional. CPU description. For example, Intel(R) Core(TM)2 Quad CPU Q6600 @ 2.40GHz. */
   private @Nullable String cpuDescription;
 
+  private @Nullable String chipset;
+
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
 
@@ -189,6 +191,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     this.processorCount = device.processorCount;
     this.processorFrequency = device.processorFrequency;
     this.cpuDescription = device.cpuDescription;
+    this.chipset = device.chipset;
 
     this.unknown = CollectionUtils.newConcurrentHashMap(device.unknown);
   }
@@ -451,6 +454,14 @@ public final class Device implements JsonUnknown, JsonSerializable {
     this.cpuDescription = cpuDescription;
   }
 
+  public @Nullable String getChipset() {
+    return chipset;
+  }
+
+  public void setChipset(final @Nullable String chipset) {
+    this.chipset = chipset;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -487,7 +498,8 @@ public final class Device implements JsonUnknown, JsonSerializable {
         && Objects.equals(batteryTemperature, device.batteryTemperature)
         && Objects.equals(processorCount, device.processorCount)
         && Objects.equals(processorFrequency, device.processorFrequency)
-        && Objects.equals(cpuDescription, device.cpuDescription);
+        && Objects.equals(cpuDescription, device.cpuDescription)
+        && Objects.equals(chipset, device.chipset);
   }
 
   @Override
@@ -525,7 +537,8 @@ public final class Device implements JsonUnknown, JsonSerializable {
             batteryTemperature,
             processorCount,
             processorFrequency,
-            cpuDescription);
+            cpuDescription,
+            chipset);
     result = 31 * result + Arrays.hashCode(archs);
     return result;
   }
@@ -589,6 +602,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     public static final String PROCESSOR_COUNT = "processor_count";
     public static final String CPU_DESCRIPTION = "cpu_description";
     public static final String PROCESSOR_FREQUENCY = "processor_frequency";
+    public static final String CHIPSET = "chipset";
   }
 
   @Override
@@ -693,6 +707,9 @@ public final class Device implements JsonUnknown, JsonSerializable {
     }
     if (cpuDescription != null) {
       writer.name(JsonKeys.CPU_DESCRIPTION).value(cpuDescription);
+    }
+    if (chipset != null) {
+      writer.name(JsonKeys.CHIPSET).value(chipset);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -838,6 +855,9 @@ public final class Device implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.CPU_DESCRIPTION:
             device.cpuDescription = reader.nextStringOrNull();
+            break;
+          case JsonKeys.CHIPSET:
+            device.chipset = reader.nextStringOrNull();
             break;
           default:
             if (unknown == null) {
