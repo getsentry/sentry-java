@@ -16,6 +16,7 @@ import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
+import io.sentry.SentryLogEvent
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider
@@ -347,6 +348,17 @@ class SentryAutoConfigurationTest {
       .run {
         assertThat(it.getBean(SentryOptions::class.java).beforeSendTransaction)
           .isInstanceOf(CustomBeforeSendTransactionCallback::class.java)
+      }
+  }
+
+  @Test
+  fun `registers logs beforeSendCallback on SentryOptions`() {
+    contextRunner
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+      .withUserConfiguration(CustomBeforeSendLogsCallbackConfiguration::class.java)
+      .run {
+        assertThat(it.getBean(SentryOptions::class.java).logs.beforeSend)
+          .isInstanceOf(CustomBeforeSendLogsCallback::class.java)
       }
   }
 
@@ -1093,6 +1105,16 @@ class SentryAutoConfigurationTest {
 
   class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
     override fun execute(event: SentryEvent, hint: Hint): SentryEvent? = null
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  open class CustomBeforeSendLogsCallbackConfiguration {
+
+    @Bean open fun beforeSendCallback() = CustomBeforeSendLogsCallback()
+  }
+
+  class CustomBeforeSendLogsCallback : SentryOptions.Logs.BeforeSendLogCallback {
+    override fun execute(event: SentryLogEvent): SentryLogEvent? = null
   }
 
   @Configuration(proxyBeanMethods = false)

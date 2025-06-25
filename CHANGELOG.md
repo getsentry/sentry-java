@@ -52,6 +52,7 @@
     ```properties
     logs.enabled=true
     ```
+- Automatically use `SentryOptions.Logs.BeforeSendLogCallback` Spring beans ([#4509](https://github.com/getsentry/sentry-java/pull/4509))
 
 ### Dependencies
 
