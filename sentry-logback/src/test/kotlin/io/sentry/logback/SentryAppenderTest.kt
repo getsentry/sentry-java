@@ -14,8 +14,10 @@ import io.sentry.ITransportFactory
 import io.sentry.InitPriority
 import io.sentry.Sentry
 import io.sentry.SentryLevel
+import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.checkLogs
 import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import java.time.Instant
@@ -44,9 +46,11 @@ class SentryAppenderTest {
     dsn: String? = "http://key@localhost/proj",
     minimumBreadcrumbLevel: Level? = null,
     minimumEventLevel: Level? = null,
+    minimumLevel: Level? = null,
     contextTags: List<String>? = null,
     encoder: Encoder<ILoggingEvent>? = null,
     sendDefaultPii: Boolean = false,
+    enableLogs: Boolean = false,
     options: SentryOptions = SentryOptions(),
     startLater: Boolean = false,
   ) {
@@ -63,10 +67,12 @@ class SentryAppenderTest {
       this.encoder = encoder
       options.dsn = dsn
       options.isSendDefaultPii = sendDefaultPii
+      options.logs.isEnabled = enableLogs
       contextTags?.forEach { options.addContextTag(it) }
       appender.setOptions(options)
       appender.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
       appender.setMinimumEventLevel(minimumEventLevel)
+      appender.setMinimumLevel(minimumLevel)
       appender.context = loggerContext
       appender.setTransportFactory(transportFactory)
       encoder?.context = loggerContext
@@ -303,6 +309,154 @@ class SentryAppenderTest {
           assertEquals("test exc", exception.value)
         },
         anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `converts trace log level to Sentry log level`() {
+    fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true)
+    fixture.logger.trace("testing trace level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { logs -> assertEquals(SentryLogLevel.TRACE, logs.items.first().level) })
+  }
+
+  @Test
+  fun `converts debug log level to Sentry log level`() {
+    fixture = Fixture(minimumLevel = Level.DEBUG, enableLogs = true)
+    fixture.logger.debug("testing debug level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { logs -> assertEquals(SentryLogLevel.DEBUG, logs.items.first().level) })
+  }
+
+  @Test
+  fun `converts info log level to Sentry log level`() {
+    fixture = Fixture(minimumLevel = Level.INFO, enableLogs = true)
+    fixture.logger.info("testing info level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { logs -> assertEquals(SentryLogLevel.INFO, logs.items.first().level) })
+  }
+
+  @Test
+  fun `converts warn log level to Sentry log level`() {
+    fixture = Fixture(minimumLevel = Level.WARN, enableLogs = true)
+    fixture.logger.warn("testing warn level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { logs -> assertEquals(SentryLogLevel.WARN, logs.items.first().level) })
+  }
+
+  @Test
+  fun `converts error log level to Sentry log level`() {
+    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
+    fixture.logger.error("testing error level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { logs -> assertEquals(SentryLogLevel.ERROR, logs.items.first().level) })
+  }
+
+  @Test
+  fun `sends formatted log message if no encoder`() {
+    fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true)
+    fixture.logger.trace("Testing {} level", "TRACE")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("Testing TRACE level", log.body)
+          val attributes = log.attributes!!
+          assertEquals("Testing {} level", attributes["sentry.message.template"]?.value)
+          assertEquals("TRACE", attributes["sentry.message.parameter.0"]?.value)
+        }
+      )
+  }
+
+  @Test
+  fun `does not send formatted log message if encoder is available but sendDefaultPii is off`() {
+    var encoder = PatternLayoutEncoder()
+    encoder.pattern = "encoderadded %msg"
+    fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true, encoder = encoder)
+    fixture.logger.trace("Testing {} level", "TRACE")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("encoderadded Testing TRACE level", log.body)
+          val attributes = log.attributes!!
+          assertNull(attributes["sentry.message.template"])
+          assertNull(attributes["sentry.message.parameter.0"])
+        }
+      )
+  }
+
+  @Test
+  fun `sends formatted log message if encoder is available and sendDefaultPii is on but encoder throws`() {
+    var encoder = ThrowingEncoder()
+    fixture =
+      Fixture(
+        minimumLevel = Level.TRACE,
+        enableLogs = true,
+        sendDefaultPii = true,
+        encoder = encoder,
+      )
+    fixture.logger.trace("Testing {} level", "TRACE")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("Testing TRACE level", log.body)
+          val attributes = log.attributes!!
+          assertEquals("Testing {} level", attributes["sentry.message.template"]?.value)
+          assertEquals("TRACE", attributes["sentry.message.parameter.0"]?.value)
+        }
+      )
+  }
+
+  @Test
+  fun `sends formatted log message if encoder is available and sendDefaultPii is on`() {
+    var encoder = PatternLayoutEncoder()
+    encoder.pattern = "encoderadded %msg"
+    fixture =
+      Fixture(
+        minimumLevel = Level.TRACE,
+        enableLogs = true,
+        sendDefaultPii = true,
+        encoder = encoder,
+      )
+    fixture.logger.trace("Testing {} level", "TRACE")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertEquals("encoderadded Testing TRACE level", log.body)
+          val attributes = log.attributes!!
+          assertEquals("Testing {} level", attributes["sentry.message.template"]?.value)
+          assertEquals("TRACE", attributes["sentry.message.parameter.0"]?.value)
+        }
       )
   }
 

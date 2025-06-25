@@ -4817,6 +4817,7 @@ public abstract interface class io/sentry/logger/ILoggerApi {
 public abstract interface class io/sentry/logger/ILoggerBatchProcessor {
 	public abstract fun add (Lio/sentry/SentryLogEvent;)V
 	public abstract fun close (Z)V
+	public abstract fun flush (J)V
 }
 
 public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
@@ -4838,6 +4839,7 @@ public final class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILog
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
+	public fun flush (J)V
 }
 
 public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi {
@@ -4856,6 +4858,7 @@ public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi 
 public final class io/sentry/logger/NoOpLoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
+	public fun flush (J)V
 	public static fun getInstance ()Lio/sentry/logger/NoOpLoggerBatchProcessor;
 }
 
