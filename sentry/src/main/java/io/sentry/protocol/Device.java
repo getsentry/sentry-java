@@ -25,10 +25,13 @@ public final class Device implements JsonUnknown, JsonSerializable {
 
   /** Name of the device. */
   private @Nullable String name;
+
   /** Manufacturer of the device. */
   private @Nullable String manufacturer;
+
   /** Brand of the device. */
   private @Nullable String brand;
+
   /**
    * Family of the device model.
    *
@@ -36,12 +39,14 @@ public final class Device implements JsonUnknown, JsonSerializable {
    * would be a reasonable family, so would be `Samsung Galaxy`.
    */
   private @Nullable String family;
+
   /**
    * Device model.
    *
    * <p>This, for example, can be `Samsung Galaxy S3`.
    */
   private @Nullable String model;
+
   /**
    * Device model (internal identifier).
    *
@@ -51,6 +56,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
 
   /** Supported CPU architectures of the device. */
   private @Nullable String[] archs;
+
   /**
    * Current battery level in %.
    *
@@ -58,32 +64,44 @@ public final class Device implements JsonUnknown, JsonSerializable {
    * (in the range 0-100).
    */
   private @Nullable Float batteryLevel;
+
   /** Whether the device was charging or not. */
   private @Nullable Boolean charging;
+
   /** Whether the device was online or not. */
   private @Nullable Boolean online;
+
   /**
    * Current screen orientation.
    *
    * <p>This can be a string `portrait` or `landscape` to define the orientation of a device.
    */
   private @Nullable DeviceOrientation orientation;
+
   /** Simulator/prod indicator. */
   private @Nullable Boolean simulator;
+
   /** Total memory available in bytes. */
   private @Nullable Long memorySize;
+
   /** How much memory is still available in bytes. */
   private @Nullable Long freeMemory;
+
   /** How much memory is usable for the app in bytes. */
   private @Nullable Long usableMemory;
+
   /** Whether the device was low on memory. */
   private @Nullable Boolean lowMemory;
+
   /** Total storage size of the device in bytes. */
   private @Nullable Long storageSize;
+
   /** How much storage is free in bytes. */
   private @Nullable Long freeStorage;
+
   /** Total size of the attached external storage in bytes (eg: android SDK card). */
   private @Nullable Long externalStorageSize;
+
   /** Free size of the attached external storage in bytes (eg: android SDK card). */
   private @Nullable Long externalFreeStorage;
 
@@ -92,12 +110,16 @@ public final class Device implements JsonUnknown, JsonSerializable {
 
   /** Device Height screen resolution. */
   private @Nullable Integer screenHeightPixels;
+
   /** Device screen density. */
   private @Nullable Float screenDensity;
+
   /** Screen density as dots-per-inch. */
   private @Nullable Integer screenDpi;
+
   /** Indicator when the device was booted. */
   private @Nullable Date bootTime;
+
   /** Timezone of the device. */
   private @Nullable TimeZone timezone;
 
@@ -123,6 +145,8 @@ public final class Device implements JsonUnknown, JsonSerializable {
 
   /** Optional. CPU description. For example, Intel(R) Core(TM)2 Quad CPU Q6600 @ 2.40GHz. */
   private @Nullable String cpuDescription;
+
+  private @Nullable String chipset;
 
   @SuppressWarnings("unused")
   private @Nullable Map<String, @NotNull Object> unknown;
@@ -167,6 +191,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     this.processorCount = device.processorCount;
     this.processorFrequency = device.processorFrequency;
     this.cpuDescription = device.cpuDescription;
+    this.chipset = device.chipset;
 
     this.unknown = CollectionUtils.newConcurrentHashMap(device.unknown);
   }
@@ -429,6 +454,14 @@ public final class Device implements JsonUnknown, JsonSerializable {
     this.cpuDescription = cpuDescription;
   }
 
+  public @Nullable String getChipset() {
+    return chipset;
+  }
+
+  public void setChipset(final @Nullable String chipset) {
+    this.chipset = chipset;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -465,7 +498,8 @@ public final class Device implements JsonUnknown, JsonSerializable {
         && Objects.equals(batteryTemperature, device.batteryTemperature)
         && Objects.equals(processorCount, device.processorCount)
         && Objects.equals(processorFrequency, device.processorFrequency)
-        && Objects.equals(cpuDescription, device.cpuDescription);
+        && Objects.equals(cpuDescription, device.cpuDescription)
+        && Objects.equals(chipset, device.chipset);
   }
 
   @Override
@@ -503,7 +537,8 @@ public final class Device implements JsonUnknown, JsonSerializable {
             batteryTemperature,
             processorCount,
             processorFrequency,
-            cpuDescription);
+            cpuDescription,
+            chipset);
     result = 31 * result + Arrays.hashCode(archs);
     return result;
   }
@@ -567,6 +602,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     public static final String PROCESSOR_COUNT = "processor_count";
     public static final String CPU_DESCRIPTION = "cpu_description";
     public static final String PROCESSOR_FREQUENCY = "processor_frequency";
+    public static final String CHIPSET = "chipset";
   }
 
   @Override
@@ -671,6 +707,9 @@ public final class Device implements JsonUnknown, JsonSerializable {
     }
     if (cpuDescription != null) {
       writer.name(JsonKeys.CPU_DESCRIPTION).value(cpuDescription);
+    }
+    if (chipset != null) {
+      writer.name(JsonKeys.CHIPSET).value(chipset);
     }
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -816,6 +855,9 @@ public final class Device implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.CPU_DESCRIPTION:
             device.cpuDescription = reader.nextStringOrNull();
+            break;
+          case JsonKeys.CHIPSET:
+            device.chipset = reader.nextStringOrNull();
             break;
           default:
             if (unknown == null) {

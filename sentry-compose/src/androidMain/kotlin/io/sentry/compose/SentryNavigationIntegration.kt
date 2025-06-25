@@ -21,105 +21,100 @@ import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 private const val TRACE_ORIGIN_APPENDIX = "jetpack_compose"
 
 internal class SentryLifecycleObserver(
-    private val navController: NavController,
-    private val navListener: NavController.OnDestinationChangedListener =
-        SentryNavigationListener(traceOriginAppendix = TRACE_ORIGIN_APPENDIX)
+  private val navController: NavController,
+  private val navListener: NavController.OnDestinationChangedListener =
+    SentryNavigationListener(traceOriginAppendix = TRACE_ORIGIN_APPENDIX),
 ) : LifecycleEventObserver {
-
-    private companion object {
-        init {
-            SentryIntegrationPackageStorage.getInstance().addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
-        }
-    }
-
+  private companion object {
     init {
-        addIntegrationToSdkVersion("ComposeNavigation")
+      SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-compose", BuildConfig.VERSION_NAME)
     }
+  }
 
-    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-        if (event == Lifecycle.Event.ON_RESUME) {
-            navController.addOnDestinationChangedListener(navListener)
-        } else if (event == Lifecycle.Event.ON_PAUSE) {
-            navController.removeOnDestinationChangedListener(navListener)
-        }
-    }
+  init {
+    addIntegrationToSdkVersion("ComposeNavigation")
+  }
 
-    fun dispose() {
-        navController.removeOnDestinationChangedListener(navListener)
+  override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+    if (event == Lifecycle.Event.ON_RESUME) {
+      navController.addOnDestinationChangedListener(navListener)
+    } else if (event == Lifecycle.Event.ON_PAUSE) {
+      navController.removeOnDestinationChangedListener(navListener)
     }
+  }
+
+  fun dispose() {
+    navController.removeOnDestinationChangedListener(navListener)
+  }
 }
 
 /**
- * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
- * them to Sentry for every navigation event when being attached to the respective [NavHostController].
+ * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends them to
+ * Sentry for every navigation event when being attached to the respective [NavHostController].
  *
- * @param navListener An instance of a [SentryNavigationListener] that is shared with other sentry integrations, like
- * the fragment navigation integration.
+ * @param navListener An instance of a [SentryNavigationListener] that is shared with other sentry
+ *   integrations, like the fragment navigation integration.
  */
 @Composable
 @NonRestartableComposable
 public fun NavHostController.withSentryObservableEffect(
-    navListener: SentryNavigationListener
+  navListener: SentryNavigationListener
 ): NavHostController {
-    val navListenerSnapshot by rememberUpdatedState(navListener)
+  val navListenerSnapshot by rememberUpdatedState(navListener)
 
-    // As described in https://developer.android.com/codelabs/jetpack-compose-advanced-state-side-effects#6
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle, this) {
-        val observer = SentryLifecycleObserver(
-            this@withSentryObservableEffect,
-            navListener = navListenerSnapshot
-        )
+  // As described in
+  // https://developer.android.com/codelabs/jetpack-compose-advanced-state-side-effects#6
+  val lifecycle = LocalLifecycleOwner.current.lifecycle
+  DisposableEffect(lifecycle, this) {
+    val observer =
+      SentryLifecycleObserver(this@withSentryObservableEffect, navListener = navListenerSnapshot)
 
-        lifecycle.addObserver(observer)
+    lifecycle.addObserver(observer)
 
-        onDispose {
-            observer.dispose()
-            lifecycle.removeObserver(observer)
-        }
+    onDispose {
+      observer.dispose()
+      lifecycle.removeObserver(observer)
     }
-    return this
+  }
+  return this
 }
 
 /**
- * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
- * them to Sentry for every navigation event when being attached to the respective [NavHostController].
- * This version of withSentryObservableEffect should be used if you are working purely with Compose.
+ * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends them to
+ * Sentry for every navigation event when being attached to the respective [NavHostController]. This
+ * version of withSentryObservableEffect should be used if you are working purely with Compose.
  *
  * @param enableNavigationBreadcrumbs Whether the integration should capture breadcrumbs for
- * navigation events.
- * @param enableNavigationTracing Whether the integration should start a new [ITransaction]
- * with [SentryOptions.idleTimeout] for navigation events.
+ *   navigation events.
+ * @param enableNavigationTracing Whether the integration should start a new [ITransaction] with
+ *   [SentryOptions.idleTimeout] for navigation events.
  */
 @Composable
 @NonRestartableComposable
 public fun NavHostController.withSentryObservableEffect(
-    enableNavigationBreadcrumbs: Boolean = true,
-    enableNavigationTracing: Boolean = true
+  enableNavigationBreadcrumbs: Boolean = true,
+  enableNavigationTracing: Boolean = true,
 ): NavHostController {
-    val enableBreadcrumbsSnapshot by rememberUpdatedState(enableNavigationBreadcrumbs)
-    val enableTracingSnapshot by rememberUpdatedState(enableNavigationTracing)
+  val enableBreadcrumbsSnapshot by rememberUpdatedState(enableNavigationBreadcrumbs)
+  val enableTracingSnapshot by rememberUpdatedState(enableNavigationTracing)
 
-    return withSentryObservableEffect(
-        navListener = SentryNavigationListener(
-            enableNavigationBreadcrumbs = enableBreadcrumbsSnapshot,
-            enableNavigationTracing = enableTracingSnapshot,
-            traceOriginAppendix = TRACE_ORIGIN_APPENDIX
-        )
-    )
+  return withSentryObservableEffect(
+    navListener =
+      SentryNavigationListener(
+        enableNavigationBreadcrumbs = enableBreadcrumbsSnapshot,
+        enableNavigationTracing = enableTracingSnapshot,
+        traceOriginAppendix = TRACE_ORIGIN_APPENDIX,
+      )
+  )
 }
 
 /**
- * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends
- * them to Sentry for every navigation event when being attached to the respective [NavHostController].
+ * A [DisposableEffect] that captures a [Breadcrumb] and starts an [ITransaction] and sends them to
+ * Sentry for every navigation event when being attached to the respective [NavHostController].
  *
  * Used by the sentry android gradle plugin for Jetpack Compose instrumentation.
- *
  */
 @Composable
-internal fun NavHostController.withSentryObservableEffect(): NavHostController {
-    return withSentryObservableEffect(
-        enableNavigationBreadcrumbs = true,
-        enableNavigationTracing = true
-    )
-}
+internal fun NavHostController.withSentryObservableEffect(): NavHostController =
+  withSentryObservableEffect(enableNavigationBreadcrumbs = true, enableNavigationTracing = true)
