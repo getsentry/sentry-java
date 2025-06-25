@@ -13,6 +13,7 @@
 - Log parameter objects are now turned into `String` via `toString` ([#4515](https://github.com/getsentry/sentry-java/pull/4515))
   - One of the two `SentryLogEventAttributeValue` constructors did not convert the value previously.
 - Logs are now flushed on shutdown ([#4503](https://github.com/getsentry/sentry-java/pull/4503))
+- User Feedback: Do not redefine system attributes for `SentryUserFeedbackButton`, but reference them instead ([#4519](https://github.com/getsentry/sentry-java/pull/4519))
 
 ### Features
 
