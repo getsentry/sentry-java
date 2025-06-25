@@ -36,6 +36,11 @@
       <minimumLevel>INFO</minimumLevel>
     </appender>
     ```
+  - For Spring Boot you may also enable it in `application.properties` / `application.yml`:
+    ```properties
+    sentry.logs.enabled=true
+    sentry.logging.minimum-level=error
+    ```
   - If you manually initialize Sentry, you may also enable logs on `Sentry.init`:
     ```java
     Sentry.init(options -> {
