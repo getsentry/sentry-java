@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix Logback with Spring Boot ([#4523](https://github.com/getsentry/sentry-java/pull/4523))
+  - Enabling Sentry Logs in Spring Boot config did not work in 3.15.0
+
 ## 8.15.0
 
 ### Features
