@@ -32,7 +32,7 @@
       options.getLogs().setEnabled(true);
     });
     ```
-  - You may set `minimumLevel` in `log4j2.xml`:
+  - It is also possible to set the `minimumLevel` in `log4j2.xml`, meaning any log message >= the configured level will be sent to Sentry and show up under Logs:
     ```xml
     <Sentry name="Sentry"
         dsn="your DSN"
