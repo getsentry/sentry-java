@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Send JUL logs to Sentry as logs ([#4518](https://github.com/getsentry/sentry-java/pull/4518))
+  - You need to enable the logs feature, either in `sentry.properties`:
+    ```properties
+    logs.enabled=true
+    ```
+  - Or, if you manually initialize Sentry, you may also enable logs on `Sentry.init`:
+    ```java
+    Sentry.init(options -> {
+      ...
+      options.getLogs().setEnabled(true);
+    });
+    ```
+  - It is also possible to set the `minimumLevel` in `logging.properties`, meaning any log message >= the configured level will be sent to Sentry and show up under Logs:
+    ```properties
+    io.sentry.jul.SentryHandler.minimumLevel=CONFIG
+    ```
+
 ## 8.15.1
 
 ### Fixes
