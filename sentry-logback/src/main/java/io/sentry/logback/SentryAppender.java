@@ -83,7 +83,8 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
   @Override
   protected void append(@NotNull ILoggingEvent eventObject) {
-    if (options.getLogs().isEnabled() && eventObject.getLevel().isGreaterOrEqual(minimumLevel)) {
+    if (ScopesAdapter.getInstance().getOptions().getLogs().isEnabled()
+        && eventObject.getLevel().isGreaterOrEqual(minimumLevel)) {
       captureLog(eventObject);
     }
     if (eventObject.getLevel().isGreaterOrEqual(minimumEventLevel)) {
@@ -113,7 +114,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     final Message message = new Message();
 
     // if encoder is set we treat message+params as PII as encoders may be used to mask/strip PII
-    if (encoder == null || options.isSendDefaultPii()) {
+    if (encoder == null || ScopesAdapter.getInstance().getOptions().isSendDefaultPii()) {
       message.setMessage(loggingEvent.getMessage());
       message.setParams(toParams(loggingEvent.getArgumentArray()));
     }
@@ -184,7 +185,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     final @NotNull SentryAttributes attributes = SentryAttributes.of();
 
     // if encoder is set we treat message+params as PII as encoders may be used to mask/strip PII
-    if (encoder == null || options.isSendDefaultPii()) {
+    if (encoder == null || ScopesAdapter.getInstance().getOptions().isSendDefaultPii()) {
       attributes.add(
           SentryAttribute.stringAttribute("sentry.message.template", loggingEvent.getMessage()));
       arguments = loggingEvent.getArgumentArray();
