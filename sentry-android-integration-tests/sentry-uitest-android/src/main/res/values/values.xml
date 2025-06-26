@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+  <!-- Just a dummy styleable to verify resource merging -->
+  <declare-styleable name="DummyStyle" >
+    <attr name="android:drawableStart" format="reference" />
+    <attr name="android:drawablePadding" format="dimension" />
+    <attr name="android:padding" format="dimension" />
+    <attr name="android:textAllCaps" format="boolean" />
+    <attr name="android:background" format="reference|color" />
+    <attr name="android:textColor" format="reference|color" />
+    <attr name="android:text" format="string" />
+  </declare-styleable>
+
   <bool tools:ignore="UnusedResources" name="leak_canary_allow_in_non_debuggable_build">true</bool>
 </resources>

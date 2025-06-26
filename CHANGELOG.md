@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 8.15.1
+
+### Fixes
+
+- Enabling Sentry Logs through Logback in Spring Boot config did not work in 3.15.0 ([#4523](https://github.com/getsentry/sentry-java/pull/4523))
+
+## 8.15.0
 
 ### Features
 
@@ -13,6 +19,7 @@
 - Log parameter objects are now turned into `String` via `toString` ([#4515](https://github.com/getsentry/sentry-java/pull/4515))
   - One of the two `SentryLogEventAttributeValue` constructors did not convert the value previously.
 - Logs are now flushed on shutdown ([#4503](https://github.com/getsentry/sentry-java/pull/4503))
+- User Feedback: Do not redefine system attributes for `SentryUserFeedbackButton`, but reference them instead ([#4519](https://github.com/getsentry/sentry-java/pull/4519))
 
 ### Features
 
@@ -52,6 +59,7 @@
     ```properties
     logs.enabled=true
     ```
+- Automatically use `SentryOptions.Logs.BeforeSendLogCallback` Spring beans ([#4509](https://github.com/getsentry/sentry-java/pull/4509))
 
 ### Dependencies
 
