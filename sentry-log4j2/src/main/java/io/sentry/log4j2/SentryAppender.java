@@ -65,7 +65,8 @@ public class SentryAppender extends AbstractAppender {
   }
 
   /**
-   * @deprecated This constructor is deprecated. Please use {@link #SentryAppender(String, Filter, String, Level, Level, Level, Boolean, ITransportFactory, IScopes, String[])} instead.
+   * @deprecated This constructor is deprecated. Please use {@link #SentryAppender(String, Filter,
+   *     String, Level, Level, Level, Boolean, ITransportFactory, IScopes, String[])} instead.
    */
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
