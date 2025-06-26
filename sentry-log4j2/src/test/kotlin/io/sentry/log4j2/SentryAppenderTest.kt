@@ -5,7 +5,9 @@ import io.sentry.InitPriority
 import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.SentryLevel
+import io.sentry.SentryLogLevel
 import io.sentry.checkEvent
+import io.sentry.checkLogs
 import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import java.time.Instant
@@ -49,6 +51,7 @@ class SentryAppenderTest {
       transportFactory: ITransportFactory? = null,
       minimumBreadcrumbLevel: Level? = null,
       minimumEventLevel: Level? = null,
+      minimumLevel: Level? = null,
       debug: Boolean? = null,
       contextTags: List<String>? = null,
     ): ExtendedLogger {
@@ -64,6 +67,7 @@ class SentryAppenderTest {
           "http://key@localhost/proj",
           minimumBreadcrumbLevel,
           minimumEventLevel,
+          minimumLevel,
           debug,
           this.transportFactory,
           ScopesAdapter.getInstance(),
@@ -237,6 +241,72 @@ class SentryAppenderTest {
 
     verify(fixture.transport)
       .send(checkEvent { event -> assertEquals(SentryLevel.FATAL, event.level) }, anyOrNull())
+  }
+
+  @Test
+  fun `converts trace log level to Sentry log level`() {
+    val logger = fixture.getSut(minimumLevel = Level.TRACE)
+    logger.trace("testing trace level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { event -> assertEquals(SentryLogLevel.TRACE, event.items.first().level) })
+  }
+
+  @Test
+  fun `converts debug log level to Sentry log level`() {
+    val logger = fixture.getSut(minimumLevel = Level.DEBUG)
+    logger.debug("testing debug level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { event -> assertEquals(SentryLogLevel.DEBUG, event.items.first().level) })
+  }
+
+  @Test
+  fun `converts info log level to Sentry log level`() {
+    val logger = fixture.getSut(minimumLevel = Level.INFO)
+    logger.info("testing info level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { event -> assertEquals(SentryLogLevel.INFO, event.items.first().level) })
+  }
+
+  @Test
+  fun `converts warn log level to Sentry log level`() {
+    val logger = fixture.getSut(minimumLevel = Level.WARN)
+    logger.warn("testing warn level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { event -> assertEquals(SentryLogLevel.WARN, event.items.first().level) })
+  }
+
+  @Test
+  fun `converts error log level to Sentry log level`() {
+    val logger = fixture.getSut(minimumLevel = Level.ERROR)
+    logger.error("testing error level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { event -> assertEquals(SentryLogLevel.ERROR, event.items.first().level) })
+  }
+
+  @Test
+  fun `converts fatal log level to Sentry log level`() {
+    val logger = fixture.getSut(minimumLevel = Level.FATAL)
+    logger.fatal("testing fatal level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { event -> assertEquals(SentryLogLevel.FATAL, event.items.first().level) })
   }
 
   @Test

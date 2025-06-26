@@ -20,6 +20,27 @@
     ```properties
     io.sentry.jul.SentryHandler.minimumLevel=CONFIG
     ```
+- Send Log4j2 logs to Sentry as logs ([#4517](https://github.com/getsentry/sentry-java/pull/4517))
+  - You need to enable the logs feature either in `sentry.properties`:
+    ```properties
+    logs.enabled=true
+    ```
+  - If you manually initialize Sentry, you may also enable logs on `Sentry.init`:
+    ```java
+    Sentry.init(options -> {
+      ...
+      options.getLogs().setEnabled(true);
+    });
+    ```
+  - It is also possible to set the `minimumLevel` in `log4j2.xml`, meaning any log message >= the configured level will be sent to Sentry and show up under Logs:
+    ```xml
+    <Sentry name="Sentry"
+        dsn="your DSN"
+        minimumBreadcrumbLevel="DEBUG"
+        minimumEventLevel="WARN"
+        minimumLevel="DEBUG"
+    />
+    ```
 
 ## 8.15.1
 
