@@ -4,7 +4,7 @@
 
 ### Features
 
-- Send JUL logs to Sentry as logs ([#4502](https://github.com/getsentry/sentry-java/pull/4502))
+- Send JUL logs to Sentry as logs ([#4518](https://github.com/getsentry/sentry-java/pull/4518))
   - You need to enable the logs feature, either in `sentry.properties`:
     ```properties
     logs.enabled=true
