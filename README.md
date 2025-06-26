@@ -70,7 +70,7 @@ This repo uses the following ways to release SDK updates:
 # Useful links and docs
 
 * A deep dive into how we built [Session Replay for Android](https://www.droidcon.com/2024/11/22/rewind-and-resolve-a-deep-dive-into-building-session-replay-for-android/) at Droidcon London 2024.
-* Current Javadocs [generated from source code](https://getsentry.github.io/sentry-java/).
+* Current Javadocs [generated from source code](https://javadoc.io/doc/io.sentry/sentry/latest/index.html).
 * Java SDK version 1.x [can still be found here](https://docs.sentry.io/clients/java/).
 * Migration page from [sentry-android 1.x and 2.x to sentry-android 4.x](https://docs.sentry.io/platforms/android/migration/).
 * Migration page from [sentry 1.x to sentry 4.x](https://docs.sentry.io/platforms/java/migration/).
