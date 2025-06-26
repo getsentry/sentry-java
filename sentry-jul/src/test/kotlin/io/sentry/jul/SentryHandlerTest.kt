@@ -3,8 +3,10 @@ package io.sentry.jul
 import io.sentry.InitPriority
 import io.sentry.Sentry
 import io.sentry.SentryLevel
+import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.checkEvent
+import io.sentry.checkLogs
 import io.sentry.test.initForTest
 import io.sentry.transport.ITransport
 import java.time.Instant
@@ -29,6 +31,7 @@ class SentryHandlerTest {
   private class Fixture(
     minimumBreadcrumbLevel: Level? = null,
     minimumEventLevel: Level? = null,
+    minimumLevel: Level? = null,
     val configureWithLogManager: Boolean = false,
     val transport: ITransport = mock(),
     contextTags: List<String>? = null,
@@ -45,6 +48,7 @@ class SentryHandlerTest {
       handler = SentryHandler(options, configureWithLogManager, true)
       handler.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
       handler.setMinimumEventLevel(minimumEventLevel)
+      handler.setMinimumLevel(minimumLevel)
       handler.level = Level.ALL
       logger.handlers.forEach { logger.removeHandler(it) }
       logger.addHandler(handler)
@@ -400,5 +404,71 @@ class SentryHandlerTest {
         },
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun `converts finest log level to Sentry log level`() {
+    fixture = Fixture(minimumLevel = Level.FINEST)
+    fixture.logger.finest("testing trace level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { event -> assertEquals(SentryLogLevel.TRACE, event.items.first().level) })
+  }
+
+  @Test
+  fun `converts fine log level to Sentry log level`() {
+    fixture = Fixture(minimumLevel = Level.FINE)
+    fixture.logger.fine("testing trace level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { event -> assertEquals(SentryLogLevel.DEBUG, event.items.first().level) })
+  }
+
+  @Test
+  fun `converts config log level to Sentry log level`() {
+    fixture = Fixture(minimumLevel = Level.CONFIG)
+    fixture.logger.config("testing debug level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { event -> assertEquals(SentryLogLevel.DEBUG, event.items.first().level) })
+  }
+
+  @Test
+  fun `converts info log level to Sentry log level`() {
+    fixture = Fixture(minimumLevel = Level.INFO)
+    fixture.logger.info("testing info level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { event -> assertEquals(SentryLogLevel.INFO, event.items.first().level) })
+  }
+
+  @Test
+  fun `converts warn log level to Sentry log level`() {
+    fixture = Fixture(minimumLevel = Level.WARNING)
+    fixture.logger.warning("testing warn level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { event -> assertEquals(SentryLogLevel.WARN, event.items.first().level) })
+  }
+
+  @Test
+  fun `converts severe log level to Sentry log level`() {
+    fixture = Fixture(minimumLevel = Level.SEVERE)
+    fixture.logger.severe("testing error level")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(checkLogs { event -> assertEquals(SentryLogLevel.ERROR, event.items.first().level) })
   }
 }
