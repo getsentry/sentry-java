@@ -13,6 +13,7 @@ jackson = "2.18.3"
 jetbrainsCompose = "1.6.11"
 kotlin = "1.9.24"
 kotlin-compatible-version = "1.6"
+ktorClient = "3.0.0"
 logback = "1.2.9"
 log4j2 = "2.20.0"
 nopen = "1.0.1"
@@ -94,6 +95,8 @@ jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClient" }
+ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktorClient" }
 log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j2" }
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j2" }
 leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version = "2.14" }
