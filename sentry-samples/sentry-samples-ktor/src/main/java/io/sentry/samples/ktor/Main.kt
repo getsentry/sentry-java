@@ -21,9 +21,11 @@ fun main() {
   val client =
     HttpClient(Java) { install(SentryKtorClientPlugin) { failedRequestTargets = listOf(".*") } }
 
+  val tx = Sentry.startTransaction("My Transaction", "test")
   runBlocking { makeRequests(client) }
 
   Sentry.captureMessage("Ktor client sample done")
+  tx.finish()
 }
 
 suspend fun makeRequests(client: HttpClient) {

@@ -68,7 +68,7 @@ internal const val TRACE_ORIGIN = "auto.http.ktor"
 
 /**
  * Sentry plugin for Ktor HTTP client that provides automatic instrumentation for HTTP requests,
- * including distributed tracing, breadcrumbs, and error capturing.
+ * including error capturing, request/response breadcrumbs, and distributed tracing.
  */
 public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
   createClientPlugin(SENTRY_KTOR_CLIENT_PLUGIN_KEY, ::SentryKtorClientPluginConfig) {
