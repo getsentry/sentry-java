@@ -7,16 +7,23 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.util.*
 import io.ktor.util.pipeline.*
+import io.sentry.BaggageHeader
 import io.sentry.HttpStatusCodeRange
 import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLongDate
 import io.sentry.SentryOptions
+import io.sentry.SpanStatus
 import io.sentry.kotlin.SentryContext
+import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
+import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
+import io.sentry.util.SpanUtils
+import io.sentry.util.TracingUtils
 import kotlinx.coroutines.withContext
 
 /** Configuration for the Sentry Ktor client plugin. */
@@ -57,6 +64,7 @@ public class SentryKtorClientPluginConfig {
 }
 
 internal const val SENTRY_KTOR_CLIENT_PLUGIN_KEY = "SentryKtorClientPlugin"
+internal const val TRACE_ORIGIN = "auto.http.ktor"
 
 /**
  * Sentry plugin for Ktor HTTP client that provides automatic instrumentation for HTTP requests,
@@ -78,17 +86,45 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
     // Attributes
     // Request start time for breadcrumbs
     val requestStartTimestampKey = AttributeKey<Long>("SentryRequestStartTimestamp")
+    // Span associated with the request
+    val requestSpanKey = AttributeKey<ISpan>("SentryRequestSpan")
 
     onRequest { request, _ ->
-      request.attributes.put(requestStartTimestampKey, System.currentTimeMillis())
-      // TODO: start span
-      // TODO: inject tracing headers
+      request.attributes.put(
+        requestStartTimestampKey,
+        CurrentDateProvider.getInstance().currentTimeMillis,
+      )
+
+      val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
+      val spanOp = "http.client"
+      val spanDescription = "${request.method.value.toString()} ${request.url.buildString()}"
+      val span =
+        if (parentSpan != null) parentSpan.startChild(spanOp, spanDescription)
+        else Sentry.startTransaction(spanDescription, spanOp)
+      request.attributes.put(requestSpanKey, span)
+
+      if (SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)) {
+        TracingUtils.traceIfAllowed(
+            scopes,
+            request.url.buildString(),
+            request.headers.getAll(BaggageHeader.BAGGAGE_HEADER),
+            span,
+          )
+          ?.let { tracingHeaders ->
+            request.headers[tracingHeaders.sentryTraceHeader.name] =
+              tracingHeaders.sentryTraceHeader.value
+            tracingHeaders.baggageHeader?.let {
+              request.headers.remove(BaggageHeader.BAGGAGE_HEADER)
+              request.headers[it.name] = it.value
+            }
+          }
+      }
     }
 
     onResponse { response ->
       val request = response.request
       val startTimestamp = response.call.attributes.getOrNull(requestStartTimestampKey)
-      val endTimestamp = System.currentTimeMillis()
+      val endTimestamp = CurrentDateProvider.getInstance().currentTimeMillis
 
       if (
         captureFailedRequests &&
@@ -100,7 +136,10 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
 
       SentryKtorClientUtils.addBreadcrumb(scopes, request, response, startTimestamp, endTimestamp)
 
-      // TODO: end span
+      response.call.attributes.getOrNull(requestSpanKey)?.let { span ->
+        val spanStatus = SpanStatus.fromHttpStatusCode(response.status.value)
+        span.finish(spanStatus, SentryLongDate(endTimestamp * 1000))
+      }
     }
 
     on(SentryKtorClientPluginContextHook()) { block -> block() }
