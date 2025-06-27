@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix javadoc on TransportResult ([#4528](https://github.com/getsentry/sentry-java/pull/4528))
+
 ## 8.16.0
 
 ### Features
