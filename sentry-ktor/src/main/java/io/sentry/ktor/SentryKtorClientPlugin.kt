@@ -1,0 +1,121 @@
+package io.sentry.ktor
+
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.api.*
+import io.ktor.client.plugins.api.ClientPlugin
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.util.*
+import io.ktor.util.pipeline.*
+import io.sentry.HttpStatusCodeRange
+import io.sentry.IScopes
+import io.sentry.ISpan
+import io.sentry.ScopesAdapter
+import io.sentry.Sentry
+import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryOptions
+import io.sentry.kotlin.SentryContext
+import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
+import io.sentry.util.PropagationTargetsUtils
+import kotlinx.coroutines.withContext
+
+/** Configuration for the Sentry Ktor client plugin. */
+public class SentryKtorClientPluginConfig {
+  /** The [IScopes] instance to use. Defaults to [ScopesAdapter.getInstance]. */
+  public var scopes: IScopes = ScopesAdapter.getInstance()
+
+  /** Callback to customize or drop spans before they are created. Return null to drop the span. */
+  public var beforeSpan: BeforeSpanCallback? = null
+
+  /** Whether to capture HTTP client errors as Sentry events. Defaults to true. */
+  public var captureFailedRequests: Boolean = true
+
+  /**
+   * The HTTP status code ranges that should be considered as failed requests. Defaults to 500-599
+   * (server errors).
+   */
+  public var failedRequestStatusCodes: List<HttpStatusCodeRange> =
+    listOf(HttpStatusCodeRange(HttpStatusCodeRange.DEFAULT_MIN, HttpStatusCodeRange.DEFAULT_MAX))
+
+  /**
+   * The list of targets (URLs) for which failed requests should be captured. Supports regex
+   * patterns. Defaults to capture all requests.
+   */
+  public var failedRequestTargets: List<String> = listOf(SentryOptions.DEFAULT_PROPAGATION_TARGETS)
+
+  /** Callback interface for customizing spans before they are created. */
+  public fun interface BeforeSpanCallback {
+    /**
+     * Customize or drop a span before it's created.
+     *
+     * @param span The span to customize
+     * @param request The HTTP request being executed
+     * @return The customized span, or null to drop the span
+     */
+    public fun execute(span: ISpan, request: HttpRequestBuilder): ISpan?
+  }
+}
+
+internal const val SENTRY_KTOR_CLIENT_PLUGIN_KEY = "SentryKtorClientPlugin"
+
+/**
+ * Sentry plugin for Ktor HTTP client that provides automatic instrumentation for HTTP requests,
+ * including distributed tracing, breadcrumbs, and error capturing.
+ */
+public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
+  createClientPlugin(SENTRY_KTOR_CLIENT_PLUGIN_KEY, ::SentryKtorClientPluginConfig) {
+    // Init
+    SentryIntegrationPackageStorage.getInstance()
+      .addPackage("maven:io.sentry:sentry-ktor", BuildConfig.VERSION_NAME)
+    addIntegrationToSdkVersion("Ktor")
+
+    // Options
+    val scopes = pluginConfig.scopes
+    val captureFailedRequests = pluginConfig.captureFailedRequests
+    val failedRequestStatusCodes = pluginConfig.failedRequestStatusCodes
+    val failedRequestTargets = pluginConfig.failedRequestTargets
+
+    // Attributes
+    // Request start time for breadcrumbs
+    val requestStartTimestampKey = AttributeKey<Long>("SentryRequestStartTimestamp")
+
+    onRequest { request, _ ->
+      request.attributes.put(requestStartTimestampKey, System.currentTimeMillis())
+      // TODO: start span
+      // TODO: inject tracing headers
+    }
+
+    onResponse { response ->
+      val request = response.request
+      val startTimestamp = response.call.attributes.getOrNull(requestStartTimestampKey)
+      val endTimestamp = System.currentTimeMillis()
+
+      if (
+        captureFailedRequests &&
+          failedRequestStatusCodes.any { it.isInRange(response.status.value) } &&
+          PropagationTargetsUtils.contain(failedRequestTargets, request.url.toString())
+      ) {
+        SentryKtorClientUtils.captureClientError(scopes, request, response)
+      }
+
+      SentryKtorClientUtils.addBreadcrumb(scopes, request, response, startTimestamp, endTimestamp)
+
+      // TODO: end span
+    }
+
+    on(SentryKtorClientPluginContextHook()) { block -> block() }
+  }
+
+public open class SentryKtorClientPluginContextHook :
+  ClientHook<suspend (suspend () -> Unit) -> Unit> {
+  private val phase = PipelinePhase("SentryKtorClientPluginContext")
+
+  override fun install(client: HttpClient, handler: suspend (suspend () -> Unit) -> Unit) {
+    client.requestPipeline.insertPhaseBefore(HttpRequestPipeline.Before, phase)
+    client.requestPipeline.intercept(phase) {
+      withContext(SentryContext(Sentry.forkedCurrentScope(SENTRY_KTOR_CLIENT_PLUGIN_KEY))) {
+        proceed()
+      }
+    }
+  }
+}
