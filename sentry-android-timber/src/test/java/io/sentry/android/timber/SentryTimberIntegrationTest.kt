@@ -2,6 +2,7 @@ package io.sentry.android.timber
 
 import io.sentry.IScopes
 import io.sentry.SentryLevel
+import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.protocol.SdkVersion
 import kotlin.test.BeforeTest
@@ -21,10 +22,12 @@ class SentryTimberIntegrationTest {
     fun getSut(
       minEventLevel: SentryLevel = SentryLevel.ERROR,
       minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
+      minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
     ): SentryTimberIntegration =
       SentryTimberIntegration(
         minEventLevel = minEventLevel,
         minBreadcrumbLevel = minBreadcrumbLevel,
+        minLogsLevel = minLogsLevel,
       )
   }
 
@@ -78,11 +81,16 @@ class SentryTimberIntegrationTest {
   @Test
   fun `Integrations pass the right min levels`() {
     val sut =
-      fixture.getSut(minEventLevel = SentryLevel.INFO, minBreadcrumbLevel = SentryLevel.DEBUG)
+      fixture.getSut(
+        minEventLevel = SentryLevel.INFO,
+        minBreadcrumbLevel = SentryLevel.DEBUG,
+        minLogsLevel = SentryLogLevel.TRACE,
+      )
     sut.register(fixture.scopes, fixture.options)
 
     assertEquals(sut.minEventLevel, SentryLevel.INFO)
     assertEquals(sut.minBreadcrumbLevel, SentryLevel.DEBUG)
+    assertEquals(sut.minLogsLevel, SentryLogLevel.TRACE)
   }
 
   @Test
