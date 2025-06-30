@@ -15,7 +15,7 @@ public class SentryTimberTree(
   private val scopes: IScopes,
   private val minEventLevel: SentryLevel,
   private val minBreadcrumbLevel: SentryLevel,
-  private val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO
+  private val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
 ) : Timber.Tree() {
   private val pendingTag = ThreadLocal<String?>()
 
@@ -170,7 +170,7 @@ public class SentryTimberTree(
     }
 
     val level = getSentryLevel(priority)
-      val logLevel = getSentryLogLevel(priority)
+    val logLevel = getSentryLogLevel(priority)
     val sentryMessage =
       Message().apply {
         this.message = message
@@ -182,18 +182,16 @@ public class SentryTimberTree(
 
     captureEvent(level, tag, sentryMessage, throwable)
     addBreadcrumb(level, sentryMessage, throwable)
-      addLog(logLevel, message, throwable, *args)
+    addLog(logLevel, message, throwable, *args)
   }
 
   /** do not log if it's lower than min. required level. */
   private fun isLoggable(level: SentryLevel, minLevel: SentryLevel): Boolean =
     level.ordinal >= minLevel.ordinal
 
-    /** do not log if it's lower than min. required level. */
-    private fun isLoggable(
-        level: SentryLogLevel,
-        minLevel: SentryLogLevel
-    ): Boolean = level.ordinal >= minLevel.ordinal
+  /** do not log if it's lower than min. required level. */
+  private fun isLoggable(level: SentryLogLevel, minLevel: SentryLogLevel): Boolean =
+    level.ordinal >= minLevel.ordinal
 
   /** Captures an event with the given attributes */
   private fun captureEvent(
@@ -237,22 +235,22 @@ public class SentryTimberTree(
     }
   }
 
-    /** Send a Sentry Logs */
-    private fun addLog(
-        sentryLogLevel: SentryLogLevel,
-        msg: String?,
-        throwable: Throwable?,
-        vararg args: Any?
-    ) {
-        // checks the log level
-        if (isLoggable(sentryLogLevel, minLogsLevel)) {
-            val throwableMsg = throwable?.message
-            when {
-                msg != null -> scopes.logger().log(sentryLogLevel, msg, *args)
-                throwableMsg != null -> scopes.logger().log(sentryLogLevel, throwableMsg, *args)
-            }
-        }
+  /** Send a Sentry Logs */
+  private fun addLog(
+    sentryLogLevel: SentryLogLevel,
+    msg: String?,
+    throwable: Throwable?,
+    vararg args: Any?,
+  ) {
+    // checks the log level
+    if (isLoggable(sentryLogLevel, minLogsLevel)) {
+      val throwableMsg = throwable?.message
+      when {
+        msg != null -> scopes.logger().log(sentryLogLevel, msg, *args)
+        throwableMsg != null -> scopes.logger().log(sentryLogLevel, throwableMsg, *args)
+      }
     }
+  }
 
   /** Converts from Timber priority to SentryLevel. Fallback to SentryLevel.DEBUG. */
   private fun getSentryLevel(priority: Int): SentryLevel =
@@ -266,19 +264,16 @@ public class SentryTimberTree(
       else -> SentryLevel.DEBUG
     }
 
-    /**
-     * Converts from Timber priority to SentryLogLevel.
-     * Fallback to SentryLogLevel.DEBUG.
-     */
-    private fun getSentryLogLevel(priority: Int): SentryLogLevel {
-        return when (priority) {
-            Log.ASSERT -> SentryLogLevel.FATAL
-            Log.ERROR -> SentryLogLevel.ERROR
-            Log.WARN -> SentryLogLevel.WARN
-            Log.INFO -> SentryLogLevel.INFO
-            Log.DEBUG -> SentryLogLevel.DEBUG
-            Log.VERBOSE -> SentryLogLevel.TRACE
-            else -> SentryLogLevel.DEBUG
-        }
+  /** Converts from Timber priority to SentryLogLevel. Fallback to SentryLogLevel.DEBUG. */
+  private fun getSentryLogLevel(priority: Int): SentryLogLevel {
+    return when (priority) {
+      Log.ASSERT -> SentryLogLevel.FATAL
+      Log.ERROR -> SentryLogLevel.ERROR
+      Log.WARN -> SentryLogLevel.WARN
+      Log.INFO -> SentryLogLevel.INFO
+      Log.DEBUG -> SentryLogLevel.DEBUG
+      Log.VERBOSE -> SentryLogLevel.TRACE
+      else -> SentryLogLevel.DEBUG
     }
+  }
 }

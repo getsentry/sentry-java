@@ -16,7 +16,7 @@ import timber.log.Timber
 public class SentryTimberIntegration(
   public val minEventLevel: SentryLevel = SentryLevel.ERROR,
   public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
-  public val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO
+  public val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
 ) : Integration, Closeable {
   private lateinit var tree: SentryTimberTree
   private lateinit var logger: ILogger

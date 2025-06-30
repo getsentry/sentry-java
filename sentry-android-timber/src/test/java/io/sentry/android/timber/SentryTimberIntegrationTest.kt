@@ -22,12 +22,12 @@ class SentryTimberIntegrationTest {
     fun getSut(
       minEventLevel: SentryLevel = SentryLevel.ERROR,
       minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
-      minLogsLevel: SentryLogLevel = SentryLogLevel.INFO
+      minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
     ): SentryTimberIntegration =
       SentryTimberIntegration(
         minEventLevel = minEventLevel,
         minBreadcrumbLevel = minBreadcrumbLevel,
-        minLogsLevel = minLogsLevel
+        minLogsLevel = minLogsLevel,
       )
   }
 
@@ -82,9 +82,9 @@ class SentryTimberIntegrationTest {
   fun `Integrations pass the right min levels`() {
     val sut =
       fixture.getSut(
-          minEventLevel = SentryLevel.INFO,
-          minBreadcrumbLevel = SentryLevel.DEBUG,
-          minLogsLevel = SentryLogLevel.TRACE
+        minEventLevel = SentryLevel.INFO,
+        minBreadcrumbLevel = SentryLevel.DEBUG,
+        minLogsLevel = SentryLogLevel.TRACE,
       )
     sut.register(fixture.scopes, fixture.options)
 
