@@ -576,9 +576,9 @@ class JsonSerializerTest {
   fun `serializes profilingTraceData`() {
     val profilingTraceData = ProfilingTraceData(fixture.traceFile, NoOpTransaction.getInstance())
     val now = Date()
-    val measurementNow = SentryNanotimeDate()
+    val measurementNow = SentryNanotimeDate().nanoTimestamp()
     val measurementNowSeconds =
-      BigDecimal.valueOf(DateUtils.nanosToSeconds(measurementNow.nanoTimestamp()))
+      BigDecimal.valueOf(DateUtils.nanosToSeconds(measurementNow))
         .setScale(6, RoundingMode.DOWN)
         .toDouble()
     profilingTraceData.androidApiLevel = 21
@@ -777,31 +777,31 @@ class JsonSerializerTest {
                                 "screen_frame_rates": {
                                     "unit":"hz",
                                     "values":[
-                                        {"value":"60.1","elapsed_since_start_ns":"1"}
+                                        {"value":"60.1","elapsed_since_start_ns":"1", "timestamp": 0.000000001}
                                     ]
                                 },
                                 "frozen_frame_renders": {
                                     "unit":"nanosecond",
                                     "values":[
-                                        {"value":"100","elapsed_since_start_ns":"2"}
+                                        {"value":"100","elapsed_since_start_ns":"2", "timestamp": 0.000000002}
                                     ]
                                 },
                                 "memory_footprint": {
                                     "unit":"byte",
                                     "values":[
-                                        {"value":"1000","elapsed_since_start_ns":"3"}
+                                        {"value":"1000","elapsed_since_start_ns":"3", "timestamp": 0.000000003}
                                     ]
                                 },
                                 "memory_native_footprint": {
                                     "unit":"byte",
                                     "values":[
-                                        {"value":"1100","elapsed_since_start_ns":"4"}
+                                        {"value":"1100","elapsed_since_start_ns":"4", "timestamp": 0.000000004}
                                     ]
                                 },
                                 "cpu_usage": {
                                     "unit":"percent",
                                     "values":[
-                                        {"value":"17.04","elapsed_since_start_ns":"5"}
+                                        {"value":"17.04","elapsed_since_start_ns":"5","timestamp": 0.000000005}
                                     ]
                                 }
                             },
@@ -856,27 +856,27 @@ class JsonSerializerTest {
         ProfileMeasurement.ID_SCREEN_FRAME_RATES to
           ProfileMeasurement(
             ProfileMeasurement.UNIT_HZ,
-            listOf(ProfileMeasurementValue(1, 60.1, mock())),
+            listOf(ProfileMeasurementValue(1, 60.1, 1)),
           ),
         ProfileMeasurement.ID_FROZEN_FRAME_RENDERS to
           ProfileMeasurement(
             ProfileMeasurement.UNIT_NANOSECONDS,
-            listOf(ProfileMeasurementValue(2, 100, mock())),
+            listOf(ProfileMeasurementValue(2, 100, 2)),
           ),
         ProfileMeasurement.ID_MEMORY_FOOTPRINT to
           ProfileMeasurement(
             ProfileMeasurement.UNIT_BYTES,
-            listOf(ProfileMeasurementValue(3, 1000, mock())),
+            listOf(ProfileMeasurementValue(3, 1000, 3)),
           ),
         ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to
           ProfileMeasurement(
             ProfileMeasurement.UNIT_BYTES,
-            listOf(ProfileMeasurementValue(4, 1100, mock())),
+            listOf(ProfileMeasurementValue(4, 1100, 4)),
           ),
         ProfileMeasurement.ID_CPU_USAGE to
           ProfileMeasurement(
             ProfileMeasurement.UNIT_PERCENT,
-            listOf(ProfileMeasurementValue(5, 17.04, mock())),
+            listOf(ProfileMeasurementValue(5, 17.04, 5)),
           ),
       )
     assertEquals(expectedMeasurements, profilingTraceData.measurementsMap)
@@ -893,9 +893,8 @@ class JsonSerializerTest {
 
   @Test
   fun `serializes profileMeasurement`() {
-    val now = SentryNanotimeDate(Date(1), 1)
     val measurementValues =
-      listOf(ProfileMeasurementValue(1, 2, now), ProfileMeasurementValue(3, 4, now))
+      listOf(ProfileMeasurementValue(1, 2, 1000000), ProfileMeasurementValue(3, 4, 1000000))
     val profileMeasurement =
       ProfileMeasurement(ProfileMeasurement.UNIT_NANOSECONDS, measurementValues)
     val actual = serializeToString(profileMeasurement)
@@ -918,17 +917,14 @@ class JsonSerializerTest {
     val expected =
       ProfileMeasurement(
         ProfileMeasurement.UNIT_HZ,
-        listOf(
-          ProfileMeasurementValue(1, 60.1, SentryNanotimeDate(Date(0), 0)),
-          ProfileMeasurementValue(2, 100, SentryNanotimeDate(Date(1), 1)),
-        ),
+        listOf(ProfileMeasurementValue(1, 60.1, 0), ProfileMeasurementValue(2, 100, 1000000)),
       )
     assertEquals(expected, profileMeasurement)
   }
 
   @Test
   fun `serializes profileMeasurementValue`() {
-    val profileMeasurementValue = ProfileMeasurementValue(1, 2, SentryNanotimeDate(Date(1), 1))
+    val profileMeasurementValue = ProfileMeasurementValue(1, 2, 1000000)
     val actual = serializeToString(profileMeasurementValue)
     val expected = "{\"value\":2.0,\"elapsed_since_start_ns\":\"1\",\"timestamp\":0.001000}"
     assertEquals(expected, actual)
@@ -939,7 +935,7 @@ class JsonSerializerTest {
     val json = """{"value":"60.1","elapsed_since_start_ns":"1"}"""
     val profileMeasurementValue =
       fixture.serializer.deserialize(StringReader(json), ProfileMeasurementValue::class.java)
-    val expected = ProfileMeasurementValue(1, 60.1, mock())
+    val expected = ProfileMeasurementValue(1, 60.1, 0)
     assertEquals(expected, profileMeasurementValue)
     assertEquals(60.1, profileMeasurementValue?.value)
     assertEquals("1", profileMeasurementValue?.relativeStartNs)
@@ -951,7 +947,7 @@ class JsonSerializerTest {
     val json = """{"value":"60.1","elapsed_since_start_ns":"1","timestamp":0.001000}"""
     val profileMeasurementValue =
       fixture.serializer.deserialize(StringReader(json), ProfileMeasurementValue::class.java)
-    val expected = ProfileMeasurementValue(1, 60.1, SentryNanotimeDate(Date(1), 1))
+    val expected = ProfileMeasurementValue(1, 60.1, 1000000)
     assertEquals(expected, profileMeasurementValue)
     assertEquals(60.1, profileMeasurementValue?.value)
     assertEquals("1", profileMeasurementValue?.relativeStartNs)
@@ -967,9 +963,9 @@ class JsonSerializerTest {
     fixture.options.environment = "environment"
     val profileChunk =
       ProfileChunk(profilerId, chunkId, fixture.traceFile, HashMap(), 5.3, fixture.options)
-    val measurementNow = SentryNanotimeDate()
+    val measurementNow = SentryNanotimeDate().nanoTimestamp()
     val measurementNowSeconds =
-      BigDecimal.valueOf(DateUtils.nanosToSeconds(measurementNow.nanoTimestamp()))
+      BigDecimal.valueOf(DateUtils.nanosToSeconds(measurementNow))
         .setScale(6, RoundingMode.DOWN)
         .toDouble()
     profileChunk.sampledProfile = "sampled profile in base 64"
@@ -1089,31 +1085,31 @@ class JsonSerializerTest {
                                 "screen_frame_rates": {
                                     "unit":"hz",
                                     "values":[
-                                        {"value":"60.1","elapsed_since_start_ns":"1"}
+                                        {"value":"60.1","elapsed_since_start_ns":"1", "timestamp": 0.000000001}
                                     ]
                                 },
                                 "frozen_frame_renders": {
                                     "unit":"nanosecond",
                                     "values":[
-                                        {"value":"100","elapsed_since_start_ns":"2"}
+                                        {"value":"100","elapsed_since_start_ns":"2", "timestamp": 0.000000002}
                                     ]
                                 },
                                 "memory_footprint": {
                                     "unit":"byte",
                                     "values":[
-                                        {"value":"1000","elapsed_since_start_ns":"3"}
+                                        {"value":"1000","elapsed_since_start_ns":"3", "timestamp": 0.000000003}
                                     ]
                                 },
                                 "memory_native_footprint": {
                                     "unit":"byte",
                                     "values":[
-                                        {"value":"1100","elapsed_since_start_ns":"4"}
+                                        {"value":"1100","elapsed_since_start_ns":"4", "timestamp": 0.000000004}
                                     ]
                                 },
                                 "cpu_usage": {
                                     "unit":"percent",
                                     "values":[
-                                        {"value":"17.04","elapsed_since_start_ns":"5"}
+                                        {"value":"17.04","elapsed_since_start_ns":"5", "timestamp": 0.000000005}
                                     ]
                                 }
                             }
@@ -1134,27 +1130,27 @@ class JsonSerializerTest {
         ProfileMeasurement.ID_SCREEN_FRAME_RATES to
           ProfileMeasurement(
             ProfileMeasurement.UNIT_HZ,
-            listOf(ProfileMeasurementValue(1, 60.1, mock())),
+            listOf(ProfileMeasurementValue(1, 60.1, 1)),
           ),
         ProfileMeasurement.ID_FROZEN_FRAME_RENDERS to
           ProfileMeasurement(
             ProfileMeasurement.UNIT_NANOSECONDS,
-            listOf(ProfileMeasurementValue(2, 100, mock())),
+            listOf(ProfileMeasurementValue(2, 100, 2)),
           ),
         ProfileMeasurement.ID_MEMORY_FOOTPRINT to
           ProfileMeasurement(
             ProfileMeasurement.UNIT_BYTES,
-            listOf(ProfileMeasurementValue(3, 1000, mock())),
+            listOf(ProfileMeasurementValue(3, 1000, 3)),
           ),
         ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT to
           ProfileMeasurement(
             ProfileMeasurement.UNIT_BYTES,
-            listOf(ProfileMeasurementValue(4, 1100, mock())),
+            listOf(ProfileMeasurementValue(4, 1100, 4)),
           ),
         ProfileMeasurement.ID_CPU_USAGE to
           ProfileMeasurement(
             ProfileMeasurement.UNIT_PERCENT,
-            listOf(ProfileMeasurementValue(5, 17.04, mock())),
+            listOf(ProfileMeasurementValue(5, 17.04, 5)),
           ),
       )
     assertEquals(expectedMeasurements, profileChunk.measurements)
