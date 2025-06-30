@@ -30,9 +30,7 @@ import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarc
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import java.io.File
 import java.lang.ref.WeakReference
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.LazyThreadSafetyMode.NONE
 import kotlin.math.roundToInt
@@ -62,7 +60,9 @@ internal class ScreenshotRecorder(
   private val debugOverlayDrawable = DebugOverlayDrawable()
 
   fun capture() {
-    options.logger.log(DEBUG, "Capturing screenshot, isCapturing: %s", isCapturing.get())
+    if (options.sessionReplay.isDebug) {
+      options.logger.log(DEBUG, "Capturing screenshot, isCapturing: %s", isCapturing.get())
+    }
     if (!isCapturing.get()) {
       if (options.sessionReplay.isDebug) {
         options.logger.log(DEBUG, "ScreenshotRecorder is paused, not capturing screenshot")
@@ -70,12 +70,14 @@ internal class ScreenshotRecorder(
       return
     }
 
-    options.logger.log(
-      DEBUG,
-      "Capturing screenshot, contentChanged: %s, lastCaptureSuccessful: %s",
-      contentChanged.get(),
-      lastCaptureSuccessful.get(),
-    )
+    if (options.sessionReplay.isDebug) {
+      options.logger.log(
+        DEBUG,
+        "Capturing screenshot, contentChanged: %s, lastCaptureSuccessful: %s",
+        contentChanged.get(),
+        lastCaptureSuccessful.get(),
+      )
+    }
 
     if (!contentChanged.get() && lastCaptureSuccessful.get()) {
       screenshotRecorderCallback?.onScreenshotRecorded(screenshot)
@@ -135,8 +137,7 @@ internal class ScreenshotRecorder(
                 val (visibleRects, color) =
                   when (node) {
                     is ImageViewHierarchyNode -> {
-                      listOf(node.visibleRect) to
-                        screenshot.dominantColorForRect(node.visibleRect)
+                      listOf(node.visibleRect) to screenshot.dominantColorForRect(node.visibleRect)
                     }
 
                     is TextViewHierarchyNode -> {

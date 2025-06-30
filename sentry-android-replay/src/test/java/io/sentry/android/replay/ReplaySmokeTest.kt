@@ -20,14 +20,12 @@ import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SystemOutLogger
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
-import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import java.time.Duration
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.BeforeTest
@@ -51,8 +49,6 @@ import org.robolectric.Robolectric.buildActivity
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowPixelCopy
-import java.util.concurrent.Executors
-import kotlin.concurrent.thread
 
 @RunWith(AndroidJUnit4::class)
 @Config(
@@ -64,10 +60,11 @@ class ReplaySmokeTest {
   @get:Rule val tmpDir = TemporaryFolder()
 
   internal class Fixture {
-    val options = SentryOptions().apply {
-      setLogger(SystemOutLogger())
-      isDebug = true
-    }
+    val options =
+      SentryOptions().apply {
+        setLogger(SystemOutLogger())
+        isDebug = true
+      }
     val scope = Scope(options)
     val scopes =
       mock<IScopes> {
@@ -99,9 +96,7 @@ class ReplaySmokeTest {
         mainLooperHandler =
           mock {
             whenever(mock.handler).thenReturn(ImmediateHandler())
-            whenever(mock.post(any())).then {
-              (it.arguments[0] as Runnable).run()
-            }
+            whenever(mock.post(any())).then { (it.arguments[0] as Runnable).run() }
             whenever(mock.postDelayed(any(), anyLong())).then {
               // have to use another thread here otherwise it will block the test thread
               recordingThread.schedule(

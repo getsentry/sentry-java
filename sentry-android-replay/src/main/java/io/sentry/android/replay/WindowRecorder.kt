@@ -33,8 +33,7 @@ internal class WindowRecorder(
   private val rootViews = ArrayList<WeakReference<View>>()
   private var lastKnownWindowSize: Point = Point()
   private val rootViewsLock = AutoClosableReentrantLock()
-  @Volatile
-  private var capturer: Capturer? = null
+  @Volatile private var capturer: Capturer? = null
 
   private class Capturer(
     private val options: SentryOptions,
@@ -46,12 +45,17 @@ internal class WindowRecorder(
     private val isRecording = AtomicBoolean(true)
 
     fun resume() {
-      options.logger.log(DEBUG, "Resuming the capture runnable.")
+      if (options.sessionReplay.isDebug) {
+        options.logger.log(DEBUG, "Resuming the capture runnable.")
+      }
       recorder?.resume()
       isRecording.getAndSet(true)
       val posted = mainLooperHandler.post(this)
       if (!posted) {
-        options.logger.log(WARNING, "Failed to post the capture runnable, main looper is not ready.")
+        options.logger.log(
+          WARNING,
+          "Failed to post the capture runnable, main looper is not ready.",
+        )
       }
     }
 
@@ -69,24 +73,33 @@ internal class WindowRecorder(
     override fun run() {
       // protection against the case where the capture is executed after the recording has stopped
       if (!isRecording.get()) {
-        options.logger.log(DEBUG, "Not capturing frames, recording is not running.")
+        if (options.sessionReplay.isDebug) {
+          options.logger.log(DEBUG, "Not capturing frames, recording is not running.")
+        }
         return
       }
 
       try {
-        options.logger.log(DEBUG, "Capturing a frame.")
+        if (options.sessionReplay.isDebug) {
+          options.logger.log(DEBUG, "Capturing a frame.")
+        }
         recorder?.capture()
       } catch (e: Throwable) {
         options.logger.log(ERROR, "Failed to capture a frame", e)
       }
 
-      options.logger.log(
-        DEBUG,
-        "Posting the capture runnable again, frame rate is ${config?.frameRate ?: 1} fps.",
-      )
+      if (options.sessionReplay.isDebug) {
+        options.logger.log(
+          DEBUG,
+          "Posting the capture runnable again, frame rate is ${config?.frameRate ?: 1} fps.",
+        )
+      }
       val posted = mainLooperHandler.postDelayed(this, 1000L / (config?.frameRate ?: 1))
       if (!posted) {
-        options.logger.log(WARNING, "Failed to post the capture runnable, main looper is shutting down.")
+        options.logger.log(
+          WARNING,
+          "Failed to post the capture runnable, main looper is shutting down.",
+        )
       }
     }
   }
@@ -177,7 +190,10 @@ internal class WindowRecorder(
         100L, // delay the first run by a bit, to allow root view listener to register
       )
     if (!posted) {
-      options.logger.log(WARNING, "Failed to post the capture runnable, main looper is shutting down.")
+      options.logger.log(
+        WARNING,
+        "Failed to post the capture runnable, main looper is shutting down.",
+      )
     }
   }
 
