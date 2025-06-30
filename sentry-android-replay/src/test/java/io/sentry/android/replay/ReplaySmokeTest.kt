@@ -60,11 +60,7 @@ class ReplaySmokeTest {
   @get:Rule val tmpDir = TemporaryFolder()
 
   internal class Fixture {
-    val options =
-      SentryOptions().apply {
-        setLogger(SystemOutLogger())
-        isDebug = true
-      }
+    val options = SentryOptions()
     val scope = Scope(options)
     val scopes =
       mock<IScopes> {
