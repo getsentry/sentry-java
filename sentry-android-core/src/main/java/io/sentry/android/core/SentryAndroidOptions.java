@@ -160,6 +160,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   @NotNull
   private NdkHandlerStrategy ndkHandlerStrategy =
       NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_DEFAULT;
+
   /**
    * Enable the Java to NDK Scope sync. The default value for sentry-java is disabled and enabled
    * for sentry-android.

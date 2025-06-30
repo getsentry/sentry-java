@@ -22,10 +22,13 @@ import org.jetbrains.annotations.Nullable;
 public final class SdkInfo implements JsonUnknown, JsonSerializable {
   /** The internal name of the SDK. */
   private @Nullable String sdkName;
+
   /** The major version of the SDK as integer or 0. */
   private @Nullable Integer versionMajor;
+
   /** The minor version of the SDK as integer or 0. */
   private @Nullable Integer versionMinor;
+
   /** The patch version of the SDK as integer or 0. */
   private @Nullable Integer versionPatchlevel;
 

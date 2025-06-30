@@ -8,43 +8,41 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.timber.BuildConfig.VERSION_NAME
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
-import timber.log.Timber
 import java.io.Closeable
+import timber.log.Timber
 
-/**
- * Sentry integration for Timber.
- */
+/** Sentry integration for Timber. */
 public class SentryTimberIntegration(
-    public val minEventLevel: SentryLevel = SentryLevel.ERROR,
-    public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO
+  public val minEventLevel: SentryLevel = SentryLevel.ERROR,
+  public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
 ) : Integration, Closeable {
-    private lateinit var tree: SentryTimberTree
-    private lateinit var logger: ILogger
+  private lateinit var tree: SentryTimberTree
+  private lateinit var logger: ILogger
 
-    private companion object {
-        init {
-            SentryIntegrationPackageStorage.getInstance()
-                .addPackage("maven:io.sentry:sentry-android-timber", VERSION_NAME)
-        }
+  private companion object {
+    init {
+      SentryIntegrationPackageStorage.getInstance()
+        .addPackage("maven:io.sentry:sentry-android-timber", VERSION_NAME)
     }
+  }
 
-    override fun register(scopes: IScopes, options: SentryOptions) {
-        logger = options.logger
+  override fun register(scopes: IScopes, options: SentryOptions) {
+    logger = options.logger
 
-        tree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel)
-        Timber.plant(tree)
+    tree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel)
+    Timber.plant(tree)
 
-        logger.log(SentryLevel.DEBUG, "SentryTimberIntegration installed.")
-        addIntegrationToSdkVersion("Timber")
+    logger.log(SentryLevel.DEBUG, "SentryTimberIntegration installed.")
+    addIntegrationToSdkVersion("Timber")
+  }
+
+  override fun close() {
+    if (this::tree.isInitialized) {
+      Timber.uproot(tree)
+
+      if (this::logger.isInitialized) {
+        logger.log(SentryLevel.DEBUG, "SentryTimberIntegration removed.")
+      }
     }
-
-    override fun close() {
-        if (this::tree.isInitialized) {
-            Timber.uproot(tree)
-
-            if (this::logger.isInitialized) {
-                logger.log(SentryLevel.DEBUG, "SentryTimberIntegration removed.")
-            }
-        }
-    }
+  }
 }
