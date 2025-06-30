@@ -14,6 +14,8 @@ import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -190,6 +192,14 @@ public final class UncaughtExceptionHandlerIntegration
   }
 
   /**
+   * Intermediary method before calling the actual recursive method. Used to initialize HashSet to
+   * keep track of visited handlers to avoid infinite recursion in case of cycles in the chain.
+   */
+  private void removeFromHandlerTree(@Nullable Thread.UncaughtExceptionHandler currentHandler) {
+    removeFromHandlerTree(currentHandler, new HashSet<>());
+  }
+
+  /**
    * Recursively traverses the chain of UncaughtExceptionHandlerIntegrations to find and remove this
    * specific integration instance.
    *
@@ -200,11 +210,32 @@ public final class UncaughtExceptionHandlerIntegration
    * the chain.
    *
    * <p>Recursion stops if the current handler is not an instance of
-   * UncaughtExceptionHandlerIntegration or the handler was found and removed.
+   * UncaughtExceptionHandlerIntegration, the handler was found and removed or a cycle was detected.
    *
    * @param currentHandler The current handler in the chain to examine
+   * @param visited Set of already visited handlers to detect cycles
    */
-  private void removeFromHandlerTree(@Nullable Thread.UncaughtExceptionHandler currentHandler) {
+  private void removeFromHandlerTree(
+      @Nullable Thread.UncaughtExceptionHandler currentHandler,
+      @NotNull Set<Thread.UncaughtExceptionHandler> visited) {
+    if (currentHandler != null) {
+      if (!visited.add(currentHandler)) {
+        if (options != null) {
+          options
+            .getLogger()
+            .log(
+              SentryLevel.WARNING,
+              "Cycle detected in UncaughtExceptionHandler chain while removing handler.");
+        }
+        return;
+      }
+    } else {
+      if (options != null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Found no current handler to remove.");
+      }
+      return;
+    }
+
     if (currentHandler instanceof UncaughtExceptionHandlerIntegration) {
       final UncaughtExceptionHandlerIntegration currentHandlerIntegration =
           (UncaughtExceptionHandlerIntegration) currentHandler;
@@ -218,7 +249,7 @@ public final class UncaughtExceptionHandlerIntegration
         }
 
       } else {
-        removeFromHandlerTree(currentHandlerIntegration.defaultExceptionHandler);
+        removeFromHandlerTree(currentHandlerIntegration.defaultExceptionHandler, visited);
       }
     }
   }
