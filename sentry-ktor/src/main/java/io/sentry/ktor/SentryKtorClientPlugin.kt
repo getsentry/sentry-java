@@ -8,6 +8,7 @@ import io.ktor.client.statement.*
 import io.ktor.util.*
 import io.ktor.util.pipeline.*
 import io.sentry.BaggageHeader
+import io.sentry.DateUtils
 import io.sentry.HttpStatusCodeRange
 import io.sentry.IScopes
 import io.sentry.ISpan
@@ -20,7 +21,6 @@ import io.sentry.SpanStatus
 import io.sentry.kotlin.SentryContext
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
-import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
@@ -95,7 +95,7 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
         CurrentDateProvider.getInstance().currentTimeMillis,
       )
 
-      val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
+      val parentSpan = Sentry.getCurrentScopes().span
       val spanOp = "http.client"
       val spanDescription = "${request.method.value.toString()} ${request.url.buildString()}"
       val span =
@@ -103,13 +103,13 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
         else Sentry.startTransaction(spanDescription, spanOp)
       request.attributes.put(requestSpanKey, span)
 
-      if (SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)) {
+      if (SpanUtils.isIgnored(Sentry.getCurrentScopes().options.getIgnoredSpanOrigins(), TRACE_ORIGIN)) {
         TracingUtils.traceIfAllowed(
-            scopes,
-            request.url.buildString(),
-            request.headers.getAll(BaggageHeader.BAGGAGE_HEADER),
-            span,
-          )
+          Sentry.getCurrentScopes(),
+          request.url.buildString(),
+          request.headers.getAll(BaggageHeader.BAGGAGE_HEADER),
+          span,
+        )
           ?.let { tracingHeaders ->
             request.headers[tracingHeaders.sentryTraceHeader.name] =
               tracingHeaders.sentryTraceHeader.value
@@ -128,8 +128,8 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
 
       if (
         captureFailedRequests &&
-          failedRequestStatusCodes.any { it.isInRange(response.status.value) } &&
-          PropagationTargetsUtils.contain(failedRequestTargets, request.url.toString())
+        failedRequestStatusCodes.any { it.isInRange(response.status.value) } &&
+        PropagationTargetsUtils.contain(failedRequestTargets, request.url.toString())
       ) {
         SentryKtorClientUtils.captureClientError(scopes, request, response)
       }
@@ -138,21 +138,23 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
 
       response.call.attributes.getOrNull(requestSpanKey)?.let { span ->
         val spanStatus = SpanStatus.fromHttpStatusCode(response.status.value)
-        span.finish(spanStatus, SentryLongDate(endTimestamp * 1000))
+        span.finish(spanStatus, SentryLongDate(DateUtils.millisToNanos(endTimestamp)))
       }
     }
 
-    on(SentryKtorClientPluginContextHook()) { block -> block() }
+    on(SentryKtorClientPluginContextHook(scopes)) { block -> block() }
   }
 
-public open class SentryKtorClientPluginContextHook :
-  ClientHook<suspend (suspend () -> Unit) -> Unit> {
+public open class SentryKtorClientPluginContextHook(
+  protected val scopes: IScopes
+) : ClientHook<suspend (suspend () -> Unit) -> Unit> {
   private val phase = PipelinePhase("SentryKtorClientPluginContext")
 
   override fun install(client: HttpClient, handler: suspend (suspend () -> Unit) -> Unit) {
     client.requestPipeline.insertPhaseBefore(HttpRequestPipeline.Before, phase)
     client.requestPipeline.intercept(phase) {
-      withContext(SentryContext(Sentry.forkedCurrentScope(SENTRY_KTOR_CLIENT_PLUGIN_KEY))) {
+      val scopes = this@SentryKtorClientPluginContextHook.scopes.forkedCurrentScope(SENTRY_KTOR_CLIENT_PLUGIN_KEY)
+      withContext(SentryContext(scopes)) {
         proceed()
       }
     }

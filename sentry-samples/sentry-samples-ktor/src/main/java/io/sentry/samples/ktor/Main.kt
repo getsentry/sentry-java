@@ -5,6 +5,7 @@ import io.ktor.client.engine.java.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.sentry.Sentry
+import io.sentry.TransactionOptions
 import io.sentry.ktor.SentryKtorClientPlugin
 import kotlinx.coroutines.runBlocking
 
@@ -21,7 +22,9 @@ fun main() {
   val client =
     HttpClient(Java) { install(SentryKtorClientPlugin) { failedRequestTargets = listOf(".*") } }
 
-  val tx = Sentry.startTransaction("My Transaction", "test")
+  val opts = TransactionOptions().apply { isBindToScope = true }
+  val tx = Sentry.startTransaction("My Transaction", "test", opts)
+
   runBlocking { makeRequests(client) }
 
   Sentry.captureMessage("Ktor client sample done")
