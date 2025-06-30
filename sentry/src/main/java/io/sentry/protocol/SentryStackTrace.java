@@ -51,6 +51,7 @@ public final class SentryStackTrace implements JsonUnknown, JsonSerializable {
    * oldest to youngest. The last frame is the one creating the exception.
    */
   private @Nullable List<SentryStackFrame> frames;
+
   /**
    * Register values of the thread (top frame).
    *

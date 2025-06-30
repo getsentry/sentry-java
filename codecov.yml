@@ -1,6 +1,7 @@
 comment: no
 codecov:
   require_ci_to_pass: no
+  max_report_age: off
 
 coverage:
   status:

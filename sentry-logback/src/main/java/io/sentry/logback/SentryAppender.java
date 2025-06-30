@@ -16,11 +16,15 @@ import io.sentry.ITransportFactory;
 import io.sentry.InitPriority;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
+import io.sentry.SentryAttribute;
+import io.sentry.SentryAttributes;
 import io.sentry.SentryEvent;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
+import io.sentry.SentryLogLevel;
 import io.sentry.SentryOptions;
 import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.logger.SentryLogParameters;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SdkVersion;
@@ -46,6 +50,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   private @Nullable ITransportFactory transportFactory;
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
+  private @NotNull Level minimumLevel = Level.INFO;
   private @Nullable Encoder<ILoggingEvent> encoder;
 
   static {
@@ -78,6 +83,10 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
   @Override
   protected void append(@NotNull ILoggingEvent eventObject) {
+    if (ScopesAdapter.getInstance().getOptions().getLogs().isEnabled()
+        && eventObject.getLevel().isGreaterOrEqual(minimumLevel)) {
+      captureLog(eventObject);
+    }
     if (eventObject.getLevel().isGreaterOrEqual(minimumEventLevel)) {
       final Hint hint = new Hint();
       hint.set(SENTRY_SYNTHETIC_EXCEPTION, eventObject);
@@ -105,7 +114,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     final Message message = new Message();
 
     // if encoder is set we treat message+params as PII as encoders may be used to mask/strip PII
-    if (encoder == null || options.isSendDefaultPii()) {
+    if (encoder == null || ScopesAdapter.getInstance().getOptions().isSendDefaultPii()) {
       message.setMessage(loggingEvent.getMessage());
       message.setParams(toParams(loggingEvent.getArgumentArray()));
     }
@@ -160,6 +169,32 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
 
     return event;
+  }
+
+  /**
+   * Captures a Sentry log from Logback's {@link ILoggingEvent}.
+   *
+   * @param loggingEvent the logback event
+   */
+  // for the Android compatibility we must use old Java Date class
+  @SuppressWarnings("JdkObsolete")
+  protected void captureLog(@NotNull ILoggingEvent loggingEvent) {
+    final @NotNull SentryLogLevel sentryLevel = toSentryLogLevel(loggingEvent.getLevel());
+
+    @Nullable Object[] arguments = null;
+    final @NotNull SentryAttributes attributes = SentryAttributes.of();
+
+    // if encoder is set we treat message+params as PII as encoders may be used to mask/strip PII
+    if (encoder == null || ScopesAdapter.getInstance().getOptions().isSendDefaultPii()) {
+      attributes.add(
+          SentryAttribute.stringAttribute("sentry.message.template", loggingEvent.getMessage()));
+      arguments = loggingEvent.getArgumentArray();
+    }
+
+    final @NotNull String formattedMessage = formatted(loggingEvent);
+    final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
+
+    Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
   }
 
   private String formatted(@NotNull ILoggingEvent loggingEvent) {
@@ -218,6 +253,26 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     }
   }
 
+  /**
+   * Transforms a {@link Level} into an {@link SentryLogLevel}.
+   *
+   * @param level original level as defined in log4j.
+   * @return log level used within sentry.
+   */
+  private static @NotNull SentryLogLevel toSentryLogLevel(@NotNull Level level) {
+    if (level.isGreaterOrEqual(Level.ERROR)) {
+      return SentryLogLevel.ERROR;
+    } else if (level.isGreaterOrEqual(Level.WARN)) {
+      return SentryLogLevel.WARN;
+    } else if (level.isGreaterOrEqual(Level.INFO)) {
+      return SentryLogLevel.INFO;
+    } else if (level.isGreaterOrEqual(Level.DEBUG)) {
+      return SentryLogLevel.DEBUG;
+    } else {
+      return SentryLogLevel.TRACE;
+    }
+  }
+
   private @NotNull SdkVersion createSdkVersion(@NotNull SentryOptions sentryOptions) {
     SdkVersion sdkVersion = sentryOptions.getSdkVersion();
 
@@ -256,6 +311,16 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
   public @NotNull Level getMinimumEventLevel() {
     return minimumEventLevel;
+  }
+
+  public void setMinimumLevel(final @Nullable Level minimumLevel) {
+    if (minimumLevel != null) {
+      this.minimumLevel = minimumLevel;
+    }
+  }
+
+  public @NotNull Level getMinimumLevel() {
+    return minimumLevel;
   }
 
   @ApiStatus.Internal

@@ -3,12 +3,10 @@ package io.sentry.android.core;
 import android.os.SystemClock;
 import android.system.Os;
 import android.system.OsConstants;
-import io.sentry.CpuCollectionData;
 import io.sentry.ILogger;
 import io.sentry.IPerformanceSnapshotCollector;
 import io.sentry.PerformanceCollectionData;
 import io.sentry.SentryLevel;
-import io.sentry.SentryNanotimeDate;
 import io.sentry.util.FileUtils;
 import io.sentry.util.Objects;
 import java.io.File;
@@ -72,11 +70,8 @@ public final class AndroidCpuCollector implements IPerformanceSnapshotCollector 
     // number from 0 to 100, so we are going to multiply it by 100
     final double cpuUsagePercentage = cpuNanosDiff / (double) realTimeNanosDiff;
 
-    CpuCollectionData cpuData =
-        new CpuCollectionData(
-            (cpuUsagePercentage / (double) numCores) * 100.0, new SentryNanotimeDate());
-
-    performanceCollectionData.addCpuData(cpuData);
+    performanceCollectionData.setCpuUsagePercentage(
+        (cpuUsagePercentage / (double) numCores) * 100.0);
   }
 
   /** Read the /proc/self/stat file and parses the result. */
