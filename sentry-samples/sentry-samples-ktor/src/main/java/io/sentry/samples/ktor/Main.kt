@@ -3,7 +3,6 @@ package io.sentry.samples.ktor
 import io.ktor.client.*
 import io.ktor.client.engine.java.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.sentry.Sentry
 import io.sentry.TransactionOptions
 import io.sentry.ktor.SentryKtorClientPlugin

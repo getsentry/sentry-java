@@ -22,7 +22,8 @@ public abstract interface class io/sentry/ktor/SentryKtorClientPluginConfig$Befo
 }
 
 public class io/sentry/ktor/SentryKtorClientPluginContextHook : io/ktor/client/plugins/api/ClientHook {
-	public fun <init> ()V
+	public fun <init> (Lio/sentry/IScopes;)V
+	protected final fun getScopes ()Lio/sentry/IScopes;
 	public synthetic fun install (Lio/ktor/client/HttpClient;Ljava/lang/Object;)V
 	public fun install (Lio/ktor/client/HttpClient;Lkotlin/jvm/functions/Function2;)V
 }
