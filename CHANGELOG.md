@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Optimize scope when maxBreadcrumb is 0 ([#4504](https://github.com/getsentry/sentry-java/pull/4504))
 - Fix javadoc on TransportResult ([#4528](https://github.com/getsentry/sentry-java/pull/4528))
 
 ### Internal

@@ -466,7 +466,7 @@ public final class Scope implements IScope {
    */
   @Override
   public void addBreadcrumb(@NotNull Breadcrumb breadcrumb, @Nullable Hint hint) {
-    if (breadcrumb == null) {
+    if (breadcrumb == null || breadcrumbs instanceof DisabledQueue) {
       return;
     }
     if (hint == null) {
@@ -862,7 +862,7 @@ public final class Scope implements IScope {
   static @NotNull Queue<Breadcrumb> createBreadcrumbsList(final int maxBreadcrumb) {
     return maxBreadcrumb > 0
         ? SynchronizedQueue.synchronizedQueue(new CircularFifoQueue<>(maxBreadcrumb))
-        : SynchronizedQueue.synchronizedQueue(new DisabledQueue<>());
+        : new DisabledQueue<>();
   }
 
   /**
