@@ -917,10 +917,7 @@ class JsonSerializerTest {
     val expected =
       ProfileMeasurement(
         ProfileMeasurement.UNIT_HZ,
-        listOf(
-          ProfileMeasurementValue(1, 60.1, 0),
-          ProfileMeasurementValue(2, 100, 1000000),
-        ),
+        listOf(ProfileMeasurementValue(1, 60.1, 0), ProfileMeasurementValue(2, 100, 1000000)),
       )
     assertEquals(expected, profileMeasurement)
   }
