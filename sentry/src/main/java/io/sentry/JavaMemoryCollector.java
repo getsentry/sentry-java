@@ -14,8 +14,6 @@ public final class JavaMemoryCollector implements IPerformanceSnapshotCollector 
   @Override
   public void collect(final @NotNull PerformanceCollectionData performanceCollectionData) {
     final long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-    MemoryCollectionData memoryData =
-        new MemoryCollectionData(usedMemory, new SentryNanotimeDate());
-    performanceCollectionData.addMemoryData(memoryData);
+    performanceCollectionData.setUsedHeapMemory(usedMemory);
   }
 }

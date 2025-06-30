@@ -6,6 +6,10 @@
 
 - Fix javadoc on TransportResult ([#4528](https://github.com/getsentry/sentry-java/pull/4528))
 
+### Internal
+
+- Flattened PerformanceCollectionData ([#4505](https://github.com/getsentry/sentry-java/pull/4505))
+
 ## 8.16.0
 
 ### Features
