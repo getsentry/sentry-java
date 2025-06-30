@@ -25,6 +25,7 @@ public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
   private @NotNull String type;
 
   private @NotNull String value;
+
   /** only required for type=interval */
   private @Nullable String unit;
 

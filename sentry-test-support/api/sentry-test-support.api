@@ -1,9 +1,12 @@
 public final class io/sentry/AssertionsKt {
+	public static final fun assertEnvelopeFeedback (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;)Lio/sentry/SentryEvent;
+	public static synthetic fun assertEnvelopeFeedback$default (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lio/sentry/SentryEvent;
 	public static final fun assertEnvelopeProfile (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;)Lio/sentry/ProfilingTraceData;
 	public static synthetic fun assertEnvelopeProfile$default (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lio/sentry/ProfilingTraceData;
 	public static final fun assertEnvelopeTransaction (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;)Lio/sentry/protocol/SentryTransaction;
 	public static synthetic fun assertEnvelopeTransaction$default (Ljava/util/List;Lio/sentry/ILogger;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lio/sentry/protocol/SentryTransaction;
 	public static final fun checkEvent (Lkotlin/jvm/functions/Function1;)Lio/sentry/SentryEnvelope;
+	public static final fun checkLogs (Lkotlin/jvm/functions/Function1;)Lio/sentry/SentryEnvelope;
 	public static final fun checkTransaction (Lkotlin/jvm/functions/Function1;)Lio/sentry/SentryEnvelope;
 	public static final fun getMockServerRequestTimeoutMillis ()J
 }

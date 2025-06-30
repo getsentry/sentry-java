@@ -53,6 +53,10 @@ public final class SentryLogcatAdapter {
       @Nullable final String msg,
       @Nullable final Throwable tr) {
     final @NotNull ScopesAdapter scopes = ScopesAdapter.getInstance();
+    // Check if logs are enabled before doing expensive operations
+    if (!scopes.getOptions().getLogs().isEnabled()) {
+      return;
+    }
     if (tr == null) {
       scopes.logger().log(level, msg);
     } else {

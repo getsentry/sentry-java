@@ -31,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 public final class DebugMeta implements JsonUnknown, JsonSerializable {
   /** Information about the system SDK (e.g. iOS SDK). */
   private @Nullable SdkInfo sdkInfo;
+
   /** List of debug information files (debug images). */
   private @Nullable List<DebugImage> images;
 
