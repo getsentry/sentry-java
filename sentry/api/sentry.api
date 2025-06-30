@@ -4802,6 +4802,7 @@ public abstract interface class io/sentry/logger/ILoggerApi {
 public abstract interface class io/sentry/logger/ILoggerBatchProcessor {
 	public abstract fun add (Lio/sentry/SentryLogEvent;)V
 	public abstract fun close (Z)V
+	public abstract fun flush (J)V
 }
 
 public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
@@ -4823,6 +4824,7 @@ public final class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILog
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
+	public fun flush (J)V
 }
 
 public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi {
@@ -4841,6 +4843,7 @@ public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi 
 public final class io/sentry/logger/NoOpLoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
+	public fun flush (J)V
 	public static fun getInstance ()Lio/sentry/logger/NoOpLoggerBatchProcessor;
 }
 
@@ -5140,6 +5143,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun getBatteryTemperature ()Ljava/lang/Float;
 	public fun getBootTime ()Ljava/util/Date;
 	public fun getBrand ()Ljava/lang/String;
+	public fun getChipset ()Ljava/lang/String;
 	public fun getConnectionType ()Ljava/lang/String;
 	public fun getCpuDescription ()Ljava/lang/String;
 	public fun getExternalFreeStorage ()Ljava/lang/Long;
@@ -5177,6 +5181,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun setBootTime (Ljava/util/Date;)V
 	public fun setBrand (Ljava/lang/String;)V
 	public fun setCharging (Ljava/lang/Boolean;)V
+	public fun setChipset (Ljava/lang/String;)V
 	public fun setConnectionType (Ljava/lang/String;)V
 	public fun setCpuDescription (Ljava/lang/String;)V
 	public fun setExternalFreeStorage (Ljava/lang/Long;)V
@@ -5234,6 +5239,7 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public static final field BOOT_TIME Ljava/lang/String;
 	public static final field BRAND Ljava/lang/String;
 	public static final field CHARGING Ljava/lang/String;
+	public static final field CHIPSET Ljava/lang/String;
 	public static final field CONNECTION_TYPE Ljava/lang/String;
 	public static final field CPU_DESCRIPTION Ljava/lang/String;
 	public static final field EXTERNAL_FREE_STORAGE Ljava/lang/String;

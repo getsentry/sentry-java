@@ -60,6 +60,7 @@ public final class DebugImage implements JsonUnknown, JsonSerializable {
   private @Nullable String uuid;
 
   private @Nullable String type;
+
   /**
    * Unique debug identifier of the image.
    *
@@ -101,6 +102,7 @@ public final class DebugImage implements JsonUnknown, JsonSerializable {
    * image. This value might be required to retrieve debug files from certain symbol servers.
    */
   private @Nullable String debugFile;
+
   /**
    * Optional identifier of the code file.
    *
@@ -127,6 +129,7 @@ public final class DebugImage implements JsonUnknown, JsonSerializable {
    * equivalent to the debug identifier.
    */
   private @Nullable String codeId;
+
   /**
    * Path and name of the image file (required).
    *
@@ -137,6 +140,7 @@ public final class DebugImage implements JsonUnknown, JsonSerializable {
    * reports, such as Minidumps.
    */
   private @Nullable String codeFile;
+
   /**
    * Starting memory address of the image (required).
    *
@@ -144,6 +148,7 @@ public final class DebugImage implements JsonUnknown, JsonSerializable {
    * Should be a string in hex representation prefixed with `"0x"`.
    */
   private @Nullable String imageAddr;
+
   /**
    * Size of the image in bytes (required).
    *
@@ -151,6 +156,7 @@ public final class DebugImage implements JsonUnknown, JsonSerializable {
    * up to the next image, which might lead to invalid stack traces.
    */
   private @Nullable Long imageSize;
+
   /**
    * CPU architecture target.
    *

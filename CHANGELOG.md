@@ -4,7 +4,110 @@
 
 ### Fixes
 
+- Fix javadoc on TransportResult ([#4528](https://github.com/getsentry/sentry-java/pull/4528))
+
+## 8.16.0
+
+### Features
+
+- Send JUL logs to Sentry as logs ([#4518](https://github.com/getsentry/sentry-java/pull/4518))
+  - You need to enable the logs feature, either in `sentry.properties`:
+    ```properties
+    logs.enabled=true
+    ```
+  - Or, if you manually initialize Sentry, you may also enable logs on `Sentry.init`:
+    ```java
+    Sentry.init(options -> {
+      ...
+      options.getLogs().setEnabled(true);
+    });
+    ```
+  - It is also possible to set the `minimumLevel` in `logging.properties`, meaning any log message >= the configured level will be sent to Sentry and show up under Logs:
+    ```properties
+    io.sentry.jul.SentryHandler.minimumLevel=CONFIG
+    ```
+- Send Log4j2 logs to Sentry as logs ([#4517](https://github.com/getsentry/sentry-java/pull/4517))
+  - You need to enable the logs feature either in `sentry.properties`:
+    ```properties
+    logs.enabled=true
+    ```
+  - If you manually initialize Sentry, you may also enable logs on `Sentry.init`:
+    ```java
+    Sentry.init(options -> {
+      ...
+      options.getLogs().setEnabled(true);
+    });
+    ```
+  - It is also possible to set the `minimumLevel` in `log4j2.xml`, meaning any log message >= the configured level will be sent to Sentry and show up under Logs:
+    ```xml
+    <Sentry name="Sentry"
+        dsn="your DSN"
+        minimumBreadcrumbLevel="DEBUG"
+        minimumEventLevel="WARN"
+        minimumLevel="DEBUG"
+    />
+    ```
+
+## 8.15.1
+
+### Fixes
+
+- Enabling Sentry Logs through Logback in Spring Boot config did not work in 3.15.0 ([#4523](https://github.com/getsentry/sentry-java/pull/4523))
+
+## 8.15.0
+
+### Features
+
+- Add chipset to device context ([#4512](https://github.com/getsentry/sentry-java/pull/4512))
+
+### Fixes
+
 - No longer send out empty log envelopes ([#4497](https://github.com/getsentry/sentry-java/pull/4497))
+- Session Replay: Expand fix for crash on devices to all Unisoc/Spreadtrum chipsets ([#4510](https://github.com/getsentry/sentry-java/pull/4510))
+- Log parameter objects are now turned into `String` via `toString` ([#4515](https://github.com/getsentry/sentry-java/pull/4515))
+  - One of the two `SentryLogEventAttributeValue` constructors did not convert the value previously.
+- Logs are now flushed on shutdown ([#4503](https://github.com/getsentry/sentry-java/pull/4503))
+- User Feedback: Do not redefine system attributes for `SentryUserFeedbackButton`, but reference them instead ([#4519](https://github.com/getsentry/sentry-java/pull/4519))
+
+### Features
+
+- Send Logback logs to Sentry as logs ([#4502](https://github.com/getsentry/sentry-java/pull/4502))
+  - You need to enable the logs feature and can also set the `minimumLevel` for log events:
+    ```xml
+    <appender name="sentry" class="io.sentry.logback.SentryAppender">
+      <options>
+        <!-- NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard -->
+        <dsn>https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563</dsn>
+        <logs>
+          <enabled>true</enabled>
+        </logs>
+      </options>
+      <!-- Demonstrates how to modify the minimum values -->
+      <!-- Default for Events is ERROR -->
+      <minimumEventLevel>WARN</minimumEventLevel>
+      <!-- Default for Breadcrumbs is INFO -->
+      <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
+      <!-- Default for Log Events is INFO -->
+      <minimumLevel>INFO</minimumLevel>
+    </appender>
+    ```
+  - For Spring Boot you may also enable it in `application.properties` / `application.yml`:
+    ```properties
+    sentry.logs.enabled=true
+    sentry.logging.minimum-level=error
+    ```
+  - If you manually initialize Sentry, you may also enable logs on `Sentry.init`:
+    ```java
+    Sentry.init(options -> {
+      ...
+      options.getLogs().setEnabled(true);
+    });
+    ```
+  - Enabling via `sentry.properties` is also possible:
+    ```properties
+    logs.enabled=true
+    ```
+- Automatically use `SentryOptions.Logs.BeforeSendLogCallback` Spring beans ([#4509](https://github.com/getsentry/sentry-java/pull/4509))
 
 ### Internal
 

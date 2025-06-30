@@ -55,11 +55,13 @@ public class io/sentry/spring/boot/jakarta/SentryProperties$Logging {
 	public fun getLoggers ()Ljava/util/List;
 	public fun getMinimumBreadcrumbLevel ()Lorg/slf4j/event/Level;
 	public fun getMinimumEventLevel ()Lorg/slf4j/event/Level;
+	public fun getMinimumLevel ()Lorg/slf4j/event/Level;
 	public fun isEnabled ()Z
 	public fun setEnabled (Z)V
 	public fun setLoggers (Ljava/util/List;)V
 	public fun setMinimumBreadcrumbLevel (Lorg/slf4j/event/Level;)V
 	public fun setMinimumEventLevel (Lorg/slf4j/event/Level;)V
+	public fun setMinimumLevel (Lorg/slf4j/event/Level;)V
 }
 
 public class io/sentry/spring/boot/jakarta/SentryProperties$Reactive {

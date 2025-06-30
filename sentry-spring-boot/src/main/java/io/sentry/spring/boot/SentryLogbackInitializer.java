@@ -51,6 +51,9 @@ public class SentryLogbackInitializer implements GenericApplicationListener {
             Optional.ofNullable(sentryProperties.getLogging().getMinimumEventLevel())
                 .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
                 .ifPresent(sentryAppender::setMinimumEventLevel);
+            Optional.ofNullable(sentryProperties.getLogging().getMinimumLevel())
+                .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
+                .ifPresent(sentryAppender::setMinimumLevel);
 
             sentryAppender.start();
             logger.addAppender(sentryAppender);

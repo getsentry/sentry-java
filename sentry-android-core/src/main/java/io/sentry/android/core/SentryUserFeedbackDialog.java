@@ -12,6 +12,7 @@ import android.widget.Toast;
 import io.sentry.IScopes;
 import io.sentry.Sentry;
 import io.sentry.SentryFeedbackOptions;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Feedback;
@@ -34,6 +35,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
       final @Nullable OptionsConfiguration configuration) {
     super(context, themeResId);
     this.configuration = configuration;
+    SentryIntegrationPackageStorage.getInstance().addIntegration("UserFeedbackWidget");
   }
 
   @Override
@@ -264,6 +266,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     public Builder(Context context, int themeResId) {
       this(context, themeResId, null);
     }
+
     /**
      * Creates a builder for a {@link SentryUserFeedbackDialog} that uses the default alert dialog
      * theme. The {@code configuration} can be used to configure the feedback options for this
