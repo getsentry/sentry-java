@@ -19,11 +19,11 @@ nopen = "1.0.1"
 # see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
 # see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
 okhttp = "4.9.2"
-otel = "1.44.1"
-otelInstrumentation = "2.10.0"
-otelInstrumentationAlpha = "2.10.0-alpha"
+otel = "1.51.0"
+otelInstrumentation = "2.17.0"
+otelInstrumentationAlpha = "2.17.0-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
-otelSemanticConventions = "1.28.0-alpha"
+otelSemanticConventions = "1.34.0-alpha"
 retrofit = "2.9.0"
 slf4j = "1.7.30"
 springboot2 = "2.7.18"
