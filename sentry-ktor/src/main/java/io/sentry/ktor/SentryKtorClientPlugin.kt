@@ -19,6 +19,7 @@ import io.sentry.SentryLongDate
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.kotlin.SentryContext
+import io.sentry.ktor.SentryKtorClientPluginConfig.BeforeSpanCallback
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.PropagationTargetsUtils
@@ -59,7 +60,7 @@ public class SentryKtorClientPluginConfig {
      * @param request The HTTP request being executed
      * @return The customized span, or null to drop the span
      */
-    public fun execute(span: ISpan, request: HttpRequestBuilder): ISpan?
+    public fun execute(span: ISpan, request: HttpRequest): ISpan?
   }
 }
 
@@ -79,6 +80,7 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
 
     // Options
     val scopes = pluginConfig.scopes
+    val beforeSpan = pluginConfig.beforeSpan
     val captureFailedRequests = pluginConfig.captureFailedRequests
     val failedRequestStatusCodes = pluginConfig.failedRequestStatusCodes
     val failedRequestTargets = pluginConfig.failedRequestTargets
@@ -99,8 +101,7 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
       val spanOp = "http.client"
       val spanDescription = "${request.method.value.toString()} ${request.url.buildString()}"
       val span =
-        if (parentSpan != null) parentSpan.startChild(spanOp, spanDescription)
-        else Sentry.startTransaction(spanDescription, spanOp)
+        parentSpan?.startChild(spanOp, spanDescription) ?: Sentry.startTransaction(spanDescription, spanOp)
       request.attributes.put(requestSpanKey, span)
 
       if (
@@ -139,6 +140,17 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
       SentryKtorClientUtils.addBreadcrumb(scopes, request, response, startTimestamp, endTimestamp)
 
       response.call.attributes.getOrNull(requestSpanKey)?.let { span ->
+        var result: ISpan? = span
+
+        if (beforeSpan != null) {
+          result = beforeSpan.execute(span, request)
+        }
+
+        if (result == null) {
+          // span is dropped
+          span.spanContext.sampled = false
+        }
+
         val spanStatus = SpanStatus.fromHttpStatusCode(response.status.value)
         span.finish(spanStatus, SentryLongDate(DateUtils.millisToNanos(endTimestamp)))
       }
