@@ -8,6 +8,8 @@ import io.sentry.protocol.profiling.JfrProfile;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -246,7 +248,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     if (sampledProfile != null) {
       writer.name(JsonKeys.SAMPLED_PROFILE).value(logger, sampledProfile);
     }
-    writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
+    writer.name(JsonKeys.TIMESTAMP).value(logger, doubleToBigDecimal(timestamp));
     if (jfrProfile != null) {
       writer.name(JsonKeys.JRF_PROFILE).value(logger, jfrProfile);
     }
@@ -257,6 +259,10 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
       }
     }
     writer.endObject();
+  }
+
+  private @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
+    return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 
   @Nullable

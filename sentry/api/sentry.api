@@ -494,6 +494,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getInAppIncludes ()Ljava/util/List;
 	public fun getMaxRequestBodySize ()Lio/sentry/SentryOptions$RequestSize;
 	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
+	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
@@ -535,6 +536,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
+	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
@@ -1938,7 +1940,6 @@ public final class io/sentry/PerformanceCollectionData {
 
 public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/io/File;Ljava/util/Map;Ljava/lang/Double;Lio/sentry/SentryOptions;)V
 	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/io/File;Ljava/util/Map;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/SentryOptions;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
@@ -1964,7 +1965,7 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 }
 
 public final class io/sentry/ProfileChunk$Builder {
-	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/util/Map;Ljava/io/File;Lio/sentry/SentryDate;)V
+	public fun <init> (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Ljava/util/Map;Ljava/io/File;Lio/sentry/SentryDate;Ljava/lang/String;)V
 	public fun build (Lio/sentry/SentryOptions;)Lio/sentry/ProfileChunk;
 }
 

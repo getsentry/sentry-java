@@ -7,6 +7,8 @@ import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +31,8 @@ public final class JfrSample implements JsonUnknown, JsonSerializable {
   @Override
   public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger) throws IOException {
     writer.beginObject();
-    writer.name(JsonKeys.TIMESTAMP).value(logger, timestamp);
+
+    writer.name(JsonKeys.TIMESTAMP).value(logger, doubleToBigDecimal(timestamp));
     writer.name(JsonKeys.STACK_ID).value(logger, stackId);
 
     if (threadId != null) {
@@ -37,6 +40,10 @@ public final class JfrSample implements JsonUnknown, JsonSerializable {
     }
 
     writer.endObject();
+  }
+
+  private @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
+    return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 
   @Override

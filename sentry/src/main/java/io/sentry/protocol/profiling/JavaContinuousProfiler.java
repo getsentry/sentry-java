@@ -98,14 +98,6 @@ public final class JavaContinuousProfiler
           profilingTracesHz);
       return;
     }
-
-    //    profiler =
-    //      new AndroidProfiler(
-    //        profilingTracesDirPath,
-    //        (int) SECONDS.toMicros(1) / profilingTracesHz,
-    //        frameMetricsCollector,
-    //        null,
-    //        logger);
   }
 
   @SuppressWarnings("ReferenceEquality")
@@ -174,8 +166,7 @@ public final class JavaContinuousProfiler
     filename = SentryUUID.generateSentryId() + ".jfr";
     final String startData;
     try {
-      //      System.out.println("### Starting profiler with start,jfr,event=wall,file");
-      startData = profiler.execute("start,jfr,event=cpu,alloc,file=" + filename);
+      startData = profiler.execute("start,jfr,event=wall,file=" + filename);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
