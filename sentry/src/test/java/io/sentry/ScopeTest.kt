@@ -14,6 +14,7 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.Assert.assertArrayEquals
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
@@ -21,6 +22,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
 class ScopeTest {
@@ -329,6 +331,69 @@ class ScopeTest {
     val scope = Scope(options)
     scope.addBreadcrumb(Breadcrumb())
     assertEquals(1, scope.breadcrumbs.count())
+  }
+
+  @Test
+  fun `when adding breadcrumb and maxBreadcrumb is 0, beforeBreadcrumb is not executed`() {
+    var called = false
+    val options =
+      SentryOptions().apply {
+        maxBreadcrumbs = 0
+        beforeBreadcrumb =
+          SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
+            called = true
+            breadcrumb
+          }
+      }
+
+    val scope = Scope(options)
+    scope.addBreadcrumb(Breadcrumb())
+    assertEquals(0, scope.breadcrumbs.count())
+    assertFalse(called)
+  }
+
+  @Test
+  fun `when adding breadcrumb and maxBreadcrumb is not 0, beforeBreadcrumb is executed`() {
+    var called = false
+    val options =
+      SentryOptions().apply {
+        beforeBreadcrumb =
+          SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
+            called = true
+            breadcrumb
+          }
+      }
+
+    val scope = Scope(options)
+    scope.addBreadcrumb(Breadcrumb())
+    assertEquals(1, scope.breadcrumbs.count())
+    assertTrue(called)
+  }
+
+  @Test
+  fun `when adding breadcrumb and maxBreadcrumb is 0, scopesObservers are not called`() {
+    val observer = mock<IScopeObserver>()
+    val options =
+      SentryOptions().apply {
+        maxBreadcrumbs = 0
+        addScopeObserver(observer)
+      }
+
+    val scope = Scope(options)
+    scope.addBreadcrumb(Breadcrumb())
+    assertEquals(0, scope.breadcrumbs.count())
+    verifyNoInteractions(observer)
+  }
+
+  @Test
+  fun `when adding breadcrumb and maxBreadcrumb is not 0, scopesObservers are called`() {
+    val observer = mock<IScopeObserver>()
+    val options = SentryOptions().apply { addScopeObserver(observer) }
+
+    val scope = Scope(options)
+    scope.addBreadcrumb(Breadcrumb())
+    assertEquals(1, scope.breadcrumbs.count())
+    verify(observer).addBreadcrumb(any())
   }
 
   @Test
