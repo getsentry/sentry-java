@@ -31,7 +31,8 @@ public final class SpanDescriptionExtractor {
       return descriptionForDbSystem(otelSpan);
     }
 
-    final @Nullable String graphqlOperationType = attributes.get(GraphqlIncubatingAttributes.GRAPHQL_OPERATION_TYPE);
+    final @Nullable String graphqlOperationType =
+        attributes.get(GraphqlIncubatingAttributes.GRAPHQL_OPERATION_TYPE);
     if (graphqlOperationType != null) {
       return descriptionForGraphql(otelSpan);
     }
@@ -114,8 +115,12 @@ public final class SpanDescriptionExtractor {
 
   private OtelSpanInfo descriptionForGraphql(final @NotNull SpanData otelSpan) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
-    @Nullable String graphqlOperationType = attributes.get(GraphqlIncubatingAttributes.GRAPHQL_OPERATION_TYPE);
-    @Nullable String graphqlOperationName = attributes.get(GraphqlIncubatingAttributes.GRAPHQL_OPERATION_NAME);
+    @Nullable
+    String graphqlOperationType =
+        attributes.get(GraphqlIncubatingAttributes.GRAPHQL_OPERATION_TYPE);
+    @Nullable
+    String graphqlOperationName =
+        attributes.get(GraphqlIncubatingAttributes.GRAPHQL_OPERATION_NAME);
     if (graphqlOperationType != null && graphqlOperationName != null) {
       String description = graphqlOperationType + " " + graphqlOperationName;
       return new OtelSpanInfo(description, description, TransactionNameSource.TASK);
