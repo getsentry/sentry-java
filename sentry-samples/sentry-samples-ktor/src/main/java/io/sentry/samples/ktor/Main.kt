@@ -16,6 +16,7 @@ fun main() {
     options.isSendDefaultPii = true
     options.tracesSampleRate = 1.0
     options.addInAppInclude("io.sentry.samples")
+    options.isGlobalHubMode = true
   }
 
   val client =
@@ -35,9 +36,12 @@ suspend fun makeRequests(client: HttpClient) {
   client.get("https://httpbin.org/get")
   client.get("https://httpbin.org/status/404")
 
-  // Should create errors
-  client.get("https://httpbin.org/status/500")
-  client.get("https://httpbin.org/status/500?lol=test")
+  // Should create breadcrumbs and errors
+  client.get("https://httpbin.org/status/500?lol=test") // no tags
+  Sentry.setTag("lol", "test")
+  client.get("https://httpbin.org/status/502") // lol: test
+  Sentry.removeTag("lol")
+  client.get("https://httpbin.org/status/503?lol=test") // no tags
 
   // Should create breadcrumb
   client.post("https://httpbin.org/post") {
