@@ -6,6 +6,7 @@ import io.opentelemetry.sdk.trace.data.SpanData;
 import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
 import io.opentelemetry.semconv.incubating.DbIncubatingAttributes;
+import io.opentelemetry.semconv.incubating.GraphqlIncubatingAttributes;
 import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes;
 import io.sentry.protocol.TransactionNameSource;
 import org.jetbrains.annotations.ApiStatus;
@@ -28,6 +29,11 @@ public final class SpanDescriptionExtractor {
     final @Nullable String dbSystem = attributes.get(DbIncubatingAttributes.DB_SYSTEM);
     if (dbSystem != null) {
       return descriptionForDbSystem(otelSpan);
+    }
+
+    final @Nullable String graphqlOperationType = attributes.get(GraphqlIncubatingAttributes.GRAPHQL_OPERATION_TYPE);
+    if (graphqlOperationType != null) {
+      return descriptionForGraphql(otelSpan);
     }
 
     final @NotNull String name = otelSpan.getName();
@@ -104,5 +110,17 @@ public final class SpanDescriptionExtractor {
     }
 
     return new OtelSpanInfo("db", otelSpan.getName(), TransactionNameSource.TASK);
+  }
+
+  private OtelSpanInfo descriptionForGraphql(final @NotNull SpanData otelSpan) {
+    final @NotNull Attributes attributes = otelSpan.getAttributes();
+    @Nullable String graphqlOperationType = attributes.get(GraphqlIncubatingAttributes.GRAPHQL_OPERATION_TYPE);
+    @Nullable String graphqlOperationName = attributes.get(GraphqlIncubatingAttributes.GRAPHQL_OPERATION_NAME);
+    if (graphqlOperationType != null && graphqlOperationName != null) {
+      String description = graphqlOperationType + " " + graphqlOperationName;
+      return new OtelSpanInfo(description, description, TransactionNameSource.TASK);
+    }
+
+    return new OtelSpanInfo(otelSpan.getName(), otelSpan.getName(), TransactionNameSource.TASK);
   }
 }

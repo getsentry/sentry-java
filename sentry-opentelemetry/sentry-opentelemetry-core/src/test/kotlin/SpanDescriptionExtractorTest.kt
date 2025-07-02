@@ -10,6 +10,7 @@ import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.UrlAttributes
 import io.opentelemetry.semconv.incubating.DbIncubatingAttributes
+import io.opentelemetry.semconv.incubating.GraphqlIncubatingAttributes
 import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes
 import io.sentry.protocol.TransactionNameSource
 import kotlin.test.Test
@@ -251,6 +252,22 @@ class SpanDescriptionExtractorTest {
     assertEquals("span name", info.op)
     assertEquals("span description", info.description)
     assertEquals(TransactionNameSource.CUSTOM, info.transactionNameSource)
+  }
+
+  @Test
+  fun `sets op to graphql for span with graphql operation type`() {
+    givenAttributes(
+      mapOf(
+        GraphqlIncubatingAttributes.GRAPHQL_OPERATION_TYPE to "query",
+        GraphqlIncubatingAttributes.GRAPHQL_OPERATION_NAME to "GreetingQuery",
+      )
+    )
+
+    val info = whenExtractingSpanInfo()
+
+    assertEquals("query GreetingQuery", info.op)
+    assertEquals("query GreetingQuery", info.description)
+    assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
   }
 
   private fun createSpanContext(
