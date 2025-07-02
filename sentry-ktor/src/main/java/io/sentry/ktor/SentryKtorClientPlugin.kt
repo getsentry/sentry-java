@@ -106,11 +106,8 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
       val spanOp = "http.client"
       val spanDescription = "${request.method.value.toString()} ${request.url.buildString()}"
       val span: ISpan =
-        if (parentSpan != null) {
-          parentSpan.startChild(spanOp, spanDescription)
-        } else {
-          Sentry.startTransaction(spanDescription, spanOp)
-        }
+        parentSpan?.startChild(spanOp, spanDescription)
+          ?: Sentry.startTransaction(spanDescription, spanOp)
       span.spanContext.origin = TRACE_ORIGIN
       request.attributes.put(requestSpanKey, span)
 
@@ -196,11 +193,7 @@ public open class SentryKtorClientPluginContextHook(protected val scopes: IScope
         this@SentryKtorClientPluginContextHook.scopes.forkedCurrentScope(
           SENTRY_KTOR_CLIENT_PLUGIN_KEY
         )
-      withContext(SentryContext(scopes)) {
-        val s = Sentry.getCurrentScopes()
-        println(s)
-        proceed()
-      }
+      withContext(SentryContext(scopes)) { proceed() }
     }
   }
 }
