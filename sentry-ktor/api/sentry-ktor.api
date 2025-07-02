@@ -18,7 +18,7 @@ public final class io/sentry/ktor/SentryKtorClientPluginConfig {
 }
 
 public abstract interface class io/sentry/ktor/SentryKtorClientPluginConfig$BeforeSpanCallback {
-	public abstract fun execute (Lio/sentry/ISpan;Lio/ktor/client/request/HttpRequestBuilder;)Lio/sentry/ISpan;
+	public abstract fun execute (Lio/sentry/ISpan;Lio/ktor/client/request/HttpRequest;)Lio/sentry/ISpan;
 }
 
 public class io/sentry/ktor/SentryKtorClientPluginContextHook : io/ktor/client/plugins/api/ClientHook {

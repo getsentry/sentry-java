@@ -5,6 +5,7 @@ import io.ktor.client.plugins.api.*
 import io.ktor.client.plugins.api.ClientPlugin
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.util.pipeline.*
 import io.sentry.BaggageHeader
@@ -19,7 +20,6 @@ import io.sentry.SentryLongDate
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.kotlin.SentryContext
-import io.sentry.ktor.SentryKtorClientPluginConfig.BeforeSpanCallback
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.PropagationTargetsUtils
@@ -62,6 +62,9 @@ public class SentryKtorClientPluginConfig {
      */
     public fun execute(span: ISpan, request: HttpRequest): ISpan?
   }
+
+  /** Forcefully use the passed in scope. Used for testing. */
+  internal var forceScopes: Boolean = false
 }
 
 internal const val SENTRY_KTOR_CLIENT_PLUGIN_KEY = "SentryKtorClientPlugin"
@@ -84,6 +87,7 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
     val captureFailedRequests = pluginConfig.captureFailedRequests
     val failedRequestStatusCodes = pluginConfig.failedRequestStatusCodes
     val failedRequestTargets = pluginConfig.failedRequestTargets
+    val forceScopes = pluginConfig.forceScopes
 
     // Attributes
     // Request start time for breadcrumbs
@@ -97,18 +101,27 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
         CurrentDateProvider.getInstance().currentTimeMillis,
       )
 
-      val parentSpan = Sentry.getCurrentScopes().span
+      val parentSpan: ISpan? = if (forceScopes) scopes.getSpan() else Sentry.getSpan()
+
       val spanOp = "http.client"
       val spanDescription = "${request.method.value.toString()} ${request.url.buildString()}"
-      val span =
-        parentSpan?.startChild(spanOp, spanDescription) ?: Sentry.startTransaction(spanDescription, spanOp)
+      val span: ISpan =
+        if (parentSpan != null) {
+          parentSpan.startChild(spanOp, spanDescription)
+        } else {
+          Sentry.startTransaction(spanDescription, spanOp)
+        }
+      span.spanContext.origin = TRACE_ORIGIN
       request.attributes.put(requestSpanKey, span)
 
       if (
-        SpanUtils.isIgnored(Sentry.getCurrentScopes().options.getIgnoredSpanOrigins(), TRACE_ORIGIN)
+        !SpanUtils.isIgnored(
+          (if (forceScopes) scopes else Sentry.getCurrentScopes()).options.getIgnoredSpanOrigins(),
+          TRACE_ORIGIN,
+        )
       ) {
         TracingUtils.traceIfAllowed(
-            Sentry.getCurrentScopes(),
+            if (forceScopes) scopes else Sentry.getCurrentScopes(),
             request.url.buildString(),
             request.headers.getAll(BaggageHeader.BAGGAGE_HEADER),
             span,
@@ -121,6 +134,19 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
               request.headers[it.name] = it.value
             }
           }
+      }
+    }
+
+    client.requestPipeline.intercept(HttpRequestPipeline.Before) {
+      try {
+        proceed()
+      } catch (t: Throwable) {
+        context.attributes.getOrNull(requestSpanKey)?.apply {
+          throwable = t
+          status = SpanStatus.INTERNAL_ERROR
+          finish()
+        }
+        throw t
       }
     }
 
@@ -170,7 +196,11 @@ public open class SentryKtorClientPluginContextHook(protected val scopes: IScope
         this@SentryKtorClientPluginContextHook.scopes.forkedCurrentScope(
           SENTRY_KTOR_CLIENT_PLUGIN_KEY
         )
-      withContext(SentryContext(scopes)) { proceed() }
+      withContext(SentryContext(scopes)) {
+        val s = Sentry.getCurrentScopes()
+        println(s)
+        proceed()
+      }
     }
   }
 }
