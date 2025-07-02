@@ -338,10 +338,10 @@ class SentryKtorClientPluginTest {
     Unit = runBlocking {
     val sut =
       fixture.getSut(
-        optionsConfiguration = { options -> options.setTracePropagationTargets(emptyList()) },
         includeMockServerInTracePropagationTargets = false,
         keepDefaultTracePropagationTargets = false,
       )
+    fixture.options.setTracePropagationTargets(emptyList())
     sut.get(fixture.server.url("/hello").toString())
 
     val recordedRequest =
