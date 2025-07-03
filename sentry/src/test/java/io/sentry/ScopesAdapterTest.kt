@@ -1,282 +1,338 @@
 package io.sentry
 
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.initForTest
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
 
 class ScopesAdapterTest {
+  val scopes: IScopes = mock()
 
-    val scopes: IScopes = mock()
+  @BeforeTest
+  fun `set up`() {
+    initForTest { it.dsn = "https://key@localhost/proj" }
+    Sentry.setCurrentScopes(scopes)
+  }
 
-    @BeforeTest
-    fun `set up`() {
-        initForTest {
-            it.dsn = "https://key@localhost/proj"
-        }
-        Sentry.setCurrentScopes(scopes)
-    }
+  @AfterTest
+  fun shutdown() {
+    Sentry.close()
+  }
 
-    @AfterTest
-    fun shutdown() {
-        Sentry.close()
-    }
+  @Test
+  fun `isEnabled calls Scopes`() {
+    ScopesAdapter.getInstance().isEnabled
+    verify(scopes).isEnabled
+  }
 
-    @Test fun `isEnabled calls Scopes`() {
-        ScopesAdapter.getInstance().isEnabled
-        verify(scopes).isEnabled
-    }
+  @Test
+  fun `captureEvent calls Scopes`() {
+    val event = mock<SentryEvent>()
+    val hint = mock<Hint>()
+    val scopeCallback = mock<ScopeCallback>()
+    ScopesAdapter.getInstance().captureEvent(event, hint)
+    verify(scopes).captureEvent(eq(event), eq(hint))
 
-    @Test fun `captureEvent calls Scopes`() {
-        val event = mock<SentryEvent>()
-        val hint = mock<Hint>()
-        val scopeCallback = mock<ScopeCallback>()
-        ScopesAdapter.getInstance().captureEvent(event, hint)
-        verify(scopes).captureEvent(eq(event), eq(hint))
+    ScopesAdapter.getInstance().captureEvent(event, hint, scopeCallback)
+    verify(scopes).captureEvent(eq(event), eq(hint), eq(scopeCallback))
+  }
 
-        ScopesAdapter.getInstance().captureEvent(event, hint, scopeCallback)
-        verify(scopes).captureEvent(eq(event), eq(hint), eq(scopeCallback))
-    }
+  @Test
+  fun `captureMessage calls Scopes`() {
+    val scopeCallback = mock<ScopeCallback>()
+    val sentryLevel = mock<SentryLevel>()
+    ScopesAdapter.getInstance().captureMessage("message", sentryLevel)
+    verify(scopes).captureMessage(eq("message"), eq(sentryLevel))
 
-    @Test fun `captureMessage calls Scopes`() {
-        val scopeCallback = mock<ScopeCallback>()
-        val sentryLevel = mock<SentryLevel>()
-        ScopesAdapter.getInstance().captureMessage("message", sentryLevel)
-        verify(scopes).captureMessage(eq("message"), eq(sentryLevel))
+    ScopesAdapter.getInstance().captureMessage("message", sentryLevel, scopeCallback)
+    verify(scopes).captureMessage(eq("message"), eq(sentryLevel), eq(scopeCallback))
+  }
 
-        ScopesAdapter.getInstance().captureMessage("message", sentryLevel, scopeCallback)
-        verify(scopes).captureMessage(eq("message"), eq(sentryLevel), eq(scopeCallback))
-    }
+  @Test
+  fun `captureFeedback calls Scopes`() {
+    val scopeCallback = mock<ScopeCallback>()
+    val hint = mock<Hint>()
+    val feedback = Feedback("message")
+    ScopesAdapter.getInstance().captureFeedback(feedback)
+    verify(scopes).captureFeedback(eq(feedback))
 
-    @Test fun `captureEnvelope calls Scopes`() {
-        val envelope = mock<SentryEnvelope>()
-        val hint = mock<Hint>()
-        ScopesAdapter.getInstance().captureEnvelope(envelope, hint)
-        verify(scopes).captureEnvelope(eq(envelope), eq(hint))
-    }
+    ScopesAdapter.getInstance().captureFeedback(feedback, hint)
+    verify(scopes).captureFeedback(eq(feedback), eq(hint))
 
-    @Test fun `captureException calls Scopes`() {
-        val throwable = mock<Throwable>()
-        val hint = mock<Hint>()
-        val scopeCallback = mock<ScopeCallback>()
-        ScopesAdapter.getInstance().captureException(throwable, hint)
-        verify(scopes).captureException(eq(throwable), eq(hint))
+    ScopesAdapter.getInstance().captureFeedback(feedback, hint, scopeCallback)
+    verify(scopes).captureFeedback(eq(feedback), eq(hint), eq(scopeCallback))
+  }
 
-        ScopesAdapter.getInstance().captureException(throwable, hint, scopeCallback)
-        verify(scopes).captureException(eq(throwable), eq(hint), eq(scopeCallback))
-    }
+  @Test
+  fun `captureEnvelope calls Scopes`() {
+    val envelope = mock<SentryEnvelope>()
+    val hint = mock<Hint>()
+    ScopesAdapter.getInstance().captureEnvelope(envelope, hint)
+    verify(scopes).captureEnvelope(eq(envelope), eq(hint))
+  }
 
-    @Test fun `captureUserFeedback calls Scopes`() {
-        val userFeedback = mock<UserFeedback>()
-        ScopesAdapter.getInstance().captureUserFeedback(userFeedback)
-        verify(scopes).captureUserFeedback(eq(userFeedback))
-    }
+  @Test
+  fun `captureException calls Scopes`() {
+    val throwable = mock<Throwable>()
+    val hint = mock<Hint>()
+    val scopeCallback = mock<ScopeCallback>()
+    ScopesAdapter.getInstance().captureException(throwable, hint)
+    verify(scopes).captureException(eq(throwable), eq(hint))
 
-    @Test fun `captureCheckIn calls Scopes`() {
-        val checkIn = mock<CheckIn>()
-        ScopesAdapter.getInstance().captureCheckIn(checkIn)
-        verify(scopes).captureCheckIn(eq(checkIn))
-    }
+    ScopesAdapter.getInstance().captureException(throwable, hint, scopeCallback)
+    verify(scopes).captureException(eq(throwable), eq(hint), eq(scopeCallback))
+  }
 
-    @Test fun `startSession calls Scopes`() {
-        ScopesAdapter.getInstance().startSession()
-        verify(scopes).startSession()
-    }
+  @Test
+  fun `captureUserFeedback calls Scopes`() {
+    val userFeedback = mock<UserFeedback>()
+    ScopesAdapter.getInstance().captureUserFeedback(userFeedback)
+    verify(scopes).captureUserFeedback(eq(userFeedback))
+  }
 
-    @Test fun `endSession calls Scopes`() {
-        ScopesAdapter.getInstance().endSession()
-        verify(scopes).endSession()
-    }
+  @Test
+  fun `captureCheckIn calls Scopes`() {
+    val checkIn = mock<CheckIn>()
+    ScopesAdapter.getInstance().captureCheckIn(checkIn)
+    verify(scopes).captureCheckIn(eq(checkIn))
+  }
 
-    @Test fun `close calls Scopes`() {
-        ScopesAdapter.getInstance().close()
-        verify(scopes).close(false)
-    }
+  @Test
+  fun `startSession calls Scopes`() {
+    ScopesAdapter.getInstance().startSession()
+    verify(scopes).startSession()
+  }
 
-    @Test fun `close with isRestarting true calls Scopes with isRestarting false`() {
-        ScopesAdapter.getInstance().close(true)
-        verify(scopes).close(false)
-    }
+  @Test
+  fun `endSession calls Scopes`() {
+    ScopesAdapter.getInstance().endSession()
+    verify(scopes).endSession()
+  }
 
-    @Test fun `close with isRestarting false calls Scopes with isRestarting false`() {
-        ScopesAdapter.getInstance().close(false)
-        verify(scopes).close(false)
-    }
+  @Test
+  fun `close calls Scopes`() {
+    ScopesAdapter.getInstance().close()
+    verify(scopes).close(false)
+  }
 
-    @Test fun `addBreadcrumb calls Scopes`() {
-        val breadcrumb = mock<Breadcrumb>()
-        val hint = mock<Hint>()
-        ScopesAdapter.getInstance().addBreadcrumb(breadcrumb, hint)
-        verify(scopes).addBreadcrumb(eq(breadcrumb), eq(hint))
-    }
+  @Test
+  fun `close with isRestarting true calls Scopes with isRestarting false`() {
+    ScopesAdapter.getInstance().close(true)
+    verify(scopes).close(false)
+  }
 
-    @Test fun `setLevel calls Scopes`() {
-        val sentryLevel = mock<SentryLevel>()
-        ScopesAdapter.getInstance().setLevel(sentryLevel)
-        verify(scopes).setLevel(eq(sentryLevel))
-    }
+  @Test
+  fun `close with isRestarting false calls Scopes with isRestarting false`() {
+    ScopesAdapter.getInstance().close(false)
+    verify(scopes).close(false)
+  }
 
-    @Test fun `setTransaction calls Scopes`() {
-        ScopesAdapter.getInstance().setTransaction("transaction")
-        verify(scopes).setTransaction(eq("transaction"))
-    }
+  @Test
+  fun `addBreadcrumb calls Scopes`() {
+    val breadcrumb = mock<Breadcrumb>()
+    val hint = mock<Hint>()
+    ScopesAdapter.getInstance().addBreadcrumb(breadcrumb, hint)
+    verify(scopes).addBreadcrumb(eq(breadcrumb), eq(hint))
+  }
 
-    @Test fun `setUser calls Scopes`() {
-        val user = mock<User>()
-        ScopesAdapter.getInstance().setUser(user)
-        verify(scopes).setUser(eq(user))
-    }
+  @Test
+  fun `setLevel calls Scopes`() {
+    val sentryLevel = mock<SentryLevel>()
+    ScopesAdapter.getInstance().setLevel(sentryLevel)
+    verify(scopes).setLevel(eq(sentryLevel))
+  }
 
-    @Test fun `setFingerprint calls Scopes`() {
-        val fingerprint = ArrayList<String>()
-        ScopesAdapter.getInstance().setFingerprint(fingerprint)
-        verify(scopes).setFingerprint(eq(fingerprint))
-    }
+  @Test
+  fun `setTransaction calls Scopes`() {
+    ScopesAdapter.getInstance().setTransaction("transaction")
+    verify(scopes).setTransaction(eq("transaction"))
+  }
 
-    @Test fun `clearBreadcrumbs calls Scopes`() {
-        ScopesAdapter.getInstance().clearBreadcrumbs()
-        verify(scopes).clearBreadcrumbs()
-    }
+  @Test
+  fun `setUser calls Scopes`() {
+    val user = mock<User>()
+    ScopesAdapter.getInstance().setUser(user)
+    verify(scopes).setUser(eq(user))
+  }
 
-    @Test fun `setTag calls Scopes`() {
-        ScopesAdapter.getInstance().setTag("key", "value")
-        verify(scopes).setTag(eq("key"), eq("value"))
-    }
+  @Test
+  fun `setFingerprint calls Scopes`() {
+    val fingerprint = ArrayList<String>()
+    ScopesAdapter.getInstance().setFingerprint(fingerprint)
+    verify(scopes).setFingerprint(eq(fingerprint))
+  }
 
-    @Test fun `removeTag calls Scopes`() {
-        ScopesAdapter.getInstance().removeTag("key")
-        verify(scopes).removeTag(eq("key"))
-    }
+  @Test
+  fun `clearBreadcrumbs calls Scopes`() {
+    ScopesAdapter.getInstance().clearBreadcrumbs()
+    verify(scopes).clearBreadcrumbs()
+  }
 
-    @Test fun `setExtra calls Scopes`() {
-        ScopesAdapter.getInstance().setExtra("key", "value")
-        verify(scopes).setExtra(eq("key"), eq("value"))
-    }
+  @Test
+  fun `setTag calls Scopes`() {
+    ScopesAdapter.getInstance().setTag("key", "value")
+    verify(scopes).setTag(eq("key"), eq("value"))
+  }
 
-    @Test fun `removeExtra calls Scopes`() {
-        ScopesAdapter.getInstance().removeExtra("key")
-        verify(scopes).removeExtra(eq("key"))
-    }
+  @Test
+  fun `removeTag calls Scopes`() {
+    ScopesAdapter.getInstance().removeTag("key")
+    verify(scopes).removeTag(eq("key"))
+  }
 
-    @Test fun `getLastEventId calls Scopes`() {
-        ScopesAdapter.getInstance().lastEventId
-        verify(scopes).lastEventId
-    }
+  @Test
+  fun `setExtra calls Scopes`() {
+    ScopesAdapter.getInstance().setExtra("key", "value")
+    verify(scopes).setExtra(eq("key"), eq("value"))
+  }
 
-    @Test fun `pushScope calls Scopes`() {
-        ScopesAdapter.getInstance().pushScope()
-        verify(scopes).pushScope()
-    }
+  @Test
+  fun `removeExtra calls Scopes`() {
+    ScopesAdapter.getInstance().removeExtra("key")
+    verify(scopes).removeExtra(eq("key"))
+  }
 
-    @Test fun `popScope calls Scopes`() {
-        ScopesAdapter.getInstance().popScope()
-        verify(scopes).popScope()
-    }
+  @Test
+  fun `getLastEventId calls Scopes`() {
+    ScopesAdapter.getInstance().lastEventId
+    verify(scopes).lastEventId
+  }
 
-    @Test fun `withScope calls Scopes`() {
-        val scopeCallback = mock<ScopeCallback>()
-        ScopesAdapter.getInstance().withScope(scopeCallback)
-        verify(scopes).withScope(eq(scopeCallback))
-    }
+  @Test
+  fun `pushScope calls Scopes`() {
+    ScopesAdapter.getInstance().pushScope()
+    verify(scopes).pushScope()
+  }
 
-    @Test fun `configureScope calls Scopes`() {
-        val scopeCallback = mock<ScopeCallback>()
-        ScopesAdapter.getInstance().configureScope(scopeCallback)
-        verify(scopes).configureScope(anyOrNull(), eq(scopeCallback))
-    }
+  @Test
+  fun `popScope calls Scopes`() {
+    ScopesAdapter.getInstance().popScope()
+    verify(scopes).popScope()
+  }
 
-    @Test fun `bindClient calls Scopes`() {
-        val client = createSentryClientMock()
-        ScopesAdapter.getInstance().bindClient(client)
-        verify(scopes).bindClient(eq(client))
-    }
+  @Test
+  fun `withScope calls Scopes`() {
+    val scopeCallback = mock<ScopeCallback>()
+    ScopesAdapter.getInstance().withScope(scopeCallback)
+    verify(scopes).withScope(eq(scopeCallback))
+  }
 
-    @Test fun `flush calls Scopes`() {
-        ScopesAdapter.getInstance().flush(1)
-        verify(scopes).flush(eq(1))
-    }
+  @Test
+  fun `configureScope calls Scopes`() {
+    val scopeCallback = mock<ScopeCallback>()
+    ScopesAdapter.getInstance().configureScope(scopeCallback)
+    verify(scopes).configureScope(anyOrNull(), eq(scopeCallback))
+  }
 
-    @Test fun `clone calls Scopes`() {
-        ScopesAdapter.getInstance().clone()
-        verify(scopes).clone()
-    }
+  @Test
+  fun `bindClient calls Scopes`() {
+    val client = createSentryClientMock()
+    ScopesAdapter.getInstance().bindClient(client)
+    verify(scopes).bindClient(eq(client))
+  }
 
-    @Test fun `captureTransaction calls Scopes`() {
-        val transaction = mock<SentryTransaction>()
-        val traceContext = mock<TraceContext>()
-        val hint = mock<Hint>()
-        val profilingTraceData = mock<ProfilingTraceData>()
-        ScopesAdapter.getInstance().captureTransaction(transaction, traceContext, hint, profilingTraceData)
-        verify(scopes).captureTransaction(eq(transaction), eq(traceContext), eq(hint), eq(profilingTraceData))
-    }
+  @Test
+  fun `flush calls Scopes`() {
+    ScopesAdapter.getInstance().flush(1)
+    verify(scopes).flush(eq(1))
+  }
 
-    @Test fun `captureProfileChunk calls Scopes`() {
-        val profileChunk = mock<ProfileChunk>()
-        ScopesAdapter.getInstance().captureProfileChunk(profileChunk)
-        verify(scopes).captureProfileChunk(eq(profileChunk))
-    }
+  @Test
+  fun `clone calls Scopes`() {
+    ScopesAdapter.getInstance().clone()
+    verify(scopes).clone()
+  }
 
-    @Test fun `startTransaction calls Scopes`() {
-        val transactionContext = mock<TransactionContext>()
-        val samplingContext = mock<CustomSamplingContext>()
-        val transactionOptions = mock<TransactionOptions>()
-        ScopesAdapter.getInstance().startTransaction(transactionContext)
-        verify(scopes).startTransaction(eq(transactionContext), any<TransactionOptions>())
+  @Test
+  fun `captureTransaction calls Scopes`() {
+    val transaction = mock<SentryTransaction>()
+    val traceContext = mock<TraceContext>()
+    val hint = mock<Hint>()
+    val profilingTraceData = mock<ProfilingTraceData>()
+    ScopesAdapter.getInstance()
+      .captureTransaction(transaction, traceContext, hint, profilingTraceData)
+    verify(scopes)
+      .captureTransaction(eq(transaction), eq(traceContext), eq(hint), eq(profilingTraceData))
+  }
 
-        reset(scopes)
+  @Test
+  fun `captureProfileChunk calls Scopes`() {
+    val profileChunk = mock<ProfileChunk>()
+    ScopesAdapter.getInstance().captureProfileChunk(profileChunk)
+    verify(scopes).captureProfileChunk(eq(profileChunk))
+  }
 
-        ScopesAdapter.getInstance().startTransaction(transactionContext, transactionOptions)
-        verify(scopes).startTransaction(eq(transactionContext), eq(transactionOptions))
-    }
+  @Test
+  fun `startTransaction calls Scopes`() {
+    val transactionContext = mock<TransactionContext>()
+    val samplingContext = mock<CustomSamplingContext>()
+    val transactionOptions = mock<TransactionOptions>()
+    ScopesAdapter.getInstance().startTransaction(transactionContext)
+    verify(scopes).startTransaction(eq(transactionContext), any<TransactionOptions>())
 
-    @Test fun `setSpanContext calls Scopes`() {
-        val throwable = mock<Throwable>()
-        val span = mock<ISpan>()
-        ScopesAdapter.getInstance().setSpanContext(throwable, span, "transactionName")
-        verify(scopes).setSpanContext(eq(throwable), eq(span), eq("transactionName"))
-    }
+    reset(scopes)
 
-    @Test fun `getSpan calls Scopes`() {
-        ScopesAdapter.getInstance().span
-        verify(scopes).span
-    }
+    ScopesAdapter.getInstance().startTransaction(transactionContext, transactionOptions)
+    verify(scopes).startTransaction(eq(transactionContext), eq(transactionOptions))
+  }
 
-    @Test fun `getTransaction calls Scopes`() {
-        ScopesAdapter.getInstance().transaction
-        verify(scopes).transaction
-    }
+  @Test
+  fun `setSpanContext calls Scopes`() {
+    val throwable = mock<Throwable>()
+    val span = mock<ISpan>()
+    ScopesAdapter.getInstance().setSpanContext(throwable, span, "transactionName")
+    verify(scopes).setSpanContext(eq(throwable), eq(span), eq("transactionName"))
+  }
 
-    @Test fun `getOptions calls Scopes`() {
-        ScopesAdapter.getInstance().options
-        verify(scopes).options
-    }
+  @Test
+  fun `getSpan calls Scopes`() {
+    ScopesAdapter.getInstance().span
+    verify(scopes).span
+  }
 
-    @Test fun `isCrashedLastRun calls Scopes`() {
-        ScopesAdapter.getInstance().isCrashedLastRun
-        verify(scopes).isCrashedLastRun
-    }
+  @Test
+  fun `getTransaction calls Scopes`() {
+    ScopesAdapter.getInstance().transaction
+    verify(scopes).transaction
+  }
 
-    @Test fun `reportFullyDisplayed calls Scopes`() {
-        ScopesAdapter.getInstance().reportFullyDisplayed()
-        verify(scopes).reportFullyDisplayed()
-    }
+  @Test
+  fun `getOptions calls Scopes`() {
+    ScopesAdapter.getInstance().options
+    verify(scopes).options
+  }
 
-    @Test fun `startProfiler calls Scopes`() {
-        ScopesAdapter.getInstance().startProfiler()
-        verify(scopes).startProfiler()
-    }
+  @Test
+  fun `isCrashedLastRun calls Scopes`() {
+    ScopesAdapter.getInstance().isCrashedLastRun
+    verify(scopes).isCrashedLastRun
+  }
 
-    @Test fun `stopProfiler calls Scopes`() {
-        ScopesAdapter.getInstance().stopProfiler()
-        verify(scopes).stopProfiler()
-    }
+  @Test
+  fun `reportFullyDisplayed calls Scopes`() {
+    ScopesAdapter.getInstance().reportFullyDisplayed()
+    verify(scopes).reportFullyDisplayed()
+  }
+
+  @Test
+  fun `startProfiler calls Scopes`() {
+    ScopesAdapter.getInstance().startProfiler()
+    verify(scopes).startProfiler()
+  }
+
+  @Test
+  fun `stopProfiler calls Scopes`() {
+    ScopesAdapter.getInstance().stopProfiler()
+    verify(scopes).stopProfiler()
+  }
 }

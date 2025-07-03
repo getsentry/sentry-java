@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- We have to omit 'format' here as we're referencing the system attributes from the '@android:' namespace -->
+  <declare-styleable name="SentryUserFeedbackButton" >
+    <attr name="android:drawableStart" />
+    <attr name="android:drawablePadding" />
+    <attr name="android:padding" />
+    <attr name="android:textAllCaps" />
+    <attr name="android:background" />
+    <attr name="android:textColor" />
+    <attr name="android:text" />
+  </declare-styleable>
+</resources>

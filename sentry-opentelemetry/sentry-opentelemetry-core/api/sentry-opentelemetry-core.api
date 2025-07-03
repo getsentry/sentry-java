@@ -50,6 +50,11 @@ public final class io/sentry/opentelemetry/OtelSpanInfo {
 	public fun getTransactionNameSource ()Lio/sentry/protocol/TransactionNameSource;
 }
 
+public final class io/sentry/opentelemetry/OtelSpanUtils {
+	public fun <init> ()V
+	public static fun maybeTransferOtelAttribute (Lio/opentelemetry/sdk/trace/data/SpanData;Lio/sentry/ISpan;Lio/opentelemetry/api/common/AttributeKey;)V
+}
+
 public final class io/sentry/opentelemetry/OtelSpanWrapper : io/sentry/opentelemetry/IOtelSpanWrapper {
 	public fun <init> (Lio/opentelemetry/sdk/trace/ReadWriteSpan;Lio/sentry/IScopes;Lio/sentry/SentryDate;Lio/sentry/TracesSamplingDecision;Lio/sentry/opentelemetry/IOtelSpanWrapper;Lio/sentry/SpanId;Lio/sentry/Baggage;)V
 	public fun finish ()V

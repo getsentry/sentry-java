@@ -1,36 +1,34 @@
 plugins {
-    `java-library`
-    kotlin("jvm")
-    jacoco
-    id(Config.QualityPlugins.errorProne)
-    id(Config.QualityPlugins.gradleVersions)
+  `java-library`
+  id("io.sentry.javadoc")
+  kotlin("jvm")
+  jacoco
+  alias(libs.plugins.errorprone)
+  alias(libs.plugins.gradle.versions)
 }
 
 configure<JavaPluginExtension> {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+  kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
 
 dependencies {
-    api(projects.sentry)
+  api(projects.sentry)
 
-    compileOnly(Config.CompileOnly.nopen)
-    errorprone(Config.CompileOnly.nopenChecker)
-    errorprone(Config.CompileOnly.errorprone)
-    compileOnly(Config.CompileOnly.jetbrainsAnnotations)
+  compileOnly(libs.jetbrains.annotations)
+  compileOnly(libs.nopen.annotations)
 
-    // tests
-    implementation(kotlin(Config.kotlinStdLib))
-    implementation(Config.TestLibs.kotlinTestJunit)
-    implementation(Config.TestLibs.mockitoKotlin)
+  errorprone(libs.errorprone.core)
+  errorprone(libs.nopen.checker)
+
+  // tests
+  implementation(kotlin(Config.kotlinStdLib))
+  implementation(libs.kotlin.test.junit)
+  implementation(libs.mockito.kotlin)
 }
 
-configure<SourceSetContainer> {
-    test {
-        java.srcDir("src/test/java")
-    }
-}
+configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }

@@ -25,6 +25,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import androidx.annotation.NonNull;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.ProcessLifecycleOwner;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IScopes;
@@ -33,13 +37,14 @@ import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
+import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import io.sentry.util.StringUtils;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,23 +56,46 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
   private final @NotNull Context context;
 
-  @TestOnly @Nullable SystemEventsBroadcastReceiver receiver;
+  @TestOnly @Nullable volatile SystemEventsBroadcastReceiver receiver;
+
+  @TestOnly @Nullable volatile ReceiverLifecycleHandler lifecycleHandler;
+
+  private final @NotNull MainLooperHandler handler;
 
   private @Nullable SentryAndroidOptions options;
 
-  private final @NotNull List<String> actions;
-  private boolean isClosed = false;
-  private final @NotNull AutoClosableReentrantLock startLock = new AutoClosableReentrantLock();
+  private @Nullable IScopes scopes;
+
+  private final @NotNull String[] actions;
+  private volatile boolean isClosed = false;
+  private volatile boolean isStopped = false;
+  private volatile IntentFilter filter = null;
+  private final @NotNull AutoClosableReentrantLock receiverLock = new AutoClosableReentrantLock();
 
   public SystemEventsBreadcrumbsIntegration(final @NotNull Context context) {
-    this(context, getDefaultActions());
+    this(context, getDefaultActionsInternal());
+  }
+
+  private SystemEventsBreadcrumbsIntegration(
+      final @NotNull Context context, final @NotNull String[] actions) {
+    this(context, actions, new MainLooperHandler());
+  }
+
+  SystemEventsBreadcrumbsIntegration(
+      final @NotNull Context context,
+      final @NotNull String[] actions,
+      final @NotNull MainLooperHandler handler) {
+    this.context = ContextUtils.getApplicationContext(context);
+    this.actions = actions;
+    this.handler = handler;
   }
 
   public SystemEventsBreadcrumbsIntegration(
       final @NotNull Context context, final @NotNull List<String> actions) {
-    this.context =
-        Objects.requireNonNull(ContextUtils.getApplicationContext(context), "Context is required");
-    this.actions = Objects.requireNonNull(actions, "Actions list is required");
+    this.context = ContextUtils.getApplicationContext(context);
+    this.actions = new String[actions.size()];
+    actions.toArray(this.actions);
+    this.handler = new MainLooperHandler();
   }
 
   @Override
@@ -77,6 +105,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
+    this.scopes = scopes;
 
     this.options
         .getLogger()
@@ -86,86 +115,219 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
             this.options.isEnableSystemEventBreadcrumbs());
 
     if (this.options.isEnableSystemEventBreadcrumbs()) {
+      addLifecycleObserver(this.options);
+      registerReceiver(this.scopes, this.options, /* reportAsNewIntegration= */ true);
+    }
+  }
 
-      try {
-        options
-            .getExecutorService()
-            .submit(
-                () -> {
-                  try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
-                    if (!isClosed) {
-                      startSystemEventsReceiver(scopes, (SentryAndroidOptions) options);
+  private void registerReceiver(
+      final @NotNull IScopes scopes,
+      final @NotNull SentryAndroidOptions options,
+      final boolean reportAsNewIntegration) {
+
+    if (!options.isEnableSystemEventBreadcrumbs()) {
+      return;
+    }
+
+    try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
+      if (isClosed || isStopped || receiver != null) {
+        return;
+      }
+    }
+
+    try {
+      options
+          .getExecutorService()
+          .submit(
+              () -> {
+                try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
+                  if (isClosed || isStopped || receiver != null) {
+                    return;
+                  }
+
+                  receiver = new SystemEventsBroadcastReceiver(scopes, options);
+                  if (filter == null) {
+                    filter = new IntentFilter();
+                    for (String item : actions) {
+                      filter.addAction(item);
                     }
                   }
-                });
-      } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                "Failed to start SystemEventsBreadcrumbsIntegration on executor thread.",
-                e);
+                  try {
+                    // registerReceiver can throw SecurityException but it's not documented in the
+                    // official docs
+                    ContextUtils.registerReceiver(context, options, receiver, filter);
+                    if (reportAsNewIntegration) {
+                      options
+                          .getLogger()
+                          .log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
+                      addIntegrationToSdkVersion("SystemEventsBreadcrumbs");
+                    }
+                  } catch (Throwable e) {
+                    options.setEnableSystemEventBreadcrumbs(false);
+                    options
+                        .getLogger()
+                        .log(
+                            SentryLevel.ERROR,
+                            "Failed to initialize SystemEventsBreadcrumbsIntegration.",
+                            e);
+                  }
+                }
+              });
+    } catch (Throwable e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Failed to start SystemEventsBreadcrumbsIntegration on executor thread.");
+    }
+  }
+
+  private void unregisterReceiver() {
+    final @Nullable SystemEventsBroadcastReceiver receiverRef;
+    try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
+      isStopped = true;
+      receiverRef = receiver;
+      receiver = null;
+    }
+
+    if (receiverRef != null) {
+      context.unregisterReceiver(receiverRef);
+    }
+  }
+
+  // TODO: this duplicates a lot of AppLifecycleIntegration. We should register once on init
+  //  and multiplex to different listeners rather.
+  private void addLifecycleObserver(final @NotNull SentryAndroidOptions options) {
+    try {
+      Class.forName("androidx.lifecycle.DefaultLifecycleObserver");
+      Class.forName("androidx.lifecycle.ProcessLifecycleOwner");
+      if (AndroidThreadChecker.getInstance().isMainThread()) {
+        addObserverInternal(options);
+      } else {
+        // some versions of the androidx lifecycle-process require this to be executed on the main
+        // thread.
+        handler.post(() -> addObserverInternal(options));
+      }
+    } catch (ClassNotFoundException e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "androidx.lifecycle is not available, SystemEventsBreadcrumbsIntegration won't be able"
+                  + " to register/unregister an internal BroadcastReceiver. This may result in an"
+                  + " increased ANR rate on Android 14 and above.");
+    } catch (Throwable e) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "SystemEventsBreadcrumbsIntegration could not register lifecycle observer",
+              e);
+    }
+  }
+
+  private void addObserverInternal(final @NotNull SentryAndroidOptions options) {
+    lifecycleHandler = new ReceiverLifecycleHandler();
+
+    try {
+      ProcessLifecycleOwner.get().getLifecycle().addObserver(lifecycleHandler);
+    } catch (Throwable e) {
+      // This is to handle a potential 'AbstractMethodError' gracefully. The error is triggered in
+      // connection with conflicting dependencies of the androidx.lifecycle.
+      // //See the issue here: https://github.com/getsentry/sentry-java/pull/2228
+      lifecycleHandler = null;
+      options
+          .getLogger()
+          .log(
+              SentryLevel.ERROR,
+              "SystemEventsBreadcrumbsIntegration failed to get Lifecycle and could not install lifecycle observer.",
+              e);
+    }
+  }
+
+  private void removeLifecycleObserver() {
+    if (lifecycleHandler != null) {
+      if (AndroidThreadChecker.getInstance().isMainThread()) {
+        removeObserverInternal();
+      } else {
+        // some versions of the androidx lifecycle-process require this to be executed on the main
+        // thread.
+        // avoid method refs on Android due to some issues with older AGP setups
+        // noinspection Convert2MethodRef
+        handler.post(() -> removeObserverInternal());
       }
     }
   }
 
-  private void startSystemEventsReceiver(
-      final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
-    receiver = new SystemEventsBroadcastReceiver(scopes, options);
-    final IntentFilter filter = new IntentFilter();
-    for (String item : actions) {
-      filter.addAction(item);
+  private void removeObserverInternal() {
+    final @Nullable ReceiverLifecycleHandler watcherRef = lifecycleHandler;
+    if (watcherRef != null) {
+      ProcessLifecycleOwner.get().getLifecycle().removeObserver(watcherRef);
     }
-    try {
-      // registerReceiver can throw SecurityException but it's not documented in the official docs
-      ContextUtils.registerReceiver(context, options, receiver, filter);
-      options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration installed.");
-      addIntegrationToSdkVersion("SystemEventsBreadcrumbs");
-    } catch (Throwable e) {
-      options.setEnableSystemEventBreadcrumbs(false);
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Failed to initialize SystemEventsBreadcrumbsIntegration.", e);
-    }
-  }
-
-  @SuppressWarnings("deprecation")
-  public static @NotNull List<String> getDefaultActions() {
-    final List<String> actions = new ArrayList<>();
-    actions.add(ACTION_SHUTDOWN);
-    actions.add(ACTION_AIRPLANE_MODE_CHANGED);
-    actions.add(ACTION_BATTERY_CHANGED);
-    actions.add(ACTION_CAMERA_BUTTON);
-    actions.add(ACTION_CONFIGURATION_CHANGED);
-    actions.add(ACTION_DATE_CHANGED);
-    actions.add(ACTION_DEVICE_STORAGE_LOW);
-    actions.add(ACTION_DEVICE_STORAGE_OK);
-    actions.add(ACTION_DOCK_EVENT);
-    actions.add(ACTION_DREAMING_STARTED);
-    actions.add(ACTION_DREAMING_STOPPED);
-    actions.add(ACTION_INPUT_METHOD_CHANGED);
-    actions.add(ACTION_LOCALE_CHANGED);
-    actions.add(ACTION_SCREEN_OFF);
-    actions.add(ACTION_SCREEN_ON);
-    actions.add(ACTION_TIMEZONE_CHANGED);
-    actions.add(ACTION_TIME_CHANGED);
-    actions.add("android.os.action.DEVICE_IDLE_MODE_CHANGED");
-    actions.add("android.os.action.POWER_SAVE_MODE_CHANGED");
-    return actions;
+    lifecycleHandler = null;
   }
 
   @Override
   public void close() throws IOException {
-    try (final @NotNull ISentryLifecycleToken ignored = startLock.acquire()) {
+    try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
       isClosed = true;
+      filter = null;
     }
-    if (receiver != null) {
-      context.unregisterReceiver(receiver);
-      receiver = null;
 
-      if (options != null) {
-        options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration remove.");
+    removeLifecycleObserver();
+    unregisterReceiver();
+
+    if (options != null) {
+      options.getLogger().log(SentryLevel.DEBUG, "SystemEventsBreadcrumbsIntegration remove.");
+    }
+  }
+
+  public static @NotNull List<String> getDefaultActions() {
+    return Arrays.asList(getDefaultActionsInternal());
+  }
+
+  @SuppressWarnings("deprecation")
+  private static @NotNull String[] getDefaultActionsInternal() {
+    final String[] actions = new String[19];
+    actions[0] = ACTION_SHUTDOWN;
+    actions[1] = ACTION_AIRPLANE_MODE_CHANGED;
+    actions[2] = ACTION_BATTERY_CHANGED;
+    actions[3] = ACTION_CAMERA_BUTTON;
+    actions[4] = ACTION_CONFIGURATION_CHANGED;
+    actions[5] = ACTION_DATE_CHANGED;
+    actions[6] = ACTION_DEVICE_STORAGE_LOW;
+    actions[7] = ACTION_DEVICE_STORAGE_OK;
+    actions[8] = ACTION_DOCK_EVENT;
+    actions[9] = ACTION_DREAMING_STARTED;
+    actions[10] = ACTION_DREAMING_STOPPED;
+    actions[11] = ACTION_INPUT_METHOD_CHANGED;
+    actions[12] = ACTION_LOCALE_CHANGED;
+    actions[13] = ACTION_SCREEN_OFF;
+    actions[14] = ACTION_SCREEN_ON;
+    actions[15] = ACTION_TIMEZONE_CHANGED;
+    actions[16] = ACTION_TIME_CHANGED;
+    actions[17] = "android.os.action.DEVICE_IDLE_MODE_CHANGED";
+    actions[18] = "android.os.action.POWER_SAVE_MODE_CHANGED";
+    return actions;
+  }
+
+  final class ReceiverLifecycleHandler implements DefaultLifecycleObserver {
+    @Override
+    public void onStart(@NonNull LifecycleOwner owner) {
+      if (scopes == null || options == null) {
+        return;
       }
+
+      try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
+        isStopped = false;
+      }
+
+      registerReceiver(scopes, options, /* reportAsNewIntegration= */ false);
+    }
+
+    @Override
+    public void onStop(@NonNull LifecycleOwner owner) {
+      unregisterReceiver();
     }
   }
 
@@ -206,10 +368,43 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
                   scopes.addBreadcrumb(breadcrumb, hint);
                 });
       } catch (Throwable t) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, t, "Failed to submit system event breadcrumb action.");
+        // ignored
       }
+    }
+
+    // in theory this should be ThreadLocal, but we won't have more than 1 thread accessing it,
+    // so we save some memory here and CPU cycles. 64 is because all intent actions we subscribe for
+    // are less than 64 chars. We also don't care about encoding as those are always UTF.
+    // TODO: _MULTI_THREADED_EXECUTOR_
+    private final char[] buf = new char[64];
+
+    @TestOnly
+    @Nullable
+    String getStringAfterDotFast(final @Nullable String str) {
+      if (str == null) {
+        return null;
+      }
+
+      final int len = str.length();
+      int bufIndex = buf.length;
+
+      // the idea here is to iterate from the end of the string and copy the characters to a
+      // pre-allocated buffer in reverse order. When we find a dot, we create a new string
+      // from the buffer. This way we use a fixed size buffer and do a bare minimum of iterations.
+      for (int i = len - 1; i >= 0; i--) {
+        final char c = str.charAt(i);
+        if (c == '.') {
+          return new String(buf, bufIndex, buf.length - bufIndex);
+        }
+        if (bufIndex == 0) {
+          // Overflow — fallback to safe version
+          return StringUtils.getStringAfterDot(str);
+        }
+        buf[--bufIndex] = c;
+      }
+
+      // No dot found — return original
+      return str;
     }
 
     private @NotNull Breadcrumb createBreadcrumb(
@@ -220,7 +415,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       final Breadcrumb breadcrumb = new Breadcrumb(timeMs);
       breadcrumb.setType("system");
       breadcrumb.setCategory("device.event");
-      final String shortAction = StringUtils.getStringAfterDot(action);
+      final String shortAction = getStringAfterDotFast(action);
       if (shortAction != null) {
         breadcrumb.setData("action", shortAction);
       }

@@ -15,6 +15,7 @@ import io.sentry.ITransactionProfiler;
 import io.sentry.NoOpCompositePerformanceCollector;
 import io.sentry.NoOpConnectionStatusProvider;
 import io.sentry.NoOpContinuousProfiler;
+import io.sentry.NoOpSocketTagger;
 import io.sentry.NoOpTransactionProfiler;
 import io.sentry.NoopVersionDetector;
 import io.sentry.ScopeType;
@@ -238,6 +239,9 @@ final class AndroidOptionsInitializer {
     if (options.getThreadChecker() instanceof NoOpThreadChecker) {
       options.setThreadChecker(AndroidThreadChecker.getInstance());
     }
+    if (options.getSocketTagger() instanceof NoOpSocketTagger) {
+      options.setSocketTagger(AndroidSocketTagger.getInstance());
+    }
     if (options.getPerformanceCollectors().isEmpty()) {
       options.addPerformanceCollector(new AndroidMemoryCollector());
       options.addPerformanceCollector(new AndroidCpuCollector(options.getLogger()));
@@ -359,7 +363,6 @@ final class AndroidOptionsInitializer {
           new ActivityLifecycleIntegration(
               (Application) context, buildInfoProvider, activityFramesTracker));
       options.addIntegration(new ActivityBreadcrumbsIntegration((Application) context));
-      options.addIntegration(new CurrentActivityIntegration((Application) context));
       options.addIntegration(new UserInteractionIntegration((Application) context, loadClass));
       if (isFragmentAvailable) {
         options.addIntegration(new FragmentLifecycleIntegration((Application) context, true, true));

@@ -1,38 +1,32 @@
 plugins {
-    id("com.android.library")
-    kotlin("android")
-    id(Config.QualityPlugins.gradleVersions)
+  id("com.android.library")
+  kotlin("android")
+  alias(libs.plugins.gradle.versions)
 }
 
 android {
-    compileSdk = Config.Android.compileSdkVersion
-    namespace = "io.sentry.android"
+  compileSdk = libs.versions.compileSdk.get().toInt()
+  namespace = "io.sentry.android"
 
-    defaultConfig {
-        minSdk = Config.Android.minSdkVersion
-    }
+  defaultConfig { minSdk = libs.versions.minSdk.get().toInt() }
 
-    buildFeatures {
-        // Determines whether to generate a BuildConfig class.
-        buildConfig = false
-    }
+  buildFeatures {
+    // Determines whether to generate a BuildConfig class.
+    buildConfig = false
+  }
 
-    buildTypes {
-        getByName("debug") {
-            consumerProguardFiles("proguard-rules.pro")
-        }
-        getByName("release") {
-            consumerProguardFiles("proguard-rules.pro")
-        }
-    }
+  buildTypes {
+    getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
+    getByName("release") { consumerProguardFiles("proguard-rules.pro") }
+  }
 
-    androidComponents.beforeVariants {
-        it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
-    }
+  androidComponents.beforeVariants {
+    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+  }
 }
 
 dependencies {
-    api(projects.sentryAndroidCore)
-    api(projects.sentryAndroidNdk)
-    api(projects.sentryAndroidReplay)
+  api(projects.sentryAndroidCore)
+  api(projects.sentryAndroidNdk)
+  api(projects.sentryAndroidReplay)
 }

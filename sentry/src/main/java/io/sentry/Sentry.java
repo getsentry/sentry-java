@@ -13,7 +13,9 @@ import io.sentry.internal.modules.IModulesLoader;
 import io.sentry.internal.modules.ManifestModulesLoader;
 import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
+import io.sentry.logger.ILoggerApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -54,6 +56,7 @@ public final class Sentry {
 
   /** The root Scopes or NoOp if Sentry is disabled. */
   private static volatile @NotNull IScopes rootScopes = NoOpScopes.getInstance();
+
   /**
    * This initializes global scope with default options. Options will later be replaced on
    * Sentry.init
@@ -189,7 +192,9 @@ public final class Sentry {
   public static <T extends SentryOptions> void init(
       final @NotNull OptionsContainer<T> clazz,
       final @NotNull OptionsConfiguration<T> optionsConfiguration)
-      throws IllegalAccessException, InstantiationException, NoSuchMethodException,
+      throws IllegalAccessException,
+          InstantiationException,
+          NoSuchMethodException,
           InvocationTargetException {
     init(clazz, optionsConfiguration, GLOBAL_HUB_DEFAULT_MODE);
   }
@@ -210,7 +215,9 @@ public final class Sentry {
       final @NotNull OptionsContainer<T> clazz,
       final @NotNull OptionsConfiguration<T> optionsConfiguration,
       final boolean globalHubMode)
-      throws IllegalAccessException, InstantiationException, NoSuchMethodException,
+      throws IllegalAccessException,
+          InstantiationException,
+          NoSuchMethodException,
           InvocationTargetException {
     final T options = clazz.createInstance();
     applyOptionsConfiguration(optionsConfiguration, options);
@@ -343,7 +350,16 @@ public final class Sentry {
         // and Scopes was still NoOp.
         // Registering integrations here make sure that Scopes is already created.
         for (final Integration integration : options.getIntegrations()) {
-          integration.register(ScopesAdapter.getInstance(), options);
+          try {
+            integration.register(ScopesAdapter.getInstance(), options);
+          } catch (Throwable t) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "Failed to register the integration " + integration.getClass().getName(),
+                    t);
+          }
         }
 
         notifyOptionsObservers(options);
@@ -757,6 +773,43 @@ public final class Sentry {
       final @NotNull SentryLevel level,
       final @NotNull ScopeCallback callback) {
     return getCurrentScopes().captureMessage(message, level, callback);
+  }
+
+  /**
+   * Captures the feedback.
+   *
+   * @param feedback The feedback to send.
+   * @return The Id (SentryId object) of the event
+   */
+  public static @NotNull SentryId captureFeedback(final @NotNull Feedback feedback) {
+    return getCurrentScopes().captureFeedback(feedback);
+  }
+
+  /**
+   * Captures the feedback.
+   *
+   * @param feedback The feedback to send.
+   * @param hint An optional hint to be applied to the event.
+   * @return The Id (SentryId object) of the event
+   */
+  public static @NotNull SentryId captureFeedback(
+      final @NotNull Feedback feedback, final @Nullable Hint hint) {
+    return getCurrentScopes().captureFeedback(feedback, hint);
+  }
+
+  /**
+   * Captures the feedback.
+   *
+   * @param feedback The feedback to send.
+   * @param hint An optional hint to be applied to the event.
+   * @param callback The callback to configure the scope for a single invocation.
+   * @return The Id (SentryId object) of the event
+   */
+  public static @NotNull SentryId captureFeedback(
+      final @NotNull Feedback feedback,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback callback) {
+    return getCurrentScopes().captureFeedback(feedback, hint, callback);
   }
 
   /**
@@ -1224,5 +1277,16 @@ public final class Sentry {
   @ApiStatus.Experimental
   public static @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     return getCurrentScopes().captureCheckIn(checkIn);
+  }
+
+  @ApiStatus.Experimental
+  @NotNull
+  public static ILoggerApi logger() {
+    return getCurrentScopes().logger();
+  }
+
+  @NotNull
+  public static IReplayApi replay() {
+    return getCurrentScopes().getScope().getOptions().getReplayController();
   }
 }

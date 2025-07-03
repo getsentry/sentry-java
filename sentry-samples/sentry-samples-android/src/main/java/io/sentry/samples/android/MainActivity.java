@@ -1,16 +1,18 @@
 package io.sentry.samples.android;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
 import io.sentry.ISpan;
 import io.sentry.MeasurementUnit;
 import io.sentry.Sentry;
-import io.sentry.UserFeedback;
 import io.sentry.instrumentation.file.SentryFileOutputStream;
-import io.sentry.protocol.SentryId;
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.User;
 import io.sentry.samples.android.compose.ComposeActivity;
 import io.sentry.samples.android.databinding.ActivityMainBinding;
@@ -38,6 +40,8 @@ public class MainActivity extends AppCompatActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    SharedState.INSTANCE.setOrientationChange(
+        getIntent().getBooleanExtra("isOrientationChange", false));
     final ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
 
     final File imageFile = getApplicationContext().getFileStreamPath("sentry.png");
@@ -70,13 +74,11 @@ public class MainActivity extends AppCompatActivity {
 
     binding.sendUserFeedback.setOnClickListener(
         view -> {
-          SentryId sentryId = Sentry.captureException(new Exception("I have feedback"));
-
-          UserFeedback userFeedback = new UserFeedback(sentryId);
-          userFeedback.setComments("It broke on Android. I don't know why, but this happens.");
-          userFeedback.setEmail("john@me.com");
-          userFeedback.setName("John Me");
-          Sentry.captureUserFeedback(userFeedback);
+          Feedback feedback =
+              new Feedback("It broke on Android. I don't know why, but this happens.");
+          feedback.setContactEmail("john@me.com");
+          feedback.setName("John Me");
+          Sentry.captureFeedback(feedback);
         });
 
     binding.addAttachment.setOnClickListener(
@@ -269,6 +271,38 @@ public class MainActivity extends AppCompatActivity {
 
     binding.openFrameDataForSpans.setOnClickListener(
         view -> startActivity(new Intent(this, FrameDataForSpansActivity.class)));
+
+    binding.throwInCoroutine.setOnClickListener(
+        view -> {
+          CoroutinesUtil.INSTANCE.throwInCoroutine();
+        });
+
+    binding.showDialog.setOnClickListener(
+        view -> {
+          new AlertDialog.Builder(MainActivity.this)
+              .setTitle("Example Title")
+              .setMessage("Example Message")
+              .setPositiveButton(
+                  "Close",
+                  (dialog, which) -> {
+                    if (SharedState.INSTANCE.isOrientationChange()) {
+                      int currentOrientation = getResources().getConfiguration().orientation;
+                      if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                      } else if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                      }
+                    } else {
+                      dialog.dismiss();
+                    }
+                  })
+              .show();
+        });
+
+    binding.enableReplayDebugMode.setOnClickListener(
+        view -> {
+          Sentry.replay().enableDebugMaskingOverlay();
+        });
 
     setContentView(binding.getRoot());
   }

@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 public final class MapObjectWriter implements ObjectWriter {
 
   final @NotNull Map<String, Object> root;
+
   /**
    * The stack for maintaining the hierarchy of a json-like data structure. Possible elements:
    *
@@ -123,6 +124,16 @@ public final class MapObjectWriter implements ObjectWriter {
   @Override
   public void setLenient(boolean lenient) {
     // no-op
+  }
+
+  @Override
+  public void setIndent(@Nullable String indent) {
+    // no-op
+  }
+
+  @Override
+  public @Nullable String getIndent() {
+    return null;
   }
 
   @Override

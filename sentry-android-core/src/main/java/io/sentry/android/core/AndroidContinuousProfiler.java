@@ -151,7 +151,7 @@ public class AndroidContinuousProfiler
     }
   }
 
-  private void start() {
+  private void initScopes() {
     if ((scopes == null || scopes == NoOpScopes.getInstance())
         && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
       this.scopes = Sentry.getCurrentScopes();
@@ -162,6 +162,10 @@ public class AndroidContinuousProfiler
         rateLimiter.addRateLimitObserver(this);
       }
     }
+  }
+
+  private void start() {
+    initScopes();
 
     // Debug.startMethodTracingSampling() is only available since Lollipop, but Android Profiler
     // causes crashes on api 21 -> https://github.com/getsentry/sentry-java/issues/3392
@@ -178,7 +182,7 @@ public class AndroidContinuousProfiler
       final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
       if (rateLimiter != null
           && (rateLimiter.isActiveForCategory(All)
-              || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk))) {
+              || rateLimiter.isActiveForCategory(DataCategory.ProfileChunkUi))) {
         logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
         // Let's stop and reset profiler id, as the profile is now broken anyway
         stop(false);
@@ -252,6 +256,7 @@ public class AndroidContinuousProfiler
   }
 
   private void stop(final boolean restartProfiler) {
+    initScopes();
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (stopFuture != null) {
         stopFuture.cancel(true);
@@ -385,7 +390,7 @@ public class AndroidContinuousProfiler
   public void onRateLimitChanged(@NotNull RateLimiter rateLimiter) {
     // We stop the profiler as soon as we are rate limited, to avoid the performance overhead
     if (rateLimiter.isActiveForCategory(All)
-        || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)) {
+        || rateLimiter.isActiveForCategory(DataCategory.ProfileChunkUi)) {
       logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
       stop(false);
     }

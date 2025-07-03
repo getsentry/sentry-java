@@ -3,9 +3,6 @@ name: 'CodeQL'
 on:
   push:
     branches: [main]
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [main]
   schedule:
     - cron: '17 23 * * 3'
 
@@ -34,19 +31,18 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@06832c7b30a0129d7fb559bcc6e43d26f6374244 # pin@v3
+        uses: gradle/actions/setup-gradle@ac638b010cf58a27ee6c972d7336334ccaf61c96
         with:
-          gradle-home-cache-cleanup: true
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@1b549b9259bda1cb5ddde3b41741a82a2d15a841 # pin@v2
+        uses: github/codeql-action/init@39edc492dbe16b1465b0cafca41432d857bdb31a # pin@v2
         with:
           languages: 'java'
 
       - name: Build Java
         run: |
-          ./gradlew buildForCodeQL
+          ./gradlew buildForCodeQL --no-build-cache
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@1b549b9259bda1cb5ddde3b41741a82a2d15a841 # pin@v2
+        uses: github/codeql-action/analyze@39edc492dbe16b1465b0cafca41432d857bdb31a # pin@v2

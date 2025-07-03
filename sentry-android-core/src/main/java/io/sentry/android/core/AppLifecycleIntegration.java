@@ -69,9 +69,8 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
         options
             .getLogger()
             .log(
-                SentryLevel.INFO,
-                "androidx.lifecycle is not available, AppLifecycleIntegration won't be installed",
-                e);
+                SentryLevel.WARNING,
+                "androidx.lifecycle is not available, AppLifecycleIntegration won't be installed");
       } catch (IllegalStateException e) {
         options
             .getLogger()

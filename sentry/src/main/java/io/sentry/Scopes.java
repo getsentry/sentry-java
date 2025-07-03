@@ -3,6 +3,9 @@ package io.sentry;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
+import io.sentry.logger.ILoggerApi;
+import io.sentry.logger.LoggerApi;
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
@@ -29,6 +32,7 @@ public final class Scopes implements IScopes {
   private final @NotNull CompositePerformanceCollector compositePerformanceCollector;
 
   private final @NotNull CombinedScopeView combinedScope;
+  private final @NotNull ILoggerApi logger;
 
   public Scopes(
       final @NotNull IScope scope,
@@ -54,6 +58,7 @@ public final class Scopes implements IScopes {
     final @NotNull SentryOptions options = getOptions();
     validateOptions(options);
     this.compositePerformanceCollector = options.getCompositePerformanceCollector();
+    this.logger = new LoggerApi(this);
   }
 
   public @NotNull String getCreator() {
@@ -162,7 +167,9 @@ public final class Scopes implements IScopes {
     return sentryId;
   }
 
-  private @NotNull ISentryClient getClient() {
+  @ApiStatus.Internal
+  @NotNull
+  public ISentryClient getClient() {
     return getCombinedScopeView().getClient();
   }
 
@@ -170,7 +177,7 @@ public final class Scopes implements IScopes {
     getCombinedScopeView().assignTraceContext(event);
   }
 
-  private IScope buildLocalScope(
+  private @NotNull IScope buildLocalScope(
       final @NotNull IScope parentScope, final @Nullable ScopeCallback callback) {
     if (callback != null) {
       try {
@@ -227,6 +234,36 @@ public final class Scopes implements IScopes {
       }
     }
     updateLastEventId(sentryId);
+    return sentryId;
+  }
+
+  @Override
+  public @NotNull SentryId captureFeedback(
+      final @NotNull Feedback feedback,
+      final @Nullable Hint hint,
+      final @Nullable ScopeCallback scopeCallback) {
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (!isEnabled()) {
+      getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Instance is disabled and this 'captureFeedback' call is a no-op.");
+    } else if (feedback.getMessage().isEmpty()) {
+      getOptions()
+          .getLogger()
+          .log(SentryLevel.WARNING, "captureFeedback called with empty message.");
+    } else {
+      try {
+        final @NotNull IScope localScope = buildLocalScope(getCombinedScopeView(), scopeCallback);
+
+        sentryId = getClient().captureFeedback(feedback, hint, localScope);
+      } catch (Throwable e) {
+        getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "Error while capturing feedback: " + feedback.getMessage(), e);
+      }
+    }
     return sentryId;
   }
 
@@ -371,7 +408,9 @@ public final class Scopes implements IScopes {
     }
   }
 
-  private IScope getCombinedScopeView() {
+  @ApiStatus.Internal
+  @NotNull
+  public IScope getCombinedScopeView() {
     return combinedScope;
   }
 
@@ -1161,6 +1200,11 @@ public final class Scopes implements IScopes {
   @Override
   public @Nullable RateLimiter getRateLimiter() {
     return getClient().getRateLimiter();
+  }
+
+  @Override
+  public @NotNull ILoggerApi logger() {
+    return logger;
   }
 
   private static void validateOptions(final @NotNull SentryOptions options) {

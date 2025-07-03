@@ -119,16 +119,25 @@ public final class SentryReplayOptions {
   private long sessionDuration = 60 * 60 * 1000L;
 
   /**
-   * Whether to track orientation changes in session replay. Used in Flutter as it has its own
-   * callbacks to determine the orientation change.
+   * Whether to track the screen configuration (e.g. window size, orientation, etc.) automatically.
+   * A valid configuration is required to capture a session replay. If set to false,
+   * ReplayIntegration.onConfigurationChanged() must be called manually to update the configuration.
+   *
+   * <p>Defaults to true.
    */
-  private boolean trackOrientationChange = true;
+  private boolean trackConfiguration = true;
 
   /**
    * SdkVersion object that contains the Sentry Client Name and its version. This object is only
    * applied to {@link SentryReplayEvent}s.
    */
   private @Nullable SdkVersion sdkVersion;
+
+  /**
+   * Turns debug mode on or off for Session Replay-specific code paths. If debug is enabled SDK will
+   * attempt to print out useful debugging information if something goes wrong. Default is disabled.
+   */
+  private boolean debug = false;
 
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
@@ -294,13 +303,13 @@ public final class SentryReplayOptions {
   }
 
   @ApiStatus.Internal
-  public boolean isTrackOrientationChange() {
-    return trackOrientationChange;
+  public boolean isTrackConfiguration() {
+    return trackConfiguration;
   }
 
   @ApiStatus.Internal
-  public void setTrackOrientationChange(final boolean trackOrientationChange) {
-    this.trackOrientationChange = trackOrientationChange;
+  public void setTrackConfiguration(final boolean trackConfiguration) {
+    this.trackConfiguration = trackConfiguration;
   }
 
   @ApiStatus.Internal
@@ -311,5 +320,23 @@ public final class SentryReplayOptions {
   @ApiStatus.Internal
   public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
     this.sdkVersion = sdkVersion;
+  }
+
+  /**
+   * Check if debug mode is ON Default is OFF
+   *
+   * @return true if ON or false otherwise
+   */
+  public boolean isDebug() {
+    return debug;
+  }
+
+  /**
+   * Sets the debug mode to ON or OFF Default is OFF
+   *
+   * @param debug true if ON or false otherwise
+   */
+  public void setDebug(final boolean debug) {
+    this.debug = debug;
   }
 }

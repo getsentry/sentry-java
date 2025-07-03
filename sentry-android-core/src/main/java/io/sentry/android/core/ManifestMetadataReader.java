@@ -6,6 +6,7 @@ import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.InitPriority;
 import io.sentry.ProfileLifecycle;
+import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SdkVersion;
@@ -109,6 +110,8 @@ final class ManifestMetadataReader {
 
   static final String REPLAYS_MASK_ALL_IMAGES = "io.sentry.session-replay.mask-all-images";
 
+  static final String REPLAYS_DEBUG = "io.sentry.session-replay.debug";
+
   static final String FORCE_INIT = "io.sentry.force-init";
 
   static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
@@ -119,8 +122,22 @@ final class ManifestMetadataReader {
 
   static final String IN_APP_EXCLUDES = "io.sentry.in-app-excludes";
 
+  static final String ENABLE_LOGS = "io.sentry.logs.enabled";
+
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
+
+  static final String FEEDBACK_NAME_REQUIRED = "io.sentry.feedback.is-name-required";
+
+  static final String FEEDBACK_SHOW_NAME = "io.sentry.feedback.show-name";
+
+  static final String FEEDBACK_EMAIL_REQUIRED = "io.sentry.feedback.is-email-required";
+
+  static final String FEEDBACK_SHOW_EMAIL = "io.sentry.feedback.show-email";
+
+  static final String FEEDBACK_USE_SENTRY_USER = "io.sentry.feedback.use-sentry-user";
+
+  static final String FEEDBACK_SHOW_BRANDING = "io.sentry.feedback.show-branding";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -452,6 +469,8 @@ final class ManifestMetadataReader {
             .getSessionReplay()
             .setMaskAllImages(readBool(metadata, logger, REPLAYS_MASK_ALL_IMAGES, true));
 
+        options.getSessionReplay().setDebug(readBool(metadata, logger, REPLAYS_DEBUG, false));
+
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
 
         final @Nullable List<String> includes = readList(metadata, logger, IN_APP_INCLUDES);
@@ -467,6 +486,25 @@ final class ManifestMetadataReader {
             options.addInAppExclude(exclude);
           }
         }
+
+        options
+            .getLogs()
+            .setEnabled(readBool(metadata, logger, ENABLE_LOGS, options.getLogs().isEnabled()));
+
+        final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
+        feedbackOptions.setNameRequired(
+            readBool(metadata, logger, FEEDBACK_NAME_REQUIRED, feedbackOptions.isNameRequired()));
+        feedbackOptions.setShowName(
+            readBool(metadata, logger, FEEDBACK_SHOW_NAME, feedbackOptions.isShowName()));
+        feedbackOptions.setEmailRequired(
+            readBool(metadata, logger, FEEDBACK_EMAIL_REQUIRED, feedbackOptions.isEmailRequired()));
+        feedbackOptions.setShowEmail(
+            readBool(metadata, logger, FEEDBACK_SHOW_EMAIL, feedbackOptions.isShowEmail()));
+        feedbackOptions.setUseSentryUser(
+            readBool(
+                metadata, logger, FEEDBACK_USE_SENTRY_USER, feedbackOptions.isUseSentryUser()));
+        feedbackOptions.setShowBranding(
+            readBool(metadata, logger, FEEDBACK_SHOW_BRANDING, feedbackOptions.isShowBranding()));
       }
       options
           .getLogger()

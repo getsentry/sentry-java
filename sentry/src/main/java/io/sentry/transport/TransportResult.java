@@ -3,7 +3,7 @@ package io.sentry.transport;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A result of {@link ITransport#send(io.sentry.SentryEnvelope)}. Note that this class is
+ * A result of {@link HttpConnection#send(io.sentry.SentryEnvelope)}. Note that this class is
  * intentionally not subclassable and has only two factory methods to capture the 2 possible states
  * - success or error.
  */

@@ -3,11 +3,17 @@ package io.sentry;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
+import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Backfillable;
+import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
+import io.sentry.logger.ILoggerBatchProcessor;
+import io.sentry.logger.LoggerBatchProcessor;
+import io.sentry.logger.NoOpLoggerBatchProcessor;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugMeta;
+import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.transport.ITransport;
@@ -35,6 +41,7 @@ public final class SentryClient implements ISentryClient {
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
   private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
+  private final @NotNull ILoggerBatchProcessor loggerBatchProcessor;
 
   @Override
   public boolean isEnabled() {
@@ -54,6 +61,11 @@ public final class SentryClient implements ISentryClient {
 
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
+    if (options.getLogs().isEnabled()) {
+      loggerBatchProcessor = new LoggerBatchProcessor(options, this);
+    } else {
+      loggerBatchProcessor = NoOpLoggerBatchProcessor.getInstance();
+    }
   }
 
   private boolean shouldApplyScopeData(
@@ -200,31 +212,17 @@ public final class SentryClient implements ISentryClient {
     }
 
     final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
-    // if event is backfillable we don't wanna trigger capture replay, because it's an event from
-    // the past
-    if (event != null && !isBackfillable && (event.isErrored() || event.isCrashed())) {
+    final boolean isCached =
+        HintUtils.hasType(hint, Cached.class) && !HintUtils.hasType(hint, ApplyScopeData.class);
+    // if event is backfillable or cached we don't wanna trigger capture replay, because it's
+    // an event from the past. If it's cached, but with ApplyScopeData, it comes from the outbox
+    // folder and we still want to capture replay (e.g. a native captureException error)
+    if (event != null && !isBackfillable && !isCached && (event.isErrored() || event.isCrashed())) {
       options.getReplayController().captureReplay(event.isCrashed());
     }
 
     try {
-      @Nullable TraceContext traceContext = null;
-      if (isBackfillable) {
-        // for backfillable hint we synthesize Baggage from event values
-        if (event != null) {
-          final Baggage baggage = Baggage.fromEvent(event, options);
-          traceContext = baggage.toTraceContext();
-        }
-      } else if (scope != null) {
-        final @Nullable ITransaction transaction = scope.getTransaction();
-        if (transaction != null) {
-          traceContext = transaction.traceContext();
-        } else {
-          final @NotNull PropagationContext propagationContext =
-              TracingUtils.maybeUpdateBaggage(scope, options);
-          traceContext = propagationContext.traceContext();
-        }
-      }
-
+      final @Nullable TraceContext traceContext = getTraceContext(scope, hint, event);
       final boolean shouldSendAttachments = event != null;
       List<Attachment> attachments = shouldSendAttachments ? getAttachments(hint) : null;
       final @Nullable SentryEnvelope envelope =
@@ -303,19 +301,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     try {
-      // TODO: check if event is Backfillable and backfill traceContext from the event values
-      @Nullable TraceContext traceContext = null;
-      if (scope != null) {
-        final @Nullable ITransaction transaction = scope.getTransaction();
-        if (transaction != null) {
-          traceContext = transaction.traceContext();
-        } else {
-          final @NotNull PropagationContext propagationContext =
-              TracingUtils.maybeUpdateBaggage(scope, options);
-          traceContext = propagationContext.traceContext();
-        }
-      }
-
+      final @Nullable TraceContext traceContext = getTraceContext(scope, hint, event, null);
       final boolean cleanupReplayFolder = HintUtils.hasType(hint, Backfillable.class);
       final SentryEnvelope envelope =
           buildEnvelope(event, hint.getReplayRecording(), traceContext, cleanupReplayFolder);
@@ -484,6 +470,38 @@ public final class SentryClient implements ISentryClient {
     return event;
   }
 
+  @Nullable
+  private SentryLogEvent processLogEvent(
+      @NotNull SentryLogEvent event, final @NotNull List<EventProcessor> eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        event = processor.process(event);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while processing log event by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (event == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Log event was dropped by a processor: %s",
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.LogItem);
+        break;
+      }
+    }
+    return event;
+  }
+
   private @Nullable SentryTransaction processTransaction(
       @NotNull SentryTransaction transaction,
       final @NotNull Hint hint,
@@ -571,6 +589,40 @@ public final class SentryClient implements ISentryClient {
     return replayEvent;
   }
 
+  @Nullable
+  private SentryEvent processFeedbackEvent(
+      @NotNull SentryEvent feedbackEvent,
+      final @NotNull Hint hint,
+      final @NotNull List<EventProcessor> eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        feedbackEvent = processor.process(feedbackEvent, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while processing feedback event by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (feedbackEvent == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Feedback event was dropped by a processor: %s",
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Feedback);
+        break;
+      }
+    }
+    return feedbackEvent;
+  }
+
   @Override
   public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
     Objects.requireNonNull(userFeedback, "SentryEvent is required.");
@@ -620,6 +672,19 @@ public final class SentryClient implements ISentryClient {
 
     final SentryEnvelopeHeader envelopeHeader =
         new SentryEnvelopeHeader(checkIn.getCheckInId(), options.getSdkVersion(), traceContext);
+
+    return new SentryEnvelope(envelopeHeader, envelopeItems);
+  }
+
+  private @NotNull SentryEnvelope buildEnvelope(final @NotNull SentryLogEvents logEvents) {
+    final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+
+    final SentryEnvelopeItem logItem =
+        SentryEnvelopeItem.fromLogs(options.getSerializer(), logEvents);
+    envelopeItems.add(logItem);
+
+    final SentryEnvelopeHeader envelopeHeader =
+        new SentryEnvelopeHeader(null, options.getSdkVersion(), null);
 
     return new SentryEnvelope(envelopeHeader, envelopeItems);
   }
@@ -970,18 +1035,7 @@ public final class SentryClient implements ISentryClient {
     SentryId sentryId = checkIn.getCheckInId();
 
     try {
-      @Nullable TraceContext traceContext = null;
-      if (scope != null) {
-        final @Nullable ITransaction transaction = scope.getTransaction();
-        if (transaction != null) {
-          traceContext = transaction.traceContext();
-        } else {
-          final @NotNull PropagationContext propagationContext =
-              TracingUtils.maybeUpdateBaggage(scope, options);
-          traceContext = propagationContext.traceContext();
-        }
-      }
-
+      final @Nullable TraceContext traceContext = getTraceContext(scope, hint, null);
       final @NotNull SentryEnvelope envelope = buildEnvelope(checkIn, traceContext);
 
       hint.clear();
@@ -993,6 +1047,167 @@ public final class SentryClient implements ISentryClient {
     }
 
     return sentryId;
+  }
+
+  /**
+   * Captures the feedback.
+   *
+   * @param feedback The feedback to send.
+   * @param hint An optional hint to be applied to the event.
+   * @param scope An optional scope to be applied to the event.
+   * @return The Id (SentryId object) of the event
+   */
+  @Override
+  public @NotNull SentryId captureFeedback(
+      final @NotNull Feedback feedback, @Nullable Hint hint, final @NotNull IScope scope) {
+    SentryEvent event = new SentryEvent();
+    event.getContexts().setFeedback(feedback);
+
+    if (hint == null) {
+      hint = new Hint();
+    }
+
+    if (feedback.getUrl() == null) {
+      feedback.setUrl(scope.getScreen());
+    }
+
+    options.getLogger().log(SentryLevel.DEBUG, "Capturing feedback: %s", event.getEventId());
+
+    if (shouldApplyScopeData(event, hint)) {
+      // Event has already passed through here before it was cached
+      // Going through again could be reading data that is no longer relevant
+      // i.e proguard id, app version, threads
+      event = applyFeedbackScope(event, scope, hint);
+
+      if (event == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Feedback was dropped by applyScope");
+        return SentryId.EMPTY_ID;
+      }
+    }
+
+    event = processFeedbackEvent(event, hint, options.getEventProcessors());
+
+    if (event != null) {
+      event = executeBeforeSendFeedback(event, hint);
+
+      if (event == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Feedback);
+      }
+    }
+
+    if (event == null) {
+      return SentryId.EMPTY_ID;
+    }
+
+    SentryId sentryId = SentryId.EMPTY_ID;
+    if (event.getEventId() != null) {
+      sentryId = event.getEventId();
+    }
+
+    // If feedback already has a replayId, we don't want to overwrite it.
+    if (feedback.getReplayId() == null) {
+      options.getReplayController().captureReplay(false);
+      final @NotNull SentryId replayId = scope.getReplayId();
+      if (!replayId.equals(SentryId.EMPTY_ID)) {
+        feedback.setReplayId(replayId);
+      }
+    }
+
+    try {
+      final @Nullable TraceContext traceContext = getTraceContext(scope, hint, event);
+      final List<Attachment> attachments = getAttachments(hint);
+      final @Nullable SentryEnvelope envelope =
+          buildEnvelope(event, attachments, null, traceContext, null);
+
+      hint.clear();
+      if (envelope != null) {
+        sentryId = sendEnvelope(envelope, hint);
+      }
+    } catch (IOException | SentryEnvelopeException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing feedback %s failed.", sentryId);
+
+      // if there was an error capturing the event, we return an emptyId
+      sentryId = SentryId.EMPTY_ID;
+    }
+
+    return sentryId;
+  }
+
+  private @Nullable TraceContext getTraceContext(
+      final @Nullable IScope scope, final @NotNull Hint hint, final @Nullable SentryEvent event) {
+    return getTraceContext(scope, hint, event, event != null ? event.getTransaction() : null);
+  }
+
+  private @Nullable TraceContext getTraceContext(
+      final @Nullable IScope scope,
+      final @NotNull Hint hint,
+      final @Nullable SentryBaseEvent event,
+      final @Nullable String txn) {
+    @Nullable TraceContext traceContext = null;
+    final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
+    if (isBackfillable) {
+      // for backfillable hint we synthesize Baggage from event values
+      if (event != null) {
+        final Baggage baggage = Baggage.fromEvent(event, txn, options);
+        traceContext = baggage.toTraceContext();
+      }
+    } else if (scope != null) {
+      final @Nullable ITransaction transaction = scope.getTransaction();
+      if (transaction != null) {
+        traceContext = transaction.traceContext();
+      } else {
+        final @NotNull PropagationContext propagationContext =
+            TracingUtils.maybeUpdateBaggage(scope, options);
+        traceContext = propagationContext.traceContext();
+      }
+    }
+    return traceContext;
+  }
+
+  @ApiStatus.Experimental
+  @Override
+  public void captureLog(@Nullable SentryLogEvent logEvent, @Nullable IScope scope) {
+    if (logEvent != null && scope != null) {
+      logEvent = processLogEvent(logEvent, scope.getEventProcessors());
+      if (logEvent == null) {
+        return;
+      }
+    }
+
+    if (logEvent != null) {
+      logEvent = processLogEvent(logEvent, options.getEventProcessors());
+      if (logEvent == null) {
+        return;
+      }
+    }
+
+    if (logEvent != null) {
+      logEvent = executeBeforeSendLog(logEvent);
+
+      if (logEvent == null) {
+        options.getLogger().log(SentryLevel.DEBUG, "Log Event was dropped by beforeSendLog");
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.LogItem);
+        return;
+      }
+
+      loggerBatchProcessor.add(logEvent);
+    }
+  }
+
+  @ApiStatus.Internal
+  @Override
+  public void captureBatchedLogEvents(final @NotNull SentryLogEvents logEvents) {
+    try {
+      final @NotNull SentryEnvelope envelope = buildEnvelope(logEvents);
+      sendEnvelope(envelope, null);
+    } catch (IOException e) {
+      options.getLogger().log(SentryLevel.WARNING, e, "Capturing log failed.");
+    }
   }
 
   private @Nullable List<Attachment> filterForTransaction(@Nullable List<Attachment> attachments) {
@@ -1039,6 +1254,43 @@ public final class SentryClient implements ISentryClient {
 
       event = processEvent(event, hint, scope.getEventProcessors());
     }
+    return event;
+  }
+
+  private @Nullable SentryEvent applyFeedbackScope(
+      @NotNull SentryEvent event, final @NotNull IScope scope, final @NotNull Hint hint) {
+
+    if (event.getUser() == null) {
+      event.setUser(scope.getUser());
+    }
+    if (event.getTags() == null) {
+      event.setTags(new HashMap<>(scope.getTags()));
+    } else {
+      for (Map.Entry<String, String> item : scope.getTags().entrySet()) {
+        if (!event.getTags().containsKey(item.getKey())) {
+          event.getTags().put(item.getKey(), item.getValue());
+        }
+      }
+    }
+    final Contexts contexts = event.getContexts();
+    for (Map.Entry<String, Object> entry : new Contexts(scope.getContexts()).entrySet()) {
+      if (!contexts.containsKey(entry.getKey())) {
+        contexts.put(entry.getKey(), entry.getValue());
+      }
+    }
+    // Set trace data from active span to connect events with transactions
+    final ISpan span = scope.getSpan();
+    if (event.getContexts().getTrace() == null) {
+      if (span == null) {
+        event
+            .getContexts()
+            .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
+      } else {
+        event.getContexts().setTrace(span.getSpanContext());
+      }
+    }
+
+    event = processFeedbackEvent(event, hint, scope.getEventProcessors());
     return event;
   }
 
@@ -1195,6 +1447,24 @@ public final class SentryClient implements ISentryClient {
     return transaction;
   }
 
+  private @Nullable SentryEvent executeBeforeSendFeedback(
+      @NotNull SentryEvent event, final @NotNull Hint hint) {
+    final SentryOptions.BeforeSendCallback beforeSendFeedback = options.getBeforeSendFeedback();
+    if (beforeSendFeedback != null) {
+      try {
+        event = beforeSendFeedback.execute(event, hint);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "The BeforeSendFeedback callback threw an exception.", e);
+
+        // drop feedback in case of an error in beforeSend due to PII concerns
+        event = null;
+      }
+    }
+    return event;
+  }
+
   private @Nullable SentryReplayEvent executeBeforeSendReplay(
       @NotNull SentryReplayEvent event, final @NotNull Hint hint) {
     final SentryOptions.BeforeSendReplayCallback beforeSendReplay = options.getBeforeSendReplay();
@@ -1216,6 +1486,27 @@ public final class SentryClient implements ISentryClient {
     return event;
   }
 
+  private @Nullable SentryLogEvent executeBeforeSendLog(@NotNull SentryLogEvent event) {
+    final SentryOptions.Logs.BeforeSendLogCallback beforeSendLog =
+        options.getLogs().getBeforeSend();
+    if (beforeSendLog != null) {
+      try {
+        event = beforeSendLog.execute(event);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The BeforeSendLog callback threw an exception. Dropping log event.",
+                e);
+
+        // drop event in case of an error in beforeSendLog due to PII concerns
+        event = null;
+      }
+    }
+    return event;
+  }
+
   @Override
   public void close() {
     close(false);
@@ -1226,6 +1517,7 @@ public final class SentryClient implements ISentryClient {
     options.getLogger().log(SentryLevel.INFO, "Closing SentryClient.");
     try {
       flush(isRestarting ? 0 : options.getShutdownTimeoutMillis());
+      loggerBatchProcessor.close(isRestarting);
       transport.close(isRestarting);
     } catch (IOException e) {
       options
@@ -1252,6 +1544,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public void flush(final long timeoutMillis) {
+    loggerBatchProcessor.flush(timeoutMillis);
     transport.flush(timeoutMillis);
   }
 

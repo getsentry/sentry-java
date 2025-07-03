@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.net.InetAddress;
 import java.util.concurrent.Callable;
@@ -11,6 +12,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,20 +27,26 @@ import org.jetbrains.annotations.Nullable;
  * <p>HostnameCache is a singleton and its instance should be obtained through {@link
  * HostnameCache#getInstance()}.
  */
-final class HostnameCache {
+@ApiStatus.Internal
+public final class HostnameCache {
   private static final long HOSTNAME_CACHE_DURATION = TimeUnit.HOURS.toMillis(5);
 
   /** Time before the get hostname operation times out (in ms). */
   private static final long GET_HOSTNAME_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
 
-  @Nullable private static HostnameCache INSTANCE;
+  private static volatile @Nullable HostnameCache INSTANCE;
+  private static final @NotNull AutoClosableReentrantLock staticLock =
+      new AutoClosableReentrantLock();
 
   /** Time for which the cache is kept. */
   private final long cacheDuration;
+
   /** Current value for hostname (might change over time). */
   @Nullable private volatile String hostname;
+
   /** Time at which the cache should expire. */
   private volatile long expirationTimestamp;
+
   /** Whether a cache update thread is currently running or not. */
   private final @NotNull AtomicBoolean updateRunning = new AtomicBoolean(false);
 
@@ -47,10 +55,15 @@ final class HostnameCache {
   private final @NotNull ExecutorService executorService =
       Executors.newSingleThreadExecutor(new HostnameCacheThreadFactory());
 
-  static @NotNull HostnameCache getInstance() {
+  public static @NotNull HostnameCache getInstance() {
     if (INSTANCE == null) {
-      INSTANCE = new HostnameCache();
+      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
+        if (INSTANCE == null) {
+          INSTANCE = new HostnameCache();
+        }
+      }
     }
+
     return INSTANCE;
   }
 
@@ -93,7 +106,7 @@ final class HostnameCache {
    * @return the hostname of the current machine.
    */
   @Nullable
-  String getHostname() {
+  public String getHostname() {
     if (expirationTimestamp < System.currentTimeMillis()
         && updateRunning.compareAndSet(false, true)) {
       updateCache();
