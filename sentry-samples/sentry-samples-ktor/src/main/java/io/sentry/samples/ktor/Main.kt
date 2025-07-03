@@ -3,6 +3,8 @@ package io.sentry.samples.ktor
 import io.ktor.client.*
 import io.ktor.client.engine.java.*
 import io.ktor.client.request.*
+import io.ktor.http.HttpStatusCode
+import io.sentry.HttpStatusCodeRange
 import io.sentry.Sentry
 import io.sentry.TransactionOptions
 import io.sentry.ktor.SentryKtorClientPlugin
@@ -20,7 +22,13 @@ fun main() {
   }
 
   val client =
-    HttpClient(Java) { install(SentryKtorClientPlugin) { failedRequestTargets = listOf(".*") } }
+    HttpClient(Java) {
+      install(SentryKtorClientPlugin) {
+        captureFailedRequests = true
+        failedRequestTargets = listOf(".*")
+        failedRequestStatusCodes = listOf(HttpStatusCodeRange(500, 599))
+      }
+    }
 
   val opts = TransactionOptions().apply { isBindToScope = true }
   val tx = Sentry.startTransaction("My Transaction", "test", opts)
