@@ -116,7 +116,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
 
     if (this.options.isEnableSystemEventBreadcrumbs()) {
       addLifecycleObserver(this.options);
-      registerReceiver(this.scopes, this.options, /* reportAsNewIntegration = */ true);
+      registerReceiver(this.scopes, this.options, /* reportAsNewIntegration= */ true);
     }
   }
 
@@ -322,7 +322,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         isStopped = false;
       }
 
-      registerReceiver(scopes, options, /* reportAsNewIntegration = */ false);
+      registerReceiver(scopes, options, /* reportAsNewIntegration= */ false);
     }
 
     @Override

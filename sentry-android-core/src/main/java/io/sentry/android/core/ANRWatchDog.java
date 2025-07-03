@@ -47,6 +47,7 @@ final class ANRWatchDog extends Thread {
   private final ANRListener anrListener;
   private final MainLooperHandler uiHandler;
   private final ICurrentDateProvider timeProvider;
+
   /** the interval in which we check if there's an ANR, in ms */
   private long pollingIntervalMs;
 

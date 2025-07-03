@@ -6,6 +6,7 @@ import android.os.Bundle;
 import io.sentry.ILogger;
 import io.sentry.InitPriority;
 import io.sentry.ProfileLifecycle;
+import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SdkVersion;
@@ -125,6 +126,18 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
+
+  static final String FEEDBACK_NAME_REQUIRED = "io.sentry.feedback.is-name-required";
+
+  static final String FEEDBACK_SHOW_NAME = "io.sentry.feedback.show-name";
+
+  static final String FEEDBACK_EMAIL_REQUIRED = "io.sentry.feedback.is-email-required";
+
+  static final String FEEDBACK_SHOW_EMAIL = "io.sentry.feedback.show-email";
+
+  static final String FEEDBACK_USE_SENTRY_USER = "io.sentry.feedback.use-sentry-user";
+
+  static final String FEEDBACK_SHOW_BRANDING = "io.sentry.feedback.show-branding";
 
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
@@ -477,6 +490,21 @@ final class ManifestMetadataReader {
         options
             .getLogs()
             .setEnabled(readBool(metadata, logger, ENABLE_LOGS, options.getLogs().isEnabled()));
+
+        final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
+        feedbackOptions.setNameRequired(
+            readBool(metadata, logger, FEEDBACK_NAME_REQUIRED, feedbackOptions.isNameRequired()));
+        feedbackOptions.setShowName(
+            readBool(metadata, logger, FEEDBACK_SHOW_NAME, feedbackOptions.isShowName()));
+        feedbackOptions.setEmailRequired(
+            readBool(metadata, logger, FEEDBACK_EMAIL_REQUIRED, feedbackOptions.isEmailRequired()));
+        feedbackOptions.setShowEmail(
+            readBool(metadata, logger, FEEDBACK_SHOW_EMAIL, feedbackOptions.isShowEmail()));
+        feedbackOptions.setUseSentryUser(
+            readBool(
+                metadata, logger, FEEDBACK_USE_SENTRY_USER, feedbackOptions.isUseSentryUser()));
+        feedbackOptions.setShowBranding(
+            readBool(metadata, logger, FEEDBACK_SHOW_BRANDING, feedbackOptions.isShowBranding()));
       }
       options
           .getLogger()
