@@ -3,12 +3,9 @@ package io.sentry.android.core
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.CpuCollectionData
 import io.sentry.ILogger
 import io.sentry.ISentryExecutorService
-import io.sentry.MemoryCollectionData
 import io.sentry.PerformanceCollectionData
-import io.sentry.SentryDate
 import io.sentry.SentryExecutorService
 import io.sentry.SentryLevel
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
@@ -276,15 +273,15 @@ class AndroidProfilerTest {
   fun `profiler includes performance measurements when passed on end`() {
     val profiler = fixture.getSut()
     val performanceCollectionData = ArrayList<PerformanceCollectionData>()
-    var singleData = PerformanceCollectionData()
-    val t1 = mock<SentryDate>()
-    val t2 = mock<SentryDate>()
-    singleData.addMemoryData(MemoryCollectionData(2, 3, t1))
-    singleData.addCpuData(CpuCollectionData(1.4, t1))
+    var singleData = PerformanceCollectionData(10)
+    singleData.usedHeapMemory = 2
+    singleData.usedNativeMemory = 3
+    singleData.cpuUsagePercentage = 1.4
     performanceCollectionData.add(singleData)
 
-    singleData = PerformanceCollectionData()
-    singleData.addMemoryData(MemoryCollectionData(3, 4, t2))
+    singleData = PerformanceCollectionData(20)
+    singleData.usedHeapMemory = 3
+    singleData.usedNativeMemory = 4
     performanceCollectionData.add(singleData)
 
     profiler.start()

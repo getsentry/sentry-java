@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Optimize scope when maxBreadcrumb is 0 ([#4504](https://github.com/getsentry/sentry-java/pull/4504))
 - Fix javadoc on TransportResult ([#4528](https://github.com/getsentry/sentry-java/pull/4528))
 
 ### Dependencies
@@ -14,6 +15,10 @@
   - `opentelemetry-javaagent` to `2.17.0`
   - `opentelemetry-semconv` to `1.34.0`
   - We are now configuring OpenTelemetry to still behave the same way it did before for span names it generates in GraphQL auto instrumentation ([#4537](https://github.com/getsentry/sentry-java/pull/4537))
+
+### Internal
+
+- Flattened PerformanceCollectionData ([#4505](https://github.com/getsentry/sentry-java/pull/4505))
 
 ## 8.16.0
 

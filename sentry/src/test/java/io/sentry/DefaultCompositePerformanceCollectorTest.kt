@@ -43,7 +43,7 @@ class DefaultCompositePerformanceCollectorTest {
         override fun setup() {}
 
         override fun collect(performanceCollectionData: PerformanceCollectionData) {
-          performanceCollectionData.addCpuData(mock())
+          performanceCollectionData.cpuUsagePercentage = 1.0
         }
       }
 
@@ -174,20 +174,12 @@ class DefaultCompositePerformanceCollectorTest {
     assertNotNull(data1)
     assertNotNull(data2)
     assertNotNull(data3)
-    val memoryData1 = data1.map { it.memoryData }
-    val cpuData1 = data1.map { it.cpuData }
-    val memoryData2 = data2.map { it.memoryData }
-    val cpuData2 = data2.map { it.cpuData }
-    val memoryData3 = data3.map { it.memoryData }
-    val cpuData3 = data3.map { it.cpuData }
-
-    // The data returned by the collector is not empty
-    assertFalse(memoryData1.isEmpty())
-    assertFalse(cpuData1.isEmpty())
-    assertFalse(memoryData2.isEmpty())
-    assertFalse(cpuData2.isEmpty())
-    assertFalse(memoryData3.isEmpty())
-    assertFalse(cpuData3.isEmpty())
+    assertFalse(data1.mapNotNull { it.usedHeapMemory }.isEmpty())
+    assertFalse(data1.mapNotNull { it.cpuUsagePercentage }.isEmpty())
+    assertFalse(data2.mapNotNull { it.usedHeapMemory }.isEmpty())
+    assertFalse(data2.mapNotNull { it.cpuUsagePercentage }.isEmpty())
+    assertFalse(data3.mapNotNull { it.usedHeapMemory }.isEmpty())
+    assertFalse(data3.mapNotNull { it.cpuUsagePercentage }.isEmpty())
   }
 
   @Test
@@ -235,8 +227,8 @@ class DefaultCompositePerformanceCollectorTest {
     Thread.sleep(300)
     val data1 = collector.stop(fixture.transaction1)
     assertNotNull(data1)
-    val memoryData = data1.map { it.memoryData }
-    val cpuData = data1.map { it.cpuData }
+    val memoryData = data1.map { it.usedHeapMemory }
+    val cpuData = data1.map { it.cpuUsagePercentage }
 
     // The data returned by the collector is not empty
     assertFalse(memoryData.isEmpty())
