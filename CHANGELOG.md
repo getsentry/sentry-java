@@ -7,10 +7,6 @@
 - Use thread context classloader when available ([#4320](https://github.com/getsentry/sentry-java/pull/4320))
   - This ensures correct resource loading in environments like Spring Boot where the thread context classloader is used for resource loading.
 
-### Internal
-
-- Read build tool info from `sentry-debug-meta.properties` and attach it to events ([#4314](https://github.com/getsentry/sentry-java/pull/4314))
-
 ## 8.7.0
 
 ### Features
