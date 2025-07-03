@@ -9,11 +9,10 @@ import io.opentelemetry.semconv.incubating.DbIncubatingAttributes;
 import io.opentelemetry.semconv.incubating.GraphqlIncubatingAttributes;
 import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes;
 import io.sentry.protocol.TransactionNameSource;
+import java.util.Arrays;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
 
 @ApiStatus.Internal
 public final class SpanDescriptionExtractor {
@@ -51,7 +50,8 @@ public final class SpanDescriptionExtractor {
     return null;
   }
 
-  private @NotNull OtelSpanInfo defaultInfo(final @NotNull SpanData otelSpan, final @Nullable IOtelSpanWrapper sentrySpan) {
+  private @NotNull OtelSpanInfo defaultInfo(
+      final @NotNull SpanData otelSpan, final @Nullable IOtelSpanWrapper sentrySpan) {
     final @NotNull String name = otelSpan.getName();
     final @Nullable String maybeDescription =
         sentrySpan != null ? sentrySpan.getDescription() : name;
