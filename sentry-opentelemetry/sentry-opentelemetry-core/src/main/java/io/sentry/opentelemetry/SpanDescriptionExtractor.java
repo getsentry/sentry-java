@@ -13,12 +13,23 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
+
 @ApiStatus.Internal
 public final class SpanDescriptionExtractor {
 
-  @SuppressWarnings("deprecation")
   public @NotNull OtelSpanInfo extractSpanInfo(
       final @NotNull SpanData otelSpan, final @Nullable IOtelSpanWrapper sentrySpan) {
+    OtelSpanInfo spanInfo = extractSpanInfoInternal(otelSpan);
+    if (spanInfo != null) {
+      return spanInfo;
+    }
+
+    return defaultInfo(otelSpan, sentrySpan);
+  }
+
+  @SuppressWarnings("deprecation")
+  private @Nullable OtelSpanInfo extractSpanInfoInternal(final @NotNull SpanData otelSpan) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
 
     final @Nullable String httpMethod = attributes.get(HttpAttributes.HTTP_REQUEST_METHOD);
@@ -37,6 +48,10 @@ public final class SpanDescriptionExtractor {
       return descriptionForGraphql(otelSpan);
     }
 
+    return null;
+  }
+
+  private @NotNull OtelSpanInfo defaultInfo(final @NotNull SpanData otelSpan, final @Nullable IOtelSpanWrapper sentrySpan) {
     final @NotNull String name = otelSpan.getName();
     final @Nullable String maybeDescription =
         sentrySpan != null ? sentrySpan.getDescription() : name;
@@ -113,7 +128,12 @@ public final class SpanDescriptionExtractor {
     return new OtelSpanInfo("db", otelSpan.getName(), TransactionNameSource.TASK);
   }
 
-  private OtelSpanInfo descriptionForGraphql(final @NotNull SpanData otelSpan) {
+  private @Nullable OtelSpanInfo descriptionForGraphql(final @NotNull SpanData otelSpan) {
+    final @NotNull String name = otelSpan.getName();
+    // do not replace span name set by customer
+    if (!Arrays.asList("query", "mutation", "subscription").contains(name)) {
+      return null;
+    }
     final @NotNull Attributes attributes = otelSpan.getAttributes();
     @Nullable
     String graphqlOperationType =
@@ -126,6 +146,6 @@ public final class SpanDescriptionExtractor {
       return new OtelSpanInfo(description, description, TransactionNameSource.TASK);
     }
 
-    return new OtelSpanInfo(otelSpan.getName(), otelSpan.getName(), TransactionNameSource.TASK);
+    return null;
   }
 }

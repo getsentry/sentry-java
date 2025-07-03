@@ -270,6 +270,23 @@ class SpanDescriptionExtractorTest {
     assertEquals(TransactionNameSource.TASK, info.transactionNameSource)
   }
 
+  @Test
+  fun `does not set op to graphql for span with graphql operation type if span name has been overridden`() {
+    givenAttributes(
+      mapOf(
+        GraphqlIncubatingAttributes.GRAPHQL_OPERATION_TYPE to "query",
+        GraphqlIncubatingAttributes.GRAPHQL_OPERATION_NAME to "GreetingQuery",
+      )
+    )
+    givenSpanName("my-custom-span-name")
+
+    val info = whenExtractingSpanInfo()
+
+    assertEquals("my-custom-span-name", info.op)
+    assertEquals("my-custom-span-name", info.description)
+    assertEquals(TransactionNameSource.CUSTOM, info.transactionNameSource)
+  }
+
   private fun createSpanContext(
     isRemote: Boolean,
     traceId: String = "f9118105af4a2d42b4124532cd1065ff",
