@@ -9,7 +9,9 @@ import org.jetbrains.annotations.Nullable;
 
 public final class OtelSpanUtils {
   public static <T> void maybeTransferOtelAttribute(
-    final @NotNull SpanData otelSpan, final @NotNull ISpan sentrySpan, final @NotNull AttributeKey<T> key) {
+      final @NotNull SpanData otelSpan,
+      final @NotNull ISpan sentrySpan,
+      final @NotNull AttributeKey<T> key) {
     final @NotNull Attributes attributes = otelSpan.getAttributes();
     final @Nullable T value = attributes.get(key);
     if (value != null) {
