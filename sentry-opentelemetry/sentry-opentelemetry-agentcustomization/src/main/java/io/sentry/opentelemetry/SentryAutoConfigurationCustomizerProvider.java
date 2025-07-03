@@ -14,11 +14,16 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryPackage;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryAutoConfigurationCustomizerProvider
     implements AutoConfigurationCustomizerProvider {
+
+  private static final Logger logger = Logger.getLogger(SentryAutoConfigurationCustomizerProvider.class.getName());
 
   public static volatile boolean skipInit = false;
 
@@ -72,7 +77,7 @@ public final class SentryAutoConfigurationCustomizerProvider
             "otel.instrumentation.graphql.add-operation-name-to-span-name.enabled", "true");
       }
     } catch (Exception e) {
-      // TODO log
+      logger.log(Level.WARNING, "Unable to change OpenTelemetry defaults for use with Sentry.", e);
     }
   }
 
