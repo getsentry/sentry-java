@@ -1,9 +1,6 @@
 package io.sentry.opentelemetry;
 
-import io.sentry.NoOpLogger;
-import io.sentry.SentryLevel;
-import io.sentry.SentryOpenTelemetryMode;
-import io.sentry.SentryOptions;
+import io.sentry.*;
 import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.SpanUtils;
@@ -11,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class OpenTelemetryUtil {

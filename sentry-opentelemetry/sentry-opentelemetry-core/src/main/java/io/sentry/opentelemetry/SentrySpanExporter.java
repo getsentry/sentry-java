@@ -3,6 +3,7 @@ package io.sentry.opentelemetry;
 import static io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME;
 import static io.sentry.opentelemetry.InternalSemanticAttributes.IS_REMOTE_PARENT;
 import static io.sentry.opentelemetry.OtelInternalSpanDetectionUtil.isSentryRequest;
+import static io.sentry.opentelemetry.OtelSpanUtils.maybeTransferOtelAttribute;
 
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.StatusCode;
@@ -340,26 +341,15 @@ public final class SentrySpanExporter implements SpanExporter {
     setOtelInstrumentationInfo(span, sentryTransaction);
     setOtelSpanKind(span, sentryTransaction);
     transferSpanDetails(sentrySpanMaybe, sentryTransaction);
-    maybeTransferOtelThreadAttributes(span, sentryTransaction);
+
+    maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_ID);
+    maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_NAME);
 
     scopesToUse.configureScope(
         ScopeType.CURRENT,
         scope -> attributesExtractor.extract(span, scope, scopesToUse.getOptions()));
 
     return sentryTransaction;
-  }
-
-  private void maybeTransferOtelThreadAttributes(
-      final @NotNull SpanData span, final @NotNull ITransaction sentryTransaction) {
-    final @NotNull Attributes attributes = span.getAttributes();
-    final @Nullable Long threadId = attributes.get(ThreadIncubatingAttributes.THREAD_ID);
-    if (threadId != null) {
-      sentryTransaction.setData(ThreadIncubatingAttributes.THREAD_ID.getKey(), threadId);
-    }
-    final @Nullable String threadName = attributes.get(ThreadIncubatingAttributes.THREAD_NAME);
-    if (threadName != null) {
-      sentryTransaction.setData(ThreadIncubatingAttributes.THREAD_NAME.getKey(), threadName);
-    }
   }
 
   private List<SpanNode> findCompletedRootNodes(final @NotNull List<SpanNode> grouped) {
