@@ -1,6 +1,9 @@
 package io.sentry.opentelemetry;
 
-import io.sentry.*;
+import io.sentry.NoOpLogger;
+import io.sentry.SentryLevel;
+import io.sentry.SentryOpenTelemetryMode;
+import io.sentry.SentryOptions;
 import io.sentry.util.LoadClass;
 import io.sentry.util.Platform;
 import io.sentry.util.SpanUtils;
