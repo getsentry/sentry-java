@@ -16,14 +16,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryAutoConfigurationCustomizerProvider
     implements AutoConfigurationCustomizerProvider {
 
-  private static final Logger logger = Logger.getLogger(SentryAutoConfigurationCustomizerProvider.class.getName());
+  private static final Logger logger =
+      Logger.getLogger(SentryAutoConfigurationCustomizerProvider.class.getName());
 
   public static volatile boolean skipInit = false;
 
