@@ -14,4 +14,5 @@ configure<JavaPluginExtension> {
 dependencies {
   implementation(projects.sentryLog4j2)
   implementation(libs.log4j.api)
+  implementation(libs.log4j.core)
 }

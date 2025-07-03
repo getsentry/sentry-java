@@ -28,20 +28,19 @@ class AndroidCpuCollectorTest {
 
   @Test
   fun `collect works only after setup`() {
-    val data = PerformanceCollectionData()
+    val data = PerformanceCollectionData(10)
     fixture.getSut().collect(data)
-    assertNull(data.cpuData)
+    assertNull(data.cpuUsagePercentage)
   }
 
   @Test
   fun `when collect cpu is collected`() {
-    val data = PerformanceCollectionData()
+    val data = PerformanceCollectionData(10)
     val collector = fixture.getSut()
     collector.setup()
     collector.collect(data)
-    val cpuData = data.cpuData
+    val cpuData = data.cpuUsagePercentage
     assertNotNull(cpuData)
-    assertNotEquals(0.0, cpuData.cpuUsagePercentage)
-    assertNotEquals(0, cpuData.timestamp.nanoTimestamp())
+    assertNotEquals(0.0, cpuData)
   }
 }

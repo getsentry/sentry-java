@@ -5,17 +5,14 @@ import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.CompositePerformanceCollector
-import io.sentry.CpuCollectionData
 import io.sentry.DataCategory
 import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
 import io.sentry.IScopes
-import io.sentry.MemoryCollectionData
 import io.sentry.PerformanceCollectionData
 import io.sentry.ProfileLifecycle
 import io.sentry.Sentry
 import io.sentry.SentryLevel
-import io.sentry.SentryNanotimeDate
 import io.sentry.SentryTracer
 import io.sentry.TracesSampler
 import io.sentry.TransactionContext
@@ -427,10 +424,11 @@ class AndroidContinuousProfilerTest {
   @Test
   fun `profiler sends chunk with measurements`() {
     val performanceCollector = mock<CompositePerformanceCollector>()
-    val collectionData = PerformanceCollectionData()
+    val collectionData = PerformanceCollectionData(10)
 
-    collectionData.addMemoryData(MemoryCollectionData(2, 3, SentryNanotimeDate()))
-    collectionData.addCpuData(CpuCollectionData(3.0, SentryNanotimeDate()))
+    collectionData.usedHeapMemory = 2
+    collectionData.usedNativeMemory = 3
+    collectionData.cpuUsagePercentage = 3.0
     whenever(performanceCollector.stop(any<String>())).thenReturn(listOf(collectionData))
 
     fixture.options.compositePerformanceCollector = performanceCollector
