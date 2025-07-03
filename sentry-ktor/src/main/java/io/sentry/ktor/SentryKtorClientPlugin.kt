@@ -63,7 +63,10 @@ public class SentryKtorClientPluginConfig {
     public fun execute(span: ISpan, request: HttpRequest): ISpan?
   }
 
-  /** Forcefully use the passed in scope. Used for testing. */
+  /**
+   * Forcefully use the passed in scope instead of relying on the one injected by [SentryContext].
+   * Used for testing.
+   */
   internal var forceScopes: Boolean = false
 }
 
