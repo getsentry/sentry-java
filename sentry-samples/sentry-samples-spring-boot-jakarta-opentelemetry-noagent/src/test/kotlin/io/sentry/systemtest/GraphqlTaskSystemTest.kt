@@ -30,7 +30,7 @@ class GraphqlTaskSystemTest {
     assertEquals("C3", firstTask.creator?.id)
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
-      testHelper.doesTransactionContainSpanWithDescription(transaction, "Query.tasks")
+      testHelper.doesTransactionContainSpanWithOpAndDescription(transaction, "graphql", "Query.tasks")
     }
   }
 }

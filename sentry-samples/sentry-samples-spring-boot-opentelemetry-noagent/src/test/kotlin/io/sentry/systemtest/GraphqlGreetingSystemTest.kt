@@ -19,7 +19,7 @@ class GraphqlGreetingSystemTest {
 
     testHelper.ensureNoErrors(response)
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
-      testHelper.doesTransactionContainSpanWithDescription(transaction, "Query.greeting")
+      testHelper.doesTransactionContainSpanWithOpAndDescription(transaction, "graphql", "Query.greeting")
     }
   }
 
@@ -32,7 +32,7 @@ class GraphqlGreetingSystemTest {
       error.message?.message?.startsWith("Unresolved RuntimeException for executionId ") ?: false
     }
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
-      testHelper.doesTransactionContainSpanWithDescription(transaction, "Query.greeting")
+      testHelper.doesTransactionContainSpanWithOpAndDescription(transaction, "graphql", "Query.greeting")
     }
   }
 }

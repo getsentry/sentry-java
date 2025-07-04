@@ -46,7 +46,8 @@ class PersonSystemTest {
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
       testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughOtelApi") &&
-        testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughSentryApi")
+        testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughSentryApi") &&
+        testHelper.doesTransactionContainSpanWithOpAndDescription(transaction, "db", "insert into person (firstName, lastName) values (?, ?)")
     }
   }
 
@@ -70,7 +71,8 @@ class PersonSystemTest {
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
       testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughOtelApi") &&
-        testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughSentryApi")
+        testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughSentryApi") &&
+        testHelper.doesTransactionContainSpanWithOpAndDescription(transaction, "db", "insert into person (firstName, lastName) values (?, ?)")
     }
   }
 
@@ -94,7 +96,8 @@ class PersonSystemTest {
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
       testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughOtelApi") &&
-        testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughSentryApi")
+        testHelper.doesTransactionContainSpanWithOp(transaction, "spanCreatedThroughSentryApi") &&
+        testHelper.doesTransactionContainSpanWithOpAndDescription(transaction, "db", "insert into person (firstName, lastName) values (?, ?)")
     }
   }
 }
