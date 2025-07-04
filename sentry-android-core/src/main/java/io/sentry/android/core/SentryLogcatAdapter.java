@@ -6,8 +6,6 @@ import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLogLevel;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

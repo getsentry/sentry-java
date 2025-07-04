@@ -123,10 +123,7 @@ class SentryLogcatAdapterTest {
     fixture.breadcrumbs.first().assert(tag, "$commonMsg verbose exception", SentryLevel.DEBUG)
     fixture.logs
       .first()
-      .assert(
-        "$commonMsg verbose exception\n${throwable.message}",
-        SentryLogLevel.TRACE,
-      )
+      .assert("$commonMsg verbose exception\n${throwable.message}", SentryLogLevel.TRACE)
   }
 
   @Test
@@ -156,10 +153,7 @@ class SentryLogcatAdapterTest {
     fixture.breadcrumbs.first().assert(tag, "$commonMsg warning exception", SentryLevel.WARNING)
     fixture.logs
       .first()
-      .assert(
-        "$commonMsg warning exception\n${throwable.message}",
-        SentryLogLevel.WARN,
-      )
+      .assert("$commonMsg warning exception\n${throwable.message}", SentryLogLevel.WARN)
   }
 
   @Test
