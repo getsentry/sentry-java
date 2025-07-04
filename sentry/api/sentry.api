@@ -6743,7 +6743,10 @@ public abstract interface class io/sentry/util/CollectionUtils$Predicate {
 public final class io/sentry/util/DebugMetaPropertiesApplier {
 	public static field DEBUG_META_PROPERTIES_FILENAME Ljava/lang/String;
 	public fun <init> ()V
+	public static fun apply (Lio/sentry/SentryOptions;Ljava/util/List;)V
 	public static fun applyToOptions (Lio/sentry/SentryOptions;Ljava/util/List;)V
+	public static fun getBuildTool (Ljava/util/Properties;)Ljava/lang/String;
+	public static fun getBuildToolVersion (Ljava/util/Properties;)Ljava/lang/String;
 	public static fun getProguardUuid (Ljava/util/Properties;)Ljava/lang/String;
 }
 
