@@ -2,14 +2,15 @@ package io.sentry.opentelemetry
 
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.sdk.internal.AttributesMap
+import io.opentelemetry.sdk.trace.SpanLimits
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.semconv.HttpAttributes
-import io.opentelemetry.semconv.SemanticAttributes
 import io.opentelemetry.semconv.ServerAttributes
 import io.opentelemetry.semconv.UrlAttributes
 import io.sentry.Scope
 import io.sentry.SentryOptions
 import io.sentry.protocol.Request
+import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -21,7 +22,7 @@ import org.mockito.kotlin.whenever
 class OpenTelemetryAttributesExtractorTest {
   private class Fixture {
     val spanData = mock<SpanData>()
-    val attributes = AttributesMap.create(100, 100)
+    val attributes = AttributesMap.create(100, SpanLimits.getDefault().maxAttributeValueLength)
     val options = SentryOptions.empty()
     val scope = Scope(options)
 
@@ -196,15 +197,6 @@ class OpenTelemetryAttributesExtractorTest {
   }
 
   @Test
-  fun `returns deprecated URL if present`() {
-    givenAttributes(mapOf(SemanticAttributes.HTTP_URL to "https://sentry.io/some/path"))
-
-    val url = whenExtractingUrl()
-
-    assertEquals("https://sentry.io/some/path", url)
-  }
-
-  @Test
   fun `returns reconstructed URL if attributes present`() {
     givenAttributes(
       mapOf(
@@ -293,19 +285,30 @@ class OpenTelemetryAttributesExtractorTest {
 
   @Test
   fun `sets server request headers based on OTel attributes and merges list of values`() {
-    givenAttributes(
+    val elements =
+      "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
+    val listOf = listOf(elements, "another-baggage=abc,more=def")
+    val pairs = AttributeKey.stringArrayKey("http.request.header.baggage") to listOf
+    val map =
       mapOf(
         HttpAttributes.HTTP_REQUEST_METHOD to "GET",
-        AttributeKey.stringArrayKey("http.request.header.baggage") to
-          listOf(
-            "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rate=1,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
-            "another-baggage=abc,more=def",
-          ),
+        pairs,
         AttributeKey.stringArrayKey("http.request.header.sentry-trace") to
           listOf("f9118105af4a2d42b4124532cd176588-4542d085bb0b4de5"),
-        AttributeKey.stringArrayKey("http.response.header.some-header") to listOf("some-value"),
+        AttributeKey.stringArrayKey("http.response.header.some-header") to
+          listOf(
+            "some-value" +
+              "__" +
+              UUID.randomUUID().toString() +
+              "__" +
+              UUID.randomUUID().toString() +
+              "__" +
+              UUID.randomUUID().toString() +
+              "__" +
+              UUID.randomUUID().toString()
+          ),
       )
-    )
+    givenAttributes(map)
 
     whenExtractingAttributes()
 

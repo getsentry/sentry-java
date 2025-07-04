@@ -14,17 +14,23 @@ import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryPackage;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class SentryAutoConfigurationCustomizerProvider
     implements AutoConfigurationCustomizerProvider {
 
+  private static final Logger logger =
+      Logger.getLogger(SentryAutoConfigurationCustomizerProvider.class.getName());
+
   public static volatile boolean skipInit = false;
 
   @Override
   public void customize(AutoConfigurationCustomizer autoConfiguration) {
     ensureSentryOtelStorageIsInitialized();
+    customizeOpenTelemetryDefaults();
     final @Nullable ManifestVersionReader.VersionInfoHolder versionInfoHolder =
         ManifestVersionReader.getInstance().readOpenTelemetryVersion();
 
@@ -61,6 +67,18 @@ public final class SentryAutoConfigurationCustomizerProvider
     as a wrapper. The wrapper can only be set until storage has been initialized by OpenTelemetry.
     */
     Sentry.getGlobalScope();
+  }
+
+  private void customizeOpenTelemetryDefaults() {
+    try {
+      if (System.getProperty("otel.instrumentation.graphql.add-operation-name-to-span-name.enabled")
+          == null) {
+        System.setProperty(
+            "otel.instrumentation.graphql.add-operation-name-to-span-name.enabled", "true");
+      }
+    } catch (Exception e) {
+      logger.log(Level.WARNING, "Unable to change OpenTelemetry defaults for use with Sentry.", e);
+    }
   }
 
   private boolean isSentryAutoInitEnabled() {

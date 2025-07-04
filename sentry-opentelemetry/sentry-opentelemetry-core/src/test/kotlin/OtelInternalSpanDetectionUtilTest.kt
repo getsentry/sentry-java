@@ -4,7 +4,6 @@ import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.sdk.internal.AttributesMap
 import io.opentelemetry.semconv.HttpAttributes
-import io.opentelemetry.semconv.SemanticAttributes
 import io.opentelemetry.semconv.ServerAttributes
 import io.opentelemetry.semconv.UrlAttributes
 import io.sentry.IScopes
@@ -57,15 +56,6 @@ class OtelInternalSpanDetectionUtilTest {
   }
 
   @Test
-  fun `detects deprecated url as internal (span kind client)`() {
-    givenDsn("https://publicKey:secretKey@io.sentry:8081/path/id?sample.rate=0.1")
-    givenSpanKind(SpanKind.CLIENT)
-    givenAttributes(mapOf(SemanticAttributes.HTTP_URL to "https://io.sentry:8081"))
-
-    thenRequestIsConsideredInternal()
-  }
-
-  @Test
   fun `detects split url as internal (span kind internal)`() {
     givenDsn("https://publicKey:secretKey@io.sentry:8081/path/id?sample.rate=0.1")
     givenSpanKind(SpanKind.INTERNAL)
@@ -88,15 +78,6 @@ class OtelInternalSpanDetectionUtilTest {
     givenDsn("https://publicKey:secretKey@io.sentry:8081/path/id?sample.rate=0.1")
     givenSpanKind(SpanKind.INTERNAL)
     givenAttributes(mapOf(UrlAttributes.URL_FULL to "https://io.sentry:8081"))
-
-    thenRequestIsConsideredInternal()
-  }
-
-  @Test
-  fun `detects deprecated url as internal (span kind internal)`() {
-    givenDsn("https://publicKey:secretKey@io.sentry:8081/path/id?sample.rate=0.1")
-    givenSpanKind(SpanKind.INTERNAL)
-    givenAttributes(mapOf(SemanticAttributes.HTTP_URL to "https://io.sentry:8081"))
 
     thenRequestIsConsideredInternal()
   }
