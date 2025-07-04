@@ -113,7 +113,7 @@ class SentryLogcatAdapterTest {
     fixture.breadcrumbs.first().assert(tag, "$commonMsg error exception", SentryLevel.ERROR)
     fixture.logs
       .first()
-      .assert("$commonMsg error exception\n${throwable.stackTraceToString()}", SentryLogLevel.ERROR)
+      .assert("$commonMsg error exception\n${throwable.message}", SentryLogLevel.ERROR)
   }
 
   @Test
@@ -124,7 +124,7 @@ class SentryLogcatAdapterTest {
     fixture.logs
       .first()
       .assert(
-        "$commonMsg verbose exception\n${throwable.stackTraceToString()}",
+        "$commonMsg verbose exception\n${throwable.message}",
         SentryLogLevel.TRACE,
       )
   }
@@ -136,7 +136,7 @@ class SentryLogcatAdapterTest {
     fixture.breadcrumbs.first().assert(tag, "$commonMsg info exception", SentryLevel.INFO)
     fixture.logs
       .first()
-      .assert("$commonMsg info exception\n${throwable.stackTraceToString()}", SentryLogLevel.INFO)
+      .assert("$commonMsg info exception\n${throwable.message}", SentryLogLevel.INFO)
   }
 
   @Test
@@ -146,7 +146,7 @@ class SentryLogcatAdapterTest {
     fixture.breadcrumbs.first().assert(tag, "$commonMsg debug exception", SentryLevel.DEBUG)
     fixture.logs
       .first()
-      .assert("$commonMsg debug exception\n${throwable.stackTraceToString()}", SentryLogLevel.DEBUG)
+      .assert("$commonMsg debug exception\n${throwable.message}", SentryLogLevel.DEBUG)
   }
 
   @Test
@@ -157,7 +157,7 @@ class SentryLogcatAdapterTest {
     fixture.logs
       .first()
       .assert(
-        "$commonMsg warning exception\n${throwable.stackTraceToString()}",
+        "$commonMsg warning exception\n${throwable.message}",
         SentryLogLevel.WARN,
       )
   }
@@ -169,7 +169,7 @@ class SentryLogcatAdapterTest {
     fixture.breadcrumbs.first().assert(tag, "$commonMsg wtf exception", SentryLevel.ERROR)
     fixture.logs
       .first()
-      .assert("$commonMsg wtf exception\n${throwable.stackTraceToString()}", SentryLogLevel.FATAL)
+      .assert("$commonMsg wtf exception\n${throwable.message}", SentryLogLevel.FATAL)
   }
 
   @Test
