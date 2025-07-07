@@ -63,7 +63,7 @@ class ResourcesDebugMetaLoaderTest {
 
     val options = SentryOptions()
 
-    assertNotNull(sut.loadDebugMeta()) { DebugMetaPropertiesApplier.applyToOptions(options, it) }
+    assertNotNull(sut.loadDebugMeta()) { DebugMetaPropertiesApplier.apply(options, it) }
 
     assertEquals(options.bundleIds, setOf("88ba82db-cd26-4c09-8b31-21461d286b68"))
     assertEquals(options.proguardUuid, "34077988-a0e5-4839-9618-7400e1616d1b")
@@ -88,7 +88,7 @@ class ResourcesDebugMetaLoaderTest {
 
     val options = SentryOptions()
 
-    assertNotNull(sut.loadDebugMeta()) { DebugMetaPropertiesApplier.applyToOptions(options, it) }
+    assertNotNull(sut.loadDebugMeta()) { DebugMetaPropertiesApplier.apply(options, it) }
 
     assertEquals(
       options.bundleIds,
@@ -124,7 +124,7 @@ class ResourcesDebugMetaLoaderTest {
 
     val options = SentryOptions()
 
-    assertNotNull(sut.loadDebugMeta()) { DebugMetaPropertiesApplier.applyToOptions(options, it) }
+    assertNotNull(sut.loadDebugMeta()) { DebugMetaPropertiesApplier.apply(options, it) }
 
     assertEquals(
       options.bundleIds,
