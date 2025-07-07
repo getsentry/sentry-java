@@ -11,6 +11,15 @@
   - Enable the Logs feature in your `SentryOptions` or with the `io.sentry.logs.enabled` manifest option and the SDK will automatically send logcat logs to Sentry, if the Sentry Android Gradle plugin is applied.
   - To set the logcat level check the [Logcat integration documentation](https://docs.sentry.io/platforms/android/integrations/logcat/#configure).
 
+### Dependencies
+
+- Bump OpenTelemetry ([#4532](https://github.com/getsentry/sentry-java/pull/4532))
+  - `opentelemetry-sdk` to `1.51.0`
+  - `opentelemetry-instrumentation` to `2.17.0`
+  - `opentelemetry-javaagent` to `2.17.0`
+  - `opentelemetry-semconv` to `1.34.0`
+  - We are now configuring OpenTelemetry to still behave the same way it did before for span names it generates in GraphQL auto instrumentation ([#4537](https://github.com/getsentry/sentry-java/pull/4537))
+
 ## 8.16.1-alpha.2
 
 ### Fixes
