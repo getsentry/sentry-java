@@ -5,49 +5,170 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
 import io.sentry.Sentry
 import io.sentry.SentryLevel
+import io.sentry.SentryLogEvent
+import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.performance.AppStartMetrics
 import java.lang.RuntimeException
-import kotlin.test.BeforeTest
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SentryLogcatAdapterTest {
-  private val breadcrumbs = mutableListOf<Breadcrumb>()
   private val tag = "my-tag"
   private val commonMsg = "SentryLogcatAdapter"
   private val throwable = RuntimeException("Test Exception")
 
   class Fixture {
+    val breadcrumbs = mutableListOf<Breadcrumb>()
+    val logs = mutableListOf<SentryLogEvent>()
+
     fun initSut(options: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null) {
       val metadata =
         Bundle().apply { putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123") }
       val mockContext = ContextUtilsTestHelper.mockMetaData(metaData = metadata)
-      when {
-        options != null -> initForTest(mockContext, options)
-        else -> initForTest(mockContext)
+      initForTest(mockContext) {
+        it.beforeBreadcrumb =
+          SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
+            breadcrumbs.add(breadcrumb)
+            breadcrumb
+          }
+        it.logs.isEnabled = true
+        it.logs.beforeSend =
+          SentryOptions.Logs.BeforeSendLogCallback { logEvent ->
+            logs.add(logEvent)
+            logEvent
+          }
+        options?.configure(it)
       }
     }
   }
 
   private val fixture = Fixture()
 
-  @BeforeTest
-  fun `set up`() {
-    Sentry.close()
+  @AfterTest
+  fun `clean up`() {
     AppStartMetrics.getInstance().clear()
     ContextUtils.resetInstance()
-    breadcrumbs.clear()
+    Sentry.close()
+    fixture.breadcrumbs.clear()
+    fixture.logs.clear()
+  }
 
-    fixture.initSut {
-      it.beforeBreadcrumb =
-        SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
-          breadcrumbs.add(breadcrumb)
-          breadcrumb
-        }
-    }
+  @Test
+  fun `verbose log message has expected content`() {
+    fixture.initSut()
+    SentryLogcatAdapter.v(tag, "$commonMsg verbose")
+    fixture.breadcrumbs.first().assert(tag, "$commonMsg verbose", SentryLevel.DEBUG)
+    fixture.logs.first().assert("$commonMsg verbose", SentryLogLevel.TRACE)
+  }
+
+  @Test
+  fun `info log message has expected content`() {
+    fixture.initSut()
+    SentryLogcatAdapter.i(tag, "$commonMsg info")
+    fixture.breadcrumbs.first().assert(tag, "$commonMsg info", SentryLevel.INFO)
+    fixture.logs.first().assert("$commonMsg info", SentryLogLevel.INFO)
+  }
+
+  @Test
+  fun `debug log message has expected content`() {
+    fixture.initSut()
+    SentryLogcatAdapter.d(tag, "$commonMsg debug")
+    fixture.breadcrumbs.first().assert(tag, "$commonMsg debug", SentryLevel.DEBUG)
+    fixture.logs.first().assert("$commonMsg debug", SentryLogLevel.DEBUG)
+  }
+
+  @Test
+  fun `warning log message has expected content`() {
+    fixture.initSut()
+    SentryLogcatAdapter.w(tag, "$commonMsg warning")
+    fixture.breadcrumbs.first().assert(tag, "$commonMsg warning", SentryLevel.WARNING)
+    fixture.logs.first().assert("$commonMsg warning", SentryLogLevel.WARN)
+  }
+
+  @Test
+  fun `error log message has expected content`() {
+    fixture.initSut()
+    SentryLogcatAdapter.e(tag, "$commonMsg error")
+    fixture.breadcrumbs.first().assert(tag, "$commonMsg error", SentryLevel.ERROR)
+    fixture.logs.first().assert("$commonMsg error", SentryLogLevel.ERROR)
+  }
+
+  @Test
+  fun `wtf log message has expected content`() {
+    fixture.initSut()
+    SentryLogcatAdapter.wtf(tag, "$commonMsg wtf")
+    fixture.breadcrumbs.first().assert(tag, "$commonMsg wtf", SentryLevel.ERROR)
+    fixture.logs.first().assert("$commonMsg wtf", SentryLogLevel.FATAL)
+  }
+
+  @Test
+  fun `e log throwable has expected content`() {
+    fixture.initSut()
+    SentryLogcatAdapter.e(tag, "$commonMsg error exception", throwable)
+    fixture.breadcrumbs.first().assert(tag, "$commonMsg error exception", SentryLevel.ERROR)
+    fixture.logs
+      .first()
+      .assert("$commonMsg error exception\n${throwable.message}", SentryLogLevel.ERROR)
+  }
+
+  @Test
+  fun `v log throwable has expected content`() {
+    fixture.initSut()
+    SentryLogcatAdapter.v(tag, "$commonMsg verbose exception", throwable)
+    fixture.breadcrumbs.first().assert(tag, "$commonMsg verbose exception", SentryLevel.DEBUG)
+    fixture.logs
+      .first()
+      .assert("$commonMsg verbose exception\n${throwable.message}", SentryLogLevel.TRACE)
+  }
+
+  @Test
+  fun `i log throwable has expected content`() {
+    fixture.initSut()
+    SentryLogcatAdapter.i(tag, "$commonMsg info exception", throwable)
+    fixture.breadcrumbs.first().assert(tag, "$commonMsg info exception", SentryLevel.INFO)
+    fixture.logs
+      .first()
+      .assert("$commonMsg info exception\n${throwable.message}", SentryLogLevel.INFO)
+  }
+
+  @Test
+  fun `d log throwable has expected content`() {
+    fixture.initSut()
+    SentryLogcatAdapter.d(tag, "$commonMsg debug exception", throwable)
+    fixture.breadcrumbs.first().assert(tag, "$commonMsg debug exception", SentryLevel.DEBUG)
+    fixture.logs
+      .first()
+      .assert("$commonMsg debug exception\n${throwable.message}", SentryLogLevel.DEBUG)
+  }
+
+  @Test
+  fun `w log throwable has expected content`() {
+    fixture.initSut()
+    SentryLogcatAdapter.w(tag, "$commonMsg warning exception", throwable)
+    fixture.breadcrumbs.first().assert(tag, "$commonMsg warning exception", SentryLevel.WARNING)
+    fixture.logs
+      .first()
+      .assert("$commonMsg warning exception\n${throwable.message}", SentryLogLevel.WARN)
+  }
+
+  @Test
+  fun `wtf log throwable has expected content`() {
+    fixture.initSut()
+    SentryLogcatAdapter.wtf(tag, "$commonMsg wtf exception", throwable)
+    fixture.breadcrumbs.first().assert(tag, "$commonMsg wtf exception", SentryLevel.ERROR)
+    fixture.logs
+      .first()
+      .assert("$commonMsg wtf exception\n${throwable.message}", SentryLogLevel.FATAL)
+  }
+
+  @Test
+  fun `do not send logs if logs is disabled`() {
+    fixture.initSut { it.logs.isEnabled = false }
 
     SentryLogcatAdapter.v(tag, "$commonMsg verbose")
     SentryLogcatAdapter.i(tag, "$commonMsg info")
@@ -55,135 +176,44 @@ class SentryLogcatAdapterTest {
     SentryLogcatAdapter.w(tag, "$commonMsg warning")
     SentryLogcatAdapter.e(tag, "$commonMsg error")
     SentryLogcatAdapter.wtf(tag, "$commonMsg wtf")
-  }
-
-  @Test
-  fun `verbose log message has expected content`() {
-    val breadcrumb =
-      breadcrumbs.find { it.level == SentryLevel.DEBUG && it.message?.contains("verbose") ?: false }
-    assertEquals("Logcat", breadcrumb?.category)
-    assertEquals(tag, breadcrumb?.data?.get("tag"))
-    assert(breadcrumb?.message?.contains("verbose") == true)
-  }
-
-  @Test
-  fun `info log message has expected content`() {
-    val breadcrumb =
-      breadcrumbs.find { it.level == SentryLevel.INFO && it.message?.contains("info") ?: false }
-    assertEquals("Logcat", breadcrumb?.category)
-    assertEquals(tag, breadcrumb?.data?.get("tag"))
-    assert(breadcrumb?.message?.contains("info") == true)
-  }
-
-  @Test
-  fun `debug log message has expected content`() {
-    val breadcrumb =
-      breadcrumbs.find { it.level == SentryLevel.DEBUG && it.message?.contains("debug") ?: false }
-    assertEquals("Logcat", breadcrumb?.category)
-    assertEquals(tag, breadcrumb?.data?.get("tag"))
-    assert(breadcrumb?.message?.contains("debug") == true)
-  }
-
-  @Test
-  fun `warning log message has expected content`() {
-    val breadcrumb =
-      breadcrumbs.find {
-        it.level == SentryLevel.WARNING && it.message?.contains("warning") ?: false
-      }
-    assertEquals("Logcat", breadcrumb?.category)
-    assertEquals(tag, breadcrumb?.data?.get("tag"))
-    assert(breadcrumb?.message?.contains("warning") == true)
-  }
-
-  @Test
-  fun `error log message has expected content`() {
-    val breadcrumb =
-      breadcrumbs.find { it.level == SentryLevel.ERROR && it.message?.contains("error") ?: false }
-    assertEquals("Logcat", breadcrumb?.category)
-    assertEquals(tag, breadcrumb?.data?.get("tag"))
-    assert(breadcrumb?.message?.contains("error") == true)
-  }
-
-  @Test
-  fun `wtf log message has expected content`() {
-    val breadcrumb =
-      breadcrumbs.find { it.level == SentryLevel.ERROR && it.message?.contains("wtf") ?: false }
-    assertEquals("Logcat", breadcrumb?.category)
-    assertEquals(tag, breadcrumb?.data?.get("tag"))
-    assert(breadcrumb?.message?.contains("wtf") == true)
-  }
-
-  @Test
-  fun `e log throwable has expected content`() {
     SentryLogcatAdapter.e(tag, "$commonMsg error exception", throwable)
-
-    val breadcrumb = breadcrumbs.find { it.message?.contains("exception") ?: false }
-    assertEquals("Logcat", breadcrumb?.category)
-    assertEquals(tag, breadcrumb?.getData("tag"))
-    assertEquals(SentryLevel.ERROR, breadcrumb?.level)
-    assertEquals(throwable.message, breadcrumb?.getData("throwable"))
-  }
-
-  @Test
-  fun `v log throwable has expected content`() {
     SentryLogcatAdapter.v(tag, "$commonMsg verbose exception", throwable)
-
-    val breadcrumb = breadcrumbs.find { it.message?.contains("exception") ?: false }
-    assertEquals("Logcat", breadcrumb?.category)
-    assertEquals(tag, breadcrumb?.getData("tag"))
-    assertEquals(SentryLevel.DEBUG, breadcrumb?.level)
-    assertEquals(throwable.message, breadcrumb?.getData("throwable"))
-  }
-
-  @Test
-  fun `i log throwable has expected content`() {
     SentryLogcatAdapter.i(tag, "$commonMsg info exception", throwable)
-
-    val breadcrumb = breadcrumbs.find { it.message?.contains("exception") ?: false }
-    assertEquals("Logcat", breadcrumb?.category)
-    assertEquals(tag, breadcrumb?.getData("tag"))
-    assertEquals(SentryLevel.INFO, breadcrumb?.level)
-    assertEquals(throwable.message, breadcrumb?.getData("throwable"))
-  }
-
-  @Test
-  fun `d log throwable has expected content`() {
     SentryLogcatAdapter.d(tag, "$commonMsg debug exception", throwable)
-
-    val breadcrumb = breadcrumbs.find { it.message?.contains("exception") ?: false }
-    assertEquals("Logcat", breadcrumb?.category)
-    assertEquals(tag, breadcrumb?.getData("tag"))
-    assertEquals(SentryLevel.DEBUG, breadcrumb?.level)
-    assertEquals(throwable.message, breadcrumb?.getData("throwable"))
-  }
-
-  @Test
-  fun `w log throwable has expected content`() {
     SentryLogcatAdapter.w(tag, "$commonMsg warning exception", throwable)
-
-    val breadcrumb = breadcrumbs.find { it.message?.contains("exception") ?: false }
-    assertEquals("Logcat", breadcrumb?.category)
-    assertEquals(tag, breadcrumb?.getData("tag"))
-    assertEquals(SentryLevel.WARNING, breadcrumb?.level)
-    assertEquals(throwable.message, breadcrumb?.getData("throwable"))
-  }
-
-  @Test
-  fun `wtf log throwable has expected content`() {
     SentryLogcatAdapter.wtf(tag, "$commonMsg wtf exception", throwable)
 
-    val breadcrumb = breadcrumbs.find { it.message?.contains("exception") ?: false }
-    assertEquals("Logcat", breadcrumb?.category)
-    assertEquals(tag, breadcrumb?.getData("tag"))
-    assertEquals(SentryLevel.ERROR, breadcrumb?.level)
-    assertEquals(throwable.message, breadcrumb?.getData("throwable"))
+    assertTrue(fixture.logs.isEmpty())
   }
 
   @Test
   fun `logs add correct number of breadcrumb`() {
+    fixture.initSut()
+    SentryLogcatAdapter.v(tag, commonMsg)
+    SentryLogcatAdapter.d(tag, commonMsg)
+    SentryLogcatAdapter.i(tag, commonMsg)
+    SentryLogcatAdapter.w(tag, commonMsg)
+    SentryLogcatAdapter.e(tag, commonMsg)
+    SentryLogcatAdapter.wtf(tag, commonMsg)
     assertEquals(
       6,
-      breadcrumbs.filter { it.message?.contains("SentryLogcatAdapter") ?: false }.size,
+      fixture.breadcrumbs.filter { it.message?.contains("SentryLogcatAdapter") ?: false }.size,
     )
+  }
+
+  private fun Breadcrumb.assert(
+    expectedTag: String,
+    expectedMessage: String,
+    expectedLevel: SentryLevel,
+  ) {
+    assertEquals(expectedMessage, message)
+    assertEquals(expectedTag, data["tag"])
+    assertEquals(expectedLevel, level)
+    assertEquals("Logcat", category)
+  }
+
+  private fun SentryLogEvent.assert(expectedMessage: String, expectedLevel: SentryLogLevel) {
+    assertEquals(expectedMessage, body)
+    assertEquals(expectedLevel, level)
   }
 }
