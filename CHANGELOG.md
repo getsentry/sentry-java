@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.16.1-alpha.2
 
 ### Fixes
 
@@ -9,6 +9,8 @@
     - To set the logcat level check the [Logcat integration documentation](https://docs.sentry.io/platforms/android/integrations/logcat/#configure).
 - Optimize scope when maxBreadcrumb is 0 ([#4504](https://github.com/getsentry/sentry-java/pull/4504))
 - Fix javadoc on TransportResult ([#4528](https://github.com/getsentry/sentry-java/pull/4528))
+- Session Replay: Fix `IllegalArgumentException` when `Bitmap` is initialized with non-positive values ([#4536](https://github.com/getsentry/sentry-java/pull/4536))
+- Set thread information on transaction from OpenTelemetry attributes ([#4478](https://github.com/getsentry/sentry-java/pull/4478))
 
 ### Internal
 
