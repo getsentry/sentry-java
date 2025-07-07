@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Features
+
+- Add Ktor client integration ([#4527](https://github.com/getsentry/sentry-java/pull/4527))
+  - To use the integration, add a dependency on `io.sentry:sentry-ktor`, then install the `SentryKtorClientPlugin` on your `HttpClient`,
+    e.g.:
+    ```kotlin
+    val client =
+      HttpClient(Java) {
+        install(io.sentry.ktor.SentryKtorClientPlugin) {
+          captureFailedRequests = true
+          failedRequestTargets = listOf(".*")
+          failedRequestStatusCodes = listOf(HttpStatusCodeRange(500, 599))
+        }
+      }
+    ```
+    
 ### Fixes
 
 - Send Timber logs through Sentry Logs ([#4490](https://github.com/getsentry/sentry-java/pull/4490))
