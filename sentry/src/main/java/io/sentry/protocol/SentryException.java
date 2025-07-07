@@ -35,18 +35,23 @@ public final class SentryException implements JsonUnknown, JsonSerializable {
    * <p>At least one of `type` or `value` is required, otherwise the exception is discarded.
    */
   private @Nullable String type;
+
   /**
    * Human readable display value.
    *
    * <p>At least one of `type` or `value` is required, otherwise the exception is discarded.
    */
   private @Nullable String value;
+
   /** The optional module, or package which the exception type lives in. */
   private @Nullable String module;
+
   /** An optional value that refers to a [thread](#typedef-Thread). */
   private @Nullable Long threadId;
+
   /** Stack trace containing frames of this exception. */
   private @Nullable SentryStackTrace stacktrace;
+
   /** Mechanism by which this exception was generated and handled. */
   private @Nullable Mechanism mechanism;
 

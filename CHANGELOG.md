@@ -1,12 +1,222 @@
 # Changelog
 
-## Unreleased
+## 8.16.1-alpha.2
+
+### Fixes
+
+- Optimize scope when maxBreadcrumb is 0 ([#4504](https://github.com/getsentry/sentry-java/pull/4504))
+- Fix javadoc on TransportResult ([#4528](https://github.com/getsentry/sentry-java/pull/4528))
+- Session Replay: Fix `IllegalArgumentException` when `Bitmap` is initialized with non-positive values ([#4536](https://github.com/getsentry/sentry-java/pull/4536))
+- Set thread information on transaction from OpenTelemetry attributes ([#4478](https://github.com/getsentry/sentry-java/pull/4478))
+
+### Internal
+
+- Flattened PerformanceCollectionData ([#4505](https://github.com/getsentry/sentry-java/pull/4505))
+
+## 8.16.0
+
+### Features
+
+- Send JUL logs to Sentry as logs ([#4518](https://github.com/getsentry/sentry-java/pull/4518))
+  - You need to enable the logs feature, either in `sentry.properties`:
+    ```properties
+    logs.enabled=true
+    ```
+  - Or, if you manually initialize Sentry, you may also enable logs on `Sentry.init`:
+    ```java
+    Sentry.init(options -> {
+      ...
+      options.getLogs().setEnabled(true);
+    });
+    ```
+  - It is also possible to set the `minimumLevel` in `logging.properties`, meaning any log message >= the configured level will be sent to Sentry and show up under Logs:
+    ```properties
+    io.sentry.jul.SentryHandler.minimumLevel=CONFIG
+    ```
+- Send Log4j2 logs to Sentry as logs ([#4517](https://github.com/getsentry/sentry-java/pull/4517))
+  - You need to enable the logs feature either in `sentry.properties`:
+    ```properties
+    logs.enabled=true
+    ```
+  - If you manually initialize Sentry, you may also enable logs on `Sentry.init`:
+    ```java
+    Sentry.init(options -> {
+      ...
+      options.getLogs().setEnabled(true);
+    });
+    ```
+  - It is also possible to set the `minimumLevel` in `log4j2.xml`, meaning any log message >= the configured level will be sent to Sentry and show up under Logs:
+    ```xml
+    <Sentry name="Sentry"
+        dsn="your DSN"
+        minimumBreadcrumbLevel="DEBUG"
+        minimumEventLevel="WARN"
+        minimumLevel="DEBUG"
+    />
+    ```
+
+## 8.15.1
+
+### Fixes
+
+- Enabling Sentry Logs through Logback in Spring Boot config did not work in 3.15.0 ([#4523](https://github.com/getsentry/sentry-java/pull/4523))
+
+## 8.15.0
+
+### Features
+
+- Add chipset to device context ([#4512](https://github.com/getsentry/sentry-java/pull/4512))
+
+### Fixes
+
+- No longer send out empty log envelopes ([#4497](https://github.com/getsentry/sentry-java/pull/4497))
+- Session Replay: Expand fix for crash on devices to all Unisoc/Spreadtrum chipsets ([#4510](https://github.com/getsentry/sentry-java/pull/4510))
+- Log parameter objects are now turned into `String` via `toString` ([#4515](https://github.com/getsentry/sentry-java/pull/4515))
+  - One of the two `SentryLogEventAttributeValue` constructors did not convert the value previously.
+- Logs are now flushed on shutdown ([#4503](https://github.com/getsentry/sentry-java/pull/4503))
+- User Feedback: Do not redefine system attributes for `SentryUserFeedbackButton`, but reference them instead ([#4519](https://github.com/getsentry/sentry-java/pull/4519))
+
+### Features
+
+- Send Logback logs to Sentry as logs ([#4502](https://github.com/getsentry/sentry-java/pull/4502))
+  - You need to enable the logs feature and can also set the `minimumLevel` for log events:
+    ```xml
+    <appender name="sentry" class="io.sentry.logback.SentryAppender">
+      <options>
+        <!-- NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard -->
+        <dsn>https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563</dsn>
+        <logs>
+          <enabled>true</enabled>
+        </logs>
+      </options>
+      <!-- Demonstrates how to modify the minimum values -->
+      <!-- Default for Events is ERROR -->
+      <minimumEventLevel>WARN</minimumEventLevel>
+      <!-- Default for Breadcrumbs is INFO -->
+      <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
+      <!-- Default for Log Events is INFO -->
+      <minimumLevel>INFO</minimumLevel>
+    </appender>
+    ```
+  - For Spring Boot you may also enable it in `application.properties` / `application.yml`:
+    ```properties
+    sentry.logs.enabled=true
+    sentry.logging.minimum-level=error
+    ```
+  - If you manually initialize Sentry, you may also enable logs on `Sentry.init`:
+    ```java
+    Sentry.init(options -> {
+      ...
+      options.getLogs().setEnabled(true);
+    });
+    ```
+  - Enabling via `sentry.properties` is also possible:
+    ```properties
+    logs.enabled=true
+    ```
+- Automatically use `SentryOptions.Logs.BeforeSendLogCallback` Spring beans ([#4509](https://github.com/getsentry/sentry-java/pull/4509))
+
+### Dependencies
+
+- Bump Gradle from v8.14.1 to v8.14.2 ([#4473](https://github.com/getsentry/sentry-java/pull/4473))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8142)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.1...v8.14.2)
+
+## 8.14.0
+
+### Fixes
+
+- Fix Session Replay masking for newer versions of Jetpack Compose (1.8+) ([#4485](https://github.com/getsentry/sentry-java/pull/4485))
+
+### Features
+
+- Add New User Feedback Widget ([#4450](https://github.com/getsentry/sentry-java/pull/4450))
+    - This widget is a custom button that can be used to show the user feedback form
+- Add New User Feedback form ([#4384](https://github.com/getsentry/sentry-java/pull/4384))
+    - We now introduce SentryUserFeedbackDialog, which extends AlertDialog, inheriting the show() and cancel() methods, among others.
+      To use it, just instantiate it and call show() on the instance (Sentry must be previously initialized).
+      For customization options, please check the [User Feedback documentation](https://docs.sentry.io/platforms/android/user-feedback/configuration/).
+      ```java
+      import io.sentry.android.core.SentryUserFeedbackDialog;
+      
+      new SentryUserFeedbackDialog.Builder(context).create().show();
+      ```
+      ```kotlin
+      import io.sentry.android.core.SentryUserFeedbackDialog
+    
+      SentryUserFeedbackDialog.Builder(context).create().show()
+      ```
+- Add `user.id`, `user.name` and `user.email` to log attributes ([#4486](https://github.com/getsentry/sentry-java/pull/4486))
+- User `name` attribute has been deprecated, please use `username` instead ([#4486](https://github.com/getsentry/sentry-java/pull/4486))
+- Add device (`device.brand`, `device.model` and `device.family`) and OS (`os.name` and `os.version`) attributes to logs ([#4493](https://github.com/getsentry/sentry-java/pull/4493))
+- Serialize `preContext` and `postContext` in `SentryStackFrame` ([#4482](https://github.com/getsentry/sentry-java/pull/4482))
+
+### Internal
+
+- User Feedback now uses SentryUser.username instead of SentryUser.name ([#4494](https://github.com/getsentry/sentry-java/pull/4494))
+
+## 8.13.3
+
+### Fixes
+
+- Send UI Profiling app start chunk when it finishes ([#4423](https://github.com/getsentry/sentry-java/pull/4423))
+- Republish Javadoc [#4457](https://github.com/getsentry/sentry-java/pull/4457)
+- Finalize `OkHttpEvent` even if no active span in `SentryOkHttpInterceptor` [#4469](https://github.com/getsentry/sentry-java/pull/4469)
+- Session Replay: Do not capture current replay for cached events from the past ([#4474](https://github.com/getsentry/sentry-java/pull/4474))
+- Session Replay: Correctly capture Dialogs and non full-sized windows ([#4354](https://github.com/getsentry/sentry-java/pull/4354))
+- Session Replay: Fix inconsistent `segment_id` ([#4471](https://github.com/getsentry/sentry-java/pull/4471))
+- Session Replay: Fix crash on devices with the Unisoc/Spreadtrum T606 chipset ([#4477](https://github.com/getsentry/sentry-java/pull/4477))
+
+## 8.13.2
+
+### Fixes
+
+- Don't apply Spring Boot plugin in `sentry-spring-boot-jakarta` ([#4456](https://github.com/getsentry/sentry-java/pull/4456))
+  - The jar for `io.sentry:sentry-spring-boot-jakarta` is now correctly being built and published to Maven Central.
+
+## 8.13.1
+
+### Fixes
+
+- Fix `SentryAndroid.init` crash if SDK is initialized from a background thread while an `Activity` is in resumed state ([#4449](https://github.com/getsentry/sentry-java/pull/4449))
+
+### Dependencies
+
+- Bump Gradle from v8.14 to v8.14.1 ([#4437](https://github.com/getsentry/sentry-java/pull/4437))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8141)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14...v8.14.1)
+
+## 8.13.0
 
 ### Features
 
 - Add debug mode for Session Replay masking ([#4357](https://github.com/getsentry/sentry-java/pull/4357))
     - Use `Sentry.replay().enableDebugMaskingOverlay()` to overlay the screen with the Session Replay masks.
     - The masks will be invalidated at most once per `frameRate` (default 1 fps).
+- Extend Logs API to allow passing in `attributes` ([#4402](https://github.com/getsentry/sentry-java/pull/4402))
+  - `Sentry.logger.log` now takes a `SentryLogParameters`
+  - Use `SentryLogParameters.create(SentryAttributes.of(...))` to pass attributes
+    - Attribute values may be of type `string`, `boolean`, `integer` or `double`.
+    - Other types will be converted to `string`. Currently we simply call `toString()` but we might offer more in the future.
+    - You may manually flatten complex types into multiple separate attributes of simple types.
+      - e.g. intead of `SentryAttribute.named("point", Point(10, 20))` you may store it as `SentryAttribute.integerAttribute("point.x", point.x)` and `SentryAttribute.integerAttribute("point.y", point.y)`
+    - `SentryAttribute.named()` will automatically infer the type or fall back to `string`.
+    - `SentryAttribute.booleanAttribute()` takes a `Boolean` value
+    - `SentryAttribute.integerAttribute()` takes a `Integer` value
+    - `SentryAttribute.doubleAttribute()` takes a `Double` value
+    - `SentryAttribute.stringAttribute()` takes a `String` value
+  - We opted for handling parameters via `SentryLogParameters` to avoid creating tons of overloads that are ambiguous.
+
+### Fixes
+
+- Isolation scope is now forked in `OtelSentrySpanProcessor` instead of `OtelSentryPropagator` ([#4434](https://github.com/getsentry/sentry-java/pull/4434))
+  - Since propagator may never be invoked we moved the location where isolation scope is forked.
+  - Not invoking `OtelSentryPropagator.extract` or having a `sentry-trace` header that failed to parse would cause isolation scope not to be forked.
+  - This in turn caused data to bleed between scopes, e.g. from one request into another
+
+### Dependencies
+
+- Bump Spring Boot to `3.5.0` ([#4111](https://github.com/getsentry/sentry-java/pull/4111))
 
 ## 8.12.0
 

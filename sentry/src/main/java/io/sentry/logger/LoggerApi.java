@@ -5,6 +5,9 @@ import io.sentry.IScope;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
 import io.sentry.Scopes;
+import io.sentry.SentryAttribute;
+import io.sentry.SentryAttributeType;
+import io.sentry.SentryAttributes;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLogEvent;
@@ -14,6 +17,7 @@ import io.sentry.SentryOptions;
 import io.sentry.SpanId;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.protocol.User;
 import io.sentry.util.Platform;
 import io.sentry.util.TracingUtils;
 import java.util.HashMap;
@@ -65,7 +69,7 @@ public final class LoggerApi implements ILoggerApi {
       final @NotNull SentryLogLevel level,
       final @Nullable String message,
       final @Nullable Object... args) {
-    log(level, null, message, args);
+    captureLog(level, SentryLogParameters.create(null, null), message, args);
   }
 
   @Override
@@ -74,13 +78,22 @@ public final class LoggerApi implements ILoggerApi {
       final @Nullable SentryDate timestamp,
       final @Nullable String message,
       final @Nullable Object... args) {
-    captureLog(level, timestamp, message, args);
+    captureLog(level, SentryLogParameters.create(timestamp, null), message, args);
+  }
+
+  @Override
+  public void log(
+      final @NotNull SentryLogLevel level,
+      final @NotNull SentryLogParameters params,
+      final @Nullable String message,
+      final @Nullable Object... args) {
+    captureLog(level, params, message, args);
   }
 
   @SuppressWarnings("AnnotateFormatMethod")
   private void captureLog(
       final @NotNull SentryLogLevel level,
-      final @Nullable SentryDate timestamp,
+      final @NotNull SentryLogParameters params,
       final @Nullable String message,
       final @Nullable Object... args) {
     final @NotNull SentryOptions options = scopes.getOptions();
@@ -103,6 +116,7 @@ public final class LoggerApi implements ILoggerApi {
         return;
       }
 
+      final @Nullable SentryDate timestamp = params.getTimestamp();
       final @NotNull SentryDate timestampToUse =
           timestamp == null ? options.getDateProvider().now() : timestamp;
       final @NotNull String messageToUse = maybeFormatMessage(message, args);
@@ -119,7 +133,7 @@ public final class LoggerApi implements ILoggerApi {
           span == null ? propagationContext.getSpanId() : span.getSpanContext().getSpanId();
       final SentryLogEvent logEvent =
           new SentryLogEvent(traceId, timestampToUse, messageToUse, level);
-      logEvent.setAttributes(createAttributes(message, spanId, args));
+      logEvent.setAttributes(createAttributes(params.getAttributes(), message, spanId, args));
       logEvent.setSeverityNumber(level.getSeverityNumber());
 
       scopes.getClient().captureLog(logEvent, combinedScope);
@@ -146,46 +160,69 @@ public final class LoggerApi implements ILoggerApi {
   }
 
   private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
-      final @NotNull String message, final @NotNull SpanId spanId, final @Nullable Object... args) {
+      final @Nullable SentryAttributes incomingAttributes,
+      final @NotNull String message,
+      final @NotNull SpanId spanId,
+      final @Nullable Object... args) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
+
+    if (incomingAttributes != null) {
+      for (SentryAttribute attribute : incomingAttributes.getAttributes().values()) {
+        final @Nullable Object value = attribute.getValue();
+        final @NotNull SentryAttributeType type =
+            attribute.getType() == null ? getType(value) : attribute.getType();
+        attributes.put(attribute.getName(), new SentryLogEventAttributeValue(type, value));
+      }
+    }
+
     if (args != null) {
       int i = 0;
       for (Object arg : args) {
-        final @NotNull String type = getType(arg);
+        final @NotNull SentryAttributeType type = getType(arg);
         attributes.put(
             "sentry.message.parameter." + i, new SentryLogEventAttributeValue(type, arg));
         i++;
       }
       if (i > 0) {
-        attributes.put(
-            "sentry.message.template", new SentryLogEventAttributeValue("string", message));
+        if (attributes.get("sentry.message.template") == null) {
+          attributes.put(
+              "sentry.message.template",
+              new SentryLogEventAttributeValue(SentryAttributeType.STRING, message));
+        }
       }
     }
 
     final @Nullable SdkVersion sdkVersion = scopes.getOptions().getSdkVersion();
     if (sdkVersion != null) {
       attributes.put(
-          "sentry.sdk.name", new SentryLogEventAttributeValue("string", sdkVersion.getName()));
+          "sentry.sdk.name",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, sdkVersion.getName()));
       attributes.put(
           "sentry.sdk.version",
-          new SentryLogEventAttributeValue("string", sdkVersion.getVersion()));
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, sdkVersion.getVersion()));
     }
 
     final @Nullable String environment = scopes.getOptions().getEnvironment();
     if (environment != null) {
-      attributes.put("sentry.environment", new SentryLogEventAttributeValue("string", environment));
+      attributes.put(
+          "sentry.environment",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, environment));
     }
     final @Nullable String release = scopes.getOptions().getRelease();
     if (release != null) {
-      attributes.put("sentry.release", new SentryLogEventAttributeValue("string", release));
+      attributes.put(
+          "sentry.release", new SentryLogEventAttributeValue(SentryAttributeType.STRING, release));
     }
 
     attributes.put(
-        "sentry.trace.parent_span_id", new SentryLogEventAttributeValue("string", spanId));
+        "sentry.trace.parent_span_id",
+        new SentryLogEventAttributeValue(SentryAttributeType.STRING, spanId));
 
     if (Platform.isJvm()) {
       setServerName(attributes);
     }
+
+    setUser(attributes);
 
     return attributes;
   }
@@ -196,25 +233,48 @@ public final class LoggerApi implements ILoggerApi {
     final @Nullable String optionsServerName = options.getServerName();
     if (optionsServerName != null) {
       attributes.put(
-          "server.address", new SentryLogEventAttributeValue("string", optionsServerName));
+          "server.address",
+          new SentryLogEventAttributeValue(SentryAttributeType.STRING, optionsServerName));
     } else if (options.isAttachServerName()) {
       final @Nullable String hostname = HostnameCache.getInstance().getHostname();
       if (hostname != null) {
-        attributes.put("server.address", new SentryLogEventAttributeValue("string", hostname));
+        attributes.put(
+            "server.address",
+            new SentryLogEventAttributeValue(SentryAttributeType.STRING, hostname));
       }
     }
   }
 
-  private @NotNull String getType(final @Nullable Object arg) {
+  private void setUser(final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes) {
+    final @Nullable User user = scopes.getCombinedScopeView().getUser();
+    if (user != null) {
+      final @Nullable String id = user.getId();
+      if (id != null) {
+        attributes.put("user.id", new SentryLogEventAttributeValue(SentryAttributeType.STRING, id));
+      }
+      final @Nullable String username = user.getUsername();
+      if (username != null) {
+        attributes.put(
+            "user.name", new SentryLogEventAttributeValue(SentryAttributeType.STRING, username));
+      }
+      final @Nullable String email = user.getEmail();
+      if (email != null) {
+        attributes.put(
+            "user.email", new SentryLogEventAttributeValue(SentryAttributeType.STRING, email));
+      }
+    }
+  }
+
+  private @NotNull SentryAttributeType getType(final @Nullable Object arg) {
     if (arg instanceof Boolean) {
-      return "boolean";
+      return SentryAttributeType.BOOLEAN;
     }
     if (arg instanceof Integer) {
-      return "integer";
+      return SentryAttributeType.INTEGER;
     }
     if (arg instanceof Number) {
-      return "double";
+      return SentryAttributeType.DOUBLE;
     }
-    return "string";
+    return SentryAttributeType.STRING;
   }
 }

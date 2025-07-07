@@ -1,66 +1,66 @@
 package io.sentry.android.sqlite
 
 import androidx.sqlite.db.SupportSQLiteOpenHelper
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
 class SentrySupportSQLiteOpenHelperTest {
+  class Fixture {
+    val mockOpenHelper = mock<SupportSQLiteOpenHelper>()
 
-    class Fixture {
-        val mockOpenHelper = mock<SupportSQLiteOpenHelper>()
-
-        init {
-            whenever(mockOpenHelper.writableDatabase).thenReturn(mock())
-            whenever(mockOpenHelper.readableDatabase).thenReturn(mock())
-        }
-
-        fun getSut(): SentrySupportSQLiteOpenHelper {
-            return SentrySupportSQLiteOpenHelper.create(mockOpenHelper) as SentrySupportSQLiteOpenHelper
-        }
+    init {
+      whenever(mockOpenHelper.writableDatabase).thenReturn(mock())
+      whenever(mockOpenHelper.readableDatabase).thenReturn(mock())
     }
 
-    private val fixture = Fixture()
+    fun getSut(): SentrySupportSQLiteOpenHelper =
+      SentrySupportSQLiteOpenHelper.create(mockOpenHelper) as SentrySupportSQLiteOpenHelper
+  }
 
-    @Test
-    fun `all calls are propagated to the delegate`() {
-        val openHelper = fixture.getSut()
+  private val fixture = Fixture()
 
-        openHelper.writableDatabase
-        verify(fixture.mockOpenHelper).writableDatabase
+  @Test
+  fun `all calls are propagated to the delegate`() {
+    val openHelper = fixture.getSut()
 
-        openHelper.readableDatabase
-        verify(fixture.mockOpenHelper).readableDatabase
+    openHelper.writableDatabase
+    verify(fixture.mockOpenHelper).writableDatabase
 
-        openHelper.databaseName
-        verify(fixture.mockOpenHelper, times(2)).databaseName
+    openHelper.readableDatabase
+    verify(fixture.mockOpenHelper).readableDatabase
 
-        openHelper.close()
-        verify(fixture.mockOpenHelper).close()
-    }
+    openHelper.databaseName
+    verify(fixture.mockOpenHelper, times(2)).databaseName
 
-    @Test
-    fun `writableDatabase returns a SentrySupportSQLiteDatabase`() {
-        val openHelper = fixture.getSut()
-        assertIs<SentrySupportSQLiteDatabase>(openHelper.writableDatabase)
-    }
+    openHelper.close()
+    verify(fixture.mockOpenHelper).close()
+  }
 
-    @Test
-    fun `create returns a SentrySupportSQLiteOpenHelper wrapper`() {
-        val openHelper: SupportSQLiteOpenHelper = SentrySupportSQLiteOpenHelper.Companion.create(fixture.mockOpenHelper)
-        assertIs<SentrySupportSQLiteDatabase>(openHelper.writableDatabase)
-        assertNotEquals(fixture.mockOpenHelper, openHelper)
-    }
+  @Test
+  fun `writableDatabase returns a SentrySupportSQLiteDatabase`() {
+    val openHelper = fixture.getSut()
+    assertIs<SentrySupportSQLiteDatabase>(openHelper.writableDatabase)
+  }
 
-    @Test
-    fun `create returns the passed openHelper if it is a SentrySupportSQLiteOpenHelper`() {
-        val sentryOpenHelper = mock<SentrySupportSQLiteOpenHelper>()
-        val openHelper: SupportSQLiteOpenHelper = SentrySupportSQLiteOpenHelper.Companion.create(sentryOpenHelper)
-        assertEquals(sentryOpenHelper, openHelper)
-    }
+  @Test
+  fun `create returns a SentrySupportSQLiteOpenHelper wrapper`() {
+    val openHelper: SupportSQLiteOpenHelper =
+      SentrySupportSQLiteOpenHelper.Companion.create(fixture.mockOpenHelper)
+    assertIs<SentrySupportSQLiteDatabase>(openHelper.writableDatabase)
+    assertNotEquals(fixture.mockOpenHelper, openHelper)
+  }
+
+  @Test
+  fun `create returns the passed openHelper if it is a SentrySupportSQLiteOpenHelper`() {
+    val sentryOpenHelper = mock<SentrySupportSQLiteOpenHelper>()
+    val openHelper: SupportSQLiteOpenHelper =
+      SentrySupportSQLiteOpenHelper.Companion.create(sentryOpenHelper)
+    assertEquals(sentryOpenHelper, openHelper)
+  }
 }

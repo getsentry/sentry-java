@@ -6,8 +6,8 @@ targets:
     gradleCliPath: ./gradlew
     mavenCliPath: scripts/mvnw
     mavenSettingsPath: scripts/settings.xml
-    mavenRepoId: ossrh
-    mavenRepoUrl: https://oss.sonatype.org/service/local/staging/deploy/maven2/
+    mavenRepoId: ossrh-staging-api
+    mavenRepoUrl: https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/
     android:
       distDirRegex: /^(sentry-android-|.*-android).*$/
       fileReplaceeRegex: /\d+\.\d+\.\d+(-\w+(\.\d+)?)?(-SNAPSHOT)?/

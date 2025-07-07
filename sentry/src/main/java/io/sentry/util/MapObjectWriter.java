@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 public final class MapObjectWriter implements ObjectWriter {
 
   final @NotNull Map<String, Object> root;
+
   /**
    * The stack for maintaining the hierarchy of a json-like data structure. Possible elements:
    *

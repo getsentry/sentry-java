@@ -57,6 +57,7 @@ public final class Sentry {
 
   /** The root Scopes or NoOp if Sentry is disabled. */
   private static volatile @NotNull IScopes rootScopes = NoOpScopes.getInstance();
+
   /**
    * This initializes global scope with default options. Options will later be replaced on
    * Sentry.init
@@ -192,7 +193,9 @@ public final class Sentry {
   public static <T extends SentryOptions> void init(
       final @NotNull OptionsContainer<T> clazz,
       final @NotNull OptionsConfiguration<T> optionsConfiguration)
-      throws IllegalAccessException, InstantiationException, NoSuchMethodException,
+      throws IllegalAccessException,
+          InstantiationException,
+          NoSuchMethodException,
           InvocationTargetException {
     init(clazz, optionsConfiguration, GLOBAL_HUB_DEFAULT_MODE);
   }
@@ -213,7 +216,9 @@ public final class Sentry {
       final @NotNull OptionsContainer<T> clazz,
       final @NotNull OptionsConfiguration<T> optionsConfiguration,
       final boolean globalHubMode)
-      throws IllegalAccessException, InstantiationException, NoSuchMethodException,
+      throws IllegalAccessException,
+          InstantiationException,
+          NoSuchMethodException,
           InvocationTargetException {
     final T options = clazz.createInstance();
     applyOptionsConfiguration(optionsConfiguration, options);
@@ -346,7 +351,16 @@ public final class Sentry {
         // and Scopes was still NoOp.
         // Registering integrations here make sure that Scopes is already created.
         for (final Integration integration : options.getIntegrations()) {
-          integration.register(ScopesAdapter.getInstance(), options);
+          try {
+            integration.register(ScopesAdapter.getInstance(), options);
+          } catch (Throwable t) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "Failed to register the integration " + integration.getClass().getName(),
+                    t);
+          }
         }
 
         notifyOptionsObservers(options);

@@ -4,7 +4,6 @@ import static io.sentry.quartz.SentryJobListener.SENTRY_SLUG_KEY;
 
 import io.sentry.samples.spring.boot.jakarta.quartz.SampleJob;
 import java.util.Collections;
-
 import org.jetbrains.annotations.NotNull;
 import org.quartz.JobDetail;
 import org.quartz.SimpleTrigger;
