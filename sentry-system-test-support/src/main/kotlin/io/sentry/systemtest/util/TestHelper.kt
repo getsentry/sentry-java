@@ -217,8 +217,13 @@ class TestHelper(backendUrl: String) {
     return true
   }
 
-  fun doesTransactionContainSpanWithOpAndDescription(transaction: SentryTransaction, op: String, description: String): Boolean {
-    val span = transaction.spans.firstOrNull { span -> span.op == op && span.description == description }
+  fun doesTransactionContainSpanWithOpAndDescription(
+    transaction: SentryTransaction,
+    op: String,
+    description: String,
+  ): Boolean {
+    val span =
+      transaction.spans.firstOrNull { span -> span.op == op && span.description == description }
     if (span == null) {
       println("Unable to find span with op $op and description $description in transaction:")
       logObject(transaction)

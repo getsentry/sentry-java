@@ -21,7 +21,11 @@ class TodoSystemTest {
     assertEquals(200, restClient.lastKnownStatusCode)
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
-      testHelper.doesTransactionContainSpanWithOpAndDescription(transaction, "http.client", "GET https://jsonplaceholder.typicode.com/todos/1")
+      testHelper.doesTransactionContainSpanWithOpAndDescription(
+        transaction,
+        "http.client",
+        "GET https://jsonplaceholder.typicode.com/todos/1",
+      )
     }
   }
 
@@ -32,7 +36,11 @@ class TodoSystemTest {
     assertEquals(200, restClient.lastKnownStatusCode)
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
-      testHelper.doesTransactionContainSpanWithOpAndDescription(transaction, "http.client", "GET https://jsonplaceholder.typicode.com/todos/1")
+      testHelper.doesTransactionContainSpanWithOpAndDescription(
+        transaction,
+        "http.client",
+        "GET https://jsonplaceholder.typicode.com/todos/1",
+      )
     }
   }
 
@@ -43,7 +51,11 @@ class TodoSystemTest {
     assertEquals(200, restClient.lastKnownStatusCode)
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
-      testHelper.doesTransactionContainSpanWithOpAndDescription(transaction, "http.client", "GET https://jsonplaceholder.typicode.com/todos/1")
+      testHelper.doesTransactionContainSpanWithOpAndDescription(
+        transaction,
+        "http.client",
+        "GET https://jsonplaceholder.typicode.com/todos/1",
+      )
     }
   }
 }
