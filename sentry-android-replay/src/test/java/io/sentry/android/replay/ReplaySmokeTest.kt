@@ -18,7 +18,6 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
-import io.sentry.SystemOutLogger
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
