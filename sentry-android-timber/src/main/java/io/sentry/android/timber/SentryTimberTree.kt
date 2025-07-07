@@ -246,7 +246,8 @@ public class SentryTimberTree(
     if (isLoggable(sentryLogLevel, minLogLevel)) {
       val throwableMsg = throwable?.message
       when {
-        msg != null && throwableMsg != null -> scopes.logger().log(sentryLogLevel, "$msg\n$throwableMsg", *args)
+        msg != null && throwableMsg != null ->
+          scopes.logger().log(sentryLogLevel, "$msg\n$throwableMsg", *args)
         msg != null -> scopes.logger().log(sentryLogLevel, msg, *args)
         throwableMsg != null -> scopes.logger().log(sentryLogLevel, throwableMsg, *args)
       }
