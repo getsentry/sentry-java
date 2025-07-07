@@ -245,4 +245,4 @@ internal fun View?.removeOnPreDrawListenerSafe(listener: ViewTreeObserver.OnPreD
   }
 }
 
-internal fun View.hasSize(): Boolean = width != 0 && height != 0
+internal fun View.hasSize(): Boolean = width > 0 && height > 0
