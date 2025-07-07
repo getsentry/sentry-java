@@ -15,7 +15,7 @@ public class SentryTimberTree(
   private val scopes: IScopes,
   private val minEventLevel: SentryLevel,
   private val minBreadcrumbLevel: SentryLevel,
-  private val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
+  private val minLogLevel: SentryLogLevel = SentryLogLevel.INFO,
 ) : Timber.Tree() {
   private val pendingTag = ThreadLocal<String?>()
 
@@ -243,9 +243,10 @@ public class SentryTimberTree(
     vararg args: Any?,
   ) {
     // checks the log level
-    if (isLoggable(sentryLogLevel, minLogsLevel)) {
+    if (isLoggable(sentryLogLevel, minLogLevel)) {
       val throwableMsg = throwable?.message
       when {
+        msg != null && throwableMsg != null -> scopes.logger().log(sentryLogLevel, "$msg\n$throwableMsg", *args)
         msg != null -> scopes.logger().log(sentryLogLevel, msg, *args)
         throwableMsg != null -> scopes.logger().log(sentryLogLevel, throwableMsg, *args)
       }

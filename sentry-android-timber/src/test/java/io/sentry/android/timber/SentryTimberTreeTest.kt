@@ -302,4 +302,12 @@ class SentryTimberTreeTest {
 
     verify(fixture.logs).log(eq(SentryLogLevel.ERROR), eq("throwable message"))
   }
+
+  @Test
+  fun `Tree logs throwable and message`() {
+    val sut = fixture.getSut()
+    sut.e(Throwable("throwable message"), "My message")
+
+    verify(fixture.logs).log(eq(SentryLogLevel.ERROR), eq("My message\nthrowable message"))
+  }
 }
