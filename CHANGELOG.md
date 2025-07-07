@@ -29,15 +29,6 @@
 - Session Replay: Fix `IllegalArgumentException` when `Bitmap` is initialized with non-positive values ([#4536](https://github.com/getsentry/sentry-java/pull/4536))
 - Set thread information on transaction from OpenTelemetry attributes ([#4478](https://github.com/getsentry/sentry-java/pull/4478))
 
-### Dependencies
-
-- Bump OpenTelemetry ([#4532](https://github.com/getsentry/sentry-java/pull/4532))
-  - `opentelemetry-sdk` to `1.51.0`
-  - `opentelemetry-instrumentation` to `2.17.0`
-  - `opentelemetry-javaagent` to `2.17.0`
-  - `opentelemetry-semconv` to `1.34.0`
-  - We are now configuring OpenTelemetry to still behave the same way it did before for span names it generates in GraphQL auto instrumentation ([#4537](https://github.com/getsentry/sentry-java/pull/4537))
-
 ### Internal
 
 - Flattened PerformanceCollectionData ([#4505](https://github.com/getsentry/sentry-java/pull/4505))
