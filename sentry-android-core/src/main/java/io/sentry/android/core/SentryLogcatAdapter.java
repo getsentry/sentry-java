@@ -6,8 +6,6 @@ import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLogLevel;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,15 +55,11 @@ public final class SentryLogcatAdapter {
     if (!scopes.getOptions().getLogs().isEnabled()) {
       return;
     }
-    if (tr == null) {
+    final @Nullable String trMessage = tr != null ? tr.getMessage() : null;
+    if (tr == null || trMessage == null) {
       scopes.logger().log(level, msg);
     } else {
-      StringWriter sw = new StringWriter(256);
-      PrintWriter pw = new PrintWriter(sw, false);
-      tr.printStackTrace(pw);
-      pw.flush();
-      scopes.logger().log(level, msg != null ? (msg + "\n" + sw.toString()) : sw.toString());
-      pw.close();
+      scopes.logger().log(level, msg != null ? (msg + "\n" + trMessage) : trMessage);
     }
   }
 
