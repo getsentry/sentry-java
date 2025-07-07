@@ -1,8 +1,11 @@
 package io.sentry.android.replay
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.graphics.Point
+import android.os.Build
 import android.view.View
+import android.view.ViewDebug
 import android.view.ViewTreeObserver
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
@@ -13,7 +16,11 @@ import io.sentry.android.replay.util.addOnPreDrawListenerSafe
 import io.sentry.android.replay.util.hasSize
 import io.sentry.android.replay.util.removeOnPreDrawListenerSafe
 import io.sentry.util.AutoClosableReentrantLock
+import java.io.ByteArrayOutputStream
+import java.io.OutputStream
 import java.lang.ref.WeakReference
+import java.util.concurrent.Callable
+import java.util.concurrent.Executor
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -108,6 +115,13 @@ internal class WindowRecorder(
     rootViewsLock.acquire().use {
       if (added) {
         rootViews.add(WeakReference(root))
+        val captureOutputStream = ByteArrayOutputStream()
+        registerSkpCallback(
+          root,
+          CaptureExecutor(captureOutputStream, root),
+          captureOutputStream
+        )
+
         capturer?.recorder?.bind(root)
         determineWindowSize(root)
       } else {
@@ -116,6 +130,14 @@ internal class WindowRecorder(
 
         val newRoot = rootViews.lastOrNull()?.get()
         if (newRoot != null && root != newRoot) {
+          val captureOutputStream = ByteArrayOutputStream()
+
+          registerSkpCallback(
+            newRoot,
+            CaptureExecutor(captureOutputStream, newRoot),
+            captureOutputStream
+          )
+
           capturer?.recorder?.bind(newRoot)
           determineWindowSize(newRoot)
         } else {
@@ -159,42 +181,72 @@ internal class WindowRecorder(
     isRecording.getAndSet(true)
   }
 
+  @SuppressLint("PrivateApi")
+  private fun registerSkpCallback(
+    rootView: View,
+    captureExecutor: Executor,
+    os: OutputStream
+  ): AutoCloseable? {
+    return if (Build.VERSION.SDK_INT > 32 || (Build.VERSION.SDK_INT == 32  && Build.VERSION.PREVIEW_SDK_INT > 0)) {
+      rootView.viewTreeObserver.addOnWindowAttachListener(
+        object : ViewTreeObserver.OnWindowAttachListener {
+          override fun onWindowAttached() {
+            // This method is only accessible on T+ (or Q, but there it's broken).
+            ViewDebug::class.java.getDeclaredMethod(
+              "startRenderingCommandsCapture",
+              View::class.java,
+              Executor::class.java,
+              Callable::class.java
+            ).invoke(null, rootView, captureExecutor, Callable { os }) as AutoCloseable
+          }
+
+          override fun onWindowDetached() {
+          }
+        }
+      )
+      return null
+    } else {
+      null
+    }
+  }
+
+
   override fun onConfigurationChanged(config: ScreenshotRecorderConfig) {
     if (!isRecording.get()) {
       return
     }
 
-    if (capturer == null) {
-      // don't recreate runnable for every config change, just update the config
-      capturer = Capturer(options, mainLooperHandler)
-    }
-
-    capturer?.config = config
-    capturer?.recorder =
-      ScreenshotRecorder(
-        config,
-        options,
-        mainLooperHandler,
-        replayExecutor,
-        screenshotRecorderCallback,
-      )
-
-    val newRoot = rootViews.lastOrNull()?.get()
-    if (newRoot != null) {
-      capturer?.recorder?.bind(newRoot)
-    }
-
-    val posted =
-      mainLooperHandler.postDelayed(
-        capturer,
-        100L, // delay the first run by a bit, to allow root view listener to register
-      )
-    if (!posted) {
-      options.logger.log(
-        WARNING,
-        "Failed to post the capture runnable, main looper is shutting down.",
-      )
-    }
+//    if (capturer == null) {
+//      // don't recreate runnable for every config change, just update the config
+//      capturer = Capturer(options, mainLooperHandler)
+//    }
+//
+//    capturer?.config = config
+//    capturer?.recorder =
+//      ScreenshotRecorder(
+//        config,
+//        options,
+//        mainLooperHandler,
+//        replayExecutor,
+//        screenshotRecorderCallback,
+//      )
+//
+//    val newRoot = rootViews.lastOrNull()?.get()
+//    if (newRoot != null) {
+//      capturer?.recorder?.bind(newRoot)
+//    }
+//
+//    val posted =
+//      mainLooperHandler.postDelayed(
+//        capturer,
+//        100L, // delay the first run by a bit, to allow root view listener to register
+//      )
+//    if (!posted) {
+//      options.logger.log(
+//        WARNING,
+//        "Failed to post the capture runnable, main looper is shutting down.",
+//      )
+//    }
   }
 
   override fun resume() {
