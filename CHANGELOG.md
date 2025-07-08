@@ -24,6 +24,8 @@
 ### Fixes
 
 - Use Spring Boot Starter 3 in `sentry-spring-boot-starter-jakarta` ([#4545](https://github.com/getsentry/sentry-java/pull/4545))
+  - While refactoring our dependency management, we accidentally added Spring Boot 2 and Spring Boot Starter 2 as dependencies of `sentry-spring-boot-starter-jakarta`, which is intended for Spring Boot 3.
+  - Now, the correct dependencies (Spring Boot 3 and Spring Boot Starter 3) are being added.
 
 ## 8.16.1-alpha.2
 
