@@ -45,7 +45,11 @@ class PersonSystemTest {
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
       testHelper.doesTransactionContainSpanWithOp(transaction, "PersonService.create") &&
-        testHelper.doesTransactionContainSpanWithOp(transaction, "db.query")
+        testHelper.doesTransactionContainSpanWithOpAndDescription(
+          transaction,
+          "db.query",
+          "insert into person (firstName, lastName) values (?, ?)",
+        )
     }
   }
 }
