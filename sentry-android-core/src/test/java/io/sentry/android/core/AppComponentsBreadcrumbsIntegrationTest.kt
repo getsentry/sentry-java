@@ -151,21 +151,21 @@ class AppComponentsBreadcrumbsIntegrationTest {
     fun `low memory changes are debounced`() {
         val sut = fixture.getSut()
 
-        val scopes = mock<IScopes>()
+        val hub = mock<IHub>()
         val options = SentryAndroidOptions().apply {
             executorService = ImmediateExecutorService()
         }
-        sut.register(scopes, options)
+        sut.register(hub, options)
         sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_BACKGROUND)
         sut.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
 
         // should only add the first crumb
-        verify(scopes).addBreadcrumb(
+        verify(hub).addBreadcrumb(
             check<Breadcrumb> {
                 assertEquals(it.data["level"], 40)
             },
             anyOrNull()
         )
-        verifyNoMoreInteractions(scopes)
+        verifyNoMoreInteractions(hub)
     }
 }
