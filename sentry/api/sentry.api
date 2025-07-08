@@ -812,6 +812,10 @@ public abstract interface class io/sentry/IPerformanceSnapshotCollector : io/sen
 	public abstract fun setup ()V
 }
 
+public abstract interface class io/sentry/IProfileConverter {
+	public abstract fun convertFromFile (Ljava/nio/file/Path;)Lio/sentry/protocol/profiling/SentryProfile;
+}
+
 public abstract interface class io/sentry/IReplayApi {
 	public abstract fun disableDebugMaskingOverlay ()V
 	public abstract fun enableDebugMaskingOverlay ()V
@@ -1934,12 +1938,12 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 	public fun getClientSdk ()Lio/sentry/protocol/SdkVersion;
 	public fun getDebugMeta ()Lio/sentry/protocol/DebugMeta;
 	public fun getEnvironment ()Ljava/lang/String;
-	public fun getJfrProfile ()Lio/sentry/protocol/profiling/JfrProfile;
 	public fun getMeasurements ()Ljava/util/Map;
 	public fun getPlatform ()Ljava/lang/String;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun getRelease ()Ljava/lang/String;
 	public fun getSampledProfile ()Ljava/lang/String;
+	public fun getSentryProfile ()Lio/sentry/protocol/profiling/SentryProfile;
 	public fun getTimestamp ()D
 	public fun getTraceFile ()Ljava/io/File;
 	public fun getUnknown ()Ljava/util/Map;
@@ -1947,8 +1951,8 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 	public fun hashCode ()I
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setDebugMeta (Lio/sentry/protocol/DebugMeta;)V
-	public fun setJfrProfile (Lio/sentry/protocol/profiling/JfrProfile;)V
 	public fun setSampledProfile (Ljava/lang/String;)V
+	public fun setSentryProfile (Lio/sentry/protocol/profiling/SentryProfile;)V
 	public fun setUnknown (Ljava/util/Map;)V
 }
 
@@ -1968,12 +1972,12 @@ public final class io/sentry/ProfileChunk$JsonKeys {
 	public static final field CLIENT_SDK Ljava/lang/String;
 	public static final field DEBUG_META Ljava/lang/String;
 	public static final field ENVIRONMENT Ljava/lang/String;
-	public static final field JRF_PROFILE Ljava/lang/String;
 	public static final field MEASUREMENTS Ljava/lang/String;
 	public static final field PLATFORM Ljava/lang/String;
 	public static final field PROFILER_ID Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
 	public static final field SAMPLED_PROFILE Ljava/lang/String;
+	public static final field SENTRY_PROFILE Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;
 	public static final field VERSION Ljava/lang/String;
 	public fun <init> ()V
@@ -4933,6 +4937,20 @@ public final class io/sentry/profilemeasurements/ProfileMeasurementValue$JsonKey
 	public fun <init> ()V
 }
 
+public abstract interface class io/sentry/profiling/JavaContinuousProfilerProvider {
+	public abstract fun getContinuousProfiler (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)Lio/sentry/IContinuousProfiler;
+}
+
+public abstract interface class io/sentry/profiling/JavaProfileConverterProvider {
+	public abstract fun getProfileConverter ()Lio/sentry/IProfileConverter;
+}
+
+public final class io/sentry/profiling/ProfilingServiceLoader {
+	public fun <init> ()V
+	public static fun loadContinuousProfiler (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)Lio/sentry/IContinuousProfiler;
+	public static fun loadProfileConverter ()Lio/sentry/IProfileConverter;
+}
+
 public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
@@ -6187,350 +6205,6 @@ public final class io/sentry/protocol/ViewHierarchyNode$JsonKeys {
 	public fun <init> ()V
 }
 
-public final class io/sentry/protocol/jfr/convert/Arguments {
-	public field alloc Z
-	public field bci Z
-	public field classify Z
-	public field cpu Z
-	public field dot Z
-	public field exclude Ljava/util/regex/Pattern;
-	public final field files Ljava/util/List;
-	public field from J
-	public field grain D
-	public field help Z
-	public field highlight Ljava/lang/String;
-	public field include Ljava/util/regex/Pattern;
-	public field inverted Z
-	public field leak Z
-	public field lines Z
-	public field live Z
-	public field lock Z
-	public field minwidth D
-	public field nativemem Z
-	public field norm Z
-	public field output Ljava/lang/String;
-	public field reverse Z
-	public field simple Z
-	public field skip I
-	public field state Ljava/lang/String;
-	public field threads Z
-	public field title Ljava/lang/String;
-	public field to J
-	public field total Z
-	public field wall Z
-	public fun <init> ([Ljava/lang/String;)V
-}
-
-public final class io/sentry/protocol/jfr/convert/CallStack {
-	public fun <init> ()V
-	public fun clear ()V
-	public fun pop ()V
-	public fun push (Ljava/lang/String;B)V
-}
-
-public final class io/sentry/protocol/jfr/convert/FlameGraph : java/util/Comparator {
-	public fun <init> (Lio/sentry/protocol/jfr/convert/Arguments;)V
-	public fun addSample (Lio/sentry/protocol/jfr/convert/CallStack;J)V
-	public fun compare (Lio/sentry/protocol/jfr/convert/Frame;Lio/sentry/protocol/jfr/convert/Frame;)I
-	public synthetic fun compare (Ljava/lang/Object;Ljava/lang/Object;)I
-	public static fun convert (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/jfr/convert/Arguments;)V
-	public fun dump (Ljava/io/PrintStream;)V
-	public fun parseCollapsed (Ljava/io/Reader;)V
-	public fun parseHtml (Ljava/io/Reader;)V
-}
-
-public final class io/sentry/protocol/jfr/convert/Frame : java/util/HashMap {
-	public static final field TYPE_C1_COMPILED B
-	public static final field TYPE_CPP B
-	public static final field TYPE_INLINED B
-	public static final field TYPE_INTERPRETED B
-	public static final field TYPE_JIT_COMPILED B
-	public static final field TYPE_KERNEL B
-	public static final field TYPE_NATIVE B
-}
-
-public final class io/sentry/protocol/jfr/convert/Index : java/util/HashMap {
-	public fun <init> (Ljava/lang/Class;Ljava/lang/Object;)V
-	public fun <init> (Ljava/lang/Class;Ljava/lang/Object;I)V
-	public fun index (Ljava/lang/Object;)I
-	public fun keys ()[Ljava/lang/Object;
-	public fun keys ([Ljava/lang/Object;)V
-}
-
-public final class io/sentry/protocol/jfr/convert/JfrAsyncProfilerToSentryProfileConverter : io/sentry/protocol/jfr/convert/JfrConverter {
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/JfrReader;Lio/sentry/protocol/jfr/convert/Arguments;)V
-	public static fun convertFromFile (Ljava/nio/file/Path;)Lio/sentry/protocol/profiling/JfrProfile;
-	public static fun main ([Ljava/lang/String;)V
-}
-
-public abstract class io/sentry/protocol/jfr/convert/JfrConverter {
-	protected final field args Lio/sentry/protocol/jfr/convert/Arguments;
-	protected final field collector Lio/sentry/protocol/jfr/jfr/event/EventCollector;
-	protected final field jfr Lio/sentry/protocol/jfr/jfr/JfrReader;
-	protected field methodNames Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/JfrReader;Lio/sentry/protocol/jfr/convert/Arguments;)V
-	protected fun collectEvents ()V
-	public fun convert ()V
-	protected fun convertChunk ()V
-	protected fun createCollector (Lio/sentry/protocol/jfr/convert/Arguments;)Lio/sentry/protocol/jfr/jfr/event/EventCollector;
-	public synthetic fun getCategory (Lio/sentry/protocol/jfr/jfr/StackTrace;)Lio/sentry/protocol/jfr/convert/Classifier$Category;
-	public fun getClassName (J)Ljava/lang/String;
-	public fun getMethodName (JB)Ljava/lang/String;
-	public fun getStackTraceElement (JBI)Ljava/lang/StackTraceElement;
-	public fun getThreadName (I)Ljava/lang/String;
-	protected fun getThreadStates (Z)Ljava/util/BitSet;
-	protected fun isNativeFrame (B)Z
-	protected fun toThreadState (Ljava/lang/String;)I
-	protected fun toTicks (J)J
-}
-
-protected abstract class io/sentry/protocol/jfr/convert/JfrConverter$AggregatedEventVisitor : io/sentry/protocol/jfr/jfr/event/EventCollector$Visitor {
-	protected fun <init> (Lio/sentry/protocol/jfr/convert/JfrConverter;)V
-	protected abstract fun visit (Lio/sentry/protocol/jfr/jfr/event/Event;J)V
-	public final fun visit (Lio/sentry/protocol/jfr/jfr/event/Event;JJ)V
-}
-
-public final class io/sentry/protocol/jfr/convert/JfrToFlame : io/sentry/protocol/jfr/convert/JfrConverter {
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/JfrReader;Lio/sentry/protocol/jfr/convert/Arguments;)V
-	public static fun convert (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/jfr/convert/Arguments;)V
-	public fun dump (Ljava/io/OutputStream;)V
-}
-
-public final class io/sentry/protocol/jfr/convert/ResourceProcessor {
-	public fun <init> ()V
-	public static fun getResource (Ljava/lang/String;)Ljava/lang/String;
-	public static fun printTill (Ljava/io/PrintStream;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-}
-
-public final class io/sentry/protocol/jfr/jfr/ClassRef {
-	public final field name J
-	public fun <init> (J)V
-}
-
-public final class io/sentry/protocol/jfr/jfr/Dictionary {
-	public fun <init> ()V
-	public fun <init> (I)V
-	public fun clear ()V
-	public fun forEach (Lio/sentry/protocol/jfr/jfr/Dictionary$Visitor;)V
-	public fun get (J)Ljava/lang/Object;
-	public fun preallocate (I)I
-	public fun put (JLjava/lang/Object;)V
-	public fun size ()I
-}
-
-public abstract interface class io/sentry/protocol/jfr/jfr/Dictionary$Visitor {
-	public abstract fun visit (JLjava/lang/Object;)V
-}
-
-public final class io/sentry/protocol/jfr/jfr/DictionaryInt {
-	public fun <init> ()V
-	public fun <init> (I)V
-	public fun clear ()V
-	public fun forEach (Lio/sentry/protocol/jfr/jfr/DictionaryInt$Visitor;)V
-	public fun get (J)I
-	public fun get (JI)I
-	public fun preallocate (I)I
-	public fun put (JI)V
-}
-
-public abstract interface class io/sentry/protocol/jfr/jfr/DictionaryInt$Visitor {
-	public abstract fun visit (JI)V
-}
-
-public final class io/sentry/protocol/jfr/jfr/JfrClass {
-	public fun field (Ljava/lang/String;)Lio/sentry/protocol/jfr/jfr/JfrField;
-}
-
-public final class io/sentry/protocol/jfr/jfr/JfrField {
-}
-
-public final class io/sentry/protocol/jfr/jfr/JfrReader : java/io/Closeable {
-	public field chunkEndNanos J
-	public field chunkStartNanos J
-	public field chunkStartTicks J
-	public final field classes Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public field endNanos J
-	public final field enums Ljava/util/Map;
-	public final field javaThreads Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public final field methods Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public final field settings Ljava/util/Map;
-	public final field stackTraces Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public field startNanos J
-	public field startTicks J
-	public field stopAtNewChunk Z
-	public final field strings Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public final field symbols Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public final field threads Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public field ticksPerSec J
-	public final field types Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public final field typesByName Ljava/util/Map;
-	public fun <init> (Ljava/lang/String;)V
-	public fun <init> (Ljava/nio/ByteBuffer;)V
-	public fun close ()V
-	public fun durationNanos ()J
-	public fun eof ()Z
-	public fun getBytes ()[B
-	public fun getDouble ()D
-	public fun getEnumKey (Ljava/lang/String;Ljava/lang/String;)I
-	public fun getEnumValue (Ljava/lang/String;I)Ljava/lang/String;
-	public fun getFloat ()F
-	public fun getString ()Ljava/lang/String;
-	public fun getVarint ()I
-	public fun getVarlong ()J
-	public fun hasMoreChunks ()Z
-	public fun incomplete ()Z
-	public fun readAllEvents ()Ljava/util/List;
-	public fun readAllEvents (Ljava/lang/Class;)Ljava/util/List;
-	public fun readEvent ()Lio/sentry/protocol/jfr/jfr/event/Event;
-	public fun readEvent (Ljava/lang/Class;)Lio/sentry/protocol/jfr/jfr/event/Event;
-	public fun registerEvent (Ljava/lang/String;Ljava/lang/Class;)V
-}
-
-public final class io/sentry/protocol/jfr/jfr/MethodRef {
-	public final field cls J
-	public final field name J
-	public final field sig J
-	public fun <init> (JJJ)V
-}
-
-public final class io/sentry/protocol/jfr/jfr/StackTrace {
-	public final field locations [I
-	public final field methods [J
-	public final field types [B
-	public fun <init> ([J[B[I)V
-}
-
-public final class io/sentry/protocol/jfr/jfr/event/AllocationSample : io/sentry/protocol/jfr/jfr/event/Event {
-	public final field allocationSize J
-	public final field classId I
-	public final field tlabSize J
-	public fun <init> (JIIIJJ)V
-	public fun classId ()J
-	public fun hashCode ()I
-	public fun sameGroup (Lio/sentry/protocol/jfr/jfr/event/Event;)Z
-	public fun value ()J
-}
-
-public final class io/sentry/protocol/jfr/jfr/event/CPULoad : io/sentry/protocol/jfr/jfr/event/Event {
-	public final field jvmSystem F
-	public final field jvmUser F
-	public final field machineTotal F
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/JfrReader;)V
-}
-
-public final class io/sentry/protocol/jfr/jfr/event/ContendedLock : io/sentry/protocol/jfr/jfr/event/Event {
-	public final field classId I
-	public final field duration J
-	public fun <init> (JIIJI)V
-	public fun classId ()J
-	public fun hashCode ()I
-	public fun sameGroup (Lio/sentry/protocol/jfr/jfr/event/Event;)Z
-	public fun value ()J
-}
-
-public abstract class io/sentry/protocol/jfr/jfr/event/Event : java/lang/Comparable {
-	public final field stackTraceId I
-	public final field tid I
-	public final field time J
-	protected fun <init> (JII)V
-	public fun classId ()J
-	public fun compareTo (Lio/sentry/protocol/jfr/jfr/event/Event;)I
-	public synthetic fun compareTo (Ljava/lang/Object;)I
-	public fun hashCode ()I
-	public fun sameGroup (Lio/sentry/protocol/jfr/jfr/event/Event;)Z
-	public fun samples ()J
-	public fun toString ()Ljava/lang/String;
-	public fun value ()J
-}
-
-public final class io/sentry/protocol/jfr/jfr/event/EventAggregator : io/sentry/protocol/jfr/jfr/event/EventCollector {
-	public fun <init> (ZD)V
-	public fun afterChunk ()V
-	public fun beforeChunk ()V
-	public fun coarsen (D)V
-	public fun collect (Lio/sentry/protocol/jfr/jfr/event/Event;)V
-	public fun collect (Lio/sentry/protocol/jfr/jfr/event/Event;JJ)V
-	public fun finish ()Z
-	public fun forEach (Lio/sentry/protocol/jfr/jfr/event/EventCollector$Visitor;)V
-	public fun size ()I
-}
-
-public abstract interface class io/sentry/protocol/jfr/jfr/event/EventCollector {
-	public abstract fun afterChunk ()V
-	public abstract fun beforeChunk ()V
-	public abstract fun collect (Lio/sentry/protocol/jfr/jfr/event/Event;)V
-	public abstract fun finish ()Z
-	public abstract fun forEach (Lio/sentry/protocol/jfr/jfr/event/EventCollector$Visitor;)V
-}
-
-public abstract interface class io/sentry/protocol/jfr/jfr/event/EventCollector$Visitor {
-	public abstract fun visit (Lio/sentry/protocol/jfr/jfr/event/Event;JJ)V
-}
-
-public final class io/sentry/protocol/jfr/jfr/event/ExecutionSample : io/sentry/protocol/jfr/jfr/event/Event {
-	public final field samples I
-	public final field threadState I
-	public fun <init> (JIIII)V
-	public fun samples ()J
-	public fun value ()J
-}
-
-public final class io/sentry/protocol/jfr/jfr/event/GCHeapSummary : io/sentry/protocol/jfr/jfr/event/Event {
-	public final field afterGC Z
-	public final field committed J
-	public final field gcId I
-	public final field reserved J
-	public final field used J
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/JfrReader;)V
-}
-
-public final class io/sentry/protocol/jfr/jfr/event/LiveObject : io/sentry/protocol/jfr/jfr/event/Event {
-	public final field allocationSize J
-	public final field allocationTime J
-	public final field classId I
-	public fun <init> (JIIIJJ)V
-	public fun classId ()J
-	public fun hashCode ()I
-	public fun sameGroup (Lio/sentry/protocol/jfr/jfr/event/Event;)Z
-	public fun value ()J
-}
-
-public final class io/sentry/protocol/jfr/jfr/event/MallocEvent : io/sentry/protocol/jfr/jfr/event/Event {
-	public final field address J
-	public final field size J
-	public fun <init> (JIIJJ)V
-	public fun value ()J
-}
-
-public final class io/sentry/protocol/jfr/jfr/event/MallocLeakAggregator : io/sentry/protocol/jfr/jfr/event/EventCollector {
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/event/EventCollector;)V
-	public fun afterChunk ()V
-	public fun beforeChunk ()V
-	public fun collect (Lio/sentry/protocol/jfr/jfr/event/Event;)V
-	public fun finish ()Z
-	public fun forEach (Lio/sentry/protocol/jfr/jfr/event/EventCollector$Visitor;)V
-}
-
-public final class io/sentry/protocol/jfr/jfr/event/ObjectCount : io/sentry/protocol/jfr/jfr/event/Event {
-	public final field classId I
-	public final field count J
-	public final field gcId I
-	public final field totalSize J
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/JfrReader;)V
-}
-
-public final class io/sentry/protocol/profiling/JavaContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
-	public fun <init> (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
-	public fun close (Z)V
-	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
-	public fun getRootSpanCounter ()I
-	public fun isRunning ()Z
-	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
-	public fun reevaluateSampling ()V
-	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
-	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
-}
-
 public final class io/sentry/protocol/profiling/JfrFrame : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public field absPath Ljava/lang/String;
 	public field filename Ljava/lang/String;
@@ -6549,31 +6223,6 @@ public final class io/sentry/protocol/profiling/JfrFrame$JsonKeys {
 	public static final field LINE_NO Ljava/lang/String;
 	public static final field MODULE Ljava/lang/String;
 	public static final field RAW_FUNCTION Ljava/lang/String;
-	public fun <init> ()V
-}
-
-public final class io/sentry/protocol/profiling/JfrProfile : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public field frames Ljava/util/List;
-	public field samples Ljava/util/List;
-	public field stacks Ljava/util/List;
-	public field threadMetadata Ljava/util/Map;
-	public fun <init> ()V
-	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
-	public fun setUnknown (Ljava/util/Map;)V
-}
-
-public final class io/sentry/protocol/profiling/JfrProfile$Deserializer : io/sentry/JsonDeserializer {
-	public fun <init> ()V
-	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/profiling/JfrProfile;
-	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
-}
-
-public final class io/sentry/protocol/profiling/JfrProfile$JsonKeys {
-	public static final field FRAMES Ljava/lang/String;
-	public static final field SAMPLES Ljava/lang/String;
-	public static final field STACKS Ljava/lang/String;
-	public static final field THREAD_METADATA Ljava/lang/String;
 	public fun <init> ()V
 }
 
@@ -6597,6 +6246,31 @@ public final class io/sentry/protocol/profiling/JfrSample$JsonKeys {
 	public static final field STACK_ID Ljava/lang/String;
 	public static final field THREAD_ID Ljava/lang/String;
 	public static final field TIMESTAMP Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/profiling/SentryProfile : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public field frames Ljava/util/List;
+	public field samples Ljava/util/List;
+	public field stacks Ljava/util/List;
+	public field threadMetadata Ljava/util/Map;
+	public fun <init> ()V
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/profiling/SentryProfile$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/profiling/SentryProfile;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/profiling/SentryProfile$JsonKeys {
+	public static final field FRAMES Ljava/lang/String;
+	public static final field SAMPLES Ljava/lang/String;
+	public static final field STACKS Ljava/lang/String;
+	public static final field THREAD_METADATA Ljava/lang/String;
 	public fun <init> ()V
 }
 

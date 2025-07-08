@@ -128,11 +128,11 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     return version;
   }
 
-  public @Nullable SentryProfile getJfrProfile() {
+  public @Nullable SentryProfile getSentryProfile() {
     return sentryProfile;
   }
 
-  public void setJfrProfile(@Nullable SentryProfile sentryProfile) {
+  public void setSentryProfile(@Nullable SentryProfile sentryProfile) {
     this.sentryProfile = sentryProfile;
   }
 
@@ -356,7 +356,8 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
             }
             break;
           case JsonKeys.SENTRY_PROFILE:
-            SentryProfile sentryProfile = reader.nextOrNull(logger, new SentryProfile.Deserializer());
+            SentryProfile sentryProfile =
+                reader.nextOrNull(logger, new SentryProfile.Deserializer());
             if (sentryProfile != null) {
               data.sentryProfile = sentryProfile;
             }

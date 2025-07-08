@@ -21,8 +21,6 @@ dependencies {
   errorprone(libs.nullaway)
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
-  // https://mvnrepository.com/artifact/tools.profiler/async-profiler
-  implementation("tools.profiler:async-profiler:3.0")
   // tests
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.awaitility.kotlin)

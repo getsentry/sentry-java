@@ -6,10 +6,9 @@ import static io.sentry.vendor.Base64.NO_WRAP;
 
 import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
+import io.sentry.profiling.ProfilingServiceLoader;
 import io.sentry.protocol.SentryTransaction;
-import io.sentry.protocol.jfr.convert.JfrAsyncProfilerToSentryProfileConverter;
 import io.sentry.protocol.profiling.SentryProfile;
-// import io.sentry.protocol.profiling.JfrToSentryProfileConverter;
 import io.sentry.util.FileUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
@@ -295,13 +294,20 @@ public final class SentryEnvelopeItem {
                         "Dropping profile chunk, because the file '%s' doesn't exists",
                         traceFile.getName()));
               }
-              if (traceFile.getName().endsWith(".jfr")) {
-                //                JfrProfile profile = new
-                // JfrToSentryProfileConverter().convert(traceFile.toPath());
-                SentryProfile profile =
-                    JfrAsyncProfilerToSentryProfileConverter.convertFromFile(traceFile.toPath());
-                profileChunk.setJfrProfile(profile);
 
+              if (traceFile.getName().endsWith(".jfr")) {
+                final IProfileConverter profileConverter =
+                    ProfilingServiceLoader.loadProfileConverter();
+                if (profileConverter != null) {
+                  try {
+                    final SentryProfile profile =
+                        profileConverter.convertFromFile(traceFile.toPath());
+                    profileChunk.setSentryProfile(profile);
+                  } catch (IOException e) {
+                    throw new SentryEnvelopeException("Profile conversion failed");
+                  }
+                }
+                // If no converter is available, JFR profile conversion is skipped
               } else {
                 // The payload of the profile item is a json including the trace file encoded with
                 // base64

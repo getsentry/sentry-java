@@ -15,10 +15,10 @@ import io.sentry.internal.modules.NoOpModulesLoader;
 import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
+import io.sentry.profiling.ProfilingServiceLoader;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
-import io.sentry.protocol.profiling.JavaContinuousProfiler;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.DebugMetaPropertiesApplier;
@@ -667,9 +667,11 @@ public final class Sentry {
     }
 
     // TODO: make this configurable
-    if (options.isContinuousProfilingEnabled()) {
-      options.setContinuousProfiler(
-          new JavaContinuousProfiler(new SystemOutLogger(), "", 10, options.getExecutorService()));
+    if (options.isContinuousProfilingEnabled() && profilingTracesDirPath != null) {
+      final IContinuousProfiler continuousProfiler =
+          ProfilingServiceLoader.loadContinuousProfiler(
+              new SystemOutLogger(), profilingTracesDirPath, 10, options.getExecutorService());
+      options.setContinuousProfiler(continuousProfiler);
     }
 
     options

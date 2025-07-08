@@ -6,9 +6,8 @@ import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.jfr.jfr.JfrReader;
 import io.sentry.protocol.jfr.jfr.StackTrace;
 import io.sentry.protocol.jfr.jfr.event.Event;
-import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.protocol.profiling.JfrSample;
-// import io.sentry.protocol.profiling.JfrToSentryProfileConverter;
+import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.protocol.profiling.ThreadMetadata;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -31,7 +30,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     Path jfrPath =
         Paths.get(
             "/Users/lukasbloder/development/projects/sentry/sentry-java/ff3cb6b172fc45c4ae16d65fb1fc83fe.jfr");
-    SentryProfile profile = JfrAsyncProfilerToSentryProfileConverter.convertFromFile(jfrPath);
+    SentryProfile profile = JfrAsyncProfilerToSentryProfileConverter.convertFromFileStatic(jfrPath);
     //    JfrProfile profile2 = new JfrToSentryProfileConverter().convert(jfrPath);
     System.out.println(profile.frames);
     System.out.println("Done");
@@ -166,7 +165,8 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     System.out.println("Samples: " + events.size());
   }
 
-  public static @NotNull SentryProfile convertFromFile(@NotNull Path jfrFilePath) throws IOException {
+  public static @NotNull SentryProfile convertFromFileStatic(@NotNull Path jfrFilePath)
+      throws IOException {
     JfrAsyncProfilerToSentryProfileConverter converter;
     try (JfrReader jfrReader = new JfrReader(jfrFilePath.toString())) {
       Arguments args = new Arguments();
