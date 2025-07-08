@@ -21,6 +21,10 @@
   - `opentelemetry-semconv` to `1.34.0`
   - We are now configuring OpenTelemetry to still behave the same way it did before for span names it generates in GraphQL auto instrumentation ([#4537](https://github.com/getsentry/sentry-java/pull/4537))
 
+### Fixes
+
+- Use Spring Boot Starter 3 in `sentry-spring-boot-starter-jakarta` ([#4545](https://github.com/getsentry/sentry-java/pull/4545))
+
 ## 8.16.1-alpha.2
 
 ### Fixes
