@@ -6,7 +6,7 @@ import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.jfr.jfr.JfrReader;
 import io.sentry.protocol.jfr.jfr.StackTrace;
 import io.sentry.protocol.jfr.jfr.event.Event;
-import io.sentry.protocol.profiling.JfrProfile;
+import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.protocol.profiling.JfrSample;
 // import io.sentry.protocol.profiling.JfrToSentryProfileConverter;
 import io.sentry.protocol.profiling.ThreadMetadata;
@@ -20,7 +20,7 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter {
-  private final @NotNull JfrProfile jfrProfile = new JfrProfile();
+  private final @NotNull SentryProfile sentryProfile = new SentryProfile();
 
   public JfrAsyncProfilerToSentryProfileConverter(JfrReader jfr, Arguments args) {
     super(jfr, args);
@@ -31,7 +31,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     Path jfrPath =
         Paths.get(
             "/Users/lukasbloder/development/projects/sentry/sentry-java/ff3cb6b172fc45c4ae16d65fb1fc83fe.jfr");
-    JfrProfile profile = JfrAsyncProfilerToSentryProfileConverter.convertFromFile(jfrPath);
+    SentryProfile profile = JfrAsyncProfilerToSentryProfileConverter.convertFromFile(jfrPath);
     //    JfrProfile profile2 = new JfrToSentryProfileConverter().convert(jfrPath);
     System.out.println(profile.frames);
     System.out.println("Done");
@@ -58,41 +58,51 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
               int[] locations = stackTrace.locations;
 
               if (args.threads) {
-                if (jfrProfile.threadMetadata == null) {
-                  jfrProfile.threadMetadata = new HashMap<>();
+                if (sentryProfile.threadMetadata == null) {
+                  sentryProfile.threadMetadata = new HashMap<>();
                 }
 
                 long threadIdToUse =
                     jfr.threads.get(event.tid) != null ? jfr.javaThreads.get(event.tid) : event.tid;
 
-                if (jfrProfile.threadMetadata != null) {
-                  jfrProfile.threadMetadata.computeIfAbsent(
+                if (sentryProfile.threadMetadata != null) {
+                  final String threadName = getThreadName(event.tid);
+                  //                  if(threadName.startsWith("AsyncProfiler-")) {
+                  //                    // AsyncProfiler threads are not useful for profiling, so we
+                  // skip them
+                  //                    return;
+                  //                  }
+                  sentryProfile.threadMetadata.computeIfAbsent(
                       String.valueOf(threadIdToUse),
                       k -> {
                         ThreadMetadata metadata = new ThreadMetadata();
-                        metadata.name = getThreadName(event.tid);
+                        metadata.name = threadName;
                         metadata.priority = 0;
                         return metadata;
                       });
                 }
               }
 
-              if (jfrProfile.samples == null) {
-                jfrProfile.samples = new ArrayList<>();
+              if (sentryProfile.samples == null) {
+                sentryProfile.samples = new ArrayList<>();
               }
 
-              if (jfrProfile.frames == null) {
-                jfrProfile.frames = new ArrayList<>();
+              if (sentryProfile.frames == null) {
+                sentryProfile.frames = new ArrayList<>();
               }
 
               List<Integer> stack = new ArrayList<>();
               int currentStack = stacks.size();
-              int currentFrame = jfrProfile.frames != null ? jfrProfile.frames.size() : 0;
+              int currentFrame = sentryProfile.frames != null ? sentryProfile.frames.size() : 0;
               for (int i = 0; i < methods.length; i++) {
                 //          for (int i = methods.length; --i >= 0; ) {
                 SentryStackFrame frame = new SentryStackFrame();
                 StackTraceElement element =
                     getStackTraceElement(methods[i], types[i], locations[i]);
+                if (element.isNativeMethod()) {
+                  continue;
+                }
+
                 final String classNameWithLambdas = element.getClassName().replace("/", ".");
                 frame.setFunction(element.getMethodName());
 
@@ -120,8 +130,8 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
                 frame.setLineno((element.getLineNumber() != 0) ? element.getLineNumber() : null);
                 frame.setFilename(classNameWithLambdas);
 
-                if (jfrProfile.frames != null) {
-                  jfrProfile.frames.add(frame);
+                if (sentryProfile.frames != null) {
+                  sentryProfile.frames.add(frame);
                 }
                 stack.add(currentFrame);
                 currentFrame++;
@@ -144,19 +154,19 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
                           ? jfr.javaThreads.get(event.tid)
                           : event.tid);
               sample.stackId = currentStack;
-              if (jfrProfile.samples != null) {
-                jfrProfile.samples.add(sample);
+              if (sentryProfile.samples != null) {
+                sentryProfile.samples.add(sample);
               }
 
               stacks.add(stack);
             }
           }
         });
-    jfrProfile.stacks = stacks;
+    sentryProfile.stacks = stacks;
     System.out.println("Samples: " + events.size());
   }
 
-  public static @NotNull JfrProfile convertFromFile(@NotNull Path jfrFilePath) throws IOException {
+  public static @NotNull SentryProfile convertFromFile(@NotNull Path jfrFilePath) throws IOException {
     JfrAsyncProfilerToSentryProfileConverter converter;
     try (JfrReader jfrReader = new JfrReader(jfrFilePath.toString())) {
       Arguments args = new Arguments();
@@ -170,6 +180,6 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
       converter.convert();
     }
 
-    return converter.jfrProfile;
+    return converter.sentryProfile;
   }
 }

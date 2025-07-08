@@ -13,7 +13,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class JfrProfile implements JsonUnknown, JsonSerializable {
+public final class SentryProfile implements JsonUnknown, JsonSerializable {
   public @Nullable List<JfrSample> samples;
 
   public @Nullable List<List<Integer>> stacks; // List of frame indices
@@ -73,13 +73,13 @@ public final class JfrProfile implements JsonUnknown, JsonSerializable {
     public static final String THREAD_METADATA = "thread_metadata";
   }
 
-  public static final class Deserializer implements JsonDeserializer<JfrProfile> {
+  public static final class Deserializer implements JsonDeserializer<SentryProfile> {
 
     @Override
-    public @NotNull JfrProfile deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
+    public @NotNull SentryProfile deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {
       reader.beginObject();
-      JfrProfile data = new JfrProfile();
+      SentryProfile data = new SentryProfile();
       return data;
       //      Map<String, Object> unknown = null;
       //

@@ -8,7 +8,7 @@ import io.sentry.clientreport.ClientReport;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.jfr.convert.JfrAsyncProfilerToSentryProfileConverter;
-import io.sentry.protocol.profiling.JfrProfile;
+import io.sentry.protocol.profiling.SentryProfile;
 // import io.sentry.protocol.profiling.JfrToSentryProfileConverter;
 import io.sentry.util.FileUtils;
 import io.sentry.util.JsonSerializationUtils;
@@ -298,7 +298,7 @@ public final class SentryEnvelopeItem {
               if (traceFile.getName().endsWith(".jfr")) {
                 //                JfrProfile profile = new
                 // JfrToSentryProfileConverter().convert(traceFile.toPath());
-                JfrProfile profile =
+                SentryProfile profile =
                     JfrAsyncProfilerToSentryProfileConverter.convertFromFile(traceFile.toPath());
                 profileChunk.setJfrProfile(profile);
 
