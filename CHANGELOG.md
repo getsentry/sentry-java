@@ -20,6 +20,9 @@
   - `opentelemetry-javaagent` to `2.17.0`
   - `opentelemetry-semconv` to `1.34.0`
   - We are now configuring OpenTelemetry to still behave the same way it did before for span names it generates in GraphQL auto instrumentation ([#4537](https://github.com/getsentry/sentry-java/pull/4537))
+- Bump Gradle from v8.14.2 to v8.14.3 ([#4540](https://github.com/getsentry/sentry-java/pull/4540))
+  - [changelog](https://github.com/gradle/gradle/blob/master/CHANGELOG.md#v8143)
+  - [diff](https://github.com/gradle/gradle/compare/v8.14.2...v8.14.3)
 
 ### Fixes
 
