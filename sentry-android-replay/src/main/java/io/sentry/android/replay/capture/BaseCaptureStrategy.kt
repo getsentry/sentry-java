@@ -61,10 +61,10 @@ internal abstract class BaseCaptureStrategy(
 
     protected val isTerminating = AtomicBoolean(false)
     protected var cache: ReplayCache? = null
-    protected var recorderConfig: ScreenshotRecorderConfig? by persistableAtomicNullable(propertyName = "") { _, _, newValue ->
+    protected var recorderConfig: ScreenshotRecorderConfig by persistableAtomic { _, _, newValue ->
         if (newValue == null) {
             // recorderConfig is only nullable on init, but never after
-            return@persistableAtomicNullable
+            return@persistableAtomic
         }
         cache?.persistSegmentValues(SEGMENT_KEY_HEIGHT, newValue.recordingHeight.toString())
         cache?.persistSegmentValues(SEGMENT_KEY_WIDTH, newValue.recordingWidth.toString())
@@ -85,6 +85,7 @@ internal abstract class BaseCaptureStrategy(
     protected val currentEvents: Deque<RRWebEvent> = ConcurrentLinkedDeque()
 
     override fun start(
+        recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int,
         replayId: SentryId,
         replayType: ReplayType?
@@ -94,6 +95,7 @@ internal abstract class BaseCaptureStrategy(
         this.currentReplayId = replayId
         this.currentSegment = segmentId
         this.replayType = replayType ?: (if (this is SessionCaptureStrategy) SESSION else BUFFER)
+        this.recorderConfig = recorderConfig
 
         segmentTimestamp = DateUtils.getCurrentDateTime()
         replayStartTimestamp.set(dateProvider.currentTimeMillis)
@@ -119,10 +121,10 @@ internal abstract class BaseCaptureStrategy(
         segmentId: Int,
         height: Int,
         width: Int,
-        frameRate: Int,
-        bitRate: Int,
         replayType: ReplayType = this.replayType,
         cache: ReplayCache? = this.cache,
+        frameRate: Int = recorderConfig.frameRate,
+        bitRate: Int = recorderConfig.bitRate,
         screenAtStart: String? = this.screenAtStart,
         breadcrumbs: List<Breadcrumb>? = null,
         events: Deque<RRWebEvent> = this.currentEvents
@@ -150,11 +152,9 @@ internal abstract class BaseCaptureStrategy(
     }
 
     override fun onTouchEvent(event: MotionEvent) {
-        recorderConfig?.let { config ->
-            val rrwebEvents = gestureConverter.convert(event, config)
-            if (rrwebEvents != null) {
-                currentEvents += rrwebEvents
-            }
+        val rrwebEvents = gestureConverter.convert(event, recorderConfig)
+        if (rrwebEvents != null) {
+            currentEvents += rrwebEvents
         }
     }
 
@@ -209,4 +209,9 @@ internal abstract class BaseCaptureStrategy(
         }
     ): ReadWriteProperty<Any?, T> =
         persistableAtomicNullable<T>(initialValue, propertyName, onChange) as ReadWriteProperty<Any?, T>
+
+    private inline fun <T> persistableAtomic(
+        crossinline onChange: (propertyName: String?, oldValue: T?, newValue: T?) -> Unit
+    ): ReadWriteProperty<Any?, T> =
+        persistableAtomicNullable<T>(null, "", onChange) as ReadWriteProperty<Any?, T>
 }

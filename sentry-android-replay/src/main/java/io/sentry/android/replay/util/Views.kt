@@ -186,7 +186,7 @@ internal fun View?.addOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawListen
     }
     try {
         viewTreeObserver.addOnDrawListener(listener)
-    } catch (_: IllegalStateException) {
+    } catch (e: IllegalStateException) {
         // viewTreeObserver is already dead
     }
 }
@@ -197,33 +197,7 @@ internal fun View?.removeOnDrawListenerSafe(listener: ViewTreeObserver.OnDrawLis
     }
     try {
         viewTreeObserver.removeOnDrawListener(listener)
-    } catch (_: IllegalStateException) {
+    } catch (e: IllegalStateException) {
         // viewTreeObserver is already dead
     }
-}
-
-internal fun View?.addOnPreDrawListenerSafe(listener: ViewTreeObserver.OnPreDrawListener) {
-    if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
-        return
-    }
-    try {
-        viewTreeObserver.addOnPreDrawListener(listener)
-    } catch (_: IllegalStateException) {
-        // viewTreeObserver is already dead
-    }
-}
-
-internal fun View?.removeOnPreDrawListenerSafe(listener: ViewTreeObserver.OnPreDrawListener) {
-    if (this == null || viewTreeObserver == null || !viewTreeObserver.isAlive) {
-        return
-    }
-    try {
-        viewTreeObserver.removeOnPreDrawListener(listener)
-    } catch (_: IllegalStateException) {
-        // viewTreeObserver is already dead
-    }
-}
-
-internal fun View.hasSize(): Boolean {
-    return width != 0 && height != 0
 }

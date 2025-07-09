@@ -7,11 +7,15 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.RectF
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import android.view.PixelCopy
 import android.view.View
 import android.view.ViewTreeObserver
+import android.view.WindowManager
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryLevel.WARNING
@@ -174,9 +178,6 @@ internal class ScreenshotRecorder(
     }
 
     override fun onDraw() {
-        if (!isCapturing.get()) {
-            return
-        }
         val root = rootView?.get()
         if (root == null || root.width <= 0 || root.height <= 0 || !root.isShown) {
             options.logger.log(DEBUG, "Root view is invalid, not capturing screenshot")
@@ -289,26 +290,35 @@ public data class ScreenshotRecorderConfig(
             }
         }
 
-        fun fromSize(
+        fun from(
             context: Context,
-            sessionReplay: SentryReplayOptions,
-            windowWidth: Int,
-            windowHeight: Int
+            sessionReplay: SentryReplayOptions
         ): ScreenshotRecorderConfig {
+            // PixelCopy takes screenshots including system bars, so we have to get the real size here
+            val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            val screenBounds = if (VERSION.SDK_INT >= VERSION_CODES.R) {
+                wm.currentWindowMetrics.bounds
+            } else {
+                val screenBounds = Point()
+                @Suppress("DEPRECATION")
+                wm.defaultDisplay.getRealSize(screenBounds)
+                Rect(0, 0, screenBounds.x, screenBounds.y)
+            }
+
             // use the baseline density of 1x (mdpi)
             val (height, width) =
-                ((windowHeight / context.resources.displayMetrics.density) * sessionReplay.quality.sizeScale)
+                ((screenBounds.height() / context.resources.displayMetrics.density) * sessionReplay.quality.sizeScale)
                     .roundToInt()
                     .adjustToBlockSize() to
-                    ((windowWidth / context.resources.displayMetrics.density) * sessionReplay.quality.sizeScale)
+                    ((screenBounds.width() / context.resources.displayMetrics.density) * sessionReplay.quality.sizeScale)
                         .roundToInt()
                         .adjustToBlockSize()
 
             return ScreenshotRecorderConfig(
                 recordingWidth = width,
                 recordingHeight = height,
-                scaleFactorX = width.toFloat() / windowWidth,
-                scaleFactorY = height.toFloat() / windowHeight,
+                scaleFactorX = width.toFloat() / screenBounds.width(),
+                scaleFactorY = height.toFloat() / screenBounds.height(),
                 frameRate = sessionReplay.frameRate,
                 bitRate = sessionReplay.quality.bitRate
             )
@@ -336,11 +346,4 @@ public interface ScreenshotRecorderCallback {
      * @param frameTimestamp the timestamp when the frame screenshot was taken
      */
     fun onScreenshotRecorded(screenshot: File, frameTimestamp: Long)
-}
-
-/**
- * A callback to be invoked when once current window size is determined or changes
- */
-public interface WindowCallback {
-    public fun onWindowSizeChanged(width: Int, height: Int)
 }

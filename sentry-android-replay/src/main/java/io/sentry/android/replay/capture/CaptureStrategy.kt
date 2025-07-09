@@ -31,6 +31,7 @@ internal interface CaptureStrategy {
     var segmentTimestamp: Date?
 
     fun start(
+        recorderConfig: ScreenshotRecorderConfig,
         segmentId: Int = 0,
         replayId: SentryId = SentryId(),
         replayType: ReplayType? = null

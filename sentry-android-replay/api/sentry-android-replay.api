@@ -34,11 +34,9 @@ public final class io/sentry/android/replay/ModifierExtensionsKt {
 }
 
 public abstract interface class io/sentry/android/replay/Recorder : java/io/Closeable {
-	public abstract fun onConfigurationChanged (Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
 	public abstract fun pause ()V
-	public abstract fun reset ()V
 	public abstract fun resume ()V
-	public abstract fun start ()V
+	public abstract fun start (Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
 	public abstract fun stop ()V
 }
 
@@ -59,24 +57,24 @@ public final class io/sentry/android/replay/ReplayCache$Companion {
 	public final fun makeReplayCacheDir (Lio/sentry/SentryOptions;Lio/sentry/protocol/SentryId;)Ljava/io/File;
 }
 
-public final class io/sentry/android/replay/ReplayIntegration : io/sentry/IConnectionStatusProvider$IConnectionStatusObserver, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, io/sentry/android/replay/WindowCallback, io/sentry/android/replay/gestures/TouchRecorderCallback, io/sentry/transport/RateLimiter$IRateLimitObserver, java/io/Closeable {
+public final class io/sentry/android/replay/ReplayIntegration : android/content/ComponentCallbacks, io/sentry/IConnectionStatusProvider$IConnectionStatusObserver, io/sentry/Integration, io/sentry/ReplayController, io/sentry/android/replay/ScreenshotRecorderCallback, io/sentry/android/replay/gestures/TouchRecorderCallback, io/sentry/transport/RateLimiter$IRateLimitObserver, java/io/Closeable {
 	public static final field $stable I
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
-	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun captureReplay (Ljava/lang/Boolean;)V
 	public fun close ()V
 	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public final fun getReplayCacheDir ()Ljava/io/File;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun isRecording ()Z
-	public final fun onConfigurationChanged (Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
+	public fun onConfigurationChanged (Landroid/content/res/Configuration;)V
 	public fun onConnectionStatusChanged (Lio/sentry/IConnectionStatusProvider$ConnectionStatus;)V
+	public fun onLowMemory ()V
 	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 	public fun onScreenshotRecorded (Landroid/graphics/Bitmap;)V
 	public fun onScreenshotRecorded (Ljava/io/File;J)V
 	public fun onTouchEvent (Landroid/view/MotionEvent;)V
-	public fun onWindowSizeChanged (II)V
 	public fun pause ()V
 	public fun register (Lio/sentry/IHub;Lio/sentry/SentryOptions;)V
 	public fun resume ()V
@@ -114,7 +112,7 @@ public final class io/sentry/android/replay/ScreenshotRecorderConfig {
 }
 
 public final class io/sentry/android/replay/ScreenshotRecorderConfig$Companion {
-	public final fun fromSize (Landroid/content/Context;Lio/sentry/SentryReplayOptions;II)Lio/sentry/android/replay/ScreenshotRecorderConfig;
+	public final fun from (Landroid/content/Context;Lio/sentry/SentryReplayOptions;)Lio/sentry/android/replay/ScreenshotRecorderConfig;
 }
 
 public final class io/sentry/android/replay/SentryReplayModifiers {
@@ -133,10 +131,6 @@ public final class io/sentry/android/replay/SessionReplayOptionsKt {
 public final class io/sentry/android/replay/ViewExtensionsKt {
 	public static final fun sentryReplayMask (Landroid/view/View;)V
 	public static final fun sentryReplayUnmask (Landroid/view/View;)V
-}
-
-public abstract interface class io/sentry/android/replay/WindowCallback {
-	public abstract fun onWindowSizeChanged (II)V
 }
 
 public final class io/sentry/android/replay/gestures/GestureRecorder : io/sentry/android/replay/OnRootViewsChangedListener {

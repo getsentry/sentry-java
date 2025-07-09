@@ -143,16 +143,10 @@
       android:text="@string/open_frame_data_for_spans"/>
 
     <Button
-      android:id="@+id/throw_in_coroutine"
+      android:id="@+id/open_metrics"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:text="@string/open_metrics"/>
-
-    <Button
-        android:id="@+id/show_dialog"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/show_dialog"/>
   </LinearLayout>
 
 </ScrollView>

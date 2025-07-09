@@ -8,18 +8,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -64,14 +55,11 @@ class ComposeActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Landing(
     navigateGithub: () -> Unit,
     navigateGithubWithArgs: () -> Unit
 ) {
-    var showDialog by remember { mutableStateOf(false) }
-
     SentryTraced(tag = "buttons_page") {
         Column(
             verticalArrangement = Arrangement.Center,
@@ -103,46 +91,6 @@ fun Landing(
                 ) {
                     Text("Crash from Compose")
                 }
-            }
-            SentryTraced(tag = "button_dialog") {
-                Button(
-                    onClick = {
-                        showDialog = true
-                    },
-                    modifier = Modifier
-                        .testTag("button_show_dialog")
-                        .padding(top = 32.dp)
-                ) {
-                    Text("Show Dialog", modifier = Modifier.sentryReplayUnmask())
-                }
-            }
-            if (showDialog) {
-                BasicAlertDialog(
-                    onDismissRequest = {
-                        showDialog = false
-                    },
-                    content = {
-                        Surface(
-                            modifier = Modifier
-                                .wrapContentWidth()
-                                .wrapContentHeight(),
-                            shape = MaterialTheme.shapes.large,
-                            tonalElevation = AlertDialogDefaults.TonalElevation
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(20.dp),
-                                content = {
-                                    Text(
-                                        "Dialog Title",
-                                        style = MaterialTheme.typography.titleLarge
-                                    )
-                                    Spacer(Modifier.size(20.dp))
-                                    Text("Dialog Content")
-                                }
-                            )
-                        }
-                    }
-                )
             }
         }
     }

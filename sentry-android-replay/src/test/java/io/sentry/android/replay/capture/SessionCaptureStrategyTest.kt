@@ -122,7 +122,7 @@ class SessionCaptureStrategyTest {
         val strategy = fixture.getSut()
         val replayId = SentryId()
 
-        strategy.start(0, replayId)
+        strategy.start(fixture.recorderConfig, 0, replayId)
 
         assertEquals(replayId, fixture.scope.replayId)
         assertEquals(replayId, strategy.currentReplayId)
@@ -134,8 +134,7 @@ class SessionCaptureStrategyTest {
         val strategy = fixture.getSut()
         val replayId = SentryId()
 
-        strategy.start(0, replayId)
-        strategy.onConfigurationChanged(fixture.recorderConfig)
+        strategy.start(fixture.recorderConfig, 0, replayId)
 
         assertEquals("0", fixture.persistedSegment[SEGMENT_KEY_ID])
         assertEquals(replayId.toString(), fixture.persistedSegment[SEGMENT_KEY_REPLAY_ID])
@@ -165,8 +164,7 @@ class SessionCaptureStrategyTest {
     @Test
     fun `pause creates and captures current segment`() {
         val strategy = fixture.getSut()
-        strategy.start(0, SentryId())
-        strategy.onConfigurationChanged(fixture.recorderConfig)
+        strategy.start(fixture.recorderConfig, 0, SentryId())
 
         strategy.pause()
 
@@ -186,8 +184,7 @@ class SessionCaptureStrategyTest {
             File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
 
         val strategy = fixture.getSut(replayCacheDir = currentReplay)
-        strategy.start(0, replayId)
-        strategy.onConfigurationChanged(fixture.recorderConfig)
+        strategy.start(fixture.recorderConfig, 0, replayId)
 
         strategy.stop()
 
@@ -207,7 +204,7 @@ class SessionCaptureStrategyTest {
     @Test
     fun `captureReplay does nothing for non-crashed event`() {
         val strategy = fixture.getSut()
-        strategy.start()
+        strategy.start(fixture.recorderConfig)
 
         strategy.captureReplay(false) {}
 
@@ -221,7 +218,7 @@ class SessionCaptureStrategyTest {
         val strategy = fixture.getSut(
             dateProvider = { now }
         )
-        strategy.start()
+        strategy.start(fixture.recorderConfig)
 
         strategy.captureReplay(true) {}
         strategy.onScreenshotRecorded(mock<Bitmap>()) {}
@@ -236,8 +233,7 @@ class SessionCaptureStrategyTest {
         val strategy = fixture.getSut(
             dateProvider = { now }
         )
-        strategy.start()
-        strategy.onConfigurationChanged(fixture.recorderConfig)
+        strategy.start(fixture.recorderConfig)
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) { frameTimestamp ->
             assertEquals(now, frameTimestamp)
@@ -276,8 +272,7 @@ class SessionCaptureStrategyTest {
                 }
             }
         )
-        strategy.start()
-        strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
+        strategy.start(fixture.recorderConfig)
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) {}
 
@@ -287,8 +282,7 @@ class SessionCaptureStrategyTest {
     @Test
     fun `onConfigurationChanged creates new segment and updates config`() {
         val strategy = fixture.getSut()
-        strategy.start()
-        strategy.onConfigurationChanged(fixture.recorderConfig)
+        strategy.start(fixture.recorderConfig)
 
         val newConfig = fixture.recorderConfig.copy(recordingHeight = 1080, recordingWidth = 1920)
         strategy.onConfigurationChanged(newConfig)
@@ -323,8 +317,7 @@ class SessionCaptureStrategyTest {
         val now =
             System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(dateProvider = { now })
-        strategy.start()
-        strategy.onConfigurationChanged(fixture.recorderConfig)
+        strategy.start(fixture.recorderConfig)
 
         fixture.scope.addBreadcrumb(Breadcrumb.navigation("from", "to"))
 
@@ -348,8 +341,7 @@ class SessionCaptureStrategyTest {
         val now =
             System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(dateProvider = { now })
-        strategy.start()
-        strategy.onConfigurationChanged(fixture.recorderConfig)
+        strategy.start(fixture.recorderConfig)
 
         fixture.scope.addBreadcrumb(Breadcrumb().apply { category = "navigation" })
 
@@ -375,8 +367,7 @@ class SessionCaptureStrategyTest {
         val now =
             System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(dateProvider = { now })
-        strategy.start()
-        strategy.onConfigurationChanged(fixture.recorderConfig)
+        strategy.start(fixture.recorderConfig)
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) {}
 
@@ -397,7 +388,7 @@ class SessionCaptureStrategyTest {
         val strategy = fixture.getSut()
         val replayId = SentryId()
 
-        strategy.start(0, replayId)
+        strategy.start(fixture.recorderConfig, 0, replayId)
 
         assertEquals(
             replayId.toString(),
@@ -417,8 +408,7 @@ class SessionCaptureStrategyTest {
         val now =
             System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(dateProvider = { now })
-        strategy.start()
-        strategy.onConfigurationChanged(fixture.recorderConfig)
+        strategy.start(fixture.recorderConfig)
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) {}
 
@@ -462,8 +452,7 @@ class SessionCaptureStrategyTest {
         val now =
             System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
         val strategy = fixture.getSut(dateProvider = { now })
-        strategy.start()
-        strategy.onConfigurationChanged(fixture.recorderConfig)
+        strategy.start(fixture.recorderConfig)
 
         strategy.onScreenshotRecorded(mock<Bitmap>()) {}
         verify(fixture.hub).captureReplay(

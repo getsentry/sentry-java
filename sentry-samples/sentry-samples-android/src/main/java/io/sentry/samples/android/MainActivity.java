@@ -3,7 +3,6 @@ package io.sentry.samples.android;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import io.sentry.Attachment;
 import io.sentry.ISpan;
@@ -257,19 +256,6 @@ public class MainActivity extends AppCompatActivity {
 
     binding.openMetrics.setOnClickListener(
         view -> startActivity(new Intent(this, MetricsActivity.class)));
-
-    binding.showDialog.setOnClickListener(
-        view -> {
-          new AlertDialog.Builder(MainActivity.this)
-              .setTitle("Example Title")
-              .setMessage("Example Message")
-              .setPositiveButton(
-                  "Close",
-                  (dialog, which) -> {
-                    dialog.dismiss();
-                  })
-              .show();
-        });
 
     setContentView(binding.getRoot());
   }

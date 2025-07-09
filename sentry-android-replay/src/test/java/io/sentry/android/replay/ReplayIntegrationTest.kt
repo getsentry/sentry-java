@@ -110,6 +110,7 @@ class ReplayIntegrationTest {
             isRateLimited: Boolean = false,
             recorderProvider: (() -> Recorder)? = null,
             replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
+            recorderConfigProvider: ((configChanged: Boolean) -> ScreenshotRecorderConfig)? = null,
             gestureRecorderProvider: (() -> GestureRecorder)? = null,
             dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance()
         ): ReplayIntegration {
@@ -127,6 +128,7 @@ class ReplayIntegrationTest {
                 context,
                 dateProvider,
                 recorderProvider,
+                recorderConfigProvider = recorderConfigProvider,
                 replayCacheProvider = { _ -> replayCache },
                 replayCaptureStrategyProvider = replayCaptureStrategyProvider,
                 gestureRecorderProvider = gestureRecorderProvider
@@ -184,7 +186,7 @@ class ReplayIntegrationTest {
 
         replay.start()
 
-        verify(captureStrategy, never()).start(any(), any(), anyOrNull())
+        verify(captureStrategy, never()).start(any(), any(), any(), anyOrNull())
     }
 
     @Test
@@ -208,6 +210,7 @@ class ReplayIntegrationTest {
         replay.start()
 
         verify(captureStrategy, times(1)).start(
+            any(),
             eq(0),
             argThat { this != SentryId.EMPTY_ID },
             anyOrNull()
@@ -223,6 +226,7 @@ class ReplayIntegrationTest {
         replay.start()
 
         verify(captureStrategy, never()).start(
+            any(),
             eq(0),
             argThat { this != SentryId.EMPTY_ID },
             anyOrNull()
@@ -238,6 +242,7 @@ class ReplayIntegrationTest {
         replay.start()
 
         verify(captureStrategy, times(1)).start(
+            any(),
             eq(0),
             argThat { this != SentryId.EMPTY_ID },
             anyOrNull()
@@ -252,7 +257,7 @@ class ReplayIntegrationTest {
         replay.register(fixture.hub, fixture.options)
         replay.start()
 
-        verify(recorder).start()
+        verify(recorder).start(any())
     }
 
     @Test
@@ -427,21 +432,25 @@ class ReplayIntegrationTest {
 
     @Test
     fun `onConfigurationChanged stops and restarts recorder with a new recorder config`() {
+        var configChanged = false
         val recorderConfig = mock<ScreenshotRecorderConfig>()
         val captureStrategy = mock<CaptureStrategy>()
         val recorder = mock<Recorder>()
         val replay = fixture.getSut(
             context,
             recorderProvider = { recorder },
-            replayCaptureStrategyProvider = { captureStrategy }
+            replayCaptureStrategyProvider = { captureStrategy },
+            recorderConfigProvider = { configChanged = it; recorderConfig }
         )
 
         replay.register(fixture.hub, fixture.options)
         replay.start()
-        replay.onConfigurationChanged(recorderConfig)
+        replay.onConfigurationChanged(mock())
 
+        verify(recorder).stop()
         verify(captureStrategy).onConfigurationChanged(eq(recorderConfig))
-        verify(recorder, times(1)).start()
+        verify(recorder, times(2)).start(eq(recorderConfig))
+        assertTrue(configChanged)
     }
 
     @Test
@@ -701,23 +710,27 @@ class ReplayIntegrationTest {
 
     @Test
     fun `if recording is paused in configChanges re-pauses it again`() {
+        var configChanged = false
         val recorderConfig = mock<ScreenshotRecorderConfig>()
         val captureStrategy = mock<CaptureStrategy>()
         val recorder = mock<Recorder>()
         val replay = fixture.getSut(
             context,
             recorderProvider = { recorder },
-            replayCaptureStrategyProvider = { captureStrategy }
+            replayCaptureStrategyProvider = { captureStrategy },
+            recorderConfigProvider = { configChanged = it; recorderConfig }
         )
 
         replay.register(fixture.hub, fixture.options)
         replay.start()
         replay.pause()
-        replay.onConfigurationChanged(recorderConfig)
+        replay.onConfigurationChanged(mock())
 
+        verify(recorder).stop()
         verify(captureStrategy).onConfigurationChanged(eq(recorderConfig))
-        verify(recorder, times(1)).start()
+        verify(recorder, times(2)).start(eq(recorderConfig))
         verify(recorder, times(2)).pause()
+        assertTrue(configChanged)
     }
 
     @Test

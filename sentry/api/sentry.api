@@ -2746,7 +2746,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getUnmaskViewContainerClass ()Ljava/lang/String;
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
-	public fun isTrackConfiguration ()Z
+	public fun isTrackOrientationChange ()Z
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
 	public fun setMaskViewContainerClass (Ljava/lang/String;)V
@@ -2754,7 +2754,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
-	public fun setTrackConfiguration (Z)V
+	public fun setTrackOrientationChange (Z)V
 	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
 }
 
