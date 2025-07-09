@@ -1,1 +1,0 @@
-typeSearchIndex = [{"p":"io.sentry.opentelemetry.agent","l":"AgentlessSpringMarker"},{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"io.sentry.opentelemetry.agentless.spring","l":"BuildConfig"}];updateSearchResults();

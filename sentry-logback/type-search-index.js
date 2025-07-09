@@ -1,1 +1,0 @@
-typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"io.sentry.logback","l":"BuildConfig"},{"p":"io.sentry.logback","l":"SentryAppender"}];updateSearchResults();

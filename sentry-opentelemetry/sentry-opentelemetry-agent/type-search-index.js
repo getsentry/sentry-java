@@ -1,1 +1,0 @@
-typeSearchIndex = [{"p":"io.sentry.opentelemetry.agent","l":"AgentMarker"},{"l":"All Classes and Interfaces","u":"allclasses-index.html"}];updateSearchResults();

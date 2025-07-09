@@ -1,1 +1,0 @@
-memberSearchIndex = [{"p":"io.sentry.opentelemetry.agent","c":"AgentMarker","l":"AgentMarker()","u":"%3Cinit%3E()"}];updateSearchResults();

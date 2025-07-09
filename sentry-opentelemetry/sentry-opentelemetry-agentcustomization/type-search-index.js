@@ -1,1 +1,0 @@
-typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"io.sentry.opentelemetry","l":"SentryAutoConfigurationCustomizerProvider"},{"p":"io.sentry.opentelemetry","l":"SentryBootstrapPackagesProvider"},{"p":"io.sentry.opentelemetry","l":"SentryPropagatorProvider"}];updateSearchResults();

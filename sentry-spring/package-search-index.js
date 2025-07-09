@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"io.sentry.spring"},{"l":"io.sentry.spring.checkin"},{"l":"io.sentry.spring.exception"},{"l":"io.sentry.spring.graphql"},{"l":"io.sentry.spring.opentelemetry"},{"l":"io.sentry.spring.tracing"},{"l":"io.sentry.spring.webflux"}];updateSearchResults();

@@ -1,1 +1,0 @@
-typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"io.sentry.jdbc","l":"BuildConfig"},{"p":"io.sentry.jdbc","l":"DatabaseUtils.DatabaseDetails"},{"p":"io.sentry.jdbc","l":"DatabaseUtils"},{"p":"io.sentry.jdbc","l":"SentryJdbcEventListener"}];updateSearchResults();

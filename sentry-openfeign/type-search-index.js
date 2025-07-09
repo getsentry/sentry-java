@@ -1,1 +1,0 @@
-typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"io.sentry.openfeign","l":"SentryFeignClient.BeforeSpanCallback"},{"p":"io.sentry.openfeign","l":"SentryCapability"},{"p":"io.sentry.openfeign","l":"SentryFeignClient"}];updateSearchResults();

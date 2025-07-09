@@ -1,1 +1,0 @@
-typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"io.sentry.graphql22","l":"SentryInstrumentation.BeforeSpanCallback"},{"p":"io.sentry.graphql22","l":"BuildConfig"},{"p":"io.sentry.graphql22","l":"SentryInstrumentation"}];updateSearchResults();
