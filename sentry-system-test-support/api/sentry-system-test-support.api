@@ -554,6 +554,7 @@ public final class io/sentry/systemtest/util/TestHelper {
 	public final fun doesContainLogWithBody (Lio/sentry/SentryLogEvents;Ljava/lang/String;)Z
 	public final fun doesTransactionContainSpanWithDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionContainSpanWithOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
+	public final fun doesTransactionContainSpanWithOpAndDescription (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;Ljava/lang/String;)Z
 	public final fun doesTransactionHaveOp (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun doesTransactionHaveTraceId (Lio/sentry/protocol/SentryTransaction;Ljava/lang/String;)Z
 	public final fun ensureEnvelopeCountIncreased ()V

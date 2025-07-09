@@ -1,8 +1,10 @@
 package io.sentry.android.timber
 
 import io.sentry.Breadcrumb
-import io.sentry.IScopes
+import io.sentry.Scopes
 import io.sentry.SentryLevel
+import io.sentry.SentryLogLevel
+import io.sentry.logger.ILoggerApi
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,19 +12,28 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import timber.log.Timber
 
 class SentryTimberTreeTest {
   private class Fixture {
-    val scopes = mock<IScopes>()
+    val scopes = mock<Scopes>()
+    val logs = mock<ILoggerApi>()
+
+    init {
+      whenever(scopes.logger()).thenReturn(logs)
+    }
 
     fun getSut(
       minEventLevel: SentryLevel = SentryLevel.ERROR,
       minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
-    ): SentryTimberTree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel)
+      minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
+    ): SentryTimberTree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel)
   }
 
   private val fixture = Fixture()
@@ -230,5 +241,73 @@ class SentryTimberTreeTest {
   fun `Tree does not throw when using log with args`() {
     val sut = fixture.getSut()
     sut.d("test %s, %s", 1, 1)
+  }
+
+  @Test
+  fun `Tree adds a log with message and arguments, when provided`() {
+    val sut = fixture.getSut()
+    sut.e("test count: %d %d", 32, 5)
+
+    verify(fixture.logs).log(eq(SentryLogLevel.ERROR), eq("test count: %d %d"), eq(32), eq(5))
+  }
+
+  @Test
+  fun `Tree adds a log if min level is equal`() {
+    val sut = fixture.getSut()
+    sut.i(Throwable("test"))
+    verify(fixture.logs).log(any(), any())
+  }
+
+  @Test
+  fun `Tree adds a log if min level is higher`() {
+    val sut = fixture.getSut()
+    sut.e(Throwable("test"))
+    verify(fixture.logs).log(any(), any<String>(), any())
+  }
+
+  @Test
+  fun `Tree won't add a log if min level is lower`() {
+    val sut = fixture.getSut(minLogsLevel = SentryLogLevel.ERROR)
+    sut.i(Throwable("test"))
+    verifyNoInteractions(fixture.logs)
+  }
+
+  @Test
+  fun `Tree adds an info log`() {
+    val sut = fixture.getSut()
+    sut.i("message")
+
+    verify(fixture.logs).log(eq(SentryLogLevel.INFO), eq("message"))
+  }
+
+  @Test
+  fun `Tree adds an error log`() {
+    val sut = fixture.getSut()
+    sut.e(Throwable("test"))
+
+    verify(fixture.logs).log(eq(SentryLogLevel.ERROR), eq("test"))
+  }
+
+  @Test
+  fun `Tree does not add a log, if no message or throwable is provided`() {
+    val sut = fixture.getSut()
+    sut.e(null as String?)
+    verifyNoInteractions(fixture.logs)
+  }
+
+  @Test
+  fun `Tree logs throwable`() {
+    val sut = fixture.getSut()
+    sut.e(Throwable("throwable message"))
+
+    verify(fixture.logs).log(eq(SentryLogLevel.ERROR), eq("throwable message"))
+  }
+
+  @Test
+  fun `Tree logs throwable and message`() {
+    val sut = fixture.getSut()
+    sut.e(Throwable("throwable message"), "My message")
+
+    verify(fixture.logs).log(eq(SentryLogLevel.ERROR), eq("My message\nthrowable message"))
   }
 }
