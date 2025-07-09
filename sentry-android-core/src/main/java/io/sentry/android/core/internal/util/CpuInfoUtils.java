@@ -51,8 +51,6 @@ public final class CpuInfoUtils {
         if (!cpuDir.getName().matches("cpu[0-9]+")) continue;
         File cpuMaxFreqFile = new File(cpuDir, CPUINFO_MAX_FREQ_PATH);
 
-        if (!cpuMaxFreqFile.exists() || !cpuMaxFreqFile.canRead()) continue;
-
         long khz;
         try {
           String content = FileUtils.readText(cpuMaxFreqFile);
