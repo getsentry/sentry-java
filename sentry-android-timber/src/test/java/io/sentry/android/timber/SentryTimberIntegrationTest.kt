@@ -27,7 +27,7 @@ class SentryTimberIntegrationTest {
       SentryTimberIntegration(
         minEventLevel = minEventLevel,
         minBreadcrumbLevel = minBreadcrumbLevel,
-        minLogsLevel = minLogsLevel,
+        minLogLevel = minLogsLevel,
       )
   }
 
@@ -90,7 +90,7 @@ class SentryTimberIntegrationTest {
 
     assertEquals(sut.minEventLevel, SentryLevel.INFO)
     assertEquals(sut.minBreadcrumbLevel, SentryLevel.DEBUG)
-    assertEquals(sut.minLogsLevel, SentryLogLevel.TRACE)
+    assertEquals(sut.minLogLevel, SentryLogLevel.TRACE)
   }
 
   @Test
