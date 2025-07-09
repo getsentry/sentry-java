@@ -1,0 +1,1 @@
+memberSearchIndex = [{"p":"io.sentry.apollo4","c":"BuildConfig","l":"SENTRY_APOLLO4_SDK_NAME"},{"p":"io.sentry.apollo4","c":"BuildConfig","l":"VERSION_NAME"}];updateSearchResults();

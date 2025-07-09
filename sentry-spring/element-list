@@ -1,0 +1,7 @@
+io.sentry.spring
+io.sentry.spring.checkin
+io.sentry.spring.exception
+io.sentry.spring.graphql
+io.sentry.spring.opentelemetry
+io.sentry.spring.tracing
+io.sentry.spring.webflux
