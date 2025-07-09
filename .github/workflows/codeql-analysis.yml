@@ -36,7 +36,7 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@39edc492dbe16b1465b0cafca41432d857bdb31a # pin@v2
+        uses: github/codeql-action/init@181d5eefc20863364f96762470ba6f862bdef56b # pin@v2
         with:
           languages: 'java'
 
@@ -45,4 +45,4 @@ jobs:
           ./gradlew buildForCodeQL --no-build-cache
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@39edc492dbe16b1465b0cafca41432d857bdb31a # pin@v2
+        uses: github/codeql-action/analyze@181d5eefc20863364f96762470ba6f862bdef56b # pin@v2
