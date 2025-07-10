@@ -10,3 +10,4 @@
 ./test/system-test-run.sh "sentry-samples-spring-boot-jakarta-opentelemetry-noagent" "0" "true" "0"
 ./test/system-test-run.sh "sentry-samples-spring-boot-jakarta-opentelemetry" "1" "true" "0"
 ./test/system-test-run.sh "sentry-samples-spring-boot-jakarta-opentelemetry" "1" "false" "0"
+./test/system-test-run.sh "sentry-samples-console" "0" "true" "0"

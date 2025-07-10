@@ -20,6 +20,7 @@ public class Main {
         options -> {
           // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
           // your Sentry project/dashboard
+          options.setEnableExternalConfiguration(true);
           options.setDsn(
               "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563");
 
@@ -66,10 +67,8 @@ public class Main {
           options.setDebug(true);
           // To change the verbosity, use:
           // By default it's DEBUG.
-          options.setDiagnosticLevel(
-              SentryLevel
-                  .ERROR); //  A good option to have SDK debug log in prod is to use only level
-          // ERROR here.
+          // options.setDiagnosticLevel(SentryLevel.ERROR);
+          // A good option to have SDK debug log in prod is to use only level ERROR here.
 
           // Exclude frames from some packages from being "inApp" so are hidden by default in Sentry
           // UI:
@@ -83,15 +82,15 @@ public class Main {
           options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
 
           // Determine traces sample rate based on the sampling context
-          options.setTracesSampler(
-              context -> {
-                // only 10% of transactions with "/product" prefix will be collected
-                if (!context.getTransactionContext().getName().startsWith("/products")) {
-                  return 0.1;
-                } else {
-                  return 0.5;
-                }
-              });
+//          options.setTracesSampler(
+//              context -> {
+//                // only 10% of transactions with "/product" prefix will be collected
+//                if (!context.getTransactionContext().getName().startsWith("/products")) {
+//                  return 0.1;
+//                } else {
+//                  return 0.5;
+//                }
+//              });
         });
 
     Sentry.addBreadcrumb(
