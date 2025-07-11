@@ -42,11 +42,21 @@ from pathlib import Path
 from typing import Optional, List, Tuple
 from dataclasses import dataclass
 
+def str_to_bool(value: str) -> str:
+    """Convert true/false string to 1/0 string for internal compatibility."""
+    if value.lower() in ('true', '1'):
+        return "1"
+    elif value.lower() in ('false', '0'):
+        return "0"
+    else:
+        raise ValueError(f"Invalid boolean value: {value}. Use 'true' or 'false'")
+
 @dataclass
 class InteractiveSelection:
     """Result of interactive module selection."""
     modules: List[Tuple[str, str, str, str]]
     manual_test_mode: bool
+    build_agent: bool
     
     def is_empty(self) -> bool:
         """Check if no modules were selected."""
@@ -61,6 +71,10 @@ class InteractiveSelection:
         if self.is_empty():
             raise ValueError("No modules selected")
         return self.modules[0]
+    
+    def has_agent_modules(self) -> bool:
+        """Check if any selected modules use the Java agent."""
+        return any(str_to_bool(agent) == "1" for _, agent, _, _ in self.modules)
 
 class SystemTestRunner:
     def __init__(self):
@@ -184,6 +198,36 @@ class SystemTestRunner:
                 return str(jar_file)
         return None
     
+    def build_agent_jar(self) -> int:
+        """Build the OpenTelemetry agent JAR file."""
+        print("Building OpenTelemetry agent JAR...")
+        return self.run_gradle_task(":sentry-opentelemetry:sentry-opentelemetry-agent:assemble")
+    
+    def ensure_agent_jar(self, skip_build: bool = False) -> Optional[str]:
+        """Ensure the OpenTelemetry agent JAR exists, building it if necessary."""
+        agent_jar = self.find_agent_jar()
+        if agent_jar:
+            return agent_jar
+        
+        if skip_build:
+            print("OpenTelemetry agent JAR not found and build was skipped")
+            return None
+        
+        # Agent JAR doesn't exist, try to build it
+        print("OpenTelemetry agent JAR not found, building it...")
+        build_result = self.build_agent_jar()
+        if build_result != 0:
+            print("Failed to build OpenTelemetry agent JAR")
+            return None
+        
+        # Try to find it again after building
+        agent_jar = self.find_agent_jar()
+        if not agent_jar:
+            print("OpenTelemetry agent JAR still not found after building")
+            return None
+        
+        return agent_jar
+    
     def start_spring_server(self, sample_module: str, java_agent: str, java_agent_auto_init: str) -> None:
         """Start a Spring Boot server for testing."""
         print(f"Starting Spring server for {sample_module}...")
@@ -205,10 +249,12 @@ class SystemTestRunner:
         cmd = ["java"]
         
         if java_agent == "1":
-            agent_jar = self.find_agent_jar()
+            agent_jar = self.ensure_agent_jar()
             if agent_jar:
                 cmd.append(f"-javaagent:{agent_jar}")
                 print(f"Using Java Agent: {agent_jar}")
+            else:
+                print("Warning: Java agent was requested but could not be found or built")
         
         cmd.extend(["-jar", jar_path])
         
@@ -372,6 +418,13 @@ class SystemTestRunner:
                 print("Build failed")
                 return build_result
         
+        # Ensure agent JAR is available if needed
+        if java_agent == "1":
+            agent_jar = self.ensure_agent_jar()
+            if not agent_jar:
+                print("Error: Java agent was requested but could not be found or built")
+                return 1
+        
         # Start mock server
         print("Starting Sentry mock server...")
         self.start_sentry_mock_server()
@@ -411,28 +464,21 @@ class SystemTestRunner:
     
     def run_all_tests(self) -> int:
         """Run all system tests."""
-        test_configs = [
-            ("sentry-samples-spring-boot", "0", "true", "0"),
-            ("sentry-samples-spring-boot-opentelemetry-noagent", "0", "true", "0"),
-            ("sentry-samples-spring-boot-opentelemetry", "1", "true", "0"),
-            ("sentry-samples-spring-boot-opentelemetry", "1", "false", "0"),
-            ("sentry-samples-spring-boot-webflux-jakarta", "0", "true", "0"),
-            ("sentry-samples-spring-boot-webflux", "0", "true", "0"),
-            ("sentry-samples-spring-boot-jakarta", "0", "true", "0"),
-            ("sentry-samples-spring-boot-jakarta-opentelemetry-noagent", "0", "true", "0"),
-            ("sentry-samples-spring-boot-jakarta-opentelemetry", "1", "true", "0"),
-            ("sentry-samples-spring-boot-jakarta-opentelemetry", "1", "false", "0"),
-            ("sentry-samples-console", "0", "true", "0"),
-        ]
+        test_configs = self.get_available_modules()
         
         failed_tests = []
         
         for sample_module, java_agent, java_agent_auto_init, build_before_run in test_configs:
+            # Convert true/false to internal 1/0 format
+            agent = str_to_bool(java_agent)
+            auto_init = java_agent_auto_init  # already in correct format
+            build = str_to_bool(build_before_run)
+            
             print(f"\n{'='*60}")
             print(f"Running test: {sample_module} (agent={java_agent}, auto_init={java_agent_auto_init})")
             print(f"{'='*60}")
             
-            result = self.run_single_test(sample_module, java_agent, java_agent_auto_init, build_before_run)
+            result = self.run_single_test(sample_module, agent, auto_init, build)
             
             if result != 0:
                 # Find the module number in the full list for interactive reference
@@ -504,17 +550,17 @@ class SystemTestRunner:
     def get_available_modules(self) -> List[Tuple[str, str, str, str]]:
         """Get list of all available test modules."""
         return [
-            ("sentry-samples-spring-boot", "0", "true", "0"),
-            ("sentry-samples-spring-boot-opentelemetry-noagent", "0", "true", "0"),
-            ("sentry-samples-spring-boot-opentelemetry", "1", "true", "0"),
-            ("sentry-samples-spring-boot-opentelemetry", "1", "false", "0"),
-            ("sentry-samples-spring-boot-webflux-jakarta", "0", "true", "0"),
-            ("sentry-samples-spring-boot-webflux", "0", "true", "0"),
-            ("sentry-samples-spring-boot-jakarta", "0", "true", "0"),
-            ("sentry-samples-spring-boot-jakarta-opentelemetry-noagent", "0", "true", "0"),
-            ("sentry-samples-spring-boot-jakarta-opentelemetry", "1", "true", "0"),
-            ("sentry-samples-spring-boot-jakarta-opentelemetry", "1", "false", "0"),
-            ("sentry-samples-console", "0", "true", "0"),
+            ("sentry-samples-spring-boot", "false", "true", "false"),
+            ("sentry-samples-spring-boot-opentelemetry-noagent", "false", "true", "false"),
+            ("sentry-samples-spring-boot-opentelemetry", "true", "true", "false"),
+            ("sentry-samples-spring-boot-opentelemetry", "true", "false", "false"),
+            ("sentry-samples-spring-boot-webflux-jakarta", "false", "true", "false"),
+            ("sentry-samples-spring-boot-webflux", "false", "true", "false"),
+            ("sentry-samples-spring-boot-jakarta", "false", "true", "false"),
+            ("sentry-samples-spring-boot-jakarta-opentelemetry-noagent", "false", "true", "false"),
+            ("sentry-samples-spring-boot-jakarta-opentelemetry", "true", "true", "false"),
+            ("sentry-samples-spring-boot-jakarta-opentelemetry", "true", "false", "false"),
+            ("sentry-samples-console", "false", "true", "false"),
         ]
     
     def _find_module_number(self, module_name: str, agent: str, auto_init: str) -> int:
@@ -568,7 +614,7 @@ class SystemTestRunner:
         print("\nAvailable test modules:")
         print("=" * 80)
         for i, (module, agent, auto_init, build) in enumerate(modules, 1):
-            agent_text = "with agent" if agent == "1" else "no agent"
+            agent_text = "with agent" if str_to_bool(agent) == "1" else "no agent"
             auto_init_text = f"auto-init: {auto_init}"
             print(f"{i:2d}. {module:<50} ({agent_text}, {auto_init_text})")
         
@@ -592,7 +638,7 @@ class SystemTestRunner:
                 # Show confirmation
                 print(f"\nSelected {len(selected_modules)} module(s):")
                 for i, (module, agent, auto_init, build) in enumerate(selected_modules, 1):
-                    agent_text = "with agent" if agent == "1" else "no agent"
+                    agent_text = "with agent" if str_to_bool(agent) == "1" else "no agent"
                     print(f"  {i}. {module} ({agent_text}, auto-init: {auto_init})")
                 
                 confirm = input("\nProceed with these selections? [Y/n]: ").strip().lower()
@@ -606,21 +652,45 @@ class SystemTestRunner:
                 print("Please try again.")
             except KeyboardInterrupt:
                 print("\nOperation cancelled.")
-                return InteractiveSelection(modules=[], manual_test_mode=False)
+                return InteractiveSelection(modules=[], manual_test_mode=False, build_agent=False)
         
         # Ask about test mode
+        manual_test_mode = False
         while True:
             try:
                 mode_input = input("\nRun tests automatically (n = only set up infrastucture for testing in IDE)? [Y/n]: ").strip().lower()
                 if not mode_input or mode_input in ('y', 'yes'):
-                    return InteractiveSelection(modules=selected_modules, manual_test_mode=False)
+                    manual_test_mode = False
+                    break
                 elif mode_input in ('n', 'no'):
-                    return InteractiveSelection(modules=selected_modules, manual_test_mode=True)
+                    manual_test_mode = True
+                    break
                 else:
                     print("Please enter 'y' or 'n'.")
             except KeyboardInterrupt:
                 print("\nOperation cancelled.")
-                return InteractiveSelection(modules=[], manual_test_mode=False)
+                return InteractiveSelection(modules=[], manual_test_mode=False, build_agent=False)
+        
+        # Ask about building agent if any modules use it
+        build_agent = False
+        has_agent_modules = any(str_to_bool(agent) == "1" for _, agent, _, _ in selected_modules)
+        if has_agent_modules:
+            while True:
+                try:
+                    agent_input = input("\nBuild OpenTelemetry agent JAR (recommended to ensure latest version)? [Y/n]: ").strip().lower()
+                    if not agent_input or agent_input in ('y', 'yes'):
+                        build_agent = True
+                        break
+                    elif agent_input in ('n', 'no'):
+                        build_agent = False
+                        break
+                    else:
+                        print("Please enter 'y' or 'n'.")
+                except KeyboardInterrupt:
+                    print("\nOperation cancelled.")
+                    return InteractiveSelection(modules=[], manual_test_mode=False, build_agent=False)
+        
+        return InteractiveSelection(modules=selected_modules, manual_test_mode=manual_test_mode, build_agent=build_agent)
     
     def run_interactive_tests(self, agent: str, auto_init: str, build: str) -> int:
         """Run tests with interactive module selection."""
@@ -630,6 +700,15 @@ class SystemTestRunner:
             print("No modules selected. Exiting.")
             return 0
         
+        # Build agent JAR if requested and modules use agent
+        if selection.build_agent and selection.has_agent_modules():
+            print("\nBuilding OpenTelemetry agent JAR...")
+            build_result = self.build_agent_jar()
+            if build_result != 0:
+                print("Failed to build OpenTelemetry agent JAR")
+                return build_result
+            print("✅ OpenTelemetry agent JAR built successfully")
+        
         # Handle manual test mode
         if selection.manual_test_mode:
             if not selection.is_single_module():
@@ -638,19 +717,29 @@ class SystemTestRunner:
                 return 1
             
             sample_module, test_agent, test_auto_init, test_build = selection.get_first_module()
+            # Convert true/false to internal 1/0 format
+            agent = str_to_bool(test_agent)
+            auto_init = test_auto_init  # already in correct format
+            build = str_to_bool(test_build)
+            
             print(f"\nSetting up manual test environment for: {sample_module}")
-            return self.run_manual_test_mode(sample_module, test_agent, test_auto_init, test_build)
+            return self.run_manual_test_mode(sample_module, agent, auto_init, build)
         
         # Handle automatic test running
         failed_tests = []
         
         for i, (sample_module, test_agent, test_auto_init, test_build) in enumerate(selection.modules, 1):
+            # Convert true/false to internal 1/0 format
+            agent = str_to_bool(test_agent)
+            auto_init = test_auto_init  # already in correct format
+            build = str_to_bool(test_build)
+            
             print(f"\n{'='*60}")
             print(f"Running test {i}/{len(selection.modules)}: {sample_module}")
             print(f"Agent: {test_agent}, Auto-init: {test_auto_init}")
             print(f"{'='*60}")
             
-            result = self.run_single_test(sample_module, test_agent, test_auto_init, test_build)
+            result = self.run_single_test(sample_module, agent, auto_init, build)
             
             if result != 0:
                 # Find the module number in the full list for interactive reference
@@ -694,9 +783,9 @@ def main():
     test_group.add_argument("--all", action="store_true", help="Run all system tests")
     test_group.add_argument("--module", help="Sample module to test")
     test_group.add_argument("--interactive", "-i", action="store_true", help="Interactive module selection")
-    test_parser.add_argument("--agent", default="0", help="Use Java agent (0 or 1)")
+    test_parser.add_argument("--agent", default="false", help="Use Java agent (true or false)")
     test_parser.add_argument("--auto-init", default="true", help="Auto-init agent (true or false)")
-    test_parser.add_argument("--build", default="0", help="Build before running (0 or 1)")
+    test_parser.add_argument("--build", default="false", help="Build before running (true or false)")
     test_parser.add_argument("--manual-test", action="store_true", help="Set up infrastructure but pause for manual testing from IDE")
     
     # Spring subcommand
@@ -705,9 +794,9 @@ def main():
     
     spring_start_parser = spring_subparsers.add_parser("start", help="Start Spring Boot application")
     spring_start_parser.add_argument("module", help="Sample module to start")
-    spring_start_parser.add_argument("--agent", default="0", help="Use Java agent (0 or 1)")
+    spring_start_parser.add_argument("--agent", default="false", help="Use Java agent (true or false)")
     spring_start_parser.add_argument("--auto-init", default="true", help="Auto-init agent (true or false)")
-    spring_start_parser.add_argument("--build", action="store_true", help="Build before starting")
+    spring_start_parser.add_argument("--build", default="false", help="Build before starting (true or false)")
     
     spring_stop_parser = spring_subparsers.add_parser("stop", help="Stop Spring Boot application")
     
@@ -741,8 +830,13 @@ def main():
     
     try:
         if args.command == "test":
+            # Convert true/false arguments to internal 1/0 format
+            agent = str_to_bool(args.agent)
+            auto_init = args.auto_init  # already accepts true/false
+            build = str_to_bool(args.build)
+            
             if args.manual_test and args.module:
-                return runner.run_manual_test_mode(args.module, args.agent, args.auto_init, args.build)
+                return runner.run_manual_test_mode(args.module, agent, auto_init, build)
             elif args.manual_test and args.all:
                 print("Error: --manual-test requires a specific --module, cannot be used with --all")
                 return 1
@@ -752,21 +846,26 @@ def main():
             elif args.all:
                 return runner.run_all_tests()
             elif args.module:
-                return runner.run_single_test(args.module, args.agent, args.auto_init, args.build)
+                return runner.run_single_test(args.module, agent, auto_init, build)
             elif args.interactive:
-                return runner.run_interactive_tests(args.agent, args.auto_init, args.build)
+                return runner.run_interactive_tests(agent, auto_init, build)
                 
         elif args.command == "spring":
             if args.spring_action == "start":
+                # Convert true/false arguments to internal format
+                agent = str_to_bool(args.agent)
+                auto_init = args.auto_init  # already accepts true/false
+                build = str_to_bool(args.build)
+                
                 # Build if requested
-                if args.build:
+                if build == "1":
                     print("Building before starting Spring application")
                     build_result = runner.build_module(args.module)
                     if build_result != 0:
                         print("Build failed")
                         return build_result
                 
-                runner.start_spring_server(args.module, args.agent, args.auto_init)
+                runner.start_spring_server(args.module, agent, auto_init)
                 if runner.wait_for_spring():
                     print("Spring application started successfully!")
                     return 0

@@ -21,26 +21,27 @@ jobs:
       fail-fast: false
       matrix:
         sample: [ "sentry-samples-spring-boot-jakarta" ]
-        agent: [ "0" ]
+        agent: [ "false" ]
         agent-auto-init: [ "true" ]
         include:
           - sample: "sentry-samples-spring-boot"
           - sample: "sentry-samples-spring-boot-opentelemetry-noagent"
           - sample: "sentry-samples-spring-boot-opentelemetry"
-            agent: "1"
+            agent: "true"
             agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-opentelemetry"
-            agent: "1"
+            agent: "true"
             agent-auto-init: "false"
           - sample: "sentry-samples-spring-boot-webflux-jakarta"
           - sample: "sentry-samples-spring-boot-webflux"
           - sample: "sentry-samples-spring-boot-jakarta-opentelemetry-noagent"
           - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
-            agent: "1"
+            agent: "true"
             agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
-            agent: "1"
+            agent: "true"
             agent-auto-init: "false"
+          - sample: "sentry-samples-console"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -90,17 +91,9 @@ jobs:
             -e '/.*"sentry-samples-android",/d' \
             build.gradle.kts
 
-      - name: Build server jar
+      - name: Build and run system tests
         run: |
-          ./gradlew :sentry-samples:${{ matrix.sample }}:bootJar
-
-      - name: Build agent jar
-        run: |
-          ./gradlew :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
-
-      - name: Start server and run integration test for sentry-cli commands
-        run: |
-          test/system-test-run.sh "${{ matrix.sample }}" "${{ matrix.agent }}" "${{ matrix.agent-auto-init }}" "0"
+          python3 test/system-test-runner.py test --module "${{ matrix.sample }}" --agent "${{ matrix.agent }}" --auto-init "${{ matrix.agent-auto-init }}" --build "true"
 
       - name: Upload test results
         if: always()
