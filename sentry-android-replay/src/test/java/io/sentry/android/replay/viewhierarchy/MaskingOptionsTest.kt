@@ -2,8 +2,10 @@ package io.sentry.android.replay.viewhierarchy
 
 import android.app.Activity
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Looper
@@ -14,11 +16,14 @@ import android.widget.LinearLayout.LayoutParams
 import android.widget.RadioButton
 import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.core.app.ApplicationProvider
 import io.sentry.SentryOptions
+import io.sentry.android.replay.R
 import io.sentry.android.replay.maskAllImages
 import io.sentry.android.replay.maskAllText
 import io.sentry.android.replay.sentryReplayMask
 import io.sentry.android.replay.sentryReplayUnmask
+import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
 import kotlin.test.BeforeTest
@@ -26,6 +31,7 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.Robolectric.buildActivity
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
@@ -224,6 +230,142 @@ class MaskingOptionsTest {
     assertFalse(linearLayoutNode.shouldMask)
     assertTrue(textNode.shouldMask)
     assertTrue(imageNode.shouldMask)
+  }
+
+  @Test
+  fun `views are masked when class name matches mask package pattern`() {
+    val textView = TextView(ApplicationProvider.getApplicationContext()).apply {
+      text = "Test text"
+      visibility = View.VISIBLE
+      measure(View.MeasureSpec.makeMeasureSpec(100, View.MeasureSpec.EXACTLY),
+              View.MeasureSpec.makeMeasureSpec(50, View.MeasureSpec.EXACTLY))
+      layout(0, 0, 100, 50)
+    }
+    val imageView = ImageView(ApplicationProvider.getApplicationContext()).apply {
+      visibility = View.VISIBLE
+      measure(View.MeasureSpec.makeMeasureSpec(100, View.MeasureSpec.EXACTLY),
+              View.MeasureSpec.makeMeasureSpec(50, View.MeasureSpec.EXACTLY))
+      layout(0, 0, 100, 50)
+    }
+    
+    // Create a bitmap drawable that should be considered maskable
+    val bitmap = Bitmap.createBitmap(50, 50, Bitmap.Config.ARGB_8888)
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val drawable = BitmapDrawable(context.resources, bitmap)
+    imageView.setImageDrawable(drawable)
+
+    val options =
+      SentryOptions().apply {
+        sessionReplay.addMaskPackage("android.widget.*")
+      }
+
+    val textNode = ViewHierarchyNode.fromView(textView, null, 0, options)
+    val imageNode = ViewHierarchyNode.fromView(imageView, null, 0, options)
+
+    // Both views from android.widget.* should be masked
+    assertTrue(textNode.shouldMask)
+    assertTrue(imageNode.shouldMask)
+  }
+
+  @Test
+  fun `views are unmasked when class name matches unmask package pattern`() {
+    val textView = TextView(ApplicationProvider.getApplicationContext())
+    val imageView = ImageView(ApplicationProvider.getApplicationContext())
+    
+    // Create a bitmap drawable that should be considered maskable
+    val bitmap = Bitmap.createBitmap(50, 50, Bitmap.Config.ARGB_8888)
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val drawable = BitmapDrawable(context.resources, bitmap)
+    imageView.setImageDrawable(drawable)
+
+    val options =
+      SentryOptions().apply {
+        sessionReplay.addMaskPackage("android.*")
+        sessionReplay.addUnmaskPackage("android.widget.*")
+      }
+
+    val textNode = ViewHierarchyNode.fromView(textView, null, 0, options)
+    val imageNode = ViewHierarchyNode.fromView(imageView, null, 0, options)
+
+    // Both views should be unmasked due to more specific unmask pattern
+    assertFalse(textNode.shouldMask)
+    assertFalse(imageNode.shouldMask)
+  }
+
+  @Test
+  fun `views are masked with specific package patterns`() {
+    val textView = TextView(ApplicationProvider.getApplicationContext()).apply {
+      text = "Test text"
+      visibility = View.VISIBLE
+      measure(View.MeasureSpec.makeMeasureSpec(100, View.MeasureSpec.EXACTLY),
+              View.MeasureSpec.makeMeasureSpec(50, View.MeasureSpec.EXACTLY))
+      layout(0, 0, 100, 50)
+    }
+    val linearLayout = LinearLayout(ApplicationProvider.getApplicationContext()).apply {
+      visibility = View.VISIBLE
+      measure(View.MeasureSpec.makeMeasureSpec(100, View.MeasureSpec.EXACTLY),
+              View.MeasureSpec.makeMeasureSpec(50, View.MeasureSpec.EXACTLY))
+      layout(0, 0, 100, 50)
+    }
+
+    val options =
+      SentryOptions().apply {
+        sessionReplay.addMaskPackage("android.widget.TextView")
+      }
+
+    val textNode = ViewHierarchyNode.fromView(textView, null, 0, options)
+    val layoutNode = ViewHierarchyNode.fromView(linearLayout, null, 0, options)
+
+    // TextView should be masked by exact match
+    assertTrue(textNode.shouldMask)
+    // LinearLayout should not be masked
+    assertFalse(layoutNode.shouldMask)
+  }
+
+  @Test
+  fun `package patterns work with multiple patterns`() {
+    val textView = TextView(ApplicationProvider.getApplicationContext()).apply {
+      text = "Test text"
+      visibility = View.VISIBLE
+      measure(View.MeasureSpec.makeMeasureSpec(100, View.MeasureSpec.EXACTLY),
+              View.MeasureSpec.makeMeasureSpec(50, View.MeasureSpec.EXACTLY))
+      layout(0, 0, 100, 50)
+    }
+    val imageView = ImageView(ApplicationProvider.getApplicationContext()).apply {
+      visibility = View.VISIBLE
+      measure(View.MeasureSpec.makeMeasureSpec(100, View.MeasureSpec.EXACTLY),
+              View.MeasureSpec.makeMeasureSpec(50, View.MeasureSpec.EXACTLY))
+      layout(0, 0, 100, 50)
+    }
+    val linearLayout = LinearLayout(ApplicationProvider.getApplicationContext()).apply {
+      visibility = View.VISIBLE
+      measure(View.MeasureSpec.makeMeasureSpec(100, View.MeasureSpec.EXACTLY),
+              View.MeasureSpec.makeMeasureSpec(50, View.MeasureSpec.EXACTLY))
+      layout(0, 0, 100, 50)
+    }
+    
+    // Create a bitmap drawable that should be considered maskable
+    val bitmap = Bitmap.createBitmap(50, 50, Bitmap.Config.ARGB_8888)
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val drawable = BitmapDrawable(context.resources, bitmap)
+    imageView.setImageDrawable(drawable)
+
+    val options =
+      SentryOptions().apply {
+        sessionReplay.addMaskPackage("android.widget.TextView")
+        sessionReplay.addMaskPackage("android.widget.ImageView")
+        sessionReplay.addUnmaskPackage("android.widget.LinearLayout")
+      }
+
+    val textNode = ViewHierarchyNode.fromView(textView, null, 0, options)
+    val imageNode = ViewHierarchyNode.fromView(imageView, null, 0, options)
+    val layoutNode = ViewHierarchyNode.fromView(linearLayout, null, 0, options)
+
+    // TextView and ImageView should be masked by exact matches
+    assertTrue(textNode.shouldMask)
+    assertTrue(imageNode.shouldMask)
+    // LinearLayout should not be masked (not in any mask patterns)
+    assertFalse(layoutNode.shouldMask)
   }
 }
 

@@ -91,6 +91,30 @@ public final class SentryReplayOptions {
    */
   private Set<String> unmaskViewClasses = new CopyOnWriteArraySet<>();
 
+  /**
+   * Mask all views with the specified package name patterns. The package name pattern can include
+   * wildcards (*) to match multiple packages. For example, "com.thirdparty.*" will mask all
+   * views from packages starting with "com.thirdparty.".
+   *
+   * <p>If you're using an obfuscation tool, make sure to add the respective proguard rules to keep
+   * the package names.
+   *
+   * <p>Default is empty.
+   */
+  private Set<String> maskPackagePatterns = new CopyOnWriteArraySet<>();
+
+  /**
+   * Ignore all views with the specified package name patterns from masking. The package name pattern can include
+   * wildcards (*) to match multiple packages. For example, "com.myapp.*" will unmask all
+   * views from packages starting with "com.myapp.".
+   *
+   * <p>If you're using an obfuscation tool, make sure to add the respective proguard rules to keep
+   * the package names.
+   *
+   * <p>Default is empty.
+   */
+  private Set<String> unmaskPackagePatterns = new CopyOnWriteArraySet<>();
+
   /** The class name of the view container that masks all of its children. */
   private @Nullable String maskViewContainerClass = null;
 
@@ -250,6 +274,24 @@ public final class SentryReplayOptions {
 
   public void addUnmaskViewClass(final @NotNull String className) {
     this.unmaskViewClasses.add(className);
+  }
+
+  @NotNull
+  public Set<String> getMaskPackagePatterns() {
+    return this.maskPackagePatterns;
+  }
+
+  public void addMaskPackage(final @NotNull String packagePattern) {
+    this.maskPackagePatterns.add(packagePattern);
+  }
+
+  @NotNull
+  public Set<String> getUnmaskPackagePatterns() {
+    return this.unmaskPackagePatterns;
+  }
+
+  public void addUnmaskPackage(final @NotNull String packagePattern) {
+    this.unmaskPackagePatterns.add(packagePattern);
   }
 
   @ApiStatus.Internal

@@ -14,6 +14,7 @@ import io.sentry.android.replay.util.isMaskable
 import io.sentry.android.replay.util.isVisibleToUser
 import io.sentry.android.replay.util.toOpaque
 import io.sentry.android.replay.util.totalPaddingTopSafe
+import io.sentry.util.PatternUtils
 
 @TargetApi(26)
 internal sealed class ViewHierarchyNode(
@@ -308,6 +309,17 @@ internal sealed class ViewHierarchyNode(
       }
 
       if (this.javaClass.isAssignableFrom(options.sessionReplay.unmaskViewClasses)) {
+        return false
+      }
+
+      // Check package-based masking patterns
+      val className = this.javaClass.name
+      if (PatternUtils.matchesAnyPattern(className, options.sessionReplay.maskPackagePatterns)) {
+        return true
+      }
+      
+      // Check package-based unmasking patterns
+      if (PatternUtils.matchesAnyPattern(className, options.sessionReplay.unmaskPackagePatterns)) {
         return false
       }
 

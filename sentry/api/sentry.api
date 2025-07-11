@@ -3665,10 +3665,13 @@ public final class io/sentry/SentryReplayOptions {
 	public static final field WEB_VIEW_CLASS_NAME Ljava/lang/String;
 	public fun <init> (Ljava/lang/Double;Ljava/lang/Double;Lio/sentry/protocol/SdkVersion;)V
 	public fun <init> (ZLio/sentry/protocol/SdkVersion;)V
+	public fun addMaskPackage (Ljava/lang/String;)V
 	public fun addMaskViewClass (Ljava/lang/String;)V
+	public fun addUnmaskPackage (Ljava/lang/String;)V
 	public fun addUnmaskViewClass (Ljava/lang/String;)V
 	public fun getErrorReplayDuration ()J
 	public fun getFrameRate ()I
+	public fun getMaskPackagePatterns ()Ljava/util/Set;
 	public fun getMaskViewClasses ()Ljava/util/Set;
 	public fun getMaskViewContainerClass ()Ljava/lang/String;
 	public fun getOnErrorSampleRate ()Ljava/lang/Double;
@@ -3677,6 +3680,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun getSessionDuration ()J
 	public fun getSessionSampleRate ()Ljava/lang/Double;
 	public fun getSessionSegmentDuration ()J
+	public fun getUnmaskPackagePatterns ()Ljava/util/Set;
 	public fun getUnmaskViewClasses ()Ljava/util/Set;
 	public fun getUnmaskViewContainerClass ()Ljava/lang/String;
 	public fun isDebug ()Z
