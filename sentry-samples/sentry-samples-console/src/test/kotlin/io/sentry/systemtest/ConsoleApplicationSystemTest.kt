@@ -1,12 +1,11 @@
 package io.sentry.systemtest
 
 import io.sentry.systemtest.util.TestHelper
-import java.io.File
 import java.util.concurrent.TimeUnit
-import org.junit.Test
-import org.junit.Before
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
 
 class ConsoleApplicationSystemTest {
   lateinit var testHelper: TestHelper
@@ -20,16 +19,18 @@ class ConsoleApplicationSystemTest {
   @Test
   fun `console application sends expected events when run as JAR`() {
     val jarFile = testHelper.findJar("sentry-samples-console")
-    val process = testHelper.launch(
-      jarFile,
-      mapOf(
-        "SENTRY_DSN" to testHelper.dsn,
-        "SENTRY_TRACES_SAMPLE_RATE" to "1.0",
-        "SENTRY_ENABLE_PRETTY_SERIALIZATION_OUTPUT" to "false",
-        "SENTRY_DEBUG" to "true",
-    ))
+    val process =
+      testHelper.launch(
+        jarFile,
+        mapOf(
+          "SENTRY_DSN" to testHelper.dsn,
+          "SENTRY_TRACES_SAMPLE_RATE" to "1.0",
+          "SENTRY_ENABLE_PRETTY_SERIALIZATION_OUTPUT" to "false",
+          "SENTRY_DEBUG" to "true",
+        ),
+      )
 
-    process.waitFor(30, TimeUnit.SECONDS);
+    process.waitFor(30, TimeUnit.SECONDS)
     assertEquals(0, process.exitValue())
 
     // Verify that we received the expected events
@@ -71,7 +72,8 @@ class ConsoleApplicationSystemTest {
     try {
       for (i in 0..9) {
         testHelper.ensureErrorReceived { event ->
-          val matches = event.message?.message?.contains("items we'll wait to flush to Sentry!") == true
+          val matches =
+            event.message?.message?.contains("items we'll wait to flush to Sentry!") == true
           if (matches) loopMessageCount++
           matches
         }
@@ -80,7 +82,10 @@ class ConsoleApplicationSystemTest {
       // Some loop messages might be missing, but we should have at least some
     }
 
-    assertTrue("Should receive at least 5 loop messages, got $loopMessageCount", loopMessageCount >= 5)
+    assertTrue(
+      "Should receive at least 5 loop messages, got $loopMessageCount",
+      loopMessageCount >= 5,
+    )
 
     // Verify we have breadcrumbs
     testHelper.ensureErrorReceived { event ->

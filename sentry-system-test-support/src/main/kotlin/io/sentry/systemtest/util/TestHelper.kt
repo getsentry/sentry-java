@@ -13,7 +13,6 @@ import io.sentry.protocol.SentryTransaction
 import io.sentry.systemtest.graphql.GraphqlTestClient
 import java.io.File
 import java.io.PrintWriter
-import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -279,9 +278,8 @@ class TestHelper(backendUrl: String) {
   fun findJar(prefix: String, inDir: String = "build/libs"): File {
     val buildDir = File(inDir)
     val jarFiles =
-      buildDir
-        .listFiles { _, name -> name.startsWith(prefix) && name.endsWith(".jar") }
-        ?.toList() ?: emptyList()
+      buildDir.listFiles { _, name -> name.startsWith(prefix) && name.endsWith(".jar") }?.toList()
+        ?: emptyList()
 
     if (jarFiles.isEmpty()) {
       throw AssertionError("No JAR found in ${buildDir.absolutePath}")
@@ -291,8 +289,8 @@ class TestHelper(backendUrl: String) {
   }
 
   fun launch(jar: File, env: Map<String, String>): Process {
-    val processBuilder = ProcessBuilder("java", "-jar", jar.absolutePath)
-      .inheritIO() // forward i/o to current process
+    val processBuilder =
+      ProcessBuilder("java", "-jar", jar.absolutePath).inheritIO() // forward i/o to current process
 
     processBuilder.environment().putAll(env)
 

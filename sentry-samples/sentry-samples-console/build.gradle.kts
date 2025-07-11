@@ -45,9 +45,7 @@ dependencies {
 
 // Configure the Shadow JAR (executable JAR with all dependencies)
 tasks.shadowJar {
-  manifest {
-    attributes["Main-Class"] = "io.sentry.samples.console.Main"
-  }
+  manifest { attributes["Main-Class"] = "io.sentry.samples.console.Main" }
   archiveClassifier.set("") // Remove the classifier so it replaces the regular JAR
   mergeServiceFiles()
 }
@@ -59,9 +57,7 @@ tasks.jar {
 }
 
 // Fix the startScripts task dependency
-tasks.startScripts {
-  dependsOn(tasks.shadowJar)
-}
+tasks.startScripts { dependsOn(tasks.shadowJar) }
 
 configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
 
@@ -85,4 +81,3 @@ tasks.named("test").configure {
 
   filter { excludeTestsMatching("io.sentry.systemtest.*") }
 }
-
