@@ -25,7 +25,11 @@ jobs:
         agent-auto-init: [ "true" ]
         include:
           - sample: "sentry-samples-spring-boot"
+            agent: "false"
+            agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-opentelemetry-noagent"
+            agent: "false"
+            agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-opentelemetry"
             agent: "true"
             agent-auto-init: "true"
@@ -33,8 +37,14 @@ jobs:
             agent: "true"
             agent-auto-init: "false"
           - sample: "sentry-samples-spring-boot-webflux-jakarta"
+            agent: "false"
+            agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-webflux"
+            agent: "false"
+            agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-jakarta-opentelemetry-noagent"
+            agent: "false"
+            agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
             agent: "true"
             agent-auto-init: "true"
@@ -42,6 +52,8 @@ jobs:
             agent: "true"
             agent-auto-init: "false"
           - sample: "sentry-samples-console"
+            agent: "false"
+            agent-auto-init: "true"
     steps:
       - uses: actions/checkout@v4
         with:
