@@ -57,6 +57,7 @@ class TestHelper(backendUrl: String) {
     if (retryCount <= 0) {
       throw RuntimeException("Unable to find matching envelope received by relay")
     } else {
+      Thread.sleep(10000)
       ensureEnvelopeReceived(retryCount - 1, callback)
     }
   }
