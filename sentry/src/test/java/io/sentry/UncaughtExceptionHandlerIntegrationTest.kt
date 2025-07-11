@@ -10,6 +10,8 @@ import io.sentry.util.HintUtils
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.file.Files
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 import kotlin.concurrent.thread
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,6 +22,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -305,7 +308,7 @@ class UncaughtExceptionHandlerIntegrationTest {
     val integration2 = UncaughtExceptionHandlerIntegration(handler)
     integration2.register(fixture.scopes, fixture.options)
 
-    assertEquals(currentDefaultHandler, integration2)
+    assertEquals(integration2, currentDefaultHandler)
     integration2.close()
 
     assertEquals(null, currentDefaultHandler)
@@ -338,5 +341,199 @@ class UncaughtExceptionHandlerIntegrationTest {
     integration2.close()
 
     assertEquals(initialUncaughtExceptionHandler, currentDefaultHandler)
+  }
+
+  @Test
+  fun `multiple registrations with different global scopes allowed`() {
+    val scopes2 = mock<IScopes>()
+    val initialUncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, _ -> }
+
+    var currentDefaultHandler: Thread.UncaughtExceptionHandler? = initialUncaughtExceptionHandler
+
+    val handler = mock<UncaughtExceptionHandler>()
+    whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
+
+    whenever(
+        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())
+      )
+      .then {
+        currentDefaultHandler = it.getArgument(0)
+        null
+      }
+
+    whenever(scopes2.globalScope).thenReturn(mock<IScope>())
+
+    val integration1 = UncaughtExceptionHandlerIntegration(handler)
+    integration1.register(fixture.scopes, fixture.options)
+
+    val integration2 = UncaughtExceptionHandlerIntegration(handler)
+    integration2.register(scopes2, fixture.options)
+
+    assertEquals(currentDefaultHandler, integration2)
+    integration2.close()
+
+    assertEquals(integration1, currentDefaultHandler)
+    integration1.close()
+
+    assertEquals(initialUncaughtExceptionHandler, currentDefaultHandler)
+  }
+
+  @Test
+  fun `multiple registrations with different global scopes allowed, closed out of order`() {
+    fixture.getSut()
+    val scopes2 = mock<IScopes>()
+    val initialUncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, _ -> }
+
+    var currentDefaultHandler: Thread.UncaughtExceptionHandler? = initialUncaughtExceptionHandler
+
+    val handler = mock<UncaughtExceptionHandler>()
+    whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
+
+    whenever(
+        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())
+      )
+      .then {
+        currentDefaultHandler = it.getArgument(0)
+        null
+      }
+
+    whenever(scopes2.globalScope).thenReturn(mock<IScope>())
+
+    val integration1 = UncaughtExceptionHandlerIntegration(handler)
+    integration1.register(fixture.scopes, fixture.options)
+
+    val integration2 = UncaughtExceptionHandlerIntegration(handler)
+    integration2.register(scopes2, fixture.options)
+
+    assertEquals(currentDefaultHandler, integration2)
+    integration1.close()
+
+    assertEquals(integration2, currentDefaultHandler)
+    integration2.close()
+
+    assertEquals(initialUncaughtExceptionHandler, currentDefaultHandler)
+  }
+
+  @Test
+  fun `multiple registrations async, closed async, one remains`() {
+    val executor = Executors.newFixedThreadPool(4)
+    fixture.getSut()
+    val scopes2 = mock<IScopes>()
+    val scopes3 = mock<IScopes>()
+    val scopes4 = mock<IScopes>()
+    val scopes5 = mock<IScopes>()
+
+    val scopesList = listOf(fixture.scopes, scopes2, scopes3, scopes4, scopes5)
+
+    val initialUncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, _ -> }
+
+    var currentDefaultHandler: Thread.UncaughtExceptionHandler? = initialUncaughtExceptionHandler
+
+    val handler = mock<UncaughtExceptionHandler>()
+    whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
+
+    whenever(
+        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())
+      )
+      .then {
+        currentDefaultHandler = it.getArgument(0)
+        null
+      }
+
+    whenever(scopes2.globalScope).thenReturn(mock<IScope>())
+    whenever(scopes3.globalScope).thenReturn(mock<IScope>())
+    whenever(scopes4.globalScope).thenReturn(mock<IScope>())
+    whenever(scopes5.globalScope).thenReturn(mock<IScope>())
+
+    val integrations =
+      scopesList.map { scope ->
+        CompletableFuture.supplyAsync(
+          {
+            UncaughtExceptionHandlerIntegration(handler).apply { register(scope, fixture.options) }
+          },
+          executor,
+        )
+      }
+
+    CompletableFuture.allOf(*integrations.toTypedArray()).get()
+
+    val futures =
+      integrations.minus(integrations[2]).reversed().map { integration ->
+        CompletableFuture.supplyAsync(
+          {
+            integration.get().close()
+            println(Thread.currentThread().name)
+          },
+          executor,
+        )
+      }
+
+    CompletableFuture.allOf(*futures.toTypedArray()).get()
+
+    assertEquals(integrations[2].get(), currentDefaultHandler)
+  }
+
+  @Test
+  fun `removeFromHandlerTree detects and handles cyclic dependencies`() {
+    var currentDefaultHandler: Thread.UncaughtExceptionHandler? = null
+    val scopes2 = mock<IScopes>()
+    val scopes3 = mock<IScopes>()
+    val scopes4 = mock<IScopes>()
+
+    whenever(scopes2.globalScope).thenReturn(mock<IScope>())
+    whenever(scopes3.globalScope).thenReturn(mock<IScope>())
+    whenever(scopes4.globalScope).thenReturn(mock<IScope>())
+
+    val handler = mock<UncaughtExceptionHandler>()
+    whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
+
+    whenever(
+        handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())
+      )
+      .then {
+        currentDefaultHandler = it.getArgument(0)
+        null
+      }
+
+    val logger = mock<ILogger>()
+    val options =
+      SentryOptions().apply {
+        setLogger(logger)
+        isDebug = true
+      }
+
+    val handlerA = UncaughtExceptionHandlerIntegration(handler)
+    val handlerB = UncaughtExceptionHandlerIntegration(handler)
+    handlerA.register(fixture.scopes, options)
+    handlerB.register(scopes2, options)
+
+    // Cycle: A → B → A
+    val defaultHandlerField =
+      UncaughtExceptionHandlerIntegration::class.java.getDeclaredField("defaultExceptionHandler")
+    defaultHandlerField.isAccessible = true
+    defaultHandlerField.set(handlerA, handlerB)
+    defaultHandlerField.set(handlerB, handlerA)
+
+    // Register handlerC to be removed from the chain
+    val handlerC = UncaughtExceptionHandlerIntegration(handler)
+    handlerC.register(scopes3, options)
+
+    assertEquals(handlerC, currentDefaultHandler)
+
+    // Register handlerD to be the current default
+    // Same Scope as handlerC so that removing handlerC would trigger a cycle
+    val handlerD = UncaughtExceptionHandlerIntegration(handler)
+    handlerD.register(scopes3, options)
+
+    assertEquals(handlerD, currentDefaultHandler)
+
+    handlerC.close()
+
+    // Verify cycle detection warning was logged
+    verify(logger, atLeastOnce())
+      .log(
+        SentryLevel.WARNING,
+        "Cycle detected in UncaughtExceptionHandler chain while removing handler.",
+      )
   }
 }

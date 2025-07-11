@@ -105,18 +105,11 @@ public final class OpenTelemetryAttributesExtractor {
     return headers;
   }
 
-  @SuppressWarnings("deprecation")
   public @Nullable String extractUrl(
       final @NotNull Attributes attributes, final @NotNull SentryOptions options) {
     final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
     if (urlFull != null) {
       return urlFull;
-    }
-
-    final @Nullable String deprecatedUrl =
-        attributes.get(io.opentelemetry.semconv.SemanticAttributes.HTTP_URL);
-    if (deprecatedUrl != null) {
-      return deprecatedUrl;
     }
 
     final String urlString = buildUrlString(attributes, options);
