@@ -334,12 +334,6 @@ public abstract interface class io/sentry/CompositePerformanceCollector {
 	public abstract fun stop (Ljava/lang/String;)Ljava/util/List;
 }
 
-public final class io/sentry/CpuCollectionData {
-	public fun <init> (DLio/sentry/SentryDate;)V
-	public fun getCpuUsagePercentage ()D
-	public fun getTimestamp ()Lio/sentry/SentryDate;
-}
-
 public final class io/sentry/CustomSamplingContext {
 	public fun <init> ()V
 	public fun get (Ljava/lang/String;)Ljava/lang/Object;
@@ -458,6 +452,7 @@ public final class io/sentry/EnvelopeSender : io/sentry/IEnvelopeSender {
 public abstract interface class io/sentry/EventProcessor {
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
 	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
@@ -788,10 +783,6 @@ public abstract interface class io/sentry/ILogger {
 	public abstract fun log (Lio/sentry/SentryLevel;Ljava/lang/String;Ljava/lang/Throwable;)V
 	public abstract fun log (Lio/sentry/SentryLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public abstract fun log (Lio/sentry/SentryLevel;Ljava/lang/Throwable;Ljava/lang/String;[Ljava/lang/Object;)V
-}
-
-public abstract interface class io/sentry/IMemoryCollector {
-	public abstract fun collect ()Lio/sentry/MemoryCollectionData;
 }
 
 public abstract interface class io/sentry/IOptionsObserver {
@@ -1284,6 +1275,7 @@ public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java
 	public fun close ()V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
+	public fun process (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
 	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
@@ -1345,14 +1337,6 @@ public final class io/sentry/MeasurementUnit$Information : java/lang/Enum, io/se
 	public fun apiName ()Ljava/lang/String;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/MeasurementUnit$Information;
 	public static fun values ()[Lio/sentry/MeasurementUnit$Information;
-}
-
-public final class io/sentry/MemoryCollectionData {
-	public fun <init> (JJLio/sentry/SentryDate;)V
-	public fun <init> (JLio/sentry/SentryDate;)V
-	public fun getTimestamp ()Lio/sentry/SentryDate;
-	public fun getUsedHeapMemory ()J
-	public fun getUsedNativeMemory ()J
 }
 
 public final class io/sentry/MonitorConfig : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -1929,11 +1913,14 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 }
 
 public final class io/sentry/PerformanceCollectionData {
-	public fun <init> ()V
-	public fun addCpuData (Lio/sentry/CpuCollectionData;)V
-	public fun addMemoryData (Lio/sentry/MemoryCollectionData;)V
-	public fun getCpuData ()Lio/sentry/CpuCollectionData;
-	public fun getMemoryData ()Lio/sentry/MemoryCollectionData;
+	public fun <init> (J)V
+	public fun getCpuUsagePercentage ()Ljava/lang/Double;
+	public fun getNanoTimestamp ()J
+	public fun getUsedHeapMemory ()Ljava/lang/Long;
+	public fun getUsedNativeMemory ()Ljava/lang/Long;
+	public fun setCpuUsagePercentage (Ljava/lang/Double;)V
+	public fun setUsedHeapMemory (Ljava/lang/Long;)V
+	public fun setUsedNativeMemory (Ljava/lang/Long;)V
 }
 
 public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -2973,6 +2960,58 @@ public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorSe
 	public fun submit (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/Future;
 }
 
+public final class io/sentry/SentryFeedbackOptions {
+	public fun <init> ()V
+	public fun <init> (Lio/sentry/SentryFeedbackOptions;)V
+	public fun getCancelButtonLabel ()Ljava/lang/CharSequence;
+	public fun getEmailLabel ()Ljava/lang/CharSequence;
+	public fun getEmailPlaceholder ()Ljava/lang/CharSequence;
+	public fun getFormTitle ()Ljava/lang/CharSequence;
+	public fun getIsRequiredLabel ()Ljava/lang/CharSequence;
+	public fun getMessageLabel ()Ljava/lang/CharSequence;
+	public fun getMessagePlaceholder ()Ljava/lang/CharSequence;
+	public fun getNameLabel ()Ljava/lang/CharSequence;
+	public fun getNamePlaceholder ()Ljava/lang/CharSequence;
+	public fun getOnFormClose ()Ljava/lang/Runnable;
+	public fun getOnFormOpen ()Ljava/lang/Runnable;
+	public fun getOnSubmitError ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
+	public fun getOnSubmitSuccess ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
+	public fun getSubmitButtonLabel ()Ljava/lang/CharSequence;
+	public fun getSuccessMessageText ()Ljava/lang/CharSequence;
+	public fun isEmailRequired ()Z
+	public fun isNameRequired ()Z
+	public fun isShowBranding ()Z
+	public fun isShowEmail ()Z
+	public fun isShowName ()Z
+	public fun isUseSentryUser ()Z
+	public fun setCancelButtonLabel (Ljava/lang/CharSequence;)V
+	public fun setEmailLabel (Ljava/lang/CharSequence;)V
+	public fun setEmailPlaceholder (Ljava/lang/CharSequence;)V
+	public fun setEmailRequired (Z)V
+	public fun setFormTitle (Ljava/lang/CharSequence;)V
+	public fun setIsRequiredLabel (Ljava/lang/CharSequence;)V
+	public fun setMessageLabel (Ljava/lang/CharSequence;)V
+	public fun setMessagePlaceholder (Ljava/lang/CharSequence;)V
+	public fun setNameLabel (Ljava/lang/CharSequence;)V
+	public fun setNamePlaceholder (Ljava/lang/CharSequence;)V
+	public fun setNameRequired (Z)V
+	public fun setOnFormClose (Ljava/lang/Runnable;)V
+	public fun setOnFormOpen (Ljava/lang/Runnable;)V
+	public fun setOnSubmitError (Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;)V
+	public fun setOnSubmitSuccess (Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;)V
+	public fun setShowBranding (Z)V
+	public fun setShowEmail (Z)V
+	public fun setShowName (Z)V
+	public fun setSubmitButtonLabel (Ljava/lang/CharSequence;)V
+	public fun setSuccessMessageText (Ljava/lang/CharSequence;)V
+	public fun setUseSentryUser (Z)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class io/sentry/SentryFeedbackOptions$SentryFeedbackCallback {
+	public abstract fun call (Lio/sentry/protocol/Feedback;)V
+}
+
 public final class io/sentry/SentryInstantDate : io/sentry/SentryDate {
 	public fun <init> ()V
 	public fun <init> (Ljava/time/Instant;)V
@@ -3091,6 +3130,7 @@ public final class io/sentry/SentryLogEvent : io/sentry/JsonSerializable, io/sen
 	public fun getTimestamp ()Ljava/lang/Double;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setAttribute (Ljava/lang/String;Lio/sentry/SentryLogEventAttributeValue;)V
 	public fun setAttributes (Ljava/util/Map;)V
 	public fun setBody (Ljava/lang/String;)V
 	public fun setLevel (Lio/sentry/SentryLogLevel;)V
@@ -3255,6 +3295,7 @@ public class io/sentry/SentryOptions {
 	public fun getExecutorService ()Lio/sentry/ISentryExecutorService;
 	public fun getExperimental ()Lio/sentry/ExperimentalOptions;
 	public fun getFatalLogger ()Lio/sentry/ILogger;
+	public fun getFeedbackOptions ()Lio/sentry/SentryFeedbackOptions;
 	public fun getFlushTimeoutMillis ()J
 	public fun getFullyDisplayedReporter ()Lio/sentry/FullyDisplayedReporter;
 	public fun getGestureTargetLocators ()Ljava/util/List;
@@ -3398,6 +3439,7 @@ public class io/sentry/SentryOptions {
 	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExecutorService (Lio/sentry/ISentryExecutorService;)V
 	public fun setFatalLogger (Lio/sentry/ILogger;)V
+	public fun setFeedbackOptions (Lio/sentry/SentryFeedbackOptions;)V
 	public fun setFlushTimeoutMillis (J)V
 	public fun setForceInit (Z)V
 	public fun setFullyDisplayedReporter (Lio/sentry/FullyDisplayedReporter;)V
@@ -3640,7 +3682,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun isDebug ()Z
 	public fun isSessionReplayEnabled ()Z
 	public fun isSessionReplayForErrorsEnabled ()Z
-	public fun isTrackOrientationChange ()Z
+	public fun isTrackConfiguration ()Z
 	public fun setDebug (Z)V
 	public fun setMaskAllImages (Z)V
 	public fun setMaskAllText (Z)V
@@ -3649,7 +3691,7 @@ public final class io/sentry/SentryReplayOptions {
 	public fun setQuality (Lio/sentry/SentryReplayOptions$SentryReplayQuality;)V
 	public fun setSdkVersion (Lio/sentry/protocol/SdkVersion;)V
 	public fun setSessionSampleRate (Ljava/lang/Double;)V
-	public fun setTrackOrientationChange (Z)V
+	public fun setTrackConfiguration (Z)V
 	public fun setUnmaskViewContainerClass (Ljava/lang/String;)V
 }
 
@@ -4760,6 +4802,7 @@ public abstract interface class io/sentry/logger/ILoggerApi {
 public abstract interface class io/sentry/logger/ILoggerBatchProcessor {
 	public abstract fun add (Lio/sentry/SentryLogEvent;)V
 	public abstract fun close (Z)V
+	public abstract fun flush (J)V
 }
 
 public final class io/sentry/logger/LoggerApi : io/sentry/logger/ILoggerApi {
@@ -4781,6 +4824,7 @@ public final class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILog
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
+	public fun flush (J)V
 }
 
 public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi {
@@ -4799,6 +4843,7 @@ public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi 
 public final class io/sentry/logger/NoOpLoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
 	public fun add (Lio/sentry/SentryLogEvent;)V
 	public fun close (Z)V
+	public fun flush (J)V
 	public static fun getInstance ()Lio/sentry/logger/NoOpLoggerBatchProcessor;
 }
 
@@ -4858,10 +4903,10 @@ public final class io/sentry/profilemeasurements/ProfileMeasurement$JsonKeys {
 
 public final class io/sentry/profilemeasurements/ProfileMeasurementValue : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public fun <init> ()V
-	public fun <init> (Ljava/lang/Long;Ljava/lang/Number;Lio/sentry/SentryDate;)V
+	public fun <init> (Ljava/lang/Long;Ljava/lang/Number;J)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun getRelativeStartNs ()Ljava/lang/String;
-	public fun getTimestamp ()Ljava/lang/Double;
+	public fun getTimestamp ()D
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getValue ()D
 	public fun hashCode ()I
@@ -5098,6 +5143,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun getBatteryTemperature ()Ljava/lang/Float;
 	public fun getBootTime ()Ljava/util/Date;
 	public fun getBrand ()Ljava/lang/String;
+	public fun getChipset ()Ljava/lang/String;
 	public fun getConnectionType ()Ljava/lang/String;
 	public fun getCpuDescription ()Ljava/lang/String;
 	public fun getExternalFreeStorage ()Ljava/lang/Long;
@@ -5135,6 +5181,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun setBootTime (Ljava/util/Date;)V
 	public fun setBrand (Ljava/lang/String;)V
 	public fun setCharging (Ljava/lang/Boolean;)V
+	public fun setChipset (Ljava/lang/String;)V
 	public fun setConnectionType (Ljava/lang/String;)V
 	public fun setCpuDescription (Ljava/lang/String;)V
 	public fun setExternalFreeStorage (Ljava/lang/Long;)V
@@ -5192,6 +5239,7 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public static final field BOOT_TIME Ljava/lang/String;
 	public static final field BRAND Ljava/lang/String;
 	public static final field CHARGING Ljava/lang/String;
+	public static final field CHIPSET Ljava/lang/String;
 	public static final field CONNECTION_TYPE Ljava/lang/String;
 	public static final field CPU_DESCRIPTION Ljava/lang/String;
 	public static final field EXTERNAL_FREE_STORAGE Ljava/lang/String;
@@ -5243,6 +5291,7 @@ public final class io/sentry/protocol/Feedback : io/sentry/JsonSerializable, io/
 	public fun setReplayId (Lio/sentry/protocol/SentryId;)V
 	public fun setUnknown (Ljava/util/Map;)V
 	public fun setUrl (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/sentry/protocol/Feedback$Deserializer : io/sentry/JsonDeserializer {
@@ -5848,6 +5897,8 @@ public final class io/sentry/protocol/SentryStackFrame$JsonKeys {
 	public static final field NATIVE Ljava/lang/String;
 	public static final field PACKAGE Ljava/lang/String;
 	public static final field PLATFORM Ljava/lang/String;
+	public static final field POST_CONTEXT Ljava/lang/String;
+	public static final field PRE_CONTEXT Ljava/lang/String;
 	public static final field RAW_FUNCTION Ljava/lang/String;
 	public static final field SYMBOL Ljava/lang/String;
 	public static final field SYMBOL_ADDR Ljava/lang/String;
@@ -6692,7 +6743,10 @@ public abstract interface class io/sentry/util/CollectionUtils$Predicate {
 public final class io/sentry/util/DebugMetaPropertiesApplier {
 	public static field DEBUG_META_PROPERTIES_FILENAME Ljava/lang/String;
 	public fun <init> ()V
+	public static fun apply (Lio/sentry/SentryOptions;Ljava/util/List;)V
 	public static fun applyToOptions (Lio/sentry/SentryOptions;Ljava/util/List;)V
+	public static fun getBuildTool (Ljava/util/Properties;)Ljava/lang/String;
+	public static fun getBuildToolVersion (Ljava/util/Properties;)Ljava/lang/String;
 	public static fun getProguardUuid (Ljava/util/Properties;)Ljava/lang/String;
 }
 

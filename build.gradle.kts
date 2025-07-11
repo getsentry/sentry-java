@@ -1,4 +1,3 @@
-import com.diffplug.spotless.LineEnding
 import com.vanniktech.maven.publish.JavaLibrary
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
@@ -10,7 +9,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     `java-library`
-    alias(libs.plugins.spotless)
+    alias(libs.plugins.spotless) apply false
     jacoco
     alias(libs.plugins.detekt)
     `maven-publish`
@@ -27,6 +26,7 @@ plugins {
     alias(libs.plugins.errorprone) apply false
     alias(libs.plugins.gradle.versions) apply false
     alias(libs.plugins.spring.dependency.management) apply false
+    id("io.sentry.javadoc.aggregate")
 }
 
 buildscript {
@@ -39,7 +39,7 @@ buildscript {
         // add classpath of sentry android gradle plugin
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
-        classpath(Config.BuildPlugins.commonsCompressOverride)
+        classpath(libs.commons.compress)
     }
 }
 
@@ -92,12 +92,10 @@ allprojects {
                 TestLogEvent.PASSED,
                 TestLogEvent.FAILED
             )
-            maxParallelForks = 1
 
             // Cap JVM args per test
             minHeapSize = "256m"
             maxHeapSize = "2g"
-            dependsOn("cleanTest")
         }
         withType<JavaCompile>().configureEach {
             options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try"))
@@ -106,6 +104,8 @@ allprojects {
 }
 
 subprojects {
+    apply { plugin("io.sentry.spotless") }
+
     val jacocoAndroidModules = listOf(
         "sentry-android-core",
         "sentry-android-fragment",
@@ -223,26 +223,6 @@ subprojects {
             // mavenCentralUsername=user name
             // mavenCentralPassword=password
         }
-    }
-}
-
-spotless {
-    lineEndings = LineEnding.UNIX
-    java {
-        target("**/*.java")
-        removeUnusedImports()
-        googleJavaFormat()
-        targetExclude("**/generated/**", "**/vendor/**", "**/sentry-native/**")
-    }
-    kotlin {
-        target("**/*.kt")
-        ktlint()
-        targetExclude("**/sentry-native/**")
-    }
-    kotlinGradle {
-        target("**/*.kts")
-        ktlint()
-        targetExclude("**/sentry-native/**")
     }
 }
 

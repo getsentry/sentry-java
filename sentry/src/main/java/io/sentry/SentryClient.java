@@ -3,7 +3,9 @@ package io.sentry;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
+import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Backfillable;
+import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.logger.ILoggerBatchProcessor;
@@ -210,9 +212,12 @@ public final class SentryClient implements ISentryClient {
     }
 
     final boolean isBackfillable = HintUtils.hasType(hint, Backfillable.class);
-    // if event is backfillable we don't wanna trigger capture replay, because it's an event from
-    // the past
-    if (event != null && !isBackfillable && (event.isErrored() || event.isCrashed())) {
+    final boolean isCached =
+        HintUtils.hasType(hint, Cached.class) && !HintUtils.hasType(hint, ApplyScopeData.class);
+    // if event is backfillable or cached we don't wanna trigger capture replay, because it's
+    // an event from the past. If it's cached, but with ApplyScopeData, it comes from the outbox
+    // folder and we still want to capture replay (e.g. a native captureException error)
+    if (event != null && !isBackfillable && !isCached && (event.isErrored() || event.isCrashed())) {
       options.getReplayController().captureReplay(event.isCrashed());
     }
 
@@ -459,6 +464,38 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+        break;
+      }
+    }
+    return event;
+  }
+
+  @Nullable
+  private SentryLogEvent processLogEvent(
+      @NotNull SentryLogEvent event, final @NotNull List<EventProcessor> eventProcessors) {
+    for (final EventProcessor processor : eventProcessors) {
+      try {
+        event = processor.process(event);
+      } catch (Throwable e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "An exception occurred while processing log event by processor: %s",
+                processor.getClass().getName());
+      }
+
+      if (event == null) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Log event was dropped by a processor: %s",
+                processor.getClass().getName());
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.LogItem);
         break;
       }
     }
@@ -1133,6 +1170,19 @@ public final class SentryClient implements ISentryClient {
   @ApiStatus.Experimental
   @Override
   public void captureLog(@Nullable SentryLogEvent logEvent, @Nullable IScope scope) {
+    if (logEvent != null && scope != null) {
+      logEvent = processLogEvent(logEvent, scope.getEventProcessors());
+      if (logEvent == null) {
+        return;
+      }
+    }
+
+    if (logEvent != null) {
+      logEvent = processLogEvent(logEvent, options.getEventProcessors());
+      if (logEvent == null) {
+        return;
+      }
+    }
 
     if (logEvent != null) {
       logEvent = executeBeforeSendLog(logEvent);
@@ -1494,6 +1544,7 @@ public final class SentryClient implements ISentryClient {
 
   @Override
   public void flush(final long timeoutMillis) {
+    loggerBatchProcessor.flush(timeoutMillis);
     transport.flush(timeoutMillis);
   }
 

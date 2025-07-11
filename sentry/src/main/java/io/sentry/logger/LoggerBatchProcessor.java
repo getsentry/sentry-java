@@ -4,15 +4,18 @@ import io.sentry.ISentryClient;
 import io.sentry.ISentryExecutorService;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryExecutorService;
+import io.sentry.SentryLevel;
 import io.sentry.SentryLogEvent;
 import io.sentry.SentryLogEvents;
 import io.sentry.SentryOptions;
+import io.sentry.transport.ReusableCountLatch;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,6 +33,8 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
       new AutoClosableReentrantLock();
   private volatile boolean hasScheduled = false;
 
+  private final @NotNull ReusableCountLatch pendingCount = new ReusableCountLatch();
+
   public LoggerBatchProcessor(
       final @NotNull SentryOptions options, final @NotNull ISentryClient client) {
     this.options = options;
@@ -40,6 +45,7 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
 
   @Override
   public void add(final @NotNull SentryLogEvent logEvent) {
+    pendingCount.increment();
     queue.offer(logEvent);
     maybeSchedule(false, false);
   }
@@ -75,6 +81,17 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
     }
   }
 
+  @Override
+  public void flush(long timeoutMillis) {
+    maybeSchedule(true, true);
+    try {
+      pendingCount.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to flush log events", e);
+      Thread.currentThread().interrupt();
+    }
+  }
+
   private void flush() {
     flushInternal();
     try (final @NotNull ISentryLifecycleToken ignored = scheduleLock.acquire()) {
@@ -101,7 +118,12 @@ public final class LoggerBatchProcessor implements ILoggerBatchProcessor {
       }
     } while (!queue.isEmpty() && logEvents.size() < MAX_BATCH_SIZE);
 
-    client.captureBatchedLogEvents(new SentryLogEvents(logEvents));
+    if (!logEvents.isEmpty()) {
+      client.captureBatchedLogEvents(new SentryLogEvents(logEvents));
+      for (int i = 0; i < logEvents.size(); i++) {
+        pendingCount.decrement();
+      }
+    }
   }
 
   private class BatchRunnable implements Runnable {

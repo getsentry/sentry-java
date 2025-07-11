@@ -129,11 +129,14 @@ public class SentryProperties extends SentryOptions {
     /** Enable/Disable logging auto-configuration. */
     private boolean enabled = true;
 
-    /** Minimum logging level for recording breadcrumb. */
+    /** Minimum logging level for recording breadcrumbs. */
     private @Nullable Level minimumBreadcrumbLevel;
 
-    /** Minimum logging level for recording event. */
+    /** Minimum logging level for recording events. */
     private @Nullable Level minimumEventLevel;
+
+    /** Minimum logging level for recording log events. */
+    private @Nullable Level minimumLevel;
 
     /** List of loggers the SentryAppender should be added to. */
     private @NotNull List<String> loggers = Arrays.asList(org.slf4j.Logger.ROOT_LOGGER_NAME);
@@ -160,6 +163,14 @@ public class SentryProperties extends SentryOptions {
 
     public void setMinimumEventLevel(@Nullable Level minimumEventLevel) {
       this.minimumEventLevel = minimumEventLevel;
+    }
+
+    public @Nullable Level getMinimumLevel() {
+      return minimumLevel;
+    }
+
+    public void setMinimumLevel(@Nullable Level minimumLevel) {
+      this.minimumLevel = minimumLevel;
     }
 
     @NotNull
