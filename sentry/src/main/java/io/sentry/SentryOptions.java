@@ -2028,7 +2028,8 @@ public class SentryOptions {
   public @Nullable String getProfilingTracesDirPath() {
     final String cacheDirPath = getCacheDirPath();
     if (cacheDirPath == null) {
-      return null;
+      // TODO: Should we add ExternalOptions to let users define the tracesDirPath?
+      return new File(".", "profiling_traces").getAbsolutePath();
     }
     return new File(cacheDirPath, "profiling_traces").getAbsolutePath();
   }
