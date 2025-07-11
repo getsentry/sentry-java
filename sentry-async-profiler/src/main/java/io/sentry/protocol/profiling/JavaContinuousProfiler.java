@@ -2,6 +2,7 @@ package io.sentry.protocol.profiling;
 
 import static io.sentry.DataCategory.All;
 import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import io.sentry.DataCategory;
 import io.sentry.IContinuousProfiler;
@@ -55,6 +56,7 @@ public final class JavaContinuousProfiler
   private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
   private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
   private @NotNull SentryDate startProfileChunkTimestamp = new SentryNanotimeDate();
+  private final @NotNull String profilingIntervalMicros;
 
   private @NotNull String filename = "";
 
@@ -77,6 +79,8 @@ public final class JavaContinuousProfiler
     this.profilingTracesHz = profilingTracesHz;
     this.executorService = executorService;
     this.profiler = AsyncProfiler.getInstance();
+    this.profilingIntervalMicros =
+        String.format("%dus", (int) SECONDS.toMicros(1) / profilingTracesHz);
   }
 
   private void init() {
@@ -108,12 +112,32 @@ public final class JavaContinuousProfiler
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (shouldSample) {
         isSampled = tracesSampler.sampleSessionProfile(SentryRandom.current().nextDouble());
-        // Kepp TRUE for now
-        //        shouldSample = false;
+        shouldSample = false;
       }
       if (!isSampled) {
         logger.log(SentryLevel.DEBUG, "Profiler was not started due to sampling decision.");
         return;
+      }
+
+      switch (profileLifecycle) {
+        case TRACE:
+          // rootSpanCounter should never be negative, unless the user changed profile lifecycle
+          // while
+          // the profiler is running or close() is called. This is just a safety check.
+          if (rootSpanCounter < 0) {
+            rootSpanCounter = 0;
+          }
+          rootSpanCounter++;
+          break;
+        case MANUAL:
+          // We check if the profiler is already running and log a message only in manual mode,
+          // since
+          // in trace mode we can have multiple concurrent traces
+          if (isRunning()) {
+            logger.log(SentryLevel.DEBUG, "Profiler is already running.");
+            return;
+          }
+          break;
       }
 
       if (!isRunning()) {
@@ -123,8 +147,7 @@ public final class JavaContinuousProfiler
     }
   }
 
-  @SuppressWarnings("ReferenceEquality")
-  private void start() {
+  private void initScopes() {
     if ((scopes == null || scopes == NoOpScopes.getInstance())
         && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
       this.scopes = Sentry.forkedRootScopes("profiler");
@@ -133,13 +156,14 @@ public final class JavaContinuousProfiler
         rateLimiter.addRateLimitObserver(this);
       }
     }
+  }
+
+  @SuppressWarnings("ReferenceEquality")
+  private void start() {
+    initScopes();
 
     // Let's initialize trace folder and profiling interval
     init();
-    // init() didn't create profiler, should never happen
-    if (profiler == null) {
-      return;
-    }
 
     if (scopes != null) {
       final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
@@ -152,6 +176,7 @@ public final class JavaContinuousProfiler
         return;
       }
 
+      // TODO: Taken from the android profiler, do we need this on the JVM as well?
       // If device is offline, we don't start the profiler, to avoid flooding the cache
       if (scopes.getOptions().getConnectionStatusProvider().getConnectionStatus() == DISCONNECTED) {
         logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
@@ -166,7 +191,13 @@ public final class JavaContinuousProfiler
     filename = SentryUUID.generateSentryId() + ".jfr";
     final String startData;
     try {
-      startData = profiler.execute("start,jfr,event=wall,file=" + filename);
+      //      final String command =
+      // String.format("start,jfr,event=cpu,wall=%s,file=%s",profilingIntervalMicros, filename);
+      final String command =
+          String.format(
+              "start,jfr,event=wall,interval=%s,file=%s", profilingIntervalMicros, filename);
+      System.out.println(command);
+      startData = profiler.execute(command);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -177,7 +208,7 @@ public final class JavaContinuousProfiler
 
     isRunning = true;
 
-    if (SentryId.EMPTY_ID.equals(profilerId)) {
+    if (profilerId == SentryId.EMPTY_ID) {
       profilerId = new SentryId();
     }
 
@@ -199,7 +230,24 @@ public final class JavaContinuousProfiler
   @Override
   public void stopProfiler(final @NotNull ProfileLifecycle profileLifecycle) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      shouldStop = true;
+      switch (profileLifecycle) {
+        case TRACE:
+          rootSpanCounter--;
+          // If there are active spans, and profile lifecycle is trace, we don't stop the profiler
+          if (rootSpanCounter > 0) {
+            return;
+          }
+          // rootSpanCounter should never be negative, unless the user changed profile lifecycle
+          // while the profiler is running or close() is called. This is just a safety check.
+          if (rootSpanCounter < 0) {
+            rootSpanCounter = 0;
+          }
+          shouldStop = true;
+          break;
+        case MANUAL:
+          shouldStop = true;
+          break;
+      }
     }
   }
 
@@ -209,7 +257,7 @@ public final class JavaContinuousProfiler
         stopFuture.cancel(true);
       }
       // check if profiler was created and it's running
-      if (profiler == null || !isRunning) {
+      if (!isRunning) {
         // When the profiler is stopped due to an error (e.g. offline or rate limited), reset the
         // ids
         profilerId = SentryId.EMPTY_ID;
@@ -333,11 +381,11 @@ public final class JavaContinuousProfiler
   @Override
   public void onRateLimitChanged(@NotNull RateLimiter rateLimiter) {
     // We stop the profiler as soon as we are rate limited, to avoid the performance overhead
-    //    if (rateLimiter.isActiveForCategory(All)
-    //      || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)) {
-    //      logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
-    //      stop(false);
-    //    }
+    if (rateLimiter.isActiveForCategory(All)
+        || rateLimiter.isActiveForCategory(DataCategory.ProfileChunk)) {
+      logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
+      stop(false);
+    }
     // If we are not rate limited anymore, we don't do anything: the profile is broken, so it's
     // useless to restart it automatically
   }
