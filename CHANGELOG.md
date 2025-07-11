@@ -6,6 +6,12 @@
 
 - Allow multiple UncaughtExceptionHandlerIntegrations to be active at the same time ([#4462](https://github.com/getsentry/sentry-java/pull/4462))
 
+### Dependencies
+
+- Bump Native SDK from v0.8.4 to v0.9.1 ([#4520](https://github.com/getsentry/sentry-java/pull/4520))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#091)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.4...0.9.1)
+
 ## 8.17.0
 
 ### Features
