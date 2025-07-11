@@ -12,6 +12,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argWhere
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -466,5 +467,63 @@ class UncaughtExceptionHandlerIntegrationTest {
         CompletableFuture.allOf(*futures.toTypedArray()).get()
 
         assertEquals(integrations[2].get(), currentDefaultHandler)
+    }
+
+    @Test
+    fun `removeFromHandlerTree detects and handles cyclic dependencies`() {
+        var currentDefaultHandler: Thread.UncaughtExceptionHandler? = null
+        val scopes2 = mock<IScopes>()
+        val scopes3 = mock<IScopes>()
+        val scopes4 = mock<IScopes>()
+
+        whenever(scopes2.globalScope).thenReturn(mock<IScope>())
+        whenever(scopes3.globalScope).thenReturn(mock<IScope>())
+        whenever(scopes4.globalScope).thenReturn(mock<IScope>())
+
+        val handler = mock<UncaughtExceptionHandler>()
+        whenever(handler.defaultUncaughtExceptionHandler).thenAnswer { currentDefaultHandler }
+
+        whenever(handler.setDefaultUncaughtExceptionHandler(anyOrNull<Thread.UncaughtExceptionHandler>())).then {
+            currentDefaultHandler = it.getArgument(0)
+            null
+        }
+
+        val logger = mock<ILogger>()
+        val options = SentryOptions().apply {
+            setLogger(logger)
+            isDebug = true
+        }
+
+        val handlerA = UncaughtExceptionHandlerIntegration(handler)
+        val handlerB = UncaughtExceptionHandlerIntegration(handler)
+        handlerA.register(fixture.scopes, options)
+        handlerB.register(scopes2, options)
+
+        // Cycle: A → B → A
+        val defaultHandlerField = UncaughtExceptionHandlerIntegration::class.java.getDeclaredField("defaultExceptionHandler")
+        defaultHandlerField.isAccessible = true
+        defaultHandlerField.set(handlerA, handlerB)
+        defaultHandlerField.set(handlerB, handlerA)
+
+        // Register handlerC to be removed from the chain
+        val handlerC = UncaughtExceptionHandlerIntegration(handler)
+        handlerC.register(scopes3, options)
+
+        assertEquals(handlerC, currentDefaultHandler)
+
+        // Register handlerD to be the current default
+        // Same Scope as handlerC so that removing handlerC would trigger a cycle
+        val handlerD = UncaughtExceptionHandlerIntegration(handler)
+        handlerD.register(scopes3, options)
+
+        assertEquals(handlerD, currentDefaultHandler)
+
+        handlerC.close()
+
+        // Verify cycle detection warning was logged
+        verify(logger, atLeastOnce()).log(
+            SentryLevel.WARNING,
+            "Cycle detected in UncaughtExceptionHandler chain while removing handler."
+        )
     }
 }
