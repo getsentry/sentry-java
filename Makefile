@@ -1,4 +1,4 @@
-.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical check preMerge publish systemtest systemtest-interactive
 
 all: stop clean javadocs compile createCoverageReports
 assembleBenchmarks: assembleBenchmarkTestRelease
@@ -58,6 +58,14 @@ runUiTestCritical:
 createCoverageReports:
 	./gradlew jacocoTestReport
 	./gradlew koverXmlReportRelease
+
+# Run system tests for sample applications
+systemtest:
+	python3 test/system-test-runner.py test --all
+
+# Run system tests with interactive module selection
+systemtest-interactive:
+	python3 test/system-test-runner.py test --interactive
 
 # Run tests and lint
 check:
