@@ -503,16 +503,16 @@ class SystemTestRunner:
 
         failed_tests = []
 
-        for module_config in test_configs:
+        for i, module_config in enumerate(test_configs):
             # Convert true/false to internal 1/0 format
             agent = str_to_bool(module_config.java_agent)
             auto_init = module_config.java_agent_auto_init  # already in correct format
             build = str_to_bool(module_config.build_before_run)
 
-            print(f"\n{'='*60}")
+            print(f"\n{'='*80}")
             print(
-                f"Running test: {module_config.module} (agent={module_config.java_agent}, auto_init={module_config.java_agent_auto_init})")
-            print(f"{'='*60}")
+                f"Running test {i + 1}/{len(test_configs)}: {module_config.module} (agent={module_config.java_agent}, auto_init={module_config.java_agent_auto_init})")
+            print(f"{'='*80}")
 
             result = self.run_single_test(
                 module_config.module, agent, auto_init, build)
