@@ -3,9 +3,7 @@ package io.sentry.util;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Utility class for pattern matching operations, primarily used for Session Replay masking.
- */
+/** Utility class for pattern matching operations, primarily used for Session Replay masking. */
 public final class PatternUtils {
 
   private PatternUtils() {}
@@ -23,18 +21,18 @@ public final class PatternUtils {
     if (!pattern.contains("*")) {
       return input.equals(pattern);
     }
-    
+
     // Only support suffix wildcards (pattern ending with *)
     if (!pattern.endsWith("*")) {
       return false;
     }
-    
+
     // Check if pattern has wildcards in the middle or beginning (not supported)
     final String prefix = pattern.substring(0, pattern.length() - 1);
     if (prefix.contains("*")) {
       return false;
     }
-    
+
     // Check if input starts with the prefix
     return input.startsWith(prefix);
   }
@@ -56,4 +54,4 @@ public final class PatternUtils {
     }
     return false;
   }
-} 
+}

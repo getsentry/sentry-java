@@ -317,7 +317,7 @@ internal sealed class ViewHierarchyNode(
       if (PatternUtils.matchesAnyPattern(className, options.sessionReplay.maskPackagePatterns)) {
         return true
       }
-      
+
       // Check package-based unmasking patterns
       if (PatternUtils.matchesAnyPattern(className, options.sessionReplay.unmaskPackagePatterns)) {
         return false

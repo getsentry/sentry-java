@@ -93,8 +93,8 @@ public final class SentryReplayOptions {
 
   /**
    * Mask all views with the specified package name patterns. The package name pattern can include
-   * wildcards (*) to match multiple packages. For example, "com.thirdparty.*" will mask all
-   * views from packages starting with "com.thirdparty.".
+   * wildcards (*) to match multiple packages. For example, "com.thirdparty.*" will mask all views
+   * from packages starting with "com.thirdparty.".
    *
    * <p>If you're using an obfuscation tool, make sure to add the respective proguard rules to keep
    * the package names.
@@ -104,9 +104,9 @@ public final class SentryReplayOptions {
   private Set<String> maskPackagePatterns = new CopyOnWriteArraySet<>();
 
   /**
-   * Ignore all views with the specified package name patterns from masking. The package name pattern can include
-   * wildcards (*) to match multiple packages. For example, "com.myapp.*" will unmask all
-   * views from packages starting with "com.myapp.".
+   * Ignore all views with the specified package name patterns from masking. The package name
+   * pattern can include wildcards (*) to match multiple packages. For example, "com.myapp.*" will
+   * unmask all views from packages starting with "com.myapp.".
    *
    * <p>If you're using an obfuscation tool, make sure to add the respective proguard rules to keep
    * the package names.
