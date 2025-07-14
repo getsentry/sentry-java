@@ -42,7 +42,7 @@ from pathlib import Path
 from typing import Optional, List, Tuple
 from dataclasses import dataclass
 
-TERMINAL_COLUMNS = os.get_terminal_size()[0] or 60
+TERMINAL_COLUMNS: int = os.get_terminal_size().columns()
 
 def str_to_bool(value: str) -> str:
     """Convert true/false string to 1/0 string for internal compatibility."""
@@ -589,8 +589,8 @@ class SystemTestRunner:
         """Find the module number in the interactive list (1-based)."""
         modules = self.get_available_modules()
         for i, module_config in enumerate(modules, 1):
-            if (module_config.name == module_name and 
-                module_config.java_agent == agent and 
+            if (module_config.name == module_name and
+                module_config.java_agent == agent and
                 module_config.java_agent_auto_init == auto_init):
                 return i
         return 0  # Should not happen, but return 0 if not found
