@@ -62,7 +62,9 @@ createCoverageReports:
 
 # Create the Python virtual environment for system tests, and install the necessary dependencies
 setupPython:
-	@test -d .venv || (python3 -m venv .venv && .venv/bin/pip install --upgrade pip && .venv/bin/pip install -r requirements.txt)
+	@test -d .venv || python3 -m venv .venv
+	.venv/bin/pip install --upgrade pip
+	.venv/bin/pip install -r requirements.txt
 
 # Run system tests for sample applications
 systemTest: setupPython
