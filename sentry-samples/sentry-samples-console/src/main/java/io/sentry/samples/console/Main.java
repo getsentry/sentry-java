@@ -82,16 +82,15 @@ public class Main {
           options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
 
           // Determine traces sample rate based on the sampling context
-          //          options.setTracesSampler(
-          //              context -> {
-          //                // only 10% of transactions with "/product" prefix will be collected
-          //                if (!context.getTransactionContext().getName().startsWith("/products"))
-          // {
-          //                  return 0.1;
-          //                } else {
-          //                  return 0.5;
-          //                }
-          //              });
+          // options.setTracesSampler(
+          //     context -> {
+          //       // only 10% of transactions with "/product" prefix will be collected
+          //       if (!context.getTransactionContext().getName().startsWith("/products")) {
+          //         return 0.1;
+          //       } else {
+          //         return 0.5;
+          //       }
+          //     });
         });
 
     Sentry.addBreadcrumb(
