@@ -528,9 +528,9 @@ class SystemTestRunner:
                 print(f"✅ Test passed: {module_config.module}")
 
         # Summary
-        print(f"\n{'='*60}")
+        print(f"\n{'='*80}")
         print("TEST SUMMARY")
-        print(f"{'='*60}")
+        print(f"{'='*80}")
         print(f"Total tests: {len(test_configs)}")
         print(f"Passed: {len(test_configs) - len(failed_tests)}")
         print(f"Failed: {len(failed_tests)}")
@@ -558,9 +558,9 @@ class SystemTestRunner:
                 return setup_result
 
             # Show status and wait for user
-            print("\n" + "="*60)
+            print("\n" + "="*80)
             print("🚀 Manual test environment ready 🚀")
-            print("="*60)
+            print("="*80)
             self.print_status_summary()
             print(
                 f"\nInfrastructure is ready for manual testing of: {sample_module}")
@@ -798,12 +798,12 @@ class SystemTestRunner:
             auto_init = module_config.java_agent_auto_init  # already in correct format
             build = str_to_bool(module_config.build_before_run)
 
-            print(f"\n{'='*60}")
+            print(f"\n{'='*80}")
             print(
                 f"Running test {i}/{len(selection.modules)}: {module_config.module}")
             print(
                 f"Agent: {module_config.java_agent}, Auto-init: {module_config.java_agent_auto_init}")
-            print(f"{'='*60}")
+            print(f"{'='*80}")
 
             result = self.run_single_test(
                 module_config.module, agent, auto_init, build)
@@ -819,9 +819,9 @@ class SystemTestRunner:
                 print(f"✅ Test passed: {module_config.sample_module}")
 
         # Summary
-        print(f"\n{'='*60}")
+        print(f"\n{'='*80}")
         print("TEST SUMMARY")
-        print(f"{'='*60}")
+        print(f"{'='*80}")
         print(f"Total tests: {len(selection.modules)}")
         print(f"Passed: {len(selection.modules) - len(failed_tests)}")
         print(f"Failed: {len(failed_tests)}")
