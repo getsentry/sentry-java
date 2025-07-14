@@ -42,7 +42,11 @@ from pathlib import Path
 from typing import Optional, List, Tuple
 from dataclasses import dataclass
 
-TERMINAL_COLUMNS: int = os.get_terminal_size().columns
+TERMINAL_COLUMNS: int = 60
+try:
+    TERMINAL_COLUMNS: int = os.get_terminal_size().columns
+except:
+    pass
 
 def str_to_bool(value: str) -> str:
     """Convert true/false string to 1/0 string for internal compatibility."""
