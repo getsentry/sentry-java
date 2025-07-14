@@ -42,6 +42,8 @@ from pathlib import Path
 from typing import Optional, List
 from dataclasses import dataclass
 
+TERMINAL_COLUMNS = os.get_terminal_size()[0]
+
 
 def str_to_bool(value: str) -> str:
     """Convert true/false string to 1/0 string for internal compatibility."""
@@ -509,10 +511,10 @@ class SystemTestRunner:
             auto_init = module_config.java_agent_auto_init  # already in correct format
             build = str_to_bool(module_config.build_before_run)
 
-            print(f"\n{'='*80}")
+            print(f"\n{'='*TERMINAL_COLUMNS}")
             print(
                 f"Running test {i + 1}/{len(test_configs)}: {module_config.module} (agent={module_config.java_agent}, auto_init={module_config.java_agent_auto_init})")
-            print(f"{'='*80}")
+            print(f"{'='*TERMINAL_COLUMNS}")
 
             result = self.run_single_test(
                 module_config.module, agent, auto_init, build)
@@ -528,9 +530,9 @@ class SystemTestRunner:
                 print(f"✅ Test passed: {module_config.module}")
 
         # Summary
-        print(f"\n{'='*80}")
+        print(f"\n{'='*TERMINAL_COLUMNS}")
         print("TEST SUMMARY")
-        print(f"{'='*80}")
+        print(f"{'='*TERMINAL_COLUMNS}")
         print(f"Total tests: {len(test_configs)}")
         print(f"Passed: {len(test_configs) - len(failed_tests)}")
         print(f"Failed: {len(failed_tests)}")
@@ -558,9 +560,9 @@ class SystemTestRunner:
                 return setup_result
 
             # Show status and wait for user
-            print("\n" + "="*80)
+            print("\n" + "="*TERMINAL_COLUMNS)
             print("🚀 Manual test environment ready 🚀")
-            print("="*80)
+            print("="*TERMINAL_COLUMNS)
             self.print_status_summary()
             print(
                 f"\nInfrastructure is ready for manual testing of: {sample_module}")
@@ -668,7 +670,7 @@ class SystemTestRunner:
         modules = self.get_available_modules()
 
         print("\nAvailable test modules:")
-        print("=" * 80)
+        print("=" * TERMINAL_COLUMNS)
         for i, module_config in enumerate(modules, 1):
             agent_text = "with agent" if module_config.uses_agent() else "no agent"
             auto_init_text = f"auto-init: {module_config.java_agent_auto_init}"
@@ -798,12 +800,12 @@ class SystemTestRunner:
             auto_init = module_config.java_agent_auto_init  # already in correct format
             build = str_to_bool(module_config.build_before_run)
 
-            print(f"\n{'='*80}")
+            print(f"\n{'='*TERMINAL_COLUMNS}")
             print(
                 f"Running test {i}/{len(selection.modules)}: {module_config.module}")
             print(
                 f"Agent: {module_config.java_agent}, Auto-init: {module_config.java_agent_auto_init}")
-            print(f"{'='*80}")
+            print(f"{'='*TERMINAL_COLUMNS}")
 
             result = self.run_single_test(
                 module_config.module, agent, auto_init, build)
@@ -819,9 +821,9 @@ class SystemTestRunner:
                 print(f"✅ Test passed: {module_config.sample_module}")
 
         # Summary
-        print(f"\n{'='*80}")
+        print(f"\n{'='*TERMINAL_COLUMNS}")
         print("TEST SUMMARY")
-        print(f"{'='*80}")
+        print(f"{'='*TERMINAL_COLUMNS}")
         print(f"Total tests: {len(selection.modules)}")
         print(f"Passed: {len(selection.modules) - len(failed_tests)}")
         print(f"Failed: {len(failed_tests)}")
