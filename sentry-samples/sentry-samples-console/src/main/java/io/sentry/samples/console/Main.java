@@ -66,8 +66,8 @@ public class Main {
           // Enable SDK logging with Debug level
           options.setDebug(true);
           // To change the verbosity, use:
-          // By default it's DEBUG.
           // options.setDiagnosticLevel(SentryLevel.ERROR);
+          // By default it's DEBUG.
           // A good option to have SDK debug log in prod is to use only level ERROR here.
 
           // Exclude frames from some packages from being "inApp" so are hidden by default in Sentry
