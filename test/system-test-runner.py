@@ -42,8 +42,7 @@ from pathlib import Path
 from typing import Optional, List
 from dataclasses import dataclass
 
-TERMINAL_COLUMNS = os.get_terminal_size()[0]
-
+TERMINAL_COLUMNS: int = os.get_terminal_size()[0] or 60
 
 def str_to_bool(value: str) -> str:
     """Convert true/false string to 1/0 string for internal compatibility."""
@@ -52,14 +51,12 @@ def str_to_bool(value: str) -> str:
     elif value.lower() in ('false', '0'):
         return "0"
     else:
-        raise ValueError(
-            f"Invalid boolean value: {value}. Use 'true' or 'false'")
-
+        raise ValueError(f"Invalid boolean value: {value}. Use 'true' or 'false'")
 
 @dataclass
 class ModuleConfig:
-    """Configuration for running a sample module."""
-    module: str
+    """Configuration for running a test module."""
+    sample_module: str
     java_agent: str
     java_agent_auto_init: str
     build_before_run: str
@@ -71,7 +68,6 @@ class ModuleConfig:
     def needs_build(self) -> bool:
         """Check if this module configuration needs building before run."""
         return str_to_bool(self.build_before_run) == "1"
-
 
 @dataclass
 class InteractiveSelection:
@@ -98,7 +94,6 @@ class InteractiveSelection:
         """Check if any selected modules use the Java agent."""
         return any(module.uses_agent() for module in self.modules)
 
-
 class SystemTestRunner:
     def __init__(self):
         self.mock_server_process: Optional[subprocess.Popen] = None
@@ -110,14 +105,12 @@ class SystemTestRunner:
 
         # Load existing PIDs if available
         self.mock_server_pid = self.read_pid_file(self.mock_server_pid_file)
-        self.spring_server_pid = self.read_pid_file(
-            self.spring_server_pid_file)
+        self.spring_server_pid = self.read_pid_file(self.spring_server_pid_file)
 
         if self.mock_server_pid:
             print(f"Found existing mock server PID: {self.mock_server_pid}")
         if self.spring_server_pid:
-            print(
-                f"Found existing Spring server PID: {self.spring_server_pid}")
+            print(f"Found existing Spring server PID: {self.spring_server_pid}")
 
     def read_pid_file(self, pid_file: str) -> Optional[int]:
         """Read PID from file if it exists."""
@@ -147,12 +140,13 @@ class SystemTestRunner:
 
             # Check if it's still running and force kill if necessary
             if self.is_process_running(pid):
-                print(
-                    f"Process {pid} didn't terminate gracefully, force killing...")
+                print(f"Process {pid} didn't terminate gracefully, force killing...")
                 os.kill(pid, signal.SIGKILL)
                 time.sleep(1)
         except (OSError, ProcessLookupError):
             print(f"Process {pid} was already dead")
+
+
 
     def start_sentry_mock_server(self) -> None:
         """Start the Sentry mock server."""
@@ -185,21 +179,18 @@ class SystemTestRunner:
         try:
             # Try graceful shutdown first
             try:
-                response = requests.get(
-                    "http://127.0.0.1:8000/STOP", timeout=5)
+                response = requests.get("http://127.0.0.1:8000/STOP", timeout=5)
                 print("Sent stop signal to mock server")
             except:
                 print("Could not send graceful stop signal")
 
             # Kill the process - try process object first, then PID from file
             if self.mock_server_process and self.mock_server_process.poll() is None:
-                print(
-                    f"Killing mock server process object with PID {self.mock_server_process.pid}")
+                print(f"Killing mock server process object with PID {self.mock_server_process.pid}")
                 self.mock_server_process.kill()
                 self.mock_server_process.wait(timeout=5)
             elif self.mock_server_pid and self.is_process_running(self.mock_server_pid):
-                print(
-                    f"Killing mock server from PID file with PID {self.mock_server_pid}")
+                print(f"Killing mock server from PID file with PID {self.mock_server_pid}")
                 self.kill_process(self.mock_server_pid, "mock server")
 
         except Exception as e:
@@ -212,8 +203,7 @@ class SystemTestRunner:
 
     def find_agent_jar(self) -> Optional[str]:
         """Find the OpenTelemetry agent JAR file."""
-        agent_dir = Path(
-            "sentry-opentelemetry/sentry-opentelemetry-agent/build/libs/")
+        agent_dir = Path("sentry-opentelemetry/sentry-opentelemetry-agent/build/libs/")
         if not agent_dir.exists():
             return None
 
@@ -222,7 +212,7 @@ class SystemTestRunner:
             if ("agent" in name and
                 "javadoc" not in name and
                 "sources" not in name and
-                    "dontuse" not in name):
+                "dontuse" not in name):
                 return str(jar_file)
         return None
 
@@ -282,8 +272,7 @@ class SystemTestRunner:
                 cmd.append(f"-javaagent:{agent_jar}")
                 print(f"Using Java Agent: {agent_jar}")
             else:
-                print(
-                    "Warning: Java agent was requested but could not be found or built")
+                print("Warning: Java agent was requested but could not be found or built")
 
         cmd.extend(["-jar", jar_path])
 
@@ -369,8 +358,7 @@ class SystemTestRunner:
 
         # Check HTTP endpoint
         try:
-            response = requests.get(
-                "http://127.0.0.1:8000/envelope-count", timeout=2)
+            response = requests.get("http://127.0.0.1:8000/envelope-count", timeout=2)
             if response.status_code == 200:
                 status["http_ready"] = True
         except:
@@ -385,15 +373,13 @@ class SystemTestRunner:
         sentry_status = self.get_sentry_status()
         print(f"Sentry Mock Server:")
         print(f"  PID: {sentry_status['pid'] or 'None'}")
-        print(
-            f"  Process Running: {'✅' if sentry_status['process_running'] else '❌'}")
+        print(f"  Process Running: {'✅' if sentry_status['process_running'] else '❌'}")
         print(f"  HTTP Ready: {'✅' if sentry_status['http_ready'] else '❌'}")
 
         spring_status = self.get_spring_status()
         print(f"Spring Boot App:")
         print(f"  PID: {spring_status['pid'] or 'None'}")
-        print(
-            f"  Process Running: {'✅' if spring_status['process_running'] else '❌'}")
+        print(f"  Process Running: {'✅' if spring_status['process_running'] else '❌'}")
         print(f"  HTTP Ready: {'✅' if spring_status['http_ready'] else '❌'}")
 
     def stop_spring_server(self) -> None:
@@ -401,16 +387,14 @@ class SystemTestRunner:
         try:
             # Kill the process - try process object first, then PID from file
             if self.spring_server_process and self.spring_server_process.poll() is None:
-                print(
-                    f"Killing Spring server process object with PID {self.spring_server_process.pid}")
+                print(f"Killing Spring server process object with PID {self.spring_server_process.pid}")
                 self.spring_server_process.kill()
                 try:
                     self.spring_server_process.wait(timeout=10)
                 except subprocess.TimeoutExpired:
                     print("Spring server did not terminate gracefully")
             elif self.spring_server_pid and self.is_process_running(self.spring_server_pid):
-                print(
-                    f"Killing Spring server from PID file with PID {self.spring_server_pid}")
+                print(f"Killing Spring server from PID file with PID {self.spring_server_pid}")
                 self.kill_process(self.spring_server_pid, "Spring server")
 
         except Exception as e:
@@ -442,7 +426,7 @@ class SystemTestRunner:
             return 1
 
     def setup_test_infrastructure(self, sample_module: str, java_agent: str,
-                                  java_agent_auto_init: str, build_before_run: str) -> int:
+                                 java_agent_auto_init: str, build_before_run: str) -> int:
         """Set up test infrastructure. Returns 0 on success, error code on failure."""
         # Build if requested
         if build_before_run == "1":
@@ -466,8 +450,7 @@ class SystemTestRunner:
         # Start Spring server if it's a Spring module
         if "spring" in sample_module:
             print(f"Starting Spring server for {sample_module}...")
-            self.start_spring_server(
-                sample_module, java_agent, java_agent_auto_init)
+            self.start_spring_server(sample_module, java_agent, java_agent_auto_init)
             if not self.wait_for_spring():
                 print("Spring application failed to start!")
                 return 1
@@ -476,20 +459,18 @@ class SystemTestRunner:
         return 0
 
     def run_single_test(self, sample_module: str, java_agent: str,
-                        java_agent_auto_init: str, build_before_run: str) -> int:
+                       java_agent_auto_init: str, build_before_run: str) -> int:
         """Run a single system test."""
         print(f"Running system test for {sample_module}")
 
         try:
             # Set up infrastructure
-            setup_result = self.setup_test_infrastructure(
-                sample_module, java_agent, java_agent_auto_init, build_before_run)
+            setup_result = self.setup_test_infrastructure(sample_module, java_agent, java_agent_auto_init, build_before_run)
             if setup_result != 0:
                 return setup_result
 
             # Run the system test
-            test_result = self.run_gradle_task(
-                f":sentry-samples:{sample_module}:systemTest")
+            test_result = self.run_gradle_task(f":sentry-samples:{sample_module}:systemTest")
 
             return test_result
 
@@ -505,29 +486,25 @@ class SystemTestRunner:
 
         failed_tests = []
 
-        for i, module_config in enumerate(test_configs):
+        for module_config in test_configs:
             # Convert true/false to internal 1/0 format
             agent = str_to_bool(module_config.java_agent)
             auto_init = module_config.java_agent_auto_init  # already in correct format
             build = str_to_bool(module_config.build_before_run)
 
             print(f"\n{'='*TERMINAL_COLUMNS}")
-            print(
-                f"Running test {i + 1}/{len(test_configs)}: {module_config.module} (agent={module_config.java_agent}, auto_init={module_config.java_agent_auto_init})")
+            print(f"Running test: {module_config.sample_module} (agent={module_config.java_agent}, auto_init={module_config.java_agent_auto_init})")
             print(f"{'='*TERMINAL_COLUMNS}")
 
-            result = self.run_single_test(
-                module_config.module, agent, auto_init, build)
+            result = self.run_single_test(module_config.sample_module, agent, auto_init, build)
 
             if result != 0:
                 # Find the module number in the full list for interactive reference
-                module_number = self._find_module_number(
-                    module_config.module, module_config.java_agent, module_config.java_agent_auto_init)
-                failed_tests.append((module_number, module_config.module,
-                                    module_config.java_agent, module_config.java_agent_auto_init))
-                print(f"❌ Test failed: {module_config.module}")
+                module_number = self._find_module_number(module_config.sample_module, module_config.java_agent, module_config.java_agent_auto_init)
+                failed_tests.append((module_number, module_config.sample_module, module_config.java_agent, module_config.java_agent_auto_init))
+                print(f"❌ Test failed: {module_config.sample_module}")
             else:
-                print(f"✅ Test passed: {module_config.module}")
+                print(f"✅ Test passed: {module_config.sample_module}")
 
         # Summary
         print(f"\n{'='*TERMINAL_COLUMNS}")
@@ -540,22 +517,20 @@ class SystemTestRunner:
         if failed_tests:
             print("\nFailed tests (for interactive mode, use these numbers):")
             for module_number, sample_module, java_agent, java_agent_auto_init in failed_tests:
-                print(
-                    f"  {module_number}. {sample_module} (agent={java_agent}, auto_init={java_agent_auto_init})")
+                print(f"  {module_number}. {sample_module} (agent={java_agent}, auto_init={java_agent_auto_init})")
             return 1
         else:
             print("\n🎉 All tests passed!")
             return 0
 
     def run_manual_test_mode(self, sample_module: str, java_agent: str,
-                             java_agent_auto_init: str, build_before_run: str) -> int:
+                            java_agent_auto_init: str, build_before_run: str) -> int:
         """Set up infrastructure for manual testing from IDE."""
         print(f"Setting up manual test environment for {sample_module}")
 
         try:
             # Set up infrastructure
-            setup_result = self.setup_test_infrastructure(
-                sample_module, java_agent, java_agent_auto_init, build_before_run)
+            setup_result = self.setup_test_infrastructure(sample_module, java_agent, java_agent_auto_init, build_before_run)
             if setup_result != 0:
                 return setup_result
 
@@ -564,15 +539,13 @@ class SystemTestRunner:
             print("🚀 Manual test environment ready 🚀")
             print("="*TERMINAL_COLUMNS)
             self.print_status_summary()
-            print(
-                f"\nInfrastructure is ready for manual testing of: {sample_module}")
+            print(f"\nInfrastructure is ready for manual testing of: {sample_module}")
             print("You can now run your system tests from your IDE.")
             print("\nTest configuration:")
             print(f"  - Module: {sample_module}")
             print(f"  - Java Agent: {'Yes' if java_agent == '1' else 'No'}")
             print(f"  - Agent Auto-init: {java_agent_auto_init}")
-            print(
-                f"  - Mock DSN: http://502f25099c204a2fbf4cb16edc5975d1@localhost:8000/0")
+            print(f"  - Mock DSN: http://502f25099c204a2fbf4cb16edc5975d1@localhost:8000/0")
 
             if "spring" in sample_module:
                 print("\nSpring Boot app is running on: http://localhost:8080")
@@ -595,26 +568,16 @@ class SystemTestRunner:
     def get_available_modules(self) -> List[ModuleConfig]:
         """Get list of all available test modules."""
         return [
-            ModuleConfig("sentry-samples-spring-boot",
-                         "false", "true", "false"),
-            ModuleConfig("sentry-samples-spring-boot-opentelemetry-noagent",
-                         "false", "true", "false"),
-            ModuleConfig("sentry-samples-spring-boot-opentelemetry",
-                         "true", "true", "false"),
-            ModuleConfig("sentry-samples-spring-boot-opentelemetry",
-                         "true", "false", "false"),
-            ModuleConfig("sentry-samples-spring-boot-webflux-jakarta",
-                         "false", "true", "false"),
-            ModuleConfig("sentry-samples-spring-boot-webflux",
-                         "false", "true", "false"),
-            ModuleConfig("sentry-samples-spring-boot-jakarta",
-                         "false", "true", "false"),
-            ModuleConfig(
-                "sentry-samples-spring-boot-jakarta-opentelemetry-noagent", "false", "true", "false"),
-            ModuleConfig(
-                "sentry-samples-spring-boot-jakarta-opentelemetry", "true", "true", "false"),
-            ModuleConfig("sentry-samples-spring-boot-jakarta-opentelemetry",
-                         "true", "false", "false"),
+            ModuleConfig("sentry-samples-spring-boot", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-opentelemetry-noagent", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-opentelemetry", "true", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-opentelemetry", "true", "false", "false"),
+            ModuleConfig("sentry-samples-spring-boot-webflux-jakarta", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-webflux", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-jakarta", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-jakarta-opentelemetry-noagent", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-jakarta-opentelemetry", "true", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-jakarta-opentelemetry", "true", "false", "false"),
             ModuleConfig("sentry-samples-console", "false", "true", "false"),
         ]
 
@@ -624,7 +587,7 @@ class SystemTestRunner:
         for i, module_config in enumerate(modules, 1):
             if (module_config.sample_module == module_name and
                 module_config.java_agent == agent and
-                    module_config.java_agent_auto_init == auto_init):
+                module_config.java_agent_auto_init == auto_init):
                 return i
         return 0  # Should not happen, but return 0 if not found
 
@@ -660,8 +623,7 @@ class SystemTestRunner:
         # Validate indices
         for idx in indices:
             if idx < 0 or idx >= max_index:
-                raise ValueError(
-                    f"Index {idx + 1} is out of range (1-{max_index})")
+                raise ValueError(f"Index {idx + 1} is out of range (1-{max_index})")
 
         return indices
 
@@ -670,12 +632,11 @@ class SystemTestRunner:
         modules = self.get_available_modules()
 
         print("\nAvailable test modules:")
-        print("=" * TERMINAL_COLUMNS)
+        print("=" * 80)
         for i, module_config in enumerate(modules, 1):
             agent_text = "with agent" if module_config.uses_agent() else "no agent"
             auto_init_text = f"auto-init: {module_config.java_agent_auto_init}"
-            print(
-                f"{i:2d}. {module_config.sample_module:<50} ({agent_text}, {auto_init_text})")
+            print(f"{i:2d}. {module_config.sample_module:<50} ({agent_text}, {auto_init_text})")
 
         print("\nSelection options:")
         print("  * = all modules")
@@ -691,19 +652,16 @@ class SystemTestRunner:
                     print("Please enter a selection.")
                     continue
 
-                selected_indices = self.parse_selection(
-                    user_input, len(modules))
+                selected_indices = self.parse_selection(user_input, len(modules))
                 selected_modules = [modules[i] for i in selected_indices]
 
                 # Show confirmation
                 print(f"\nSelected {len(selected_modules)} module(s):")
                 for i, module_config in enumerate(selected_modules, 1):
                     agent_text = "with agent" if module_config.uses_agent() else "no agent"
-                    print(
-                        f"  {i}. {module_config.sample_module} ({agent_text}, auto-init: {module_config.java_agent_auto_init})")
+                    print(f"  {i}. {module_config.sample_module} ({agent_text}, auto-init: {module_config.java_agent_auto_init})")
 
-                confirm = input(
-                    "\nProceed with these selections? [Y/n]: ").strip().lower()
+                confirm = input("\nProceed with these selections? [Y/n]: ").strip().lower()
                 if confirm in ('', 'y', 'yes'):
                     break
                 else:
@@ -720,8 +678,7 @@ class SystemTestRunner:
         manual_test_mode = False
         while True:
             try:
-                mode_input = input(
-                    "\nRun tests automatically (n = only set up infrastucture for testing in IDE)? [Y/n]: ").strip().lower()
+                mode_input = input("\nRun tests automatically (n = only set up infrastucture for testing in IDE)? [Y/n]: ").strip().lower()
                 if not mode_input or mode_input in ('y', 'yes'):
                     manual_test_mode = False
                     break
@@ -736,13 +693,11 @@ class SystemTestRunner:
 
         # Ask about building agent if any modules use it
         build_agent = False
-        has_agent_modules = any(module_config.uses_agent()
-                                for module_config in selected_modules)
+        has_agent_modules = any(module_config.uses_agent() for module_config in selected_modules)
         if has_agent_modules:
             while True:
                 try:
-                    agent_input = input(
-                        "\nBuild OpenTelemetry agent JAR (recommended to ensure latest version)? [Y/n]: ").strip().lower()
+                    agent_input = input("\nBuild OpenTelemetry agent JAR (recommended to ensure latest version)? [Y/n]: ").strip().lower()
                     if not agent_input or agent_input in ('y', 'yes'):
                         build_agent = True
                         break
@@ -787,9 +742,8 @@ class SystemTestRunner:
             auto_init = module_config.java_agent_auto_init  # already in correct format
             build = str_to_bool(module_config.build_before_run)
 
-            print(
-                f"\nSetting up manual test environment for: {module_config.module}")
-            return self.run_manual_test_mode(module_config.module, agent, auto_init, build)
+            print(f"\nSetting up manual test environment for: {module_config.sample_module}")
+            return self.run_manual_test_mode(module_config.sample_module, agent, auto_init, build)
 
         # Handle automatic test running
         failed_tests = []
@@ -801,21 +755,16 @@ class SystemTestRunner:
             build = str_to_bool(module_config.build_before_run)
 
             print(f"\n{'='*TERMINAL_COLUMNS}")
-            print(
-                f"Running test {i}/{len(selection.modules)}: {module_config.module}")
-            print(
-                f"Agent: {module_config.java_agent}, Auto-init: {module_config.java_agent_auto_init}")
+            print(f"Running test {i}/{len(selection.modules)}: {module_config.sample_module}")
+            print(f"Agent: {module_config.java_agent}, Auto-init: {module_config.java_agent_auto_init}")
             print(f"{'='*TERMINAL_COLUMNS}")
 
-            result = self.run_single_test(
-                module_config.module, agent, auto_init, build)
+            result = self.run_single_test(module_config.sample_module, agent, auto_init, build)
 
             if result != 0:
                 # Find the module number in the full list for interactive reference
-                module_number = self._find_module_number(
-                    module_config.module, module_config.java_agent, module_config.java_agent_auto_init)
-                failed_tests.append((module_number, module_config.module,
-                                    module_config.java_agent, module_config.java_agent_auto_init))
+                module_number = self._find_module_number(module_config.sample_module, module_config.java_agent, module_config.java_agent_auto_init)
+                failed_tests.append((module_number, module_config.sample_module, module_config.java_agent, module_config.java_agent_auto_init))
                 print(f"❌ Test failed: {module_config.sample_module}")
             else:
                 print(f"✅ Test passed: {module_config.sample_module}")
@@ -831,8 +780,7 @@ class SystemTestRunner:
         if failed_tests:
             print("\nFailed tests (for interactive mode, use these numbers):")
             for module_number, sample_module, test_agent, test_auto_init in failed_tests:
-                print(
-                    f"  {module_number}. {sample_module} (agent={test_agent}, auto_init={test_auto_init})")
+                print(f"  {module_number}. {sample_module} (agent={test_agent}, auto_init={test_auto_init})")
             return 1
         else:
             print("\n🎉 All tests passed!")
@@ -845,73 +793,48 @@ class SystemTestRunner:
         self.stop_sentry_mock_server()
         sys.exit(1)
 
-
 def main():
-    parser = argparse.ArgumentParser(
-        description="System Test Runner for Sentry Java")
-    subparsers = parser.add_subparsers(
-        dest="command", help="Available commands")
+    parser = argparse.ArgumentParser(description="System Test Runner for Sentry Java")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Test subcommand
     test_parser = subparsers.add_parser("test", help="Run system tests")
     test_group = test_parser.add_mutually_exclusive_group(required=True)
-    test_group.add_argument("--all", action="store_true",
-                            help="Run all system tests")
+    test_group.add_argument("--all", action="store_true", help="Run all system tests")
     test_group.add_argument("--module", help="Sample module to test")
-    test_group.add_argument(
-        "--interactive", "-i", action="store_true", help="Interactive module selection")
-    test_parser.add_argument("--agent", default="false",
-                             help="Use Java agent (true or false)")
-    test_parser.add_argument(
-        "--auto-init", default="true", help="Auto-init agent (true or false)")
-    test_parser.add_argument("--build", default="false",
-                             help="Build before running (true or false)")
-    test_parser.add_argument("--manual-test", action="store_true",
-                             help="Set up infrastructure but pause for manual testing from IDE")
+    test_group.add_argument("--interactive", "-i", action="store_true", help="Interactive module selection")
+    test_parser.add_argument("--agent", default="false", help="Use Java agent (true or false)")
+    test_parser.add_argument("--auto-init", default="true", help="Auto-init agent (true or false)")
+    test_parser.add_argument("--build", default="false", help="Build before running (true or false)")
+    test_parser.add_argument("--manual-test", action="store_true", help="Set up infrastructure but pause for manual testing from IDE")
 
     # Spring subcommand
-    spring_parser = subparsers.add_parser(
-        "spring", help="Manage Spring Boot applications")
-    spring_subparsers = spring_parser.add_subparsers(
-        dest="spring_action", help="Spring actions")
+    spring_parser = subparsers.add_parser("spring", help="Manage Spring Boot applications")
+    spring_subparsers = spring_parser.add_subparsers(dest="spring_action", help="Spring actions")
 
-    spring_start_parser = spring_subparsers.add_parser(
-        "start", help="Start Spring Boot application")
+    spring_start_parser = spring_subparsers.add_parser("start", help="Start Spring Boot application")
     spring_start_parser.add_argument("module", help="Sample module to start")
-    spring_start_parser.add_argument(
-        "--agent", default="false", help="Use Java agent (true or false)")
-    spring_start_parser.add_argument(
-        "--auto-init", default="true", help="Auto-init agent (true or false)")
-    spring_start_parser.add_argument(
-        "--build", default="false", help="Build before starting (true or false)")
+    spring_start_parser.add_argument("--agent", default="false", help="Use Java agent (true or false)")
+    spring_start_parser.add_argument("--auto-init", default="true", help="Auto-init agent (true or false)")
+    spring_start_parser.add_argument("--build", default="false", help="Build before starting (true or false)")
 
-    spring_stop_parser = spring_subparsers.add_parser(
-        "stop", help="Stop Spring Boot application")
+    spring_stop_parser = spring_subparsers.add_parser("stop", help="Stop Spring Boot application")
 
-    spring_wait_parser = spring_subparsers.add_parser(
-        "wait", help="Wait for Spring Boot application to be ready")
-    spring_wait_parser.add_argument(
-        "--timeout", type=int, default=20, help="Max attempts to wait (default: 20)")
+    spring_wait_parser = spring_subparsers.add_parser("wait", help="Wait for Spring Boot application to be ready")
+    spring_wait_parser.add_argument("--timeout", type=int, default=20, help="Max attempts to wait (default: 20)")
 
-    spring_status_parser = spring_subparsers.add_parser(
-        "status", help="Check Spring Boot application status")
+    spring_status_parser = spring_subparsers.add_parser("status", help="Check Spring Boot application status")
 
     # Sentry subcommand
-    sentry_parser = subparsers.add_parser(
-        "sentry", help="Manage Sentry mock server")
-    sentry_subparsers = sentry_parser.add_subparsers(
-        dest="sentry_action", help="Sentry actions")
+    sentry_parser = subparsers.add_parser("sentry", help="Manage Sentry mock server")
+    sentry_subparsers = sentry_parser.add_subparsers(dest="sentry_action", help="Sentry actions")
 
-    sentry_start_parser = sentry_subparsers.add_parser(
-        "start", help="Start Sentry mock server")
-    sentry_stop_parser = sentry_subparsers.add_parser(
-        "stop", help="Stop Sentry mock server")
-    sentry_status_parser = sentry_subparsers.add_parser(
-        "status", help="Check Sentry mock server status")
+    sentry_start_parser = sentry_subparsers.add_parser("start", help="Start Sentry mock server")
+    sentry_stop_parser = sentry_subparsers.add_parser("stop", help="Stop Sentry mock server")
+    sentry_status_parser = sentry_subparsers.add_parser("status", help="Check Sentry mock server status")
 
     # Status subcommand
-    status_parser = subparsers.add_parser(
-        "status", help="Show status of all services")
+    status_parser = subparsers.add_parser("status", help="Show status of all services")
 
     args = parser.parse_args()
 
@@ -935,8 +858,7 @@ def main():
             if args.manual_test and args.module:
                 return runner.run_manual_test_mode(args.module, agent, auto_init, build)
             elif args.manual_test and args.all:
-                print(
-                    "Error: --manual-test requires a specific --module, cannot be used with --all")
+                print("Error: --manual-test requires a specific --module, cannot be used with --all")
                 return 1
             elif args.manual_test and args.interactive:
                 print("Error: --manual-test cannot be used with --interactive")
@@ -985,8 +907,7 @@ def main():
                 status = runner.get_spring_status()
                 print(f"Spring Boot Application Status:")
                 print(f"  PID: {status['pid'] or 'None'}")
-                print(
-                    f"  Process Running: {'✅' if status['process_running'] else '❌'}")
+                print(f"  Process Running: {'✅' if status['process_running'] else '❌'}")
                 print(f"  HTTP Ready: {'✅' if status['http_ready'] else '❌'}")
                 return 0 if (status['process_running'] and status['http_ready']) else 1
             else:
@@ -1006,8 +927,7 @@ def main():
                 status = runner.get_sentry_status()
                 print(f"Sentry Mock Server Status:")
                 print(f"  PID: {status['pid'] or 'None'}")
-                print(
-                    f"  Process Running: {'✅' if status['process_running'] else '❌'}")
+                print(f"  Process Running: {'✅' if status['process_running'] else '❌'}")
                 print(f"  HTTP Ready: {'✅' if status['http_ready'] else '❌'}")
                 return 0 if (status['process_running'] and status['http_ready']) else 1
             else:
@@ -1032,7 +952,6 @@ def main():
         if args.command == "test":
             runner.stop_spring_server()
             runner.stop_sentry_mock_server()
-
 
 if __name__ == "__main__":
     sys.exit(main())
