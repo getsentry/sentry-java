@@ -66,7 +66,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install requests
+          python3 -m pip install -r requirements.txt
 
       - name: Set up Java
         uses: actions/setup-java@v4
