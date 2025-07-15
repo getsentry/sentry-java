@@ -64,7 +64,7 @@ tasks {
 buildConfig {
   useJavaOutput()
   packageName("io.sentry.ktorClient")
-  buildConfigField("String", "SENTRY_KTOR_SDK_NAME", "\"${Config.Sentry.SENTRY_KTOR_SDK_NAME}\"")
+  buildConfigField("String", "SENTRY_KTOR_SDK_NAME", "\"${Config.Sentry.SENTRY_KTOR_CLIENT_SDK_NAME}\"")
   buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 
@@ -80,7 +80,7 @@ tasks.jar {
   manifest {
     attributes(
       "Sentry-Version-Name" to project.version,
-      "Sentry-SDK-Name" to Config.Sentry.SENTRY_KTOR_SDK_NAME,
+      "Sentry-SDK-Name" to Config.Sentry.SENTRY_KTOR_CLIENT_SDK_NAME,
       "Sentry-SDK-Package-Name" to "maven:io.sentry:sentry-ktor-client",
       "Implementation-Vendor" to "Sentry",
       "Implementation-Title" to project.name,
