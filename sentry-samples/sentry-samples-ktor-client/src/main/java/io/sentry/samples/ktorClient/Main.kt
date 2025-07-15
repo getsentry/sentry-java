@@ -1,4 +1,4 @@
-package io.sentry.samples.ktor
+package io.sentry.samples.ktorClient
 
 import io.ktor.client.*
 import io.ktor.client.engine.java.*

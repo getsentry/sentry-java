@@ -4,7 +4,7 @@ plugins {
   alias(libs.plugins.gradle.versions)
 }
 
-application { mainClass.set("io.sentry.samples.ktor.Main") }
+application { mainClass.set("io.sentry.samples.ktorClient.Main") }
 
 configure<JavaPluginExtension> {
   sourceCompatibility = JavaVersion.VERSION_1_8
