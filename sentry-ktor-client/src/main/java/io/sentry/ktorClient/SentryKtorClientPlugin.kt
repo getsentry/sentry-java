@@ -1,27 +1,26 @@
-package io.sentry.ktor
+package io.sentry.ktorClient
 
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.api.*
 import io.ktor.client.plugins.api.ClientPlugin
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.util.pipeline.*
 import io.sentry.BaggageHeader
-import io.sentry.DateUtils
+import io.sentry.BuildConfig
 import io.sentry.HttpStatusCodeRange
 import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.ScopesAdapter
 import io.sentry.Sentry
+import io.sentry.SentryDate
 import io.sentry.SentryIntegrationPackageStorage
-import io.sentry.SentryLongDate
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.kotlin.SentryContext
-import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
+import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
@@ -71,7 +70,7 @@ public class SentryKtorClientPluginConfig {
 }
 
 internal const val SENTRY_KTOR_CLIENT_PLUGIN_KEY = "SentryKtorClientPlugin"
-internal const val TRACE_ORIGIN = "auto.http.ktor"
+internal const val TRACE_ORIGIN = "auto.http.ktor-client"
 
 /**
  * Sentry plugin for Ktor HTTP client that provides automatic instrumentation for HTTP requests,
@@ -81,7 +80,7 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
   createClientPlugin(SENTRY_KTOR_CLIENT_PLUGIN_KEY, ::SentryKtorClientPluginConfig) {
     // Init
     SentryIntegrationPackageStorage.getInstance()
-      .addPackage("maven:io.sentry:sentry-ktor", BuildConfig.VERSION_NAME)
+      .addPackage("maven:io.sentry:sentry-ktor-client", BuildConfig.VERSION_NAME)
     addIntegrationToSdkVersion("Ktor")
 
     // Options
@@ -94,25 +93,29 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
 
     // Attributes
     // Request start time for breadcrumbs
-    val requestStartTimestampKey = AttributeKey<Long>("SentryRequestStartTimestamp")
+    val requestStartTimestampKey = AttributeKey<SentryDate>("SentryRequestStartTimestamp")
     // Span associated with the request
     val requestSpanKey = AttributeKey<ISpan>("SentryRequestSpan")
 
     onRequest { request, _ ->
       request.attributes.put(
         requestStartTimestampKey,
-        CurrentDateProvider.getInstance().currentTimeMillis,
+        Sentry.getCurrentScopes().options.dateProvider.now(),
       )
 
-      val parentSpan: ISpan? = if (forceScopes) scopes.getSpan() else Sentry.getSpan()
+      val parentSpan: ISpan? =
+        if (forceScopes) scopes.getSpan()
+        else {
+          if (Platform.isAndroid()) scopes.transaction else scopes.span
+        }
 
       val spanOp = "http.client"
       val spanDescription = "${request.method.value.toString()} ${request.url.buildString()}"
-      val span: ISpan =
-        parentSpan?.startChild(spanOp, spanDescription)
-          ?: Sentry.startTransaction(spanDescription, spanOp)
-      span.spanContext.origin = TRACE_ORIGIN
-      request.attributes.put(requestSpanKey, span)
+      val span: ISpan? = parentSpan?.startChild(spanOp, spanDescription)
+      if (span != null) {
+        span.spanContext.origin = TRACE_ORIGIN
+        request.attributes.put(requestSpanKey, span)
+      }
 
       if (
         !SpanUtils.isIgnored(
@@ -153,7 +156,7 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
     onResponse { response ->
       val request = response.request
       val startTimestamp = response.call.attributes.getOrNull(requestStartTimestampKey)
-      val endTimestamp = CurrentDateProvider.getInstance().currentTimeMillis
+      val endTimestamp = Sentry.getCurrentScopes().options.dateProvider.now()
 
       if (
         captureFailedRequests &&
@@ -178,7 +181,7 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
         }
 
         val spanStatus = SpanStatus.fromHttpStatusCode(response.status.value)
-        span.finish(spanStatus, SentryLongDate(DateUtils.millisToNanos(endTimestamp)))
+        span.finish(spanStatus, endTimestamp)
       }
     }
 

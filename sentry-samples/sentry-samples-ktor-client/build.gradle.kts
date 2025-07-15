@@ -20,7 +20,7 @@ dependencies {
   implementation(libs.ktor.client.java)
   implementation(libs.kotlinx.coroutines)
   implementation(projects.sentry)
-  implementation(projects.sentryKtor)
+  implementation(projects.sentryKtorClient)
 }
 
 tasks.test { useJUnitPlatform() }

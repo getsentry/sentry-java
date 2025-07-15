@@ -1,4 +1,4 @@
-package io.sentry.ktor
+package io.sentry.ktorClient
 
 import io.ktor.client.request.HttpRequest
 import io.ktor.client.statement.HttpResponse
@@ -9,6 +9,7 @@ import io.ktor.util.toMap
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.IScopes
+import io.sentry.SentryDate
 import io.sentry.SentryEvent
 import io.sentry.SpanDataConvention
 import io.sentry.TypeCheckHint
@@ -71,13 +72,7 @@ internal object SentryKtorClientUtils {
     val res = mutableMapOf<String, String>()
     headers.toMap().forEach { (key, values) ->
       if (!HttpUtils.containsSensitiveHeader(key)) {
-        if (values.size == 1) {
-          res[key] = values[0]
-        } else {
-          for ((i, value) in values.withIndex()) {
-            res["$key[$i]"] = value
-          }
-        }
+        res[key] = values.joinToString(",")
       }
     }
     return res
@@ -87,8 +82,8 @@ internal object SentryKtorClientUtils {
     scopes: IScopes,
     request: HttpRequest,
     response: HttpResponse,
-    startTimestamp: Long?,
-    endTimestamp: Long?,
+    startTimestamp: SentryDate?,
+    endTimestamp: SentryDate?,
   ) {
     val breadcrumb =
       Breadcrumb.http(request.url.toString(), request.method.value, response.status.value)
@@ -97,10 +92,16 @@ internal object SentryKtorClientUtils {
       response.contentLength(),
     )
     if (startTimestamp != null) {
-      breadcrumb.setData(SpanDataConvention.HTTP_START_TIMESTAMP, startTimestamp)
+      breadcrumb.setData(
+        SpanDataConvention.HTTP_START_TIMESTAMP,
+        startTimestamp.nanoTimestamp() / 1000L,
+      )
     }
     if (endTimestamp != null) {
-      breadcrumb.setData(SpanDataConvention.HTTP_END_TIMESTAMP, endTimestamp)
+      breadcrumb.setData(
+        SpanDataConvention.HTTP_END_TIMESTAMP,
+        endTimestamp.nanoTimestamp() / 1000L,
+      )
     }
 
     val hint = Hint().also { it.set(TypeCheckHint.KTOR_REQUEST, request) }

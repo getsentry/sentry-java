@@ -6,7 +6,7 @@ import io.ktor.client.request.*
 import io.sentry.HttpStatusCodeRange
 import io.sentry.Sentry
 import io.sentry.TransactionOptions
-import io.sentry.ktor.SentryKtorClientPlugin
+import io.sentry.ktorClient.SentryKtorClientPlugin
 import kotlinx.coroutines.runBlocking
 
 fun main() {

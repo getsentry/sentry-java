@@ -1,4 +1,4 @@
-package io.sentry.ktor
+package io.sentry.ktorClient
 
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -89,7 +89,6 @@ class SentryKtorClientPluginTest {
       sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
 
       if (isSpanActive) {
-        println("span active")
         whenever(scopes.span).thenReturn(sentryTracer)
       }
 
@@ -281,7 +280,7 @@ class SentryKtorClientPluginTest {
     val httpClientSpan = fixture.sentryTracer.children.first()
     assertEquals("http.client", httpClientSpan.operation)
     assertEquals("GET $url", httpClientSpan.description)
-    assertEquals("auto.http.ktor", httpClientSpan.spanContext.origin)
+    assertEquals("auto.http.ktor-client", httpClientSpan.spanContext.origin)
     assertEquals(SpanStatus.OK, httpClientSpan.status)
     assertTrue(httpClientSpan.isFinished)
   }
@@ -366,7 +365,7 @@ class SentryKtorClientPluginTest {
   fun `does not add sentry-trace header when span origin is ignored`(): Unit = runBlocking {
     val sut =
       fixture.getSut(isSpanActive = false) { options ->
-        options.setIgnoredSpanOrigins(listOf("auto.http.ktor"))
+        options.setIgnoredSpanOrigins(listOf("auto.http.ktor-client"))
       }
     sut.get(fixture.server.url("/hello").toString())
 
