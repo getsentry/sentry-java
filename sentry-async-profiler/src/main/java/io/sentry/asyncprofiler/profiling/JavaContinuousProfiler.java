@@ -56,7 +56,6 @@ public final class JavaContinuousProfiler
   private @NotNull SentryId chunkId = SentryId.EMPTY_ID;
   private final @NotNull AtomicBoolean isClosed = new AtomicBoolean(false);
   private @NotNull SentryDate startProfileChunkTimestamp = new SentryNanotimeDate();
-  private final @NotNull String profilingIntervalMicros;
 
   private @NotNull String filename = "";
 
@@ -79,29 +78,28 @@ public final class JavaContinuousProfiler
     this.profilingTracesHz = profilingTracesHz;
     this.executorService = executorService;
     this.profiler = AsyncProfiler.getInstance();
-    this.profilingIntervalMicros =
-        String.format("%dus", (int) SECONDS.toMicros(1) / profilingTracesHz);
   }
 
-  private void init() {
+  private boolean init() {
     // We initialize it only once
     if (isInitialized) {
-      return;
+      return true;
     }
     isInitialized = true;
     if (profilingTracesDirPath == null) {
       logger.log(
           SentryLevel.WARNING,
           "Disabling profiling because no profiling traces dir path is defined in options.");
-      return;
+      return false;
     }
     if (profilingTracesHz <= 0) {
       logger.log(
           SentryLevel.WARNING,
           "Disabling profiling because trace rate is set to %d",
           profilingTracesHz);
-      return;
+      return false;
     }
+    return true;
   }
 
   @SuppressWarnings("ReferenceEquality")
@@ -150,7 +148,8 @@ public final class JavaContinuousProfiler
   private void initScopes() {
     if ((scopes == null || scopes == NoOpScopes.getInstance())
         && Sentry.getCurrentScopes() != NoOpScopes.getInstance()) {
-      this.scopes = Sentry.forkedRootScopes("profiler");
+      // TODO: should we fork the scopes here?
+      this.scopes = Sentry.getCurrentScopes();
       final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
       if (rateLimiter != null) {
         rateLimiter.addRateLimitObserver(this);
@@ -163,7 +162,9 @@ public final class JavaContinuousProfiler
     initScopes();
 
     // Let's initialize trace folder and profiling interval
-    init();
+    if (!init()) {
+      return;
+    }
 
     if (scopes != null) {
       final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
@@ -188,18 +189,18 @@ public final class JavaContinuousProfiler
     } else {
       startProfileChunkTimestamp = new SentryNanotimeDate();
     }
-    filename = SentryUUID.generateSentryId() + ".jfr";
-    final String startData;
+    filename = profilingTracesDirPath + File.separator + SentryUUID.generateSentryId() + ".jfr";
+    String startData = null;
     try {
-      //      final String command =
-      // String.format("start,jfr,event=cpu,wall=%s,file=%s",profilingIntervalMicros, filename);
+      final String profilingIntervalMicros =
+          String.format("%dus", (int) SECONDS.toMicros(1) / profilingTracesHz);
       final String command =
           String.format(
               "start,jfr,event=wall,interval=%s,file=%s", profilingIntervalMicros, filename);
       System.out.println(command);
       startData = profiler.execute(command);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Failed to start profiling: ", e);
     }
     // check if profiling started
     if (startData == null) {
