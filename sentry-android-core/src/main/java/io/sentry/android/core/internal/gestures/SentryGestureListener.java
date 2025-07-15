@@ -249,7 +249,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     final TransactionOptions transactionOptions = new TransactionOptions();
     transactionOptions.setWaitForChildren(true);
-    
+
     // Set deadline timeout based on configured option
     final long deadlineTimeoutMillis = options.getAutoTransactionDeadlineTimeoutMillis();
     if (deadlineTimeoutMillis <= 0) {
@@ -259,7 +259,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
       // Use configured timeout when positive value is set
       transactionOptions.setDeadlineTimeout(deadlineTimeoutMillis);
     }
-    
+
     transactionOptions.setIdleTimeout(options.getIdleTimeout());
     transactionOptions.setTrimEnd(true);
     transactionOptions.setOrigin(TRACE_ORIGIN + "." + target.getOrigin());
