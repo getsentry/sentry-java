@@ -249,8 +249,21 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     final TransactionOptions transactionOptions = new TransactionOptions();
     transactionOptions.setWaitForChildren(true);
-    transactionOptions.setDeadlineTimeout(
-        TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION);
+    
+    // Set deadline timeout based on configured option
+    final long deadlineTimeoutMillis = options.getAutoTransactionDeadlineTimeoutMillis();
+    if (deadlineTimeoutMillis < 0) {
+      // No deadline when negative value is set
+      transactionOptions.setDeadlineTimeout(null);
+    } else if (deadlineTimeoutMillis == 0) {
+      // Use default timeout when 0 is set
+      transactionOptions.setDeadlineTimeout(
+          TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION);
+    } else {
+      // Use configured timeout when positive value is set
+      transactionOptions.setDeadlineTimeout(deadlineTimeoutMillis);
+    }
+    
     transactionOptions.setIdleTimeout(options.getIdleTimeout());
     transactionOptions.setTrimEnd(true);
     transactionOptions.setOrigin(TRACE_ORIGIN + "." + target.getOrigin());

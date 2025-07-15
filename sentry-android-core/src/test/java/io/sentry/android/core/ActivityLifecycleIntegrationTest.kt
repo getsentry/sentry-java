@@ -226,6 +226,72 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
+  fun `Activity transaction uses custom deadline timeout when autoTransactionDeadlineTimeoutMillis is set to positive value`() {
+    val sut = fixture.getSut()
+    fixture.options.tracesSampleRate = 1.0
+    fixture.options.autoTransactionDeadlineTimeoutMillis = 60000L // 60 seconds
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    verify(fixture.scopes)
+      .startTransaction(
+        any<TransactionContext>(),
+        check<TransactionOptions> { transactionOptions ->
+          assertEquals(60000L, transactionOptions.deadlineTimeout)
+        },
+      )
+  }
+
+  @Test
+  fun `Activity transaction uses no deadline timeout when autoTransactionDeadlineTimeoutMillis is set to negative value`() {
+    val sut = fixture.getSut()
+    fixture.options.tracesSampleRate = 1.0
+    fixture.options.autoTransactionDeadlineTimeoutMillis = -1L // No deadline
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    verify(fixture.scopes)
+      .startTransaction(
+        any<TransactionContext>(),
+        check<TransactionOptions> { transactionOptions ->
+          assertNull(transactionOptions.deadlineTimeout)
+        },
+      )
+  }
+
+  @Test
+  fun `Activity transaction uses default deadline timeout when autoTransactionDeadlineTimeoutMillis is set to 0`() {
+    val sut = fixture.getSut()
+    fixture.options.tracesSampleRate = 1.0
+    fixture.options.autoTransactionDeadlineTimeoutMillis = 0L // Use default
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    verify(fixture.scopes)
+      .startTransaction(
+        any<TransactionContext>(),
+        check<TransactionOptions> { transactionOptions ->
+          assertEquals(
+            TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION,
+            transactionOptions.deadlineTimeout,
+          )
+        },
+      )
+  }
+
+  @Test
   fun `Activity gets added to ActivityFramesTracker during transaction creation`() {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
