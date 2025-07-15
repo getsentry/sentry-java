@@ -171,13 +171,7 @@ internal class WindowRecorder(
 
     capturer?.config = config
     capturer?.recorder =
-      ScreenshotRecorder(
-        config,
-        options,
-        mainLooperHandler,
-        replayExecutor,
-        screenshotRecorderCallback,
-      )
+      ScreenshotRecorder(config, options, replayExecutor, screenshotRecorderCallback)
 
     val newRoot = rootViews.lastOrNull()?.get()
     if (newRoot != null) {
