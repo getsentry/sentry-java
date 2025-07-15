@@ -27,6 +27,7 @@ dependencies {
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
   compileOnly(libs.ktor.client.core)
+  compileOnly(libs.ktor.client.okhttp)
   errorprone(libs.errorprone.core)
   errorprone(libs.nopen.checker)
   errorprone(libs.nullaway)
@@ -37,6 +38,8 @@ dependencies {
   testImplementation(libs.mockito.inline)
   testImplementation(libs.ktor.client.core)
   testImplementation(libs.ktor.client.java)
+  testImplementation(libs.ktor.client.okhttp)
+  testImplementation(projects.sentryOkhttp)
   testImplementation(libs.okhttp.mockwebserver)
 }
 

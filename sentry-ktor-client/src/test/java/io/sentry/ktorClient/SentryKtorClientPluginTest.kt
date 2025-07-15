@@ -1,6 +1,13 @@
 package io.sentry.ktorClient
 
 import io.ktor.client.HttpClient
+import io.ktor.client.HttpClientConfig
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.engine.java.Java
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.engine.okhttp.OkHttpConfig
+import io.ktor.client.engine.okhttp.OkHttpEngine
+import io.ktor.client.plugins.plugin
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -24,8 +31,10 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.mockServerRequestTimeoutMillis
+import io.sentry.okhttp.SentryOkHttpInterceptor
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
+import okhttp3.OkHttpClient
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -68,6 +77,7 @@ class SentryKtorClientPluginTest {
         ),
       sendDefaultPii: Boolean = false,
       optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null,
+      httpClientEngine: HttpClientEngine = Java.create(),
     ): HttpClient {
       options =
         SentryOptions().also {
@@ -102,7 +112,7 @@ class SentryKtorClientPluginTest {
           .setResponseCode(httpStatusCode)
       )
 
-      return HttpClient {
+      return HttpClient(httpClientEngine) {
         install(SentryKtorClientPlugin) {
           this.scopes = this@Fixture.scopes
           this.captureFailedRequests = captureFailedRequests
@@ -364,9 +374,12 @@ class SentryKtorClientPluginTest {
   @Test
   fun `does not add sentry-trace header when span origin is ignored`(): Unit = runBlocking {
     val sut =
-      fixture.getSut(isSpanActive = false) { options ->
-        options.setIgnoredSpanOrigins(listOf("auto.http.ktor-client"))
-      }
+      fixture.getSut(
+        isSpanActive = false,
+        optionsConfiguration = { options ->
+          options.setIgnoredSpanOrigins(listOf("auto.http.ktor-client"))
+        }
+      )
     sut.get(fixture.server.url("/hello").toString())
 
     val recordedRequest =
@@ -418,5 +431,24 @@ class SentryKtorClientPluginTest {
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
     assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
+  }
+
+  @Test
+  fun `is disabled when using OkHttp client with Sentry interceptor added to builder`() {
+    val okHttpClient = OkHttpClient.Builder()
+      .addInterceptor(SentryOkHttpInterceptor())
+      .build()
+    val engine = OkHttpEngine(OkHttpConfig().apply { 
+      preconfigured = okHttpClient
+    })
+    
+    val client = fixture.getSut(httpClientEngine = engine)
+    val plugin = client.plugin(SentryKtorClientPlugin)
+  }
+
+  @Test
+  fun `is disabled when using preconfigured OkHttp client with Sentry interceptor`() {
+    val engine = OkHttpEngine(OkHttpConfig())
+    val client = fixture.getSut(httpClientEngine = engine)
   }
 }
