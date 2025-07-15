@@ -295,7 +295,7 @@ public final class SentryEnvelopeItem {
                         traceFile.getName()));
               }
 
-              if (traceFile.getName().endsWith(".jfr")) {
+              if (profileChunk.getPlatform().equals("java")) {
                 final IProfileConverter profileConverter =
                     ProfilingServiceLoader.loadProfileConverter();
                 if (profileConverter != null) {
@@ -307,7 +307,6 @@ public final class SentryEnvelopeItem {
                     throw new SentryEnvelopeException("Profile conversion failed");
                   }
                 }
-                // If no converter is available, JFR profile conversion is skipped
               } else {
                 // The payload of the profile item is a json including the trace file encoded with
                 // base64
