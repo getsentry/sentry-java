@@ -64,7 +64,11 @@ tasks {
 buildConfig {
   useJavaOutput()
   packageName("io.sentry.ktorClient")
-  buildConfigField("String", "SENTRY_KTOR_SDK_NAME", "\"${Config.Sentry.SENTRY_KTOR_CLIENT_SDK_NAME}\"")
+  buildConfigField(
+    "String",
+    "SENTRY_KTOR_CLIENT_SDK_NAME",
+    "\"${Config.Sentry.SENTRY_KTOR_CLIENT_SDK_NAME}\"",
+  )
   buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
 }
 

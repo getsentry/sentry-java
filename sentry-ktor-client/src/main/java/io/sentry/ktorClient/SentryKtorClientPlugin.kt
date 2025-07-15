@@ -188,6 +188,10 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
     on(SentryKtorClientPluginContextHook(scopes)) { block -> block() }
   }
 
+/**
+ * Context hook to manage scopes during request handling. Forks the current scope and uses
+ * [SentryContext] to ensure that the whole pipeline runs within the correct scopes.
+ */
 public open class SentryKtorClientPluginContextHook(protected val scopes: IScopes) :
   ClientHook<suspend (suspend () -> Unit) -> Unit> {
   private val phase = PipelinePhase("SentryKtorClientPluginContext")
