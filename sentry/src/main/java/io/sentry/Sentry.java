@@ -666,11 +666,16 @@ public final class Sentry {
       options.getBackpressureMonitor().start();
     }
 
-    // TODO: make this configurable
-    if (options.isContinuousProfilingEnabled() && profilingTracesDirPath != null) {
+    if (options.isContinuousProfilingEnabled()
+        && profilingTracesDirPath != null
+        && options.getContinuousProfiler() == NoOpContinuousProfiler.getInstance()) {
       final IContinuousProfiler continuousProfiler =
           ProfilingServiceLoader.loadContinuousProfiler(
-              new SystemOutLogger(), profilingTracesDirPath, 10, options.getExecutorService());
+              new SystemOutLogger(),
+              profilingTracesDirPath,
+              options.getProfilingTracesHz(),
+              options.getExecutorService());
+
       options.setContinuousProfiler(continuousProfiler);
     }
 

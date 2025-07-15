@@ -383,6 +383,13 @@ class ExternalOptionsTest {
     }
   }
 
+  @Test
+  fun `creates options with profilingTracesDirPath set to profile_traces`() {
+    withPropertiesFile("profiling-traces-dir-path=profile_traces") { options ->
+      assertTrue(options.profilingTracesDirPath == "profile_traces")
+    }
+  }
+
   private fun withPropertiesFile(
     textLines: List<String> = emptyList(),
     logger: ILogger = mock(),

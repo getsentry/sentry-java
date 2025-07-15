@@ -57,6 +57,7 @@ public final class ExternalOptions {
   private @Nullable Boolean captureOpenTelemetryEvents;
 
   private @Nullable Double profileSessionSampleRate;
+  private @Nullable String profilingTracesDirPath;
 
   private @Nullable SentryOptions.Cron cron;
 
@@ -206,6 +207,8 @@ public final class ExternalOptions {
     options.setSpotlightConnectionUrl(propertiesProvider.getProperty("spotlight-connection-url"));
     options.setProfileSessionSampleRate(
         propertiesProvider.getDoubleProperty("profile-session-sample-rate"));
+
+    options.setProfilingTracesDirPath(propertiesProvider.getProperty("profiling-traces-dir-path"));
 
     return options;
   }
@@ -542,5 +545,13 @@ public final class ExternalOptions {
 
   public void setProfileSessionSampleRate(@Nullable Double profileSessionSampleRate) {
     this.profileSessionSampleRate = profileSessionSampleRate;
+  }
+
+  public @Nullable String getProfilingTracesDirPath() {
+    return profilingTracesDirPath;
+  }
+
+  public void setProfilingTracesDirPath(@Nullable String profilingTracesDirPath) {
+    this.profilingTracesDirPath = profilingTracesDirPath;
   }
 }

@@ -491,6 +491,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getPrintUncaughtStackTrace ()Ljava/lang/Boolean;
 	public fun getProfileSessionSampleRate ()Ljava/lang/Double;
 	public fun getProfilesSampleRate ()Ljava/lang/Double;
+	public fun getProfilingTracesDirPath ()Ljava/lang/String;
 	public fun getProguardUuid ()Ljava/lang/String;
 	public fun getProxy ()Lio/sentry/SentryOptions$Proxy;
 	public fun getRelease ()Ljava/lang/String;
@@ -533,6 +534,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setPrintUncaughtStackTrace (Ljava/lang/Boolean;)V
 	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
+	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
 	public fun setRelease (Ljava/lang/String;)V
@@ -3479,6 +3481,7 @@ public class io/sentry/SentryOptions {
 	public fun setProfileSessionSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampleRate (Ljava/lang/Double;)V
 	public fun setProfilesSampler (Lio/sentry/SentryOptions$ProfilesSamplerCallback;)V
+	public fun setProfilingTracesDirPath (Ljava/lang/String;)V
 	public fun setProfilingTracesHz (I)V
 	public fun setProguardUuid (Ljava/lang/String;)V
 	public fun setProxy (Lio/sentry/SentryOptions$Proxy;)V
