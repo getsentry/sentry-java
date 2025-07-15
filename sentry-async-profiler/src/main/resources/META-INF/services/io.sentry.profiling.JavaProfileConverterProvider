@@ -1,1 +1,1 @@
-io.sentry.asyncprofiler.AsyncProfilerProfileConverterProvider
+io.sentry.asyncprofiler.provider.AsyncProfilerProfileConverterProvider

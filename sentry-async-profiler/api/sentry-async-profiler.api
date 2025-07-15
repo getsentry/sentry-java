@@ -1,19 +1,36 @@
-public final class io/sentry/asyncprofiler/AsyncProfilerContinuousProfilerProvider : io/sentry/profiling/JavaContinuousProfilerProvider {
-	public fun <init> ()V
-	public fun getContinuousProfiler (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)Lio/sentry/IContinuousProfiler;
-}
-
-public final class io/sentry/asyncprofiler/AsyncProfilerProfileConverterProvider : io/sentry/profiling/JavaProfileConverterProvider {
-	public fun <init> ()V
-	public fun getProfileConverter ()Lio/sentry/IProfileConverter;
-}
-
 public final class io/sentry/asyncprofiler/BuildConfig {
 	public static final field SENTRY_ASYNC_PROFILER_SDK_NAME Ljava/lang/String;
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 
-public final class io/sentry/protocol/jfr/convert/Arguments {
+public final class io/sentry/asyncprofiler/convert/JfrAsyncProfilerToSentryProfileConverter : io/sentry/asyncprofiler/vendor/asyncprofiler/convert/JfrConverter {
+	public fun <init> (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrReader;Lio/sentry/asyncprofiler/vendor/asyncprofiler/convert/Arguments;)V
+	public static fun convertFromFileStatic (Ljava/nio/file/Path;)Lio/sentry/protocol/profiling/SentryProfile;
+}
+
+public final class io/sentry/asyncprofiler/profiling/JavaContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
+	public fun <init> (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
+	public fun close (Z)V
+	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
+	public fun getRootSpanCounter ()I
+	public fun isRunning ()Z
+	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
+	public fun reevaluateSampling ()V
+	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
+	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
+}
+
+public final class io/sentry/asyncprofiler/provider/AsyncProfilerContinuousProfilerProvider : io/sentry/profiling/JavaContinuousProfilerProvider {
+	public fun <init> ()V
+	public fun getContinuousProfiler (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)Lio/sentry/IContinuousProfiler;
+}
+
+public final class io/sentry/asyncprofiler/provider/AsyncProfilerProfileConverterProvider : io/sentry/profiling/JavaProfileConverterProvider {
+	public fun <init> ()V
+	public fun getProfileConverter ()Lio/sentry/IProfileConverter;
+}
+
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/convert/Arguments {
 	public field alloc Z
 	public field bci Z
 	public field classify Z
@@ -47,25 +64,7 @@ public final class io/sentry/protocol/jfr/convert/Arguments {
 	public fun <init> ([Ljava/lang/String;)V
 }
 
-public final class io/sentry/protocol/jfr/convert/CallStack {
-	public fun <init> ()V
-	public fun clear ()V
-	public fun pop ()V
-	public fun push (Ljava/lang/String;B)V
-}
-
-public final class io/sentry/protocol/jfr/convert/FlameGraph : java/util/Comparator {
-	public fun <init> (Lio/sentry/protocol/jfr/convert/Arguments;)V
-	public fun addSample (Lio/sentry/protocol/jfr/convert/CallStack;J)V
-	public fun compare (Lio/sentry/protocol/jfr/convert/Frame;Lio/sentry/protocol/jfr/convert/Frame;)I
-	public synthetic fun compare (Ljava/lang/Object;Ljava/lang/Object;)I
-	public static fun convert (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/jfr/convert/Arguments;)V
-	public fun dump (Ljava/io/PrintStream;)V
-	public fun parseCollapsed (Ljava/io/Reader;)V
-	public fun parseHtml (Ljava/io/Reader;)V
-}
-
-public final class io/sentry/protocol/jfr/convert/Frame : java/util/HashMap {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/convert/Frame : java/util/HashMap {
 	public static final field TYPE_C1_COMPILED B
 	public static final field TYPE_CPP B
 	public static final field TYPE_INLINED B
@@ -75,33 +74,20 @@ public final class io/sentry/protocol/jfr/convert/Frame : java/util/HashMap {
 	public static final field TYPE_NATIVE B
 }
 
-public final class io/sentry/protocol/jfr/convert/Index : java/util/HashMap {
-	public fun <init> (Ljava/lang/Class;Ljava/lang/Object;)V
-	public fun <init> (Ljava/lang/Class;Ljava/lang/Object;I)V
-	public fun index (Ljava/lang/Object;)I
-	public fun keys ()[Ljava/lang/Object;
-	public fun keys ([Ljava/lang/Object;)V
-}
-
-public final class io/sentry/protocol/jfr/convert/JfrAsyncProfilerToSentryProfileConverter : io/sentry/protocol/jfr/convert/JfrConverter {
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/JfrReader;Lio/sentry/protocol/jfr/convert/Arguments;)V
-	public static fun convertFromFileStatic (Ljava/nio/file/Path;)Lio/sentry/protocol/profiling/SentryProfile;
-	public static fun main ([Ljava/lang/String;)V
-}
-
-public abstract class io/sentry/protocol/jfr/convert/JfrConverter {
-	protected final field args Lio/sentry/protocol/jfr/convert/Arguments;
-	protected final field collector Lio/sentry/protocol/jfr/jfr/event/EventCollector;
-	protected final field jfr Lio/sentry/protocol/jfr/jfr/JfrReader;
-	protected field methodNames Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/JfrReader;Lio/sentry/protocol/jfr/convert/Arguments;)V
+public abstract class io/sentry/asyncprofiler/vendor/asyncprofiler/convert/JfrConverter {
+	protected final field args Lio/sentry/asyncprofiler/vendor/asyncprofiler/convert/Arguments;
+	protected final field collector Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector;
+	protected final field jfr Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrReader;
+	protected field methodNames Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/Dictionary;
+	public fun <init> (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrReader;Lio/sentry/asyncprofiler/vendor/asyncprofiler/convert/Arguments;)V
 	protected fun collectEvents ()V
 	public fun convert ()V
 	protected fun convertChunk ()V
-	protected fun createCollector (Lio/sentry/protocol/jfr/convert/Arguments;)Lio/sentry/protocol/jfr/jfr/event/EventCollector;
-	public synthetic fun getCategory (Lio/sentry/protocol/jfr/jfr/StackTrace;)Lio/sentry/protocol/jfr/convert/Classifier$Category;
+	protected fun createCollector (Lio/sentry/asyncprofiler/vendor/asyncprofiler/convert/Arguments;)Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector;
+	public synthetic fun getCategory (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/StackTrace;)Lio/sentry/asyncprofiler/vendor/asyncprofiler/convert/Classifier$Category;
 	public fun getClassName (J)Ljava/lang/String;
 	public fun getMethodName (JB)Ljava/lang/String;
+	public fun getPlainThreadName (I)Ljava/lang/String;
 	public fun getStackTraceElement (JBI)Ljava/lang/StackTraceElement;
 	public fun getThreadName (I)Ljava/lang/String;
 	protected fun getThreadStates (Z)Ljava/util/BitSet;
@@ -110,85 +96,73 @@ public abstract class io/sentry/protocol/jfr/convert/JfrConverter {
 	protected fun toTicks (J)J
 }
 
-protected abstract class io/sentry/protocol/jfr/convert/JfrConverter$AggregatedEventVisitor : io/sentry/protocol/jfr/jfr/event/EventCollector$Visitor {
-	protected fun <init> (Lio/sentry/protocol/jfr/convert/JfrConverter;)V
-	protected abstract fun visit (Lio/sentry/protocol/jfr/jfr/event/Event;J)V
-	public final fun visit (Lio/sentry/protocol/jfr/jfr/event/Event;JJ)V
+protected abstract class io/sentry/asyncprofiler/vendor/asyncprofiler/convert/JfrConverter$AggregatedEventVisitor : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector$Visitor {
+	protected fun <init> (Lio/sentry/asyncprofiler/vendor/asyncprofiler/convert/JfrConverter;)V
+	protected abstract fun visit (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;J)V
+	public final fun visit (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;JJ)V
 }
 
-public final class io/sentry/protocol/jfr/convert/JfrToFlame : io/sentry/protocol/jfr/convert/JfrConverter {
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/JfrReader;Lio/sentry/protocol/jfr/convert/Arguments;)V
-	public static fun convert (Ljava/lang/String;Ljava/lang/String;Lio/sentry/protocol/jfr/convert/Arguments;)V
-	public fun dump (Ljava/io/OutputStream;)V
-}
-
-public final class io/sentry/protocol/jfr/convert/ResourceProcessor {
-	public fun <init> ()V
-	public static fun getResource (Ljava/lang/String;)Ljava/lang/String;
-	public static fun printTill (Ljava/io/PrintStream;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-}
-
-public final class io/sentry/protocol/jfr/jfr/ClassRef {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/ClassRef {
 	public final field name J
 	public fun <init> (J)V
 }
 
-public final class io/sentry/protocol/jfr/jfr/Dictionary {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/Dictionary {
 	public fun <init> ()V
 	public fun <init> (I)V
 	public fun clear ()V
-	public fun forEach (Lio/sentry/protocol/jfr/jfr/Dictionary$Visitor;)V
+	public fun forEach (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/Dictionary$Visitor;)V
 	public fun get (J)Ljava/lang/Object;
 	public fun preallocate (I)I
 	public fun put (JLjava/lang/Object;)V
 	public fun size ()I
 }
 
-public abstract interface class io/sentry/protocol/jfr/jfr/Dictionary$Visitor {
+public abstract interface class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/Dictionary$Visitor {
 	public abstract fun visit (JLjava/lang/Object;)V
 }
 
-public final class io/sentry/protocol/jfr/jfr/DictionaryInt {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/DictionaryInt {
 	public fun <init> ()V
 	public fun <init> (I)V
 	public fun clear ()V
-	public fun forEach (Lio/sentry/protocol/jfr/jfr/DictionaryInt$Visitor;)V
+	public fun forEach (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/DictionaryInt$Visitor;)V
 	public fun get (J)I
 	public fun get (JI)I
 	public fun preallocate (I)I
 	public fun put (JI)V
 }
 
-public abstract interface class io/sentry/protocol/jfr/jfr/DictionaryInt$Visitor {
+public abstract interface class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/DictionaryInt$Visitor {
 	public abstract fun visit (JI)V
 }
 
-public final class io/sentry/protocol/jfr/jfr/JfrClass {
-	public fun field (Ljava/lang/String;)Lio/sentry/protocol/jfr/jfr/JfrField;
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrClass {
+	public fun field (Ljava/lang/String;)Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrField;
 }
 
-public final class io/sentry/protocol/jfr/jfr/JfrField {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrField {
 }
 
-public final class io/sentry/protocol/jfr/jfr/JfrReader : java/io/Closeable {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrReader : java/io/Closeable {
 	public field chunkEndNanos J
 	public field chunkStartNanos J
 	public field chunkStartTicks J
-	public final field classes Lio/sentry/protocol/jfr/jfr/Dictionary;
+	public final field classes Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/Dictionary;
 	public field endNanos J
 	public final field enums Ljava/util/Map;
-	public final field javaThreads Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public final field methods Lio/sentry/protocol/jfr/jfr/Dictionary;
+	public final field javaThreads Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/Dictionary;
+	public final field methods Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/Dictionary;
 	public final field settings Ljava/util/Map;
-	public final field stackTraces Lio/sentry/protocol/jfr/jfr/Dictionary;
+	public final field stackTraces Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/Dictionary;
 	public field startNanos J
 	public field startTicks J
 	public field stopAtNewChunk Z
-	public final field strings Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public final field symbols Lio/sentry/protocol/jfr/jfr/Dictionary;
-	public final field threads Lio/sentry/protocol/jfr/jfr/Dictionary;
+	public final field strings Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/Dictionary;
+	public final field symbols Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/Dictionary;
+	public final field threads Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/Dictionary;
 	public field ticksPerSec J
-	public final field types Lio/sentry/protocol/jfr/jfr/Dictionary;
+	public final field types Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/Dictionary;
 	public final field typesByName Ljava/util/Map;
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/nio/ByteBuffer;)V
@@ -207,93 +181,93 @@ public final class io/sentry/protocol/jfr/jfr/JfrReader : java/io/Closeable {
 	public fun incomplete ()Z
 	public fun readAllEvents ()Ljava/util/List;
 	public fun readAllEvents (Ljava/lang/Class;)Ljava/util/List;
-	public fun readEvent ()Lio/sentry/protocol/jfr/jfr/event/Event;
-	public fun readEvent (Ljava/lang/Class;)Lio/sentry/protocol/jfr/jfr/event/Event;
+	public fun readEvent ()Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;
+	public fun readEvent (Ljava/lang/Class;)Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;
 	public fun registerEvent (Ljava/lang/String;Ljava/lang/Class;)V
 }
 
-public final class io/sentry/protocol/jfr/jfr/MethodRef {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/MethodRef {
 	public final field cls J
 	public final field name J
 	public final field sig J
 	public fun <init> (JJJ)V
 }
 
-public final class io/sentry/protocol/jfr/jfr/StackTrace {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/StackTrace {
 	public final field locations [I
 	public final field methods [J
 	public final field types [B
 	public fun <init> ([J[B[I)V
 }
 
-public final class io/sentry/protocol/jfr/jfr/event/AllocationSample : io/sentry/protocol/jfr/jfr/event/Event {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/AllocationSample : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event {
 	public final field allocationSize J
 	public final field classId I
 	public final field tlabSize J
 	public fun <init> (JIIIJJ)V
 	public fun classId ()J
 	public fun hashCode ()I
-	public fun sameGroup (Lio/sentry/protocol/jfr/jfr/event/Event;)Z
+	public fun sameGroup (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;)Z
 	public fun value ()J
 }
 
-public final class io/sentry/protocol/jfr/jfr/event/CPULoad : io/sentry/protocol/jfr/jfr/event/Event {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/CPULoad : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event {
 	public final field jvmSystem F
 	public final field jvmUser F
 	public final field machineTotal F
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/JfrReader;)V
+	public fun <init> (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrReader;)V
 }
 
-public final class io/sentry/protocol/jfr/jfr/event/ContendedLock : io/sentry/protocol/jfr/jfr/event/Event {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/ContendedLock : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event {
 	public final field classId I
 	public final field duration J
 	public fun <init> (JIIJI)V
 	public fun classId ()J
 	public fun hashCode ()I
-	public fun sameGroup (Lio/sentry/protocol/jfr/jfr/event/Event;)Z
+	public fun sameGroup (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;)Z
 	public fun value ()J
 }
 
-public abstract class io/sentry/protocol/jfr/jfr/event/Event : java/lang/Comparable {
+public abstract class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event : java/lang/Comparable {
 	public final field stackTraceId I
 	public final field tid I
 	public final field time J
 	protected fun <init> (JII)V
 	public fun classId ()J
-	public fun compareTo (Lio/sentry/protocol/jfr/jfr/event/Event;)I
+	public fun compareTo (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;)I
 	public synthetic fun compareTo (Ljava/lang/Object;)I
 	public fun hashCode ()I
-	public fun sameGroup (Lio/sentry/protocol/jfr/jfr/event/Event;)Z
+	public fun sameGroup (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;)Z
 	public fun samples ()J
 	public fun toString ()Ljava/lang/String;
 	public fun value ()J
 }
 
-public final class io/sentry/protocol/jfr/jfr/event/EventAggregator : io/sentry/protocol/jfr/jfr/event/EventCollector {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventAggregator : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector {
 	public fun <init> (ZD)V
 	public fun afterChunk ()V
 	public fun beforeChunk ()V
 	public fun coarsen (D)V
-	public fun collect (Lio/sentry/protocol/jfr/jfr/event/Event;)V
-	public fun collect (Lio/sentry/protocol/jfr/jfr/event/Event;JJ)V
+	public fun collect (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;)V
+	public fun collect (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;JJ)V
 	public fun finish ()Z
-	public fun forEach (Lio/sentry/protocol/jfr/jfr/event/EventCollector$Visitor;)V
+	public fun forEach (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector$Visitor;)V
 	public fun size ()I
 }
 
-public abstract interface class io/sentry/protocol/jfr/jfr/event/EventCollector {
+public abstract interface class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector {
 	public abstract fun afterChunk ()V
 	public abstract fun beforeChunk ()V
-	public abstract fun collect (Lio/sentry/protocol/jfr/jfr/event/Event;)V
+	public abstract fun collect (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;)V
 	public abstract fun finish ()Z
-	public abstract fun forEach (Lio/sentry/protocol/jfr/jfr/event/EventCollector$Visitor;)V
+	public abstract fun forEach (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector$Visitor;)V
 }
 
-public abstract interface class io/sentry/protocol/jfr/jfr/event/EventCollector$Visitor {
-	public abstract fun visit (Lio/sentry/protocol/jfr/jfr/event/Event;JJ)V
+public abstract interface class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector$Visitor {
+	public abstract fun visit (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;JJ)V
 }
 
-public final class io/sentry/protocol/jfr/jfr/event/ExecutionSample : io/sentry/protocol/jfr/jfr/event/Event {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/ExecutionSample : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event {
 	public final field samples I
 	public final field threadState I
 	public fun <init> (JIIII)V
@@ -301,59 +275,47 @@ public final class io/sentry/protocol/jfr/jfr/event/ExecutionSample : io/sentry/
 	public fun value ()J
 }
 
-public final class io/sentry/protocol/jfr/jfr/event/GCHeapSummary : io/sentry/protocol/jfr/jfr/event/Event {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/GCHeapSummary : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event {
 	public final field afterGC Z
 	public final field committed J
 	public final field gcId I
 	public final field reserved J
 	public final field used J
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/JfrReader;)V
+	public fun <init> (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrReader;)V
 }
 
-public final class io/sentry/protocol/jfr/jfr/event/LiveObject : io/sentry/protocol/jfr/jfr/event/Event {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/LiveObject : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event {
 	public final field allocationSize J
 	public final field allocationTime J
 	public final field classId I
 	public fun <init> (JIIIJJ)V
 	public fun classId ()J
 	public fun hashCode ()I
-	public fun sameGroup (Lio/sentry/protocol/jfr/jfr/event/Event;)Z
+	public fun sameGroup (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;)Z
 	public fun value ()J
 }
 
-public final class io/sentry/protocol/jfr/jfr/event/MallocEvent : io/sentry/protocol/jfr/jfr/event/Event {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/MallocEvent : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event {
 	public final field address J
 	public final field size J
 	public fun <init> (JIIJJ)V
 	public fun value ()J
 }
 
-public final class io/sentry/protocol/jfr/jfr/event/MallocLeakAggregator : io/sentry/protocol/jfr/jfr/event/EventCollector {
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/event/EventCollector;)V
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/MallocLeakAggregator : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector {
+	public fun <init> (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector;)V
 	public fun afterChunk ()V
 	public fun beforeChunk ()V
-	public fun collect (Lio/sentry/protocol/jfr/jfr/event/Event;)V
+	public fun collect (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event;)V
 	public fun finish ()Z
-	public fun forEach (Lio/sentry/protocol/jfr/jfr/event/EventCollector$Visitor;)V
+	public fun forEach (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/EventCollector$Visitor;)V
 }
 
-public final class io/sentry/protocol/jfr/jfr/event/ObjectCount : io/sentry/protocol/jfr/jfr/event/Event {
+public final class io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/ObjectCount : io/sentry/asyncprofiler/vendor/asyncprofiler/jfr/event/Event {
 	public final field classId I
 	public final field count J
 	public final field gcId I
 	public final field totalSize J
-	public fun <init> (Lio/sentry/protocol/jfr/jfr/JfrReader;)V
-}
-
-public final class io/sentry/protocol/profiling/JavaContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
-	public fun <init> (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
-	public fun close (Z)V
-	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
-	public fun getRootSpanCounter ()I
-	public fun isRunning ()Z
-	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
-	public fun reevaluateSampling ()V
-	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
-	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
+	public fun <init> (Lio/sentry/asyncprofiler/vendor/asyncprofiler/jfr/JfrReader;)V
 }
 
