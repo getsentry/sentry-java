@@ -23,7 +23,11 @@ class TodoSystemTest {
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
       testHelper.doesTransactionContainSpanWithOp(transaction, "todoSpanOtelApi") &&
         testHelper.doesTransactionContainSpanWithOp(transaction, "todoSpanSentryApi") &&
-        testHelper.doesTransactionContainSpanWithOp(transaction, "http.client")
+        testHelper.doesTransactionContainSpanWithOpAndDescription(
+          transaction,
+          "http.client",
+          "GET https://jsonplaceholder.typicode.com/todos/1",
+        )
     }
   }
 
@@ -34,7 +38,11 @@ class TodoSystemTest {
     assertEquals(200, restClient.lastKnownStatusCode)
 
     testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
-      testHelper.doesTransactionContainSpanWithOp(transaction, "http.client")
+      testHelper.doesTransactionContainSpanWithOpAndDescription(
+        transaction,
+        "http.client",
+        "GET https://jsonplaceholder.typicode.com/todos/1",
+      )
     }
   }
 }
