@@ -30,6 +30,11 @@ public final class io/sentry/asyncprofiler/provider/AsyncProfilerProfileConverte
 	public fun getProfileConverter ()Lio/sentry/IProfileConverter;
 }
 
+public final class io/sentry/asyncprofiler/provider/AsyncProfilerProfileConverterProvider$AsyncProfilerProfileConverter : io/sentry/IProfileConverter {
+	public fun <init> ()V
+	public fun convertFromFile (Ljava/nio/file/Path;)Lio/sentry/protocol/profiling/SentryProfile;
+}
+
 public final class io/sentry/asyncprofiler/vendor/asyncprofiler/convert/Arguments {
 	public field alloc Z
 	public field bci Z

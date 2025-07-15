@@ -21,7 +21,7 @@ public final class AsyncProfilerProfileConverterProvider implements JavaProfileC
    * Internal implementation of IProfileConverter that delegates to
    * JfrAsyncProfilerToSentryProfileConverter.
    */
-  private static final class AsyncProfilerProfileConverter implements IProfileConverter {
+  public static final class AsyncProfilerProfileConverter implements IProfileConverter {
 
     @Override
     public @NotNull io.sentry.protocol.profiling.SentryProfile convertFromFile(
