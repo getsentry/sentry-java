@@ -34,6 +34,7 @@ public final class SpanUtils {
       origins.add("auto.http.spring_jakarta.resttemplate");
       origins.add("auto.http.spring.resttemplate");
       origins.add("auto.http.openfeign");
+      origins.add("auto.http.ktor-client");
     }
 
     if (SentryOpenTelemetryMode.AGENT == mode) {
