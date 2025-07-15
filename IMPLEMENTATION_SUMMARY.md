@@ -11,14 +11,14 @@ Added a new configuration option `autoTransactionDeadlineTimeoutMillis` to `Sent
 #### 1. Added New Option to SentryAndroidOptions
 **File**: `/workspace/sentry-android-core/src/main/java/io/sentry/android/core/SentryAndroidOptions.java`
 
-- Added field `autoTransactionDeadlineTimeoutMillis` with default value `0`
+- Added field `autoTransactionDeadlineTimeoutMillis` with default value `30000`
 - Added getter `getAutoTransactionDeadlineTimeoutMillis()`
 - Added setter `setAutoTransactionDeadlineTimeoutMillis(long autoTransactionDeadlineTimeoutMillis)`
 
 **Behavior**:
-- `0` (default): Use the existing 30-second default timeout
+- `30000` (default): 30-second timeout (same as previous behavior)
 - Positive value: Use the specified timeout in milliseconds
-- Negative value: No deadline (transactions only finish when explicitly finished or activity lifecycle ends)
+- Zero or negative value: No deadline (transactions only finish when explicitly finished or activity lifecycle ends)
 
 #### 2. Updated ActivityLifecycleIntegration
 **File**: `/workspace/sentry-android-core/src/main/java/io/sentry/android/core/ActivityLifecycleIntegration.java`
@@ -35,23 +35,30 @@ Applied the same deadline timeout configuration logic for user interaction trans
 
 Modified to use the new configuration option with appropriate type checking since navigation listener works with base `SentryOptions`.
 
-#### 5. Added Tests
+#### 5. Added Manifest Support
+**File**: `/workspace/sentry-android-core/src/main/java/io/sentry/android/core/ManifestMetadataReader.java`
+
+Added support for configuring the option via AndroidManifest.xml using the key `io.sentry.traces.auto-transaction-deadline-timeout-millis`.
+
+#### 6. Added Tests
 **Files**: 
 - `/workspace/sentry-android-core/src/test/java/io/sentry/android/core/SentryAndroidOptionsTest.kt`
 - `/workspace/sentry-android-core/src/test/java/io/sentry/android/core/ActivityLifecycleIntegrationTest.kt`
+- `/workspace/sentry-android-core/src/test/java/io/sentry/android/core/ManifestMetadataReaderTest.kt`
 
 Added comprehensive tests to verify:
-- Option defaults to 0
+- Option defaults to 30000
 - Option can be set to positive, negative, and zero values
 - ActivityLifecycleIntegration respects the new option
 - All three timeout behaviors work correctly (default, custom, disabled)
+- Manifest reading works correctly
 
 ### Usage Example
 
 ```kotlin
-// Disable deadline timeout (transactions only finish manually or on activity lifecycle)
+// Disable deadline timeout (solve the original issue - transactions only finish manually or on activity lifecycle)
 SentryAndroid.init(this) { options ->
-    options.autoTransactionDeadlineTimeoutMillis = -1
+    options.autoTransactionDeadlineTimeoutMillis = 0  // or any negative value
 }
 
 // Set custom 60-second timeout
@@ -59,10 +66,18 @@ SentryAndroid.init(this) { options ->
     options.autoTransactionDeadlineTimeoutMillis = 60000
 }
 
-// Use default 30-second timeout (default behavior)
+// Use default 30-second timeout (default behavior - no configuration needed)
 SentryAndroid.init(this) { options ->
-    options.autoTransactionDeadlineTimeoutMillis = 0  // or just don't set it
+    // autoTransactionDeadlineTimeoutMillis defaults to 30000
 }
+```
+
+**Via AndroidManifest.xml:**
+
+```xml
+<application>
+    <meta-data android:name="io.sentry.traces.auto-transaction-deadline-timeout-millis" android:value="0" />
+</application>
 ```
 
 ### Backward Compatibility

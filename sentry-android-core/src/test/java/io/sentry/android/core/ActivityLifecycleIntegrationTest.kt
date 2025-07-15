@@ -247,6 +247,27 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
+  fun `Activity transaction uses no deadline timeout when autoTransactionDeadlineTimeoutMillis is set to zero`() {
+    val sut = fixture.getSut()
+    fixture.options.tracesSampleRate = 1.0
+    fixture.options.autoTransactionDeadlineTimeoutMillis = 0L // No deadline
+    sut.register(fixture.scopes, fixture.options)
+
+    setAppStartTime()
+
+    val activity = mock<Activity>()
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    verify(fixture.scopes)
+      .startTransaction(
+        any<TransactionContext>(),
+        check<TransactionOptions> { transactionOptions ->
+          assertNull(transactionOptions.deadlineTimeout)
+        },
+      )
+  }
+
+  @Test
   fun `Activity transaction uses no deadline timeout when autoTransactionDeadlineTimeoutMillis is set to negative value`() {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
@@ -268,10 +289,10 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  fun `Activity transaction uses default deadline timeout when autoTransactionDeadlineTimeoutMillis is set to 0`() {
+  fun `Activity transaction uses default deadline timeout when autoTransactionDeadlineTimeoutMillis is default`() {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
-    fixture.options.autoTransactionDeadlineTimeoutMillis = 0L // Use default
+    // Don't set autoTransactionDeadlineTimeoutMillis, use default (30000)
     sut.register(fixture.scopes, fixture.options)
 
     setAppStartTime()
@@ -283,10 +304,7 @@ class ActivityLifecycleIntegrationTest {
       .startTransaction(
         any<TransactionContext>(),
         check<TransactionOptions> { transactionOptions ->
-          assertEquals(
-            TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION,
-            transactionOptions.deadlineTimeout,
-          )
+          assertEquals(30000L, transactionOptions.deadlineTimeout)
         },
       )
   }

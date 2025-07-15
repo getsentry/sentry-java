@@ -127,6 +127,9 @@ final class ManifestMetadataReader {
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
 
+  static final String AUTO_TRANSACTION_DEADLINE_TIMEOUT_MILLIS =
+      "io.sentry.traces.auto-transaction-deadline-timeout-millis";
+
   static final String FEEDBACK_NAME_REQUIRED = "io.sentry.feedback.is-name-required";
 
   static final String FEEDBACK_SHOW_NAME = "io.sentry.feedback.show-name";
@@ -445,6 +448,13 @@ final class ManifestMetadataReader {
                 logger,
                 ENABLE_AUTO_TRACE_ID_GENERATION,
                 options.isEnableAutoTraceIdGeneration()));
+
+        options.setAutoTransactionDeadlineTimeoutMillis(
+            readLong(
+                metadata,
+                logger,
+                AUTO_TRANSACTION_DEADLINE_TIMEOUT_MILLIS,
+                options.getAutoTransactionDeadlineTimeoutMillis()));
 
         if (options.getSessionReplay().getSessionSampleRate() == null) {
           final double sessionSampleRate =

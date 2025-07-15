@@ -192,13 +192,9 @@ public final class ActivityLifecycleIntegration
         
         // Set deadline timeout based on configured option
         final long deadlineTimeoutMillis = options.getAutoTransactionDeadlineTimeoutMillis();
-        if (deadlineTimeoutMillis < 0) {
-          // No deadline when negative value is set
+        if (deadlineTimeoutMillis <= 0) {
+          // No deadline when zero or negative value is set
           transactionOptions.setDeadlineTimeout(null);
-        } else if (deadlineTimeoutMillis == 0) {
-          // Use default timeout when 0 is set
-          transactionOptions.setDeadlineTimeout(
-              TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION);
         } else {
           // Use configured timeout when positive value is set
           transactionOptions.setDeadlineTimeout(deadlineTimeoutMillis);

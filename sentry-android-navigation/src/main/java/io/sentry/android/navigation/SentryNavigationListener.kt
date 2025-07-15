@@ -138,11 +138,10 @@ constructor(
         } else {
           null
         }
-        val deadlineTimeoutMillis = androidOptions?.autoTransactionDeadlineTimeoutMillis ?: 0L
+        val deadlineTimeoutMillis = androidOptions?.autoTransactionDeadlineTimeoutMillis ?: TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION
         
         it.deadlineTimeout = when {
-          deadlineTimeoutMillis < 0 -> null // No deadline when negative value is set
-          deadlineTimeoutMillis == 0L -> TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION // Use default timeout when 0 is set
+          deadlineTimeoutMillis <= 0 -> null // No deadline when zero or negative value is set
           else -> deadlineTimeoutMillis // Use configured timeout when positive value is set
         }
         

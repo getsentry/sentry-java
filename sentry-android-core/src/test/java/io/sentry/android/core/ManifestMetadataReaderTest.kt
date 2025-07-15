@@ -1092,6 +1092,20 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads autoTransactionDeadlineTimeoutMillis from metadata`() {
+    // Arrange
+    val expectedTimeout = 60000
+    val bundle = bundleOf(ManifestMetadataReader.AUTO_TRANSACTION_DEADLINE_TIMEOUT_MILLIS to expectedTimeout)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(expectedTimeout.toLong(), fixture.options.autoTransactionDeadlineTimeoutMillis)
+  }
+
+  @Test
   fun `applyMetadata without specifying idleTimeout, stays default`() {
     // Arrange
     val context = fixture.getContext()
