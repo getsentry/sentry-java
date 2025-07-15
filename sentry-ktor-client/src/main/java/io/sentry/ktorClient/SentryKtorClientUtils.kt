@@ -34,10 +34,6 @@ internal object SentryKtorClientUtils {
       ExceptionMechanismException(mechanism, exception, Thread.currentThread(), true)
     val event = SentryEvent(mechanismException)
 
-    val hint = Hint()
-    hint.set(TypeCheckHint.KTOR_REQUEST, request)
-    hint.set(TypeCheckHint.KTOR_RESPONSE, response)
-
     val sentryRequest =
       io.sentry.protocol.Request().apply {
         // Cookie is only sent if isSendDefaultPii is enabled
@@ -59,6 +55,12 @@ internal object SentryKtorClientUtils {
 
     event.request = sentryRequest
     event.contexts.setResponse(sentryResponse)
+
+    val hint =
+      Hint().also {
+        it.set(TypeCheckHint.KTOR_CLIENT_REQUEST, request)
+        it.set(TypeCheckHint.KTOR_CLIENT_RESPONSE, response)
+      }
 
     scopes.captureEvent(event, hint)
   }
@@ -104,9 +106,11 @@ internal object SentryKtorClientUtils {
       )
     }
 
-    val hint = Hint().also { it.set(TypeCheckHint.KTOR_REQUEST, request) }
-    hint[TypeCheckHint.KTOR_REQUEST] = request
-    hint[TypeCheckHint.KTOR_RESPONSE] = response
+    val hint =
+      Hint().also {
+        it.set(TypeCheckHint.KTOR_CLIENT_REQUEST, request)
+        it.set(TypeCheckHint.KTOR_CLIENT_RESPONSE, response)
+      }
 
     scopes.addBreadcrumb(breadcrumb, hint)
   }

@@ -1,5 +1,5 @@
 public final class io/sentry/ktorClient/BuildConfig {
-	public static final field SENTRY_KTOR_SDK_NAME Ljava/lang/String;
+	public static final field SENTRY_KTOR_CLIENT_SDK_NAME Ljava/lang/String;
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 
