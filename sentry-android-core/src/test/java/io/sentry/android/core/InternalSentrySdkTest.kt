@@ -269,6 +269,9 @@ class InternalSentrySdkTest {
 
     // then modifications should not be reflected
     Sentry.configureScope { scope -> assertEquals(3, scope.breadcrumbs.size) }
+
+    // Ensure we don't interfere with other tests
+    Sentry.configureScope(ScopeType.GLOBAL) { scope -> scope.clear() }
   }
 
   @Test

@@ -645,7 +645,7 @@ public final class Sentry {
       options.setDebugMetaLoader(new ResourcesDebugMetaLoader(options.getLogger()));
     }
     final @Nullable List<Properties> propertiesList = options.getDebugMetaLoader().loadDebugMeta();
-    DebugMetaPropertiesApplier.applyToOptions(options, propertiesList);
+    DebugMetaPropertiesApplier.apply(options, propertiesList);
 
     final IThreadChecker threadChecker = options.getThreadChecker();
     // only override the ThreadChecker if it's not already set by Android
