@@ -738,7 +738,7 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun withScope (Lio/sentry/ScopeCallback;)V
 }
 
-public abstract interface class io/sentry/IConnectionStatusProvider {
+public abstract interface class io/sentry/IConnectionStatusProvider : java/io/Closeable {
 	public abstract fun addConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)Z
 	public abstract fun getConnectionStatus ()Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
 	public abstract fun getConnectionType ()Ljava/lang/String;
@@ -1452,6 +1452,7 @@ public final class io/sentry/NoOpCompositePerformanceCollector : io/sentry/Compo
 public final class io/sentry/NoOpConnectionStatusProvider : io/sentry/IConnectionStatusProvider {
 	public fun <init> ()V
 	public fun addConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)Z
+	public fun close ()V
 	public fun getConnectionStatus ()Lio/sentry/IConnectionStatusProvider$ConnectionStatus;
 	public fun getConnectionType ()Ljava/lang/String;
 	public fun removeConnectionStatusObserver (Lio/sentry/IConnectionStatusProvider$IConnectionStatusObserver;)V

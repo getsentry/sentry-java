@@ -446,6 +446,7 @@ public final class Scopes implements IScopes {
         getOptions().getTransactionProfiler().close();
         getOptions().getContinuousProfiler().close(true);
         getOptions().getCompositePerformanceCollector().close();
+        getOptions().getConnectionStatusProvider().close();
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
         if (isRestarting) {
           executorService.submit(
