@@ -139,6 +139,13 @@ public final class SentryReplayOptions {
    */
   private boolean debug = false;
 
+  /**
+   * The screenshot strategy to use for capturing screenshots during replay recording. Defaults to
+   * PIXEL_COPY for better performance and quality.
+   */
+  @ApiStatus.Internal
+  private ScreenshotStrategyType screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY;
+
   public SentryReplayOptions(final boolean empty, final @Nullable SdkVersion sdkVersion) {
     if (!empty) {
       setMaskAllText(true);
@@ -338,5 +345,25 @@ public final class SentryReplayOptions {
    */
   public void setDebug(final boolean debug) {
     this.debug = debug;
+  }
+
+  /**
+   * Gets the screenshot strategy used for capturing screenshots during replay recording.
+   *
+   * @return the screenshot strategy
+   */
+  @ApiStatus.Internal
+  public @NotNull ScreenshotStrategyType getScreenshotStrategy() {
+    return screenshotStrategy;
+  }
+
+  /**
+   * Sets the screenshot strategy to use for capturing screenshots during replay recording.
+   *
+   * @param screenshotStrategy the screenshot strategy to use
+   */
+  @ApiStatus.Internal
+  public void setScreenshotStrategy(final @NotNull ScreenshotStrategyType screenshotStrategy) {
+    this.screenshotStrategy = screenshotStrategy;
   }
 }

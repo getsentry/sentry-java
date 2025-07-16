@@ -7,13 +7,16 @@ import android.graphics.Bitmap
 import android.os.SystemClock
 import android.view.View
 import android.view.ViewTreeObserver
+import io.sentry.ScreenshotStrategyType
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayOptions
 import io.sentry.android.replay.screenshot.CanvasStrategy
+import io.sentry.android.replay.screenshot.PixelCopyStrategy
 import io.sentry.android.replay.screenshot.ScreenshotStrategy
 import io.sentry.android.replay.util.DebugOverlayDrawable
+import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.addOnDrawListenerSafe
 import io.sentry.android.replay.util.removeOnDrawListenerSafe
 import java.io.File
@@ -37,13 +40,18 @@ internal class ScreenshotRecorder(
   private val contentChanged = AtomicBoolean(false)
 
   private val screenshotStrategy: ScreenshotStrategy =
-    CanvasStrategy(recorder, screenshotRecorderCallback, options, config)
-
-  //    PixelCopyStrategy(
-  //    recorder,
-  //    mainLooperHandler,
-  //    screenshotRecorderCallback,
-  //    options, config)
+    when (options.sessionReplay.screenshotStrategy) {
+      ScreenshotStrategyType.CANVAS ->
+        CanvasStrategy(recorder, screenshotRecorderCallback, options, config)
+      ScreenshotStrategyType.PIXEL_COPY ->
+        PixelCopyStrategy(
+          recorder,
+          MainLooperHandler(),
+          screenshotRecorderCallback,
+          options,
+          config,
+        )
+    }
 
   fun capture() {
     if (options.sessionReplay.isDebug) {
