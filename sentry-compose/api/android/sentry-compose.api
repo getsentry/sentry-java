@@ -6,6 +6,13 @@ public final class io/sentry/compose/BuildConfig {
 	public fun <init> ()V
 }
 
+public final class io/sentry/compose/ComposableSingletons$SentryUserFeedbackButtonKt {
+	public static final field INSTANCE Lio/sentry/compose/ComposableSingletons$SentryUserFeedbackButtonKt;
+	public static field lambda-1 Lkotlin/jvm/functions/Function3;
+	public fun <init> ()V
+	public final fun getLambda-1$sentry_compose_release ()Lkotlin/jvm/functions/Function3;
+}
+
 public final class io/sentry/compose/SentryComposeHelperKt {
 	public static final fun boundsInWindow (Landroidx/compose/ui/layout/LayoutCoordinates;Landroidx/compose/ui/layout/LayoutCoordinates;)Landroidx/compose/ui/geometry/Rect;
 }
@@ -24,6 +31,10 @@ public final class io/sentry/compose/SentryModifier {
 public final class io/sentry/compose/SentryNavigationIntegrationKt {
 	public static final fun withSentryObservableEffect (Landroidx/navigation/NavHostController;Lio/sentry/android/navigation/SentryNavigationListener;Landroidx/compose/runtime/Composer;I)Landroidx/navigation/NavHostController;
 	public static final fun withSentryObservableEffect (Landroidx/navigation/NavHostController;ZZLandroidx/compose/runtime/Composer;II)Landroidx/navigation/NavHostController;
+}
+
+public final class io/sentry/compose/SentryUserFeedbackButtonKt {
+	public static final fun SentryUserFeedbackButton (Landroidx/compose/ui/Modifier;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;Landroidx/compose/runtime/Composer;II)V
 }
 
 public final class io/sentry/compose/gestures/ComposeGestureTargetLocator : io/sentry/internal/gestures/GestureTargetLocator {

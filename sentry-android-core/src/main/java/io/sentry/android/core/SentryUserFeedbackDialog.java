@@ -28,13 +28,16 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
   private @Nullable OnDismissListener delegate;
 
   private final @Nullable OptionsConfiguration configuration;
+  private final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator;
 
   SentryUserFeedbackDialog(
       final @NotNull Context context,
       final int themeResId,
-      final @Nullable OptionsConfiguration configuration) {
+      final @Nullable OptionsConfiguration configuration,
+      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
     super(context, themeResId);
     this.configuration = configuration;
+    this.configurator = configurator;
     SentryIntegrationPackageStorage.getInstance().addIntegration("UserFeedbackWidget");
   }
 
@@ -55,6 +58,9 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
         new SentryFeedbackOptions(Sentry.getCurrentScopes().getOptions().getFeedbackOptions());
     if (configuration != null) {
       configuration.configure(getContext(), feedbackOptions);
+    }
+    if (configurator != null) {
+      configurator.configure(feedbackOptions);
     }
     final @NotNull TextView lblTitle = findViewById(R.id.sentry_dialog_user_feedback_title);
     final @NotNull ImageView imgLogo = findViewById(R.id.sentry_dialog_user_feedback_logo);
@@ -226,6 +232,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
   public static class Builder {
 
     @Nullable OptionsConfiguration configuration;
+    @Nullable SentryFeedbackOptions.OptionsConfigurator configurator;
     final @NotNull Context context;
     final int themeResId;
 
@@ -264,7 +271,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
      *     {@code 0} to use the parent {@code context}'s default alert dialog theme
      */
     public Builder(Context context, int themeResId) {
-      this(context, themeResId, null);
+      this(context, themeResId, null, null);
     }
 
     /**
@@ -281,7 +288,25 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
      */
     public Builder(
         final @NotNull Context context, final @Nullable OptionsConfiguration configuration) {
-      this(context, 0, configuration);
+      this(context, 0, configuration, null);
+    }
+
+    /**
+     * Creates a builder for a {@link SentryUserFeedbackDialog} that uses the default alert dialog
+     * theme. The {@code configuration} can be used to configure the feedback options for this
+     * specific dialog.
+     *
+     * <p>The default alert dialog theme is defined by {@link android.R.attr#alertDialogTheme}
+     * within the parent {@code context}'s theme.
+     *
+     * @param context the parent context
+     * @param configurator the configuration for the feedback options, can be {@code null} to use
+     *     the global feedback options.
+     */
+    public Builder(
+        final @NotNull Context context,
+        final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+      this(context, 0, null, configurator);
     }
 
     /**
@@ -311,10 +336,12 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
     public Builder(
         final @NotNull Context context,
         final int themeResId,
-        final @Nullable OptionsConfiguration configuration) {
+        final @Nullable OptionsConfiguration configuration,
+        final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
       this.context = context;
       this.themeResId = themeResId;
       this.configuration = configuration;
+      this.configurator = configurator;
     }
 
     /**
@@ -324,7 +351,7 @@ public final class SentryUserFeedbackDialog extends AlertDialog {
      * @return a new instance of {@link SentryUserFeedbackDialog}
      */
     public SentryUserFeedbackDialog create() {
-      return new SentryUserFeedbackDialog(context, themeResId, configuration);
+      return new SentryUserFeedbackDialog(context, themeResId, configuration, configurator);
     }
   }
 

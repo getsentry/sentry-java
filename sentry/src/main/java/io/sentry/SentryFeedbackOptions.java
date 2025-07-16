@@ -83,12 +83,16 @@ public final class SentryFeedbackOptions {
   private @Nullable Runnable onFormClose;
 
   /** Callback called when feedback is successfully submitted via the prepared form. */
-  private @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitSuccess;
+  private @Nullable SentryFeedbackCallback onSubmitSuccess;
 
   /** Callback called when there is an error submitting feedback via the prepared form. */
   private @Nullable SentryFeedbackCallback onSubmitError;
 
-  public SentryFeedbackOptions() {}
+  private @NotNull IDialogHandler iDialogHandler;
+
+  public SentryFeedbackOptions(@NotNull IDialogHandler iDialogHandler) {
+    this.iDialogHandler = iDialogHandler;
+  }
 
   /** Creates a copy of the passed {@link SentryFeedbackOptions}. */
   public SentryFeedbackOptions(final @NotNull SentryFeedbackOptions other) {
@@ -113,6 +117,7 @@ public final class SentryFeedbackOptions {
     this.onFormClose = other.onFormClose;
     this.onSubmitSuccess = other.onSubmitSuccess;
     this.onSubmitError = other.onSubmitError;
+    this.iDialogHandler = other.iDialogHandler;
   }
 
   /**
@@ -507,6 +512,24 @@ public final class SentryFeedbackOptions {
     this.onSubmitError = onSubmitError;
   }
 
+  /**
+   * Sets the dialog handler to be used to show the feedback form.
+   *
+   * @param iDialogHandler the dialog handler to be used to show the feedback form
+   */
+  public void setDialogHandler(final @NotNull IDialogHandler iDialogHandler) {
+    this.iDialogHandler = iDialogHandler;
+  }
+
+  /**
+   * Gets the dialog handler to be used to show the feedback form.
+   *
+   * @return the dialog handler to be used to show the feedback form
+   */
+  public @NotNull IDialogHandler getDialogHandler() {
+    return iDialogHandler;
+  }
+
   @Override
   public String toString() {
     return "SentryFeedbackOptions{"
@@ -557,5 +580,21 @@ public final class SentryFeedbackOptions {
 
   public interface SentryFeedbackCallback {
     void call(final @NotNull Feedback feedback);
+  }
+
+  @ApiStatus.Internal
+  public interface IDialogHandler {
+    void showDialog(final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator);
+  }
+
+  /** Configuration callback for feedback options. */
+  public interface OptionsConfigurator {
+
+    /**
+     * configure the feedback options
+     *
+     * @param options the feedback options
+     */
+    void configure(final @NotNull SentryFeedbackOptions options);
   }
 }
