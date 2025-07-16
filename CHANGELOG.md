@@ -5,6 +5,7 @@
 ### Fixes
 
 - Allow multiple UncaughtExceptionHandlerIntegrations to be active at the same time ([#4462](https://github.com/getsentry/sentry-java/pull/4462))
+- Cache network capabilities and status to reduce IPC calls ([#4462](https://github.com/getsentry/sentry-java/pull/4462))
 
 ## 8.17.0
 
@@ -3539,7 +3540,7 @@ TBD
 Packages were released on [bintray](https://dl.bintray.com/getsentry/maven/io/sentry/)
 
 > Note: This release marks the unification of the Java and Android Sentry codebases based on the core of the Android SDK (version 2.x).
-Previous releases for the Android SDK (version 2.x) can be found on the now archived: https://github.com/getsentry/sentry-android/
+> Previous releases for the Android SDK (version 2.x) can be found on the now archived: https://github.com/getsentry/sentry-android/
 
 ## 3.0.0-alpha.1
 
