@@ -24,6 +24,7 @@ import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import java.time.Duration
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.BeforeTest
@@ -35,6 +36,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
+import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
@@ -65,7 +67,6 @@ class ReplaySmokeTest {
           .whenever(it)
           .configureScope(any())
       }
-    var count: Int = 0
 
     private class ImmediateHandler :
       Handler(
@@ -74,6 +75,8 @@ class ReplaySmokeTest {
           true
         }
       )
+
+    private val recordingThread = Executors.newSingleThreadScheduledExecutor()
 
     fun getSut(
       context: Context,
@@ -88,9 +91,14 @@ class ReplaySmokeTest {
         mainLooperHandler =
           mock {
             whenever(mock.handler).thenReturn(ImmediateHandler())
-            whenever(mock.post(any())).then {
-              (it.arguments[0] as Runnable).run()
-              count++
+            whenever(mock.post(any())).then { (it.arguments[0] as Runnable).run() }
+            whenever(mock.postDelayed(any(), anyLong())).then {
+              // have to use another thread here otherwise it will block the test thread
+              recordingThread.schedule(
+                it.arguments[0] as Runnable,
+                it.arguments[1] as Long,
+                TimeUnit.MILLISECONDS,
+              )
             }
           },
       )

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Improvements
+
+- Session Replay: Use main thread looper to schedule replay capture ([#4542](https://github.com/getsentry/sentry-java/pull/4542))
+
 ### Fixes
 
 - Allow multiple UncaughtExceptionHandlerIntegrations to be active at the same time ([#4462](https://github.com/getsentry/sentry-java/pull/4462))
