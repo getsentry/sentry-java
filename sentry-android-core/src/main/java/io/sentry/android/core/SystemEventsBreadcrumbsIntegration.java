@@ -339,6 +339,43 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
     private final @NotNull Debouncer batteryChangedDebouncer =
         new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
 
+    // Track previous battery state to avoid duplicate breadcrumbs when values haven't changed
+    private @Nullable BatteryState previousBatteryState;
+
+    static final class BatteryState {
+      private final @Nullable Float level;
+      private final @Nullable Boolean charging;
+
+      BatteryState(final @Nullable Float level, final @Nullable Boolean charging) {
+        this.level = level;
+        this.charging = charging;
+      }
+
+      @Override
+      public boolean equals(final @Nullable Object other) {
+        if (!(other instanceof BatteryState)) return false;
+        BatteryState that = (BatteryState) other;
+        return isSimilarLevel(level, that.level) && Objects.equals(charging, that.charging);
+      }
+
+      @Override
+      public int hashCode() {
+        // Use rounded level for hash consistency
+        Float roundedLevel = level != null ? Math.round(level * 100f) / 100f : null;
+        return Objects.hash(roundedLevel, charging);
+      }
+
+      private boolean isSimilarLevel(final @Nullable Float level1, final @Nullable Float level2) {
+        if (level1 == null && level2 == null) return true;
+        if (level1 == null || level2 == null) return false;
+
+        // Round both levels to 2 decimal places and compare
+        float rounded1 = Math.round(level1 * 100f) / 100f;
+        float rounded2 = Math.round(level2 * 100f) / 100f;
+        return Float.compare(rounded1, rounded2) == 0;
+      }
+    }
+
     SystemEventsBroadcastReceiver(
         final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
       this.scopes = scopes;
@@ -355,14 +392,29 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         return;
       }
 
+      // For battery changes, check if the actual values have changed
+      @Nullable BatteryState batteryState = null;
+      if (isBatteryChanged) {
+        final @Nullable Float currentBatteryLevel = DeviceInfoUtil.getBatteryLevel(intent, options);
+        final @Nullable Boolean currentChargingState = DeviceInfoUtil.isCharging(intent, options);
+        batteryState = new BatteryState(currentBatteryLevel, currentChargingState);
+
+        // Only create breadcrumb if battery state has actually changed
+        if (batteryState.equals(previousBatteryState)) {
+          return;
+        }
+
+        previousBatteryState = batteryState;
+      }
+
+      final BatteryState state = batteryState;
       final long now = System.currentTimeMillis();
       try {
         options
             .getExecutorService()
             .submit(
                 () -> {
-                  final Breadcrumb breadcrumb =
-                      createBreadcrumb(now, intent, action, isBatteryChanged);
+                  final Breadcrumb breadcrumb = createBreadcrumb(now, intent, action, state);
                   final Hint hint = new Hint();
                   hint.set(ANDROID_INTENT, intent);
                   scopes.addBreadcrumb(breadcrumb, hint);
@@ -411,7 +463,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         final long timeMs,
         final @NotNull Intent intent,
         final @Nullable String action,
-        boolean isBatteryChanged) {
+        final @Nullable BatteryState batteryState) {
       final Breadcrumb breadcrumb = new Breadcrumb(timeMs);
       breadcrumb.setType("system");
       breadcrumb.setCategory("device.event");
@@ -420,14 +472,12 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         breadcrumb.setData("action", shortAction);
       }
 
-      if (isBatteryChanged) {
-        final Float batteryLevel = DeviceInfoUtil.getBatteryLevel(intent, options);
-        if (batteryLevel != null) {
-          breadcrumb.setData("level", batteryLevel);
+      if (batteryState != null) {
+        if (batteryState.level != null) {
+          breadcrumb.setData("level", batteryState.level);
         }
-        final Boolean isCharging = DeviceInfoUtil.isCharging(intent, options);
-        if (isCharging != null) {
-          breadcrumb.setData("charging", isCharging);
+        if (batteryState.charging != null) {
+          breadcrumb.setData("charging", batteryState.charging);
         }
       } else {
         final Bundle extras = intent.getExtras();
