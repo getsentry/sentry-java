@@ -5,7 +5,7 @@
 ### Fixes
 
 - Allow multiple UncaughtExceptionHandlerIntegrations to be active at the same time ([#4462](https://github.com/getsentry/sentry-java/pull/4462))
-- Cache network capabilities and status to reduce IPC calls ([#4462](https://github.com/getsentry/sentry-java/pull/4462))
+- Cache network capabilities and status to reduce IPC calls ([#4560](https://github.com/getsentry/sentry-java/pull/4560))
 
 ## 8.17.0
 
