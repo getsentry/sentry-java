@@ -1,0 +1,55 @@
+---
+alwaysApply: true
+description: Cursor Coding Rules
+---
+
+# Coding Rules
+
+## Overview
+
+sentry-java is the Java and Android SDK for Sentry. This repository contains the source code and examples for SDK usage.
+
+## Tech Stack
+
+- **Language**: Java and Kotlin
+- **Build Framework**: Gradle
+
+## Key Commands
+
+```bash
+# Format code and regenerate .api file
+./gradlew spotlessApply apiDump
+
+# Run tests and lint
+./gradlew check
+
+# Run unit tests
+./gradle ':<module>:testDebugUnitTest' --tests="*<file name>*" --info
+```
+
+## Contributing Guidelines
+
+1. Follow existing code style and language
+2. Do not modify the API files (e.g. sentry.api) manually, instead run `./gradlew  apiDump` to regenerate them
+3. Write comprehensive tests
+4. Use Kotlin only for test code and Android modules which already use Kotlin, otherwise use Java
+5. New features should be opt-in by default, extend `SentryOptions` with getters and setters to enable/disable a new feature
+6. Consider backwards compatibility
+7. Before implementing a feature or a fix, create a new branch off the `main` branch, the branch name should have the following pattern: `markushi/[feat|fix]/branch-name`
+
+## Coding rules
+
+1. First think through the problem, read the codebase for relevant files, and propose a plan
+2. Before you begin working, check in with me and I will verify the plan
+3. Then, begin working on the todo items, marking them as complete as you go
+4. Please every step of the way just give me a high level explanation of what changes you made
+5. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity.
+6. Once you're done, format the code and regenerate the .api files using the following command `./gradlew spotlessApply apiDump`
+7. As a last step, do a git commit
+
+
+## Useful Resources
+
+- Main SDK documentation: https://develop.sentry.dev/sdk/overview/
+- Internal contributing guide: https://docs.sentry.io/internal/contributing/
+- Git commit messages conventions: https://develop.sentry.dev/engineering-practices/commit-messages/
