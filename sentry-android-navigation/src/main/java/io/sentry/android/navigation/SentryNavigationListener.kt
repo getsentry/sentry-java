@@ -133,21 +133,9 @@ constructor(
         it.idleTimeout = scopes.options.idleTimeout
 
         // Set deadline timeout based on configured option
-        val androidOptions =
-          if (scopes.options is io.sentry.android.core.SentryAndroidOptions) {
-            scopes.options as io.sentry.android.core.SentryAndroidOptions
-          } else {
-            null
-          }
-        val deadlineTimeoutMillis =
-          androidOptions?.autoTransactionDeadlineTimeoutMillis
-            ?: TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION
-
-        it.deadlineTimeout =
-          when {
-            deadlineTimeoutMillis <= 0 -> null // No deadline when zero or negative value is set
-            else -> deadlineTimeoutMillis // Use configured timeout when positive value is set
-          }
+        val deadlineTimeoutMillis = scopes.options.autoTransactionDeadlineTimeoutMillis
+        // No deadline when zero or negative value is set
+        it.deadlineTimeout = if (deadlineTimeoutMillis <= 0) null else deadlineTimeoutMillis
 
         it.isTrimEnd = true
       }

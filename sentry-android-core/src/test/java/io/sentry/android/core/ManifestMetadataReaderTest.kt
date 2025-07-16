@@ -1107,6 +1107,18 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads autoTransactionDeadlineTimeoutMillis from metadata and keep default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(30000L, fixture.options.autoTransactionDeadlineTimeoutMillis)
+  }
+
+  @Test
   fun `applyMetadata without specifying idleTimeout, stays default`() {
     // Arrange
     val context = fixture.getContext()

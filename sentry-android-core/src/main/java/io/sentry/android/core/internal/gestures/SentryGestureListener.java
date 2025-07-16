@@ -252,13 +252,9 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     // Set deadline timeout based on configured option
     final long deadlineTimeoutMillis = options.getAutoTransactionDeadlineTimeoutMillis();
-    if (deadlineTimeoutMillis <= 0) {
-      // No deadline when zero or negative value is set
-      transactionOptions.setDeadlineTimeout(null);
-    } else {
-      // Use configured timeout when positive value is set
-      transactionOptions.setDeadlineTimeout(deadlineTimeoutMillis);
-    }
+    // No deadline when zero or negative value is set
+    transactionOptions.setDeadlineTimeout(
+        deadlineTimeoutMillis <= 0 ? null : deadlineTimeoutMillis);
 
     transactionOptions.setIdleTimeout(options.getIdleTimeout());
     transactionOptions.setTrimEnd(true);

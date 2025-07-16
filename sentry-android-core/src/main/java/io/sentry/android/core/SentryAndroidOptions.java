@@ -173,16 +173,6 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean enableAutoTraceIdGeneration = true;
 
-  /**
-   * Controls the deadline timeout in milliseconds for automatic transactions. When set to a
-   * positive value, that value is used as the deadline timeout. When set to a value less than or
-   * equal to 0, no deadline is applied and transactions will only finish when explicitly finished
-   * or when the activity lifecycle ends.
-   *
-   * <p>Default is 30000 (30 seconds).
-   */
-  private long autoTransactionDeadlineTimeoutMillis = 30000;
-
   public interface BeforeCaptureCallback {
 
     /**
@@ -618,13 +608,5 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setEnableAutoTraceIdGeneration(final boolean enableAutoTraceIdGeneration) {
     this.enableAutoTraceIdGeneration = enableAutoTraceIdGeneration;
-  }
-
-  public long getAutoTransactionDeadlineTimeoutMillis() {
-    return autoTransactionDeadlineTimeoutMillis;
-  }
-
-  public void setAutoTransactionDeadlineTimeoutMillis(long autoTransactionDeadlineTimeoutMillis) {
-    this.autoTransactionDeadlineTimeoutMillis = autoTransactionDeadlineTimeoutMillis;
   }
 }

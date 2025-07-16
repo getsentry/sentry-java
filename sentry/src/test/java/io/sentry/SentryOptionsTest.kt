@@ -815,4 +815,31 @@ class SentryOptionsTest {
     options.setTag(null, null)
     assertTrue(options.tags.isEmpty())
   }
+
+  @Test
+  fun `autoTransactionDeadlineTimeoutMillis option defaults to 30000`() {
+    val options = SentryOptions.empty()
+    assertEquals(30000L, options.autoTransactionDeadlineTimeoutMillis)
+  }
+
+  @Test
+  fun `autoTransactionDeadlineTimeoutMillis option can be changed`() {
+    val options = SentryOptions.empty()
+    options.autoTransactionDeadlineTimeoutMillis = 60000L
+    assertEquals(60000L, options.autoTransactionDeadlineTimeoutMillis)
+  }
+
+  @Test
+  fun `autoTransactionDeadlineTimeoutMillis option can be set to zero value`() {
+    val options = SentryOptions.empty()
+    options.autoTransactionDeadlineTimeoutMillis = 0L
+    assertEquals(0L, options.autoTransactionDeadlineTimeoutMillis)
+  }
+
+  @Test
+  fun `autoTransactionDeadlineTimeoutMillis option can be set to negative value`() {
+    val options = SentryOptions.empty()
+    options.autoTransactionDeadlineTimeoutMillis = -1L
+    assertEquals(-1L, options.autoTransactionDeadlineTimeoutMillis)
+  }
 }

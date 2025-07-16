@@ -230,12 +230,9 @@ class ActivityLifecycleIntegrationTest {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
     fixture.options.autoTransactionDeadlineTimeoutMillis = 60000L // 60 seconds
+
     sut.register(fixture.scopes, fixture.options)
-
-    setAppStartTime()
-
-    val activity = mock<Activity>()
-    sut.onActivityCreated(activity, fixture.bundle)
+    sut.onActivityCreated(mock(), fixture.bundle)
 
     verify(fixture.scopes)
       .startTransaction(
@@ -251,12 +248,9 @@ class ActivityLifecycleIntegrationTest {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
     fixture.options.autoTransactionDeadlineTimeoutMillis = 0L // No deadline
+
     sut.register(fixture.scopes, fixture.options)
-
-    setAppStartTime()
-
-    val activity = mock<Activity>()
-    sut.onActivityCreated(activity, fixture.bundle)
+    sut.onActivityCreated(mock(), fixture.bundle)
 
     verify(fixture.scopes)
       .startTransaction(
@@ -272,12 +266,9 @@ class ActivityLifecycleIntegrationTest {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
     fixture.options.autoTransactionDeadlineTimeoutMillis = -1L // No deadline
+
     sut.register(fixture.scopes, fixture.options)
-
-    setAppStartTime()
-
-    val activity = mock<Activity>()
-    sut.onActivityCreated(activity, fixture.bundle)
+    sut.onActivityCreated(mock(), fixture.bundle)
 
     verify(fixture.scopes)
       .startTransaction(
@@ -293,12 +284,9 @@ class ActivityLifecycleIntegrationTest {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
     // Don't set autoTransactionDeadlineTimeoutMillis, use default (30000)
+
     sut.register(fixture.scopes, fixture.options)
-
-    setAppStartTime()
-
-    val activity = mock<Activity>()
-    sut.onActivityCreated(activity, fixture.bundle)
+    sut.onActivityCreated(mock(), fixture.bundle)
 
     verify(fixture.scopes)
       .startTransaction(

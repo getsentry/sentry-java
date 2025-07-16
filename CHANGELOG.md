@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add autoTransactionDeadlineTimeoutMillis option ([#4555](https://github.com/getsentry/sentry-java/pull/4555))
+
 ### Fixes
 
 - Allow multiple UncaughtExceptionHandlerIntegrations to be active at the same time ([#4462](https://github.com/getsentry/sentry-java/pull/4462))

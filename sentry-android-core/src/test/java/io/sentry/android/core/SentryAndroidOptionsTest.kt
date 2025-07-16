@@ -181,33 +181,6 @@ class SentryAndroidOptionsTest {
     )
   }
 
-  @Test
-  fun `autoTransactionDeadlineTimeoutMillis option defaults to 30000`() {
-    val sentryOptions = SentryAndroidOptions()
-    assertEquals(30000L, sentryOptions.autoTransactionDeadlineTimeoutMillis)
-  }
-
-  @Test
-  fun `autoTransactionDeadlineTimeoutMillis option can be changed`() {
-    val sentryOptions = SentryAndroidOptions()
-    sentryOptions.autoTransactionDeadlineTimeoutMillis = 60000L
-    assertEquals(60000L, sentryOptions.autoTransactionDeadlineTimeoutMillis)
-  }
-
-  @Test
-  fun `autoTransactionDeadlineTimeoutMillis option can be set to zero value`() {
-    val sentryOptions = SentryAndroidOptions()
-    sentryOptions.autoTransactionDeadlineTimeoutMillis = 0L
-    assertEquals(0L, sentryOptions.autoTransactionDeadlineTimeoutMillis)
-  }
-
-  @Test
-  fun `autoTransactionDeadlineTimeoutMillis option can be set to negative value`() {
-    val sentryOptions = SentryAndroidOptions()
-    sentryOptions.autoTransactionDeadlineTimeoutMillis = -1L
-    assertEquals(-1L, sentryOptions.autoTransactionDeadlineTimeoutMillis)
-  }
-
   private class CustomDebugImagesLoader : IDebugImagesLoader {
     override fun loadDebugImages(): List<DebugImage>? = null
 

@@ -574,6 +574,16 @@ public class SentryOptions {
    */
   private boolean startProfilerOnAppStart = false;
 
+  /**
+   * Controls the deadline timeout in milliseconds for automatic transactions. When set to a
+   * positive value, that value is used as the deadline timeout. When set to a value less than or
+   * equal to 0, no deadline is applied and transactions will only finish when explicitly finished
+   * or when the activity lifecycle ends.
+   *
+   * <p>Default is 30000 (30 seconds).
+   */
+  private long autoTransactionDeadlineTimeoutMillis = 30000;
+
   private @NotNull SentryOptions.Logs logs = new SentryOptions.Logs();
 
   private @NotNull ISocketTagger socketTagger = NoOpSocketTagger.getInstance();
@@ -2018,6 +2028,24 @@ public class SentryOptions {
    */
   public void setStartProfilerOnAppStart(final boolean startProfilerOnAppStart) {
     this.startProfilerOnAppStart = startProfilerOnAppStart;
+  }
+
+  public long getAutoTransactionDeadlineTimeoutMillis() {
+    return autoTransactionDeadlineTimeoutMillis;
+  }
+
+  /**
+   * Controls the deadline timeout in milliseconds for automatic transactions. When set to a
+   * positive value, that value is used as the deadline timeout. When set to a value less than or
+   * equal to 0, no deadline is applied and transactions will only finish when explicitly finished
+   * or when the activity lifecycle ends.
+   *
+   * <p>Default is 30000 (30 seconds).
+   *
+   * @param autoTransactionDeadlineTimeoutMillis the timeout in milliseconds
+   */
+  public void setAutoTransactionDeadlineTimeoutMillis(long autoTransactionDeadlineTimeoutMillis) {
+    this.autoTransactionDeadlineTimeoutMillis = autoTransactionDeadlineTimeoutMillis;
   }
 
   /**
