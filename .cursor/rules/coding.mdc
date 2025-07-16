@@ -32,20 +32,18 @@ sentry-java is the Java and Android SDK for Sentry. This repository contains the
 1. Follow existing code style and language
 2. Do not modify the API files (e.g. sentry.api) manually, instead run `./gradlew  apiDump` to regenerate them
 3. Write comprehensive tests
-4. Use Kotlin only for test code and Android modules which already use Kotlin, otherwise use Java
-5. New features should be opt-in by default, extend `SentryOptions` with getters and setters to enable/disable a new feature
-6. Consider backwards compatibility
-7. Before implementing a feature or a fix, create a new branch off the `main` branch, the branch name should have the following pattern: `markushi/[feat|fix]/branch-name`
+4. New features should always be opt-in by default, extend `SentryOptions` or similar Option classes with getters and setters to enable/disable a new feature
+5. Consider backwards compatibility
 
 ## Coding rules
 
 1. First think through the problem, read the codebase for relevant files, and propose a plan
 2. Before you begin working, check in with me and I will verify the plan
 3. Then, begin working on the todo items, marking them as complete as you go
-4. Please every step of the way just give me a high level explanation of what changes you made
+4. Please do not describe every step of the way and just give me a high level explanation of what changes you made
 5. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity.
 6. Once you're done, format the code and regenerate the .api files using the following command `./gradlew spotlessApply apiDump`
-7. As a last step, do a git commit
+7. As a last step, git stage the relevant files and propose (but not execute) a single git commit command (e.g. `git commit -m "<git commit message>"`)
 
 
 ## Useful Resources
