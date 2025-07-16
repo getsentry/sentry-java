@@ -387,14 +387,14 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
       final @Nullable String action = intent.getAction();
       final boolean isBatteryChanged = ACTION_BATTERY_CHANGED.equals(action);
 
-      // aligning with iOS which only captures battery status changes every minute at maximum
-      if (isBatteryChanged && batteryChangedDebouncer.checkForDebounce()) {
-        return;
-      }
-
-      // For battery changes, check if the actual values have changed
       @Nullable BatteryState batteryState = null;
       if (isBatteryChanged) {
+        if (batteryChangedDebouncer.checkForDebounce()) {
+          // aligning with iOS which only captures battery status changes every minute at maximum
+          return;
+        }
+
+        // For battery changes, check if the actual values have changed
         final @Nullable Float currentBatteryLevel = DeviceInfoUtil.getBatteryLevel(intent, options);
         final @Nullable Boolean currentChargingState = DeviceInfoUtil.isCharging(intent, options);
         batteryState = new BatteryState(currentBatteryLevel, currentChargingState);
