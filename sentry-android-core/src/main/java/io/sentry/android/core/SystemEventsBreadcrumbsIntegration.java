@@ -372,7 +372,7 @@ public final class SystemEventsBreadcrumbsIntegration implements Integration, Cl
         // Round both levels to 2 decimal places and compare
         float rounded1 = Math.round(level1 * 100f) / 100f;
         float rounded2 = Math.round(level2 * 100f) / 100f;
-        return Float.compare(rounded1, rounded2) == 0;
+        return rounded1 == rounded2;
       }
     }
 
