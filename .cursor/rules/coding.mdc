@@ -3,7 +3,7 @@ alwaysApply: true
 description: Cursor Coding Rules
 ---
 
-# Coding Rules
+# Contributing Rules for Agents
 
 ## Overview
 
@@ -17,13 +17,13 @@ sentry-java is the Java and Android SDK for Sentry. This repository contains the
 ## Key Commands
 
 ```bash
-# Format code and regenerate .api file
+# Format code and regenerate .api files
 ./gradlew spotlessApply apiDump
 
-# Run tests and lint
+# Run all tests and linter
 ./gradlew check
 
-# Run unit tests
+# Run unit tests for a specific file
 ./gradle ':<module>:testDebugUnitTest' --tests="*<file name>*" --info
 ```
 
