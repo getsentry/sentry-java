@@ -100,12 +100,12 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
         // The OkHttp client is initialized only upon the first request.
         // Attempt to initialize a client to inspect the interceptors that are registered on it.
         try {
-          val configField: Field = OkHttpConfig::class.java.getDeclaredField("config")
-          configField.isAccessible = true
+          val configField: Field =
+            OkHttpConfig::class.java.getDeclaredField("config").apply { isAccessible = true }
           val configFunction = configField.get(config) as? (OkHttpClient.Builder.() -> Unit)
 
           if (configFunction != null) {
-            val builder = okhttp3.OkHttpClient.Builder()
+            val builder = OkHttpClient.Builder()
             configFunction.invoke(builder)
             val client = builder.build()
             if (client.interceptors.any { it.javaClass.name.contains("SentryOkHttpInterceptor") }) {
