@@ -675,4 +675,9 @@ public final class AndroidConnectionStatusProvider implements IConnectionStatusP
   public Thread getInitThread() {
     return initThread;
   }
+
+  @TestOnly
+  public static void setConnectivityManager(final @Nullable ConnectivityManager cm) {
+    connectivityManager = cm;
+  }
 }
