@@ -11,8 +11,7 @@ import kotlinx.coroutines.runBlocking
 
 fun main() {
   Sentry.init { options ->
-    options.dsn =
-      "https://b9ca97be3ff8f1cef41dffdcb1e5100b@o447951.ingest.us.sentry.io/4508683222843393"
+    options.dsn = "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563"
     options.isDebug = true
     options.isSendDefaultPii = true
     options.tracesSampleRate = 1.0

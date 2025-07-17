@@ -50,7 +50,9 @@ internal object SentryKtorClientUtils {
         cookies = if (scopes.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
         headers = getHeaders(scopes, response.headers)
         statusCode = response.status.value
-        bodySize = response.bodyAsBytes().size.toLong()
+        try {
+          bodySize = response.bodyAsBytes().size.toLong()
+        } catch (_: Throwable) {}
       }
 
     event.request = sentryRequest

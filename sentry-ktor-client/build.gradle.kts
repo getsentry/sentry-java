@@ -21,7 +21,7 @@ kotlin { explicitApi() }
 dependencies {
   api(projects.sentry)
 
-  api(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
   api(projects.sentryKotlinExtensions)
 
   compileOnly(libs.jetbrains.annotations)
