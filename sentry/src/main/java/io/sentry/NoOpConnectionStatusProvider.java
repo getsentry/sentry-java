@@ -1,5 +1,6 @@
 package io.sentry;
 
+import java.io.IOException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,6 +24,11 @@ public final class NoOpConnectionStatusProvider implements IConnectionStatusProv
 
   @Override
   public void removeConnectionStatusObserver(@NotNull IConnectionStatusObserver observer) {
+    // no-op
+  }
+
+  @Override
+  public void close() throws IOException {
     // no-op
   }
 }

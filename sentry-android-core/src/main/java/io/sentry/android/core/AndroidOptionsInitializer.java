@@ -28,6 +28,7 @@ import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
+import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
@@ -157,7 +158,8 @@ final class AndroidOptionsInitializer {
 
     if (options.getConnectionStatusProvider() instanceof NoOpConnectionStatusProvider) {
       options.setConnectionStatusProvider(
-          new AndroidConnectionStatusProvider(context, options.getLogger(), buildInfoProvider));
+          new AndroidConnectionStatusProvider(
+              context, options, buildInfoProvider, AndroidCurrentDateProvider.getInstance()));
     }
 
     if (options.getCacheDirPath() != null) {

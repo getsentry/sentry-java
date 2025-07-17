@@ -1,11 +1,12 @@
 package io.sentry;
 
+import java.io.Closeable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public interface IConnectionStatusProvider {
+public interface IConnectionStatusProvider extends Closeable {
 
   enum ConnectionStatus {
     UNKNOWN,
