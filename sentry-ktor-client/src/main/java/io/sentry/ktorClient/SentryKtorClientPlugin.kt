@@ -1,6 +1,7 @@
 package io.sentry.ktorClient
 
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttpConfig
 import io.ktor.client.plugins.api.*
 import io.ktor.client.plugins.api.ClientPlugin
 import io.ktor.client.request.*
@@ -24,7 +25,9 @@ import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
+import java.lang.reflect.Field
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 
 /** Configuration for the Sentry Ktor client plugin. */
 public class SentryKtorClientPluginConfig {
@@ -62,6 +65,9 @@ public class SentryKtorClientPluginConfig {
     public fun execute(span: ISpan, request: HttpRequest): ISpan?
   }
 
+  /** Whether the plugin is enabled. If disabled, the plugin has no effect. Defaults to true. */
+  public var enabled: Boolean = true
+
   /**
    * Forcefully use the passed in scope instead of relying on the one injected by [SentryContext].
    * Used for testing.
@@ -78,6 +84,52 @@ internal const val TRACE_ORIGIN = "auto.http.ktor-client"
  */
 public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
   createClientPlugin(SENTRY_KTOR_CLIENT_PLUGIN_KEY, ::SentryKtorClientPluginConfig) {
+    /**
+     * Disables the plugin, if necessary.
+     *
+     * Currently, the only case in which we want to disable the plugin is when we detect that the
+     * OkHttp engine is used and SentryOkHttpInterceptor is registered, as otherwise all HTTP
+     * requests would be doubly instrumented.
+     */
+    fun maybeDisable() {
+      if (client.engine.config is OkHttpConfig) {
+        val config = client.engine.config as OkHttpConfig
+
+        // Case 1: OkHttp client initialized by Ktor and configured with a `config` block.
+        //
+        // The OkHttp client is initialized only upon the first request.
+        // Attempt to initialize a client to inspect the interceptors that are registered on it.
+        try {
+          val configField: Field = OkHttpConfig::class.java.getDeclaredField("config")
+          configField.isAccessible = true
+          val configFunction = configField.get(config) as? (OkHttpClient.Builder.() -> Unit)
+
+          if (configFunction != null) {
+            val builder = okhttp3.OkHttpClient.Builder()
+            configFunction.invoke(builder)
+            val client = builder.build()
+            if (client.interceptors.any { it.javaClass.name.contains("SentryOkHttpInterceptor") }) {
+              pluginConfig.enabled = false
+            }
+          }
+        } catch (_: Throwable) {}
+
+        // Case 2: pre-configured OkHttp client passed in.
+        val client = config.preconfigured
+        if (client != null) {
+          if (client.interceptors.any { it.javaClass.name.contains("SentryOkHttpInterceptor") }) {
+            pluginConfig.enabled = false
+          }
+        }
+      }
+    }
+
+    maybeDisable()
+
+    if (!pluginConfig.enabled) {
+      return@createClientPlugin
+    }
+
     // Init
     SentryIntegrationPackageStorage.getInstance()
       .addPackage("maven:io.sentry:sentry-ktor-client", BuildConfig.VERSION_NAME)
@@ -98,6 +150,10 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
     val requestSpanKey = AttributeKey<ISpan>("SentryRequestSpan")
 
     onRequest { request, _ ->
+      if (!this@createClientPlugin.pluginConfig.enabled) {
+        return@onRequest
+      }
+
       request.attributes.put(
         requestStartTimestampKey,
         (if (forceScopes) scopes else Sentry.getCurrentScopes()).options.dateProvider.now(),
@@ -141,6 +197,10 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
     }
 
     client.requestPipeline.intercept(HttpRequestPipeline.Before) {
+      if (!this@createClientPlugin.pluginConfig.enabled) {
+        proceed()
+      }
+
       try {
         proceed()
       } catch (t: Throwable) {
@@ -154,6 +214,10 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
     }
 
     onResponse { response ->
+      if (!this@createClientPlugin.pluginConfig.enabled) {
+        return@onResponse
+      }
+
       val request = response.request
       val startTimestamp = response.call.attributes.getOrNull(requestStartTimestampKey)
       val endTimestamp =
@@ -186,18 +250,24 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
       }
     }
 
-    on(SentryKtorClientPluginContextHook(scopes)) { block -> block() }
+    on(SentryKtorClientPluginContextHook(scopes, pluginConfig.enabled)) { block -> block() }
   }
 
 /**
  * Context hook to manage scopes during request handling. Forks the current scope and uses
  * [SentryContext] to ensure that the whole pipeline runs within the correct scopes.
  */
-public open class SentryKtorClientPluginContextHook(protected val scopes: IScopes) :
-  ClientHook<suspend (suspend () -> Unit) -> Unit> {
+public open class SentryKtorClientPluginContextHook(
+  protected val scopes: IScopes,
+  protected val enabled: Boolean,
+) : ClientHook<suspend (suspend () -> Unit) -> Unit> {
   private val phase = PipelinePhase("SentryKtorClientPluginContext")
 
   override fun install(client: HttpClient, handler: suspend (suspend () -> Unit) -> Unit) {
+    if (!enabled) {
+      return
+    }
+
     client.requestPipeline.insertPhaseBefore(HttpRequestPipeline.Before, phase)
     client.requestPipeline.intercept(phase) {
       val scopes =

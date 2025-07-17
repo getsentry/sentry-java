@@ -3,6 +3,8 @@ package io.sentry.ktorClient
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.java.Java
+import io.ktor.client.engine.okhttp.OkHttpConfig
+import io.ktor.client.engine.okhttp.OkHttpEngine
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -26,13 +28,16 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.mockServerRequestTimeoutMillis
+import io.sentry.okhttp.SentryOkHttpInterceptor
 import java.util.concurrent.TimeUnit
+import kotlin.Unit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
+import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -424,5 +429,28 @@ class SentryKtorClientPluginTest {
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=name"))
     assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
+  }
+
+  @Test
+  fun `is disabled when using OkHttp engine with preconfigured client using Sentry interceptor`():
+    Unit = runBlocking {
+    val okHttpClient = OkHttpClient.Builder().addInterceptor(SentryOkHttpInterceptor()).build()
+    val engine = OkHttpEngine(OkHttpConfig().apply { preconfigured = okHttpClient })
+    val sut = fixture.getSut(httpClientEngine = engine)
+
+    sut.get(fixture.server.url("/hello").toString())
+
+    assertEquals(0, fixture.sentryTracer.children.size)
+  }
+
+  @Test
+  fun `is disabled when using OkHttp engine initialized with Sentry interceptor in config block`():
+    Unit = runBlocking {
+    val engine = OkHttpEngine(OkHttpConfig().apply { addInterceptor(SentryOkHttpInterceptor()) })
+    val sut = fixture.getSut(httpClientEngine = engine)
+
+    sut.get(fixture.server.url("/hello").toString())
+
+    assertEquals(0, fixture.sentryTracer.children.size)
   }
 }
