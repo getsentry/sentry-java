@@ -1,7 +1,6 @@
 package io.sentry.ktorClient
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttpConfig
 import io.ktor.client.plugins.api.*
 import io.ktor.client.plugins.api.ClientPlugin
 import io.ktor.client.request.*
@@ -79,17 +78,6 @@ internal const val TRACE_ORIGIN = "auto.http.ktor-client"
  */
 public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
   createClientPlugin(SENTRY_KTOR_CLIENT_PLUGIN_KEY, ::SentryKtorClientPluginConfig) {
-    // If the engine is OkHttp and the OkHttp client is configured to use the SentryOkHttpInterceptor, any functionality of this plugin is disabled
-    // Without this check, all HTTP requests would be doubly instrumented
-    if (client.engine.config is OkHttpConfig) {
-      val config = client.engine.config as OkHttpConfig
-      var interceptors = config.preconfigured?.interceptors ?: emptyList()
-      config.config { interceptors += this@config.interceptors() }
-      if (interceptors.any { it.toString().contains("SentryOkHttpInterceptor") }) {
-        return@createClientPlugin
-      }
-    }
-
     // Init
     SentryIntegrationPackageStorage.getInstance()
       .addPackage("maven:io.sentry:sentry-ktor-client", BuildConfig.VERSION_NAME)
@@ -112,7 +100,7 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
     onRequest { request, _ ->
       request.attributes.put(
         requestStartTimestampKey,
-        Sentry.getCurrentScopes().options.dateProvider.now(),
+        (if (forceScopes) scopes else Sentry.getCurrentScopes()).options.dateProvider.now(),
       )
 
       val parentSpan: ISpan? =
@@ -168,7 +156,8 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
     onResponse { response ->
       val request = response.request
       val startTimestamp = response.call.attributes.getOrNull(requestStartTimestampKey)
-      val endTimestamp = Sentry.getCurrentScopes().options.dateProvider.now()
+      val endTimestamp =
+        (if (forceScopes) scopes else Sentry.getCurrentScopes()).options.dateProvider.now()
 
       if (
         captureFailedRequests &&
