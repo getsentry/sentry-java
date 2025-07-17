@@ -59,7 +59,7 @@ class SentryGestureListenerScrollTest {
     val directions = setOf("up", "down", "left", "right")
 
     internal inline fun <reified T : View> getSut(
-      resourceName: String = "test_scroll_view",
+      resourceName: String? = "test_scroll_view",
       touchWithinBounds: Boolean = true,
       direction: String = "",
     ): SentryGestureListener {
@@ -234,45 +234,17 @@ class SentryGestureListenerScrollTest {
 
   @Test
   fun `logs error message only once per gesture when no scroll target is found`() {
-    val mockLogger = mock<ILogger>()
-    fixture.options.setLogger(mockLogger)
-
-    // Create a setup where no scrollable view is found
-    // Use regular View which doesn't implement ScrollingView/AbsListView/ScrollView
-    fixture.target =
-      mockView<View>(
-        event = fixture.firstEvent,
-        touchWithinBounds = true,
-        context = fixture.context,
-      )
-    fixture.window.mockDecorView<ViewGroup>(event = fixture.firstEvent) {
-      whenever(it.childCount).thenReturn(1)
-      whenever(it.getChildAt(0)).thenReturn(fixture.target)
-    }
-
-    fixture.resources.mockForTarget(fixture.target, "test_view")
-    whenever(fixture.context.resources).thenReturn(fixture.resources)
-    whenever(fixture.target.context).thenReturn(fixture.context)
-    whenever(fixture.activity.window).thenReturn(fixture.window)
-    doAnswer { (it.arguments[0] as ScopeCallback).run(fixture.scope) }
-      .whenever(fixture.scopes)
-      .configureScope(any())
-    doAnswer {
-        (it.arguments[0] as Scope.IWithPropagationContext).accept(fixture.propagationContext)
-        fixture.propagationContext
-      }
-      .whenever(fixture.scope)
-      .withPropagationContext(any())
-
-    val sut = SentryGestureListener(fixture.activity, fixture.scopes, fixture.options)
+    val logger = mock<ILogger>()
+    fixture.options.setLogger(logger)
+    fixture.options.isDebug = true
+    val sut = fixture.getSut<ScrollableListView>(resourceName = null)
 
     sut.onDown(fixture.firstEvent)
-    // Multiple onScroll calls during the same gesture - should only log once
-    fixture.eventsInBetween.forEach { sut.onScroll(fixture.firstEvent, it, 10f, 0f) }
+    fixture.eventsInBetween.forEach { sut.onScroll(fixture.firstEvent, it, 10.0f, 0f) }
     sut.onUp(fixture.endEvent)
 
     // Verify that the error message is logged only once during the entire gesture
-    verify(mockLogger, times(1))
+    verify(logger, times(1))
       .log(SentryLevel.DEBUG, "Unable to find scroll target. No breadcrumb captured.")
   }
 
