@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.SentryFeedbackOptions.IDialogHandler
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.mockito.kotlin.mock
@@ -7,7 +8,7 @@ import org.mockito.kotlin.mock
 class SentryFeedbackOptionsTest {
   @Test
   fun `feedback options is initialized with default values`() {
-    val options = SentryFeedbackOptions()
+    val options = SentryFeedbackOptions(mock<IDialogHandler>())
     assertEquals(false, options.isNameRequired)
     assertEquals(true, options.isShowName)
     assertEquals(false, options.isEmailRequired)
@@ -34,7 +35,7 @@ class SentryFeedbackOptionsTest {
   @Test
   fun `feedback options copy constructor`() {
     val options =
-      SentryFeedbackOptions().apply {
+      SentryFeedbackOptions(mock<IDialogHandler>()).apply {
         isNameRequired = true
         isShowName = false
         isEmailRequired = true
@@ -79,5 +80,6 @@ class SentryFeedbackOptionsTest {
     assertEquals(options.onFormClose, optionsCopy.onFormClose)
     assertEquals(options.onSubmitSuccess, optionsCopy.onSubmitSuccess)
     assertEquals(options.onSubmitError, optionsCopy.onSubmitError)
+    assertEquals(options.dialogHandler, optionsCopy.dialogHandler)
   }
 }

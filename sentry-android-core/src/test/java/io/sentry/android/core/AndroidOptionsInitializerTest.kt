@@ -17,6 +17,7 @@ import io.sentry.MainEventProcessor
 import io.sentry.NoOpContinuousProfiler
 import io.sentry.NoOpTransactionProfiler
 import io.sentry.SentryOptions
+import io.sentry.android.core.SentryAndroidOptions.AndroidUserFeedbackIDialogHandler
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator
@@ -834,6 +835,12 @@ class AndroidOptionsInitializerTest {
 
     val anrv1Integration = fixture.sentryOptions.integrations.firstOrNull { it is AnrIntegration }
     assertNull(anrv1Integration)
+  }
+
+  @Test
+  fun `AndroidUserFeedbackIDialogHandler is set as feedback dialog handler`() {
+    fixture.initSut()
+    assertIs<AndroidUserFeedbackIDialogHandler>(fixture.sentryOptions.feedbackOptions.dialogHandler)
   }
 
   @Test

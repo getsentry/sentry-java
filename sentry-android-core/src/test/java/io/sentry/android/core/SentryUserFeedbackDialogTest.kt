@@ -9,6 +9,7 @@ import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.ReplayController
 import io.sentry.Sentry
+import io.sentry.SentryFeedbackOptions
 import io.sentry.SentryLevel
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -52,8 +53,10 @@ class SentryUserFeedbackDialogTest {
     }
 
     fun getSut(
-      configuration: SentryUserFeedbackDialog.OptionsConfiguration? = null
-    ): SentryUserFeedbackDialog = SentryUserFeedbackDialog(application, 0, configuration)
+      configuration: SentryUserFeedbackDialog.OptionsConfiguration? = null,
+      configurator: SentryFeedbackOptions.OptionsConfigurator? = null,
+    ): SentryUserFeedbackDialog =
+      SentryUserFeedbackDialog(application, 0, configuration, configurator)
   }
 
   private val fixture = Fixture()
@@ -98,7 +101,23 @@ class SentryUserFeedbackDialogTest {
   @Test
   fun `when configuration is passed, it is applied to the current dialog only`() {
     fixture.options.isEnabled = true
-    val sut = fixture.getSut { context, options -> options.formTitle = "custom title" }
+    val sut =
+      fixture.getSut(configuration = { context, options -> options.formTitle = "custom title" })
+    assertNotEquals("custom title", fixture.options.feedbackOptions.formTitle)
+    sut.show()
+    // After showing the dialog, the title should be set
+    assertEquals(
+      "custom title",
+      sut.findViewById<TextView>(R.id.sentry_dialog_user_feedback_title).text,
+    )
+    // And the original options should not be modified
+    assertNotEquals("custom title", fixture.options.feedbackOptions.formTitle)
+  }
+
+  @Test
+  fun `when configurator is passed, it is applied to the current dialog only`() {
+    fixture.options.isEnabled = true
+    val sut = fixture.getSut(configurator = { options -> options.formTitle = "custom title" })
     assertNotEquals("custom title", fixture.options.feedbackOptions.formTitle)
     sut.show()
     // After showing the dialog, the title should be set

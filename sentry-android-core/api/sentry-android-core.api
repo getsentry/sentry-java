@@ -402,7 +402,8 @@ public final class io/sentry/android/core/SentryUserFeedbackDialog : android/app
 public class io/sentry/android/core/SentryUserFeedbackDialog$Builder {
 	public fun <init> (Landroid/content/Context;)V
 	public fun <init> (Landroid/content/Context;I)V
-	public fun <init> (Landroid/content/Context;ILio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
+	public fun <init> (Landroid/content/Context;ILio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+	public fun <init> (Landroid/content/Context;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryUserFeedbackDialog$OptionsConfiguration;)V
 	public fun create ()Lio/sentry/android/core/SentryUserFeedbackDialog;
 }

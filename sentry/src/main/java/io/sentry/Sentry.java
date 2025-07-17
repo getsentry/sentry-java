@@ -1289,4 +1289,14 @@ public final class Sentry {
   public static IReplayApi replay() {
     return getCurrentScopes().getScope().getOptions().getReplayController();
   }
+
+  public static void showUserFeedbackDialog() {
+    showUserFeedbackDialog(null);
+  }
+
+  public static void showUserFeedbackDialog(
+      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
+    final @NotNull SentryOptions options = getCurrentScopes().getOptions();
+    options.getFeedbackOptions().getDialogHandler().showDialog(configurator);
+  }
 }
