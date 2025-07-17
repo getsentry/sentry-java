@@ -3265,7 +3265,6 @@ public class io/sentry/SentryOptions {
 	public fun addScopeObserver (Lio/sentry/IScopeObserver;)V
 	public static fun empty ()Lio/sentry/SentryOptions;
 	public fun findPersistingScopeObserver ()Lio/sentry/cache/PersistingScopeObserver;
-	public fun getAutoTransactionDeadlineTimeoutMillis ()J
 	public fun getBackpressureMonitor ()Lio/sentry/backpressure/IBackpressureMonitor;
 	public fun getBeforeBreadcrumb ()Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;
 	public fun getBeforeEnvelopeCallback ()Lio/sentry/SentryOptions$BeforeEnvelopeCallback;
@@ -3283,6 +3282,7 @@ public class io/sentry/SentryOptions {
 	public fun getContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getCron ()Lio/sentry/SentryOptions$Cron;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
+	public fun getDeadlineTimeout ()J
 	public fun getDebugMetaLoader ()Lio/sentry/internal/debugmeta/IDebugMetaLoader;
 	public fun getDefaultScopeType ()Lio/sentry/ScopeType;
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
@@ -3398,7 +3398,6 @@ public class io/sentry/SentryOptions {
 	public fun setAttachServerName (Z)V
 	public fun setAttachStacktrace (Z)V
 	public fun setAttachThreads (Z)V
-	public fun setAutoTransactionDeadlineTimeoutMillis (J)V
 	public fun setBackpressureMonitor (Lio/sentry/backpressure/IBackpressureMonitor;)V
 	public fun setBeforeBreadcrumb (Lio/sentry/SentryOptions$BeforeBreadcrumbCallback;)V
 	public fun setBeforeEnvelopeCallback (Lio/sentry/SentryOptions$BeforeEnvelopeCallback;)V
@@ -3414,6 +3413,7 @@ public class io/sentry/SentryOptions {
 	public fun setContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
+	public fun setDeadlineTimeout (J)V
 	public fun setDebug (Z)V
 	public fun setDebugMetaLoader (Lio/sentry/internal/debugmeta/IDebugMetaLoader;)V
 	public fun setDefaultScopeType (Lio/sentry/ScopeType;)V

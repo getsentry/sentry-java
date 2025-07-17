@@ -402,7 +402,7 @@ class SentryNavigationListenerTest {
   @Test
   fun `Navigation listener uses custom deadline timeout when set to positive value`() {
     val sut = fixture.getSut()
-    fixture.options.autoTransactionDeadlineTimeoutMillis = 60000L
+    fixture.options.deadlineTimeout = 60000L
 
     sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
@@ -416,7 +416,7 @@ class SentryNavigationListenerTest {
   @Test
   fun `Navigation listener uses no deadline timeout when set to zero`() {
     val sut = fixture.getSut()
-    fixture.options.autoTransactionDeadlineTimeoutMillis = 0L
+    fixture.options.deadlineTimeout = 0L
 
     sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 
@@ -430,7 +430,7 @@ class SentryNavigationListenerTest {
   @Test
   fun `Navigation listener uses no deadline timeout when set to negative value`() {
     val sut = fixture.getSut()
-    fixture.options.autoTransactionDeadlineTimeoutMillis = -1L
+    fixture.options.deadlineTimeout = -1L
 
     sut.onDestinationChanged(fixture.navController, fixture.destination, null)
 

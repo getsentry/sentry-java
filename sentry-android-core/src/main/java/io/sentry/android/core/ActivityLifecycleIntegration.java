@@ -191,7 +191,7 @@ public final class ActivityLifecycleIntegration
         final TransactionOptions transactionOptions = new TransactionOptions();
 
         // Set deadline timeout based on configured option
-        final long deadlineTimeoutMillis = options.getAutoTransactionDeadlineTimeoutMillis();
+        final long deadlineTimeoutMillis = options.getDeadlineTimeout();
         // No deadline when zero or negative value is set
         transactionOptions.setDeadlineTimeout(
             deadlineTimeoutMillis <= 0 ? null : deadlineTimeoutMillis);

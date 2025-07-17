@@ -582,7 +582,7 @@ public class SentryOptions {
    *
    * <p>Default is 30000 (30 seconds).
    */
-  private long autoTransactionDeadlineTimeoutMillis = 30000;
+  private long deadlineTimeout = TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION;
 
   private @NotNull SentryOptions.Logs logs = new SentryOptions.Logs();
 
@@ -2030,8 +2030,8 @@ public class SentryOptions {
     this.startProfilerOnAppStart = startProfilerOnAppStart;
   }
 
-  public long getAutoTransactionDeadlineTimeoutMillis() {
-    return autoTransactionDeadlineTimeoutMillis;
+  public long getDeadlineTimeout() {
+    return deadlineTimeout;
   }
 
   /**
@@ -2042,10 +2042,10 @@ public class SentryOptions {
    *
    * <p>Default is 30000 (30 seconds).
    *
-   * @param autoTransactionDeadlineTimeoutMillis the timeout in milliseconds
+   * @param deadlineTimeout the timeout in milliseconds
    */
-  public void setAutoTransactionDeadlineTimeoutMillis(long autoTransactionDeadlineTimeoutMillis) {
-    this.autoTransactionDeadlineTimeoutMillis = autoTransactionDeadlineTimeoutMillis;
+  public void setDeadlineTimeout(long deadlineTimeout) {
+    this.deadlineTimeout = deadlineTimeout;
   }
 
   /**

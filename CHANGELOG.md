@@ -4,7 +4,7 @@
 
 ### Features
 
-- Add autoTransactionDeadlineTimeoutMillis option ([#4555](https://github.com/getsentry/sentry-java/pull/4555))
+- Add deadlineTimeout option ([#4555](https://github.com/getsentry/sentry-java/pull/4555))
 
 ### Fixes
 

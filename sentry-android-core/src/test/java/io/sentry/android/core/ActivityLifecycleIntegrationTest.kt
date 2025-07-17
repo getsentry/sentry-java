@@ -229,7 +229,7 @@ class ActivityLifecycleIntegrationTest {
   fun `Activity transaction uses custom deadline timeout when autoTransactionDeadlineTimeoutMillis is set to positive value`() {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
-    fixture.options.autoTransactionDeadlineTimeoutMillis = 60000L // 60 seconds
+    fixture.options.deadlineTimeout = 60000L // 60 seconds
 
     sut.register(fixture.scopes, fixture.options)
     sut.onActivityCreated(mock(), fixture.bundle)
@@ -247,7 +247,7 @@ class ActivityLifecycleIntegrationTest {
   fun `Activity transaction uses no deadline timeout when autoTransactionDeadlineTimeoutMillis is set to zero`() {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
-    fixture.options.autoTransactionDeadlineTimeoutMillis = 0L // No deadline
+    fixture.options.deadlineTimeout = 0L // No deadline
 
     sut.register(fixture.scopes, fixture.options)
     sut.onActivityCreated(mock(), fixture.bundle)
@@ -265,7 +265,7 @@ class ActivityLifecycleIntegrationTest {
   fun `Activity transaction uses no deadline timeout when autoTransactionDeadlineTimeoutMillis is set to negative value`() {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
-    fixture.options.autoTransactionDeadlineTimeoutMillis = -1L // No deadline
+    fixture.options.deadlineTimeout = -1L // No deadline
 
     sut.register(fixture.scopes, fixture.options)
     sut.onActivityCreated(mock(), fixture.bundle)
@@ -283,7 +283,6 @@ class ActivityLifecycleIntegrationTest {
   fun `Activity transaction uses default deadline timeout when autoTransactionDeadlineTimeoutMillis is default`() {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
-    // Don't set autoTransactionDeadlineTimeoutMillis, use default (30000)
 
     sut.register(fixture.scopes, fixture.options)
     sut.onActivityCreated(mock(), fixture.bundle)
@@ -292,7 +291,10 @@ class ActivityLifecycleIntegrationTest {
       .startTransaction(
         any<TransactionContext>(),
         check<TransactionOptions> { transactionOptions ->
-          assertEquals(30000L, transactionOptions.deadlineTimeout)
+          assertEquals(
+            TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION,
+            transactionOptions.deadlineTimeout,
+          )
         },
       )
   }

@@ -133,7 +133,7 @@ constructor(
         it.idleTimeout = scopes.options.idleTimeout
 
         // Set deadline timeout based on configured option
-        val deadlineTimeoutMillis = scopes.options.autoTransactionDeadlineTimeoutMillis
+        val deadlineTimeoutMillis = scopes.options.deadlineTimeout
         // No deadline when zero or negative value is set
         it.deadlineTimeout = if (deadlineTimeoutMillis <= 0) null else deadlineTimeoutMillis
 
