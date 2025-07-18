@@ -14,7 +14,7 @@ public final class io/sentry/android/timber/SentryTimberIntegration : io/sentry/
 	public fun close ()V
 	public final fun getMinBreadcrumbLevel ()Lio/sentry/SentryLevel;
 	public final fun getMinEventLevel ()Lio/sentry/SentryLevel;
-	public final fun getMinLogsLevel ()Lio/sentry/SentryLogLevel;
+	public final fun getMinLogLevel ()Lio/sentry/SentryLogLevel;
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
