@@ -12,6 +12,12 @@
 - Prevent repeated scroll target determination during a single scroll gesture ([#4557](https://github.com/getsentry/sentry-java/pull/4557))
   - This should reduce the number of ANRs seen in `SentryGestureListener`
 
+### Dependencies
+
+- Bump Native SDK from v0.8.4 to v0.9.1 ([#4520](https://github.com/getsentry/sentry-java/pull/4520))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#091)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.8.4...0.9.1)
+
 ## 8.17.0
 
 ### Features
