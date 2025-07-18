@@ -40,34 +40,19 @@ abstract class DirectoryProcessor {
     try {
       logger.log(SentryLevel.DEBUG, "Processing dir. %s", directory.getAbsolutePath());
 
-      if (!directory.exists()) {
-        logger.log(
-            SentryLevel.WARNING,
-            "Directory '%s' doesn't exist. No cached events to send.",
-            directory.getAbsolutePath());
-        return;
-      }
-      if (!directory.isDirectory()) {
-        logger.log(
-            SentryLevel.ERROR, "Cache dir %s is not a directory.", directory.getAbsolutePath());
-        return;
-      }
-
-      final File[] listFiles = directory.listFiles();
-      if (listFiles == null) {
+      final File[] filteredListFiles = directory.listFiles((d, name) -> isRelevantFileName(name));
+      if (filteredListFiles == null) {
         logger.log(SentryLevel.ERROR, "Cache dir %s is null.", directory.getAbsolutePath());
         return;
       }
 
-      final File[] filteredListFiles = directory.listFiles((d, name) -> isRelevantFileName(name));
-
       logger.log(
           SentryLevel.DEBUG,
           "Processing %d items from cache dir %s",
-          filteredListFiles != null ? filteredListFiles.length : 0,
+          filteredListFiles.length,
           directory.getAbsolutePath());
 
-      for (File file : listFiles) {
+      for (File file : filteredListFiles) {
         // it ignores .sentry-native database folder and new ones that might come up
         if (!file.isFile()) {
           logger.log(SentryLevel.DEBUG, "File %s is not a File.", file.getAbsolutePath());
