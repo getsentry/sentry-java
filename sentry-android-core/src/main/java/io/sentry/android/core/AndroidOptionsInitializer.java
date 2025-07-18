@@ -382,8 +382,7 @@ final class AndroidOptionsInitializer {
     }
     options.addIntegration(new AppComponentsBreadcrumbsIntegration(context));
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
-    options.addIntegration(
-        new NetworkBreadcrumbsIntegration(context, buildInfoProvider, options.getLogger()));
+    options.addIntegration(new NetworkBreadcrumbsIntegration(context, buildInfoProvider));
     if (isReplayAvailable) {
       final ReplayIntegration replay =
           new ReplayIntegration(context, CurrentDateProvider.getInstance());

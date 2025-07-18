@@ -1,4 +1,4 @@
-package io.sentry.android.core
+package io.sentry.android.core.internal.util
 
 import android.Manifest
 import android.content.Context
@@ -18,7 +18,7 @@ import android.os.Build
 import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
 import io.sentry.SentryOptions
-import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider
+import io.sentry.android.core.BuildInfoProvider
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.ICurrentDateProvider
 import kotlin.test.AfterTest
@@ -37,6 +37,7 @@ import org.mockito.kotlin.mockingDetails
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class AndroidConnectionStatusProviderTest {
@@ -68,7 +69,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(connectivityManager.activeNetworkInfo).thenReturn(networkInfo)
 
     buildInfo = mock()
-    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M)
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
 
     network = mock()
     whenever(connectivityManager.activeNetwork).thenReturn(network)
@@ -174,12 +175,6 @@ class AndroidConnectionStatusProviderTest {
   }
 
   @Test
-  fun `When ConnectivityManager is not available, return null for getConnectionType`() {
-    whenever(contextMock.getSystemService(any())).thenReturn(null)
-    assertNull(connectionStatusProvider.connectionType)
-  }
-
-  @Test
   fun `When there's no permission, return null for getConnectionType`() {
     whenever(contextMock.checkPermission(any(), any(), any())).thenReturn(PERMISSION_DENIED)
 
@@ -225,23 +220,6 @@ class AndroidConnectionStatusProviderTest {
     whenever(networkCapabilities.hasTransport(eq(TRANSPORT_CELLULAR))).thenReturn(true)
 
     assertEquals("cellular", connectionStatusProvider.connectionType)
-  }
-
-  @Test
-  fun `registerNetworkCallback calls connectivityManager registerDefaultNetworkCallback`() {
-    val buildInfo = mock<BuildInfoProvider>()
-    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
-    whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
-    val registered =
-      AndroidConnectionStatusProvider.registerNetworkCallback(
-        contextMock,
-        logger,
-        buildInfo,
-        mock(),
-      )
-
-    assertTrue(registered)
-    verify(connectivityManager).registerDefaultNetworkCallback(any())
   }
 
   @Test
@@ -630,5 +608,28 @@ class AndroidConnectionStatusProviderTest {
     // Verify observer was notified of the changes (both calls should notify since capabilities
     // changed significantly)
     verify(observer, times(2)).onConnectionStatusChanged(any())
+  }
+
+  @Test
+  fun `childCallbacks receive network events dispatched by provider`() {
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
+
+    val mainCallback = connectionStatusProvider.networkCallback
+    assertNotNull(mainCallback)
+
+    // Register a mock child callback
+    val childCallback = mock<NetworkCallback>()
+    AndroidConnectionStatusProvider.getChildCallbacks().add(childCallback)
+
+    // Simulate event on available
+    mainCallback.onAvailable(network)
+
+    // Assert child callback received the event
+    verify(childCallback).onAvailable(network)
+
+    // Remove it and ensure it no longer receives events
+    AndroidConnectionStatusProvider.getChildCallbacks().remove(childCallback)
+    mainCallback.onAvailable(network)
+    verifyNoMoreInteractions(childCallback)
   }
 }
