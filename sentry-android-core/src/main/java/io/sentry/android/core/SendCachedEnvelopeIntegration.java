@@ -75,7 +75,9 @@ final class SendCachedEnvelopeIntegration
   @Override
   public void onConnectionStatusChanged(
       final @NotNull IConnectionStatusProvider.ConnectionStatus status) {
-    if (scopes != null && options != null) {
+    if (scopes != null
+        && options != null
+        && status != IConnectionStatusProvider.ConnectionStatus.DISCONNECTED) {
       sendCachedEnvelopes(scopes, options);
     }
   }

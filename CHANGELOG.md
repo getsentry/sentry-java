@@ -7,6 +7,7 @@
 - Allow multiple UncaughtExceptionHandlerIntegrations to be active at the same time ([#4462](https://github.com/getsentry/sentry-java/pull/4462))
 - Cache network capabilities and status to reduce IPC calls ([#4560](https://github.com/getsentry/sentry-java/pull/4560))
 - Deduplicate battery breadcrumbs ([#4561](https://github.com/getsentry/sentry-java/pull/4561))
+- Have single `NetworkCallback` registered at a time to reduce IPC calls ([#4562](https://github.com/getsentry/sentry-java/pull/4562))
 
 ## 8.17.0
 

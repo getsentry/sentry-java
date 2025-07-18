@@ -54,7 +54,15 @@ internal interface CaptureStrategy {
   fun convert(): CaptureStrategy
 
   companion object {
-    private const val BREADCRUMB_START_OFFSET = 100L
+    private fun Breadcrumb?.isNetworkAvailable(): Boolean =
+      this != null &&
+        category == "network.event" &&
+        data.getOrElse("action", { null }) == "NETWORK_AVAILABLE"
+
+    private fun Breadcrumb.isNetworkConnectivity(): Boolean =
+      category == "network.event" && data.containsKey("network_type")
+
+    private const val NETWORK_BREADCRUMB_START_OFFSET = 5000L
 
     // 5 minutes, otherwise relay will just drop it. Can prevent the case where the device
     // time is wrong and the segment is too long.
@@ -168,12 +176,18 @@ internal interface CaptureStrategy {
         }
 
       val urls = LinkedList<String>()
+      var previousCrumb: Breadcrumb? = null
       breadcrumbs.forEach { breadcrumb ->
-        // we add some fixed breadcrumb offset to make sure we don't miss any
-        // breadcrumbs that might be relevant for the current segment, but just happened
-        // earlier than the current segment (e.g. network connectivity changed)
+        // we special-case network-reconnected breadcrumb, because there's usually some delay after
+        // we receive onConnected callback and we resume ongoing replay recording. We still want
+        // this breadcrumb to be sent with the current segment, hence we give it more room to make
+        // it into the replay
+        val isAfterNetworkReconnected =
+          previousCrumb?.isNetworkAvailable() == true &&
+            breadcrumb.isNetworkConnectivity() &&
+            breadcrumb.timestamp.time + NETWORK_BREADCRUMB_START_OFFSET >= segmentTimestamp.time
         if (
-          (breadcrumb.timestamp.time + BREADCRUMB_START_OFFSET) >= segmentTimestamp.time &&
+          (breadcrumb.timestamp.time >= segmentTimestamp.time || isAfterNetworkReconnected) &&
             breadcrumb.timestamp.time < endTimestamp.time
         ) {
           val rrwebEvent = options.replayController.breadcrumbConverter.convert(breadcrumb)
@@ -190,6 +204,7 @@ internal interface CaptureStrategy {
             }
           }
         }
+        previousCrumb = breadcrumb
       }
 
       if (screenAtStart != null && urls.firstOrNull() != screenAtStart) {
