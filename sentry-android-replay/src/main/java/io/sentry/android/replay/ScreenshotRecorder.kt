@@ -94,7 +94,7 @@ internal class ScreenshotRecorder(
       contentChanged.set(false)
       val start = SystemClock.uptimeMillis()
       screenshotStrategy.capture(root)
-      if (options.sessionReplay.isDebug || true) {
+      if (options.sessionReplay.isDebug) {
         val duration = SystemClock.uptimeMillis() - start
         options.logger.log(DEBUG, "screenshotStrategy.capture took %d ms", duration)
       }

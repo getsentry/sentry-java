@@ -79,10 +79,13 @@ internal class CanvasStrategy(
           if (hwImage != null) {
             val hwScreenshot = toBitmap(hwImage)
             screenshot = hwScreenshot
+            lastCaptureSuccessful.set(true)
             screenshotRecorderCallback?.onScreenshotRecorded(hwScreenshot)
+            hwImage.close()
           } else {
             options.logger.log(SentryLevel.DEBUG, "Canvas Strategy: hardware image is null")
           }
+          synchronized(freePictures) { freePictures.add(holder) }
         },
         Handler(Looper.getMainLooper()),
       )
@@ -92,9 +95,7 @@ internal class CanvasStrategy(
       canvas.drawColor(Color.BLACK, PorterDuff.Mode.CLEAR)
       holder.picture.draw(canvas)
       surface.unlockCanvasAndPost(canvas)
-    } finally {
-      synchronized(freePictures) { freePictures.add(holder) }
-    }
+    } finally {}
   }
 
   override fun capture(root: View) {
@@ -186,7 +187,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   private var colorSamplingReader: ImageReader? = null
 
   override fun isHardwareAccelerated(): Boolean {
-    return true
+    return false
   }
 
   override fun setBitmap(bitmap: Bitmap?) {
@@ -230,7 +231,12 @@ private class TextIgnoringDelegateCanvas : Canvas() {
   }
 
   override fun save(): Int {
-    return delegate.save()
+    val result = delegate.save()
+    return result
+  }
+
+  fun save(saveFlags: Int): Int {
+    return save()
   }
 
   override fun saveLayer(bounds: RectF?, paint: Paint?, saveFlags: Int): Int {
@@ -713,6 +719,7 @@ private class TextIgnoringDelegateCanvas : Canvas() {
       indexCount,
       paint,
     )
+    // TODO should we support this?
   }
 
   override fun drawRenderNode(renderNode: RenderNode) {
@@ -899,6 +906,5 @@ private class TextIgnoringDelegateCanvas : Canvas() {
 
 private data class PictureReaderHolder(val width: Int, val height: Int) {
   val picture = Picture()
-  val reader: ImageReader
-    get() = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 1)
+  val reader: ImageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 1)
 }
