@@ -24,15 +24,14 @@ class ConsoleApplicationSystemTest {
         jarFile,
         mapOf(
           "SENTRY_DSN" to testHelper.dsn,
-//          "SENTRY_AUTO_INIT" to "false",
+          //          "SENTRY_AUTO_INIT" to "false",
           "SENTRY_TRACES_SAMPLE_RATE" to "1.0",
           "SENTRY_ENABLE_PRETTY_SERIALIZATION_OUTPUT" to "false",
           "SENTRY_DEBUG" to "true",
           "OTEL_METRICS_EXPORTER" to "none",
           "OTEL_LOGS_EXPORTER" to "none",
           "OTEL_TRACES_EXPORTER" to "none",
-        ),
-        enableOtelAutoConfig = true
+        )
       )
 
     process.waitFor(30, TimeUnit.SECONDS)

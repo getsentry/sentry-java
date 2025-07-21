@@ -4,7 +4,6 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
-import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
@@ -27,13 +26,14 @@ public class Main {
   public static void main(String[] args) throws InterruptedException {
     AutoConfiguredOpenTelemetrySdk.builder()
         .setResultAsGlobal()
-        .addPropertiesSupplier(() -> {
-          final Map<String, String> properties = new HashMap<>();
-          properties.put("otel.logs.exporter", "none");
-          properties.put("otel.metrics.exporter", "none");
-          properties.put("otel.traces.exporter", "none");
-          return properties;
-        })
+        .addPropertiesSupplier(
+            () -> {
+              final Map<String, String> properties = new HashMap<>();
+              properties.put("otel.logs.exporter", "none");
+              properties.put("otel.metrics.exporter", "none");
+              properties.put("otel.traces.exporter", "none");
+              return properties;
+            })
         .build();
 
     Sentry.addBreadcrumb(
