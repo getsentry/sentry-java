@@ -4,6 +4,8 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 import io.sentry.Breadcrumb;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
@@ -17,90 +19,22 @@ import io.sentry.SpanStatus;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.User;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main {
 
   public static void main(String[] args) throws InterruptedException {
-    Sentry.init(
-        options -> {
-          // NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in
-          // your Sentry project/dashboard
-          options.setDsn(
-              "https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563");
-
-          // All events get assigned to the release. See more at
-          // https://docs.sentry.io/workflow/releases/
-          options.setRelease("io.sentry.samples.console@3.0.0+1");
-
-          // Modifications to event before it goes out. Could replace the event altogether
-          options.setBeforeSend(
-              (event, hint) -> {
-                // Drop an event altogether:
-                if (event.getTag("SomeTag") != null) {
-                  return null;
-                }
-                return event;
-              });
-
-          options.setBeforeSendTransaction(
-              (transaction, hint) -> {
-                // Drop a transaction:
-                if (transaction.getTag("SomeTransactionTag") != null) {
-                  return null;
-                }
-
-                return transaction;
-              });
-
-          // Allows inspecting and modifying, returning a new or simply rejecting (returning null)
-          options.setBeforeBreadcrumb(
-              (breadcrumb, hint) -> {
-                // Don't add breadcrumbs with message containing:
-                if (breadcrumb.getMessage() != null
-                    && breadcrumb.getMessage().contains("bad breadcrumb")) {
-                  return null;
-                }
-                return breadcrumb;
-              });
-
-          // Configure the background worker which sends events to sentry:
-          // Wait up to 5 seconds before shutdown while there are events to send.
-          options.setShutdownTimeoutMillis(5000);
-
-          // Enable SDK logging with Debug level
-          options.setDebug(true);
-          // To change the verbosity, use:
-          // By default it's DEBUG.
-          //          options.setDiagnosticLevel(
-          //              SentryLevel
-          //                  .ERROR); //  A good option to have SDK debug log in prod is to use
-          // only level
-          // ERROR here.
-          options.setEnablePrettySerializationOutput(false);
-
-          // Exclude frames from some packages from being "inApp" so are hidden by default in Sentry
-          // UI:
-          options.addInAppExclude("org.jboss");
-
-          // Include frames from our package
-          options.addInAppInclude("io.sentry.samples");
-
-          // Performance configuration options
-          // Set what percentage of traces should be collected
-          options.setTracesSampleRate(1.0); // set 0.5 to send 50% of traces
-
-          // Determine traces sample rate based on the sampling context
-          //          options.setTracesSampler(
-          //              context -> {
-          //                // only 10% of transactions with "/product" prefix will be collected
-          //                if (!context.getTransactionContext().getName().startsWith("/products"))
-          // {
-          //                  return 0.1;
-          //                } else {
-          //                  return 0.5;
-          //                }
-          //              });
-        });
+    AutoConfiguredOpenTelemetrySdk.builder()
+        .setResultAsGlobal()
+        .addPropertiesSupplier(() -> {
+          final Map<String, String> properties = new HashMap<>();
+          properties.put("otel.logs.exporter", "none");
+          properties.put("otel.metrics.exporter", "none");
+          properties.put("otel.traces.exporter", "none");
+          return properties;
+        })
+        .build();
 
     Sentry.addBreadcrumb(
         "A 'bad breadcrumb' that will be rejected because of 'BeforeBreadcrumb callback above.'");

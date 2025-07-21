@@ -288,9 +288,19 @@ class TestHelper(backendUrl: String) {
     return jarFiles.maxOf { it }
   }
 
-  fun launch(jar: File, env: Map<String, String>): Process {
+  fun launch(jar: File, env: Map<String, String>, enableOtelAutoConfig: Boolean = false): Process {
+    val processBuilderList = mutableListOf("java", "--add-opens", "java.base/java.lang=ALL-UNNAMED")
+
+    if (enableOtelAutoConfig) {
+      processBuilderList.add("-Dotel.java.global-autoconfigure.enabled=true")
+    }
+
+    processBuilderList.add("-jar")
+    processBuilderList.add(jar.absolutePath)
+
     val processBuilder =
-      ProcessBuilder("java", "-jar", jar.absolutePath).inheritIO() // forward i/o to current process
+      ProcessBuilder(processBuilderList)
+        .inheritIO() // forward i/o to current process
 
     processBuilder.environment().putAll(env)
 
