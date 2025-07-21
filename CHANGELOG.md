@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add deadlineTimeout option ([#4555](https://github.com/getsentry/sentry-java/pull/4555))
+
+### Fixes
+
+- Allow multiple UncaughtExceptionHandlerIntegrations to be active at the same time ([#4462](https://github.com/getsentry/sentry-java/pull/4462))
+- Prevent repeated scroll target determination during a single scroll gesture ([#4557](https://github.com/getsentry/sentry-java/pull/4557))
+  - This should reduce the number of ANRs seen in `SentryGestureListener`
+
 ## 8.17.0
 
 ### Features
