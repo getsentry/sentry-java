@@ -38,4 +38,9 @@ public final class SentryContextStorage implements ContextStorage {
   public Context current() {
     return contextStorage.current();
   }
+
+  @Override
+  public Context root() {
+    return SentryContextWrapper.wrap(ContextStorage.super.root());
+  }
 }
