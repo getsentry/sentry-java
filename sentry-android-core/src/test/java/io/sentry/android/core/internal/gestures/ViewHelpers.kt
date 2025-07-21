@@ -67,6 +67,11 @@ internal inline fun <reified T : View> mockView(
   return mockView
 }
 
-internal fun Resources.mockForTarget(target: View, expectedResourceName: String) {
-  whenever(getResourceEntryName(target.id)).thenReturn(expectedResourceName)
+internal fun Resources.mockForTarget(target: View, expectedResourceName: String?) {
+  if (expectedResourceName == null) {
+    whenever(getResourceEntryName(target.id))
+      .thenThrow(Resources.NotFoundException("res not found"))
+  } else {
+    whenever(getResourceEntryName(target.id)).thenReturn(expectedResourceName)
+  }
 }

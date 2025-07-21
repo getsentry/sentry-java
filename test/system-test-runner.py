@@ -42,6 +42,12 @@ from pathlib import Path
 from typing import Optional, List, Tuple
 from dataclasses import dataclass
 
+TERMINAL_COLUMNS: int = 60
+try:
+    TERMINAL_COLUMNS: int = os.get_terminal_size().columns
+except:
+    pass
+
 def str_to_bool(value: str) -> str:
     """Convert true/false string to 1/0 string for internal compatibility."""
     if value.lower() in ('true', '1'):
@@ -52,9 +58,29 @@ def str_to_bool(value: str) -> str:
         raise ValueError(f"Invalid boolean value: {value}. Use 'true' or 'false'")
 
 @dataclass
+class ModuleConfig:
+    """Configuration for a test module."""
+    name: str
+    java_agent: str
+    java_agent_auto_init: str
+    build_before_run: str
+
+    def uses_agent(self) -> bool:
+        """Check if this module uses the Java agent."""
+        return str_to_bool(self.java_agent) == "1"
+
+    def needs_build(self) -> bool:
+        """Check if this module needs to be built before running."""
+        return str_to_bool(self.build_before_run) == "1"
+
+    def is_spring_module(self) -> bool:
+        """Check if this is a Spring Boot module."""
+        return "spring" in self.name
+
+@dataclass
 class InteractiveSelection:
     """Result of interactive module selection."""
-    modules: List[Tuple[str, str, str, str]]
+    modules: List[ModuleConfig]
     manual_test_mode: bool
     build_agent: bool
 
@@ -66,7 +92,7 @@ class InteractiveSelection:
         """Check if exactly one module was selected."""
         return len(self.modules) == 1
 
-    def get_first_module(self) -> Tuple[str, str, str, str]:
+    def get_first_module(self) -> ModuleConfig:
         """Get the first selected module (for manual test mode)."""
         if self.is_empty():
             raise ValueError("No modules selected")
@@ -74,7 +100,7 @@ class InteractiveSelection:
 
     def has_agent_modules(self) -> bool:
         """Check if any selected modules use the Java agent."""
-        return any(str_to_bool(agent) == "1" for _, agent, _, _ in self.modules)
+        return any(module_config.uses_agent() for module_config in self.modules)
 
 class SystemTestRunner:
     def __init__(self):
@@ -468,30 +494,30 @@ class SystemTestRunner:
 
         failed_tests = []
 
-        for sample_module, java_agent, java_agent_auto_init, build_before_run in test_configs:
+        for i, module_config in enumerate(test_configs):
             # Convert true/false to internal 1/0 format
-            agent = str_to_bool(java_agent)
-            auto_init = java_agent_auto_init  # already in correct format
-            build = str_to_bool(build_before_run)
+            agent = str_to_bool(module_config.java_agent)
+            auto_init = module_config.java_agent_auto_init  # already in correct format
+            build = str_to_bool(module_config.build_before_run)
 
-            print(f"\n{'='*60}")
-            print(f"Running test: {sample_module} (agent={java_agent}, auto_init={java_agent_auto_init})")
-            print(f"{'='*60}")
+            print(f"\n{'='*TERMINAL_COLUMNS}")
+            print(f"Running test {i + 1}/{len(test_configs)}: {module_config.name} (agent={module_config.java_agent}, auto_init={module_config.java_agent_auto_init})")
+            print(f"{'='*TERMINAL_COLUMNS}")
 
-            result = self.run_single_test(sample_module, agent, auto_init, build)
+            result = self.run_single_test(module_config.name, agent, auto_init, build)
 
             if result != 0:
                 # Find the module number in the full list for interactive reference
-                module_number = self._find_module_number(sample_module, java_agent, java_agent_auto_init)
-                failed_tests.append((module_number, sample_module, java_agent, java_agent_auto_init))
-                print(f"❌ Test failed: {sample_module}")
+                module_number = self._find_module_number(module_config.name, module_config.java_agent, module_config.java_agent_auto_init)
+                failed_tests.append((module_number, module_config.name, module_config.java_agent, module_config.java_agent_auto_init))
+                print(f"❌ Test failed: {module_config.name}")
             else:
-                print(f"✅ Test passed: {sample_module}")
+                print(f"✅ Test passed: {module_config.name}")
 
         # Summary
-        print(f"\n{'='*60}")
+        print(f"\n{'='*TERMINAL_COLUMNS}")
         print("TEST SUMMARY")
-        print(f"{'='*60}")
+        print(f"{'='*TERMINAL_COLUMNS}")
         print(f"Total tests: {len(test_configs)}")
         print(f"Passed: {len(test_configs) - len(failed_tests)}")
         print(f"Failed: {len(failed_tests)}")
@@ -517,9 +543,9 @@ class SystemTestRunner:
                 return setup_result
 
             # Show status and wait for user
-            print("\n" + "="*60)
+            print("\n" + "="*TERMINAL_COLUMNS)
             print("🚀 Manual test environment ready 🚀")
-            print("="*60)
+            print("="*TERMINAL_COLUMNS)
             self.print_status_summary()
             print(f"\nInfrastructure is ready for manual testing of: {sample_module}")
             print("You can now run your system tests from your IDE.")
@@ -547,28 +573,29 @@ class SystemTestRunner:
             # Cleanup will happen in the finally block of main()
             pass
 
-    def get_available_modules(self) -> List[Tuple[str, str, str, str]]:
+    def get_available_modules(self) -> List[ModuleConfig]:
         """Get list of all available test modules."""
         return [
-            ("sentry-samples-spring-boot", "false", "true", "false"),
-            ("sentry-samples-spring-boot-opentelemetry-noagent", "false", "true", "false"),
-            ("sentry-samples-spring-boot-opentelemetry", "true", "true", "false"),
-            ("sentry-samples-spring-boot-opentelemetry", "true", "false", "false"),
-            ("sentry-samples-spring-boot-webflux-jakarta", "false", "true", "false"),
-            ("sentry-samples-spring-boot-webflux", "false", "true", "false"),
-            ("sentry-samples-spring-boot-jakarta", "false", "true", "false"),
-            ("sentry-samples-spring-boot-jakarta-opentelemetry-noagent", "false", "true", "false"),
-            ("sentry-samples-spring-boot-jakarta-opentelemetry", "true", "true", "false"),
-            ("sentry-samples-spring-boot-jakarta-opentelemetry", "true", "false", "false"),
-            ("sentry-samples-console", "false", "true", "false"),
-            ("sentry-samples-console-opentelemetry-noagent", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-opentelemetry-noagent", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-opentelemetry", "true", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-opentelemetry", "true", "false", "false"),
+            ModuleConfig("sentry-samples-spring-boot-webflux-jakarta", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-webflux", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-jakarta", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-jakarta-opentelemetry-noagent", "false", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-jakarta-opentelemetry", "true", "true", "false"),
+            ModuleConfig("sentry-samples-spring-boot-jakarta-opentelemetry", "true", "false", "false"),
+            ModuleConfig("sentry-samples-console", "false", "true", "false"),
         ]
 
     def _find_module_number(self, module_name: str, agent: str, auto_init: str) -> int:
         """Find the module number in the interactive list (1-based)."""
         modules = self.get_available_modules()
-        for i, (mod_name, mod_agent, mod_auto_init, _) in enumerate(modules, 1):
-            if mod_name == module_name and mod_agent == agent and mod_auto_init == auto_init:
+        for i, module_config in enumerate(modules, 1):
+            if (module_config.name == module_name and
+                module_config.java_agent == agent and
+                module_config.java_agent_auto_init == auto_init):
                 return i
         return 0  # Should not happen, but return 0 if not found
 
@@ -614,10 +641,10 @@ class SystemTestRunner:
 
         print("\nAvailable test modules:")
         print("=" * 80)
-        for i, (module, agent, auto_init, build) in enumerate(modules, 1):
-            agent_text = "with agent" if str_to_bool(agent) == "1" else "no agent"
-            auto_init_text = f"auto-init: {auto_init}"
-            print(f"{i:2d}. {module:<50} ({agent_text}, {auto_init_text})")
+        for i, module_config in enumerate(modules, 1):
+            agent_text = "with agent" if module_config.uses_agent() else "no agent"
+            auto_init_text = f"auto-init: {module_config.java_agent_auto_init}"
+            print(f"{i:2d}. {module_config.name:<50} ({agent_text}, {auto_init_text})")
 
         print("\nSelection options:")
         print("  * = all modules")
@@ -638,9 +665,9 @@ class SystemTestRunner:
 
                 # Show confirmation
                 print(f"\nSelected {len(selected_modules)} module(s):")
-                for i, (module, agent, auto_init, build) in enumerate(selected_modules, 1):
-                    agent_text = "with agent" if str_to_bool(agent) == "1" else "no agent"
-                    print(f"  {i}. {module} ({agent_text}, auto-init: {auto_init})")
+                for i, module_config in enumerate(selected_modules, 1):
+                    agent_text = "with agent" if module_config.uses_agent() else "no agent"
+                    print(f"  {i}. {module_config.name} ({agent_text}, auto-init: {module_config.java_agent_auto_init})")
 
                 confirm = input("\nProceed with these selections? [Y/n]: ").strip().lower()
                 if confirm in ('', 'y', 'yes'):
@@ -674,7 +701,7 @@ class SystemTestRunner:
 
         # Ask about building agent if any modules use it
         build_agent = False
-        has_agent_modules = any(str_to_bool(agent) == "1" for _, agent, _, _ in selected_modules)
+        has_agent_modules = any(module_config.uses_agent() for module_config in selected_modules)
         if has_agent_modules:
             while True:
                 try:
@@ -717,43 +744,43 @@ class SystemTestRunner:
                 print("Please select only one module for manual testing.")
                 return 1
 
-            sample_module, test_agent, test_auto_init, test_build = selection.get_first_module()
+            module_config = selection.get_first_module()
             # Convert true/false to internal 1/0 format
-            agent = str_to_bool(test_agent)
-            auto_init = test_auto_init  # already in correct format
-            build = str_to_bool(test_build)
+            agent = str_to_bool(module_config.java_agent)
+            auto_init = module_config.java_agent_auto_init  # already in correct format
+            build = str_to_bool(module_config.build_before_run)
 
-            print(f"\nSetting up manual test environment for: {sample_module}")
-            return self.run_manual_test_mode(sample_module, agent, auto_init, build)
+            print(f"\nSetting up manual test environment for: {module_config.name}")
+            return self.run_manual_test_mode(module_config.name, agent, auto_init, build)
 
         # Handle automatic test running
         failed_tests = []
 
-        for i, (sample_module, test_agent, test_auto_init, test_build) in enumerate(selection.modules, 1):
+        for i, module_config in enumerate(selection.modules, 1):
             # Convert true/false to internal 1/0 format
-            agent = str_to_bool(test_agent)
-            auto_init = test_auto_init  # already in correct format
-            build = str_to_bool(test_build)
+            agent = str_to_bool(module_config.java_agent)
+            auto_init = module_config.java_agent_auto_init  # already in correct format
+            build = str_to_bool(module_config.build_before_run)
 
-            print(f"\n{'='*60}")
-            print(f"Running test {i}/{len(selection.modules)}: {sample_module}")
-            print(f"Agent: {test_agent}, Auto-init: {test_auto_init}")
-            print(f"{'='*60}")
+            print(f"\n{'='*TERMINAL_COLUMNS}")
+            print(f"Running test {i}/{len(selection.modules)}: {module_config.name}")
+            print(f"Agent: {module_config.java_agent}, Auto-init: {module_config.java_agent_auto_init}")
+            print(f"{'='*TERMINAL_COLUMNS}")
 
-            result = self.run_single_test(sample_module, agent, auto_init, build)
+            result = self.run_single_test(module_config.name, agent, auto_init, build)
 
             if result != 0:
                 # Find the module number in the full list for interactive reference
-                module_number = self._find_module_number(sample_module, test_agent, test_auto_init)
-                failed_tests.append((module_number, sample_module, test_agent, test_auto_init))
-                print(f"❌ Test failed: {sample_module}")
+                module_number = self._find_module_number(module_config.name, module_config.java_agent, module_config.java_agent_auto_init)
+                failed_tests.append((module_number, module_config.name, module_config.java_agent, module_config.java_agent_auto_init))
+                print(f"❌ Test failed: {module_config.name}")
             else:
-                print(f"✅ Test passed: {sample_module}")
+                print(f"✅ Test passed: {module_config.name}")
 
         # Summary
-        print(f"\n{'='*60}")
+        print(f"\n{'='*TERMINAL_COLUMNS}")
         print("TEST SUMMARY")
-        print(f"{'='*60}")
+        print(f"{'='*TERMINAL_COLUMNS}")
         print(f"Total tests: {len(selection.modules)}")
         print(f"Passed: {len(selection.modules) - len(failed_tests)}")
         print(f"Failed: {len(failed_tests)}")

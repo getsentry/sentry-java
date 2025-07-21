@@ -139,6 +139,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "Unable to find scroll target. No breadcrumb captured.");
+        scrollState.type = GestureType.Scroll;
         return false;
       } else {
         options
@@ -249,8 +250,13 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
 
     final TransactionOptions transactionOptions = new TransactionOptions();
     transactionOptions.setWaitForChildren(true);
+
+    // Set deadline timeout based on configured option
+    final long deadlineTimeoutMillis = options.getDeadlineTimeout();
+    // No deadline when zero or negative value is set
     transactionOptions.setDeadlineTimeout(
-        TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION);
+        deadlineTimeoutMillis <= 0 ? null : deadlineTimeoutMillis);
+
     transactionOptions.setIdleTimeout(options.getIdleTimeout());
     transactionOptions.setTrimEnd(true);
     transactionOptions.setOrigin(TRACE_ORIGIN + "." + target.getOrigin());
