@@ -299,8 +299,7 @@ class TestHelper(backendUrl: String) {
     processBuilderList.add(jar.absolutePath)
 
     val processBuilder =
-      ProcessBuilder(processBuilderList)
-        .inheritIO() // forward i/o to current process
+      ProcessBuilder(processBuilderList).inheritIO() // forward i/o to current process
 
     processBuilder.environment().putAll(env)
 
