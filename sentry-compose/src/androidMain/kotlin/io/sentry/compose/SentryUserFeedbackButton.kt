@@ -18,8 +18,8 @@ import io.sentry.SentryFeedbackOptions
 @Composable
 public fun SentryUserFeedbackButton(
   modifier: Modifier = Modifier,
-  configurator: SentryFeedbackOptions.OptionsConfigurator? = null,
   text: String = "Report a Bug",
+  configurator: SentryFeedbackOptions.OptionsConfigurator? = null,
 ) {
   Button(modifier = modifier, onClick = { Sentry.showUserFeedbackDialog(configurator) }) {
     Row(
